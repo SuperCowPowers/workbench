@@ -43,7 +43,7 @@ Tox will install the SageMaker Sandbox package into a blank virtualenv and then 
 ### Make sure ALL tests pass
 
 ``` {.bash}
-$ cd sagemaker_sandbox
+$ cd sageworks
 $ tox 
 ```
 
@@ -74,7 +74,7 @@ $ twine upload dist/* -r pypi
 
 ``` {.bash}
 $ git add setup.py
-$ get commit -m "sagesand version 1.8.7 (or whatever)"
+$ get commit -m "sageworks version 1.8.7 (or whatever)"
 $ git tag v1.8.7 (or whatever)
 $ git push --tags
 $ git push

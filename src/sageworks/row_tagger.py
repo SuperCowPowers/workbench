@@ -4,7 +4,7 @@ from collections import defaultdict
 import pandas as pd
 
 # Local Imports
-from sagesand import feature_spider
+from sageworks import feature_spider
 
 
 # Class: RowTagger
