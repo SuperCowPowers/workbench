@@ -1,6 +1,6 @@
 <img align="right" style="padding:0px" src="docs/images/big_spider.png" width="320">
 
-# SageWorks
+# SageWorks<sup>TM</sup>
 AWS SageMaker has a fantastic set of functional components that can be used in concert to setup production level data processing and machine learning functionality.
 
 - **Training Data:** Organized S3 buckets for training data
