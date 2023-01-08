@@ -9,10 +9,10 @@ from sklearn.preprocessing import StandardScaler
 
 # Feature Spider Class
 class FeatureSpider:
-    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target: str, source: str):
+    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target: str):
 
         # Check for expected columns (used later)
-        for column in ['SMILES', id_column, target, source]:
+        for column in [id_column, target] + features:
             if column not in df.columns:
                 print(f'DataFrame does not have required {column} Column!')
                 return
@@ -21,7 +21,6 @@ class FeatureSpider:
         self.df = df
         self.id_column = id_column
         self.target = target
-        self.source = source
         self.features = features
 
         # Build our KNN model pipeline with StandardScalar
@@ -109,15 +108,10 @@ class FeatureSpider:
         results_df['knn_target_values'] = [', '.join([str(val) for val in values]) for values in target_values]
         results_df['knn_distances'] = [', '.join([str(dis) for dis in distances]) for distances in neigh_dist]
 
-        # Do we have Source data
-        if self.source is not None:
-            for index in neigh_ind:
-                print(self.df.iloc[index][self.source])
-            results_df['sources'] = [', '.join([self.df.iloc[index][self.source][0] for index in neigh_ind])]
         return results_df
 
     def neighbor_ids(self, pred_df) -> pd.DataFrame:
-        """Provide id + smiles for the neighbors (knn_ids, knn_smiles)"""
+        """Provide id, features for the neighbors (knn_ids, knn_features)"""
 
         # Run through scaler
         x_scaled = self.scalar.transform(pred_df[self.features])
@@ -125,10 +119,10 @@ class FeatureSpider:
         # Add the data to a copy of the dataframe
         results_df = pred_df.copy()
 
-        # Neighbor ID/SMILE lookups
+        # Neighbor ID and feature lookups
         neigh_dist, neigh_ind = self.knn.kneighbors(x_scaled)
         results_df['knn_ids'] = [', '.join(self.df.iloc[index][self.id_column] for index in indexes) for indexes in neigh_ind]
-        results_df['knn_smiles'] = [', '.join(self.df.iloc[index]['SMILES'] for index in indexes) for indexes in neigh_ind]
+        results_df['knn_features'] = [', '.join(self.df.iloc[index][self.id_column] for index in indexes) for indexes in neigh_ind]
         return results_df
 
     def coincident(self, target_diff, verbose=True):
@@ -152,7 +146,7 @@ class FeatureSpider:
 
             # Grab the info for this observation
             my_id = self.df.iloc[my_index][self.id_column]
-            my_smile = self.df.iloc[my_index]['SMILES']
+            my_features = self.df.iloc[my_index][self.id_column]
             my_target = self.knn._y[my_index]
 
             # Loop through the neighbors
@@ -178,14 +172,12 @@ class FeatureSpider:
             # Okay we've computed our HTG set for this observation
             # Print out all my HTG neighbors if the verbose flag is set
             if verbose and my_htg_set:
-                source = self.df.iloc[my_index][self.source]
                 print(f"\nOBSERVATION: {my_id}")
-                print(f"\t{my_id}({my_target:.2f}):{my_smile} {source}")
+                print(f"\t{my_id}({my_target:.2f}):{my_features}")
                 for htg_neighbor, dist, _diff, target in my_htg_set:
                     neighbor_id = self.df.iloc[htg_neighbor][self.id_column]
-                    neighbor_smile = self.df.iloc[htg_neighbor]['SMILES']
-                    n_source = self.df.iloc[htg_neighbor][self.source]
-                    print(f"\t{neighbor_id}({target:.2f}):{neighbor_smile} {n_source} TD:{_diff:.2f} FD:{dist}")
+                    neighbor_features = self.df.iloc[htg_neighbor][self.id_column]
+                    print(f"\t{neighbor_id}({target:.2f}):{neighbor_features} TargetD:{_diff:.2f} FeatureD:{dist}")
 
         # Return the global list of indexes that are part of high target gradient (HTG) pairs
         return list(global_htg_set)
@@ -198,28 +190,16 @@ def test():
     pd.set_option('display.width', 1000)
 
     # Make some fake data
-    data = {'ID': ['IVC-0', 'IVC-1', 'IVC-2', 'IVC-3', 'IVC-4',
-                   'IVC-5', 'IVC-6', 'IVC-7', 'IVC-8', 'IVC-9'],
-            'SMILES': ['CC1(C)[C@@H]2C[C@H]1C2(C)C',
-                       'CC1(C)[C@H]2C[C@@H]1C2(C)C',
-                       'C[C@]12O[C@H]1C[C@H]1C[C@@H]2C1(C)C',
-                       'C[C@]12O[C@H]1C[C@H]1C[C@@H]2C1(C)C',
-                       'CC(C)[C@@H]1CC[C@@H](C)C[C@H]1OC(=O)[C@H](C)O',
-                       'CC1(C)[C@@H]2C[C@H]1C2(C)C',
-                       'CC1(C)[C@H]2C[C@@H]1C2(C)C',
-                       'C[C@]12O[C@H]1C[C@H]1C[C@@H]2C1(C)C',
-                       'C[C@]12O[C@H]1C[C@H]1C[C@@H]2C1(C)C',
-                       'CC(C)[C@@H]1CC[C@@H](C)C[C@H]1OC(=O)[C@H](C)O'
-                       ],
+    data = {'ID': ['id_0', 'id_0', 'id_2', 'id_3', 'id_4',
+                   'id_5', 'id_6', 'id_7', 'id_8', 'id_9'],
             'feat1': [1.0, 1.0, 1.1, 3.0, 4.0, 1.0, 1.0, 1.1, 3.0, 4.0],
             'feat2': [1.0, 1.0, 1.1, 3.0, 4.0, 1.0, 1.0, 1.1, 3.0, 4.0],
             'feat3': [0.1, 0.1, 0.2, 1.6, 2.5, 0.1, 0.1, 0.2, 1.6, 2.5],
-            'source': ['A', 'A', 'B', 'A', 'B', 'A', 'A', 'B', 'A', 'B'],
-            'logS': [-3.1, -6.0, -6.0, -4.0, -2.0, -3.1, -6.0, -6.0, -4.0, -2.0]}
+            'price': [31, 60, 62, 40, 20, 31, 61, 60, 40, 20]}
     data_df = pd.DataFrame(data)
 
     # Create the class and run the taggers
-    f_spider = FeatureSpider(data_df, ['feat1', 'feat2', 'feat3'], id_column='ID', target='logS', source='source')
+    f_spider = FeatureSpider(data_df, ['feat1', 'feat2', 'feat3'], id_column='ID', target='price')
     preds = f_spider.predict(data_df)
     print(preds)
     coincident = f_spider.coincident(2)
@@ -230,7 +210,7 @@ def test():
     print(high_gradients)
 
     # Run some neighbor methods
-    query_df = data_df[data_df['ID'] == 'IVC-0'].copy()
+    query_df = data_df[data_df['ID'] == 'id_0'].copy()
     print(f_spider.neighbor_info(query_df))
 
 
