@@ -13,9 +13,9 @@ AWS SageMaker has a fantastic set of functional components that can be used in c
 
 ## Why SageWorks?
 
-- SageMaker is awesome but fairly complex
-- SageWorks lets us setup SageMaker Pipelines in a few lines of code
-- **Pipeline Graphs:** Visibility/Transparency into a Pipeline
+- The Amazon SageMaker ecosystem has significant complexity
+- SageWorks lets us setup ML Pipelines in a few lines of code
+- **Pipeline Graphs:** Visibility/Transparency into our Pipelines
     - What S3 data sources are getting pulled?
     - What Features Store(s) is the Model Using?
     - What's the ***Provenance*** of a Model in Model Registry?
