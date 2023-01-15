@@ -1,4 +1,5 @@
 <img align="left" style="padding: 10px 10px 0px 0px" src="docs/images/scp.png" width="140">
+
 # SageWorks<sup><i>TM</i></sup>
 
 AWS SageMaker has a fantastic set of functional components that can be used in concert to setup production level data processing and machine learning functionality.
