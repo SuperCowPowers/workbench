@@ -1,4 +1,4 @@
-<img align="left" style="padding: 10px 10px 0px 0px" src="docs/images/scp.png" width="140">
+<img align="left" style="padding: 30px 10px 0px 0px" src="docs/images/scp.png" width="140">
 
 # SageWorks<sup><i>TM</i></sup>
 
