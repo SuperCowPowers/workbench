@@ -1,5 +1,5 @@
 <img align="right" src="docs/images/sageworks.png" width="340">
-<img align="left" src="docs/images/scp.png" width="140">
+<img align="left" src="docs/images/scp.png" width="180">
 
 # SageWorks<sup><i>TM</i></sup>
 
@@ -21,7 +21,7 @@ AWS SageMaker has a fantastic set of functional components that can be used in c
     - What's the ***Provenance*** of a Model in Model Registry?
     - What SageMaker Endpoints are associated with this model?
 
-<img src="docs/images/graph_representation.png" width="340">
+<img src="docs/images/graph_representation.png" width="400">
 
 <i><b> Clearly illustrated:</b> SageWorks uses Pipeline Graphs to provide intuitive and transparent visibility into AWS Sagemaker Deployments.</i>
 
