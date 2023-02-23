@@ -17,7 +17,7 @@ class ListTags:
         """List all the files/tags for the tables in this AWS catalog database"""
         catalog_table_data = self.glue_meta.get_table_data()
         for name, table_info in catalog_table_data.items():
-            print(f"\n*** {name} ***")
+            print(f"\nData Source: {name}")
             for key, value in table_info.items():
                 print(f"\t{key}: {value}")
 

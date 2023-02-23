@@ -6,17 +6,6 @@ from awswrangler.exceptions import NoFilesFound
 import json
 import boto3
 
-# SLUDGE
-udm_types = {'TEXT', 'SMILES', 'NMBR', 'DATE', 'XSMI', 'CTAB'}
-udm_type_to_postgres = {
-    'TEXT': 'text',
-    'SMILES': 'text',
-    'NMBR': 'real',
-    'DATE': 'date',
-    'XSMI': 'text',
-    'CTAB': 'text'
-}
-
 
 # Class: GlueMeta
 class GlueMeta:
@@ -24,12 +13,6 @@ class GlueMeta:
     def __init__(self, database: str, skip_ignore: bool = True):
         # Store our database name
         self.database = database
-
-        # Create our boto3 session
-        self.session = boto3.session.Session()
-
-        # Set which tags are going to be 'sticky' (i.e. won't get overwritten/removed when a tag run occurs)
-        self.sticky_tags = ['combo']
 
         # Keep track of files that are ignored
         self.ignored_files = []
@@ -119,10 +102,6 @@ class GlueMeta:
         # Return a dictionary of ORIGINAL column names mapped to dtypes
         return dtypes
 
-    @staticmethod
-    def get_udm_types():
-        return udm_type_to_postgres
-
     def has_registered_types(self, table_name: str) -> bool:
         """Does this AWS Glue Catalog Table have registered types"""
         table_info = self.get_table_info(table_name)
@@ -142,7 +121,7 @@ class GlueMeta:
 
         # Grab the CSV file just to get the columns headers (only grab 1 row)
         print('Getting Original Columns from S3...')
-        csv_df = wr.s3.read_csv(path=s3_file_path, boto3_session=self.session, nrows=1)
+        csv_df = wr.s3.read_csv(path=s3_file_path, nrows=1)
         return list(csv_df.columns)
 
     def _get_registered_types(self, s3_file_path: str) -> dict:
@@ -152,7 +131,7 @@ class GlueMeta:
         print('Getting Registered Types from S3...')
         txt_file_path = s3_file_path.replace(".csv", ".txt")
         try:
-            txt_df = wr.s3.read_csv(path=txt_file_path, boto3_session=self.session)
+            txt_df = wr.s3.read_csv(path=txt_file_path)
         except NoFilesFound:
             return {}
 
@@ -173,32 +152,19 @@ class GlueMeta:
         """Set the tags for a specific table"""
         return self.table_data[table_name]['tags']
 
-    def set_table_tags(self, table_name: str, tags: list, push_to_aws: bool = False):
+    def set_table_tags(self, table_name: str, tags: list):
         """Set the tags for a specific table"""
+        self.table_data[table_name]['tags'] = tags
+        wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(self.table_data[table_name]['tags'])},
+                                           database=self.database,
+                                           table=table_name)
 
-        # Special logic to avoid overwriting sticky tags
-        sticky_tags = set(self.sticky_tags).intersection(set(self.table_data[table_name]['tags']))
-        self.table_data[table_name]['tags'] = list(set(tags).union(sticky_tags))
-        if push_to_aws:
-            wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(self.table_data[table_name]['tags'])},
-                                               database=self.database,
-                                               table=table_name)
-
-    def add_table_tags(self, table_name: str, tags: list, push_to_aws=False):
+    def add_table_tags(self, table_name: str, tags: list):
         """Add the tags for a specific table"""
         self.table_data[table_name]['tags'] = list(set(self.table_data[table_name]['tags']).union(set(tags)))
-        if push_to_aws:
-            wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(self.table_data[table_name]['tags'])},
-                                               database=self.database,
-                                               table=table_name)
-
-    def write_tags_to_aws(self):
-        """Set the tags for a specific table"""
-        for name, table_info in self.table_data.items():
-            print(name, table_info['tags'])
-            wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(table_info['tags'])},
-                                               database=self.database,
-                                               table=name)
+        wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(self.table_data[table_name]['tags'])},
+                                           database=self.database,
+                                           table=table_name)
 
     def get_table_ops(self, table_name: str):
         """Set the tags for a specific table"""
@@ -235,7 +201,7 @@ if __name__ == '__main__':
 
     # Collect args from the command line
     parser = argparse.ArgumentParser()
-    parser.add_argument('database', type=str, default='all', help='Only show a specific database')
+    parser.add_argument('--database', type=str, default='sageworks', help='AWS Data Catalog Database')
     args, commands = parser.parse_known_args()
 
     # Check for unknown args
@@ -252,7 +218,7 @@ if __name__ == '__main__':
         print(f"\t{my_name}")
 
     # Get a specific table
-    my_table = 'udm_com_idya_prj_a1_csv'
+    my_table = 'aqsol_data'
     my_table_info = glue_meta.get_table_info(my_table)
     pprint(my_table_info)
 
@@ -262,14 +228,13 @@ if __name__ == '__main__':
     pprint(my_table_info)
 
     # Test out getting just the tables with certain tags
-    for my_table in glue_meta.tables_with_tags(['assay', 'partial']):
+    for my_table in glue_meta.tables_with_tags(['public', 'parquet']):
         print(my_table)
 
     # Test out include/exclude tags
     for my_table in glue_meta.tables_with_tags(['smiles']):
         print(my_table)
-    print('\nNO PROJECT')
-    for my_table in glue_meta.tables_with_tags(['smiles'], exclude_list=['project', 'reagent']):
+    for my_table in glue_meta.tables_with_tags(['smiles'], exclude_list=['public']):
         print(my_table)
 
     # Test out column name retrieval
@@ -279,16 +244,15 @@ if __name__ == '__main__':
     print(f'Number of columns {len(my_columns)}')
 
     # Test out both the glue computed and registered types
-    test_table = 'udm_com_idya_prj_a1_csv'
-    my_table_info = glue_meta.get_table_info(test_table)
+    my_table_info = glue_meta.get_table_info(my_table)
     pprint(my_table_info)
     print(my_table_info['glue_computed_types'])
 
     # When you ask for dtypes two S3 calls are made (slow)
     # Note: Lazy evaluation here.. so a second call is fast
-    my_dtypes = glue_meta.get_column_dtypes(test_table)
+    my_dtypes = glue_meta.get_column_dtypes(my_table)
     pprint(my_dtypes)
 
     # This call will be fast
-    my_dtypes = glue_meta.get_column_dtypes(test_table)
+    my_dtypes = glue_meta.get_column_dtypes(my_table)
     pprint(my_dtypes)

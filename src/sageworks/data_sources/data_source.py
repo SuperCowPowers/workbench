@@ -9,10 +9,11 @@ class DataSource(ABC):
     def __init__(self, name, resource_url: str):
         self.name = name
         self.resource_url = resource_url
+        self.data_catalog_db = 'sageworks'
         self.num_rows = None
         self.num_columns = None
         self.column_names = None
-        self.data_catalog_db = 'sageworks'
+        self.tags = []
 
         # Make sure the AWS data catalog database exists
         self.ensure_aws_catalog_db()
@@ -91,6 +92,11 @@ class DataSource(ABC):
     def generate_feature_set(self, feature_type: str) -> bool:
         """Concrete Classes will support different feature set generations"""
         pass
+
+    def add_tag(self, tag):
+        """Add a tag to this data source"""
+        # This ensures no duplicate tags
+        self.tags = list(set(self.tags).add(tag))
 
     def get_meta(self) -> dict:
         return vars(self)
