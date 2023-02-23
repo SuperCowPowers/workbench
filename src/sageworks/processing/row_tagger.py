@@ -3,7 +3,7 @@
 import pandas as pd
 
 # Local Imports
-from sageworks import feature_spider
+from sageworks.processing import feature_spider
 
 
 # Class: RowTagger
@@ -14,7 +14,7 @@ class RowTagger:
     """
 
     def __init__(self, dataframe: pd.DataFrame, features: list, id_column: str, target: str,
-                min_dist: float, min_target_diff: float):
+                 min_dist: float, min_target_diff: float):
 
         # Set up some parameters
         self.id_column = id_column
