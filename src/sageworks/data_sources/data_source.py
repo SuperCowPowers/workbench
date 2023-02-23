@@ -1,7 +1,7 @@
 """DataSource: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)"""
 from abc import ABC, abstractmethod
 import pandas as pd
-# Local Imports
+import awswrangler as wr
 
 
 class DataSource(ABC):
@@ -12,6 +12,12 @@ class DataSource(ABC):
         self.num_rows = None
         self.num_columns = None
         self.column_names = None
+        self.data_catalog_db = 'sageworks'
+
+        # Make sure the AWS data catalog database exists
+        self.ensure_aws_catalog_db()
+
+        # All done
         print(f'DataSource Initialized: {resource_url}')
 
     @abstractmethod
@@ -40,13 +46,55 @@ class DataSource(ABC):
         pass
 
     @abstractmethod
+    def schema_validation(self):
+        """All data sources will have some form of schema validation.
+           For things like RDS tables this might just be a return True
+           but for other data source types there should be some code that
+           looks at the columns and types and does something reasonable
+           """
+        pass
+
+    @abstractmethod
+    def data_quality_review(self):
+        """All data sources should have some form of data quality review.
+           After schema_validation the class should 'inspect' the data values.
+           - What percentage of values in each column are NaNs/Null?
+           - Are there only a few unique values in each column (low variance?)
+           - Are there 'crazy' values way out of 3Sigma range?
+           - TBD
+           Given that plots and charts will be super helpful for this the data
+           quality review process should probably involve a web page and click 'OK' button
+           Having a Data Quality Web page is something we want to do anyway
+           """
+        pass
+
+    def store_in_sageworks(self):
+        """Store the data source into the SageWorks/AWS Framework.
+           A sequence of steps must be passed before being stored.
+           After the methods below 'pass' then we call the internal method
+           _store_in_sageworks() which actually does the official storage.
+           """
+        self.check()
+        self.get_num_rows()
+        self.get_num_columns()
+        self.schema_validation()
+        self.data_quality_review()
+        self._store_in_sageworks()
+
+    @abstractmethod
+    def _store_in_sageworks(self):
+        """Internal: Store this data source into AWS/SageWorks. Some classes may take no action
+           on this me (like RDS classes), others may convert CSV to Parquet, etc"""
+        pass
+
+    @abstractmethod
     def generate_feature_set(self, feature_type: str) -> bool:
         """Concrete Classes will support different feature set generations"""
         pass
 
-    def store_meta(self) -> bool:
-        print('Storing meta-data...')
-        return True
-
     def get_meta(self) -> dict:
         return vars(self)
+
+    def ensure_aws_catalog_db(self):
+        """Ensure that the AWS Catalog Database exists"""
+        wr.catalog.create_database(self.data_catalog_db, exist_ok=True)

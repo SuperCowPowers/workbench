@@ -10,6 +10,9 @@ class S3CSV(DataSource):
     """"S3CSV: Class for an S3 CSV DataSource"""
     def __init__(self, name, resource_url: str):
 
+        # S3 path if they want to store this data
+        self.data_source_s3_path = 's3://sageworks-data-sources'
+
         # Call Base Class Initialization
         super().__init__(name, resource_url)
 
@@ -46,6 +49,43 @@ class S3CSV(DataSource):
         df = wr.s3.select_query(query, self.resource_url, input_serialization='CSV', input_serialization_params=params)
         return df
 
+    def schema_validation(self):
+        """All data sources will have some form of schema validation.
+           For things like RDS tables this might just be a return True
+           but for other data source types there should be some code that
+           looks at the columns and types and does something reasonable
+           """
+        print('Schema Validation...')
+        return True
+
+    def data_quality_review(self):
+        """All data sources should have some form of data quality review.
+           After schema_validation the class should 'inspect' the data values.
+           - What percentage of values in each column are NaNs/Null?
+           - Are there only a few unique values in each column (low variance?)
+           - Are there 'crazy' values way out of 3Sigma range?
+           - TBD
+           Given that plots and charts will be super helpful for this the data
+           quality review process should probably involve a web page and click 'OK' button
+           Having a Data Quality Web page is something we want to do anyway
+           """
+        print('Data Quality Review...')
+        return True
+
+    def _store_in_sageworks(self, overwrite=True):
+        """Convert the CSV data into Parquet Format, move it to SageMaker S3 Path, and
+           the information about the data to the AWS Data Catalog sageworks database"""
+        s3_storage_path = f"{self.data_source_s3_path}/{self.name}"
+        print('Storing into SageWorks...')
+
+        # FIXME: This pull all the data down to the client (improve this later)
+        df = wr.s3.read_csv(self.resource_url, low_memory=False)
+        wr.s3.to_parquet(df, path=s3_storage_path, dataset=True, mode='overwrite',
+                         database=self.data_catalog_db, table=self.name,
+                         description=f'SageWorks data source: {self.name}',
+                         filename_prefix=f'{self.name}_',
+                         partition_cols=None)  # FIXME: Have some logic around partition columns
+
     def generate_feature_set(self, feature_type: str) -> bool:
         """Concrete Classes will support different feature set generations"""
         print(f'Generating feature set {feature_type}...')
@@ -58,7 +98,7 @@ def test():
     from pprint import pprint
 
     # Create a Data Source
-    my_data = S3CSV('aqsol_data', 's3://scp-sageworks-incoming-data/aqsol_public_data.csv')
+    my_data = S3CSV('aqsol_data', 's3://sageworks-incoming-data/aqsol_public_data.csv')
 
     # Call the various methods
 
@@ -81,10 +121,12 @@ def test():
     # Generate a feature set from the data source
     my_data.generate_feature_set('rdkit')
 
-    # Store meta-data to the meta-data DB and retrieve it
-    my_data.store_meta()
+    # Get the meta-data for our data source
     meta = my_data.get_meta()
     pprint(meta)
+
+    # Store this data source into SageWorks also puts info in AWS Data Catalog
+    my_data.store_in_sageworks()
 
 
 if __name__ == "__main__":
