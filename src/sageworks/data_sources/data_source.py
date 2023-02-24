@@ -96,7 +96,7 @@ class DataSource(ABC):
     def add_tag(self, tag):
         """Add a tag to this data source"""
         # This ensures no duplicate tags
-        self.tags = list(set(self.tags).add(tag))
+        self.tags = list(set(self.tags).union([tag]))
 
     def get_meta(self) -> dict:
         return vars(self)

@@ -1,6 +1,7 @@
 """S3CSV: Class for an S3 CSV DataSource"""
 import pandas as pd
 import awswrangler as wr
+import json
 
 # Local Imports
 from sageworks.data_sources.data_source import DataSource
@@ -78,12 +79,17 @@ class S3CSV(DataSource):
         s3_storage_path = f"{self.data_source_s3_path}/{self.name}"
         print('Storing into SageWorks...')
 
+        # Specify the tags to store
+        self.add_tag('sageworks')
+        self.add_tag('public')
+
         # FIXME: This pull all the data down to the client (improve this later)
         df = wr.s3.read_csv(self.resource_url, low_memory=False)
         wr.s3.to_parquet(df, path=s3_storage_path, dataset=True, mode='overwrite',
                          database=self.data_catalog_db, table=self.name,
                          description=f'SageWorks data source: {self.name}',
                          filename_prefix=f'{self.name}_',
+                         parameters={'tags': json.dumps(self.tags)},
                          partition_cols=None)  # FIXME: Have some logic around partition columns
 
     def generate_feature_set(self, feature_type: str) -> bool:
