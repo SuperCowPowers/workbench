@@ -64,7 +64,7 @@ class S3CSV(DataSource):
            After schema_validation the class should 'inspect' the data values.
            - What percentage of values in each column are NaNs/Null?
            - Are there only a few unique values in each column (low variance?)
-           - Are there 'crazy' values way out of 3Sigma range?
+           - Are there 'crazy' values way out of 3 Sigma range?
            - TBD
            Given that plots and charts will be super helpful for this the data
            quality review process should probably involve a web page and click 'OK' button

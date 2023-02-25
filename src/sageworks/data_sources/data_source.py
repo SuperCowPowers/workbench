@@ -81,6 +81,16 @@ class DataSource(ABC):
         self.schema_validation()
         self.data_quality_review()
         self._store_in_sageworks()
+        self.test_athena_query()
+
+    def test_athena_query(self):
+        """Run AFTER a data source has been stored (with _store_in_sageworks) this method
+           insures that everything went well and the data can be queried from Athena"""
+        query = f"select * from {self.name} limit 1"
+        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db)
+        print(df.head())
+        scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
+        print(f"Athena Query successful (scanned bytes: {scanned_bytes}")
 
     @abstractmethod
     def _store_in_sageworks(self):
