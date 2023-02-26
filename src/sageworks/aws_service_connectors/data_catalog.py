@@ -1,12 +1,12 @@
-"""Class: DataCatalogDatabase"""
+"""Class: DataCatalog"""
 import sys
 import argparse
 import awswrangler as wr
 import json
 
 
-class DataCatalogDatabase:
-    """DataCatalogDatabase: Helper Class for the AWS Data Catalog Database"""
+class DataCatalog:
+    """DataCatalog: Helper Class for the AWS Data Catalog Database"""
     def __init__(self, database: str):
         # Store our database name
         self.database = database
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Create the class and get the AWS Data Catalog database info
-    cat_db = DataCatalogDatabase(args.database)
+    cat_db = DataCatalog(args.database)
 
     # List tables in the database
     print(f"{cat_db.database}")
