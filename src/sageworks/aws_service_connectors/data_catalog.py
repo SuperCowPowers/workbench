@@ -3,20 +3,39 @@ import sys
 import argparse
 import awswrangler as wr
 import json
+import logging
+
+# Local Imports
+from sageworks.utils.logging import logging_setup
+from sageworks.aws_service_connectors.connector import Connector
+
+# Set up logging
+logging_setup()
 
 
-class DataCatalog:
+class DataCatalog(Connector):
     """DataCatalog: Helper Class for the AWS Data Catalog Database"""
     def __init__(self, database: str):
+        self.log = logging.getLogger(__name__)
+
         # Store our database name
         self.database = database
         self.table_list = None
         self.table_lookup = None
 
         # Load in the tables from the database
-        self.reload_tables()
+        self.refresh()
 
-    def reload_tables(self):
+    def check(self) -> bool:
+        """Check if we can reach/connect to this AWS Service"""
+        try:
+            wr.catalog.get_databases()
+            return True
+        except Exception as e:
+            self.log.critical(f"Error connecting to AWS Data Catalog: {e}")
+            return False
+
+    def refresh(self):
         """Load/reload the tables in the database"""
         # Grab all the tables in this database
         print(f"Reading Data Catalog Database: {self.database}...")
@@ -28,6 +47,10 @@ class DataCatalog:
     def get_table_names(self) -> list:
         """Get all the table names in this database"""
         return list(self.table_lookup.keys())
+
+    def get_data(self) -> list:
+        """Get all the table information in this database"""
+        return self.table_lookup
 
     def get_table(self, table_name) -> dict:
         """Get the table information for the given table name"""

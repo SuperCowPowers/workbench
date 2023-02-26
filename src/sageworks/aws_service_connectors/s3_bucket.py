@@ -2,29 +2,53 @@
 import sys
 import argparse
 import awswrangler as wr
+import logging
+
+
+# Local Imports
+from sageworks.utils.logging import logging_setup
+from sageworks.aws_service_connectors.connector import Connector
+
+# Set up logging
+logging_setup()
 
 
 # Class to retrieve object/file information from an AWS S3 Bucket
-class S3Bucket:
+class S3Bucket(Connector):
     """S3Bucket: Class to retrieve object/file information from an AWS S3 Bucket"""
     def __init__(self, bucket: str):
+        self.log = logging.getLogger(__name__)
+
         # Store our bucket name
         self.bucket = bucket
         self.file_info = None
 
         # Load in the files from the bucket
-        self.reload_files()
+        self.refresh()
 
-    def reload_files(self):
+    def check(self) -> bool:
+        """Check if we can reach/connect to this AWS Service"""
+        try:
+            wr.s3.does_object_exist(self.bucket)
+            return True
+        except Exception as e:
+            self.log.critical(f"Could not connect to AWS S3 {self.bucket}: {e}")
+            return False
+
+    def refresh(self):
         """Load/reload the files in the bucket"""
         # Grab all the files in this bucket
-        print(f"Reading S3 Bucket: {self.bucket}...")
+        self.log.info(f"Reading S3 Bucket: {self.bucket}...")
         _aws_file_info = wr.s3.describe_objects(self.bucket)
         self.file_info = {full_path.split('/')[-1]: info for full_path, info in _aws_file_info.items()}
 
     def get_file_names(self) -> list:
         """Get all the file names in this bucket"""
         return list(self.file_info.keys())
+
+    def get_data(self) -> dict:
+        """Get all the details for the files in this bucket"""
+        return self.file_info
 
     def get_file_info(self, file: str) -> dict:
         """Get additional info about this specific file"""
