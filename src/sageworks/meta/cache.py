@@ -11,10 +11,10 @@ class Cache(object):
             cache = Cache(max_size=5, timeout=10)
             cache.set('foo', 'bar')
             cache.get('foo')
-            >>> bar
+            > bar
             time.sleep(11)
             cache.get('foo')
-            >>> None
+            > None
             cache.clear()
     """
     def __init__(self, max_size=1000, timeout=None):
