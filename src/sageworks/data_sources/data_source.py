@@ -69,35 +69,6 @@ class DataSource(ABC):
            """
         pass
 
-    def store_in_sageworks(self):
-        """Store the data source into the SageWorks/AWS Framework.
-           A sequence of steps must be passed before being stored.
-           After the methods below 'pass' then we call the internal method
-           _store_in_sageworks() which actually does the official storage.
-           """
-        self.check()
-        self.get_num_rows()
-        self.get_num_columns()
-        self.schema_validation()
-        self.data_quality_review()
-        self._store_in_sageworks()
-        self.test_athena_query()
-
-    def test_athena_query(self):
-        """Run AFTER a data source has been stored (with _store_in_sageworks) this method
-           insures that everything went well and the data can be queried from Athena"""
-        query = f"select * from {self.name} limit 1"
-        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db)
-        print(df.head())
-        scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
-        print(f"Athena Query successful (scanned bytes: {scanned_bytes}")
-
-    @abstractmethod
-    def _store_in_sageworks(self):
-        """Internal: Store this data source into AWS/SageWorks. Some classes may take no action
-           on this me (like RDS classes), others may convert CSV to Parquet, etc"""
-        pass
-
     @abstractmethod
     def generate_feature_set(self, feature_type: str) -> bool:
         """Concrete Classes will support different feature set generations"""
@@ -107,9 +78,6 @@ class DataSource(ABC):
         """Add a tag to this data source"""
         # This ensures no duplicate tags
         self.tags = list(set(self.tags).union([tag]))
-
-    def get_meta(self) -> dict:
-        return vars(self)
 
     def ensure_aws_catalog_db(self):
         """Ensure that the AWS Catalog Database exists"""

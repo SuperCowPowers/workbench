@@ -90,12 +90,6 @@ class AthenaSource(DataSource):
         """Concrete Classes will support different feature set generations"""
         return True
 
-    # Note: This need to get ripped out
-    def _store_in_sageworks(self):
-        """Internal: Store this data source into AWS/SageWorks. Some classes may take no action
-           on this me (like RDS classes), others may convert CSV to Parquet, etc"""
-        return
-
 
 # Simple test of the AthenaSource functionality
 def test():

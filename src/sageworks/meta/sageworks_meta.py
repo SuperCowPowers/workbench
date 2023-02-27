@@ -25,9 +25,8 @@ class MetaCategory(Enum):
 
 
 class SageWorksMeta:
-    """SageWorksMeta pulls and collects metadata from a bunch of AWS Services"""
     def __init__(self):
-        """SageWorksMeta Initialization"""
+        """SageWorksMeta pulls and collects metadata from a bunch of AWS Services"""
         self.log = logging.getLogger(__file__)
 
         # FIXME: These should be pulled from a config file
