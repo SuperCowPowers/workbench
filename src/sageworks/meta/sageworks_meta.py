@@ -8,6 +8,7 @@ import logging
 from sageworks.meta.cache import Cache
 from sageworks.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_connectors.data_catalog import DataCatalog
+from sageworks.aws_service_connectors.feature_store import FeatureStore
 from sageworks.utils.logging import logging_setup
 
 # Setup Logging
@@ -36,27 +37,29 @@ class SageWorksMeta:
         # SageWorks category mapping to AWS Services
         # - incoming_data = S3
         # - data_sources = Data Catalog, Athena
-        # - feature_sets = Athena, Feature Store
+        # - feature_sets = Data Catalog, Athena, Feature Store
         # - models = Model Registry
         # - endpoints = Sagemaker Endpoints, Model Monitors
 
         # Pull in AWS Service Connectors
         self.incoming_data = S3Bucket(self.incoming_data_bucket)
         self.data_catalog = DataCatalog(self.data_catalog_db)
-        self.meta_cache = Cache(10)
-        # Feature Store
+        self.feature_store = FeatureStore()
         # Model Registry
         # Endpoints
         # Model Monitors
 
-        # This connection map is used to refresh the metadata for each category
+        # Temporal Cache for Metadata
+        self.meta_cache = Cache(10)
+
+        # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler
         self.connection_map = {
-            MetaCategory.INCOMING_DATA: {'refresh': self.incoming_data.refresh, 'get_data': self.incoming_data.get_data},
-            MetaCategory.DATA_SOURCES: {'refresh': self.data_catalog.refresh, 'get_data': self.data_catalog.get_data},
-            MetaCategory.FEATURE_SETS: {'refresh': lambda: None, 'get_data': lambda: []},
-            MetaCategory.MODELS: {'refresh': lambda: None, 'get_data': lambda: []},
-            MetaCategory.ENDPOINTS: {'refresh': lambda: None, 'get_data': lambda: []}
+            MetaCategory.INCOMING_DATA: self.incoming_data,
+            MetaCategory.DATA_SOURCES: self.data_catalog,
+            MetaCategory.FEATURE_SETS: self.feature_store,
+            MetaCategory.MODELS: self.incoming_data,
+            MetaCategory.ENDPOINTS: self.incoming_data
         }
 
     def refresh_meta(self, category: MetaCategory) -> None:
@@ -66,8 +69,8 @@ class SageWorksMeta:
             category (MetaCategory): The Category of metadata to Pull
         """
         # Refresh the connection for the given category and pull new data
-        self.connection_map[category]['refresh']()
-        self.meta_cache.set(category, self.connection_map[category]['get_data']())
+        self.connection_map[category].refresh()
+        self.meta_cache.set(category, self.connection_map[category].get_metadata())
 
     def get(self, category: MetaCategory) -> dict:
         """Pull Metadata for the given Category

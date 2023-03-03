@@ -42,13 +42,13 @@ class S3Bucket(Connector):
         _aws_file_info = wr.s3.describe_objects(self.bucket)
         self.file_info = {full_path.split('/')[-1]: info for full_path, info in _aws_file_info.items()}
 
+    def get_metadata(self) -> dict:
+        """Get all the details for the files in this bucket"""
+        return self.file_info
+
     def get_file_names(self) -> list:
         """Get all the file names in this bucket"""
         return list(self.file_info.keys())
-
-    def get_data(self) -> dict:
-        """Get all the details for the files in this bucket"""
-        return self.file_info
 
     def get_file_info(self, file: str) -> dict:
         """Get additional info about this specific file"""

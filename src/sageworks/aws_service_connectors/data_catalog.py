@@ -44,13 +44,13 @@ class DataCatalog(Connector):
         # Convert to a data structure with direct lookup
         self.table_lookup = {table['Name']: table for table in self.table_list}
 
+    def get_metadata(self) -> list:
+        """Get all the table information in this database"""
+        return self.table_lookup
+
     def get_table_names(self) -> list:
         """Get all the table names in this database"""
         return list(self.table_lookup.keys())
-
-    def get_data(self) -> list:
-        """Get all the table information in this database"""
-        return self.table_lookup
 
     def get_table(self, table_name) -> dict:
         """Get the table information for the given table name"""
@@ -109,8 +109,8 @@ if __name__ == '__main__':
     # Set the tags for this table
     cat_db.set_table_tags(my_table, ['public', 'solubility'])
 
-    # Reload tables
-    cat_db.reload_tables()
+    # Refresh the connector to get the latest info from AWS Data Catalog
+    cat_db.refresh()
 
     # Get the tags for this table
     tags = cat_db.get_table_tags(my_table)
@@ -119,8 +119,8 @@ if __name__ == '__main__':
     # Set the tags for this table
     cat_db.add_table_tags(my_table, ['aqsol', 'smiles'])
 
-    # Reload tables
-    cat_db.reload_tables()
+    # Refresh the connector to get the latest info from AWS Data Catalog
+    cat_db.refresh()
 
     # Get the tags for this table
     tags = cat_db.get_table_tags(my_table)

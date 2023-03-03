@@ -3,7 +3,7 @@ import awswrangler as wr
 import json
 import logging
 
-# FIXME: This will be a glue jobs that uses SPARK to convert CSV to Parquet in a 
+# FIXME: This will be a glue jobs that uses SPARK to convert CSV to Parquet in a
 #        scalable say and then populate the AWS Data Catalog with the information
 
 # Local imports
