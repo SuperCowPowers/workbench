@@ -26,13 +26,25 @@ class MetaCategory(Enum):
 
 
 class SageWorksMeta:
-    def __init__(self):
-        """SageWorksMeta pulls and collects metadata from a bunch of AWS Services"""
-        self.log = logging.getLogger(__file__)
 
-        # FIXME: These should be pulled from a config file
-        self.incoming_data_bucket = 's3://sageworks-incoming-data'
-        self.data_catalog_db = 'sageworks'
+    def __new__(cls):
+        """SageWorksMeta Singleton Pattern"""
+        if not hasattr(cls, 'instance'):
+            print('Creating New SageWorksMeta Instance...')
+            cls.instance = super(SageWorksMeta, cls).__new__(cls)
+
+            # Class Initialization
+            cls.instance.__class_init__()
+
+        return cls.instance
+
+    @classmethod
+    def __class_init__(cls):
+        """"SageWorksMeta pulls and collects metadata from a bunch of AWS Services"""
+        cls.log = logging.getLogger(__file__)
+
+        # FIXME: This should be pulled from a config file
+        cls.incoming_data_bucket = 's3://sageworks-incoming-data'
 
         # SageWorks category mapping to AWS Services
         # - incoming_data = S3
@@ -42,37 +54,39 @@ class SageWorksMeta:
         # - endpoints = Sagemaker Endpoints, Model Monitors
 
         # Pull in AWS Service Connectors
-        self.incoming_data = S3Bucket(self.incoming_data_bucket)
-        self.data_catalog = DataCatalog(self.data_catalog_db)
-        self.feature_store = FeatureStore()
+        cls.incoming_data = S3Bucket(cls.incoming_data_bucket)
+        cls.data_catalog = DataCatalog()
+        cls.feature_store = FeatureStore()
         # Model Registry
         # Endpoints
         # Model Monitors
 
         # Temporal Cache for Metadata
-        self.meta_cache = Cache(10)
+        cls.meta_cache = Cache(10)
 
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler
-        self.connection_map = {
-            MetaCategory.INCOMING_DATA: self.incoming_data,
-            MetaCategory.DATA_SOURCES: self.data_catalog,
-            MetaCategory.FEATURE_SETS: self.feature_store,
-            MetaCategory.MODELS: self.incoming_data,
-            MetaCategory.ENDPOINTS: self.incoming_data
+        cls.connection_map = {
+            MetaCategory.INCOMING_DATA: cls.incoming_data,
+            MetaCategory.DATA_SOURCES: cls.data_catalog,
+            MetaCategory.FEATURE_SETS: cls.feature_store,
+            MetaCategory.MODELS: cls.incoming_data,
+            MetaCategory.ENDPOINTS: cls.incoming_data
         }
 
-    def refresh_meta(self, category: MetaCategory) -> None:
+    @classmethod
+    def refresh_meta(cls, category: MetaCategory) -> None:
         """Refresh the Metadata for the given Category
 
         Args:
             category (MetaCategory): The Category of metadata to Pull
         """
         # Refresh the connection for the given category and pull new data
-        self.connection_map[category].refresh()
-        self.meta_cache.set(category, self.connection_map[category].get_metadata())
+        cls.connection_map[category].refresh()
+        cls.meta_cache.set(category, cls.connection_map[category].get_metadata())
 
-    def get(self, category: MetaCategory) -> dict:
+    @classmethod
+    def get_metadata(cls, category: MetaCategory) -> dict:
         """Pull Metadata for the given Category
 
         Args:
@@ -82,14 +96,14 @@ class SageWorksMeta:
             dict: The Metadata for the Requested Category
         """
         # Check the Temporal Cache
-        meta_data = self.meta_cache.get(category)
+        meta_data = cls.meta_cache.get(category)
         if meta_data is not None:
             return meta_data
         else:
             # If we don't have the data in the cache, we need to refresh it
-            self.log.info(f"Refreshing data for {category}...")
-            self.refresh_meta(category)
-            return self.meta_cache.get(category)
+            cls.log.info(f"Refreshing data for {category}...")
+            cls.refresh_meta(category)
+            return cls.meta_cache.get(category)
 
 
 if __name__ == '__main__':
@@ -111,10 +125,10 @@ if __name__ == '__main__':
     # Get the Metadata for various categories
     for my_category in MetaCategory:
         print(f"{my_category}:")
-        pprint(sage_meta.get(my_category))
+        pprint(sage_meta.get_metadata(my_category))
 
     # Get the Metadata for various categories
     # NOTE: There should be NO Refreshes in the logs
     for my_category in MetaCategory:
         print(f"{my_category}:")
-        pprint(sage_meta.get(my_category))
+        pprint(sage_meta.get_metadata(my_category))

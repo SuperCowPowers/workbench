@@ -14,24 +14,27 @@ logging_setup()
 
 class AthenaSource(DataSource):
     """AthenaSource: SageWork Data Source accessible through Athena"""
-    def __init__(self, table_name):
+    def __init__(self, database_name, table_name):
         """AthenaSource Initialization
 
         Args:
-            table_name (str): Name of Athena Table in the SageWorks Database
+            database_name (str): Name of Athena Database
+            table_name (str): Name of Athena Table
         """
+
+        self.database_name = database_name
         self.table_name = table_name
         self.log = logging.getLogger(__name__)
 
         # Call SuperClass (DataSource) Initialization
-        super().__init__(table_name, resource_url=None)
+        super().__init__(self.database_name)
 
         # Grab a SageWorks Metadata object and pull information for Data Sources
         self.sage_meta = SageWorksMeta()
-        self.my_meta = self.sage_meta.get(MetaCategory.DATA_SOURCES).get(self.table_name)
+        self.my_meta = self.sage_meta.get_metadata(MetaCategory.DATA_SOURCES)[self.database_name].get(self.table_name)
 
         # All done
-        print(f'AthenaSource Initialized: {table_name}')
+        print(f'AthenaSource Initialized: {self.database_name}.{self.table_name}')
 
     def check(self) -> bool:
         """Does the table_name exist in the SageWorks Metadata?"""
@@ -42,7 +45,7 @@ class AthenaSource(DataSource):
 
     def get_num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
-        count_df = self.query(f"select count(*) AS count from {self.table_name}")
+        count_df = self.query(f'select count(*) AS count from "{self.database_name}"."{self.table_name}"')
         return count_df['count'][0]
 
     def get_num_columns(self) -> int:
@@ -86,17 +89,13 @@ class AthenaSource(DataSource):
            """
         return True
 
-    def generate_feature_set(self, feature_type: str) -> bool:
-        """Concrete Classes will support different feature set generations"""
-        return True
-
 
 # Simple test of the AthenaSource functionality
 def test():
     """Test for AthenaSource Class"""
 
-    # Create a Data Source
-    my_data = AthenaSource('aqsol_data')
+    # Retrieve a Data Source
+    my_data = AthenaSource('sageworks', 'aqsol_data')
 
     # Call the various methods
 
@@ -104,20 +103,22 @@ def test():
     assert(my_data.check())
 
     # How many rows and columns?
-    rows = my_data.get_num_rows()
-    columns = my_data.get_num_columns()
-    print(f'Rows: {rows} Columns: {columns}')
+    num_rows = my_data.get_num_rows()
+    num_columns = my_data.get_num_columns()
+    print(f'Rows: {num_rows} Columns: {num_columns}')
 
     # What are the column names?
-    print(my_data.get_column_names())
+    columns = my_data.get_column_names()
+    print(columns)
 
-    # Run a query to only pull back only some data
-    query = f"select id, name, smiles from {my_data.table_name} limit 10"
+    # Get the tags associated with this feature set
+    print(f"Tags: {my_data.get_tags()}")
+
+    # Run a query to only pull back a few columns and rows
+    column_query = ', '.join(columns[:3])
+    query = f'select {column_query} from "{my_data.database_name}"."{my_data.table_name}" limit 10'
     df = my_data.query(query)
     print(df)
-
-    # Generate a feature set from the data source
-    my_data.generate_feature_set('rdkit')
 
 
 if __name__ == "__main__":

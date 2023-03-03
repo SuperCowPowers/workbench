@@ -5,11 +5,15 @@ import awswrangler as wr
 
 
 class DataSource(ABC):
-    """DataSource: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)"""
-    def __init__(self, name, resource_url: str):
-        self.name = name
-        self.resource_url = resource_url
-        self.data_catalog_db = 'sageworks'
+    def __init__(self, data_catalog_db: str = 'sageworks'):
+        """DataSource: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)
+
+        Args:
+            data_catalog_db (str): AWS Data Catalog Database. Defaults to 'sageworks'.
+        """
+
+        # Initialize the data source attributes
+        self.data_catalog_db = data_catalog_db
         self.num_rows = None
         self.num_columns = None
         self.column_names = None
@@ -17,9 +21,6 @@ class DataSource(ABC):
 
         # Make sure the AWS data catalog database exists
         self.ensure_aws_catalog_db()
-
-        # All done
-        print(f'DataSource Initialized: {resource_url}')
 
     @abstractmethod
     def check(self) -> bool:
@@ -69,10 +70,9 @@ class DataSource(ABC):
            """
         pass
 
-    @abstractmethod
-    def generate_feature_set(self, feature_type: str) -> bool:
-        """Concrete Classes will support different feature set generations"""
-        pass
+    def get_tags(self):
+        """Get the tags for this data source"""
+        return self.tags
 
     def add_tag(self, tag):
         """Add a tag to this data source"""

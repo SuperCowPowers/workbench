@@ -14,17 +14,12 @@ logging_setup()
 
 
 class DataCatalog(Connector):
-    """DataCatalog: Helper Class for the AWS Data Catalog Database"""
-    def __init__(self, database: str):
+    """DataCatalog: Helper Class for the AWS Data Catalog"""
+    def __init__(self):
         self.log = logging.getLogger(__name__)
 
-        # Store our database name
-        self.database = database
-        self.table_list = None
-        self.table_lookup = None
-
-        # Load in the tables from the database
-        self.refresh()
+        # Set up our internal data storage
+        self.data_catalog_metadata = {}
 
     def check(self) -> bool:
         """Check if we can reach/connect to this AWS Service"""
@@ -36,43 +31,51 @@ class DataCatalog(Connector):
             return False
 
     def refresh(self):
-        """Load/reload the tables in the database"""
-        # Grab all the tables in this database
-        print(f"Reading Data Catalog Database: {self.database}...")
-        self.table_list = wr.catalog.get_tables(database=self.database)
+        """Load/reload all the tables in all the catalog databases"""
 
-        # Convert to a data structure with direct lookup
-        self.table_lookup = {table['Name']: table for table in self.table_list}
+        # For each database, load the tables
+        for database in wr.catalog.get_databases():
+            print(f"Reading Data Catalog Database: {database['Name']}...")
+            table_list = wr.catalog.get_tables(database=database['Name'])
+
+            # Convert to a data structure with direct lookup
+            self.data_catalog_metadata[database['Name']] = {table['Name']: table for table in table_list}
 
     def get_metadata(self) -> list:
         """Get all the table information in this database"""
-        return self.table_lookup
+        return self.data_catalog_metadata
 
-    def get_table_names(self) -> list:
+    def get_database_names(self) -> list:
+        """Get all the database names from AWS Data Catalog"""
+        return list(self.data_catalog_metadata.keys())
+
+    def get_table_names(self, database: str) -> list:
         """Get all the table names in this database"""
-        return list(self.table_lookup.keys())
+        return list(self.data_catalog_metadata[database].keys())
 
-    def get_table(self, table_name) -> dict:
+    def get_table(self, database: str, table_name: str) -> dict:
         """Get the table information for the given table name"""
-        return self.table_lookup.get(table_name)
+        return self.data_catalog_metadata[database].get(table_name)
 
-    def get_table_tags(self, table_name) -> list:
+    def get_table_tags(self, database: str, table_name: str) -> list:
         """Get the table tag list for the given table name"""
-        table = self.get_table(table_name)
+        table = self.get_table(database, table_name)
         return json.loads(table['Parameters'].get('tags', '[]'))
 
-    def set_table_tags(self, table_name: str, tags: list):
+    @staticmethod
+    def set_table_tags(database: str, table_name: str, tags: list):
         """Set the tags for a specific table"""
         wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(tags)},
-                                           database=self.database,
+                                           database=database,
                                            table=table_name)
 
-    def add_table_tags(self, table_name: str, tags: list):
+    @staticmethod
+    def add_table_tags(database: str, table_name: str, tags: list):
         """Add some the tags for a specific table"""
-        current_tags = json.loads(wr.catalog.get_table_parameters(self.database, table_name).get('tags'))
+        current_tags = json.loads(wr.catalog.get_table_parameters(database, table_name).get('tags'))
         new_tags = list(set(current_tags).union(set(tags)))
         wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(new_tags)},
-                                           database=self.database,
+                                           database=database,
                                            table=table_name)
 
 
@@ -81,7 +84,6 @@ if __name__ == '__main__':
 
     # Collect args from the command line
     parser = argparse.ArgumentParser()
-    parser.add_argument('--database', type=str, default='sageworks', help='AWS Data Catalog Database')
     args, commands = parser.parse_known_args()
 
     # Check for unknown args
@@ -90,38 +92,40 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Create the class and get the AWS Data Catalog database info
-    cat_db = DataCatalog(args.database)
+    catalog = DataCatalog()
 
-    # List tables in the database
-    print(f"{cat_db.database}")
-    for name in cat_db.get_table_names():
-        print(f"\t{name}")
+    # List databases and tables
+    for my_database in catalog.get_database_names():
+        print(f"{my_database}")
+        for name in catalog.get_table_names(my_database):
+            print(f"\t{name}")
 
     # Get a specific table
+    my_database = 'sageworks'
     my_table = 'aqsol_data'
-    table_info = cat_db.get_table(my_table)
+    table_info = catalog.get_table(my_database, my_table)
     pprint(table_info)
 
     # Get the tags for this table
-    tags = cat_db.get_table_tags(my_table)
+    tags = catalog.get_table_tags(my_database, my_table)
     print(f"Tags: {tags}")
 
     # Set the tags for this table
-    cat_db.set_table_tags(my_table, ['public', 'solubility'])
+    catalog.set_table_tags(my_database, my_table, ['public', 'solubility'])
 
     # Refresh the connector to get the latest info from AWS Data Catalog
-    cat_db.refresh()
+    catalog.refresh()
 
     # Get the tags for this table
-    tags = cat_db.get_table_tags(my_table)
+    tags = catalog.get_table_tags(my_database, my_table)
     print(f"Tags: {tags}")
 
     # Set the tags for this table
-    cat_db.add_table_tags(my_table, ['aqsol', 'smiles'])
+    catalog.add_table_tags(my_database, my_table, ['aqsol', 'smiles'])
 
     # Refresh the connector to get the latest info from AWS Data Catalog
-    cat_db.refresh()
+    catalog.refresh()
 
     # Get the tags for this table
-    tags = cat_db.get_table_tags(my_table)
-    print(f"Tags: {tags}")
+    my_tags = catalog.get_table_tags(my_database, my_table)
+    print(f"Tags: {my_tags}")
