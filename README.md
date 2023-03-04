@@ -35,3 +35,13 @@ Using SageWorks will minimizize the time and manpower needed to incorporate AWS 
 
 ### Contributions
 If you'd like to contribute to the SageWorks project, you're more than welcome. All contributions will fall under the existing project [license](https://github.com/SuperCowPowers/sageworks/blob/main/LICENSE). If you are interested in contributing or have questions please feel free to contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com).
+
+### SageWorks Zen
+- [**AWS Glue**](https://docs.aws.amazon.com/glue/latest/dg/how-it-works.html) should maybe be called '**AWS Spark**'
+- **Heavy** components typically use **[Apache Spark](https://spark.apache.org/)** (via AWS Glue/Spark).
+- **Light** components will typically use **[Pandas](https://pandas.pydata.org/)**.
+- **Heavy** and **Light** paths lead to **same** data/artifacts pushed in AWS Services.
+- **Quick prototypes** can be built with the **light path** and then flipped to **heavy** as the system matures and usage grows.
+
+### SageWorks Algorithm Zen
+- There's only **trees**, well except for when it's a **graph** or a **DAG** or an **unordered collection**, but mostly it's **trees** .
