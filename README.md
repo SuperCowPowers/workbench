@@ -2,7 +2,7 @@
 
 # SageWorks<sup><i>TM</i></sup>
 
-<img align="right" src="docs/images/sageworks_concepts.png" width="640">
+<img src="docs/images/sageworks_concepts.png" width="1000">
 
 
 ## Why SageWorks?
