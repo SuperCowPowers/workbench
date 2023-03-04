@@ -1,14 +1,8 @@
-<img align="right" src="docs/images/sageworks.png" width="340">
 <img align="left" src="docs/images/scp.png" width="180">
 
 # SageWorks<sup><i>TM</i></sup>
 
-AWS SageMaker has a fantastic set of functional components that can be used in concert to set up production level data processing and machine learning functionality.
-
-- **Training Data:** Organized S3 buckets for training data
-- **Feature Store:** Store/organize 'curated/known' feature sets
-- **Model Registery:** Models with known performance stats/Model Scoreboards
-- **Model Endpoints:** Easy to use HTTP(S) endpoints for single or batch predictions
+<img align="right" src="docs/images/sageworks_concepts.png" width="640">
 
 
 ## Why SageWorks?
