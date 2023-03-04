@@ -22,7 +22,7 @@ class FeatureSet(AthenaSource):
         self.feature_set_name = feature_set_name
 
         # Grab a SageWorks Metadata object and pull information for Feature Sets
-        self.sage_meta = SageWorksMeta()
+        self.sage_meta = SageWorksMeta('all')
         self.feature_set_meta = self.sage_meta.get_metadata(MetaCategory.FEATURE_SETS).get(self.feature_set_name)
 
         # Pull Athena and S3 Storage information from metadata

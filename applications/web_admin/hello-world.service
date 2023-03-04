@@ -1,0 +1,13 @@
+[Unit]
+Description=uWSGI instance to serve the SageWorks Hello World 
+After=network.target
+
+[Service]
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/home/ec2-user/hello-world
+Environment="PATH=/home/ec2-user/.pyenv/versions/py39/bin"
+ExecStart=/home/ec2-user/.pyenv/versions/py39/bin/uwsgi --ini /home/ec2-user/hello-world/hello-world/web_admin/hello-world.ini
+
+[Install]
+WantedBy=multi-user.target

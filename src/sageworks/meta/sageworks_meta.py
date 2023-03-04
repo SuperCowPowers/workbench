@@ -27,19 +27,19 @@ class MetaCategory(Enum):
 
 class SageWorksMeta:
 
-    def __new__(cls):
+    def __new__(cls, database_scope='sageworks'):
         """SageWorksMeta Singleton Pattern"""
         if not hasattr(cls, 'instance'):
             print('Creating New SageWorksMeta Instance...')
             cls.instance = super(SageWorksMeta, cls).__new__(cls)
 
             # Class Initialization
-            cls.instance.__class_init__()
+            cls.instance.__class_init__(database_scope)
 
         return cls.instance
 
     @classmethod
-    def __class_init__(cls):
+    def __class_init__(cls, database_scope='sageworks'):
         """"SageWorksMeta pulls and collects metadata from a bunch of AWS Services"""
         cls.log = logging.getLogger(__file__)
 
@@ -55,7 +55,7 @@ class SageWorksMeta:
 
         # Pull in AWS Service Connectors
         cls.incoming_data = S3Bucket(cls.incoming_data_bucket)
-        cls.data_catalog = DataCatalog()
+        cls.data_catalog = DataCatalog(database_scope)
         cls.feature_store = FeatureStore()
         # Model Registry
         # Endpoints
@@ -120,7 +120,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Create the class
-    sage_meta = SageWorksMeta()
+    sage_meta = SageWorksMeta('all')
 
     # Get the Metadata for various categories
     for my_category in MetaCategory:

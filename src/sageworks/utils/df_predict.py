@@ -116,7 +116,7 @@ def endpoint_to_dataframe_tests():
     # Read in our SDF File
     df = sdf_to_df(args.sdfpath)
 
-    # Invoke a HarmonyML Endpoint
+    # Invoke an Endpoint
     endpoint_name = 'smiles-to-rdkit-mordred'
     endpoint = Predictor(endpoint_name, serializer=CSVSerializer(), deserializer=CSVDeserializer())
 

@@ -15,8 +15,17 @@ logging_setup()
 
 class DataCatalog(Connector):
     """DataCatalog: Helper Class for the AWS Data Catalog"""
-    def __init__(self):
+    def __init__(self, database_scope: (str, list) = 'sageworks'):
+        """DataCatalog: Helper Class for the AWS Data Catalog
+           Args: -
+               database_scope (str, list) - The scope of the databases to query (default = 'sageworks',
+                                            can be list ['a', 'b'], also 'all' for account wide scope)
+        """
         self.log = logging.getLogger(__name__)
+
+        # Set up our database scope
+        self.database_scope = database_scope if isinstance(database_scope, list) else [database_scope]
+        self.scoped_database_list = self.get_scoped_database_list()
 
         # Set up our internal data storage
         self.data_catalog_metadata = {}
@@ -33,17 +42,26 @@ class DataCatalog(Connector):
     def refresh(self):
         """Load/reload all the tables in all the catalog databases"""
 
-        # For each database, load the tables
-        for database in wr.catalog.get_databases():
-            print(f"Reading Data Catalog Database: {database['Name']}...")
-            table_list = wr.catalog.get_tables(database=database['Name'])
+        # For each database in our scoped list, load the tables
+        for database in self.scoped_database_list:
+            print(f"Reading Data Catalog Database: {database}...")
+            table_list = wr.catalog.get_tables(database=database)
 
             # Convert to a data structure with direct lookup
-            self.data_catalog_metadata[database['Name']] = {table['Name']: table for table in table_list}
+            self.data_catalog_metadata[database] = {table['Name']: table for table in table_list}
 
     def get_metadata(self) -> list:
         """Get all the table information in this database"""
         return self.data_catalog_metadata
+
+    def get_scoped_database_list(self):
+        """Return a list of databases within the defined scope for this class"""
+        all_databases = [db['Name'] for db in wr.catalog.get_databases()]
+        if self.database_scope == ['all']:
+            return all_databases
+
+        # Return a subset of the databases
+        return list(set(all_databases).intersection(set(self.database_scope)))
 
     def get_database_names(self) -> list:
         """Get all the database names from AWS Data Catalog"""
@@ -93,6 +111,9 @@ if __name__ == '__main__':
 
     # Create the class and get the AWS Data Catalog database info
     catalog = DataCatalog()
+
+    # The connectors need an explicit refresh to populate themselves
+    catalog.refresh()
 
     # List databases and tables
     for my_database in catalog.get_database_names():
