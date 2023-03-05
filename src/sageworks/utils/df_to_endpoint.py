@@ -1,4 +1,4 @@
-"""Helper Method to call endpoints with DataFrame"""
+"""Helper Method to call endpoints with a DataFrame as input"""
 import sys
 import argparse
 from io import StringIO
@@ -73,13 +73,13 @@ def _dataframe_to_endpoint(predictor, df):
             raise err
 
 
-def df_predict(predictor, df, dropna=True):
+def df_to_endpoint(endpoint, df, dropna=True):
     df_list = []
     for index in range(0, len(df), 500):
         print('Processing...')
 
         # Compute partial DataFrames, add them to a list, and concatenate at the end
-        partial_df = _dataframe_to_endpoint(predictor, df[index:index + 500])
+        partial_df = _dataframe_to_endpoint(endpoint, df[index:index + 500])
         df_list.append(partial_df)
 
     # Concatenate the dataframes
@@ -122,14 +122,14 @@ def endpoint_to_dataframe_tests():
 
     # Use the DataFrame helper method
     print(f'Calling Endpoint: {endpoint_name}...')
-    endpoint_results = df_predict(endpoint, df)
+    endpoint_results = df_to_endpoint(endpoint, df)
     print(endpoint_results.head())
 
     # Now replace one of the SMILES with a NaN
     df['SMILES'][1] = np.NaN
     df['SMILES'][3] = np.NaN
     print(f'Calling Endpoint with a NaN SMILES: {endpoint_name}...')
-    endpoint_results = df_predict(endpoint, df)
+    endpoint_results = df_to_endpoint(endpoint, df)
     print(endpoint_results.head())
 
 
