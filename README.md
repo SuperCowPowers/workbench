@@ -30,17 +30,11 @@ If you'd like to contribute to the SageWorks project, you're more than welcome. 
 
 ### SageWorks Zen
 
-- SageWorks API reflects AWS ML Services through the lens of **Artifacts and Transforms**.
-- [**AWS Glue**](https://docs.aws.amazon.com/glue/latest/dg/how-it-works.html) should maybe have been called '**AWS Spark**'
-- **Heavy** transforms typically use **[Apache Spark](https://spark.apache.org/)** (via AWS Glue/Spark).
+- SageWorks reflects AWS ML Services through the lens of **Artifacts and Transforms**.
+- **Heavy** transforms typically use **[AWS Athena](https://aws.amazon.com/athena/)** or **[Apache Spark](https://spark.apache.org/)** (via AWS Glue/Spark).
 - **Light** transforms will typically use **[Pandas](https://pandas.pydata.org/)**.
-- **Heavy** and **Light** transforms lead to **same** data/artifacts pushed in AWS Services.
+- Heavy and Light transforms both update **Artifacts** (collections of AWS Services).
 - **Quick prototypes** can be built with the **light path** and then flipped to **heavy** as the system matures and usage grows.
-- **Algorithms** have their own set of **Artifacts**:
-  - Tables
-  - Graphs
-     - DAGs
-     - Trees
 
 
 ### SageWorks Alpha Testers Wanted
