@@ -34,8 +34,8 @@ If you'd like to contribute to the SageWorks project, you're more than welcome. 
 - SageWorks views AWS ML Services through the lens of **Artifacts and Transforms**.
 - **Heavy** transforms typically use **[AWS Athena](https://aws.amazon.com/athena/)** or **[Apache Spark](https://spark.apache.org/)** (via AWS Glue/Spark).
 - **Light** transforms will typically use **[Pandas](https://pandas.pydata.org/)**.
-- Heavy and Light transforms both update **Artifacts** (collections of AWS Services).
-- **Quick prototypes** can be built with the **light path** and then flipped to **heavy** as the system matures and usage grows.
+- Heavy and Light transforms both update **AWS Artifacts** (collections of AWS Services).
+- **Quick prototypes** are typically built with the **light path** and then flipped to the **heavy path** as the system matures and usage grows.
 
 
 ### SageWorks Alpha Testers Wanted
