@@ -2,8 +2,8 @@
 import logging
 
 # Local Imports
-from sageworks.data_sources.athena_source import AthenaSource
-from sageworks.meta.sageworks_meta import MetaCategory, SageWorksMeta
+from sageworks.artifacts.data_sources.athena_source import AthenaSource
+from sageworks.aws_metadata.aws_metadata_broker import MetaCategory, AWSMetadataBroker
 from sageworks.utils.logging import logging_setup
 
 # Setup Logging
@@ -21,9 +21,9 @@ class FeatureSet(AthenaSource):
         self.log = logging.getLogger(__name__)
         self.feature_set_name = feature_set_name
 
-        # Grab a SageWorks Metadata object and pull information for Feature Sets
-        self.sage_meta = SageWorksMeta('all')
-        self.feature_set_meta = self.sage_meta.get_metadata(MetaCategory.FEATURE_SETS).get(self.feature_set_name)
+        # Grab an AWS Metadata Broker object and pull information for Feature Sets
+        self.aws_meta = AWSMetadataBroker('all')
+        self.feature_set_meta = self.aws_meta.get_metadata(MetaCategory.FEATURE_SETS).get(self.feature_set_name)
 
         # Pull Athena and S3 Storage information from metadata
         self.athena_database = self.feature_set_meta['sageworks'].get('athena_database')

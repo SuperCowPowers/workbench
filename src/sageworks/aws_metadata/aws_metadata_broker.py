@@ -1,11 +1,11 @@
-"""SageWorksMeta pulls and collects metadata from a bunch of AWS Services"""
+"""AWSMetadataBroker pulls and collects metadata from a bunch of AWS Services"""
 import sys
 import argparse
 from enum import Enum, auto
 import logging
 
 # Local Imports
-from sageworks.meta.cache import Cache
+from sageworks.aws_metadata.cache import Cache
 from sageworks.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_connectors.data_catalog import DataCatalog
 from sageworks.aws_service_connectors.feature_store import FeatureStore
@@ -25,13 +25,13 @@ class MetaCategory(Enum):
     ENDPOINTS = auto()
 
 
-class SageWorksMeta:
+class AWSMetadataBroker:
 
     def __new__(cls, database_scope='sageworks'):
-        """SageWorksMeta Singleton Pattern"""
+        """AWSMetadataBroker Singleton Pattern"""
         if not hasattr(cls, 'instance'):
-            print('Creating New SageWorksMeta Instance...')
-            cls.instance = super(SageWorksMeta, cls).__new__(cls)
+            print('Creating New AWSMetadataBroker Instance...')
+            cls.instance = super(AWSMetadataBroker, cls).__new__(cls)
 
             # Class Initialization
             cls.instance.__class_init__(database_scope)
@@ -40,7 +40,7 @@ class SageWorksMeta:
 
     @classmethod
     def __class_init__(cls, database_scope='sageworks'):
-        """"SageWorksMeta pulls and collects metadata from a bunch of AWS Services"""
+        """"AWSMetadataBroker pulls and collects metadata from a bunch of AWS Services"""
         cls.log = logging.getLogger(__file__)
 
         # FIXME: This should be pulled from a config file
@@ -120,7 +120,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Create the class
-    sage_meta = SageWorksMeta('all')
+    sage_meta = AWSMetadataBroker('all')
 
     # Get the Metadata for various categories
     for my_category in MetaCategory:
