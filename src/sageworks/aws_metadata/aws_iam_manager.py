@@ -21,7 +21,7 @@ class AWSIAMManager:
         - identity
         - roles
         - policies
-        - Check whether you a transform can 'create/update' the thing it's about to generate
+        - Check whether a transform can 'create/update' the thing it's about to generate
         """
 
 
