@@ -18,6 +18,6 @@ class Connector(ABC):
         pass
 
     @abstractmethod
-    def get_metadata(self) -> dict:
+    def metadata(self) -> dict:
         """Return all the metadata for this service"""
         pass

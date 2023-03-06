@@ -42,15 +42,15 @@ class S3Bucket(Connector):
         _aws_file_info = wr.s3.describe_objects(self.bucket)
         self.file_info = {full_path.split('/')[-1]: info for full_path, info in _aws_file_info.items()}
 
-    def get_metadata(self) -> dict:
-        """Get all the details for the files in this bucket"""
+    def metadata(self) -> dict:
+        """Get all the metadata for the files in this bucket"""
         return self.file_info
 
-    def get_file_names(self) -> list:
+    def file_names(self) -> list:
         """Get all the file names in this bucket"""
         return list(self.file_info.keys())
 
-    def get_file_info(self, file: str) -> dict:
+    def file_info(self, file: str) -> dict:
         """Get additional info about this specific file"""
         return self.file_info[file]
 
@@ -73,9 +73,9 @@ if __name__ == '__main__':
 
     # List files in the bucket
     print(f"{s3_bucket.bucket}")
-    for file_name in s3_bucket.get_file_names():
+    for file_name in s3_bucket.file_names():
         print(f"\t{file_name}")
 
     # Get additional info for a specific file
-    my_file_info = s3_bucket.get_file_info('aqsol_public_data.csv')
+    my_file_info = s3_bucket.file_info('aqsol_public_data.csv')
     pprint(my_file_info)

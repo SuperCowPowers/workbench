@@ -50,7 +50,7 @@ class DataCatalog(Connector):
             # Convert to a data structure with direct lookup
             self.data_catalog_metadata[database] = {table['Name']: table for table in table_list}
 
-    def get_metadata(self) -> list:
+    def metadata(self) -> list:
         """Get all the table information in this database"""
         return self.data_catalog_metadata
 

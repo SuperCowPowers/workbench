@@ -47,12 +47,15 @@ class AthenaSource(DataSource):
             return False
         return True
 
+    def aws_uuid(self) -> str:
+        """An AWS Unique Identifier"""
+        return f"CatalogID:{self._meta['CatalogId']}"
+
     def size(self) -> bool:
         """Return the size of this data in MegaBytes"""
-        # FIXME: WAG for now, figure out better way to get this
-        data_bytes = self.num_rows() * self.num_columns() * 20
-        megabytes = int(data_bytes / 1_000_000)
-        return megabytes
+        size_in_bytes = sum(wr.s3.size_objects(self.s3_storage()).values())
+        size_in_mb = round(size_in_bytes / 1_000_000)
+        return size_in_mb
 
     def meta(self):
         """Get the metadata for this artifact"""
@@ -95,6 +98,10 @@ class AthenaSource(DataSource):
         self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
         return df
 
+    def s3_storage(self) -> str:
+        """Get the S3 Storage Location for this Data Source"""
+        return self._meta['StorageDescriptor']['Location']
+
     def schema_validation(self):
         """All data sources will have some form of schema validation.
            For things like RDS tables this might just be a return True
@@ -128,6 +135,12 @@ def test():
 
     # Does this Athena data exist?
     assert(my_data.check())
+
+    # What's my AWS UUID
+    print(f"AWS UUID: {my_data.aws_uuid()}")
+
+    # Get the S3 Storage for this Data Source
+    print(f"S3 Storage: {my_data.s3_storage()}")
 
     # What's the size of the data?
     print(f"Size of Data (MB): {my_data.size()}")

@@ -52,7 +52,7 @@ class FeatureStore(Connector):
                         's3_storage': self.s3_storage(fg_name)}
             self.feature_data[fg_name]['sageworks'] = add_data
 
-    def get_metadata(self) -> list:
+    def metadata(self) -> list:
         """Get all the table information in this database"""
         return self.feature_data
 

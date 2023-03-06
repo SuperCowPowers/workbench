@@ -13,6 +13,11 @@ class Artifact(ABC):
         pass
 
     @abstractmethod
+    def aws_uuid(self) -> int:
+        """Return the unique AWS identifier for this artifact"""
+        pass
+
+    @abstractmethod
     def size(self) -> int:
         """Return the size of this artifact in MegaBytes"""
         pass
