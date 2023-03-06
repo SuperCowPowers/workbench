@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 
 # Local Imports
-from sageworks.artifacts.data_sources.data_source import DataSource
+from sageworks.aws_artifacts.data_sources.data_source import DataSource
 from sageworks.aws_metadata.aws_metadata_broker import MetaCategory, AWSMetadataBroker
 from sageworks.utils.logging import logging_setup
 
