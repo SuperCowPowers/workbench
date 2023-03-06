@@ -1,19 +1,17 @@
 <img align="left" src="docs/images/scp.png" width="180">
 
 # SageWorks<sup><i>TM</i></sup>
-<img align="right" src="docs/images/powered_aws_transparent.png" width="180">
-
-<br><br>
+<br>
 <img src="docs/images/sageworks_concepts.png">
 
 
 ## Why SageWorks?
 
-- The AWS® SageMaker ecosystem is **awesome** but has a large number of services with significant complexity
-- SageWorks lets us set up ML Pipelines in a few lines of code
-- **Pipeline Graphs:** Visibility/Transparency into our Pipelines
+- The AWS SageMaker® ecosystem is **awesome** but has a large number of services with significant complexity
+- SageWorks provides **rapid prototyping** through easy to use **classes** and **transforms**
+- SageWorks provides **visibility** and **transparency** into AWS SageMaker® Pipelines
     - What S3 data sources are getting pulled?
-    - What Features Store(s) is the Model Using?
+    - What Features Store/Group is the Model Using?
     - What's the ***Provenance*** of a Model in Model Registry?
     - What SageMaker Endpoints are associated with this model?
 
