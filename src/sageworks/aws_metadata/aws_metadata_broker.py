@@ -6,9 +6,9 @@ import logging
 
 # Local Imports
 from sageworks.aws_metadata.cache import Cache
-from sageworks.aws_service_connectors.s3_bucket import S3Bucket
-from sageworks.aws_service_connectors.data_catalog import DataCatalog
-from sageworks.aws_service_connectors.feature_store import FeatureStore
+from sageworks.aws_metadata.aws_service_connectors.s3_bucket import S3Bucket
+from sageworks.aws_metadata.aws_service_connectors.data_catalog import DataCatalog
+from sageworks.aws_metadata.aws_service_connectors.feature_store import FeatureStore
 from sageworks.utils.logging import logging_setup
 
 # Setup Logging
