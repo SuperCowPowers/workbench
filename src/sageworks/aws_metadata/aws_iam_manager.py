@@ -16,6 +16,14 @@ class AWSIAMManager:
         """"AWSIAMManager provides a bit of logic/functionality over the set of AWS IAM Services"""
         self.log = logging.getLogger(__file__)
 
+        # FIXME: Have some nice functionality around
+        """
+        - identity
+        - roles
+        - policies
+        - Check whether you a transform can 'create/update' the thing it's about to generate
+        """
+
 
 if __name__ == '__main__':
 
