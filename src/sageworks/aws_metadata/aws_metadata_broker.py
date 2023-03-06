@@ -120,15 +120,15 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Create the class
-    sage_meta = AWSMetadataBroker('all')
+    meta_broker = AWSMetadataBroker('all')
 
     # Get the Metadata for various categories
     for my_category in MetaCategory:
         print(f"{my_category}:")
-        pprint(sage_meta.get_metadata(my_category))
+        pprint(meta_broker.get_metadata(my_category))
 
     # Get the Metadata for various categories
     # NOTE: There should be NO Refreshes in the logs
     for my_category in MetaCategory:
         print(f"{my_category}:")
-        pprint(sage_meta.get_metadata(my_category))
+        pprint(meta_broker.get_metadata(my_category))
