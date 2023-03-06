@@ -1,10 +1,13 @@
 """DataSource: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)"""
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 import pandas as pd
 import awswrangler as wr
 
+# Local imports
+from sageworks.artifacts.artifact import Artifact
 
-class DataSource(ABC):
+
+class DataSource(Artifact):
     def __init__(self, data_catalog_db: str = 'sageworks'):
         """DataSource: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)
 
@@ -14,31 +17,22 @@ class DataSource(ABC):
 
         # Initialize the data source attributes
         self.data_catalog_db = data_catalog_db
-        self.num_rows = None
-        self.num_columns = None
-        self.column_names = None
-        self.tags = []
 
         # Make sure the AWS data catalog database exists
         self.ensure_aws_catalog_db()
 
     @abstractmethod
-    def check(self) -> bool:
-        """Does the DataSource exist? Can we connect to it?"""
-        pass
-
-    @abstractmethod
-    def get_num_rows(self) -> int:
+    def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
         pass
 
     @abstractmethod
-    def get_num_columns(self) -> int:
+    def num_columns(self) -> int:
         """Return the number of columns for this Data Source"""
         pass
 
     @abstractmethod
-    def get_column_names(self) -> list[str]:
+    def column_names(self) -> list[str]:
         """Return the column names for this Data Source"""
         pass
 
@@ -69,15 +63,6 @@ class DataSource(ABC):
            Having a Data Quality Web page is something we want to do anyway
            """
         pass
-
-    def get_tags(self):
-        """Get the tags for this data source"""
-        return self.tags
-
-    def add_tag(self, tag):
-        """Add a tag to this data source"""
-        # This ensures no duplicate tags
-        self.tags = list(set(self.tags).union([tag]))
 
     def ensure_aws_catalog_db(self):
         """Ensure that the AWS Catalog Database exists"""
