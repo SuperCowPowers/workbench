@@ -54,19 +54,11 @@ class S3BigToAthena:
                          parameters={'tags': json.dumps(list(self.tags))},
                          partition_cols=None)  # FIXME: Have some logic around partition columns
 
-    def test_athena_query(self):
-        """Run AFTER a data source has been stored (with _store_in_sageworks) this method
-           insures that everything went well and the data can be queried from Athena"""
-        query = f"select count(*) as count from {self.name} limit 1"
-        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db)
-        print(df.head())
-        scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
-        print(f"Athena Query successful (scanned bytes: {scanned_bytes})")
-
 
 # Simple test of the S3BigToAthena functionality
 def test():
     """Test the S3BigToAthena Class"""
+    from sageworks.aws_artifacts.data_sources.athena_source import AthenaSource
 
     # Create a Data Source
     my_loader = S3BigToAthena('aqsol_data', 's3://sageworks-incoming-data/aqsol_public_data.csv')
@@ -77,8 +69,9 @@ def test():
     # Store this data into Athena/SageWorks
     my_loader.load_into_athena()
 
-    # Now try out an Athena Query
-    my_loader.test_athena_query()
+    # Grab our new data source and validate/check it
+    new_data_source = AthenaSource('sageworks', 'aqsol_data')
+    new_data_source.check()
 
 
 if __name__ == "__main__":

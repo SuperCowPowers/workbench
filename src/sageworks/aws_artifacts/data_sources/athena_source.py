@@ -41,11 +41,20 @@ class AthenaSource(DataSource):
         print(f'AthenaSource Initialized: {self.database_name}.{self.table_name}')
 
     def check(self) -> bool:
-        """Does the table_name exist in the SageWorks Metadata?"""
+        """Validation Checks for this Data Source"""
+
+        # We're we able to pull AWS Meta data for this table_name?"""
         if self._meta is None:
             self.log.critical(f'AthenaSource.check() {self.table_name} not found in SageWorks Metadata!')
             return False
-        return True
+
+        # Can we run an Athena Test Query
+        try:
+            self.athena_test_query()
+            return True
+        except Exception as exc:
+            self.log.critical(f"Athena Test Query Failed: {exc}")
+            return False
 
     def aws_uuid(self) -> str:
         """An AWS Unique Identifier"""
@@ -102,26 +111,13 @@ class AthenaSource(DataSource):
         """Get the S3 Storage Location for this Data Source"""
         return self._meta['StorageDescriptor']['Location']
 
-    def schema_validation(self):
-        """All data sources will have some form of schema validation.
-           For things like RDS tables this might just be a return True
-           but for other data source types there should be some code that
-           looks at the columns and types and does something reasonable
-           """
-        return True
-
-    def data_quality_review(self):
-        """All data sources should have some form of data quality review.
-           After schema_validation the class should 'inspect' the data values.
-           - What percentage of values in each column are NaNs/Null?
-           - Are there only a few unique values in each column (low variance?)
-           - Are there 'crazy' values way out of 3Sigma range?
-           - TBD
-           Given that plots and charts will be super helpful for this the data
-           quality review process should probably involve a web page and click 'OK' button
-           Having a Data Quality Web page is something we want to do anyway
-           """
-        return True
+    def athena_test_query(self):
+        """Validate that Athena Queries are working"""
+        query = f"select count(*) as count from {self.table_name}"
+        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db)
+        print(df.head())
+        scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
+        print(f"Athena Query successful (scanned bytes: {scanned_bytes})")
 
 
 # Simple test of the AthenaSource functionality
@@ -133,7 +129,7 @@ def test():
 
     # Call the various methods
 
-    # Does this Athena data exist?
+    # Verify that the Athena Data Source exists
     assert(my_data.check())
 
     # What's my AWS UUID

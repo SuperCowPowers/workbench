@@ -5,18 +5,21 @@ from enum import Enum
 
 class TransformInput(Enum):
     """Enumerated Types for SageWorks Transform Inputs"""
-    S3_OBJECT = 0
-    DATA_SOURCE = 1
-    FEATURE_SET = 2
-    MODEL = 3
+    PANDAS_DF = 0
+    S3_OBJECT = 1
+    DATA_SOURCE = 2
+    FEATURE_SET = 3
+    MODEL = 4
 
 
 class TransformOutput(Enum):
     """Enumerated Types for SageWorks Transform Outputs"""
-    DATA_SOURCE = 1
-    FEATURE_SET = 2
-    MODEL = 3
-    ENDPOINT = 4
+    PANDAS_DF = 0
+    S3_OBJECT = 1
+    DATA_SOURCE = 2
+    FEATURE_SET = 3
+    MODEL = 4
+    ENDPOINT = 5
 
 
 class Transform(ABC):
@@ -34,12 +37,12 @@ class Transform(ABC):
         pass
 
     @abstractmethod
-    def set_input(self, resource_url: str):
+    def set_input_uuid(self, resource_url: str):
         """Set the Input for this Transform"""
         pass
 
     @abstractmethod
-    def set_output_name(self, uuid: str):
+    def set_output_uuid(self, uuid: str):
         """Set the Output Name (uuid) for this Transform"""
         pass
 
@@ -59,14 +62,4 @@ class Transform(ABC):
     @abstractmethod
     def validate_input(self) -> bool:
         """Validate the Input for this Transform"""
-        pass
-
-    @abstractmethod
-    def validate_output_pre_transform(self) -> bool:
-        """Validate, output type, AWS write permissions, etc. before it's created"""
-        pass
-
-    @abstractmethod
-    def validate_output(self) -> bool:
-        """Validate the Output after it's been created"""
         pass
