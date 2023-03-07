@@ -86,22 +86,21 @@ def test():
     # Create some fake data
     fake_df = pd.DataFrame({'name': ['sue'], 'age': [41], 'score': [7.8], 'date': [datetime.now()]})
 
-    # Create my Data Loader
+    # Create my DF to Data Source Transform
     output_uuid = 'test_data'
-    my_loader = DFToDataSource()
-    my_loader.set_input(fake_df)
-    my_loader.set_output_uuid(output_uuid)
+    df_to_data = DFToDataSource()
+    df_to_data.set_input(fake_df)
+    df_to_data.set_output_uuid(output_uuid)
 
     # Does my data pass validation?
-    assert(my_loader.validate_input())
+    assert(df_to_data.validate_input())
 
     # Store this data into Athena/SageWorks
-    my_loader.transform()
+    df_to_data.transform()
 
     # Grab the output and query it for a dataframe
-    output = my_loader.get_output()
-    query = f"select * from {output_uuid} limit 5"
-    df = output.query(query)
+    output = df_to_data.get_output()
+    df = output.query(f"select * from {output_uuid} limit 5")
 
     # Show the dataframe
     print(df)
