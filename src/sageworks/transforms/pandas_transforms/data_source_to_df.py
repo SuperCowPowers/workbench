@@ -15,6 +15,9 @@ class DataSourceToDF(Transform):
     def __init__(self):
         """DataSourceToDF: Class to transform a Data Source into a Pandas DataFrame"""
 
+        # Call superclass init
+        super().__init__()
+
         # Set up all my class instance vars
         self.log = logging.getLogger(__name__)
         self.input_uuid = None
@@ -46,9 +49,21 @@ class DataSourceToDF(Transform):
         self.input_data_source = AthenaSource(self.data_catalog_db, self.input_uuid)
         return self.input_data_source.check()
 
-    def transform(self, overwrite: bool = True):
+    def transform(self, max_rows=100000):
         """Convert the DataSource into a Pandas DataFrame"""
-        self.output_df = self.input_data_source.query(f"select * from {self.input_uuid}")
+
+        # Validate our input and get the number of rows in the DataSource
+        self.validate_input()
+        num_rows = self.input_data_source.num_rows()
+
+        # If the data source has more rows than max_rows, do a sample query
+        if num_rows > max_rows:
+            percentage = round(max_rows*100.0/num_rows)
+            self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {max_rows}...")
+            query = f"SELECT * FROM {self.input_uuid} TABLESAMPLE BERNOULLI({percentage})"
+        else:
+            query = f"SELECT * FROM {self.input_uuid}"
+        self.output_df = self.input_data_source.query(query)
 
 
 # Simple test of the DataSourceToDF functionality
@@ -67,11 +82,8 @@ def test():
     data_to_df = DataSourceToDF()
     data_to_df.set_input_uuid(data_uuid)
 
-    # Is my input data AOK?
-    assert(data_to_df.validate_input())
-
-    # Transform the DataSource into a Pandas DataFrame
-    data_to_df.transform()
+    # Transform the DataSource into a Pandas DataFrame (with max_rows = 1000)
+    data_to_df.transform(max_rows=1000)
 
     # Grab the output and show it
     my_df = data_to_df.get_output()
