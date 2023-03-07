@@ -12,6 +12,8 @@ from sageworks.utils.logging import logging_setup
 # Setup Logging
 logging_setup()
 
+# NOTE: This class is currently NOT WORKING, we have a ticket for it :)
+
 
 class S3BigToAthena:
     def __init__(self, name, s3_file_path: str):

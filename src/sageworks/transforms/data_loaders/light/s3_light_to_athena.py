@@ -1,4 +1,4 @@
-"""S3SmallToAthena: Class to move SMALL S3 Files into Athena"""
+"""S3LightToAthena: Class to move LIGHT S3 Files into Athena"""
 import awswrangler as wr
 import json
 import logging
@@ -12,9 +12,9 @@ from sageworks.aws_artifacts.data_sources.athena_source import AthenaSource
 logging_setup()
 
 
-class S3SmallToAthena(Transform):
+class S3LightToAthena(Transform):
     def __init__(self):
-        """S3SmallToAthena: Class to move SMALL S3 Files into Athena"""
+        """S3LightToAthena: Class to move LIGHT S3 Files into Athena"""
 
         # Set up all my class instance vars
         self.log = logging.getLogger(__name__)
@@ -84,14 +84,14 @@ class S3SmallToAthena(Transform):
                          partition_cols=None)  # FIXME: Have some logic around partition columns
 
 
-# Simple test of the S3SmallToAthena functionality
+# Simple test of the S3LightToAthena functionality
 def test():
-    """Test the S3SmallToAthena Class"""
+    """Test the S3LightToAthena Class"""
     import pandas as pd
 
     # Create my Data Loader
     output_uuid = 'aqsol_data'
-    my_loader = S3SmallToAthena()
+    my_loader = S3LightToAthena()
     my_loader.set_input_uuid('s3://sageworks-incoming-data/aqsol_public_data.csv')
     my_loader.set_output_uuid(output_uuid)
 
