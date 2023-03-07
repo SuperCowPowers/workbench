@@ -70,7 +70,7 @@ def test():
     # Is my input data AOK?
     assert(data_to_df.validate_input())
 
-    # Store this data into Athena/SageWorks
+    # Transform the DataSource into a Pandas DataFrame
     data_to_df.transform()
 
     # Grab the output and show it
