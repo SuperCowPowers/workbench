@@ -60,7 +60,7 @@ class S3BigToAthena:
 # Simple test of the S3BigToAthena functionality
 def test():
     """Test the S3BigToAthena Class"""
-    from sageworks.aws_artifacts.data_sources.athena_source import AthenaSource
+    from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
     # Create a Data Source
     my_loader = S3BigToAthena('aqsol_data', 's3://sageworks-incoming-data/aqsol_public_data.csv')

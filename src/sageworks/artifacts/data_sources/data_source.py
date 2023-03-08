@@ -4,10 +4,10 @@ import pandas as pd
 import awswrangler as wr
 
 # Local imports
-from sageworks.aws_artifacts.aws_artifact import AWSArtifact
+from sageworks.artifacts.artifact import Artifact
 
 
-class DataSource(AWSArtifact):
+class DataSource(Artifact):
     def __init__(self, data_catalog_db: str = 'sageworks'):
         """DataSource: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)
 

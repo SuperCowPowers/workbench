@@ -10,7 +10,7 @@ from sagemaker import get_execution_role
 # Local imports
 from sageworks.utils.logging import logging_setup
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.aws_artifacts.feature_sets.feature_set import FeatureSet
+from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 from sageworks.aws_service_broker.aws_iam_manager import AWSIAMManager
 
 # Setup Logging

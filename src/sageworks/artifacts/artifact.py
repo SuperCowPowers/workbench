@@ -1,17 +1,17 @@
-"""AWSArtifact: Abstract Base Class for all Artifact classes in SageWorks.
+"""Artifact: Abstract Base Class for all Artifact classes in SageWorks.
                 Artifacts simply reflect and aggregate one or more AWS Services"""
 from abc import ABC, abstractmethod
 from datetime import datetime
 
 
-class AWSArtifact(ABC):
+class Artifact(ABC):
     def __init__(self):
-        """AWSArtifact: Abstract Base Class for all Artifact classes in SageWorks.
+        """Artifact: Abstract Base Class for all Artifact classes in SageWorks.
                         Artifacts simply reflect and aggregate one or more AWS Services"""
 
     @abstractmethod
     def check(self) -> bool:
-        """Does the AWSArtifact exist? Can we connect to it?"""
+        """Does the Artifact exist? Can we connect to it?"""
         pass
 
     @abstractmethod

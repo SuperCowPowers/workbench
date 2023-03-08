@@ -2,7 +2,7 @@
 import logging
 
 # Local Imports
-from sageworks.aws_artifacts.data_sources.athena_source import AthenaSource
+from sageworks.artifacts.data_sources.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
 from sageworks.utils.logging import logging_setup
 

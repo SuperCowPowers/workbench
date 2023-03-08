@@ -5,7 +5,7 @@ import pandas as pd
 # Local imports
 from sageworks.utils.logging import logging_setup
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.aws_artifacts.data_sources.athena_source import AthenaSource
+from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 # Setup Logging
 logging_setup()
