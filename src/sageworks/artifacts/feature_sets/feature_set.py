@@ -23,7 +23,7 @@ class FeatureSet(AthenaSource):
 
         # Grab an AWS Metadata Broker object and pull information for Feature Sets
         self.aws_meta = AWSServiceBroker('all')
-        self.feature_set_meta = self.aws_meta.get_metadata(ServiceCategory.FEATURE_SETS).get(self.feature_set_name)
+        self.feature_set_meta = self.aws_meta.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
 
         # Pull Athena and S3 Storage information from metadata
         self.athena_database = self.feature_set_meta['sageworks'].get('athena_database')
