@@ -1,8 +1,12 @@
 <img align="left" src="docs/images/scp.png" width="180">
 
 # SageWorks<sup><i>TM</i></sup>
-<br>
+
+A flexible, rapid, and customizable AWS® ML Sandbox. Here's some of the classes and concepts we use in the SageWorks system.
+
 <img src="docs/images/sageworks_concepts.png">
+
+For more details: [SageWorks Classes and Concept](docs/sageworks_classes_concepts.md)
 
 
 ## Why SageWorks?
