@@ -1,14 +1,14 @@
-"""AWSMetadataBroker pulls and collects metadata from a bunch of AWS Services"""
+"""AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
 import sys
 import argparse
 from enum import Enum, auto
 import logging
 
 # Local Imports
-from sageworks.aws_metadata.cache import Cache
-from sageworks.aws_metadata.aws_service_connectors.s3_bucket import S3Bucket
-from sageworks.aws_metadata.aws_service_connectors.data_catalog import DataCatalog
-from sageworks.aws_metadata.aws_service_connectors.feature_store import FeatureStore
+from sageworks.aws_service_broker.cache import Cache
+from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
+from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog
+from sageworks.aws_service_broker.aws_service_connectors.feature_store import FeatureStore
 from sageworks.utils.logging import logging_setup
 
 # Setup Logging
@@ -16,22 +16,22 @@ logging_setup()
 
 
 # Enumerated types for SageWorks Meta Requests
-class MetaCategory(Enum):
+class ServiceCategory(Enum):
     """Enumerated Types for SageWorks Meta Requests"""
     INCOMING_DATA = auto()
-    DATA_SOURCES = auto()
-    FEATURE_SETS = auto()
+    DATA_CATALOG = auto()
+    FEATURE_STORE = auto()
     MODELS = auto()
     ENDPOINTS = auto()
 
 
-class AWSMetadataBroker:
+class AWSServiceBroker:
 
     def __new__(cls, database_scope='sageworks'):
-        """AWSMetadataBroker Singleton Pattern"""
+        """AWSServiceBroker Singleton Pattern"""
         if not hasattr(cls, 'instance'):
-            print('Creating New AWSMetadataBroker Instance...')
-            cls.instance = super(AWSMetadataBroker, cls).__new__(cls)
+            print('Creating New AWSServiceBroker Instance...')
+            cls.instance = super(AWSServiceBroker, cls).__new__(cls)
 
             # Class Initialization
             cls.instance.__class_init__(database_scope)
@@ -40,7 +40,7 @@ class AWSMetadataBroker:
 
     @classmethod
     def __class_init__(cls, database_scope='sageworks'):
-        """"AWSMetadataBroker pulls and collects metadata from a bunch of AWS Services"""
+        """"AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
         cls.log = logging.getLogger(__file__)
 
         # FIXME: This should be pulled from a config file
@@ -67,30 +67,30 @@ class AWSMetadataBroker:
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler
         cls.connection_map = {
-            MetaCategory.INCOMING_DATA: cls.incoming_data,
-            MetaCategory.DATA_SOURCES: cls.data_catalog,
-            MetaCategory.FEATURE_SETS: cls.feature_store,
-            MetaCategory.MODELS: cls.incoming_data,
-            MetaCategory.ENDPOINTS: cls.incoming_data
+            ServiceCategory.INCOMING_DATA: cls.incoming_data,
+            ServiceCategory.DATA_CATALOG: cls.data_catalog,
+            ServiceCategory.FEATURE_STORE: cls.feature_store,
+            ServiceCategory.MODELS: cls.incoming_data,
+            ServiceCategory.ENDPOINTS: cls.incoming_data
         }
 
     @classmethod
-    def refresh_meta(cls, category: MetaCategory) -> None:
+    def refresh_meta(cls, category: ServiceCategory) -> None:
         """Refresh the Metadata for the given Category
 
         Args:
-            category (MetaCategory): The Category of metadata to Pull
+            category (ServiceCategory): The Category of metadata to Pull
         """
         # Refresh the connection for the given category and pull new data
         cls.connection_map[category].refresh()
         cls.meta_cache.set(category, cls.connection_map[category].metadata())
 
     @classmethod
-    def get_metadata(cls, category: MetaCategory) -> dict:
+    def get_metadata(cls, category: ServiceCategory) -> dict:
         """Pull Metadata for the given Category
 
         Args:
-            category (MetaCategory): The Category of metadata to Pull
+            category (ServiceCategory): The Category of metadata to Pull
 
         Returns:
             dict: The Metadata for the Requested Category
@@ -120,15 +120,15 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Create the class
-    meta_broker = AWSMetadataBroker('all')
+    meta_broker = AWSServiceBroker('all')
 
     # Get the Metadata for various categories
-    for my_category in MetaCategory:
+    for my_category in ServiceCategory:
         print(f"{my_category}:")
         pprint(meta_broker.get_metadata(my_category))
 
     # Get the Metadata for various categories
     # NOTE: There should be NO Refreshes in the logs
-    for my_category in MetaCategory:
+    for my_category in ServiceCategory:
         print(f"{my_category}:")
         pprint(meta_broker.get_metadata(my_category))

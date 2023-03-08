@@ -6,7 +6,7 @@ from datetime import datetime
 
 # Local Imports
 from sageworks.aws_artifacts.data_sources.data_source import DataSource
-from sageworks.aws_metadata.aws_metadata_broker import MetaCategory, AWSMetadataBroker
+from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
 from sageworks.utils.logging import logging_setup
 
 # Setup Logging
@@ -31,8 +31,8 @@ class AthenaSource(DataSource):
         super().__init__(self.database_name)
 
         # Grab an AWS Metadata Broker object and pull information for Data Sources
-        self.aws_meta = AWSMetadataBroker()
-        self._meta = self.aws_meta.get_metadata(MetaCategory.DATA_SOURCES)[self.database_name].get(self.table_name)
+        self.aws_meta = AWSServiceBroker()
+        self._meta = self.aws_meta.get_metadata(ServiceCategory.DATA_CATALOG)[self.database_name].get(self.table_name)
 
         # Grab my tags
         self._tags = self._meta.get('Parameters', {}).get('tags', [])

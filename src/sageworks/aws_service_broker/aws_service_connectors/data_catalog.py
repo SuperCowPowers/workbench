@@ -7,7 +7,7 @@ import logging
 
 # Local Imports
 from sageworks.utils.logging import logging_setup
-from sageworks.aws_metadata.aws_service_connectors.connector import Connector
+from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
 
 # Set up logging
 logging_setup()
