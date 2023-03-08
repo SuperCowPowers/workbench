@@ -37,13 +37,13 @@ class Transform(ABC):
         pass
 
     @abstractmethod
-    def set_input_uuid(self, resource_url: str):
-        """Set the Input for this Transform"""
+    def set_input_uuid(self, input_uuid: str):
+        """Set the Input UUID (Name) for this Transform"""
         pass
 
     @abstractmethod
-    def set_output_uuid(self, uuid: str):
-        """Set the Output Name (uuid) for this Transform"""
+    def set_output_uuid(self, output_uuid: str):
+        """Set the Output UUID (Name) for this Transform"""
         pass
 
     @abstractmethod

@@ -35,7 +35,7 @@ class AthenaSource(DataSource):
         self._meta = self.aws_meta.get_metadata(MetaCategory.DATA_SOURCES)[self.database_name].get(self.table_name)
 
         # Grab my tags
-        self._tags = self._meta['Parameters']['tags']
+        self._tags = self._meta.get('Parameters', {}).get('tags', [])
 
         # All done
         print(f'AthenaSource Initialized: {self.database_name}.{self.table_name}')

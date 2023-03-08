@@ -17,6 +17,9 @@ class DFToDataSource(Transform):
     def __init__(self):
         """DFToDataSource: Class to publish Pandas DataFrames into Athena"""
 
+        # Call superclass init
+        super().__init__()
+
         # Set up all my class instance vars
         self.log = logging.getLogger(__name__)
         self.input_df = None
@@ -84,7 +87,14 @@ def test():
     pd.set_option('display.width', 1000)
 
     # Create some fake data
-    fake_df = pd.DataFrame({'name': ['sue'], 'age': [41], 'score': [7.8], 'date': [datetime.now()]})
+    fake_data = [
+        {'id': 1, 'name': 'sue', 'age': 41, 'score': 7.8, 'date': datetime.now()},
+        {'id': 2, 'name': 'bob', 'age': 34, 'score': 6.4, 'date': datetime.now()},
+        {'id': 3, 'name': 'ted', 'age': 69, 'score': 8.2, 'date': datetime.now()},
+        {'id': 4, 'name': 'bill', 'age': 24, 'score': 5.3, 'date': datetime.now()},
+        {'id': 5, 'name': 'sally', 'age': 52, 'score': 9.5, 'date': datetime.now()}
+        ]
+    fake_df = pd.DataFrame(fake_data)
 
     # Create my DF to Data Source Transform
     output_uuid = 'test_data'

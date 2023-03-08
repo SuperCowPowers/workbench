@@ -37,9 +37,9 @@ class FeatureSet(AthenaSource):
         print(f'FeatureSet Initialized: {feature_set_name}')
 
     def check(self) -> bool:
-        """Does the feature_set_name exist in the SageWorks Metadata?"""
+        """Does the feature_set_name exist in the AWS Metadata?"""
         if self.feature_set_meta is None:
-            self.log.critical(f'FeatureSet.check() {self.feature_set_name} not found in SageWorks Metadata!')
+            self.log.critical(f'FeatureSet.check() {self.feature_set_name} not found in AWS Metadata!')
             return False
         return True
 
@@ -53,20 +53,20 @@ def test():
 
     # Call the various methods
 
-    # Does this Feature Set exist?
+    # Lets do a check/validation of the feature set
     assert(my_features.check())
 
     # How many rows and columns?
-    num_rows = my_features.get_num_rows()
-    num_columns = my_features.get_num_columns()
+    num_rows = my_features.num_rows()
+    num_columns = my_features.num_columns()
     print(f'Rows: {num_rows} Columns: {num_columns}')
 
     # What are the column names?
-    columns = my_features.get_column_names()
+    columns = my_features.column_names()
     print(columns)
 
     # Get the tags associated with this feature set
-    print(f"Tags: {my_features.get_tags()}")
+    print(f"Tags: {my_features.tags()}")
 
     # Run a query to only pull back a few columns and rows
     column_query = ', '.join(columns[:3])
