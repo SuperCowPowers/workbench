@@ -1,13 +1,9 @@
 """CleanData: Example Class that demonstrates data cleanup for Light DataSources using Pandas"""
 
 # Local imports
-from sageworks.utils.logging import logging_setup
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.transforms.transform_utils.data_to_pandas import DataToPandas
 from sageworks.transforms.transform_utils.pandas_to_data import PandasToData
-
-# Setup Logging
-logging_setup()
 
 
 class CleanData(Transform):
@@ -24,10 +20,8 @@ class CleanData(Transform):
     def transform(self):
         """Pull the input DataSource make sure it's 'clean' and output to a DataSource"""
 
-        # Grab the Input (Data Source)
-        input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
-
         """
+        Notes for later:
         Cleaning data typically involves two phases: Identification and Remediation.
 
         - Identification
@@ -41,6 +35,8 @@ class CleanData(Transform):
             - Impute the value (using inference/context to fill in a value)
         """
 
+        # Grab the Input (Data Source)
+        input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
 
         # Drop Rows that have ANY NaNs in them
         orig_rows = len(input_df)
@@ -48,7 +44,7 @@ class CleanData(Transform):
         if len(input_df) != orig_rows:
             self.log.info(f"Dropping {orig_rows - len(input_df)} rows that have a NaN in them")
 
-        # Drop Columns that ANY ALL NaNs in them
+        # Drop Columns that have ANY NaNs in them
         orig_columns = input_df.columns.tolist()
         input_df = input_df.dropna(axis=1, how='any')
         remaining_columns = input_df.columns.tolist()
