@@ -1,4 +1,4 @@
-"""DataSourceToPandas: Class to transform a Data Source into a Pandas DataFrame"""
+"""DataToPandas: Class to transform a Data Source into a Pandas DataFrame"""
 import pandas as pd
 
 # Local imports
@@ -6,17 +6,18 @@ from sageworks.transforms.transform import Transform, TransformInput, TransformO
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 
-class DataSourceToPandas(Transform):
+class DataToPandas(Transform):
     def __init__(self):
-        """DataSourceToPandas: Class to transform a Data Source into a Pandas DataFrame"""
+        """DataToPandas: Class to transform a Data Source into a Pandas DataFrame"""
 
         # Call superclass init
         super().__init__()
 
-        # Set up all my class instance vars
+        # Set up all my instance attributes
         self.input_type = TransformInput.DATA_SOURCE
         self.output_type = TransformOutput.PANDAS_DF
         self.output_df = None
+        self.transform_run = False
 
     def transform(self, max_rows=100000):
         """Convert the DataSource into a Pandas DataFrame"""
@@ -37,16 +38,21 @@ class DataSourceToPandas(Transform):
             query = f"SELECT * FROM {self.input_uuid} TABLESAMPLE BERNOULLI({percentage})"
         else:
             query = f"SELECT * FROM {self.input_uuid}"
+
+        # Mark the transform as complete and set the output DataFrame
+        self.transform_run = True
         self.output_df = input_data.query(query)
 
     def get_output(self) -> pd.DataFrame:
         """Get the DataFrame Output from this Transform"""
+        if not self.transform_run:
+            self.transform()
         return self.output_df
 
 
-# Simple test of the DataSourceToPandas functionality
+# Simple test of the DataToPandas functionality
 def test():
-    """Test the DataSourceToPandas Class"""
+    """Test the DataToPandas Class"""
 
     # Setup Pandas output options
     pd.set_option('display.max_colwidth', 15)
@@ -57,7 +63,7 @@ def test():
     data_uuid = 'aqsol_data'
 
     # Create the DataSource to DF Transform
-    data_to_df = DataSourceToPandas()
+    data_to_df = DataToPandas()
     data_to_df.set_input_uuid(data_uuid)
 
     # Transform the DataSource into a Pandas DataFrame (with max_rows = 1000)

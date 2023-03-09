@@ -16,7 +16,7 @@ class S3LightToAthena(Transform):
     def __init__(self):
         """S3LightToAthena: Class to move LIGHT S3 Files into Athena"""
 
-        # Set up all my class instance vars
+        # Set up all my instance attributes
         self.log = logging.getLogger(__name__)
         self.s3_file_path = None
         self.output_uuid = None

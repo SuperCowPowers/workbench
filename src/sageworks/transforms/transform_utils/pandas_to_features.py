@@ -29,7 +29,7 @@ class DFToFeatureSet(Transform):
         # Call superclass init
         super().__init__()
 
-        # Set up all my class instance vars
+        # Set up all my instance attributes
         self.log = logging.getLogger(__name__)
         self.input_df = None
         self.output_uuid = None

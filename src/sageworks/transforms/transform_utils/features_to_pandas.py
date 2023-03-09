@@ -18,7 +18,7 @@ class FeaturesToPandas(Transform):
         # Call superclass init
         super().__init__()
 
-        # Set up all my class instance vars
+        # Set up all my instance attributes
         self.log = logging.getLogger(__name__)
         self.input_uuid = None
         self.input_data_source = None

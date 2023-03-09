@@ -1,4 +1,4 @@
-"""DFToDataSource: Class to publish a Pandas DataFrame as a DataSource"""
+"""PandasToData: Class to publish a Pandas DataFrame as a DataSource"""
 import awswrangler as wr
 import json
 import pandas as pd
@@ -11,14 +11,14 @@ from sageworks.transforms.transform import Transform, TransformInput, TransformO
 logging_setup()
 
 
-class DFToDataSource(Transform):
+class PandasToData(Transform):
     def __init__(self):
-        """DFToDataSource: Class to publish a Pandas DataFrame as a DataSource"""
+        """PandasToData: Class to publish a Pandas DataFrame as a DataSource"""
 
         # Call superclass init
         super().__init__()
 
-        # Set up all my class instance vars
+        # Set up all my instance attributes
         self.input_type = TransformInput.PANDAS_DF
         self.output_type = TransformOutput.DATA_SOURCE
         self.input_df = None
@@ -46,9 +46,9 @@ class DFToDataSource(Transform):
         self.input_df = input_df
 
 
-# Simple test of the DFToDataSource functionality
+# Simple test of the PandasToData functionality
 def test():
-    """Test the DFToDataSource Class"""
+    """Test the PandasToData Class"""
     from datetime import datetime
     from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
@@ -69,7 +69,7 @@ def test():
 
     # Create my DF to Data Source Transform
     output_uuid = 'test_data'
-    df_to_data = DFToDataSource()
+    df_to_data = PandasToData()
     df_to_data.set_input(fake_df)
     df_to_data.set_output_uuid(output_uuid)
 

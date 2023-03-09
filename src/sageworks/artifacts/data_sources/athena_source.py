@@ -54,7 +54,7 @@ class AthenaSource(DataSource):
 
     def size(self) -> bool:
         """Return the size of this data in MegaBytes"""
-        size_in_bytes = sum(wr.s3.size_objects(self.s3_storage()).values())
+        size_in_bytes = sum(wr.s3.size_objects(self.s3_storage_location()).values())
         size_in_mb = round(size_in_bytes / 1_000_000)
         return size_in_mb
 
@@ -99,7 +99,7 @@ class AthenaSource(DataSource):
         self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
         return df
 
-    def s3_storage(self) -> str:
+    def s3_storage_location(self) -> str:
         """Get the S3 Storage Location for this Data Source"""
         return self._meta['StorageDescriptor']['Location']
 
@@ -128,7 +128,7 @@ def test():
     print(f"AWS UUID: {my_data.aws_uuid()}")
 
     # Get the S3 Storage for this Data Source
-    print(f"S3 Storage: {my_data.s3_storage()}")
+    print(f"S3 Storage: {my_data.s3_storage_location()}")
 
     # What's the size of the data?
     print(f"Size of Data (MB): {my_data.size()}")

@@ -19,7 +19,7 @@ class S3BigToAthena:
     def __init__(self, name, s3_file_path: str):
         """S3BigToAthena: Class to move BIG S3 Files into Athena"""
 
-        # Set up all my class instance vars
+        # Set up all my instance attributes
         self.log = logging.getLogger(__name__)
         self.name = name
         self.s3_file_path = s3_file_path

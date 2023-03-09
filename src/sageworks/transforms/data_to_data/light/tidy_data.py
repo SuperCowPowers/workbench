@@ -1,13 +1,14 @@
 """TidyData: Example Class that demonstrates data cleanup for Light DataSources using Pandas"""
+import logging
+
 import awswrangler as wr
 import json
-import logging
 
 # Local imports
 from sageworks.utils.logging import logging_setup
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.transforms.transform_utils.data_to_pandas import DataSourceToPandas
-from sageworks.artifacts.data_sources.athena_source import AthenaSource
+from sageworks.transforms.transform_utils.data_to_pandas import DataToPandas
+from sageworks.transforms.transform_utils.pandas_to_data import PandasToData
 
 # Setup Logging
 logging_setup()
@@ -17,52 +18,23 @@ class TidyData(Transform):
     def __init__(self):
         """TidyData: Class for filtering, sub-setting, and value constraints on Light DataSources uses Pandas"""
 
-        # Set up all my class instance vars
-        self.log = logging.getLogger(__name__)
-        self.input_uuid = None
-        self.output_uuid = None
-        self.data_catalog_db = 'sageworks'
-        self.data_source_s3_path = 's3://sageworks-data-sources'
+        # Call superclass init
+        super().__init__()
 
-        # Simple Slice and Dice
-        self.keep_columns = None
+        # Set up all my instance attributes
+        self.input_type = TransformInput.DATA_SOURCE
+        self.output_type = TransformOutput.DATA_SOURCE
 
-    def input_type(self) -> TransformInput:
-        """What Input Type does this Transform Consume"""
-        return TransformInput.DATA_SOURCE
+    def transform(self):
+        """Pull the input DataSource make sure it's 'clean' and output to a DataSource"""
 
-    def output_type(self) -> TransformOutput:
-        """What Output Type does this Transform Produce"""
-        return TransformOutput.DATA_SOURCE
+        # Grab the Input (Data Source)
+        input_df = DataToPandas(self.input_uuid).get_output()
 
-    def set_input_uuid(self, input_uuid: str):
-        """Set the Input for this Transform"""
-        self.input_uuid = input_uuid
+        # Now Cleanup up the data and publish to the output location
+        PandasToData(self.output_uuid)
 
-    def set_output_name(self, output_uuid: str):
-        """Set the Name for the output Data Source"""
-        self.output_uuid = output_uuid
 
-    def get_output(self) -> AthenaSource:
-        """Get the Output from this Transform"""
-        return AthenaSource(self.data_catalog_db, self.output_uuid)
-
-    def validate_input(self) -> bool:
-        """Validate the Input for this Transform"""
-
-        # Does the S3 object exist and can it be accessed
-        print(f'Input Validation {self.s3_file_path}...')
-        return wr.s3.does_object_exist(self.s3_file_path)
-
-    def input_size_mb(self) -> int:
-        """ Get the size of the input S3 object in MBytes"""
-        size_in_bytes = wr.s3.size_objects(self.s3_file_path)[self.s3_file_path]
-        size_in_mb = round(size_in_bytes/1_000_000)
-        return size_in_mb
-
-    def set_slices(self, columns: (str, list)):
-        """Set which columns you'd like to keep"""
-        self.keep_columns = columns if isinstance(columns, list) else [columns]
 
     def transform(self, overwrite: bool = True, exclude_nans: bool = True):
         """Convert the CSV data into Parquet Format in the SageWorks S3 Bucket, and
