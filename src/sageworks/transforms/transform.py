@@ -1,25 +1,27 @@
 """Transform: Abstract Base Class for all transforms in SageWorks"""
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import Enum, auto
 
 
 class TransformInput(Enum):
     """Enumerated Types for SageWorks Transform Inputs"""
-    PANDAS_DF = 0
-    S3_OBJECT = 1
-    DATA_SOURCE = 2
-    FEATURE_SET = 3
-    MODEL = 4
+    PANDAS_DF = auto()
+    SPARK_DF = auto()
+    S3_OBJECT = auto()
+    DATA_SOURCE = auto()
+    FEATURE_SET = auto()
+    MODEL = auto()
 
 
 class TransformOutput(Enum):
     """Enumerated Types for SageWorks Transform Outputs"""
-    PANDAS_DF = 0
-    S3_OBJECT = 1
-    DATA_SOURCE = 2
-    FEATURE_SET = 3
-    MODEL = 4
-    ENDPOINT = 5
+    PANDAS_DF = auto()
+    SPARK_DF = auto()
+    S3_OBJECT = auto()
+    DATA_SOURCE = auto()
+    FEATURE_SET = auto()
+    MODEL = auto()
+    ENDPOINT = auto()
 
 
 class Transform(ABC):

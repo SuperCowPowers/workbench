@@ -1,4 +1,4 @@
-"""DataSourceToDF: Class to transform a Data Source into a Pandas DataFrame"""
+"""FeaturesToPandas: Class to transform a Data Source into a Spark DataFrame"""
 import logging
 import pandas as pd
 
@@ -11,9 +11,9 @@ from sageworks.artifacts.data_sources.athena_source import AthenaSource
 logging_setup()
 
 
-class DataSourceToDF(Transform):
+class FeaturesToPandas(Transform):
     def __init__(self):
-        """DataSourceToDF: Class to transform a Data Source into a Pandas DataFrame"""
+        """FeaturesToPandas: Class to transform a Data Source into a Spark DataFrame"""
 
         # Call superclass init
         super().__init__()
@@ -66,9 +66,9 @@ class DataSourceToDF(Transform):
         self.output_df = self.input_data_source.query(query)
 
 
-# Simple test of the DataSourceToDF functionality
+# Simple test of the FeaturesToPandas functionality
 def test():
-    """Test the DataSourceToDF Class"""
+    """Test the FeaturesToPandas Class"""
 
     # Setup Pandas output options
     pd.set_option('display.max_colwidth', 15)
@@ -79,7 +79,7 @@ def test():
     data_uuid = 'aqsol_data'
 
     # Create the DataSource to DF Transform
-    data_to_df = DataSourceToDF()
+    data_to_df = FeaturesToPandas()
     data_to_df.set_input_uuid(data_uuid)
 
     # Transform the DataSource into a Pandas DataFrame (with max_rows = 1000)
