@@ -8,15 +8,11 @@ from sageworks.artifacts.artifact import Artifact
 
 
 class DataSource(Artifact):
-    def __init__(self, data_catalog_db: str = 'sageworks'):
-        """DataSource: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)
+    def __init__(self):
+        """DataSource: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)"""
 
-        Args:
-            data_catalog_db (str): AWS Data Catalog Database. Defaults to 'sageworks'.
-        """
-
-        # Initialize the data source attributes
-        self.data_catalog_db = data_catalog_db
+        # Call superclass init
+        super().__init__()
 
         # Make sure the AWS data catalog database exists
         self.ensure_aws_catalog_db()

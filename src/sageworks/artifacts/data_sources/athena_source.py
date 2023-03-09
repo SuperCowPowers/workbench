@@ -1,44 +1,36 @@
 """AthenaSource: SageWork Data Source accessible through Athena"""
 import pandas as pd
 import awswrangler as wr
-import logging
 from datetime import datetime
 
 # Local Imports
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
-from sageworks.utils.logging import logging_setup
-
-# Setup Logging
-logging_setup()
 
 
 class AthenaSource(DataSource):
     """AthenaSource: SageWork Data Source accessible through Athena"""
-    def __init__(self, database_name, table_name):
+    def __init__(self, table_name):
         """AthenaSource Initialization
 
         Args:
-            database_name (str): Name of Athena Database
             table_name (str): Name of Athena Table
         """
 
-        self.database_name = database_name
-        self.table_name = table_name
-        self.log = logging.getLogger(__name__)
+        # Call superclass init
+        super().__init__()
 
-        # Call SuperClass (DataSource) Initialization
-        super().__init__(self.database_name)
+        self.table_name = table_name
 
         # Grab an AWS Metadata Broker object and pull information for Data Sources
         self.aws_meta = AWSServiceBroker()
-        self._meta = self.aws_meta.get_metadata(ServiceCategory.DATA_CATALOG)[self.database_name].get(self.table_name)
+        self._meta = self.aws_meta.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(self.table_name)
 
         # Grab my tags
         self._tags = self._meta.get('Parameters', {}).get('tags', [])
 
         # All done
-        print(f'AthenaSource Initialized: {self.database_name}.{self.table_name}')
+        print(f'AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}')
 
     def check(self) -> bool:
         """Validation Checks for this Data Source"""
@@ -89,7 +81,7 @@ class AthenaSource(DataSource):
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
-        count_df = self.query(f'select count(*) AS count from "{self.database_name}"."{self.table_name}"')
+        count_df = self.query(f'select count(*) AS count from "{self.data_catalog_db}"."{self.table_name}"')
         return count_df['count'][0]
 
     def num_columns(self) -> int:
@@ -125,7 +117,7 @@ def test():
     """Test for AthenaSource Class"""
 
     # Retrieve a Data Source
-    my_data = AthenaSource('sageworks', 'aqsol_data')
+    my_data = AthenaSource('aqsol_data')
 
     # Call the various methods
 
@@ -162,7 +154,7 @@ def test():
 
     # Run a query to only pull back a few columns and rows
     column_query = ', '.join(columns[:3])
-    query = f'select {column_query} from "{my_data.database_name}"."{my_data.table_name}" limit 10'
+    query = f'select {column_query} from "{my_data.data_catalog_db}"."{my_data.table_name}" limit 10'
     df = my_data.query(query)
     print(df)
 

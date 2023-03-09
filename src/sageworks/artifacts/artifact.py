@@ -2,12 +2,24 @@
                 Artifacts simply reflect and aggregate one or more AWS Services"""
 from abc import ABC, abstractmethod
 from datetime import datetime
+import logging
+
+from sageworks.utils.logging import logging_setup
+
+# Setup Logging
+logging_setup()
 
 
 class Artifact(ABC):
     def __init__(self):
         """Artifact: Abstract Base Class for all Artifact classes in SageWorks.
                         Artifacts simply reflect and aggregate one or more AWS Services"""
+        self.log = logging.getLogger(__name__)
+
+        # FIXME: We should have this come from AWS or Config
+        self.data_catalog_db = 'sageworks'
+        self.data_source_s3_path = 's3://sageworks-data-sources'
+        self.feature_sets_s3_path = 's3://sageworks-feature-sets'
 
     @abstractmethod
     def check(self) -> bool:
