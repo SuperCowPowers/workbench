@@ -12,11 +12,11 @@ logging_setup()
 
 
 class PandasToData(Transform):
-    def __init__(self):
+    def __init__(self, output_uuid=None):
         """PandasToData: Class to publish a Pandas DataFrame as a DataSource"""
 
         # Call superclass init
-        super().__init__()
+        super().__init__(None, output_uuid)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.PANDAS_DF
@@ -69,9 +69,8 @@ def test():
 
     # Create my DF to Data Source Transform
     output_uuid = 'test_data'
-    df_to_data = PandasToData()
+    df_to_data = PandasToData(output_uuid)
     df_to_data.set_input(fake_df)
-    df_to_data.set_output_uuid(output_uuid)
 
     # Store this data into Athena/SageWorks
     df_to_data.transform()

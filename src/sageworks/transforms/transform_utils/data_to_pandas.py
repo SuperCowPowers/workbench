@@ -7,11 +7,11 @@ from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 
 class DataToPandas(Transform):
-    def __init__(self):
+    def __init__(self, input_uuid=None):
         """DataToPandas: Class to transform a Data Source into a Pandas DataFrame"""
 
         # Call superclass init
-        super().__init__()
+        super().__init__(input_uuid, None)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.DATA_SOURCE
@@ -23,7 +23,7 @@ class DataToPandas(Transform):
         """Convert the DataSource into a Pandas DataFrame"""
 
         # Grab the Input (Data Source)
-        input_data = AthenaSource(self.data_catalog_db, self.input_uuid)
+        input_data = AthenaSource(self.input_uuid)
         if not input_data.check():
             self.log.critical(f"Data Check on {self.input_uuid} failed!")
             return
@@ -63,8 +63,7 @@ def test():
     data_uuid = 'aqsol_data'
 
     # Create the DataSource to DF Transform
-    data_to_df = DataToPandas()
-    data_to_df.set_input_uuid(data_uuid)
+    data_to_df = DataToPandas(data_uuid)
 
     # Transform the DataSource into a Pandas DataFrame (with max_rows = 1000)
     data_to_df.transform(max_rows=1000)

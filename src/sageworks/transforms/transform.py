@@ -32,15 +32,15 @@ class TransformOutput(Enum):
 
 
 class Transform(ABC):
-    def __init__(self):
+    def __init__(self, input_uuid: str = None, output_uuid: str = None):
         """Transform: Abstract Base Class for all transforms in SageWorks"""
 
         # FIXME: Should this class be a Python dataclass?
         self.log = logging.getLogger(__name__)
         self.input_type = None
         self.output_type = None
-        self.input_uuid = None
-        self.output_uuid = None
+        self.input_uuid = input_uuid
+        self.output_uuid = output_uuid
 
         # FIXME: We should have this come from AWS or Config
         self.data_catalog_db = 'sageworks'
