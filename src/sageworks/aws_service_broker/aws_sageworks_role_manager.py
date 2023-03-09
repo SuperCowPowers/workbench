@@ -1,8 +1,7 @@
-"""AWSSageWorksRole provides a bit of logic/functionality over the set of AWS IAM Services"""
+"""AWSSageWorksRoleManager provides a bit of logic/functionality over the set of AWS IAM Services"""
 import sys
 import boto3
 from botocore.exceptions import ClientError
-import sagemaker
 import argparse
 import logging
 
@@ -13,14 +12,15 @@ from sageworks.utils.logging import logging_setup
 logging_setup()
 
 
-class AWSSageWorksRole:
+class AWSSageWorksRoleManager:
 
     def __init__(self, role_name='SageWorks-ExecutionRole'):
-        """"AWSSageWorksRole provides a bit of logic/functionality over the set of AWS IAM Services"""
+        """"AWSSageWorksRoleManagerSession: Get the SageWorks Execution Role and/or Session"""
         self.log = logging.getLogger(__file__)
         self.role_name = role_name
 
-    def check_aws_identity(self) -> bool:
+    @staticmethod
+    def check_aws_identity() -> bool:
         """Check the AWS Identity currently active"""
         # Check AWS Identity Token
         sts = boto3.client('sts')
@@ -33,6 +33,16 @@ class AWSSageWorksRole:
         except ClientError:
             print("AWS Identity Check Failure: Check AWS_PROFILE and Renew Security Token...")
             return False
+
+    def sageworks_execution_role_arn(self):
+        """Get the SageWorks Execution Role"""
+        try:
+            iam = boto3.client('iam')
+            role_arn = iam.get_role(RoleName=self.role_name)['Role']['Arn']
+            return role_arn
+        except iam.exceptions.NoSuchEntityException:
+            print(f"Could Not Find Role {self.role_name}")
+            return None
 
     def sageworks_session(self):
         """Create a sageworks session using sts.assume_role(sageworks_execution_role)"""
@@ -49,16 +59,6 @@ class AWSSageWorksRole:
                                     aws_session_token=response['Credentials']['SessionToken'])
         return new_session
 
-    def sageworks_execution_role_arn(self):
-        """Get the SageWorks Execution Role"""
-        try:
-            iam = boto3.client('iam')
-            role_arn = iam.get_role(RoleName=self.role_name)['Role']['Arn']
-            return role_arn
-        except iam.exceptions.NoSuchEntityException:
-            print(f"Could Not Find Role {self.role_name}")
-            return None
-
 
 if __name__ == '__main__':
 
@@ -72,13 +72,17 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Create the class
-    iam_manager = AWSSageWorksRole()
+    sageworks_role = AWSSageWorksRoleManager()
 
     # Check our AWS identity
-    iam_manager.check_aws_identity()
+    sageworks_role.check_aws_identity()
+
+    # Get our Execution Role ARN
+    role_arn = sageworks_role.sageworks_execution_role_arn()
+    print(role_arn)
 
     # Get our SageWorks Session
-    sageworks_session = iam_manager.sageworks_session()
+    sageworks_session = sageworks_role.sageworks_session()
     print(sageworks_session)
 
     # Try to access some AWS services
