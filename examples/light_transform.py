@@ -32,29 +32,18 @@ class LightTransform(Transform):
         output_data.transform()
 
 
-# Simple test of the LightTransform functionality
-def test():
-    """Test the LightTransform Class"""
-    import pandas as pd
+if __name__ == "__main__":
+    """Run/Test the LightTransform Class"""
     from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = 'aqsol_data'
-    output_uuid = 'aqsol_data_clean'
-    LightTransform(input_uuid, output_uuid).transform()
+    my_input = 'aqsol_data'
+    my_output = 'aqsol_data_clean'
+    LightTransform(my_input, my_output).transform()
 
-    # Grab the output and query it for a dataframe
-    output = AthenaSource(output_uuid)
-    df = output.query(f"select * from {output_uuid} limit 5")
-
-    # Setup Pandas output options
-    pd.set_option('display.max_colwidth', 15)
-    pd.set_option('display.max_columns', 15)
-    pd.set_option('display.width', 1000)
+    # Use SageWorks to grab the output and query it for a dataframe
+    output = AthenaSource(my_output)
+    df = output.query(f"select * from {my_output} limit 5")
 
     # Show the dataframe
     print(df)
-
-
-if __name__ == "__main__":
-    test()
