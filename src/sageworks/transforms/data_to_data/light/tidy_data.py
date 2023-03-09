@@ -6,6 +6,7 @@ import logging
 # Local imports
 from sageworks.utils.logging import logging_setup
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
+from sageworks.transforms.transform_utils.data_to_pandas import DataSourceToPandas
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 # Setup Logging
@@ -74,7 +75,7 @@ class TidyData(Transform):
             return
 
         # Add some tags here
-        tags = ['sageworks', 'slice_and_dice']
+        tags = ['sageworks', 'tidy_data']
 
         # Read in the S3 CSV as a Pandas DataFrame
         df = wr.s3.read_csv(self.s3_file_path, low_memory=False)

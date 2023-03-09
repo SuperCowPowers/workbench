@@ -1,6 +1,13 @@
-"""Transform: Abstract Base Class for all transforms in SageWorks"""
+"""Transform: Base Class for all transforms within SageWorks
+              Inherited Classes must implement the abstract transform() method"""
 from abc import ABC, abstractmethod
 from enum import Enum, auto
+import logging
+
+from sageworks.utils.logging import logging_setup
+
+# Setup Logging
+logging_setup()
 
 
 class TransformInput(Enum):
@@ -28,40 +35,33 @@ class Transform(ABC):
     def __init__(self):
         """Transform: Abstract Base Class for all transforms in SageWorks"""
 
-    @abstractmethod
-    def input_type(self) -> TransformInput:
-        """What Input Type does this Transform Consume"""
-        pass
-
-    @abstractmethod
-    def output_type(self) -> TransformOutput:
-        """What Output Type does this Transform Produce"""
-        pass
-
-    @abstractmethod
-    def set_input_uuid(self, input_uuid: str):
-        """Set the Input UUID (Name) for this Transform"""
-        pass
-
-    @abstractmethod
-    def set_output_uuid(self, output_uuid: str):
-        """Set the Output UUID (Name) for this Transform"""
-        pass
+        # FIXME: Should this class be a Python dataclass?
+        self.log = logging.getLogger(__name__)
+        self.input_type = None
+        self.output_type = None
+        self.input_uuid = None
+        self.output_uuid = None
 
     @abstractmethod
     def transform(self, overwrite: bool = True):
         """Perform the Transformation from Input to Output
            Args:
-               overwrite (bool): Overwrite the output/uuid if it exists (default = True)
+               overwrite (bool): Overwrite the output_uuid if it exists (default = True)
         """
         pass
 
-    @abstractmethod
-    def get_output(self) -> any:
-        """Get the Output from this Transform"""
-        pass
+    def input_type(self) -> TransformInput:
+        """What Input Type does this Transform Consume"""
+        return self.input_type
 
-    @abstractmethod
-    def validate_input(self) -> bool:
-        """Validate the Input for this Transform"""
-        pass
+    def output_type(self) -> TransformOutput:
+        """What Output Type does this Transform Produce"""
+        return self.output_type
+
+    def set_input_uuid(self, input_uuid: str):
+        """Set the Input UUID (Name) for this Transform"""
+        self.input_uuid = input_uuid
+
+    def set_output_uuid(self, output_uuid: str):
+        """Set the Output UUID (Name) for this Transform"""
+        self.output_uuid = output_uuid
