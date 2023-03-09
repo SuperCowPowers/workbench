@@ -15,13 +15,8 @@ class DataSourceToPandas(Transform):
 
         # Set up all my class instance vars
         self.input_type = TransformInput.DATA_SOURCE
-        self.output_type = TransformInput.PANDAS_DF
-        self.data_catalog_db = 'sageworks'
+        self.output_type = TransformOutput.PANDAS_DF
         self.output_df = None
-
-    def get_dataframe(self) -> pd.DataFrame:
-        """Get the DataFrame Output from this Transform"""
-        return self.output_df
 
     def transform(self, max_rows=100000):
         """Convert the DataSource into a Pandas DataFrame"""
@@ -44,6 +39,10 @@ class DataSourceToPandas(Transform):
             query = f"SELECT * FROM {self.input_uuid}"
         self.output_df = input_data.query(query)
 
+    def get_output(self) -> pd.DataFrame:
+        """Get the DataFrame Output from this Transform"""
+        return self.output_df
+
 
 # Simple test of the DataSourceToPandas functionality
 def test():
@@ -65,7 +64,7 @@ def test():
     data_to_df.transform(max_rows=1000)
 
     # Grab the output dataframe and show it
-    my_df = data_to_df.get_dataframe()
+    my_df = data_to_df.get_output()
     print(my_df)
 
 

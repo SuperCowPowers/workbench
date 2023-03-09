@@ -42,6 +42,11 @@ class Transform(ABC):
         self.input_uuid = None
         self.output_uuid = None
 
+        # FIXME: We should have this come from AWS or Config
+        self.data_catalog_db = 'sageworks'
+        self.data_source_s3_path = 's3://sageworks-data-sources'
+        self.feature_sets_s3_path = 's3://sageworks-feature-sets'
+
     @abstractmethod
     def transform(self, overwrite: bool = True):
         """Perform the Transformation from Input to Output
