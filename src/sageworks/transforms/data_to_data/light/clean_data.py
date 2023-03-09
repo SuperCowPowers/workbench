@@ -27,8 +27,34 @@ class CleanData(Transform):
         # Grab the Input (Data Source)
         input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
 
-        # Cleanup up the data
-        input_df = input_df
+        """
+        Cleaning data typically involves two phases: Identification and Remediation.
+
+        - Identification
+            - Look for NaNs/NULL
+            - Make sure all datatypes are correct (df.info()) if not .. fix...
+            - Look at distributions/histograms
+            - Look for outliers
+        - Remediation
+            - Drop
+            - Fill/Replace
+            - Impute the value (using inference/context to fill in a value)
+        """
+
+
+        # Drop Rows that have ANY NaNs in them
+        orig_rows = len(input_df)
+        input_df = input_df.dropna(axis=0, how='any')
+        if len(input_df) != orig_rows:
+            self.log.info(f"Dropping {orig_rows - len(input_df)} rows that have a NaN in them")
+
+        # Drop Columns that ANY ALL NaNs in them
+        orig_columns = input_df.columns.tolist()
+        input_df = input_df.dropna(axis=1, how='any')
+        remaining_columns = input_df.columns.tolist()
+        if remaining_columns != orig_columns:
+            dropped_columns = list(set(remaining_columns).difference(set(orig_columns)))
+            self.log.info(f"Dropping {dropped_columns} columns that have a NaN in them")
 
         # Now publish to the output location
         output_data = PandasToData(self.output_uuid)
