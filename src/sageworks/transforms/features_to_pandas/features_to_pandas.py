@@ -1,4 +1,4 @@
-"""FeaturesToPandas: Class to transform a Data Source into a Spark DataFrame"""
+"""FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame"""
 import logging
 import pandas as pd
 
@@ -13,7 +13,7 @@ logging_setup()
 
 class FeaturesToPandas(Transform):
     def __init__(self):
-        """FeaturesToPandas: Class to transform a Data Source into a Spark DataFrame"""
+        """FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame"""
 
         # Call superclass init
         super().__init__()
@@ -27,7 +27,7 @@ class FeaturesToPandas(Transform):
 
     def input_type(self) -> TransformInput:
         """What Input Type does this Transform Consume"""
-        return TransformInput.DATA_SOURCE
+        return TransformInput.FEATURE_SET
 
     def output_type(self) -> TransformOutput:
         """What Output Type does this Transform Produce"""
