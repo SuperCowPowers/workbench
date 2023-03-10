@@ -2,13 +2,13 @@
 
 # SageWorks<sup><i>TM</i></sup>
 
-A flexible, rapid, and customizable AWS® **ML Sandbox**. 
+#### SageWorks: The scientists workbench powered by AMS for scalability, flexibility, and security.
 
 SageWorks is a medium granularity framework that manages and aggregates AWS Services into classes and concepts. When you use SageWorks you think about **DataSources**, **FeatureSets**, **Models**, and **Endpoints**. Underneath the hood those classes handle all the details around updating and managing a **complex set of AWS Services**. All the power and none of the pain so that your team can **Do Science Faster!**
 
 <img src="docs/images/sageworks_concepts.png">
 
-For more details: [SageWorks Classes and Concept](docs/sageworks_classes_concepts.md)
+For more details see: [SageWorks Artitected FrameWork](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing)
 
 
 ## Why SageWorks?
