@@ -9,6 +9,7 @@ from sageworks.aws_service_broker.cache import Cache
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog
 from sageworks.aws_service_broker.aws_service_connectors.feature_store import FeatureStore
+from sageworks.aws_service_broker.aws_service_connectors.model_registry import ModelRegistry
 from sageworks.utils.logging import logging_setup
 
 # Setup Logging
@@ -57,6 +58,7 @@ class AWSServiceBroker:
         cls.incoming_data = S3Bucket(cls.incoming_data_bucket)
         cls.data_catalog = DataCatalog(database_scope)
         cls.feature_store = FeatureStore()
+        cls.model_registry = ModelRegistry()
         # Model Registry
         # Endpoints
         # Model Monitors
@@ -70,8 +72,8 @@ class AWSServiceBroker:
             ServiceCategory.INCOMING_DATA: cls.incoming_data,
             ServiceCategory.DATA_CATALOG: cls.data_catalog,
             ServiceCategory.FEATURE_STORE: cls.feature_store,
-            ServiceCategory.MODELS: cls.incoming_data,
-            ServiceCategory.ENDPOINTS: cls.incoming_data
+            ServiceCategory.MODELS: cls.model_registry,
+            ServiceCategory.ENDPOINTS: cls.model_registry
         }
 
     @classmethod

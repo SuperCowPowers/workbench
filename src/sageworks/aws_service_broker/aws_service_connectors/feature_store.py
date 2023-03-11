@@ -39,7 +39,7 @@ class FeatureStore(Connector):
         """Load/reload the tables in the database"""
         # Grab all the Feature Groups in the AWS Feature Store
         print("Reading Feature Store Database...")
-        _feature_groups = self.sm_session.boto_session.client("sagemaker").list_feature_groups()['FeatureGroupSummaries']
+        _feature_groups = self.sm_client.list_feature_groups()['FeatureGroupSummaries']
         _fg_names = [feature_group['FeatureGroupName'] for feature_group in _feature_groups]
 
         # Get the details for each Feature Group and convert to a data structure with direct lookup
@@ -136,6 +136,7 @@ if __name__ == '__main__':
 
     # Create the class and get the AWS Feature Store details
     feature_store = FeatureStore()
+    feature_store.refresh()
 
     # List the Feature Groups
     print('Feature Groups:')
