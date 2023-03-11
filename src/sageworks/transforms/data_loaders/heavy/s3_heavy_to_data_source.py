@@ -1,4 +1,4 @@
-"""S3HeavyToDataSource: Class to move HEAVY S3 Files into Athena"""
+"""S3HeavyToDataSource: Class to move HEAVY S3 Files into a SageWorks DataSource"""
 import awswrangler as wr
 import json
 
@@ -13,7 +13,7 @@ from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 class S3HeavyToDataSource(Transform):
     def __init__(self, input_uuid=None, output_uuid=None):
-        """S3HeavyToDataSource: Class to move HEAVY S3 Files into Athena"""
+        """S3HeavyToDataSource: Class to move HEAVY S3 Files into a SageWorks DataSource"""
 
         # Call superclass init
         super().__init__(input_uuid, output_uuid)

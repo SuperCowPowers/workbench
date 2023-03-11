@@ -2,8 +2,8 @@
 
 # Local imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.transforms.transform_utils.data_to_pandas import DataToPandas
-from sageworks.transforms.transform_utils.pandas_to_data import PandasToData
+from sageworks.transforms.pandas_transforms.data_to_pandas import DataToPandas
+from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
 
 
 class LightTransform(Transform):

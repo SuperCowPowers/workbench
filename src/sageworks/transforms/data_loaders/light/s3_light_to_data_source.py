@@ -1,4 +1,4 @@
-"""S3LightToDataSource: Class to move LIGHT S3 Files into Athena"""
+"""S3LightToDataSource: Class to move LIGHT S3 Files into a SageWorks DataSource"""
 import awswrangler as wr
 import json
 
@@ -9,7 +9,7 @@ from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 class S3LightToDataSource(Transform):
     def __init__(self, input_uuid=None, output_uuid=None):
-        """S3LightToDataSource: Class to move LIGHT S3 Files into Athena"""
+        """S3LightToDataSource: Class to move LIGHT S3 Files into a SageWorks DataSource"""
 
         # Call superclass init
         super().__init__(input_uuid, output_uuid)
@@ -31,7 +31,7 @@ class S3LightToDataSource(Transform):
         # Sanity Check for S3 Object size
         object_megabytes = self.input_size_mb()
         if object_megabytes > 100:
-            self.log.error(f"S3 Object too big ({object_megabytes} MBytes): Use the S3HeavyToAthena class!")
+            self.log.error(f"S3 Object too big ({object_megabytes} MBytes): Use the S3HeavyToDataSource class!")
             return
 
         # Add some tags here

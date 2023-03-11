@@ -1,4 +1,4 @@
-"""Helper methods to show info about the dataframe"""
+"""Utility/helper methods for Pandas dataframe operations"""
 import pandas as pd
 
 
