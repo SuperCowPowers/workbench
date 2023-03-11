@@ -36,8 +36,8 @@ If you'd like to contribute to the SageWorks project, you're more than welcome. 
 
 ### SageWorks Zen
 
-- AWS SageMaker® is **awesome** but is vast and **complex**
-- SageWorks views AWS ML Services through the lens of **AWS Artifacts and Transforms**.
+- The AWS SageMaker® set of services is vast and **complex**
+- SageWorks Classes encapsulate, organize, and manage sets of AWS® Services
 - **Heavy** transforms typically use **[AWS Athena](https://aws.amazon.com/athena/)** or **[Apache Spark](https://spark.apache.org/)** (via AWS Glue/Spark).
 - **Light** transforms will typically use **[Pandas](https://pandas.pydata.org/)**.
 - Heavy and Light transforms both update **AWS Artifacts** (collections of AWS Services).

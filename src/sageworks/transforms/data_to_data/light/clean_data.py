@@ -18,7 +18,7 @@ class CleanData(Transform):
         self.output_type = TransformOutput.DATA_SOURCE
 
     def transform(self):
-        """Pull the input DataSource make sure it's 'clean' and output to a DataSource"""
+        """Pull the input DataSource, clean the data, and output to a DataSource"""
 
         """
         Notes for later:
