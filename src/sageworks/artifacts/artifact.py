@@ -27,8 +27,8 @@ class Artifact(ABC):
         pass
 
     @abstractmethod
-    def aws_uuid(self) -> int:
-        """Return the unique AWS identifier for this artifact"""
+    def uuid(self) -> int:
+        """Return the unique SageWorks identifier for this artifact"""
         pass
 
     @abstractmethod

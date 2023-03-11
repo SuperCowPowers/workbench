@@ -35,7 +35,7 @@ class AthenaSource(DataSource):
     def check(self) -> bool:
         """Validation Checks for this Data Source"""
 
-        # We're we able to pull AWS Meta data for this table_name?"""
+        # We're we able to pull AWS Metadata for this table_name?"""
         if self._meta is None:
             self.log.critical(f'AthenaSource.check() {self.table_name} not found in SageWorks Metadata!')
             return False
@@ -48,8 +48,12 @@ class AthenaSource(DataSource):
             self.log.critical(f"Athena Test Query Failed: {exc}")
             return False
 
-    def aws_uuid(self) -> str:
-        """An AWS Unique Identifier"""
+    def uuid(self) -> str:
+        """The SageWorks Unique Identifier"""
+        return self.table_name
+
+    def _aws_uuid(self) -> str:
+        """Internal: An AWS Unique Identifier"""
         return f"CatalogID:{self._meta['CatalogId']}"
 
     def size(self) -> bool:

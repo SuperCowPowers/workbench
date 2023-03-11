@@ -64,8 +64,11 @@ def test():
     # Store this data as a SageWorks DataSource
     my_loader.transform()
 
-    # Grab the output and query it for a dataframe
+    # Grab the output and print out it's AWS UUID and tags
     output = AthenaSource(output_uuid)
+    print(f"UUID: {output.uuid()}   TAGS: {output.tags()}")
+
+    # Now query the data source and print out the resulting dataframe
     df = output.query(f"select * from {output_uuid} limit 5")
 
     # Setup Pandas output options
