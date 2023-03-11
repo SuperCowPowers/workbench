@@ -72,7 +72,7 @@ def test():
     df_to_data = PandasToData(output_uuid)
     df_to_data.set_input(fake_df)
 
-    # Store this data into Athena/SageWorks
+    # Store this data into a SageWorks DataSource
     df_to_data.transform()
 
     # Grab the output and query it for a dataframe
