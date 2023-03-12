@@ -48,7 +48,7 @@ class FeatureStore(Connector):
                         's3_storage': self.s3_storage(fg_name)}
             self.feature_data[fg_name]['sageworks'] = add_data
 
-    def metadata(self) -> list:
+    def metadata(self) -> dict:
         """Get all the table information in this database"""
         return self.feature_data
 
@@ -74,21 +74,21 @@ class FeatureStore(Connector):
 
     def get_feature_group_tags(self, feature_group_name: str) -> list:
         """Get the table tag list for the given table name"""
-        feature_group = self.get_feature_group_details(feature_group_name)
+        feature_group = self.feature_group_details(feature_group_name)
         return json.loads(feature_group['Parameters'].get('tags', '[]'))
 
-    def set_feature_group_tags(self, table_name: str, tags: list):
+    def set_feature_group_tags(self, database: str, table_name: str, tags: list):
         """Set the tags for a specific feature group"""
         wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(tags)},
-                                           database=self.database,
+                                           database=database,
                                            table=table_name)
 
-    def add_feature_group_tags(self, table_name: str, tags: list):
+    def add_feature_group_tags(self, database: str,  table_name: str, tags: list):
         """Add some the tags for a specific feature set"""
-        current_tags = json.loads(wr.catalog.get_table_parameters(self.database, table_name).get('tags'))
+        current_tags = json.loads(wr.catalog.get_table_parameters(database, table_name).get('tags'))
         new_tags = list(set(current_tags).union(set(tags)))
         wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(new_tags)},
-                                           database=self.database,
+                                           database=database,
                                            table=table_name)
 
     def _feature_group_details(self, feature_group_name: str) -> dict:
@@ -136,11 +136,11 @@ if __name__ == '__main__':
 
     # List the Feature Groups
     print('Feature Groups:')
-    for name in feature_store.feature_group_names():
-        print(f"\t{name}")
+    for fname in feature_store.feature_group_names():
+        print(f"\t{fname}")
 
     # Get the details for a specific Feature Group
-    my_group = 'AqSolDB-base'
+    my_group = fname
     group_info = feature_store.feature_group_details(my_group)
     pprint(group_info)
 

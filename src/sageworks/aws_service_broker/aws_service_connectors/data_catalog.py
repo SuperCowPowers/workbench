@@ -46,7 +46,7 @@ class DataCatalog(Connector):
             # Convert to a data structure with direct lookup
             self.data_catalog_metadata[database] = {table['Name']: table for table in table_list}
 
-    def metadata(self) -> list:
+    def metadata(self) -> dict:
         """Get all the table information in this database"""
         return self.data_catalog_metadata
 
@@ -124,8 +124,8 @@ if __name__ == '__main__':
     pprint(table_info)
 
     # Get the tags for this table
-    tags = catalog.get_table_tags(my_database, my_table)
-    print(f"Tags: {tags}")
+    my_tags = catalog.get_table_tags(my_database, my_table)
+    print(f"Tags: {my_tags}")
 
     # Set the tags for this table
     catalog.set_table_tags(my_database, my_table, ['public', 'solubility'])
@@ -134,8 +134,8 @@ if __name__ == '__main__':
     catalog.refresh()
 
     # Get the tags for this table
-    tags = catalog.get_table_tags(my_database, my_table)
-    print(f"Tags: {tags}")
+    my_tags = catalog.get_table_tags(my_database, my_table)
+    print(f"Tags: {my_tags}")
 
     # Set the tags for this table
     catalog.add_table_tags(my_database, my_table, ['aqsol', 'smiles'])

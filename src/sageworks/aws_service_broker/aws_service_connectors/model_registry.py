@@ -39,7 +39,7 @@ class ModelRegistry(Connector):
         # Get the details for each Model Group and convert to a data structure with direct lookup
         self.model_data = {name: self._model_group_details(name) for name in _mg_names}
 
-    def metadata(self) -> list:
+    def metadata(self) -> dict:
         """Get all the table information in this database"""
         return self.model_data
 
@@ -84,8 +84,8 @@ if __name__ == '__main__':
 
     # List the Model Groups
     print('Model Groups:')
-    for name in model_registry.model_group_names():
-        print(f"\t{name}")
+    for my_group_name in model_registry.model_group_names():
+        print(f"\t{my_group_name}")
 
     # Get the details for a specific Model Group
     my_group = 'Solubility-Models'
