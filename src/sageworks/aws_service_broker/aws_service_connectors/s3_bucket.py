@@ -17,7 +17,7 @@ class S3Bucket(Connector):
 
         # Store our bucket name
         self.bucket = bucket
-        self.meta_data = None
+        self.s3_bucket_data = None
 
         # Load in the files from the bucket
         self.refresh()
@@ -36,19 +36,19 @@ class S3Bucket(Connector):
         # Grab all the files in this bucket
         self.log.info(f"Reading S3 Bucket: {self.bucket}...")
         _aws_file_info = wr.s3.describe_objects(self.bucket)
-        self.meta_data = {full_path.split('/')[-1]: info for full_path, info in _aws_file_info.items()}
+        self.s3_bucket_data = {full_path.split('/')[-1]: info for full_path, info in _aws_file_info.items()}
 
     def metadata(self) -> dict:
         """Get all the metadata for the files in this bucket"""
-        return self.meta_data
+        return self.s3_bucket_data
 
     def file_names(self) -> list:
         """Get all the file names in this bucket"""
-        return list(self.meta_data.keys())
+        return list(self.s3_bucket_data.keys())
 
     def file_info(self, file: str) -> dict:
         """Get additional info about this specific file"""
-        return self.meta_data[file]
+        return self.s3_bucket_data[file]
 
 
 if __name__ == '__main__':
