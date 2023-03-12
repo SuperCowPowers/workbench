@@ -42,6 +42,7 @@ If you'd like to contribute to the SageWorks project, you're more than welcome. 
 - **Light** transforms will typically use **[Pandas](https://pandas.pydata.org/)**.
 - Heavy and Light transforms both update **AWS Artifacts** (collections of AWS Services).
 - **Quick prototypes** are typically built with the **light path** and then flipped to the **heavy path** as the system matures and usage grows.
+- A **View** in SageWorks is a **database view** of AWS Service data/information
 
 
 ### SageWorks Alpha Testers Wanted

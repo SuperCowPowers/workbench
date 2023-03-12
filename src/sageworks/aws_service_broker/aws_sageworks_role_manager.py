@@ -5,7 +5,7 @@ from botocore.exceptions import ClientError
 import argparse
 import logging
 
-# Local Imports
+# SageWorks Imports
 from sageworks.utils.logging import logging_setup
 
 # Setup Logging

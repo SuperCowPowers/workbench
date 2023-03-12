@@ -3,7 +3,7 @@ import sys
 import argparse
 from sagemaker.session import Session
 
-# Local Imports
+# SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
 
 

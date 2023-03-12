@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 import logging
 
-# Local Imports
+# SageWorks Imports
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.utils.logging import logging_setup
 

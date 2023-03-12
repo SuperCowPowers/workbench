@@ -3,7 +3,7 @@ import dash
 from dash import Dash
 from dash.dependencies import Input, Output
 
-# Local Imports
+# SageWorks Imports
 from web_interfaces.web_tools.components.model_data import ModelData
 from web_interfaces.web_tools.components import feature_importance, confusion_matrix, model_details, feature_details
 

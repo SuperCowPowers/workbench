@@ -3,7 +3,7 @@ import pandas as pd
 import awswrangler as wr
 from datetime import datetime
 
-# Local Imports
+# SageWorks Imports
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
 

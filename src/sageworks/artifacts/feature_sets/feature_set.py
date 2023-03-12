@@ -1,7 +1,7 @@
 """FeatureSet: SageWork Feature Set accessible through Athena"""
 import logging
 
-# Local Imports
+# SageWorks Imports
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
 from sageworks.utils.logging import logging_setup

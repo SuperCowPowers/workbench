@@ -1,9 +1,12 @@
 import os
+
+import pandas as pd
 from dash import Dash
 import dash_bootstrap_components as dbc
 
 
-# Local Imports
+# SageWorks Imports
+from sageworks.views.artifacts import Artifacts
 from sageworks.web_interfaces import layout, callbacks
 from sageworks.web_interfaces.components import confusion_matrix, table, scatter_plot
 from sageworks.web_interfaces.components import feature_importance, model_data, model_details, feature_details
@@ -13,21 +16,42 @@ from sageworks.web_interfaces.components import feature_importance, model_data, 
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
 
 # Create our Dash Application
-app = Dash(title='Hello World Application', external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(title='SageWork Artifacts', external_stylesheets=[dbc.themes.BOOTSTRAP])
 # app = Dash(title='Hello World Application', external_stylesheets=[dbc.themes.DARKLY])
 server = app.server
 
 
-def setup_model_scoreboard():
+def setup_artifact_viewer():
 
     # Set Default Template for figures
     # load_figure_template('darkly')
 
-    # Read in our model data
-    data_path = os.path.join(os.path.dirname(__file__), 'data/toy_data.csv')
-    model_info = model_data.ModelData(data_path)
+    # Grab a view that gives us a summary of all the artifacts currently in SageWorks
+    sageworks_artifacts = Artifacts()
+    sageworks_artifacts.refresh()
+    artifact_summary = sageworks_artifacts.view_data()
+
+    """
+    {<ServiceCategory.INCOMING_DATA: 1>: ['aqsol_public_data.csv'],
+ <ServiceCategory.DATA_CATALOG: 2>: ['athena_input_data',
+                                     'sagemaker_featurestore',
+                                     'sageworks',
+                                     'temp_crawler_output'],
+ <ServiceCategory.FEATURE_STORE: 3>: ['test-feature-set', 'AqSolDB-base'],
+ <ServiceCategory.MODELS: 4>: ['test-model', 'Solubility-Models'],
+ <ServiceCategory.ENDPOINTS: 5>: ['jumpstart-dft-bert-movie-reviews',
+                                  'solubility-base-endpoint']}
+    """
+
+    # Just a bunch of tables for now :)
+    for service_category, artifact_list in artifact_summary.items():
+
+        # Make a baby dataframe for the table
+        df = pd.DataFrame({"Artifact Name": artifact_list})
+        _table = table.create(service_category, df)
 
     # Create our components
+    """
     model_df = model_info.get_model_df()
     model_table = table.create('model_table', model_df, show_columns=['model_name', 'date_created', 'f_scores'])
     details = model_details.create(model_info.get_model_details(0))
@@ -35,6 +59,7 @@ def setup_model_scoreboard():
     scatter = scatter_plot.create(model_df)
     my_feature_importance = feature_importance.create(model_info.get_model_feature_importance(0))
     my_feature_details = feature_details.create(model_info.get_model_feature_importance(0))
+    """
     components = {
         'model_table': model_table,
         'model_details': details,
@@ -55,7 +80,7 @@ def setup_model_scoreboard():
 
 
 # Now actually set up the scoreboard
-setup_model_scoreboard()
+setup_artifact_viewer()
 
 
 if __name__ == '__main__':

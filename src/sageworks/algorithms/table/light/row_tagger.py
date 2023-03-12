@@ -2,7 +2,7 @@
 # License: Apache 2.0 ©SuperCowPowers LLC
 import pandas as pd
 
-# Local Imports
+# SageWorks Imports
 from sageworks.processing import feature_spider
 
 

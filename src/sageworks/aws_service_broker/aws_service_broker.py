@@ -4,7 +4,7 @@ import argparse
 from enum import Enum, auto
 import logging
 
-# Local Imports
+# SageWorks Imports
 from sageworks.aws_service_broker.cache import Cache
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog

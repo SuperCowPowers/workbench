@@ -2,7 +2,7 @@
 import sys
 import argparse
 
-# Local Imports
+# SageWorks Imports
 from sageworks.views.view import View
 
 

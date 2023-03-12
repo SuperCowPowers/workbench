@@ -4,7 +4,7 @@ import argparse
 import awswrangler as wr
 
 
-# Local Imports
+# SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
 
 
