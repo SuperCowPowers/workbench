@@ -2,26 +2,22 @@
 import sys
 import argparse
 import awswrangler as wr
-import logging
 
 
 # Local Imports
-from sageworks.utils.logging import logging_setup
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
-
-# Set up logging
-logging_setup()
 
 
 # Class to retrieve object/file information from an AWS S3 Bucket
 class S3Bucket(Connector):
     """S3Bucket: Class to retrieve object/file information from an AWS S3 Bucket"""
     def __init__(self, bucket: str):
-        self.log = logging.getLogger(__name__)
+        # Call SuperClass Initialization
+        super().__init__()
 
         # Store our bucket name
         self.bucket = bucket
-        self.file_info = None
+        self.meta_data = None
 
         # Load in the files from the bucket
         self.refresh()
@@ -40,19 +36,19 @@ class S3Bucket(Connector):
         # Grab all the files in this bucket
         self.log.info(f"Reading S3 Bucket: {self.bucket}...")
         _aws_file_info = wr.s3.describe_objects(self.bucket)
-        self.file_info = {full_path.split('/')[-1]: info for full_path, info in _aws_file_info.items()}
+        self.meta_data = {full_path.split('/')[-1]: info for full_path, info in _aws_file_info.items()}
 
     def metadata(self) -> dict:
         """Get all the metadata for the files in this bucket"""
-        return self.file_info
+        return self.meta_data
 
     def file_names(self) -> list:
         """Get all the file names in this bucket"""
-        return list(self.file_info.keys())
+        return list(self.meta_data.keys())
 
     def file_info(self, file: str) -> dict:
         """Get additional info about this specific file"""
-        return self.file_info[file]
+        return self.meta_data[file]
 
 
 if __name__ == '__main__':

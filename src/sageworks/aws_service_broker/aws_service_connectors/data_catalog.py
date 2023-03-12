@@ -3,14 +3,9 @@ import sys
 import argparse
 import awswrangler as wr
 import json
-import logging
 
 # Local Imports
-from sageworks.utils.logging import logging_setup
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
-
-# Set up logging
-logging_setup()
 
 
 class DataCatalog(Connector):
@@ -21,7 +16,8 @@ class DataCatalog(Connector):
                database_scope (str, list) - The scope of the databases to query (default = 'sageworks',
                                             can be list ['a', 'b'], also 'all' for account wide scope)
         """
-        self.log = logging.getLogger(__name__)
+        # Call SuperClass Initialization
+        super().__init__()
 
         # Set up our database scope
         self.database_scope = database_scope if isinstance(database_scope, list) else [database_scope]

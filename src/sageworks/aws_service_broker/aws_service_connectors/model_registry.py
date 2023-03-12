@@ -1,21 +1,17 @@
 """ModelRegistry: Helper Class for the AWS Model Registry Service"""
 import sys
 import argparse
-import logging
 from sagemaker.session import Session
 
 # Local Imports
-from sageworks.utils.logging import logging_setup
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
-
-# Set up logging
-logging_setup()
 
 
 class ModelRegistry(Connector):
     def __init__(self):
         """"ModelRegistry: Helper Class for the AWS Model Registry Service"""
-        self.log = logging.getLogger(__name__)
+        # Call SuperClass Initialization
+        super().__init__()
 
         # Set up our SageMaker Session and SageMaker Client
         self.sm_session = Session()

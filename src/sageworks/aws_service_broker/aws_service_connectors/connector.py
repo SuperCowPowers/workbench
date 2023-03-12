@@ -1,11 +1,19 @@
 """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
 from abc import ABC, abstractmethod
 
+import logging
+
+# Local Imports
+from sageworks.utils.logging import logging_setup
+
+# Set up logging
+logging_setup()
+
 
 class Connector(ABC):
-    """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
     def __init__(self):
-        pass
+        """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
+        self.log = logging.getLogger(__name__)
 
     @abstractmethod
     def check(self) -> bool:
