@@ -10,7 +10,7 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWS
 
 class AthenaSource(DataSource):
     """AthenaSource: SageWork Data Source accessible through Athena"""
-    def __init__(self, table_name):
+    def __init__(self, table_name, database='sageworks'):
         """AthenaSource Initialization
 
         Args:
@@ -20,6 +20,7 @@ class AthenaSource(DataSource):
         # Call superclass init
         super().__init__()
 
+        self.data_catalog_db = database
         self.table_name = table_name
 
         # Grab an AWS Metadata Broker object and pull information for Data Sources
@@ -39,6 +40,10 @@ class AthenaSource(DataSource):
         if self._meta is None:
             self.log.critical(f'AthenaSource.check() {self.table_name} not found in SageWorks Metadata!')
             return False
+        return True
+
+    def deep_check(self) -> bool:
+        """These are more comprehensive checks for this Data Source (may take a LONG TIME)"""
 
         # Can we run an Athena Test Query
         try:
@@ -74,6 +79,10 @@ class AthenaSource(DataSource):
         """Add a tag to this artifact"""
         # This ensures no duplicate tags
         self._tags = list(set(self._tags).union([tag]))
+
+    def aws_url(self):
+        """The AWS URL for looking at/querying this data source"""
+        return 'https://us-west-2.console.aws.amazon.com/athena/home'
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
@@ -111,9 +120,8 @@ class AthenaSource(DataSource):
         """Validate that Athena Queries are working"""
         query = f"select count(*) as count from {self.table_name}"
         df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db)
-        print(df.head())
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
-        print(f"Athena Query successful (scanned bytes: {scanned_bytes})")
+        self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
 
 # Simple test of the AthenaSource functionality
