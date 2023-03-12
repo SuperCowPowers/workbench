@@ -1,15 +1,16 @@
-import os
-
-import pandas as pd
+"""HelloWorld: A SageWorks HelloWorld Application"""
 from dash import Dash
 import dash_bootstrap_components as dbc
 
 
 # SageWorks Imports
-from sageworks.views.artifacts import Artifacts
-from sageworks.web_interfaces import layout, callbacks
-from sageworks.web_interfaces.components import confusion_matrix, table, scatter_plot
-from sageworks.web_interfaces.components import feature_importance, model_data, model_details, feature_details
+from sageworks.views.artifacts_summary import ArtifactsSummary
+from sageworks.web_components import confusion_matrix, table, scatter_plot
+from sageworks.web_components import feature_importance, model_data, model_details, feature_details
+
+# Local Imports
+import layout
+import callbacks
 
 
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
@@ -27,56 +28,35 @@ def setup_artifact_viewer():
     # load_figure_template('darkly')
 
     # Grab a view that gives us a summary of all the artifacts currently in SageWorks
-    sageworks_artifacts = Artifacts()
-    sageworks_artifacts.refresh()
-    artifact_summary = sageworks_artifacts.view_data()
-
-    """
-    {<ServiceCategory.INCOMING_DATA: 1>: ['aqsol_public_data.csv'],
- <ServiceCategory.DATA_CATALOG: 2>: ['athena_input_data',
-                                     'sagemaker_featurestore',
-                                     'sageworks',
-                                     'temp_crawler_output'],
- <ServiceCategory.FEATURE_STORE: 3>: ['test-feature-set', 'AqSolDB-base'],
- <ServiceCategory.MODELS: 4>: ['test-model', 'Solubility-Models'],
- <ServiceCategory.ENDPOINTS: 5>: ['jumpstart-dft-bert-movie-reviews',
-                                  'solubility-base-endpoint']}
-    """
+    sageworks_artifacts = ArtifactsSummary()
+    artifacts_summary = sageworks_artifacts.view_data()
 
     # Just a bunch of tables for now :)
-    for service_category, artifact_list in artifact_summary.items():
+    tables = {}
+    for service_category, artifact_info_df in artifacts_summary.items():
 
-        # Make a baby dataframe for the table
-        df = pd.DataFrame({"Artifact Name": artifact_list})
-        _table = table.create(service_category, df)
+        # Grab the Artifact Information DataFrame for each AWS Service
+        tables[service_category.name] = table.create(service_category.name, artifact_info_df)
 
     # Create our components
-    """
-    model_df = model_info.get_model_df()
-    model_table = table.create('model_table', model_df, show_columns=['model_name', 'date_created', 'f_scores'])
-    details = model_details.create(model_info.get_model_details(0))
-    c_matrix = confusion_matrix.create(model_info.get_model_confusion_matrix(0))
-    scatter = scatter_plot.create(model_df)
-    my_feature_importance = feature_importance.create(model_info.get_model_feature_importance(0))
-    my_feature_details = feature_details.create(model_info.get_model_feature_importance(0))
-    """
     components = {
-        'model_table': model_table,
-        'model_details': details,
-        'confusion_matrix': c_matrix,
-        'scatter_plot': scatter,
-        'feature_importance': my_feature_importance,
-        'feature_details': my_feature_details
+        'incoming_data': tables['INCOMING_DATA'],
+        'data_sources': tables['DATA_CATALOG'],
+        'feature_sets': tables['FEATURE_STORE'],
+        'models': tables['MODELS'],
+        'endpoints': tables['ENDPOINTS']
     }
 
     # Setup up our application layout
-    app.layout = layout.scoreboard_layout(app, components)
+    app.layout = layout.artifact_layout(app, components)
 
     # Setup our callbacks/connections
+    """
     callbacks.table_row_select(app, 'model_table')
-    callbacks.update_figures(app, model_info)
-    callbacks.update_model_details(app, model_info)
-    callbacks.update_feature_details(app, model_info)
+    callbacks.update_figures(app, df)
+    callbacks.update_model_details(app, df)
+    callbacks.update_feature_details(app, df)
+    """
 
 
 # Now actually set up the scoreboard
