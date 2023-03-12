@@ -37,11 +37,11 @@ class ArtifactsSummary(View):
            """
 
         # We're filling in Summary Data for all the AWS Services
-        self.summary_data[ServiceCategory.INCOMING_DATA] = self.incoming_data_summary()
-        self.summary_data[ServiceCategory.DATA_CATALOG] = self.data_sources_summary()
-        self.summary_data[ServiceCategory.FEATURE_STORE] = self.data_sources_summary()
-        self.summary_data[ServiceCategory.MODELS] = self.data_sources_summary()
-        self.summary_data[ServiceCategory.ENDPOINTS] = self.data_sources_summary()
+        self.summary_data['INCOMING_DATA'] = self.incoming_data_summary()
+        self.summary_data['DATA_SOURCES'] = self.data_sources_summary()
+        self.summary_data['FEATURE_SETS'] = self.feature_sets_summary()
+        self.summary_data['MODELS'] = self.models_summary()
+        self.summary_data['ENDPOINTS'] = self.endpoints_summary()
         return self.summary_data
 
     def incoming_data_summary(self):
@@ -66,7 +66,7 @@ class ArtifactsSummary(View):
         for database, db_info in data.items():
             for name, info in db_info.items():
                 summary = {'Name': name,
-                           'Database': info.get('DatabaseName', '-'),
+                           'Catalog DB': info.get('DatabaseName', '-'),
                            'Size': str(info.get('ContentLength', '-')),
                            'Created': str(info.get('CreateTime', '-')),
                            'LastModified': str(info.get('LastModified', '-')),
@@ -77,23 +77,65 @@ class ArtifactsSummary(View):
 
         return pd.DataFrame(data_summary)
 
-    def feature_store(self):
-        """Get summary data about the SageWorks DataSources"""
+    def feature_sets_summary(self):
+        """Get summary data about the SageWorks FeatureSets"""
+        data = self.service_info[ServiceCategory.FEATURE_STORE]
+        data_summary = []
+        for feature_group, group_info in data.items():
+            summary = {'Feature Group': group_info['FeatureGroupName'],
+                       'Catalog DB': group_info['OfflineStoreConfig']['DataCatalogConfig'].get('Database', '-'),
+                       'Feature ID': group_info['RecordIdentifierFeatureName'],
+                       'Feature EventTime': group_info['EventTimeFeatureName'],
+                       'Online': str(group_info.get('OnlineStoreConfig', {}).get('EnableOnlineStore', 'False')),
+                       'Created': str(group_info.get('CreationTime', '-')),
+                       'LastModified': str(group_info.get('LastModified', '-')),
+                       'Tags': str(group_info.get('tags', '-'), )}
+            data_summary.append(summary)
 
-        # FIXME: Fill in with real logic
-        return self.data_sources_summary()
+        return pd.DataFrame(data_summary)
 
-    def models(self):
-        """Get summary data about the SageWorks DataSources"""
+    def models_summary(self):
+        """Get summary data about the SageWorks Models"""
+        data = self.service_info[ServiceCategory.MODELS]
+        data_summary = []
+        for model_group, model_list in data.items():
+            # Special Case for Model Groups without any Models
+            if not model_list:
+                summary = {'Model Group': model_group}
+                data_summary.append(summary)
+                continue
 
-        # FIXME: Fill in with real logic
-        return self.data_sources_summary()
+            # Get Summary information for each model in the model_list
+            for model in model_list:
+                summary = {'Model Group': model['ModelPackageGroupName'],
+                           'Version': model['ModelPackageVersion'],
+                           'Description': model['ModelPackageDescription'],
+                           'Created': str(model.get('CreationTime', '-')),
+                           'LastModified': str(model.get('LastModifiedTime', '-')),
+                           'Status': str(model.get('ModelApprovalStatus', ' - ')),
+                           'Tags': str(model.get('tags', '-'), )}
+                data_summary.append(summary)
 
-    def endpoints(self):
-        """Get summary data about the SageWorks DataSources"""
+        return pd.DataFrame(data_summary)
 
-        # FIXME: Fill in with real logic
-        return self.data_sources_summary()
+    def endpoints_summary(self):
+        """Get summary data about the SageWorks Endpoints"""
+        data = self.service_info[ServiceCategory.ENDPOINTS]
+        data_summary = []
+
+        # Get Summary information for each endpoint
+        for endpoint, endpoint_info in data.items():
+            summary = {'Name': endpoint_info['EndpointName'],
+                       'Status': endpoint_info['EndpointStatus'],
+                       'Description': 'TBD',
+                       'Created': str(endpoint_info.get('CreationTime', '-')),
+                       'LastModified': str(endpoint_info.get('LastModifiedTime', '-')),
+                       'DataCapture': str(endpoint_info.get('DataCaptureConfig', {}).get('EnableCapture', 'False')),
+                       'SamplingPercent': str(endpoint_info.get('DataCaptureConfig', {}).get('CurrentSamplingPercentage', '-')),
+                       'Tags': str(endpoint_info.get('tags', '-'), )}
+            data_summary.append(summary)
+
+        return pd.DataFrame(data_summary)
 
 
 if __name__ == '__main__':

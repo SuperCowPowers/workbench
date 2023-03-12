@@ -36,13 +36,13 @@ def setup_artifact_viewer():
     for service_category, artifact_info_df in artifacts_summary.items():
 
         # Grab the Artifact Information DataFrame for each AWS Service
-        tables[service_category.name] = table.create(service_category.name, artifact_info_df)
+        tables[service_category] = table.create(service_category, artifact_info_df)
 
     # Create our components
     components = {
         'incoming_data': tables['INCOMING_DATA'],
-        'data_sources': tables['DATA_CATALOG'],
-        'feature_sets': tables['FEATURE_STORE'],
+        'data_sources': tables['DATA_SOURCES'],
+        'feature_sets': tables['FEATURE_SETS'],
         'models': tables['MODELS'],
         'endpoints': tables['ENDPOINTS']
     }
