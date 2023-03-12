@@ -89,13 +89,13 @@ class AWSServiceBroker:
 
     @classmethod
     def get_metadata(cls, category: ServiceCategory) -> dict:
-        """Pull Metadata for the given Category
+        """Pull Metadata for the given Service Category
 
         Args:
-            category (ServiceCategory): The Category of metadata to Pull
+            category (ServiceCategory): The Service Category to pull metadata from
 
         Returns:
-            dict: The Metadata for the Requested Category
+            dict: The Metadata for the Requested Service Category
         """
         # Check the Temporal Cache
         meta_data = cls.meta_cache.get(category)
@@ -106,6 +106,11 @@ class AWSServiceBroker:
             cls.log.info(f"Refreshing data for {category}...")
             cls.refresh_meta(category)
             return cls.meta_cache.get(category)
+
+    @classmethod
+    def get_all_metadata(cls) -> dict:
+        """Pull the metadata for ALL the Service Categories"""
+        return {_category: cls.get_metadata(_category) for _category in ServiceCategory}
 
 
 if __name__ == '__main__':
@@ -122,15 +127,13 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Create the class
-    meta_broker = AWSServiceBroker('all')
+    aws_broker = AWSServiceBroker(database_scope='all')
 
     # Get the Metadata for various categories
     for my_category in ServiceCategory:
         print(f"{my_category}:")
-        pprint(meta_broker.get_metadata(my_category))
+        pprint(aws_broker.get_metadata(my_category))
 
-    # Get the Metadata for various categories
+    # Get the Metadata for ALL the categories
     # NOTE: There should be NO Refreshes in the logs
-    for my_category in ServiceCategory:
-        print(f"{my_category}:")
-        pprint(meta_broker.get_metadata(my_category))
+    pprint(aws_broker.get_all_metadata())
