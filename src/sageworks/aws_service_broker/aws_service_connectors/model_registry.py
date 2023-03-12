@@ -64,6 +64,9 @@ class ModelRegistry(Connector):
 
         # Grab the Model Group details from the AWS Model Registry
         details = self.sm_client.list_model_packages(ModelPackageGroupName=model_group_name)['ModelPackageSummaryList']
+        for detail in details:
+            model_arn = detail['ModelPackageArn']
+            detail['ModelPackageDetails'] = self.sm_client.describe_model_package(ModelPackageName=model_arn)
         return details
 
 
