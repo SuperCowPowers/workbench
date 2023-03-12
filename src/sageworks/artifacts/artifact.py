@@ -60,3 +60,8 @@ class Artifact(ABC):
     def add_tag(self, tag):
         """Add a tag to this artifact"""
         pass
+
+    @abstractmethod
+    def aws_url(self):
+        """AWS console/web interface for this artifact"""
+        pass
