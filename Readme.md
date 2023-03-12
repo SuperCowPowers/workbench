@@ -30,19 +30,24 @@ For more details see: [SageWorks Artitected FrameWork](https://docs.google.com/p
 pip install sageworks
 ```
 
-### Contributions
-If you'd like to contribute to the SageWorks project, you're more than welcome. All contributions will fall under the existing project [license](https://github.com/SuperCowPowers/sageworks/blob/main/LICENSE). If you are interested in contributing or have questions please feel free to contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com).
-
-
 ### SageWorks Zen
-
-- The AWS SageMaker® set of services is vast and **complex**
-- SageWorks Classes encapsulate, organize, and manage sets of AWS® Services
+- The AWS SageMaker® set of services is vast and **complex**.
+- SageWorks Classes encapsulate, organize, and manage sets of AWS® Services.
 - **Heavy** transforms typically use **[AWS Athena](https://aws.amazon.com/athena/)** or **[Apache Spark](https://spark.apache.org/)** (via AWS Glue/Spark).
 - **Light** transforms will typically use **[Pandas](https://pandas.pydata.org/)**.
 - Heavy and Light transforms both update **AWS Artifacts** (collections of AWS Services).
 - **Quick prototypes** are typically built with the **light path** and then flipped to the **heavy path** as the system matures and usage grows.
 - A **View** in SageWorks is a **database view** of AWS Service data/information
+
+### Classes and Concepts
+The SageWorks Classes are orgnized to work in concert with AWS Services. For more details on the current classes and class heirarchies see [SageWorks Classes and Concepts](docs/sageworks_classes_concepts.md).
+
+### Contributions
+If you'd like to contribute to the SageWorks project, you're more than welcome. All contributions will fall under the existing project [license](https://github.com/SuperCowPowers/sageworks/blob/main/LICENSE). If you are interested in contributing or have questions please feel free to contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com).
+
+
+
+
 
 
 ### SageWorks Alpha Testers Wanted
