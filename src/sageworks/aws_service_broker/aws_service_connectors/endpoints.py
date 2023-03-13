@@ -31,8 +31,8 @@ class Endpoints(Connector):
 
     def refresh(self):
         """Load/reload the tables in the database"""
-        # Grab all the Model Groups in the AWS Model Registry
-        print("Reading Model Registry...")
+        # Grab all the Endpoint Data from SageMaker
+        print("Reading Endpoints from SageMaker...")
         _endpoints = self.sm_client.list_endpoints()['Endpoints']
         _end_names = [_endpoint['EndpointName'] for _endpoint in _endpoints]
 
