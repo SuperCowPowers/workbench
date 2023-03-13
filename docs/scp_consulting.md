@@ -14,16 +14,13 @@ Using SageWorks will minimizize the time and manpower needed to incorporate AWS 
 ### Typical Engagements
 SageWorks clients typically want a tailored web_interface that helps to drive business decisions and provides value for their organization.
 
-- Does SageWorks 'lock me in' in any way?
-	No, the SageWorks componets can be
 - SageWorks components provide a set of classes and transforms the will dramatically **reduce time** and **increase productivity** when building AWS ML Systems.
 - SageWorks enables rapid prototyping via it's **light paths** and provides AWS production workflows on **large scale data** through it's **heavy paths**.
-- We embrace the **light paths**, for they are **nimble**, **flexible**, and **creative** paths.
-- Rapid Prototyping is typically done via the **light paths**.
+- Rapid Prototyping is typically done via these steps.
  
   1. Quick Construction of Web Interface (***tailored***)
   2. Custom Components (***tailored***)
-  3. Show it to the Client
+  3. Demo/Review the Application with the Client
   4. Get Feedback/Changes/Improvements
   5. Goto Step 1
 
