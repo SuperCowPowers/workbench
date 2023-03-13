@@ -51,7 +51,7 @@ class ArtifactsSummary(View):
         for name, info in data.items():
             summary = {'Name': name,
                        'Size': str(info.get('ContentLength', '-')),
-                       'LastModified': str(info.get('LastModified', '-')),
+                       'LastModified': self.datetime_string(info.get('LastModified')),
                        'ContentType': str(info.get('ContentType', '-')),
                        'ServerSideEncryption': info.get('ServerSideEncryption', '-'),
                        'Tags': str(info.get('tags', '-'), )}
@@ -68,10 +68,10 @@ class ArtifactsSummary(View):
                 summary = {'Name': name,
                            'Catalog DB': info.get('DatabaseName', '-'),
                            'Size': str(info.get('ContentLength', '-')),
-                           'Created': str(info.get('CreateTime', '-')),
-                           'LastModified': str(info.get('LastModified', '-')),
-                           'Location': info.get('Location', '-'),
-                           'DataLake Registered': info.get('IsRegisteredWithLakeFormation', '-'),
+                           'Created': self.datetime_string(info.get('CreateTime')),
+                           'LastModified': self.datetime_string(info.get('UpdateTime')),
+                           'Num Columns': self.num_columns(info),
+                           'DataLake': info.get('IsRegisteredWithLakeFormation', '-'),
                            'Tags': str(info.get('tags', '-'), )}
                 data_summary.append(summary)
 
@@ -87,8 +87,8 @@ class ArtifactsSummary(View):
                        'Feature ID': group_info['RecordIdentifierFeatureName'],
                        'Feature EventTime': group_info['EventTimeFeatureName'],
                        'Online': str(group_info.get('OnlineStoreConfig', {}).get('EnableOnlineStore', 'False')),
-                       'Created': str(group_info.get('CreationTime', '-')),
-                       'LastModified': str(group_info.get('LastModified', '-')),
+                       'Created': self.datetime_string(group_info.get('CreationTime')),
+                       'LastModified': self.datetime_string(group_info.get('LastModified')),
                        'Tags': str(group_info.get('tags', '-'), )}
             data_summary.append(summary)
 
@@ -110,8 +110,8 @@ class ArtifactsSummary(View):
                 summary = {'Model Group': model['ModelPackageGroupName'],
                            'Version': model['ModelPackageVersion'],
                            'Description': model['ModelPackageDescription'],
-                           'Created': str(model.get('CreationTime', '-')),
-                           'LastModified': str(model.get('LastModifiedTime', '-')),
+                           'Created': self.datetime_string(model.get('CreationTime')),
+                           'LastModified': self.datetime_string(model.get('LastModifiedTime')),
                            'Status': str(model.get('ModelApprovalStatus', ' - ')),
                            'Tags': str(model.get('tags', '-'), )}
                 data_summary.append(summary)
@@ -128,14 +128,31 @@ class ArtifactsSummary(View):
             summary = {'Name': endpoint_info['EndpointName'],
                        'Status': endpoint_info['EndpointStatus'],
                        'Description': 'TBD',
-                       'Created': str(endpoint_info.get('CreationTime', '-')),
-                       'LastModified': str(endpoint_info.get('LastModifiedTime', '-')),
+                       'Created': self.datetime_string(endpoint_info.get('CreationTime')),
+                       'LastModified': self.datetime_string(endpoint_info.get('LastModifiedTime')),
                        'DataCapture': str(endpoint_info.get('DataCaptureConfig', {}).get('EnableCapture', 'False')),
                        'SamplingPercent': str(endpoint_info.get('DataCaptureConfig', {}).get('CurrentSamplingPercentage', '-')),
                        'Tags': str(endpoint_info.get('tags', '-'), )}
             data_summary.append(summary)
 
         return pd.DataFrame(data_summary)
+
+
+    @staticmethod
+    def num_columns(data_info):
+        """Helper: Compute the number of columns from the storage descriptor data"""
+        try:
+            return len(data_info['StorageDescriptor']['Columns'])
+        except KeyError:
+            return '-'
+
+    @staticmethod
+    def datetime_string(datetime_obj):
+        """Helper: Convert DateTime Object into a nice string"""
+        if datetime_obj is None:
+            return '-'
+        # Date + Hour Minute
+        return datetime_obj.strftime("%Y-%m-%d %H:%M")
 
 
 if __name__ == '__main__':
