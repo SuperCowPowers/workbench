@@ -18,11 +18,13 @@ def create(table_id: str, df: pd.DataFrame, show_columns: list[str] = None, row_
         id=table_id,
         data=df.to_dict('records'),
         columns=[{"name": i, "id": i} for i in df.columns if i in show_columns],
-        style_as_list_view=True,
+        # style_as_list_view=True,
         sort_action='native',
-        row_selectable=row_select,
+        # row_selectable=row_select,
         cell_selectable=False,
-        selected_rows=[0]
+        # selected_rows=[0],
+        # fixed_rows={'headers': True},
+        style_table={'maxHeight': '300px', 'overflowY': 'auto'}
     )
     return table
 
