@@ -18,8 +18,8 @@ def get_files(dir_name):
 setup(
     name='sageworks',
     # use_scm_version=True,
-    version='0.1.0',
-    description='SageWorks: An easy to use WorkBench for using and deploying SageMaker Models',
+    version='0.1.1',
+    description='SageWorks: An easy to use WorkBench for creating and deploying SageMaker Models',
     long_description=readme,
     long_description_content_type='text/markdown',
     author='SuperCowPowers LLC',
@@ -41,8 +41,8 @@ setup(
     license='Apache License 2.0',
     keywords='SageMaker, Machine Learning, AWS, Python, Utilities',
     classifiers=[
-        'Development Status :: 3 - Alpha'
-        'License :: OSI Approved :: MIT License'
+        'Development Status :: 3 - Alpha',
+        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
