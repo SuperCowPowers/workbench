@@ -31,21 +31,21 @@ setup(
     include_package_data=True,
     data_files=get_files('data') + get_files('examples'),
     install_requires=[
+        'boto3',
+        'awswrangler',
         'sagemaker',
         'pandas',
-        'scikit-learn'
+        'scikit-learn',
+        'dash'
     ],
     license='Apache License 2.0',
     keywords='SageMaker, Machine Learning, AWS, Python, Utilities',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: Apache Software License',
-        'Natural Language :: English',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
+        'Development Status :: 3 - Alpha'
+        'License :: OSI Approved :: MIT License'
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy'
     ],

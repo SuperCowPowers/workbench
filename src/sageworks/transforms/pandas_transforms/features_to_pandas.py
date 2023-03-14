@@ -46,7 +46,7 @@ class FeaturesToPandas(Transform):
 
     def validate_input(self) -> bool:
         """Validate the Input for this Transform"""
-        self.input_data_source = AthenaSource(self.data_catalog_db, self.input_uuid)
+        self.input_data_source = AthenaSource(self.input_uuid, self.data_catalog_db)
         return self.input_data_source.check()
 
     def transform(self, max_rows=100000):

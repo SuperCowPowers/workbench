@@ -3,7 +3,7 @@
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.processing import feature_spider
+from sageworks.algorithms.table.light import feature_spider
 
 
 # Class: RowTagger

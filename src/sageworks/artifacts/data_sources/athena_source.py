@@ -24,7 +24,7 @@ class AthenaSource(DataSource):
         self.table_name = table_name
 
         # Grab an AWS Metadata Broker object and pull information for Data Sources
-        self.aws_meta = AWSServiceBroker()
+        self.aws_meta = AWSServiceBroker('all')
         self._meta = self.aws_meta.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(self.table_name)
 
         # Grab my tags
@@ -136,8 +136,8 @@ def test():
     # Verify that the Athena Data Source exists
     assert(my_data.check())
 
-    # What's my AWS UUID
-    print(f"AWS UUID: {my_data.aws_uuid()}")
+    # What's my SageWorks UUID
+    print(f"UUID: {my_data.uuid()}")
 
     # Get the S3 Storage for this Data Source
     print(f"S3 Storage: {my_data.s3_storage_location()}")

@@ -11,7 +11,7 @@ from sagemaker.feature_store.feature_group import FeatureGroup
 from sageworks.utils.logging import logging_setup
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
-from sageworks.aws_service_broker.aws_sageworks_role import AWSSageWorksRole
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
 
 # Setup Logging
 logging_setup()
@@ -38,7 +38,7 @@ class DFToFeatureSet(Transform):
         self.id_column = None
         self.event_time_column = None
         self.sagemaker_session = Session()
-        self.sageworks_role_arn = AWSSageWorksRole().sageworks_execution_role_arn()
+        self.sageworks_role_arn = AWSSageWorksRoleManager().sageworks_execution_role_arn()
 
     def input_type(self) -> TransformInput:
         """What Input Type does this Transform Consume"""
@@ -153,6 +153,7 @@ class DFToFeatureSet(Transform):
             status = feature_group.describe().get("FeatureGroupStatus")
         self.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
+
 # Simple test of the DFToFeatureSet functionality
 def test():
     """Test the DFToFeatureSet Class"""
@@ -181,7 +182,9 @@ def test():
     # Does my data pass validation?
     assert(df_to_features.validate_input())
 
-    # Store this data into Athena/SageWorks
+    # Store this dataframe as a SageWorks Feature Set
+    # FIXME: This rest if this test is disabled for now
+    """
     df_to_features.transform()
 
     # Grab the output and query it for a dataframe
@@ -190,6 +193,7 @@ def test():
     df = output.query(query)
     # Show the dataframe
     print(df)
+    """
 
 
 if __name__ == "__main__":

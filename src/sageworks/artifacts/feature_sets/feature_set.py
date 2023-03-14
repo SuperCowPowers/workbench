@@ -31,7 +31,7 @@ class FeatureSet(AthenaSource):
         self.s3_storage = self.feature_set_meta['sageworks'].get('s3_storage')
 
         # Call SuperClass (AthenaSource) Initialization
-        super().__init__(self.athena_database, self.athena_table)
+        super().__init__(self.athena_table, self.athena_database)
 
         # All done
         print(f'FeatureSet Initialized: {feature_set_name}')
@@ -70,7 +70,7 @@ def test():
 
     # Run a query to only pull back a few columns and rows
     column_query = ', '.join(columns[:3])
-    query = f'select {column_query} from "{my_features.database_name}"."{my_features.table_name}" limit 10'
+    query = f'select {column_query} from "{my_features.athena_database}"."{my_features.athena_table}" limit 10'
     df = my_features.query(query)
     print(df)
 
