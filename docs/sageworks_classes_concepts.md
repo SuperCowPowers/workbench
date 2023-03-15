@@ -1,7 +1,7 @@
 # SageWorks Classes and Concepts
 A flexible, rapid, and customizable AWS® ML Sandbox. Here's some of the classes and concepts we use in the SageWorks system:
 
-**Note:** If you're currently developing an application against the SageWorks Classes/APIs please note that the API is currently in a fairly fluid state right now. :)
+<img src="images/sageworks_concepts.png">
 
 - Artifacts
   - DataLoader
