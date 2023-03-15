@@ -9,27 +9,21 @@ A flexible, rapid, and customizable AWS® ML Sandbox. Here's some of the classes
   - FeatureSet
   - Model
   - Endpoint
-- Transforms (Script, Glue, Lambda)
-  - DataSource to DataSource (Light/Heavy)
-  - DataSource to FeatureSet (Light/Heavy)
-  - FeatureSet to FeatureSet (Light/Heavy)
+
+- Transforms
+  - DataSource to DataSource
+     - Heavy 
+         - AWS Glue Jobs
+         - AWS EMR Serverless
+     - Light
+         - Local/Laptop
+         - Lambdas
+         - StepFunctions
+  - DataSource to FeatureSet
+     - Heavy/Light (see above breakout)
+  - FeatureSet to FeatureSet
+     - Heavy/Light (see above breakout)
   - FeatureSet to Model
-  - Model to Endpoint 
-- Glue/Heavy Lifting
-  - All transorms can be AWS Spark/Glue Jobs
-  - Easily handle the biggest workloads
-- Lambdas
-  - All transorms can be Lambdas
-  - Lambdas have formal inputs/outputs	
+  - Model to Endpoint
 
-  Example Transform Classes:
-  
-  	 - MyDataToFeatures: **DataSource** --> **FeatureSet**
-  	 - RemoveCorrelated: **FeatureSet** --> **FeatureSet**
-  	 - TrainModel: **FeatureSet** --> **Model**
-  	 - ServeModel: **Model** --> **Endpoint** 
-
-
-- Pipelines/DAGs of Tranforms (Step Functions)
-  - WireUp Lambdas with matching input/output
-  - Easy to build flexible and fantastic AWS ML Systems!
+     
