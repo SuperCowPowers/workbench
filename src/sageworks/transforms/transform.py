@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from enum import Enum, auto
 import logging
 
-from sageworks.utils.logging import logging_setup
+from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
 logging_setup()

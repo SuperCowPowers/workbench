@@ -6,7 +6,7 @@ import argparse
 import logging
 
 # SageWorks Imports
-from sageworks.utils.logging import logging_setup
+from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
 logging_setup()

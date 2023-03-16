@@ -11,7 +11,7 @@ from sageworks.aws_service_broker.aws_service_connectors.data_catalog import Dat
 from sageworks.aws_service_broker.aws_service_connectors.feature_store import FeatureStore
 from sageworks.aws_service_broker.aws_service_connectors.model_registry import ModelRegistry
 from sageworks.aws_service_broker.aws_service_connectors.endpoints import Endpoints
-from sageworks.utils.logging import logging_setup
+from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
 logging_setup()

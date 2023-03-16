@@ -8,7 +8,7 @@ from sagemaker.session import Session
 from sagemaker.feature_store.feature_group import FeatureGroup
 
 # Local imports
-from sageworks.utils.logging import logging_setup
+from sageworks.utils.sageworks_logging import logging_setup
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager

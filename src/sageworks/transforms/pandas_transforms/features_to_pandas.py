@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 
 # Local imports
-from sageworks.utils.logging import logging_setup
+from sageworks.utils.sageworks_logging import logging_setup
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 

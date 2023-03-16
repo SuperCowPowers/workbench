@@ -4,7 +4,7 @@ import logging
 # SageWorks Imports
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
-from sageworks.utils.logging import logging_setup
+from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
 logging_setup()

@@ -4,7 +4,7 @@ import json
 import pandas as pd
 
 # Local imports
-from sageworks.utils.logging import logging_setup
+from sageworks.utils.sageworks_logging import logging_setup
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 
 # Setup Logging

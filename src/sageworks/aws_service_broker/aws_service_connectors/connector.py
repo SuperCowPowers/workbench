@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import logging
 
 # SageWorks Imports
-from sageworks.utils.logging import logging_setup
+from sageworks.utils.sageworks_logging import logging_setup
 
 # Set up logging
 logging_setup()
