@@ -4,8 +4,8 @@ from dash import Dash
 from dash.dependencies import Input, Output
 
 # SageWorks Imports
-from web_interfaces.web_tools.components.model_data import ModelData
-from web_interfaces.web_tools.components import feature_importance, confusion_matrix, model_details, feature_details
+from sageworks.web_components.model_data import ModelData
+from sageworks.web_components import feature_importance, confusion_matrix, model_details, feature_details
 
 
 # Highlights the selected row in the table

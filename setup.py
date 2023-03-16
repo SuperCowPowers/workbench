@@ -36,9 +36,10 @@ setup(
         'sagemaker',
         'pandas',
         'scikit-learn',
-        'dash'
+        'dash',
+        'dash-bootstrap-components'
     ],
-    license='Apache License 2.0',
+    license='MIT',
     keywords='SageMaker, Machine Learning, AWS, Python, Utilities',
     classifiers=[
         'Development Status :: 3 - Alpha',
