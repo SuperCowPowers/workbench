@@ -1,4 +1,4 @@
-"""Helper methods for generating EventBridge messages"""
+"""SageWorksEventBridge: Class for publishing events to AWS EventBridge"""
 import json
 from pprint import pprint
 import logging
@@ -14,7 +14,7 @@ logging_setup()
 
 class SageWorksEventBridge:
     def __init__(self, bus_name='sageworks'):
-        """SageWorksEventBridge: Class for publishing/retrieving events from the AWS EventBridge"""
+        """SageWorksEventBridge: Class for publishing events to AWS EventBridge"""
         self.log = logging.getLogger(__name__)
         self.event_bus = bus_name
 
