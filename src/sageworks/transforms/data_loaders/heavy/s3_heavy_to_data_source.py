@@ -22,7 +22,7 @@ class S3HeavyToDataSource(Transform):
         self.input_type = TransformInput.S3_OBJECT
         self.output_type = TransformOutput.DATA_SOURCE
 
-    def transform(self, overwrite: bool = True):
+    def transform_impl(self, overwrite: bool = True):
         """Convert the CSV data into Parquet Format in the SageWorks S3 Bucket, and
            store the information about the data to the AWS Data Catalog sageworks database"""
 

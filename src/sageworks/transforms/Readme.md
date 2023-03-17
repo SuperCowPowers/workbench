@@ -27,7 +27,7 @@ def set_output_name(self, uuid: str):
     pass
 
 @abstractmethod
-def transform(self):
+def transform_impl(self):
     """Perform the Transformation from Input to Output"""
     pass
     

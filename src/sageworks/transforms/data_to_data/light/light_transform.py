@@ -25,16 +25,6 @@ class LightTransform(Transform):
         # Grab the Input (Data Source)
         self.input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
 
-    def transform(self, overwrite: bool = True, **kwargs):
-        """Pull the input DataSource, do something with the data, and output to a DataSource"""
-        self.pre_transform()
-        self._transform(**kwargs)
-        self.post_transform()
-
-    def _transform(self):
-        """Abstract Method: Subclass must over write this"""
-        pass
-
     def post_transform(self):
         """At this point the output DataFrame should be populated, so publish it as a DataSource"""
 
@@ -55,7 +45,7 @@ def test():
         def __init__(self, input_uuid, output_uuid):
             super().__init__(input_uuid, output_uuid)
 
-        def _transform(self):
+        def transform_impl(self):
             self.output_df = self.input_df
 
     # Create the class with inputs and outputs and invoke the transform

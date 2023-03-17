@@ -19,7 +19,7 @@ class DataToPandas(Transform):
         self.output_df = None
         self.transform_run = False
 
-    def transform(self, max_rows=100000):
+    def transform_impl(self, max_rows=100000):
         """Convert the DataSource into a Pandas DataFrame"""
 
         # Grab the Input (Data Source)

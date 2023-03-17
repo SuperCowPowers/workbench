@@ -24,7 +24,7 @@ class S3LightToDataSource(Transform):
         size_in_mb = round(size_in_bytes/1_000_000)
         return size_in_mb
 
-    def transform(self, overwrite: bool = True):
+    def transform_impl(self, overwrite: bool = True):
         """Convert the CSV data into Parquet Format in the SageWorks S3 Bucket, and
            store the information about the data to the AWS Data Catalog sageworks database"""
 

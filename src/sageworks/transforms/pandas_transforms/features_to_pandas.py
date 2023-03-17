@@ -49,7 +49,7 @@ class FeaturesToPandas(Transform):
         self.input_data_source = AthenaSource(self.input_uuid, self.data_catalog_db)
         return self.input_data_source.check()
 
-    def transform(self, max_rows=100000):
+    def transform_impl(self, max_rows=100000):
         """Convert the DataSource into a Pandas DataFrame"""
 
         # Validate our input and get the number of rows in the DataSource

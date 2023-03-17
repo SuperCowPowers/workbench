@@ -11,7 +11,7 @@ class CleanData(LightTransform):
         # Call superclass init
         super().__init__(input_uuid, output_uuid)
 
-    def _transform(self, dropna='any'):
+    def transform_impl(self, dropna='any'):
         """Simple Clean Data, will improve later"""
 
         """
