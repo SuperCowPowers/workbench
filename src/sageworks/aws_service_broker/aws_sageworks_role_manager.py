@@ -2,6 +2,7 @@
 import sys
 import boto3
 from botocore.exceptions import ClientError
+from sagemaker.session import Session as SageSession
 import argparse
 import logging
 
@@ -44,7 +45,7 @@ class AWSSageWorksRoleManager:
             print(f"Could Not Find Role {self.role_name}")
             return None
 
-    def sageworks_session(self):
+    def boto_session(self):
         """Create a sageworks session using sts.assume_role(sageworks_execution_role)"""
         # Make sure we can access stuff with this role
         session = boto3.Session()
@@ -52,12 +53,17 @@ class AWSSageWorksRoleManager:
         sts = session.client("sts")
         response = sts.assume_role(
             RoleArn=self.sageworks_execution_role_arn(),
-            RoleSessionName="sageworks-session"
+            RoleSessionName="sageworks-boto3-session"
         )
         new_session = boto3.Session(aws_access_key_id=response['Credentials']['AccessKeyId'],
                                     aws_secret_access_key=response['Credentials']['SecretAccessKey'],
                                     aws_session_token=response['Credentials']['SessionToken'])
         return new_session
+
+    def sagemaker_session(self):
+        """Create a sageworks SageMaker session using sts.assume_role(sageworks_execution_role)"""
+        # Make sure we can access stuff with this role
+        return SageSession(boto_session=self.boto_session())
 
 
 if __name__ == '__main__':
@@ -81,10 +87,18 @@ if __name__ == '__main__':
     role_arn = sageworks_role.sageworks_execution_role_arn()
     print(role_arn)
 
-    # Get our SageWorks Session
-    sageworks_session = sageworks_role.sageworks_session()
-    print(sageworks_session)
+    # Get our Boto Session
+    boto_session = sageworks_role.boto_session()
+    print(boto_session)
 
-    # Try to access some AWS services
-    s3 = sageworks_session.client("s3")
+    # Try to access a 'regular' AWS service
+    s3 = boto_session.client("s3")
     print(s3.list_buckets())
+
+    # Get our SageMaker Session
+    sagemaker_session = sageworks_role.sagemaker_session()
+    print(sagemaker_session)
+
+    # Try to access a SageMaker AWS services
+    sm_client = sagemaker_session.boto_session.client("sagemaker")
+    print(sm_client.list_feature_groups()['FeatureGroupSummaries'])
