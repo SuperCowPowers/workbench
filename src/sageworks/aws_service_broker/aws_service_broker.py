@@ -127,7 +127,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Create the class
-    aws_broker = AWSServiceBroker(database_scope='all')
+    aws_broker = AWSServiceBroker()
 
     # Get the Metadata for various categories
     for my_category in ServiceCategory:
