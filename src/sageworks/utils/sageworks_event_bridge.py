@@ -19,11 +19,11 @@ class SageWorksEventBridge:
         self.event_bus = bus_name
 
         # Grab a SageWorks Session (this allows us to assume the SageWorks-ExecutionRole)
-        self.sageworks_session = AWSSageWorksRoleManager().sageworks_session()
-        print(self.sageworks_session)
+        self.boto_session = AWSSageWorksRoleManager().boto_session()
+        print(self.boto_session)
 
         # Get our AWS EventBridge Client
-        self.event_bridge = self.sageworks_session.client('events')
+        self.event_bridge = self.boto_session.client('events')
 
     def create_artifact(self, uuid: str, artifact_type: ArtifactType):
         event = {'eventType': 'CREATE_ARTIFACT',

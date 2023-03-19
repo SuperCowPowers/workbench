@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import logging
 
 # SageWorks Imports
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Set up logging
@@ -14,6 +15,10 @@ class Connector(ABC):
     def __init__(self):
         """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
         self.log = logging.getLogger(__name__)
+
+        # Set up our SageMaker Session and SageMaker Client
+        self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
+        self.sm_client = self.sm_session.boto_session.client("sagemaker")
 
     @abstractmethod
     def check(self) -> bool:

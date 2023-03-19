@@ -46,7 +46,7 @@ class AWSServiceBroker:
         cls.log = logging.getLogger(__file__)
 
         # FIXME: This should be pulled from a config file
-        cls.incoming_data_bucket = 's3://sageworks-incoming-data'
+        cls.incoming_data_bucket = 's3://sageworks-artifacts/incoming-data'
 
         # SageWorks category mapping to AWS Services
         # - incoming_data = S3

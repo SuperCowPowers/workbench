@@ -18,8 +18,8 @@ class Artifact(ABC):
 
         # FIXME: We should have this come from AWS or Config
         self.data_catalog_db = 'sageworks'
-        self.data_source_s3_path = 's3://sageworks-data-sources'
-        self.feature_sets_s3_path = 's3://sageworks-feature-sets'
+        self.data_source_s3_path = 's3://sageworks-artifacts/data-sources'
+        self.feature_sets_s3_path = 's3://sageworks-artifacts/feature-sets'
 
     @abstractmethod
     def check(self) -> bool:

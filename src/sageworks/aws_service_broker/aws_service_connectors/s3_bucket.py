@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     # Collect args from the command line
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bucket', type=str, default='s3://sageworks-incoming-data', help='AWS S3 Bucket')
+    parser.add_argument('--bucket', type=str, default='s3://sageworks-artifacts/incoming-data', help='AWS S3 Bucket')
     args, commands = parser.parse_known_args()
 
     # Check for unknown args

@@ -5,6 +5,8 @@ from enum import Enum, auto
 from typing import final
 import logging
 
+# SageWorks Imports
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -45,8 +47,14 @@ class Transform(ABC):
 
         # FIXME: We should have this come from AWS or Config
         self.data_catalog_db = 'sageworks'
-        self.data_source_s3_path = 's3://sageworks-data-sources'
-        self.feature_sets_s3_path = 's3://sageworks-feature-sets'
+        self.data_source_s3_path = 's3://sageworks-artifacts/data-sources'
+        self.feature_sets_s3_path = 's3://sageworks-artifacts/feature-sets'
+
+        # Grab a SageWorks Role ARN and Sessions
+        self.sageworks_role_arn = AWSSageWorksRoleManager().sageworks_execution_role_arn()
+        self.boto_session = AWSSageWorksRoleManager().boto_session()
+        self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
+
 
     def pre_transform(self):
         """Perform any Pre-Transform operations"""

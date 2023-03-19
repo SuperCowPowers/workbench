@@ -4,7 +4,6 @@ import logging
 import pandas as pd
 import time
 import botocore
-from sagemaker.session import Session
 from sagemaker.feature_store.feature_group import FeatureGroup
 
 # Local imports
@@ -34,11 +33,9 @@ class DFToFeatureSet(Transform):
         self.input_df = None
         self.output_uuid = None
         self.data_catalog_db = 'sageworks'
-        self.feature_set_s3_path = 's3://sageworks-feature-sets'
+        self.feature_set_s3_path = 's3://sageworks-artifacts/feature-sets'
         self.id_column = None
         self.event_time_column = None
-        self.sagemaker_session = Session()
-        self.sageworks_role_arn = AWSSageWorksRoleManager().sageworks_execution_role_arn()
 
     def input_type(self) -> TransformInput:
         """What Input Type does this Transform Consume"""
@@ -107,7 +104,7 @@ class DFToFeatureSet(Transform):
         if overwrite:
             try:
                 # Delete the Feature Group and ensure that it gets deleted
-                remove_fg = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sagemaker_session)
+                remove_fg = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
                 remove_fg.delete()
                 self.ensure_feature_group_deleted(remove_fg)
 
@@ -116,7 +113,7 @@ class DFToFeatureSet(Transform):
                 self.log.info(error)
 
         # Create a Feature Group and load our Feature Definitions
-        my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sagemaker_session)
+        my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
         my_feature_group.load_feature_definitions(data_frame=self.input_df)
 
         # Add some tags here
@@ -183,8 +180,6 @@ def test():
     assert(df_to_features.validate_input())
 
     # Store this dataframe as a SageWorks Feature Set
-    # FIXME: This rest if this test is disabled for now
-    """
     df_to_features.transform()
 
     # Grab the output and query it for a dataframe
@@ -193,7 +188,6 @@ def test():
     df = output.query(query)
     # Show the dataframe
     print(df)
-    """
 
 
 if __name__ == "__main__":

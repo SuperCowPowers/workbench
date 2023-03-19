@@ -1,7 +1,6 @@
 """ModelRegistry: Helper Class for the AWS Model Registry Service"""
 import sys
 import argparse
-from sagemaker.session import Session
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
@@ -12,10 +11,6 @@ class ModelRegistry(Connector):
         """"ModelRegistry: Helper Class for the AWS Model Registry Service"""
         # Call SuperClass Initialization
         super().__init__()
-
-        # Set up our SageMaker Session and SageMaker Client
-        self.sm_session = Session()
-        self.sm_client = self.sm_session.boto_session.client("sagemaker")
 
         # Set up our internal data storage
         self.model_data = {}

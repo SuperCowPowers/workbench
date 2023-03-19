@@ -131,8 +131,6 @@ def test():
     # Retrieve a Data Source
     my_data = AthenaSource('aqsol_data')
 
-    # Call the various methods
-
     # Verify that the Athena Data Source exists
     assert(my_data.check())
 
@@ -148,6 +146,13 @@ def test():
     # When was it created and last modified?
     print(f"Created: {my_data.created()}")
     print(f"Modified: {my_data.modified()}")
+
+
+def more_details():
+    """Additional Tests that don't get run automatically"""
+
+    # Retrieve a Data Source
+    my_data = AthenaSource('aqsol_data')
 
     # How many rows and columns?
     num_rows = my_data.num_rows()
