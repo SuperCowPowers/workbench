@@ -19,9 +19,6 @@ class S3Bucket(Connector):
         self.bucket = bucket
         self.s3_bucket_data = None
 
-        # Load in the files from the bucket
-        self.refresh()
-
     def check(self) -> bool:
         """Check if we can reach/connect to this AWS Service"""
         try:

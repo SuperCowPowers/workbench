@@ -123,6 +123,16 @@ class AthenaSource(DataSource):
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
+    def delete(self):
+        """Delete the AWS Data Catalog Table and S3 Storage Objects"""
+
+        # Make sure the Feature Group exists
+        if not self.check():
+            self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.table_name}")
+
+        # FIXME: Add Data Catalog Table and S3 Storage Object Deletion Here
+        self.log.info("Add deletion logic")
+
 
 # Simple test of the AthenaSource functionality
 def test():
@@ -175,6 +185,10 @@ def more_details():
     df = my_data.query(query)
     print(df)
 
+    # Now delete the AWS artifacts associated with this DataSource
+    my_data.delete()
+
 
 if __name__ == "__main__":
     test()
+    more_details()

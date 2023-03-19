@@ -48,13 +48,12 @@ class Transform(ABC):
         # FIXME: We should have this come from AWS or Config
         self.data_catalog_db = 'sageworks'
         self.data_source_s3_path = 's3://sageworks-artifacts/data-sources'
-        self.feature_sets_s3_path = 's3://sageworks-artifacts/feature-sets'
+        self.feature_set_s3_path = 's3://sageworks-artifacts/feature-sets'
 
         # Grab a SageWorks Role ARN and Sessions
         self.sageworks_role_arn = AWSSageWorksRoleManager().sageworks_execution_role_arn()
         self.boto_session = AWSSageWorksRoleManager().boto_session()
         self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
-
 
     def pre_transform(self):
         """Perform any Pre-Transform operations"""

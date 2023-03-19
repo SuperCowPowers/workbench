@@ -29,7 +29,7 @@ class ServiceCategory(Enum):
 
 class AWSServiceBroker:
 
-    def __new__(cls, database_scope='sageworks'):
+    def __new__(cls, database_scope=['sageworks', 'sagemaker_featurestore']):
         """AWSServiceBroker Singleton Pattern"""
         if not hasattr(cls, 'instance'):
             print('Creating New AWSServiceBroker Instance...')
@@ -41,7 +41,7 @@ class AWSServiceBroker:
         return cls.instance
 
     @classmethod
-    def __class_init__(cls, database_scope='sageworks'):
+    def __class_init__(cls, database_scope):
         """"AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
         cls.log = logging.getLogger(__file__)
 
