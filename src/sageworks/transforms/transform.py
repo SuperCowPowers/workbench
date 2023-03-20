@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import final
 import logging
+import awswrangler as wr
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
@@ -55,6 +56,9 @@ class Transform(ABC):
         self.boto_session = AWSSageWorksRoleManager().boto_session()
         self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
 
+        # Make sure the AWS data catalog database exists
+        self.ensure_aws_catalog_db()
+
     def pre_transform(self):
         """Perform any Pre-Transform operations"""
         self.log.info('Pre-Transform...')
@@ -90,3 +94,7 @@ class Transform(ABC):
     def set_output_uuid(self, output_uuid: str):
         """Set the Output UUID (Name) for this Transform"""
         self.output_uuid = output_uuid
+
+    def ensure_aws_catalog_db(self):
+        """Ensure that the AWS Catalog Database exists"""
+        wr.catalog.create_database(self.data_catalog_db, exist_ok=True, boto3_session=self.boto_session)

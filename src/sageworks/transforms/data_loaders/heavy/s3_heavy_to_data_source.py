@@ -30,7 +30,7 @@ class S3HeavyToDataSource(Transform):
         tags = ['sageworks', 'public']
 
         # Read in the S3 CSV as a Pandas DataFrame
-        df = wr.s3.read_csv(self.input_uuid, low_memory=False)
+        df = wr.s3.read_csv(self.input_uuid, low_memory=False, boto3_session=self.boto_session)
 
         # Create the Output Parquet file S3 Storage Path
         s3_storage_path = f"{self.data_source_s3_path}/{self.output_uuid}"
@@ -41,6 +41,7 @@ class S3HeavyToDataSource(Transform):
                          description=f'SageWorks data source: {self.output_uuid}',
                          filename_prefix=f'{self.output_uuid}_',
                          parameters={'tags': json.dumps(tags)},
+                         boto3_session = self.boto_session,
                          partition_cols=None)  # FIXME: Have some logic around partition columns
 
 

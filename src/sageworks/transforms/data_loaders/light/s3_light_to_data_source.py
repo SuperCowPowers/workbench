@@ -20,7 +20,7 @@ class S3LightToDataSource(Transform):
 
     def input_size_mb(self) -> int:
         """ Get the size of the input S3 object in MBytes"""
-        size_in_bytes = wr.s3.size_objects(self.input_uuid)[self.input_uuid]
+        size_in_bytes = wr.s3.size_objects(self.input_uuid, boto3_session=self.boto_session)[self.input_uuid]
         size_in_mb = round(size_in_bytes/1_000_000)
         return size_in_mb
 
@@ -38,7 +38,7 @@ class S3LightToDataSource(Transform):
         tags = ['sageworks', 'public']
 
         # Read in the S3 CSV as a Pandas DataFrame
-        df = wr.s3.read_csv(self.input_uuid, low_memory=False)
+        df = wr.s3.read_csv(self.input_uuid, low_memory=False, boto3_session=self.boto_session)
 
         # Create the Output Parquet file S3 Storage Path
         s3_storage_path = f"{self.data_source_s3_path}/{self.output_uuid}"
@@ -49,6 +49,7 @@ class S3LightToDataSource(Transform):
                          description=f'SageWorks data source: {self.output_uuid}',
                          filename_prefix=f'{self.output_uuid}_',
                          parameters={'tags': json.dumps(tags)},
+                         boto3_session=self.boto_session,
                          partition_cols=None)  # FIXME: Have some logic around partition columns
 
 
@@ -69,6 +70,8 @@ def test():
     print(f"UUID: {output.uuid()}   TAGS: {output.tags()}")
 
     # Now query the data source and print out the resulting dataframe
+    """Commenting out for now"""
+    """
     df = output.query(f"select * from {output_uuid} limit 5")
 
     # Setup Pandas output options
@@ -78,6 +81,7 @@ def test():
 
     # Show the dataframe
     print(df)
+    """
 
 
 if __name__ == "__main__":

@@ -63,7 +63,7 @@ class AthenaSource(DataSource):
 
     def size(self) -> bool:
         """Return the size of this data in MegaBytes"""
-        size_in_bytes = sum(wr.s3.size_objects(self.s3_storage_location()).values())
+        size_in_bytes = sum(wr.s3.size_objects(self.s3_storage_location(), boto3_session=self.boto_session).values())
         size_in_mb = round(size_in_bytes / 1_000_000)
         return size_in_mb
 
@@ -107,7 +107,7 @@ class AthenaSource(DataSource):
 
     def query(self, query: str) -> pd.DataFrame:
         """Query the AthenaSource"""
-        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db)
+        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db, boto3_session=self.boto_session)
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
         return df
@@ -119,7 +119,7 @@ class AthenaSource(DataSource):
     def athena_test_query(self):
         """Validate that Athena Queries are working"""
         query = f"select count(*) as count from {self.table_name}"
-        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db)
+        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db, boto3_session=self.boto_session)
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 

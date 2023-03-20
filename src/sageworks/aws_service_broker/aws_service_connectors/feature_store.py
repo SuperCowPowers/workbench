@@ -82,7 +82,7 @@ class FeatureStore(Connector):
         """Set the tags for a specific feature group"""
         wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(tags)},
                                            database=database,
-                                           table=table_name)
+                                           table=table_name, boto3_session=self.boto_session)
 
     def add_feature_group_tags(self, database: str,  table_name: str, tags: list):
         """Add some the tags for a specific feature set"""
@@ -90,7 +90,7 @@ class FeatureStore(Connector):
         new_tags = list(set(current_tags).union(set(tags)))
         wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(new_tags)},
                                            database=database,
-                                           table=table_name)
+                                           table=table_name, boto3_session=self.boto_session)
 
     def _feature_group_details(self, feature_group_name: str) -> dict:
         """Internal: Do not call this method directly, use feature_group_details() instead"""

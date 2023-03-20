@@ -22,7 +22,7 @@ class S3Bucket(Connector):
     def check(self) -> bool:
         """Check if we can reach/connect to this AWS Service"""
         try:
-            wr.s3.does_object_exist(self.bucket)
+            wr.s3.does_object_exist(self.bucket, boto3_session=self.boto_session)
             return True
         except Exception as e:
             self.log.critical(f"Could not connect to AWS S3 {self.bucket}: {e}")

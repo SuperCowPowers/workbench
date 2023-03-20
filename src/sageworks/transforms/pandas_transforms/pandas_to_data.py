@@ -39,6 +39,7 @@ class PandasToData(Transform):
                          description=f'SageWorks data source: {self.output_uuid}',
                          filename_prefix=f'{self.output_uuid}_',
                          parameters={'tags': json.dumps(tags)},
+                         boto3_session = self.boto_session,
                          partition_cols=None)  # FIXME: Have some logic around partition columns
 
     def set_input(self, input_df: pd.DataFrame):

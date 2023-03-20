@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 import logging
 
+# SageWorks Imports
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -20,6 +22,9 @@ class Artifact(ABC):
         self.data_catalog_db = 'sageworks'
         self.data_source_s3_path = 's3://scp-sageworks-artifacts/data-sources'
         self.feature_sets_s3_path = 's3://scp-sageworks-artifacts/feature-sets'
+
+        # Grab a SageWorks Boto3 Session
+        self.boto_session = AWSSageWorksRoleManager().boto_session()
 
     @abstractmethod
     def check(self) -> bool:

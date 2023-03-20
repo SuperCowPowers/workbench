@@ -41,7 +41,7 @@ class DataCatalog(Connector):
         # For each database in our scoped list, load the tables
         for database in self.scoped_database_list:
             print(f"Reading Data Catalog Database: {database}...")
-            table_list = wr.catalog.get_tables(database=database)
+            table_list = wr.catalog.get_tables(database=database, boto3_session=self.boto_session)
 
             # Convert to a data structure with direct lookup
             self.data_catalog_metadata[database] = {table['Name']: table for table in table_list}
@@ -76,21 +76,20 @@ class DataCatalog(Connector):
         table = self.get_table(database, table_name)
         return json.loads(table['Parameters'].get('tags', '[]'))
 
-    @staticmethod
-    def set_table_tags(database: str, table_name: str, tags: list):
+
+    def set_table_tags(self, database: str, table_name: str, tags: list):
         """Set the tags for a specific table"""
         wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(tags)},
                                            database=database,
-                                           table=table_name)
+                                           table=table_name, boto3_session=self.boto_session)
 
-    @staticmethod
-    def add_table_tags(database: str, table_name: str, tags: list):
+    def add_table_tags(self, database: str, table_name: str, tags: list):
         """Add some the tags for a specific table"""
         current_tags = json.loads(wr.catalog.get_table_parameters(database, table_name).get('tags'))
         new_tags = list(set(current_tags).union(set(tags)))
         wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(new_tags)},
                                            database=database,
-                                           table=table_name)
+                                           table=table_name, boto3_session=self.boto_session)
 
 
 if __name__ == '__main__':

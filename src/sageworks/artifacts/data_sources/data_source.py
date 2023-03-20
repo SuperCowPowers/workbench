@@ -14,9 +14,6 @@ class DataSource(Artifact):
         # Call superclass init
         super().__init__()
 
-        # Make sure the AWS data catalog database exists
-        self.ensure_aws_catalog_db()
-
     @abstractmethod
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
@@ -36,7 +33,3 @@ class DataSource(Artifact):
     def query(self, query: str) -> pd.DataFrame:
         """Query the DataSource"""
         pass
-
-    def ensure_aws_catalog_db(self):
-        """Ensure that the AWS Catalog Database exists"""
-        wr.catalog.create_database(self.data_catalog_db, exist_ok=True)
