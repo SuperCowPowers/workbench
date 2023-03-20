@@ -16,7 +16,7 @@ import callbacks
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
 
 # Create our Dash Application
-app = Dash(title='SageWork Artifacts', external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(title='SageWorks Artifacts', external_stylesheets=[dbc.themes.BOOTSTRAP])
 # app = Dash(title='Hello World Application', external_stylesheets=[dbc.themes.DARKLY])
 server = app.server
 
@@ -50,8 +50,8 @@ def setup_artifact_viewer():
     app.layout = layout.artifact_layout(app, components)
 
     # Setup our callbacks/connections
-    callbacks.change_last_updated_time(app)
-    callbacks.update_artifact_tables(app, sageworks_artifacts)
+    callbacks.update_artifact_data(app, sageworks_artifacts)
+    callbacks.update_artifact_tables(app)
     """
     callbacks.table_row_select(app, 'model_table')
     callbacks.update_figures(app, df)

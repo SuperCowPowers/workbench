@@ -51,7 +51,7 @@ def test():
 
     # Create my Data Loader
     output_uuid = 'aqsol_data'
-    my_loader = S3HeavyToDataSource('s3://sageworks-artifacts/incoming-data/aqsol_public_data.csv', output_uuid)
+    my_loader = S3HeavyToDataSource('s3://scp-sageworks-artifacts/incoming-data/aqsol_public_data.csv', output_uuid)
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()

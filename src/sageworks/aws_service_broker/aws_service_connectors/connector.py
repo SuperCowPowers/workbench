@@ -16,9 +16,12 @@ class Connector(ABC):
         """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
         self.log = logging.getLogger(__name__)
 
-        # Set up our SageMaker Session and SageMaker Client
+        # Set up our Boto3 and SageMaker Session and SageMaker Client
+        self.boto_session = AWSSageWorksRoleManager().boto_session()
         self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
         self.sm_client = self.sm_session.boto_session.client("sagemaker")
+
+        # Figure out our the SageWorks Artifacts Bucket Name
 
     @abstractmethod
     def check(self) -> bool:

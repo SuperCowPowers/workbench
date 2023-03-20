@@ -9,25 +9,47 @@ from sageworks.web_components.model_data import ModelData
 from sageworks.web_components import feature_importance, confusion_matrix, model_details, feature_details
 from sageworks.views.artifacts_summary import ArtifactsSummary
 
+# Cheese Sauce
+all_data = None
 
-def change_last_updated_time(app: Dash):
+
+def update_artifact_data(app: Dash, sageworks_artifacts: ArtifactsSummary):
+
     @app.callback(
         Output('last-updated', 'children'),
         Input('interval-component', 'n_intervals')
     )
     def time_updated(n):
+        global all_data
+        print('Calling Artifact Refresh...')
+        sageworks_artifacts.refresh()
+        all_data = sageworks_artifacts.view_data()
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
-def update_artifact_tables(app: Dash, sageworks_artifacts: ArtifactsSummary):
+def update_artifact_tables(app: Dash):
+
+    @app.callback(
+        Output('INCOMING_DATA', 'data'),
+        Input('interval-component', 'n_intervals')
+    )
+    def table_data(n):
+        feature_set_data = all_data['INCOMING_DATA']
+        return feature_set_data.to_dict('records')
+
+    @app.callback(
+        Output('DATA_SOURCES', 'data'),
+        Input('interval-component', 'n_intervals')
+    )
+    def table_data(n):
+        feature_set_data = all_data['DATA_SOURCES']
+        return feature_set_data.to_dict('records')
 
     @app.callback(
         Output('FEATURE_SETS', 'data'),
         Input('interval-component', 'n_intervals')
     )
     def table_data(n):
-        sageworks_artifacts.refresh()
-        all_data = sageworks_artifacts.view_data()
         feature_set_data = all_data['FEATURE_SETS']
         return feature_set_data.to_dict('records')
 

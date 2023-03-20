@@ -142,21 +142,14 @@ def test():
         ]
     fake_df = pd.DataFrame(fake_data)
 
-    # Create my DF to Data Source Transform
-    output_uuid = 'test-feature-set-2'
+    # Create my DF to Feature Set Transform
+    output_uuid = 'test-feature-set'
     df_to_features = DFToFeatureSet()
     df_to_features.set_input(fake_df, id_column='id', event_time_column='date')
     df_to_features.set_output_uuid(output_uuid)
 
     # Store this dataframe as a SageWorks Feature Set
     df_to_features.transform(delete_existing=True)
-
-    # Grab the output and query it for a dataframe
-    output = FeatureSet(output_uuid)
-    query = f'select * from "{output.athena_database}"."{output.athena_table}" limit 5'
-    df = output.query(query)
-    # Show the dataframe
-    print(df)
 
 
 if __name__ == "__main__":

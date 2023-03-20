@@ -32,7 +32,7 @@ class S3Bucket(Connector):
         """Load/reload the files in the bucket"""
         # Grab all the files in this bucket
         self.log.info(f"Reading S3 Bucket: {self.bucket}...")
-        _aws_file_info = wr.s3.describe_objects(self.bucket)
+        _aws_file_info = wr.s3.describe_objects(self.bucket, boto3_session=self.boto_session)
         self.s3_bucket_data = {full_path.split('/')[-1]: info for full_path, info in _aws_file_info.items()}
 
     def metadata(self) -> dict:
@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     # Collect args from the command line
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bucket', type=str, default='s3://sageworks-artifacts/incoming-data', help='AWS S3 Bucket')
+    parser.add_argument('--bucket', type=str, default='s3://scp-sageworks-artifacts/incoming-data', help='AWS S3 Bucket')
     args, commands = parser.parse_known_args()
 
     # Check for unknown args

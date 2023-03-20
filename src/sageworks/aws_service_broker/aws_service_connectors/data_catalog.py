@@ -29,7 +29,7 @@ class DataCatalog(Connector):
     def check(self) -> bool:
         """Check if we can reach/connect to this AWS Service"""
         try:
-            wr.catalog.get_databases()
+            wr.catalog.get_databases(boto3_session=self.boto_session)
             return True
         except Exception as e:
             self.log.critical(f"Error connecting to AWS Data Catalog: {e}")
@@ -52,7 +52,7 @@ class DataCatalog(Connector):
 
     def get_scoped_database_list(self):
         """Return a list of databases within the defined scope for this class"""
-        all_databases = [db['Name'] for db in wr.catalog.get_databases()]
+        all_databases = [db['Name'] for db in wr.catalog.get_databases(boto3_session=self.boto_session)]
         if self.database_scope == ['all']:
             return all_databases
 
