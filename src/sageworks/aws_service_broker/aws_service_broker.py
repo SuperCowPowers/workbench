@@ -64,7 +64,7 @@ class AWSServiceBroker:
         # Model Monitors
 
         # Temporal Cache for Metadata
-        cls.meta_cache = Cache(10)
+        cls.meta_cache = Cache(timeout=10)
 
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler

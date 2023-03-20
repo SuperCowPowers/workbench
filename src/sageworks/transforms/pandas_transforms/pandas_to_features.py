@@ -143,7 +143,7 @@ def test():
     fake_df = pd.DataFrame(fake_data)
 
     # Create my DF to Data Source Transform
-    output_uuid = 'test-feature-set'
+    output_uuid = 'test-feature-set-2'
     df_to_features = DFToFeatureSet()
     df_to_features.set_input(fake_df, id_column='id', event_time_column='date')
     df_to_features.set_output_uuid(output_uuid)

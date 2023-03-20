@@ -83,7 +83,7 @@ class ArtifactsSummary(View):
         data_summary = []
         for feature_group, group_info in data.items():
             summary = {'Feature Group': group_info['FeatureGroupName'],
-                       'Catalog DB': group_info['OfflineStoreConfig']['DataCatalogConfig'].get('Database', '-'),
+                       'Catalog DB': group_info['OfflineStoreConfig'].get('DataCatalogConfig', {}).get('Database', '-'),
                        'Feature ID': group_info['RecordIdentifierFeatureName'],
                        'Feature EventTime': group_info['EventTimeFeatureName'],
                        'Online': str(group_info.get('OnlineStoreConfig', {}).get('EnableOnlineStore', 'False')),
