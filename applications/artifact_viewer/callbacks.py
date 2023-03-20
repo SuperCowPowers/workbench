@@ -1,4 +1,5 @@
 """Callbacks/Connections in the Web User Interface"""
+from datetime import datetime
 import dash
 from dash import Dash
 from dash.dependencies import Input, Output
@@ -6,6 +7,29 @@ from dash.dependencies import Input, Output
 # SageWorks Imports
 from sageworks.web_components.model_data import ModelData
 from sageworks.web_components import feature_importance, confusion_matrix, model_details, feature_details
+from sageworks.views.artifacts_summary import ArtifactsSummary
+
+
+def change_last_updated_time(app: Dash):
+    @app.callback(
+        Output('last-updated', 'children'),
+        Input('interval-component', 'n_intervals')
+    )
+    def time_updated(n):
+        return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
+
+
+def update_artifact_tables(app: Dash, sageworks_artifacts: ArtifactsSummary):
+
+    @app.callback(
+        Output('FEATURE_SETS', 'data'),
+        Input('interval-component', 'n_intervals')
+    )
+    def table_data(n):
+        sageworks_artifacts.refresh()
+        all_data = sageworks_artifacts.view_data()
+        feature_set_data = all_data['FEATURE_SETS']
+        return feature_set_data.to_dict('records')
 
 
 # Highlights the selected row in the table

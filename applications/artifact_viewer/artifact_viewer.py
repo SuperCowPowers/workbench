@@ -9,6 +9,7 @@ from sageworks.web_components import table
 
 # Local Imports
 import layout
+import callbacks
 
 
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
@@ -49,6 +50,8 @@ def setup_artifact_viewer():
     app.layout = layout.artifact_layout(app, components)
 
     # Setup our callbacks/connections
+    callbacks.change_last_updated_time(app)
+    callbacks.update_artifact_tables(app, sageworks_artifacts)
     """
     callbacks.table_row_select(app, 'model_table')
     callbacks.update_figures(app, df)
