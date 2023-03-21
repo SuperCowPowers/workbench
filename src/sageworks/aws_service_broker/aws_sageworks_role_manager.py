@@ -20,19 +20,28 @@ class AWSSageWorksRoleManager:
         self.log = logging.getLogger(__file__)
         self.role_name = role_name
 
-    @staticmethod
-    def check_aws_identity() -> bool:
+    def check_aws_identity(self) -> bool:
         """Check the AWS Identity currently active"""
         # Check AWS Identity Token
         sts = boto3.client('sts')
         try:
             identity = sts.get_caller_identity()
-            print("\nAWS Account Info:")
-            print(f"\tAccount: {identity['Account']}")
-            print(f"\tARN: {identity['Arn']}")
+            self.log.info("\nAWS Account Info:")
+            self.log.info(f"\tAccount: {identity['Account']}")
+            self.log.info(f"\tARN: {identity['Arn']}")
             return True
         except ClientError:
-            print("AWS Identity Check Failure: Check AWS_PROFILE and Renew Security Token...")
+            self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and Renew Security Token...")
+            return False
+
+    def is_sageworks_role(self) -> bool:
+        """Check if the current AWS Identity is the SageWorks Role"""
+        sts = boto3.client('sts')
+        try:
+            'SageWorks-ExecutionRole' in sts.get_caller_identity()['Arn']
+            return True
+        except ClientError:
+            self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and Renew Security Token...")
             return False
 
     def sageworks_execution_role_arn(self):
@@ -47,9 +56,13 @@ class AWSSageWorksRoleManager:
 
     def boto_session(self):
         """Create a sageworks session using sts.assume_role(sageworks_execution_role)"""
-        # Make sure we can access stuff with this role
-        session = boto3.Session()
 
+        # First check if we have already assumed the SageWorks Execution Role
+        if self.is_sageworks_role():
+            return boto3.Session()
+
+        # Okay we need to assume the SageWorks Execution Role and Return a boto3 session
+        session = boto3.Session()
         sts = session.client("sts")
         response = sts.assume_role(
             RoleArn=self.sageworks_execution_role_arn(),
