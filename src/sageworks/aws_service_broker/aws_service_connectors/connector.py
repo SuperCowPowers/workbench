@@ -21,7 +21,7 @@ class Connector(ABC):
         self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
         self.sm_client = self.sm_session.boto_session.client("sagemaker")
 
-        # Figure out our the SageWorks Artifacts Bucket Name
+        # FIXME: Figure out our SageWorks Artifacts Bucket Name
 
     @abstractmethod
     def check(self) -> bool:

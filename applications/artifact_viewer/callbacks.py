@@ -34,24 +34,24 @@ def update_artifact_tables(app: Dash):
         Input('interval-component', 'n_intervals')
     )
     def table_data(n):
-        feature_set_data = all_data['INCOMING_DATA']
-        return feature_set_data.to_dict('records')
+        incoming_data = all_data['INCOMING_DATA']
+        return incoming_data.to_dict('records')
 
     @app.callback(
         Output('DATA_SOURCES', 'data'),
         Input('interval-component', 'n_intervals')
     )
     def table_data(n):
-        feature_set_data = all_data['DATA_SOURCES']
-        return feature_set_data.to_dict('records')
+        data_sources = all_data['DATA_SOURCES']
+        return data_sources.to_dict('records')
 
     @app.callback(
         Output('FEATURE_SETS', 'data'),
         Input('interval-component', 'n_intervals')
     )
     def table_data(n):
-        feature_set_data = all_data['FEATURE_SETS']
-        return feature_set_data.to_dict('records')
+        feature_sets = all_data['FEATURE_SETS']
+        return feature_sets.to_dict('records')
 
 
 # Highlights the selected row in the table

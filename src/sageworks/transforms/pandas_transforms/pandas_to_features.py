@@ -1,4 +1,4 @@
-"""DFToFeatureSet: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)"""
+"""PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)"""
 from datetime import datetime, timezone
 import pandas as pd
 import time
@@ -15,9 +15,9 @@ from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 # IMPORTANT: You must attach the following policies to your execution role: * AmazonS3FullAccess * AmazonSageMakerFeatureStoreAccess
 
 
-class DFToFeatureSet(Transform):
+class PandasToFeatures(Transform):
     def __init__(self):
-        """DFToFeatureSet: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)"""
+        """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)"""
 
         # Call superclass init
         super().__init__()
@@ -122,9 +122,9 @@ class DFToFeatureSet(Transform):
         self.log.info(f"FeatureSet {feature_group.name} successfully created")
 
 
-# Simple test of the DFToFeatureSet functionality
+# Simple test of the PandasToFeatures functionality
 def test():
-    """Test the DFToFeatureSet Class"""
+    """Test the PandasToFeatures Class"""
 
     # Setup Pandas output options
     pd.set_option('display.max_colwidth', 15)
@@ -144,7 +144,7 @@ def test():
 
     # Create my DF to Feature Set Transform
     output_uuid = 'test-feature-set'
-    df_to_features = DFToFeatureSet()
+    df_to_features = PandasToFeatures()
     df_to_features.set_input(fake_df, id_column='id', event_time_column='date')
     df_to_features.set_output_uuid(output_uuid)
 
