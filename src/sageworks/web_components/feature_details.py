@@ -10,7 +10,8 @@ def create_markdown(feature_info: dict):
 
     markdown = ""
     for (feature, value) in feature_list:
-        markdown += f"- **{feature}** ({value}): Cool stuff about descriptor {feature} that we get later [{feature}](https://www.rdkit.org/docs/source/rdkit.Chem.Crippen.html#rdkit.Chem.Crippen.MolLogP)\n"
+        markdown += f"- **{feature}** ({value}): Cool stuff about descriptor {feature} that we get later " \
+            "[{feature}](https://www.rdkit.org/docs/source/rdkit.Chem.Crippen.html#rdkit.Chem.Crippen.MolLogP)\n"
 
     # Add the additional info section
     markdown += """

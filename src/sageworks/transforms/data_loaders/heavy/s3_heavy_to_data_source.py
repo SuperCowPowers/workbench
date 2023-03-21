@@ -41,7 +41,7 @@ class S3HeavyToDataSource(Transform):
                          description=f'SageWorks data source: {self.output_uuid}',
                          filename_prefix=f'{self.output_uuid}_',
                          parameters={'tags': json.dumps(tags)},
-                         boto3_session = self.boto_session,
+                         boto3_session=self.boto_session,
                          partition_cols=None)  # FIXME: Have some logic around partition columns
 
 

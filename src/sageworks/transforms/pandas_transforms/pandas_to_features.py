@@ -82,6 +82,7 @@ class PandasToFeatures(Transform):
 
         # Add some tags here
         tags = ['sageworks', 'public']
+        print(tags)
 
         # Create the Output Parquet file S3 Storage Path for this Feature Set
         s3_storage_path = f"{self.feature_set_s3_path}/{self.output_uuid}"

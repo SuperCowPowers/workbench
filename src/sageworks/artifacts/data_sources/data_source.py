@@ -1,7 +1,6 @@
 """DataSource: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)"""
 from abc import abstractmethod
 import pandas as pd
-import awswrangler as wr
 
 # Local imports
 from sageworks.artifacts.artifact import Artifact

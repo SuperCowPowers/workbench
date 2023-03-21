@@ -11,9 +11,8 @@ def create(df: pd.DataFrame) -> dcc.Graph:
 
     # TEMP
     gap_df.rename({'gdpPercap': 'awesome', 'lifeExp': 'stuff', 'continent': 'Project', 'pop': 'logS'}, axis=1, inplace=True)
-    # gap_df.replace({'Asia': 'Project X', 'Europe': 'Project Y', 'Africa': 'Project Z', 'Americas': 'Project A', 'Oceania': 'Project B'}, inplace=True)
-    gap_df.replace({'Asia': 'Training Set', 'Europe': 'Training Set', 'Africa': 'Training Set', 'Americas': 'Test Set', 'Oceania': 'Test Set'},
-                   inplace=True)
+    gap_df.replace({'Asia': 'Project X', 'Europe': 'Project Y', 'Africa': 'Project Z', 'Americas': 'Project A',
+                    'Oceania': 'Project B'}, inplace=True)
 
     fig = px.scatter(gap_df,
                      x="awesome", y="stuff", size="logS", color="Project",

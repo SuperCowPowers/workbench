@@ -76,7 +76,6 @@ class DataCatalog(Connector):
         table = self.get_table(database, table_name)
         return json.loads(table['Parameters'].get('tags', '[]'))
 
-
     def set_table_tags(self, database: str, table_name: str, tags: list):
         """Set the tags for a specific table"""
         wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(tags)},

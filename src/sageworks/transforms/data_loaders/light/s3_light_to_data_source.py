@@ -56,7 +56,6 @@ class S3LightToDataSource(Transform):
 # Simple test of the S3LightToDataSource functionality
 def test():
     """Test the S3LightToDataSource Class"""
-    import pandas as pd
 
     # Create my Data Loader
     output_uuid = 'aqsol_data'

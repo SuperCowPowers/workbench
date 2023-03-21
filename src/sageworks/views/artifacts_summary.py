@@ -137,7 +137,6 @@ class ArtifactsSummary(View):
 
         return pd.DataFrame(data_summary)
 
-
     @staticmethod
     def num_columns(data_info):
         """Helper: Compute the number of columns from the storage descriptor data"""
