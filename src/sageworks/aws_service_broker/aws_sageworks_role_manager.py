@@ -38,11 +38,11 @@ class AWSSageWorksRoleManager:
         """Check if the current AWS Identity is the SageWorks Role"""
         sts = boto3.client('sts')
         try:
-            'SageWorks-ExecutionRole' in sts.get_caller_identity()['Arn']
-            return True
+            if 'SageWorks-ExecutionRole' in sts.get_caller_identity()['Arn']:
+                return True
         except ClientError:
             self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and Renew Security Token...")
-            return False
+        return False
 
     def sageworks_execution_role_arn(self):
         """Get the SageWorks Execution Role"""
