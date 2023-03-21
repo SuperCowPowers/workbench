@@ -1,6 +1,7 @@
 """HelloWorld: A SageWorks HelloWorld Application"""
 from dash import Dash
 import dash_bootstrap_components as dbc
+from dash_bootstrap_templates import load_figure_template
 
 
 # SageWorks Imports
@@ -16,8 +17,9 @@ import callbacks
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
 
 # Create our Dash Application
-app = Dash(title='SageWorks Artifacts', external_stylesheets=[dbc.themes.BOOTSTRAP])
-# app = Dash(title='Hello World Application', external_stylesheets=[dbc.themes.DARKLY])
+# app = Dash(title='SageWorks Artifacts', external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(title='SageWorks Artifacts')
+# app = Dash(title='SageWorks Artifacts', external_stylesheets=[dbc.themes.DARKLY])
 server = app.server
 
 

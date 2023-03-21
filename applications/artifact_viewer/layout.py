@@ -8,7 +8,7 @@ def artifact_layout(app: Dash, components: dict) -> html.Div:
     layout = html.Div(children=[
         dbc.Row(html.H2(app.title)),
         dbc.Row(html.Div('Last Updated: ', id='last-updated',
-                         style={'color': 'blue', 'fontSize': 14, 'padding': '0px 0px 0px 100px'})),
+                         style={'color': 'rgb(200, 200, 200)', 'fontSize': 14, 'padding': '0px 0px 0px 100px'})),
         dbc.Row(html.H3('Incoming Data'), style={'padding': '50px 0px 0px 0px'}),
         dbc.Row(components['incoming_data']),
         dbc.Row(html.H3('Data Sources'), style={'padding': '50px 0px 0px 0px'}),

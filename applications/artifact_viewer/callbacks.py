@@ -64,7 +64,7 @@ def table_row_select(app: Dash, table_name: str):
         if selected_rows is None:
             return dash.no_update
         foo = [
-            {"if": {"filter_query": "{{id}} ={}".format(i)}, "backgroundColor": "rgb(200, 220, 200)"}
+            {"if": {"filter_query": "{{id}} ={}".format(i)}, "backgroundColor": "rgb(100, 100, 100)"}
             for i in selected_rows
         ]
         return foo
