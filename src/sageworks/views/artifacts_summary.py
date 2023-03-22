@@ -90,8 +90,8 @@ class ArtifactsSummary(View):
         for feature_group, group_info in data.items():
             summary = {'Feature Group': self.athena_hyperlink(group_info['FeatureGroupName']),
                        'Catalog DB': group_info['OfflineStoreConfig'].get('DataCatalogConfig', {}).get('Database', '-'),
-                       'Feature ID': group_info['RecordIdentifierFeatureName'],
-                       'Feature EventTime': group_info['EventTimeFeatureName'],
+                       'Athena Table': group_info['OfflineStoreConfig'].get('DataCatalogConfig', {}).get('TableName', '-'),
+                       'ID/EventTime': f"{group_info['RecordIdentifierFeatureName']}/{group_info['EventTimeFeatureName']}",
                        'Online': str(group_info.get('OnlineStoreConfig', {}).get('EnableOnlineStore', 'False')),
                        'Created': self.datetime_string(group_info.get('CreationTime')),
                        'LastModified': self.datetime_string(group_info.get('LastModified')),
