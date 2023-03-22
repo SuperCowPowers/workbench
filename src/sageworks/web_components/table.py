@@ -4,7 +4,8 @@ import pandas as pd
 
 
 def create(table_id: str, df: pd.DataFrame, header_color='rgb(60, 60, 60)',
-           show_columns: list[str] = None, row_select=False) -> dash_table:
+           show_columns: list[str] = None, row_select=False,
+           markdown_columns: list[str] = None) -> dash_table:
     """Create a Table"""
 
     # To select rows we need to set up an ID for each row
@@ -15,10 +16,17 @@ def create(table_id: str, df: pd.DataFrame, header_color='rgb(60, 60, 60)',
         show_columns = df.columns.to_list()
         show_columns.remove('id')
 
+    # Column Setup with name, id, and presentation type
+    column_setup = []
+    for c in show_columns:
+        presentation = 'markdown' if markdown_columns and c in markdown_columns else 'input'
+        column_setup.append({"name": c, "id": c, "presentation": presentation})
+
+    # Create the Dash Table
     table = dash_table.DataTable(
         id=table_id,
         data=df.to_dict('records'),
-        columns=[{"name": i, "id": i, "presentation": "markdown"} for i in df.columns if i in show_columns],
+        columns=column_setup,
         # style_as_list_view=True,
         sort_action='native',
         row_selectable=row_select,

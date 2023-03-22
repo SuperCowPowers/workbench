@@ -32,17 +32,15 @@ def setup_artifact_viewer():
     sageworks_artifacts = ArtifactsSummary()
     artifacts_summary = sageworks_artifacts.view_data()
 
-    # Just a bunch of tables for now :)
-    tables = {}
-    colors = {'INCOMING_DATA': 'rgb(60, 60, 100)',
-              'DATA_SOURCES': 'rgb(100, 60, 60)',
-              'FEATURE_SETS': 'rgb(100, 100, 60)',
-              'MODELS': 'rgb(60, 100, 60)',
-              'ENDPOINTS': 'rgb(100, 60, 100)'}
-    for service_category, artifact_info_df in artifacts_summary.items():
-
-        # Grab the Artifact Information DataFrame for each AWS Service
-        tables[service_category] = table.create(service_category, artifact_info_df, header_color=colors[service_category])
+    # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
+    tables = dict()
+    tables['INCOMING_DATA'] = table.create('INCOMING_DATA', artifacts_summary['INCOMING_DATA'], header_color='rgb(60, 60, 100)')
+    tables['DATA_SOURCES'] = table.create('DATA_SOURCES', artifacts_summary['DATA_SOURCES'], header_color='rgb(100, 60, 60)',
+                                          markdown_columns=['Name'])
+    tables['FEATURE_SETS'] = table.create('FEATURE_SETS', artifacts_summary['FEATURE_SETS'], header_color='rgb(100, 100, 60)',
+                                          markdown_columns=['Feature Group'])
+    tables['MODELS'] = table.create('MODELS', artifacts_summary['MODELS'], header_color='rgb(60, 100, 60)')
+    tables['ENDPOINTS'] = table.create('ENDPOINTS', artifacts_summary['ENDPOINTS'], header_color='rgb(100, 60, 100)')
 
     # Create our components
     components = {
