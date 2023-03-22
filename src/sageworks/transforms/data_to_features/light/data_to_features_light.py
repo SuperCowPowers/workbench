@@ -1,4 +1,4 @@
-"""LightTransform: Base Class for Light DataSource to FeatureSet using Pandas"""
+"""DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas"""
 
 # Local imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
@@ -6,9 +6,9 @@ from sageworks.transforms.pandas_transforms.data_to_pandas import DataToPandas
 from sageworks.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
 
 
-class LightTransform(Transform):
+class DataToFeaturesLight(Transform):
     def __init__(self, input_uuid: str = None, output_uuid: str = None):
-        """LightTransform: Base Class for Light DataSource to DataSource using Pandas"""
+        """DataToFeaturesLight: Base Class for Light DataSource to DataSource using Pandas"""
 
         # Call superclass init
         super().__init__(input_uuid, output_uuid)
@@ -35,12 +35,12 @@ class LightTransform(Transform):
         output_features.transform()
 
 
-# Simple test of the LightTransform functionality
+# Simple test of the DataToFeaturesLight functionality
 def test():
-    """Test the LightTransform Class"""
+    """Test the DataToFeaturesLight Class"""
 
     # My Test Class
-    class MyTransform(LightTransform):
+    class MyTransform(DataToFeaturesLight):
         def __init__(self, input_uuid, output_uuid):
             super().__init__(input_uuid, output_uuid)
 

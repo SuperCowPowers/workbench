@@ -1,12 +1,12 @@
-"""CleanData: Example Class that demonstrates data cleanup for Light DataSources using Pandas"""
+"""RDKitDescriptors: Example Class that demonstrates data cleanup for Light DataSources using Pandas"""
 
 # Local imports
-from sageworks.transforms.data_to_features.light.light_transform import LightTransform
+from sageworks.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
 
 
-class CleanData(LightTransform):
+class RDKitDescriptors(DataToFeaturesLight):
     def __init__(self, input_uuid: str = None, output_uuid: str = None):
-        """CleanData: Class for filtering, sub-setting, and value constraints on Light DataSources uses Pandas"""
+        """RDKitDescriptors: Class for filtering, sub-setting, and value constraints on Light DataSources uses Pandas"""
 
         # Call superclass init
         super().__init__(input_uuid, output_uuid)
@@ -44,16 +44,16 @@ class CleanData(LightTransform):
             self.log.info(f"Dropping {dropped_columns} columns that have a NaN in them")
 
 
-# Simple test of the CleanData functionality
+# Simple test of the RDKitDescriptors functionality
 def test():
-    """Test the CleanData Class"""
+    """Test the RDKitDescriptors Class"""
     import pandas as pd
     from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'aqsol_data'
     output_uuid = 'aqsol_data_clean'
-    CleanData(input_uuid, output_uuid).transform(dropna='any')
+    RDKitDescriptors(input_uuid, output_uuid).transform(dropna='any')
 
     # Grab the output and query it for a dataframe
     output = AthenaSource(output_uuid)
