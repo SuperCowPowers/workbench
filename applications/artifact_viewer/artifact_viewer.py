@@ -34,10 +34,15 @@ def setup_artifact_viewer():
 
     # Just a bunch of tables for now :)
     tables = {}
+    colors = {'INCOMING_DATA': 'rgb(60, 60, 100)',
+              'DATA_SOURCES': 'rgb(100, 60, 60)',
+              'FEATURE_SETS': 'rgb(100, 100, 60)',
+              'MODELS': 'rgb(60, 100, 60)',
+              'ENDPOINTS': 'rgb(100, 60, 100)'}
     for service_category, artifact_info_df in artifacts_summary.items():
 
         # Grab the Artifact Information DataFrame for each AWS Service
-        tables[service_category] = table.create(service_category, artifact_info_df)
+        tables[service_category] = table.create(service_category, artifact_info_df, header_color=colors[service_category])
 
     # Create our components
     components = {

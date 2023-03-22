@@ -65,7 +65,7 @@ class ArtifactsSummary(View):
         data_summary = []
         for database, db_info in data.items():
             for name, info in db_info.items():
-                summary = {'Name': name,
+                summary = {'Name': self.athena_hyperlink(name),
                            'Catalog DB': info.get('DatabaseName', '-'),
                            'Size': str(info.get('ContentLength', '-')),
                            'Created': self.datetime_string(info.get('CreateTime')),
@@ -77,12 +77,18 @@ class ArtifactsSummary(View):
 
         return pd.DataFrame(data_summary)
 
+    @staticmethod
+    def athena_hyperlink(name):
+        athena_url = 'https://us-west-2.console.aws.amazon.com/athena/home'
+        link = f"{name} (<a href='{athena_url}' target='_blank'>query</a>)"
+        return link
+
     def feature_sets_summary(self):
         """Get summary data about the SageWorks FeatureSets"""
         data = self.service_info[ServiceCategory.FEATURE_STORE]
         data_summary = []
         for feature_group, group_info in data.items():
-            summary = {'Feature Group': group_info['FeatureGroupName'],
+            summary = {'Feature Group': self.athena_hyperlink(group_info['FeatureGroupName']),
                        'Catalog DB': group_info['OfflineStoreConfig'].get('DataCatalogConfig', {}).get('Database', '-'),
                        'Feature ID': group_info['RecordIdentifierFeatureName'],
                        'Feature EventTime': group_info['EventTimeFeatureName'],
