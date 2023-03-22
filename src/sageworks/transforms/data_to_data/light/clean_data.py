@@ -1,10 +1,10 @@
 """CleanData: Example Class that demonstrates data cleanup for Light DataSources using Pandas"""
 
 # Local imports
-from sageworks.transforms.data_to_data.light.light_transform import LightTransform
+from sageworks.transforms.data_to_data.light.data_to_data_light import DataToDataLight
 
 
-class CleanData(LightTransform):
+class CleanData(DataToDataLight):
     def __init__(self, input_uuid: str = None, output_uuid: str = None):
         """CleanData: Class for filtering, sub-setting, and value constraints on Light DataSources uses Pandas"""
 
