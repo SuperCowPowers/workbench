@@ -1,8 +1,10 @@
 """RDKitDescriptors: Example Class that demonstrates data cleanup for Light DataSources using Pandas"""
 
-# Local imports
+# Local Imports
 from sageworks.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
 
+# Third Party Imports
+import rdkit
 
 class RDKitDescriptors(DataToFeaturesLight):
     def __init__(self, input_uuid: str = None, output_uuid: str = None):

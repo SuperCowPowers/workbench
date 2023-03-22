@@ -36,16 +36,17 @@ class PandasToFeatures(Transform):
     def _ensure_event_time(self):
         """Internal: AWS Feature Store requires an EventTime field in all data stored"""
         if self.event_time_column is None or self.event_time_column not in self.input_df.columns:
-            current_datetime = datetime.utcnow()
+            current_datetime = datetime.now(timezone.utc)
             self.log.info('Generating an EventTime column before FeatureSet Creation...')
             self.event_time_column = 'EventTime'
-            self.input_df[self.event_time_column] = pd.Series([current_datetime] * len(self.input_df), dtype="string")
-        else:  # The event_time_column is defined so lets make sure it the right type for Feature Store
-            if pd.api.types.is_datetime64_any_dtype(self.input_df[self.event_time_column]):
-                self.log.info(f"Converting {self.event_time_column} to ISOFormat Date String before FeatureSet Creation...")
+            self.input_df[self.event_time_column] = pd.Series([current_datetime] * len(self.input_df))
 
-                # Convert the datetime DType to ISO-8601 string
-                self.input_df[self.event_time_column] = self.input_df[self.event_time_column].map(self._iso8601_utc)
+        # The event_time_column is defined so lets make sure it the right type for Feature Store
+        if pd.api.types.is_datetime64_any_dtype(self.input_df[self.event_time_column]):
+            self.log.info(f"Converting {self.event_time_column} to ISOFormat Date String before FeatureSet Creation...")
+
+            # Convert the datetime DType to ISO-8601 string
+            self.input_df[self.event_time_column] = self.input_df[self.event_time_column].map(self._iso8601_utc)
 
     @staticmethod
     def _iso8601_utc(dt):

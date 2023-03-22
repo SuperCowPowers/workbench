@@ -59,25 +59,25 @@ class Transform(ABC):
         # Make sure the AWS data catalog database exists
         self.ensure_aws_catalog_db()
 
-    def pre_transform(self):
+    def pre_transform(self, **kwargs):
         """Perform any Pre-Transform operations"""
         self.log.info('Pre-Transform...')
 
-    def post_transform(self):
+    def post_transform(self, **kwargs):
         """Perform any Post-Transform operations"""
         self.log.info('Post-Transform...')
 
     @abstractmethod
-    def transform_impl(self):
+    def transform_impl(self, **kwargs):
         """Abstract Method: Implement the Transformation from Input to Output"""
         pass
 
     @final
-    def transform(self, *args, **kwargs):
+    def transform(self, **kwargs):
         """Perform the Transformation from Input to Output with pre_transform() and post_transform() invocations"""
-        self.pre_transform()
-        self.transform_impl(*args, **kwargs)
-        self.post_transform()
+        self.pre_transform(**kwargs)
+        self.transform_impl(**kwargs)
+        self.post_transform(**kwargs)
 
     def input_type(self) -> TransformInput:
         """What Input Type does this Transform Consume"""

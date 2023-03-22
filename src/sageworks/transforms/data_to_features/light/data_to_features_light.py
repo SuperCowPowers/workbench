@@ -19,20 +19,20 @@ class DataToFeaturesLight(Transform):
         self.input_df = None
         self.output_df = None
 
-    def pre_transform(self):
+    def pre_transform(self, **kwargs):
         """Pull the input DataSource into our Input Pandas DataFrame"""
 
         # Grab the Input (Data Source)
         self.input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
 
-    def post_transform(self):
+    def post_transform(self, **kwargs):
         """At this point the output DataFrame should be populated, so publish it as a DataSource"""
 
         # Now publish to the output location
         output_features = PandasToFeatures()
         output_features.set_input(self.output_df, id_column='id')
         output_features.set_output_uuid(self.output_uuid)
-        output_features.transform()
+        output_features.transform(**kwargs)
 
 
 # Simple test of the DataToFeaturesLight functionality
@@ -44,13 +44,13 @@ def test():
         def __init__(self, input_uuid, output_uuid):
             super().__init__(input_uuid, output_uuid)
 
-        def transform_impl(self):
+        def transform_impl(self, **kwargs):
             self.output_df = self.input_df
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'aqsol_data'
     output_uuid = 'test_aqsol_features'
-    MyTransform(input_uuid, output_uuid).transform()
+    MyTransform(input_uuid, output_uuid).transform(delete_existing=True)
 
 
 if __name__ == "__main__":
