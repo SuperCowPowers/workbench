@@ -2,6 +2,7 @@
 
 # Local imports
 from sageworks.transforms.data_to_data.light.data_to_data_light import DataToDataLight
+from sageworks.transforms.pandas_transforms import pandas_helpers
 
 
 class CleanData(DataToDataLight):
@@ -11,7 +12,7 @@ class CleanData(DataToDataLight):
         # Call superclass init
         super().__init__(input_uuid, output_uuid)
 
-    def transform_impl(self, dropna='any'):
+    def transform_impl(self, drop_na='any'):
         """Simple Clean Data, will improve later"""
 
         """
@@ -30,18 +31,7 @@ class CleanData(DataToDataLight):
         """
 
         # Drop Rows that have NaNs in them
-        orig_rows = len(self.input_df)
-        self.output_df = self.input_df.dropna(axis=0, how=dropna)
-        if len(self.output_df) != orig_rows:
-            self.log.info(f"Dropping {orig_rows - len(self.output_df)} rows that have a NaN in them")
-
-        # Drop Columns that have NaNs in them
-        orig_columns = self.output_df.columns.tolist()
-        self.output_df = self.output_df.dropna(axis=1, how=dropna)
-        remaining_columns = self.output_df.columns.tolist()
-        if remaining_columns != orig_columns:
-            dropped_columns = list(set(remaining_columns).difference(set(orig_columns)))
-            self.log.info(f"Dropping {dropped_columns} columns that have a NaN in them")
+        self.output_df = pandas_helpers.drop_nans(self.input_df, drop_na)
 
 
 # Simple test of the CleanData functionality
@@ -53,7 +43,7 @@ def test():
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'aqsol_data'
     output_uuid = 'aqsol_data_clean'
-    CleanData(input_uuid, output_uuid).transform(dropna='any')
+    CleanData(input_uuid, output_uuid).transform(drop_na='any')
 
     # Grab the output and query it for a dataframe
     output = AthenaSource(output_uuid)

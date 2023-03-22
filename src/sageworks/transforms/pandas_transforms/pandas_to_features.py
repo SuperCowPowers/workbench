@@ -113,7 +113,7 @@ class PandasToFeatures(Transform):
         self.ensure_feature_group_created(my_feature_group)
 
         # Now we actually push the data into the Feature Group
-        my_feature_group.ingest(self.input_df)
+        my_feature_group.ingest(self.input_df, max_processes=4)
 
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")

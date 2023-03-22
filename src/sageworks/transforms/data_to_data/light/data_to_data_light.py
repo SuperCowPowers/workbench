@@ -19,13 +19,13 @@ class DataToDataLight(Transform):
         self.input_df = None
         self.output_df = None
 
-    def pre_transform(self):
+    def pre_transform(self, **kwargs):
         """Pull the input DataSource into our Input Pandas DataFrame"""
 
         # Grab the Input (Data Source)
         self.input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
 
-    def post_transform(self):
+    def post_transform(self, **kwargs):
         """At this point the output DataFrame should be populated, so publish it as a DataSource"""
 
         # Now publish to the output location
