@@ -4,7 +4,7 @@ import pandas as pd
 
 # Local Imports
 from sageworks.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
-from sageworks.transforms.pandas_transforms import pandas_helpers
+from sageworks.transforms.pandas_transforms import pandas_utils
 
 # Third Party Imports
 try:
@@ -40,7 +40,7 @@ class RDKitDescriptors(DataToFeaturesLight):
         self.output_df = self.compute_rdkit_descriptors()
 
         # Drop any NaNs (and INFs)
-        self.output_df = pandas_helpers.drop_nans(self.output_df, how='any')
+        self.output_df = pandas_utils.drop_nans(self.output_df, how='any')
 
     def compute_rdkit_descriptors(self):
         """Compute and add all the RDKit Descriptors"""

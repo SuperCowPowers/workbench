@@ -2,7 +2,7 @@
 
 # Local imports
 from sageworks.transforms.data_to_data.light.data_to_data_light import DataToDataLight
-from sageworks.transforms.pandas_transforms import pandas_helpers
+from sageworks.transforms.pandas_transforms import pandas_utils
 
 
 class CleanData(DataToDataLight):
@@ -31,7 +31,7 @@ class CleanData(DataToDataLight):
         """
 
         # Drop Rows that have NaNs in them
-        self.output_df = pandas_helpers.drop_nans(self.input_df, drop_na)
+        self.output_df = pandas_utils.drop_nans(self.input_df, how=drop_na)
 
 
 # Simple test of the CleanData functionality
