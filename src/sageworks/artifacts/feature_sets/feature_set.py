@@ -1,16 +1,11 @@
 """FeatureSet: SageWork Feature Set accessible through Athena"""
 import time
-import logging
 from sagemaker.feature_store.feature_group import FeatureGroup
 
 # SageWorks Imports
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
 from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
-from sageworks.utils.sageworks_logging import logging_setup
-
-# Setup Logging
-logging_setup()
 
 
 class FeatureSet(AthenaSource):
@@ -21,10 +16,9 @@ class FeatureSet(AthenaSource):
         Args:
             feature_set_name (str): Name of Feature Set in SageWorks Metadata.
         """
-        self.log = logging.getLogger(__name__)
-        self.feature_set_name = feature_set_name
 
         # Grab an AWS Metadata Broker object and pull information for Feature Sets
+        self.feature_set_name = feature_set_name
         self.aws_meta = AWSServiceBroker()
         self.feature_meta = self.aws_meta.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
 
@@ -33,11 +27,12 @@ class FeatureSet(AthenaSource):
         self.athena_table = self.feature_meta['sageworks'].get('athena_table')
         self.s3_storage = self.feature_meta['sageworks'].get('s3_storage')
 
+        # Call SuperClass (AthenaSource) Initialization
+        # Note: We would normally do this first, but we need the Athena table/db info
+        super().__init__(self.athena_table, self.athena_database)
+
         # Grab our SageMaker Session in case we need it later
         self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
-
-        # Call SuperClass (AthenaSource) Initialization
-        super().__init__(self.athena_table, self.athena_database)
 
         # All done
         self.log.info(f"FeatureSet Initialized: {feature_set_name}")
