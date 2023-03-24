@@ -1,4 +1,4 @@
-"""FeatureSet: SageWork Feature Set accessible through Athena"""
+"""FeatureSet: SageWorks Feature Set accessible through Athena"""
 import time
 from datetime import datetime, timezone
 
@@ -14,7 +14,7 @@ from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorks
 class FeatureSet(AthenaSource):
 
     def __init__(self, feature_set_name):
-        """FeatureSet: SageWork Feature Set accessible through Athena
+        """FeatureSet: SageWorks Feature Set accessible through Athena
 
         Args:
             feature_set_name (str): Name of Feature Set in SageWorks Metadata.
@@ -52,24 +52,19 @@ class FeatureSet(AthenaSource):
 
     def get_feature_store(self) -> FeatureStore:
         """Return the underlying AWS FeatureStore object. This can be useful for more advanced usage
-           such as create_dataset() with Joins and time ranges and a host of other options
+           with create_dataset() such as Joins and time ranges and a host of other options
            See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
         """
         return self.feature_store
 
-    @staticmethod
-    def date_now_string():
-        """Helper method to give a nice string output for the current date/time"""
-        return datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
-
     def create_s3_training_data(self) -> str:
         """Create some Training Data (S3 CSV) from a Feature Set using standard options. If you want
-           additional options/features use the get_feature_group() method and see AWS docs for all
+           additional options/features use the get_feature_store() method and see AWS docs for all
            the details: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
            Returns:
                str: The full path/file for the CSV file created by Feature Store create_dataset()
         """
-        date_time = self.date_now_string()
+        date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
         s3_output_path = self.feature_sets_s3_path + f"/{self.feature_set_name}/datasets/all_{date_time}"
         my_feature_group = FeatureGroup(name=self.feature_set_name, sagemaker_session=self.sm_session)
         s3_output_file, query = self.feature_store.create_dataset(

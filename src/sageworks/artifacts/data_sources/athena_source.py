@@ -1,4 +1,4 @@
-"""AthenaSource: SageWork Data Source accessible through Athena"""
+"""AthenaSource: SageWorks Data Source accessible through Athena"""
 import pandas as pd
 import awswrangler as wr
 from datetime import datetime
@@ -9,7 +9,7 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWS
 
 
 class AthenaSource(DataSource):
-    """AthenaSource: SageWork Data Source accessible through Athena"""
+    """AthenaSource: SageWorks Data Source accessible through Athena"""
     def __init__(self, table_name, database='sageworks'):
         """AthenaSource Initialization
 
