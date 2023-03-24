@@ -1,7 +1,7 @@
 """AWSSageWorksRoleManager provides a bit of logic/functionality over the set of AWS IAM Services"""
 import sys
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, UnauthorizedSSOTokenError
 from sagemaker.session import Session as SageSession
 import argparse
 import logging
@@ -30,9 +30,10 @@ class AWSSageWorksRoleManager:
             self.log.info(f"\tAccount: {identity['Account']}")
             self.log.info(f"\tARN: {identity['Arn']}")
             return True
-        except ClientError:
-            self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and Renew Security Token...")
-            return False
+        except (ClientError, UnauthorizedSSOTokenError) as exc:
+            self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+            self.log.critical(exc)
+            sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
 
     def is_sageworks_role(self) -> bool:
         """Check if the current AWS Identity is the SageWorks Role"""
@@ -40,9 +41,10 @@ class AWSSageWorksRoleManager:
         try:
             if 'SageWorks-ExecutionRole' in sts.get_caller_identity()['Arn']:
                 return True
-        except ClientError:
-            self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and Renew Security Token...")
-        return False
+        except (ClientError, UnauthorizedSSOTokenError) as exc:
+            self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+            self.log.critical(exc)
+            sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
 
     def sageworks_execution_role_arn(self):
         """Get the SageWorks Execution Role"""

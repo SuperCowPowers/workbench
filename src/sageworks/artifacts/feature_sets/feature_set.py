@@ -1,6 +1,8 @@
 """FeatureSet: SageWork Feature Set accessible through Athena"""
 import time
+from datetime import datetime, timezone
 from sagemaker.feature_store.feature_group import FeatureGroup
+from sagemaker.feature_store.feature_store import FeatureStore
 
 # SageWorks Imports
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
@@ -31,8 +33,11 @@ class FeatureSet(AthenaSource):
         # Note: We would normally do this first, but we need the Athena table/db info
         super().__init__(self.athena_table, self.athena_database)
 
-        # Grab our SageMaker Session in case we need it later
+        # Grab our SageMaker Session
         self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
+
+        # Spin up our Feature Store
+        self.feature_store = FeatureStore(self.sm_session)
 
         # All done
         self.log.info(f"FeatureSet Initialized: {feature_set_name}")
@@ -43,6 +48,34 @@ class FeatureSet(AthenaSource):
             self.log.critical(f'FeatureSet.check() {self.feature_set_name} not found in AWS Metadata!')
             return False
         return True
+
+    def get_feature_group(self) -> FeatureGroup:
+        """Return the underlying AWS FeatureGroup object. This can be useful for more advanced usage
+           such as create_dataset() with Joins and time ranges and a host of other options
+           See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
+        """
+        return FeatureGroup(name=self.feature_set_name, sagemaker_session=self.sm_session)
+
+    @staticmethod
+    def date_now_string():
+        """Helper method to give a nice string output for the current date/time"""
+        return datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
+
+    def create_training_data(self) -> tuple[str, str]:
+        """Create some Training Data (CSV) from a Feature Set using standard options. If you want
+           additional options/features use the get_feature_group() method and see AWS docs for all
+           the details: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
+           Returns:
+               str: The full path/file for the CSV file created by Feature Store create_dataset()
+        """
+        date_time = self.date_now_string()
+        s3_output_path = self.feature_sets_s3_path + f"/{self.feature_set_name}/datasets/all_{date_time}"
+        my_feature_group = FeatureGroup(name=self.feature_set_name, sagemaker_session=self.sm_session)
+        s3_output_file, query = self.feature_store.create_dataset(
+            base=my_feature_group,
+            output_path=s3_output_path
+        ).to_csv_file()
+        return s3_output_file
 
     def delete(self):
         """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
@@ -96,6 +129,11 @@ def test():
     query = f'select {column_query} from "{my_features.athena_database}"."{my_features.athena_table}" limit 10'
     df = my_features.query(query)
     print(df)
+
+    # Create some training data from our Feature Set
+    s3_path = my_features.create_training_data()
+    print('Training Data Created')
+    print(s3_path)
 
 
 if __name__ == "__main__":

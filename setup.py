@@ -33,7 +33,7 @@ setup(
     install_requires=[
         'boto3',
         'awswrangler',
-        'sagemaker',
+        'sagemaker >= 2.14',
         'pandas',
         'scikit-learn',
         'dash',
