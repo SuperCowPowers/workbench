@@ -49,12 +49,12 @@ class FeatureSet(AthenaSource):
             return False
         return True
 
-    def get_feature_group(self) -> FeatureGroup:
-        """Return the underlying AWS FeatureGroup object. This can be useful for more advanced usage
+    def get_feature_store(self) -> FeatureStore:
+        """Return the underlying AWS FeatureStore object. This can be useful for more advanced usage
            such as create_dataset() with Joins and time ranges and a host of other options
            See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
         """
-        return FeatureGroup(name=self.feature_set_name, sagemaker_session=self.sm_session)
+        return self.feature_store
 
     @staticmethod
     def date_now_string():
