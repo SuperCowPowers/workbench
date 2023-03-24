@@ -7,11 +7,11 @@ from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 
 class FeaturesToPandas(Transform):
-    def __init__(self):
+    def __init__(self, feature_set_name: str = None):
         """FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame"""
 
         # Call superclass init
-        super().__init__()
+        super().__init__(input_uuid=feature_set_name)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.FEATURE_SET
@@ -31,6 +31,11 @@ class FeaturesToPandas(Transform):
         # Grab the table for this Feature Set
         table = input_data.athena_table
 
+        # Get the list of columns (and subtract metadata columns that might get added)
+        columns = input_data.column_names()
+        filter_columns = ['write_time', 'api_invocation_time', 'is_deleted']
+        columns = ', '.join([x for x in columns if x not in filter_columns])
+
         # Get the number of rows in the Feature Set
         num_rows = input_data.num_rows()
 
@@ -38,9 +43,9 @@ class FeaturesToPandas(Transform):
         if num_rows > max_rows:
             percentage = round(max_rows*100.0/num_rows)
             self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {max_rows}...")
-            query = f'SELECT * FROM "{table}" TABLESAMPLE BERNOULLI({percentage})'
+            query = f'SELECT {columns} FROM "{table}" TABLESAMPLE BERNOULLI({percentage})'
         else:
-            query = f'SELECT * FROM "{table}"'
+            query = f'SELECT {columns} FROM "{table}"'
 
         # Mark the transform as complete and set the output DataFrame
         self.transform_run = True
@@ -62,12 +67,11 @@ def test():
     pd.set_option('display.max_columns', 15)
     pd.set_option('display.width', 1000)
 
-    # Grab a Data Source
-    data_uuid = 'test_rdkit_features'
+    # Grab a Feature Set
+    feature_set_name = 'test-feature-set'
 
     # Create the FeatureSet to DF Transform
-    feature_to_df = FeaturesToPandas()
-    feature_to_df.set_input_uuid(data_uuid)
+    feature_to_df = FeaturesToPandas(feature_set_name)
 
     # Transform the DataSource into a Pandas DataFrame (with max_rows = 1000)
     feature_to_df.transform(max_rows=1000)

@@ -1,6 +1,7 @@
 """FeatureSet: SageWork Feature Set accessible through Athena"""
 import time
 from datetime import datetime, timezone
+
 from sagemaker.feature_store.feature_group import FeatureGroup
 from sagemaker.feature_store.feature_store import FeatureStore
 
@@ -61,8 +62,8 @@ class FeatureSet(AthenaSource):
         """Helper method to give a nice string output for the current date/time"""
         return datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
 
-    def create_training_data(self) -> tuple[str, str]:
-        """Create some Training Data (CSV) from a Feature Set using standard options. If you want
+    def create_s3_training_data(self) -> str:
+        """Create some Training Data (S3 CSV) from a Feature Set using standard options. If you want
            additional options/features use the get_feature_group() method and see AWS docs for all
            the details: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
            Returns:
@@ -103,6 +104,7 @@ class FeatureSet(AthenaSource):
 # Simple test of the FeatureSet functionality
 def test():
     """Test for FeatureSet Class"""
+    from sageworks.transforms.pandas_transforms.features_to_pandas import FeaturesToPandas
 
     # Grab a FeatureSet object and pull some information from it
     my_features = FeatureSet('test-feature-set')
@@ -131,9 +133,14 @@ def test():
     print(df)
 
     # Create some training data from our Feature Set
-    s3_path = my_features.create_training_data()
+    s3_path = my_features.create_s3_training_data()
     print('Training Data Created')
     print(s3_path)
+
+    # Getting the Feature Set as a Pandas DataFrame
+    my_df = FeaturesToPandas('test-feature-set').get_output()
+    print('Feature Set as Pandas DataFrame')
+    print(my_df.head())
 
 
 if __name__ == "__main__":
