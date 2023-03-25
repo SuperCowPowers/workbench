@@ -33,7 +33,7 @@ class FeaturesToModel(Transform):
         """
 
         # FIXME: Revisit all of this since it's a bit wonky
-        script_name = 'xgb_model.py'
+        script_name = 'generated_xgb_model.py'
         dir_path = Path(__file__).parent.absolute()
         self.model_script_dir = os.path.join(dir_path, 'light_model_harness')
         template_path = os.path.join(self.model_script_dir, 'xgb_model.template')
