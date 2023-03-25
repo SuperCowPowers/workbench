@@ -25,10 +25,10 @@ class AthenaSource(DataSource):
 
         # Grab an AWS Metadata Broker object and pull information for Data Sources
         self.aws_meta = AWSServiceBroker()
-        self._meta = self.aws_meta.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(self.table_name)
+        self.catalog_meta = self.aws_meta.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(self.table_name)
 
         # Grab my tags
-        self._tags = self._meta.get('Parameters', {}).get('tags', []) if self._meta else []
+        self._tags = self.catalog_meta.get('Parameters', {}).get('tags', []) if self.catalog_meta else []
 
         # All done
         print(f'AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}')
@@ -37,7 +37,7 @@ class AthenaSource(DataSource):
         """Validation Checks for this Data Source"""
 
         # We're we able to pull AWS Metadata for this table_name?"""
-        if self._meta is None:
+        if self.catalog_meta is None:
             self.log.critical(f'AthenaSource.check() {self.table_name} not found in SageWorks Metadata!')
             return False
         return True
@@ -59,7 +59,7 @@ class AthenaSource(DataSource):
 
     def _aws_uuid(self) -> str:
         """Internal: An AWS Unique Identifier"""
-        return f"CatalogID:{self._meta['CatalogId']}"
+        return f"CatalogID:{self.catalog_meta['CatalogId']}"
 
     def size(self) -> bool:
         """Return the size of this data in MegaBytes"""
@@ -69,7 +69,7 @@ class AthenaSource(DataSource):
 
     def meta(self):
         """Get the metadata for this artifact"""
-        return self._meta
+        return self.catalog_meta
 
     def tags(self):
         """Get the tags for this artifact"""
@@ -86,11 +86,11 @@ class AthenaSource(DataSource):
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
-        return self._meta['CreateTime']
+        return self.catalog_meta['CreateTime']
 
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
-        return self._meta['UpdateTime']
+        return self.catalog_meta['UpdateTime']
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
@@ -103,7 +103,7 @@ class AthenaSource(DataSource):
 
     def column_names(self) -> list[str]:
         """Return the column names for this Athena Table"""
-        return [item['Name'] for item in self._meta['StorageDescriptor']['Columns']]
+        return [item['Name'] for item in self.catalog_meta['StorageDescriptor']['Columns']]
 
     def query(self, query: str) -> pd.DataFrame:
         """Query the AthenaSource"""
@@ -114,7 +114,7 @@ class AthenaSource(DataSource):
 
     def s3_storage_location(self) -> str:
         """Get the S3 Storage Location for this Data Source"""
-        return self._meta['StorageDescriptor']['Location']
+        return self.catalog_meta['StorageDescriptor']['Location']
 
     def athena_test_query(self):
         """Validate that Athena Queries are working"""
