@@ -133,3 +133,6 @@ dmypy.json
 
 # Mac filesystem
 .DS_Store
+
+# Generated Model Harness files
+generated_*.py
