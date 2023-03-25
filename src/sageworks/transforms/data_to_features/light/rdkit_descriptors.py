@@ -34,7 +34,7 @@ class RDKitDescriptors(DataToFeaturesLight):
         #       So we simply need to grab the input and produce the output
 
         # Remove all the dataframe columns except for ID and SMILES
-        self.output_df = self.input_df[['id', 'smiles']]
+        self.output_df = self.input_df[['id', 'smiles', 'solubility']]
 
         # Compute/add all the RDKIT Descriptors
         self.output_df = self.compute_rdkit_descriptors()
