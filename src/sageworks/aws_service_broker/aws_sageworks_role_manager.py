@@ -52,9 +52,14 @@ class AWSSageWorksRoleManager:
             iam = boto3.client('iam')
             role_arn = iam.get_role(RoleName=self.role_name)['Role']['Arn']
             return role_arn
-        except iam.exceptions.NoSuchEntityException:
-            print(f"Could Not Find Role {self.role_name}")
-            return None
+        except iam.exceptions.NoSuchEntityException as exc:
+            self.log.critical(f"Could Not Find Role {self.role_name}")
+            self.log.critical(exc)
+            sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
+        except UnauthorizedSSOTokenError as exc:
+            self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+            self.log.critical(exc)
+            sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
 
     def boto_session(self):
         """Create a sageworks session using sts.assume_role(sageworks_execution_role)"""
