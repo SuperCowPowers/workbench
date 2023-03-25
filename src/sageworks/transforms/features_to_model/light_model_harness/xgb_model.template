@@ -1,0 +1,108 @@
+# Imports for XGB Model
+import xgboost as xgb
+
+# Scikit Learn Imports
+from sklearn.model_selection import train_test_split
+
+from io import StringIO
+import json
+import argparse
+import joblib
+import os
+import pandas as pd
+
+
+if __name__ == '__main__':
+
+    # Harness Template Parameters
+    target = '{{target}}'
+    feature_list = {{feature_list}}
+    model_type = '{{model_type}}'
+    validation_split = 0.2
+
+    # Sagemaker specific arguments. Defaults are set in the environment variables.
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
+    parser.add_argument('--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
+    parser.add_argument('--train', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
+    args = parser.parse_args()
+
+    # Read the training data into DataFrames
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith('.csv')]
+    print(f'Training Files: {training_files}')
+
+    # Combine files and read them all into a single pandas dataframe
+    all_df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
+
+    # Now Split based on training Split
+    df_train, df_val = train_test_split(all_df, test_size=validation_split)
+    print(f'FIT/TRAIN: {df_train.shape}')
+    print(f'VALIDATiON: {df_val.shape}')
+
+    # Now spin up our XGB Model
+    if model_type == 'classifier':
+        xgb_model = xgb.XGBClassifier()
+    else:
+        xgb_model = xgb.XGBRegressor()
+
+    # Grab our Features, Target and Train the Model
+    y = df_train[target]
+    X = df_train[feature_list]
+    xgb_model.fit(X, y)
+
+    # Make Predictions on the Validation Set
+    preds = xgb_model.predict(df_val[feature_list])
+
+    # Report Performance Metrics
+    # FIXME: Put in different metrics for Regression and Classification Models
+
+    # Now save the model to the standard place/name
+    joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
+
+    # Also save the features (this will validate input during predictions)
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
+        json.dump(feature_list, fp)
+
+
+def model_fn(model_dir):
+    """Deserialized and return fitted model"""
+    clf = joblib.load(os.path.join(model_dir, "xgb_model.joblib"))
+    return clf
+
+
+def input_fn(input_data, content_type):
+    """We only take CSV Input"""
+    if content_type == "text/csv":
+        # Read the input buffer as a CSV file.
+        input_df = pd.read_csv(StringIO(input_data))
+        return input_df
+    else:
+        raise ValueError("{} not supported by script!".format(content_type))
+
+
+def output_fn(output_df, accept):
+    """We only give CSV Output"""
+    if accept == "text/csv":
+        csv_buffer = StringIO()
+        output_df.to_csv(csv_buffer, index=False)
+        return csv_buffer.getvalue()
+    else:
+        raise RuntimeError("{} accept type is not supported by this script.".format(accept))
+
+
+def predict_fn(df, model):
+    """Make Predictions with our XGB Model"""
+
+    # Grab our feature columns (from training)
+    model_dir = os.environ['SM_MODEL_DIR']
+    with open(os.path.join(model_dir, "feature_columns.json")) as fp:
+        features = json.load(fp)
+
+    # Predict the features against our XGB Model
+    predictions = model.predict(df[features])
+    pred_proba = model.predict_proba(df[features])
+
+    # Store our predictions and return the DataFrame
+    df['predictions'] = predictions
+    df['pred_proba'] = [json.dumps(p.tolist()) for p in pred_proba]  # We have to do this for CSV serialization
+    return df
