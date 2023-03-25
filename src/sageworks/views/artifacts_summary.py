@@ -1,5 +1,6 @@
 """ArtifactsSummary pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
 import sys
+import json
 import argparse
 
 import pandas as pd
@@ -113,13 +114,25 @@ class ArtifactsSummary(View):
 
             # Get Summary information for each model in the model_list
             for model in model_list:
+                # Unpack Description if it's a JSON Blob
+                try:
+                    model_info = json.loads(model['ModelPackageDescription'])
+                    description = model_info['info']
+                    feature_set = str(model_info['input'])
+                    tags = str(model_info['tags'])
+                except (json.JSONDecodeError, KeyError):
+                    description = model['ModelPackageDescription']
+                    feature_set = '-'
+                    tags = '-'
+
                 summary = {'Model Group': model['ModelPackageGroupName'],
                            'Version': model['ModelPackageVersion'],
-                           'Description': model['ModelPackageDescription'],
+                           'Description': description,
+                           'Feature Set': feature_set,
                            'Created': self.datetime_string(model.get('CreationTime')),
                            'LastModified': self.datetime_string(model.get('LastModifiedTime')),
                            'Status': str(model.get('ModelApprovalStatus', ' - ')),
-                           'Tags': str(model.get('tags', '-'), )}
+                           'Tags': tags}
                 data_summary.append(summary)
 
         return pd.DataFrame(data_summary)
