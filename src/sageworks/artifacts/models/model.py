@@ -1,4 +1,4 @@
-"""Model: SageWorks Model accessible through Athena"""
+"""Model: SageWorks Model Class"""
 import json
 from datetime import datetime
 
@@ -12,10 +12,10 @@ from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorks
 class Model(Artifact):
 
     def __init__(self, model_name):
-        """Model: SageWorks Model accessible through Athena
+        """Model: SageWorks Model Class
 
         Args:
-            model_name (str): Name of Model in SageWorks Metadata.
+            model_name (str): Name of Model in SageWorks.
         """
         # Call SuperClass Initialization
         super().__init__()
