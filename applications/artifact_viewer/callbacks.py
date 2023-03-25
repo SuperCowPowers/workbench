@@ -53,6 +53,22 @@ def update_artifact_tables(app: Dash):
         feature_sets = all_data['FEATURE_SETS']
         return feature_sets.to_dict('records')
 
+    @app.callback(
+        Output('MODELS', 'data'),
+        Input('interval-component', 'n_intervals')
+    )
+    def table_data(n):
+        feature_sets = all_data['MODELS']
+        return feature_sets.to_dict('records')
+
+    @app.callback(
+        Output('ENDPOINTS', 'data'),
+        Input('interval-component', 'n_intervals')
+    )
+    def table_data(n):
+        feature_sets = all_data['ENDPOINTS']
+        return feature_sets.to_dict('records')
+
 
 # Highlights the selected row in the table
 def table_row_select(app: Dash, table_name: str):
