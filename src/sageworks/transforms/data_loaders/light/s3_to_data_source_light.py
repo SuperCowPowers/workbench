@@ -1,6 +1,5 @@
 """S3ToDataSourceLight: Class to move LIGHT S3 Files into a SageWorks DataSource"""
 import awswrangler as wr
-import json
 
 # Local imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
@@ -25,7 +24,7 @@ class S3ToDataSourceLight(Transform):
         return size_in_mb
 
     def transform_impl(self, overwrite: bool = True):
-        """Convert the CSV data into Parquet Format in the SageWorks S3 Bucket, and
+        """Convert the CSV data into Parquet Format in the SageWorks Data Sources Bucket, and
            store the information about the data to the AWS Data Catalog sageworks database"""
 
         # Sanity Check for S3 Object size
