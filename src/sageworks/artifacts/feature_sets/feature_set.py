@@ -1,6 +1,7 @@
 """FeatureSet: SageWorks Feature Set accessible through Athena"""
 import time
 from datetime import datetime, timezone
+import awswrangler as wr
 
 from sagemaker.feature_store.feature_group import FeatureGroup
 from sagemaker.feature_store.feature_store import FeatureStore
@@ -114,6 +115,10 @@ class FeatureSet(AthenaSource):
         # Delete the Data Catalog Table and S3 Storage Objects
         super().delete()
 
+        # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
+        s3_delete_path = self.feature_sets_s3_path + f"/{self.feature_set_name}"
+        wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
+
     def ensure_feature_group_deleted(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")
         while status == "Deleting":
@@ -166,6 +171,10 @@ def test():
     my_df = FeaturesToPandas('test-feature-set').get_output()
     print('Feature Set as Pandas DataFrame')
     print(my_df.head())
+
+    # Now delete the AWS artifacts associated with this Feature Set
+    print('Deleting SageWorks Feature Set...')
+    my_features.delete()
 
 
 if __name__ == "__main__":
