@@ -68,20 +68,6 @@ def test():
     output = AthenaSource(output_uuid)
     print(f"UUID: {output.uuid()}   TAGS: {output.tags()}")
 
-    # Now query the data source and print out the resulting dataframe
-    """Commenting out for now"""
-    """
-    df = output.query(f"select * from {output_uuid} limit 5")
-
-    # Setup Pandas output options
-    pd.set_option('display.max_colwidth', 15)
-    pd.set_option('display.max_columns', 15)
-    pd.set_option('display.width', 1000)
-
-    # Show the dataframe
-    print(df)
-    """
-
 
 if __name__ == "__main__":
     test()

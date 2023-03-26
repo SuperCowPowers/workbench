@@ -50,38 +50,26 @@ class PandasToData(Transform):
 # Simple test of the PandasToData functionality
 def test():
     """Test the PandasToData Class"""
-    from datetime import datetime
-    from sageworks.artifacts.data_sources.athena_source import AthenaSource
-
-    # Setup Pandas output options
-    pd.set_option('display.max_colwidth', 15)
-    pd.set_option('display.max_columns', 15)
-    pd.set_option('display.width', 1000)
+    from datetime import datetime, timezone
 
     # Create some fake data
     fake_data = [
-        {'id': 1, 'name': 'sue', 'age': 41, 'score': 7.8, 'date': datetime.now()},
-        {'id': 2, 'name': 'bob', 'age': 34, 'score': 6.4, 'date': datetime.now()},
-        {'id': 3, 'name': 'ted', 'age': 69, 'score': 8.2, 'date': datetime.now()},
-        {'id': 4, 'name': 'bill', 'age': 24, 'score': 5.3, 'date': datetime.now()},
-        {'id': 5, 'name': 'sally', 'age': 52, 'score': 9.5, 'date': datetime.now()}
+        {'id': 1, 'name': 'sue', 'age': 41, 'score': 7.8, 'date': datetime.now(timezone.utc)},
+        {'id': 2, 'name': 'bob', 'age': 34, 'score': 6.4, 'date': datetime.now(timezone.utc)},
+        {'id': 3, 'name': 'ted', 'age': 69, 'score': 8.2, 'date': datetime.now(timezone.utc)},
+        {'id': 4, 'name': 'bill', 'age': 24, 'score': 5.3, 'date': datetime.now(timezone.utc)},
+        {'id': 5, 'name': 'sally', 'age': 52, 'score': 9.5, 'date': datetime.now(timezone.utc)}
         ]
     fake_df = pd.DataFrame(fake_data)
 
     # Create my DF to Data Source Transform
-    output_uuid = 'test_data'
+    output_uuid = 'test_fake_data'
     df_to_data = PandasToData(output_uuid)
     df_to_data.set_input(fake_df)
 
     # Store this data into a SageWorks DataSource
     df_to_data.transform()
-
-    # Grab the output and query it for a dataframe
-    output = AthenaSource(output_uuid)
-    df = output.query(f"select * from {output_uuid} limit 5")
-
-    # Show the dataframe
-    print(df)
+    print(f"{output_uuid} stored as a SageWorks DataSource")
 
 
 if __name__ == "__main__":
