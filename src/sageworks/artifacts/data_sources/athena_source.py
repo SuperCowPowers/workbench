@@ -130,8 +130,13 @@ class AthenaSource(DataSource):
         if not self.check():
             self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.table_name}")
 
-        # FIXME: Add Data Catalog Table and S3 Storage Object Deletion Here
-        self.log.info("Add deletion logic")
+        # Delete Data Catalog Table
+        self.log.info(f"Deleting DataCatalog Table: {self.data_catalog_db}.{self.table_name}...")
+        wr.catalog.delete_table_if_exists(self.data_catalog_db, self.table_name, boto3_session=self.boto_session)
+
+        # Delete S3 Storage Object Deletion Here
+        self.log.info(f"Deleting S3 Storage Object: {self.s3_storage_location()}...")
+        wr.s3.delete_objects(self.s3_storage_location(), boto3_session=self.boto_session)
 
 
 # Simple test of the AthenaSource functionality
@@ -139,7 +144,7 @@ def test():
     """Test for AthenaSource Class"""
 
     # Retrieve a Data Source
-    my_data = AthenaSource('aqsol_data')
+    my_data = AthenaSource('aqsol_data_clean')
 
     # Verify that the Athena Data Source exists
     assert(my_data.check())
@@ -157,38 +162,10 @@ def test():
     print(f"Created: {my_data.created()}")
     print(f"Modified: {my_data.modified()}")
 
-
-def more_details():
-    """Additional Tests that don't get run automatically"""
-
-    # Retrieve a Data Source
-    my_data = AthenaSource('aqsol_data')
-
-    # How many rows and columns?
-    num_rows = my_data.num_rows()
-    num_columns = my_data.num_columns()
-    print(f'Rows: {num_rows} Columns: {num_columns}')
-
-    # What are the column names?
-    columns = my_data.column_names()
-    print(columns)
-
-    # Get all the metadata associated with this data source
-    print(f"Meta: {my_data.meta()}")
-
-    # Get the tags associated with this data source
-    print(f"Tags: {my_data.tags()}")
-
-    # Run a query to only pull back a few columns and rows
-    column_query = ', '.join(columns[:3])
-    query = f'select {column_query} from "{my_data.data_catalog_db}"."{my_data.table_name}" limit 10'
-    df = my_data.query(query)
-    print(df)
-
     # Now delete the AWS artifacts associated with this DataSource
-    my_data.delete()
+    # print('Deleting SageWorks Data Source...')
+    # my_data.delete()
 
 
 if __name__ == "__main__":
     test()
-    more_details()
