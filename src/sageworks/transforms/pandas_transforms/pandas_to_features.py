@@ -51,6 +51,12 @@ class PandasToFeatures(Transform):
     @staticmethod
     def _iso8601_utc(dt):
         """convert datetime to string in UTC format (yyyy-MM-dd'T'HH:mm:ss.SSSZ)"""
+
+        # Check for TimeZone
+        if dt.tzinfo is None:
+            dt = dt.tz_localize(timezone.utc)
+
+        # Convert to ISO-8601 String
         iso_str = dt.astimezone(timezone.utc).isoformat('T', 'milliseconds')
         return iso_str.replace('+00:00', 'Z')
 
