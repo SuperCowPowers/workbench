@@ -16,6 +16,7 @@ logging_setup()
 
 class TransformInput(Enum):
     """Enumerated Types for SageWorks Transform Inputs"""
+    LOCAL_FILE = auto()
     PANDAS_DF = auto()
     SPARK_DF = auto()
     S3_OBJECT = auto()
