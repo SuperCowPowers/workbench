@@ -117,7 +117,7 @@ if __name__ == '__main__':
 
     # Get a specific table
     my_database = 'sageworks'
-    my_table = 'aqsol_data'
+    my_table = 'test_data'
     table_info = catalog.get_table(my_database, my_table)
     pprint(table_info)
 
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     print(f"Tags: {my_tags}")
 
     # Set the tags for this table
-    catalog.add_table_tags(my_database, my_table, ['aqsol', 'smiles'])
+    catalog.add_table_tags(my_database, my_table, ['test', 'sageworks'])
 
     # Refresh the connector to get the latest info from AWS Data Catalog
     catalog.refresh()

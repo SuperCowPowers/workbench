@@ -51,8 +51,8 @@ def test():
     import pandas as pd
 
     # Create my Data Loader
-    output_uuid = 'aqsol_data'
-    my_loader = S3HeavyToDataSource('s3://scp-sageworks-artifacts/incoming-data/aqsol_public_data.csv', output_uuid)
+    output_uuid = 'test_heavy_data'
+    my_loader = S3HeavyToDataSource('s3://scp-sageworks-artifacts/incoming-data/abalone.csv', output_uuid)
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()

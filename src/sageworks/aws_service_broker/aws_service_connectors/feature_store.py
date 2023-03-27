@@ -103,7 +103,7 @@ class FeatureStore(Connector):
         """Construct an Athena 'snapshot' query for the given feature group"""
         database = self.athena_database_name(feature_group_name)
         table = self.athena_table_name(feature_group_name)
-        event_time = 'EventTime'
+        event_time = 'event_time'
         record_id = 'id'
         query = f"""
             SELECT *
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     print(f"Tags: {my_tags}")
 
     # Set the tags for this table
-    feature_store.add_feature_group_tags(my_group, ['aqsol', 'smiles'])
+    feature_store.add_feature_group_tags(my_group, ['test', 'sageworks'])
 
     # Refresh the connector to get the latest info from AWS Feature Store
     feature_store.refresh()

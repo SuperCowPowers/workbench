@@ -39,9 +39,6 @@ class Model(Artifact):
             self.description = self.model_info
             self.model_tags = '-'
 
-        # Grab our SageMaker Session
-        self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
-
         # All done
         self.log.info(f"Model Initialized: {model_name}")
 

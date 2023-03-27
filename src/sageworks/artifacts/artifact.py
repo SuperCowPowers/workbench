@@ -23,8 +23,10 @@ class Artifact(ABC):
         self.data_source_s3_path = 's3://scp-sageworks-artifacts/data-sources'
         self.feature_sets_s3_path = 's3://scp-sageworks-artifacts/feature-sets'
 
-        # Grab a SageWorks Boto3 Session
+        # Set up our Boto3 and SageMaker Session and SageMaker Client
         self.boto_session = AWSSageWorksRoleManager().boto_session()
+        self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
+        self.sm_client = self.sm_session.boto_session.client("sagemaker")
 
     @abstractmethod
     def check(self) -> bool:

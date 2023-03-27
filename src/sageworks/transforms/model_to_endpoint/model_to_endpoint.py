@@ -42,13 +42,12 @@ class ModelToEndpoint(Transform):
     def delete_endpoint(self):
         """Delete an existing Endpoint and it's Configuration"""
         # Delete endpoint (if it already exists)
-        sm_client = self.sm_session.boto_session.client("sagemaker")
         try:
-            sm_client.delete_endpoint(EndpointName=self.output_uuid)
+            self.sm_client.delete_endpoint(EndpointName=self.output_uuid)
         except botocore.exceptions.ClientError:
             self.log.info(f"Endpoint {self.output_uuid} doesn't exist...")
         try:
-            sm_client.delete_endpoint_config(EndpointConfigName=self.output_uuid)
+            self.sm_client.delete_endpoint_config(EndpointConfigName=self.output_uuid)
         except botocore.exceptions.ClientError:
             self.log.info(f"Endpoint Config {self.output_uuid} doesn't exist...")
 

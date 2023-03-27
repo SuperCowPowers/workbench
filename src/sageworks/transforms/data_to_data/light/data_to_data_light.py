@@ -25,6 +25,10 @@ class DataToDataLight(Transform):
         # Grab the Input (Data Source)
         self.input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
 
+    def transform_impl(self, **kwargs):
+        """Base Class is simply an identity transform"""
+        self.output_df = self.input_df
+
     def post_transform(self, **kwargs):
         """At this point the output DataFrame should be populated, so publish it as a DataSource"""
 
@@ -37,33 +41,11 @@ class DataToDataLight(Transform):
 # Simple test of the DataToDataLight functionality
 def test():
     """Test the DataToDataLight Class"""
-    import pandas as pd
-    from sageworks.artifacts.data_sources.athena_source import AthenaSource
-
-    # My Test Class
-    class MyTransform(DataToDataLight):
-        def __init__(self, input_uuid, output_uuid):
-            super().__init__(input_uuid, output_uuid)
-
-        def transform_impl(self):
-            self.output_df = self.input_df
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = 'aqsol_data'
-    output_uuid = 'aqsol_data_clean'
-    MyTransform(input_uuid, output_uuid).transform()
-
-    # Grab the output and query it for a dataframe
-    output = AthenaSource(output_uuid)
-    df = output.query(f"select * from {output_uuid} limit 5")
-
-    # Setup Pandas output options
-    pd.set_option('display.max_colwidth', 15)
-    pd.set_option('display.max_columns', 15)
-    pd.set_option('display.width', 1000)
-
-    # Show the dataframe
-    print(df)
+    input_uuid = 'abalone_data'
+    output_uuid = 'abalone_data_copy'
+    DataToDataLight(input_uuid, output_uuid).transform()
 
 
 if __name__ == "__main__":

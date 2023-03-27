@@ -7,6 +7,7 @@ from sagemaker.feature_store.feature_group import FeatureGroup
 from sagemaker.feature_store.feature_store import FeatureStore
 
 # SageWorks Imports
+from sageworks.artifacts.artifact import Artifact
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
 from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
@@ -26,22 +27,21 @@ class FeatureSet(AthenaSource):
         self.aws_meta = AWSServiceBroker()
         self.feature_meta = self.aws_meta.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
         if self.feature_meta is None:
-            print(f"Could not find feature set {self.feature_set_name} within current visibility scope")
-            return
-        self.record_id = self.feature_meta['RecordIdentifierFeatureName']
-        self.event_time = self.feature_meta['EventTimeFeatureName']
+            # Base Class Initialization
+            Artifact.__init__()
+            self.log.warning(f"Could not find feature set {self.feature_set_name} within current visibility scope")
+        else:
+            self.record_id = self.feature_meta['RecordIdentifierFeatureName']
+            self.event_time = self.feature_meta['EventTimeFeatureName']
 
-        # Pull Athena and S3 Storage information from metadata
-        self.athena_database = self.feature_meta['sageworks'].get('athena_database')
-        self.athena_table = self.feature_meta['sageworks'].get('athena_table')
-        self.s3_storage = self.feature_meta['sageworks'].get('s3_storage')
+            # Pull Athena and S3 Storage information from metadata
+            self.athena_database = self.feature_meta['sageworks'].get('athena_database')
+            self.athena_table = self.feature_meta['sageworks'].get('athena_table')
+            self.s3_storage = self.feature_meta['sageworks'].get('s3_storage')
 
-        # Call SuperClass (AthenaSource) Initialization
-        # Note: We would normally do this first, but we need the Athena table/db info
-        super().__init__(self.athena_table, self.athena_database)
-
-        # Grab our SageMaker Session
-        self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
+            # Call SuperClass (AthenaSource) Initialization
+            # Note: We would normally do this first, but we need the Athena table/db info
+            super().__init__(self.athena_table, self.athena_database)
 
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)

@@ -25,9 +25,6 @@ class Endpoint(Artifact):
         self.aws_meta = AWSServiceBroker()
         self.endpoint_meta = self.aws_meta.get_metadata(ServiceCategory.ENDPOINTS).get(self.endpoint_name)
 
-        # Grab our SageMaker Session
-        self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
-
         # All done
         self.log.info(f"Endpoint Initialized: {endpoint_name}")
 
@@ -74,13 +71,12 @@ class Endpoint(Artifact):
         """Delete the Endpoint and Endpoint Config"""
 
         # Delete endpoint (if it already exists)
-        sm_client = self.sm_session.boto_session.client("sagemaker")
         try:
-            sm_client.delete_endpoint(EndpointName=self.endpoint_name)
+            self.sm_client.delete_endpoint(EndpointName=self.endpoint_name)
         except botocore.exceptions.ClientError:
             self.log.info(f"Endpoint {self.endpoint_name} doesn't exist...")
         try:
-            sm_client.delete_endpoint_config(EndpointConfigName=self.endpoint_name)
+            self.sm_client.delete_endpoint_config(EndpointConfigName=self.endpoint_name)
         except botocore.exceptions.ClientError:
             self.log.info(f"Endpoint Config {self.endpoint_name} doesn't exist...")
 

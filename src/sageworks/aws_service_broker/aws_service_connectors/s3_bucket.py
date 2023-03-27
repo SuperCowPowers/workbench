@@ -70,5 +70,5 @@ if __name__ == '__main__':
         print(f"\t{file_name}")
 
     # Get additional info for a specific file
-    my_file_info = s3_bucket.file_info('aqsol_public_data.csv')
+    my_file_info = s3_bucket.file_info('abalone.csv')
     pprint(my_file_info)

@@ -60,7 +60,7 @@ def test():
     pd.set_option('display.width', 1000)
 
     # Grab a Data Source
-    data_uuid = 'aqsol_data'
+    data_uuid = 'test_data'
 
     # Create the DataSource to DF Transform
     data_to_df = DataToPandas(data_uuid)

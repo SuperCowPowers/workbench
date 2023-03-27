@@ -61,7 +61,7 @@ class FeaturesToModel(Transform):
 
         # Figure out features (FIXME)
         all_columns = feature_set.column_names()
-        filter_list = ['id', 'smiles', 'eventtime', 'solubility', 'write_time', 'api_invocation_time', 'is_deleted']
+        filter_list = ['id', 'smiles', 'event_time', 'solubility', 'write_time', 'api_invocation_time', 'is_deleted']
         feature_columns = [c for c in all_columns if c not in filter_list]
 
         # Generate our model script

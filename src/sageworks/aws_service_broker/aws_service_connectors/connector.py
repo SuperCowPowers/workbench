@@ -12,7 +12,7 @@ logging_setup()
 
 
 class Connector(ABC):
-    def __init__(self):
+    def __init__(self, token_refresh=45):
         """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
         self.log = logging.getLogger(__name__)
 
@@ -21,8 +21,7 @@ class Connector(ABC):
         self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
         self.sm_client = self.sm_session.boto_session.client("sagemaker")
 
-        # FIXME: Figure out our SageWorks Artifacts Bucket Name
-
+        # Set up the token refresh time
     @abstractmethod
     def check(self) -> bool:
         """Can we connect to this service?"""

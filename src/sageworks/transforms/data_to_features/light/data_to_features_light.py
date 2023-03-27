@@ -25,7 +25,11 @@ class DataToFeaturesLight(Transform):
         # Grab the Input (Data Source)
         self.input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
 
-    def post_transform(self, id_column, event_time_column, delete_existing=False):
+    def transform_impl(self, **kwargs):
+        """Base Class is simply an identity transform"""
+        self.output_df = self.input_df
+
+    def post_transform(self, id_column=None, event_time_column=None, delete_existing=False):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set"""
 
         # Now publish to the output location
@@ -39,18 +43,10 @@ class DataToFeaturesLight(Transform):
 def test():
     """Test the DataToFeaturesLight Class"""
 
-    # My Test Class
-    class MyTransform(DataToFeaturesLight):
-        def __init__(self, input_uuid, output_uuid):
-            super().__init__(input_uuid, output_uuid)
-
-        def transform_impl(self, **kwargs):
-            self.output_df = self.input_df
-
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = 'test_data'
-    output_uuid = 'test_feature_set'
-    MyTransform(input_uuid, output_uuid).transform(id_column='id', event_time_column='date', delete_existing=True)
+    input_uuid = 'abalone_data'
+    output_uuid = 'abalone_feature_set'
+    DataToFeaturesLight(input_uuid, output_uuid).transform(delete_existing=True)
 
 
 if __name__ == "__main__":

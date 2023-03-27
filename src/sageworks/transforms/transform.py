@@ -52,10 +52,11 @@ class Transform(ABC):
         self.data_source_s3_path = 's3://scp-sageworks-artifacts/data-sources'
         self.feature_set_s3_path = 's3://scp-sageworks-artifacts/feature-sets'
 
-        # Grab a SageWorks Role ARN and Sessions
+        # Grab a SageWorks Role ARN, Boto3, SageMaker Session, and SageMaker Client
         self.sageworks_role_arn = AWSSageWorksRoleManager().sageworks_execution_role_arn()
         self.boto_session = AWSSageWorksRoleManager().boto_session()
         self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
+        self.sm_client = self.sm_session.boto_session.client("sagemaker")
 
         # Make sure the AWS data catalog database exists
         self.ensure_aws_catalog_db()

@@ -144,7 +144,7 @@ def test():
     """Test for AthenaSource Class"""
 
     # Retrieve a Data Source
-    my_data = AthenaSource('aqsol_data_clean')
+    my_data = AthenaSource('test_data')
 
     # Verify that the Athena Data Source exists
     assert(my_data.check())

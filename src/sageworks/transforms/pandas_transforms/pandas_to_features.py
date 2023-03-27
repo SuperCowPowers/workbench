@@ -27,18 +27,26 @@ class PandasToFeatures(Transform):
         self.id_column = None
         self.event_time_column = None
 
-    def set_input(self, input_df: pd.DataFrame, id_column, event_time_column=None):
+    def set_input(self, input_df: pd.DataFrame, id_column=None, event_time_column=None):
         """Set the Input DataFrame for this Transform"""
         self.id_column = id_column
         self.event_time_column = event_time_column
         self.input_df = input_df
 
+    def _ensure_id_column(self):
+        """Internal: AWS Feature Store requires an Id field for all data store"""
+        if self.id_column is None or self.id_column not in self.input_df.columns:
+            if 'id' not in self.input_df.columns:
+                self.log.info('Generating an id column before FeatureSet Creation...')
+                self.input_df['id'] = self.input_df.index
+            self.id_column = 'id'
+
     def _ensure_event_time(self):
-        """Internal: AWS Feature Store requires an EventTime field in all data stored"""
+        """Internal: AWS Feature Store requires an event_time field for all data stored"""
         if self.event_time_column is None or self.event_time_column not in self.input_df.columns:
             current_datetime = datetime.now(timezone.utc)
-            self.log.info('Generating an EventTime column before FeatureSet Creation...')
-            self.event_time_column = 'EventTime'
+            self.log.info('Generating an event_time column before FeatureSet Creation...')
+            self.event_time_column = 'event_time'
             self.input_df[self.event_time_column] = pd.Series([current_datetime] * len(self.input_df))
 
         # The event_time_column is defined so lets make sure it the right type for Feature Store
@@ -70,7 +78,8 @@ class PandasToFeatures(Transform):
         """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
            store the information about the data to the AWS Data Catalog sageworks database"""
 
-        # Ensure that the input dataframe has an EventTime field
+        # Ensure that the input dataframe has id and event_time fields
+        self._ensure_id_column()
         self._ensure_event_time()
 
         # Convert object dtypes to string

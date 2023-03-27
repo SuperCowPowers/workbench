@@ -41,8 +41,8 @@ def test():
     from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = 'aqsol_data'
-    output_uuid = 'aqsol_data_clean'
+    input_uuid = 'test_data'
+    output_uuid = 'test_data_clean'
     CleanData(input_uuid, output_uuid).transform(drop_na='any')
 
     # Grab the output and query it for a dataframe

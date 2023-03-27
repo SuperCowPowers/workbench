@@ -47,8 +47,8 @@ def test():
     """Test the S3ToDataSourceLight Class"""
 
     # Create my Data Loader
-    output_uuid = 'aqsol_data'
-    my_loader = S3ToDataSourceLight('s3://scp-sageworks-artifacts/incoming-data/aqsol_public_data.csv', output_uuid)
+    output_uuid = 'test_data'
+    my_loader = S3ToDataSourceLight('s3://scp-sageworks-artifacts/incoming-data/abalone.csv', output_uuid)
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()
