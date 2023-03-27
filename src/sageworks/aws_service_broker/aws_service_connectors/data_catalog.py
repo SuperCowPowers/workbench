@@ -35,7 +35,7 @@ class DataCatalog(Connector):
             self.log.critical(f"Error connecting to AWS Data Catalog: {e}")
             return False
 
-    def refresh(self):
+    def refresh_impl(self):
         """Load/reload all the tables in all the catalog databases"""
 
         # For each database in our scoped list, load the tables

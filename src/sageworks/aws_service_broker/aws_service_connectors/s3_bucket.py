@@ -28,7 +28,7 @@ class S3Bucket(Connector):
             self.log.critical(f"Could not connect to AWS S3 {self.bucket}: {e}")
             return False
 
-    def refresh(self):
+    def refresh_impl(self):
         """Load/reload the files in the bucket"""
         # Grab all the files in this bucket
         self.log.info(f"Reading S3 Bucket: {self.bucket}...")

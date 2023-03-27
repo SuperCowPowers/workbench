@@ -26,7 +26,7 @@ class FeatureStore(Connector):
             self.log.critical(f"Error connecting to AWS Feature Store Service: {e}")
             return False
 
-    def refresh(self):
+    def refresh_impl(self):
         """Load/reload the tables in the database"""
         # Grab all the Feature Groups in the AWS Feature Store
         print("Reading Feature Store Database...")

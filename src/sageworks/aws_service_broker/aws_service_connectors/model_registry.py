@@ -24,7 +24,7 @@ class ModelRegistry(Connector):
             self.log.critical(f"Error connecting to AWS Model Registry Service: {e}")
             return False
 
-    def refresh(self):
+    def refresh_impl(self):
         """Load/reload the tables in the database"""
         # Grab all the Model Groups in the AWS Model Registry
         print("Reading Model Registry...")

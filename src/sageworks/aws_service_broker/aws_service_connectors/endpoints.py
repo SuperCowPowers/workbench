@@ -24,7 +24,7 @@ class Endpoints(Connector):
             self.log.critical(f"Error connecting to AWS Model Registry Service: {e}")
             return False
 
-    def refresh(self):
+    def refresh_impl(self):
         """Load/reload the tables in the database"""
         # Grab all the Endpoint Data from SageMaker
         print("Reading Endpoints from SageMaker...")
