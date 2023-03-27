@@ -4,10 +4,12 @@ import json
 import argparse
 
 import pandas as pd
+import awswrangler as wr
 
 # SageWorks Imports
 from sageworks.views.view import View
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
+from sageworks.aws_service_broker.cache import Cache
 
 
 class ArtifactsSummary(View):
@@ -22,13 +24,26 @@ class ArtifactsSummary(View):
         # Summary data for ALL the AWS Services
         self.summary_data = {}
 
+        # S3 Object Size Cache
+        self.size_cache = Cache(timeout=60)
+
     def check(self) -> bool:
         """Can we connect to this view/service?"""
-        True  # I'm great, thx for asking
+        return True  # I'm great, thx for asking
 
-    def refresh(self) -> bool:
+    def refresh(self):
         """Refresh data/metadata associated with this view"""
         self.service_info = self.aws_broker.get_all_metadata()
+
+    def s3_objects_size(self, s3_path) -> bool:
+        """Return the size of this data in MegaBytes"""
+        size_in_mb = self.size_cache.get(s3_path)
+        if size_in_mb is None:
+            self.log.info('Computing S3 Object sizes...')
+            size_in_bytes = sum(wr.s3.size_objects(s3_path, boto3_session=self.boto_session).values())
+            size_in_mb = f"{ (size_in_bytes/1_000_000):.1f}"
+            self.size_cache.set(s3_path, size_in_mb)
+        return size_in_mb
 
     def view_data(self) -> dict:
         """Get all the data that's useful for this view
@@ -50,8 +65,11 @@ class ArtifactsSummary(View):
         data = self.service_info[ServiceCategory.INCOMING_DATA]
         data_summary = []
         for name, info in data.items():
+
+            # Get the size of the S3 Storage Object(s)
+            size = round(int(info.get('ContentLength') / 1_000_000))
             summary = {'Name': name,
-                       'Size': str(info.get('ContentLength', '-')),
+                       'Size (MB)': size,
                        'LastModified': self.datetime_string(info.get('LastModified')),
                        'ContentType': str(info.get('ContentType', '-')),
                        'ServerSideEncryption': info.get('ServerSideEncryption', '-'),
@@ -66,9 +84,13 @@ class ArtifactsSummary(View):
         data_summary = []
         for database, db_info in data.items():
             for name, info in db_info.items():
+
+                # Get the size of the S3 Storage Object(s)
+                size = self.s3_objects_size(info['StorageDescriptor']['Location'])
                 summary = {'Name': self.athena_hyperlink(name),
+                           'Version': info.get('VersionId', '-'),
+                           'Size (MB)': size,
                            'Catalog DB': info.get('DatabaseName', '-'),
-                           'Size': str(info.get('ContentLength', '-')),
                            'Created': self.datetime_string(info.get('CreateTime')),
                            'LastModified': self.datetime_string(info.get('UpdateTime')),
                            'Num Columns': self.num_columns(info),
@@ -89,7 +111,12 @@ class ArtifactsSummary(View):
         data = self.service_info[ServiceCategory.FEATURE_STORE]
         data_summary = []
         for feature_group, group_info in data.items():
+
+            # Get the size of the S3 Storage Object(s)
+            size = self.s3_objects_size(group_info['OfflineStoreConfig']['S3StorageConfig']['S3Uri'])
             summary = {'Feature Group': self.athena_hyperlink(group_info['FeatureGroupName']),
+                       'Status': group_info['FeatureGroupStatus'],
+                       'Size (MB)': size,
                        'Catalog DB': group_info['OfflineStoreConfig'].get('DataCatalogConfig', {}).get('Database', '-'),
                        'Athena Table': group_info['OfflineStoreConfig'].get('DataCatalogConfig', {}).get('TableName', '-'),
                        'ID/EventTime': f"{group_info['RecordIdentifierFeatureName']}/{group_info['EventTimeFeatureName']}",
@@ -127,11 +154,11 @@ class ArtifactsSummary(View):
 
                 summary = {'Model Group': model['ModelPackageGroupName'],
                            'Version': model['ModelPackageVersion'],
+                           'Status': model['ModelPackageStatus'],
                            'Description': description,
                            'Feature Set': feature_set,
                            'Created': self.datetime_string(model.get('CreationTime')),
                            'LastModified': self.datetime_string(model.get('LastModifiedTime')),
-                           'Status': str(model.get('ModelApprovalStatus', ' - ')),
                            'Tags': tags}
                 data_summary.append(summary)
 

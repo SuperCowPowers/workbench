@@ -85,28 +85,16 @@ class Model(Artifact):
         return self.latest_model['CreationTime']
 
     def delete(self):
-        """Delete the Model: Feature Group, Catalog Table, and S3 Storage Objects"""
+        """Delete the Model Packages and the Model Group"""
 
-        # Delete the Model and ensure that it gets deleted
-        """
-        remove_model = FeatureGroup(name=self.model_name, sagemaker_session=self.sm_session)
-        remove_model.delete()
-        self.ensure_model_deleted(remove_model)
-        """
+        # First delete the Model Packages within the Model Group
+        for model in self.model_meta:
+            self.log.info(f"Deleting Model Package {model['ModelPackageArn']}...")
+            self.sm_session.sagemaker_client.delete_model_package(ModelPackageName=model['ModelPackageArn'])
 
-    def ensure_model_deleted(self, feature_group):
-        """
-        status = feature_group.describe().get("FeatureGroupStatus")
-        while status == "Deleting":
-            self.log.info("Model being Deleted...")
-            time.sleep(5)
-            try:
-                status = feature_group.describe().get("FeatureGroupStatus")
-            except Exception:  # FIXME
-                break
-        self.log.info(f"Model {feature_group.name} successfully deleted")
-        """
-        pass
+        # Now delete the Model Package Group
+        self.log.info(f"Deleting Model Group {self.model_name}...")
+        self.sm_session.sagemaker_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
 
 
 # Simple test of the Model functionality
@@ -114,7 +102,7 @@ def test():
     """Test for Model Class"""
 
     # Grab a Model object and pull some information from it
-    my_model = Model('solubility-regression')
+    my_model = Model('test_abalone')
 
     # Call the various methods
 
@@ -123,6 +111,9 @@ def test():
 
     # Get the tags associated with this Model
     print(f"Tags: {my_model.tags()}")
+
+    # Delete the Model
+    # my_model.delete()
 
 
 if __name__ == "__main__":

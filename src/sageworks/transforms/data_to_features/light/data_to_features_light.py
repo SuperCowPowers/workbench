@@ -49,7 +49,7 @@ def test():
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'test_data'
-    output_uuid = 'test-feature-set'
+    output_uuid = 'test_feature_set'
     MyTransform(input_uuid, output_uuid).transform(id_column='id', event_time_column='date', delete_existing=True)
 
 

@@ -22,7 +22,7 @@ class Cache(object):
         self.store = OrderedDict()
         self.max_size = max_size
         self.timeout = timeout
-        self._compression_timer = 60
+        self._compression_timer = 600
         self._last_compression = time.time()
 
         # Try to do cleanup/serialization at exit

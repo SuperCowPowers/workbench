@@ -76,13 +76,13 @@ class Endpoint(Artifact):
         # Delete endpoint (if it already exists)
         sm_client = self.sm_session.boto_session.client("sagemaker")
         try:
-            sm_client.delete_endpoint(EndpointName=self.output_uuid)
+            sm_client.delete_endpoint(EndpointName=self.endpoint_name)
         except botocore.exceptions.ClientError:
-            self.log.info(f"Endpoint {self.output_uuid} doesn't exist...")
+            self.log.info(f"Endpoint {self.endpoint_name} doesn't exist...")
         try:
-            sm_client.delete_endpoint_config(EndpointConfigName=self.output_uuid)
+            sm_client.delete_endpoint_config(EndpointConfigName=self.endpoint_name)
         except botocore.exceptions.ClientError:
-            self.log.info(f"Endpoint Config {self.output_uuid} doesn't exist...")
+            self.log.info(f"Endpoint Config {self.endpoint_name} doesn't exist...")
 
 
 # Simple test of the Endpoint functionality

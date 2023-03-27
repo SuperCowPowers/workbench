@@ -5,6 +5,7 @@ import logging
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Set up logging
@@ -18,6 +19,7 @@ class View(ABC):
 
         # Grab an AWS Metadata Broker object for pulling AWS Service information
         self.aws_broker = AWSServiceBroker(database_scope=database_scope)
+        self.boto_session = AWSSageWorksRoleManager().boto_session()
 
     @abstractmethod
     def check(self) -> bool:

@@ -25,6 +25,9 @@ class FeatureSet(AthenaSource):
         self.feature_set_name = feature_set_name
         self.aws_meta = AWSServiceBroker()
         self.feature_meta = self.aws_meta.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
+        if self.feature_meta is None:
+            print(f"Could not find feature set {self.feature_set_name} within current visibility scope")
+            return
         self.record_id = self.feature_meta['RecordIdentifierFeatureName']
         self.event_time = self.feature_meta['EventTimeFeatureName']
 
@@ -117,6 +120,7 @@ class FeatureSet(AthenaSource):
 
         # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
         s3_delete_path = self.feature_sets_s3_path + f"/{self.feature_set_name}"
+        self.log.info(f"Deleting S3 Storage Objects {s3_delete_path}")
         wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
 
     def ensure_feature_group_deleted(self, feature_group):
