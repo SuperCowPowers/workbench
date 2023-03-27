@@ -33,7 +33,7 @@ def update_artifact_tables(app: Dash):
         Output('INCOMING_DATA', 'data'),
         Input('interval-component', 'n_intervals')
     )
-    def table_data(n):
+    def incoming_data_update(n):
         incoming_data = all_data['INCOMING_DATA']
         return incoming_data.to_dict('records')
 
@@ -41,7 +41,7 @@ def update_artifact_tables(app: Dash):
         Output('DATA_SOURCES', 'data'),
         Input('interval-component', 'n_intervals')
     )
-    def table_data(n):
+    def data_sources_update(n):
         data_sources = all_data['DATA_SOURCES']
         return data_sources.to_dict('records')
 
@@ -49,7 +49,7 @@ def update_artifact_tables(app: Dash):
         Output('FEATURE_SETS', 'data'),
         Input('interval-component', 'n_intervals')
     )
-    def table_data(n):
+    def feature_sets_update(n):
         feature_sets = all_data['FEATURE_SETS']
         return feature_sets.to_dict('records')
 
@@ -57,17 +57,17 @@ def update_artifact_tables(app: Dash):
         Output('MODELS', 'data'),
         Input('interval-component', 'n_intervals')
     )
-    def table_data(n):
-        feature_sets = all_data['MODELS']
-        return feature_sets.to_dict('records')
+    def models_update(n):
+        models = all_data['MODELS']
+        return models.to_dict('records')
 
     @app.callback(
         Output('ENDPOINTS', 'data'),
         Input('interval-component', 'n_intervals')
     )
-    def table_data(n):
-        feature_sets = all_data['ENDPOINTS']
-        return feature_sets.to_dict('records')
+    def endpoints_update(n):
+        endpoints = all_data['ENDPOINTS']
+        return endpoints.to_dict('records')
 
 
 # Highlights the selected row in the table

@@ -1,8 +1,5 @@
 """HelloWorld: A SageWorks HelloWorld Application"""
 from dash import Dash
-import dash_bootstrap_components as dbc
-from dash_bootstrap_templates import load_figure_template
-
 
 # SageWorks Imports
 from sageworks.views.artifacts_summary import ArtifactsSummary
