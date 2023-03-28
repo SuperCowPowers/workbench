@@ -30,6 +30,9 @@ For more details see: [SageWorks Artitected FrameWork](https://docs.google.com/p
 pip install sageworks
 ```
 
+### Gettting Started
+SageWorks has a large number of classes and components, the best place to get started is our [SageWorks Wiki](https://github.com/SuperCowPowers/sageworks/wiki). There's a growing set of documentation (with pictures) and step-by-step examples of how to get started with SageWorks.
+
 ### SageWorks Zen
 - The AWS SageMaker® set of services is vast and **complex**.
 - SageWorks Classes encapsulate, organize, and manage sets of AWS® Services.
@@ -39,7 +42,7 @@ pip install sageworks
 - **Quick prototypes** are typically built with the **light path** and then flipped to the **heavy path** as the system matures and usage grows.
 
 ### Classes and Concepts
-The SageWorks Classes are orgnized to work in concert with AWS Services. For more details on the current classes and class heirarchies see [SageWorks Classes and Concepts](docs/sageworks_classes_concepts.md).
+The SageWorks Classes are organized to work in concert with AWS Services. For more details on the current classes and class hierarchies see [SageWorks Classes and Concepts](docs/sageworks_classes_concepts.md).
 
 ### Contributions
 If you'd like to contribute to the SageWorks project, you're more than welcome. All contributions will fall under the existing project [license](https://github.com/SuperCowPowers/sageworks/blob/main/LICENSE). If you are interested in contributing or have questions please feel free to contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com).
