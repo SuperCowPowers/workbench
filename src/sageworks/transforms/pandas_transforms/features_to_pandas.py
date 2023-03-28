@@ -67,11 +67,8 @@ def test():
     pd.set_option('display.max_columns', 15)
     pd.set_option('display.width', 1000)
 
-    # Grab a Feature Set
-    feature_set_name = 'test-feature-set'
-
     # Create the FeatureSet to DF Transform
-    feature_to_df = FeaturesToPandas(feature_set_name)
+    feature_to_df = FeaturesToPandas('test-feature-set')
 
     # Transform the DataSource into a Pandas DataFrame (with max_rows = 1000)
     feature_to_df.transform(max_rows=1000)

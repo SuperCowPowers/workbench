@@ -15,27 +15,6 @@ import os
 import pandas as pd
 
 
-# Helper Methods
-def feature_type_converter(df, feature_list):
-    """Output all the feature types and convert objects to Categorical"""
-    non_feature_columns = set(df.columns.tolist()).difference(set(feature_list))
-    my_dtypes = df.dtypes
-    for feature in feature_list:
-        dtype = my_dtypes[feature]
-        print(feature, dtype)
-        if dtype == 'object':
-            print(f"Converting object column {feature} to categorical")
-            print(f"Unique Values = {df[feature].nunique()}")
-            df[feature] = df[feature].astype("category")
-
-    # Now convert Categorical Types to One Hot Encoding
-    df = pd.get_dummies(df)
-
-    # Get new feature_list
-    new_feature_list = [c for c in df.columns if c not in non_feature_columns]
-    return df, new_feature_list
-
-
 if __name__ == '__main__':
 
     # Harness Template Parameters

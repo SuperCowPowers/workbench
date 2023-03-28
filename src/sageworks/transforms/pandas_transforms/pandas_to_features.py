@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 import pandas as pd
 import time
+import botocore
 from sagemaker.feature_store.feature_group import FeatureGroup
 
 # Local imports
@@ -16,11 +17,11 @@ from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 
 class PandasToFeatures(Transform):
-    def __init__(self):
+    def __init__(self, output_uuid):
         """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)"""
 
         # Call superclass init
-        super().__init__()
+        super().__init__(None, output_uuid)
 
         # Set up all my instance attributes
         self.input_df = None
@@ -55,6 +56,7 @@ class PandasToFeatures(Transform):
 
             # Convert the datetime DType to ISO-8601 string
             self.input_df[self.event_time_column] = self.input_df[self.event_time_column].map(self._iso8601_utc)
+            self.input_df[self.event_time_column] = self.input_df[self.event_time_column].astype(pd.StringDtype())
 
     @staticmethod
     def _iso8601_utc(dt):
@@ -74,6 +76,21 @@ class PandasToFeatures(Transform):
             if pd.api.types.is_object_dtype(self.input_df[col].dtype):
                 self.input_df[col] = self.input_df[col].astype(pd.StringDtype())
 
+    # Helper Methods
+    def categorical_converter(self):
+        """Convert object and string types to Categorical"""
+        categorical_columns = []
+        for feature, dtype in self.input_df.dtypes.items():
+            print(feature, dtype)
+            if dtype in ['object', 'string'] and feature not in [self.event_time_column, self.id_column]:
+                print(f"Converting object column {feature} to categorical")
+                print(f"Unique Values = {self.input_df[feature].nunique()}")
+                self.input_df[feature] = self.input_df[feature].astype("category")
+                categorical_columns.append(feature)
+
+        # Now convert Categorical Types to One Hot Encoding
+        self.input_df = pd.get_dummies(self.input_df, columns=categorical_columns)
+
     def transform_impl(self, delete_existing=False):
         """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
            store the information about the data to the AWS Data Catalog sageworks database"""
@@ -82,14 +99,14 @@ class PandasToFeatures(Transform):
         self._ensure_id_column()
         self._ensure_event_time()
 
-        # Convert object dtypes to string
-        self._convert_objs_to_string()
+        # Convert object and string types to Categorical
+        self.categorical_converter()
 
         # Do we want to delete the existing FeatureSet?
         if delete_existing:
             try:
                 FeatureSet(self.output_uuid).delete()
-            except TypeError:
+            except botocore.exceptions.ClientError:
                 self.log.info(f"FeatureSet {self.output_uuid} doesn't exist...")
 
         # Create a Feature Group and load our Feature Definitions
@@ -160,10 +177,8 @@ def test():
     fake_df = pd.DataFrame(fake_data)
 
     # Create my DF to Feature Set Transform
-    output_uuid = 'test-feature-set'
-    df_to_features = PandasToFeatures()
+    df_to_features = PandasToFeatures('test-feature-set')
     df_to_features.set_input(fake_df, id_column='id', event_time_column='date')
-    df_to_features.set_output_uuid(output_uuid)
 
     # Store this dataframe as a SageWorks Feature Set
     df_to_features.transform(delete_existing=True)

@@ -6,7 +6,6 @@ from datetime import datetime
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
-from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
 
 
 class Model(Artifact):
