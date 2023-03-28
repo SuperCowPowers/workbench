@@ -33,9 +33,8 @@ class DataToFeaturesLight(Transform):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set"""
 
         # Now publish to the output location
-        output_features = PandasToFeatures()
+        output_features = PandasToFeatures(self.output_uuid)
         output_features.set_input(self.output_df, id_column=id_column, event_time_column=event_time_column)
-        output_features.set_output_uuid(self.output_uuid)
         output_features.transform(delete_existing=delete_existing)
 
 
