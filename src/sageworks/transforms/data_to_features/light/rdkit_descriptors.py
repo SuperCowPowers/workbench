@@ -18,7 +18,7 @@ except ImportError:
 
 
 class RDKitDescriptors(DataToFeaturesLight):
-    def __init__(self, input_uuid: str = None, output_uuid: str = None):
+    def __init__(self, input_uuid: str, output_uuid: str):
         """RDKitDescriptors: Compute a Feature Set based on RDKit Descriptors"""
 
         # Call superclass init

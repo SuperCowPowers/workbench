@@ -12,7 +12,7 @@ from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 
 class S3HeavyToDataSource(Transform):
-    def __init__(self, input_uuid=None, output_uuid=None):
+    def __init__(self, input_uuid, output_uuid):
         """S3HeavyToDataSource: Class to move HEAVY S3 Files into a SageWorks DataSource"""
 
         # Call superclass init

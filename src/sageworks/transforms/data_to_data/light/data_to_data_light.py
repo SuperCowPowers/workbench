@@ -7,7 +7,7 @@ from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
 
 
 class DataToDataLight(Transform):
-    def __init__(self, input_uuid: str = None, output_uuid: str = None):
+    def __init__(self, input_uuid: str, output_uuid: str):
         """DataToDataLight: Base Class for Light DataSource to DataSource using Pandas"""
 
         # Call superclass init

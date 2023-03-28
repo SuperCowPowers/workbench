@@ -7,7 +7,7 @@ from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
 
 
 class S3ToDataSourceLight(Transform):
-    def __init__(self, input_uuid=None, output_uuid=None):
+    def __init__(self, input_uuid, output_uuid):
         """S3ToDataSourceLight: Class to move LIGHT S3 Files into a SageWorks DataSource"""
 
         # Call superclass init

@@ -72,3 +72,8 @@ class Artifact(ABC):
     def aws_url(self):
         """AWS console/web interface for this artifact"""
         pass
+
+    @abstractmethod
+    def delete(self):
+        """Delete this artifact including all related AWS objects"""
+        pass

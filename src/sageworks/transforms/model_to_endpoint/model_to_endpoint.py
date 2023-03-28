@@ -10,7 +10,7 @@ from sageworks.artifacts.models.model import Model
 
 
 class ModelToEndpoint(Transform):
-    def __init__(self, input_uuid: str = None, output_uuid: str = None):
+    def __init__(self, input_uuid: str, output_uuid: str):
         """ModelToEndpoint: Deploy an Endpoint for a Model"""
 
         # Call superclass init

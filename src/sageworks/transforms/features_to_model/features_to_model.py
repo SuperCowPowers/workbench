@@ -7,10 +7,11 @@ from sagemaker.sklearn.estimator import SKLearn
 # Local Imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
+from sageworks.artifacts.models.model import Model
 
 
 class FeaturesToModel(Transform):
-    def __init__(self, input_uuid: str = None, output_uuid: str = None):
+    def __init__(self, input_uuid: str, output_uuid: str):
         """FeaturesToModel: Train/Create a Model from a Feature Set"""
 
         # Call superclass init
@@ -52,20 +53,27 @@ class FeaturesToModel(Transform):
             fp.write(xgb_script)
         return script_name
 
-    def transform_impl(self, **kwargs):
-        """Compute a Feature Set based on RDKit Descriptors"""
+    def transform_impl(self, target, input_feature_list=None, delete_existing=False):
+        """Generic Features to Model: Note you should create a new class and inherit from
+           this one to include specific logic for your Feature Set/Model"""
 
         # Get our Feature Set and create an S3 CSV Training dataset
         feature_set = FeatureSet(self.input_uuid)
         s3_training_path = feature_set.create_s3_training_data()
 
-        # Figure out features (FIXME)
-        all_columns = feature_set.column_names()
-        filter_list = ['id', 'smiles', 'event_time', 'solubility', 'write_time', 'api_invocation_time', 'is_deleted']
-        feature_columns = [c for c in all_columns if c not in filter_list]
+        # Did they specify a feature list?
+        if input_feature_list:
+            feature_list = input_feature_list
+
+        # Try to figure out features (this is a big guess)
+        else:
+            self.log.warning('Guessing at the feature list...')
+            all_columns = feature_set.column_names()
+            filter_list = ['id', 'event_time', 'write_time', 'api_invocation_time', 'is_deleted'] + [target]
+            feature_list = [c for c in all_columns if c not in filter_list]
 
         # Generate our model script
-        script_path = self.generate_model_script('solubility', feature_columns, 'regression')
+        script_path = self.generate_model_script(target, feature_list, 'regression')
 
         # Create a Sagemaker Model with our script
         self.estimator = SKLearn(
@@ -80,7 +88,14 @@ class FeaturesToModel(Transform):
         # Train the estimator
         self.estimator.fit({'train': s3_training_path})
 
+        # Do they want to delete any existing models?
+        if delete_existing:
+            self.log.info('Trying to delete existing model...')
+            delete_model = Model(self.output_uuid)
+            delete_model.delete()
+
         # Create Model and officially Register
+        self.log.info(f"Creating new model {self.output_uuid}...")
         self.create_and_register_model()
 
     def create_and_register_model(self):
@@ -96,7 +111,7 @@ class FeaturesToModel(Transform):
         model_specs = json.dumps(specs)
         model = self.estimator.create_model(role=self.sageworks_role_arn)
         model.register(
-            model_package_group_name='solubility-regression',
+            model_package_group_name=self.output_uuid,
             framework_version='1.0.1',
             content_types=["text/csv"],
             response_types=["text/csv"],
@@ -112,9 +127,9 @@ def test():
     """Test the FeaturesToModel Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = 'test_rdkit_features'
-    output_uuid = 'test_solubility_regression'
-    FeaturesToModel(input_uuid, output_uuid).transform(delete_existing=True)
+    input_uuid = 'abalone_feature_set'
+    output_uuid = 'abalone-regression'
+    FeaturesToModel(input_uuid, output_uuid).transform(target='class_number_of_rings', delete_existing=True)
 
 
 if __name__ == "__main__":

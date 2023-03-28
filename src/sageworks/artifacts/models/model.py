@@ -24,27 +24,32 @@ class Model(Artifact):
         self.model_name = model_name
         self.aws_meta = AWSServiceBroker()
         self.model_meta = self.aws_meta.get_metadata(ServiceCategory.MODELS).get(self.model_name)
-        self.latest_model = self.model_meta[0]
-        self.model_package_arn = self.latest_model['ModelPackageDetails']['ModelPackageArn']
+        if self.model_meta is None:
+            # Base Class Initialization
+            Artifact.__init__(self)
+            self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
+        else:
+            self.latest_model = self.model_meta[0]
+            self.model_package_arn = self.latest_model['ModelPackageDetails']['ModelPackageArn']
 
-        # Pull Model Package Description Data
-        try:
-            self.model_info = json.loads(self.latest_model['ModelPackageDescription'])
-            self.input = self.model_info['input']
-            self.description = self.model_info['info']
-            self.model_tags = self.model_info['tags']
-        except (json.JSONDecoder, KeyError):
-            self.model_info = self.latest_model['ModelPackageDescription']
-            self.input = '-'
-            self.description = self.model_info
-            self.model_tags = '-'
+            # Pull Model Package Description Data
+            try:
+                self.model_info = json.loads(self.latest_model['ModelPackageDescription'])
+                self.input = self.model_info['input']
+                self.description = self.model_info['info']
+                self.model_tags = self.model_info['tags']
+            except (json.JSONDecoder, KeyError):
+                self.model_info = self.latest_model['ModelPackageDescription']
+                self.input = '-'
+                self.description = self.model_info
+                self.model_tags = '-'
 
         # All done
         self.log.info(f"Model Initialized: {model_name}")
 
     def check(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
-        if self.latest_model is None:
+        if self.model_meta is None:
             self.log.critical(f'Model.check() {self.model_name} not found in AWS Metadata!')
             return False
         return True
@@ -67,7 +72,7 @@ class Model(Artifact):
 
     def tags(self):
         """Get the tags for this artifact"""
-        return self.model_tags
+        return getattr(self, 'model_tags', [])
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
@@ -84,6 +89,11 @@ class Model(Artifact):
     def delete(self):
         """Delete the Model Packages and the Model Group"""
 
+        # If we don't have meta then the model probably doesn't exist
+        if self.model_meta is None:
+            self.log.info(f"Model {self.model_name} doesn't appear to exist...")
+            return
+
         # First delete the Model Packages within the Model Group
         for model in self.model_meta:
             self.log.info(f"Deleting Model Package {model['ModelPackageArn']}...")
@@ -99,18 +109,18 @@ def test():
     """Test for Model Class"""
 
     # Grab a Model object and pull some information from it
-    my_model = Model('test_abalone')
+    my_model = Model('abalone-regression')
 
     # Call the various methods
 
     # Lets do a check/validation of the Model
-    assert(my_model.check())
+    print(f"Model Check: {my_model.check()}")
 
     # Get the tags associated with this Model
     print(f"Tags: {my_model.tags()}")
 
     # Delete the Model
-    # my_model.delete()
+    my_model.delete()
 
 
 if __name__ == "__main__":

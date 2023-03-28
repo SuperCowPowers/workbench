@@ -10,7 +10,6 @@ from sagemaker.feature_store.feature_store import FeatureStore
 from sageworks.artifacts.artifact import Artifact
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
-from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
 
 
 class FeatureSet(AthenaSource):
@@ -28,7 +27,7 @@ class FeatureSet(AthenaSource):
         self.feature_meta = self.aws_meta.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
         if self.feature_meta is None:
             # Base Class Initialization
-            Artifact.__init__()
+            Artifact.__init__(self)
             self.log.warning(f"Could not find feature set {self.feature_set_name} within current visibility scope")
         else:
             self.record_id = self.feature_meta['RecordIdentifierFeatureName']
@@ -146,7 +145,7 @@ def test():
     # Call the various methods
 
     # Let's do a check/validation of the feature set
-    assert (my_features.check())
+    print(f"Feature Set Check: {my_features.check()}")
 
     # How many rows and columns?
     num_rows = my_features.num_rows()

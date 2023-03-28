@@ -6,7 +6,7 @@ from sageworks.transforms.pandas_transforms import pandas_utils
 
 
 class CleanData(DataToDataLight):
-    def __init__(self, input_uuid: str = None, output_uuid: str = None):
+    def __init__(self, input_uuid: str, output_uuid: str):
         """CleanData: Class for filtering, sub-setting, and value constraints on Light DataSources uses Pandas"""
 
         # Call superclass init

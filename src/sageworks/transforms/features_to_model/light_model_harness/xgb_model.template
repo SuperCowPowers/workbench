@@ -1,6 +1,9 @@
 # Imports for XGB Model
 import xgboost as xgb
 
+# Model Performance Scores
+from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error, precision_recall_fscore_support
+
 # Scikit Learn Imports
 from sklearn.model_selection import train_test_split
 
@@ -10,6 +13,27 @@ import argparse
 import joblib
 import os
 import pandas as pd
+
+
+# Helper Methods
+def feature_type_converter(df, feature_list):
+    """Output all the feature types and convert objects to Categorical"""
+    non_feature_columns = set(df.columns.tolist()).difference(set(feature_list))
+    my_dtypes = df.dtypes
+    for feature in feature_list:
+        dtype = my_dtypes[feature]
+        print(feature, dtype)
+        if dtype == 'object':
+            print(f"Converting object column {feature} to categorical")
+            print(f"Unique Values = {df[feature].nunique()}")
+            df[feature] = df[feature].astype("category")
+
+    # Now convert Categorical Types to One Hot Encoding
+    df = pd.get_dummies(df)
+
+    # Get new feature_list
+    new_feature_list = [c for c in df.columns if c not in non_feature_columns]
+    return df, new_feature_list
 
 
 if __name__ == '__main__':
@@ -34,6 +58,14 @@ if __name__ == '__main__':
     # Combine files and read them all into a single pandas dataframe
     all_df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
 
+    # Features/Target output
+    print(f"Target: {target}")
+    print(f"Features: {str(feature_list)}")
+
+    # Look at/convert Feature Data Types
+    all_df, feature_list = feature_type_converter(all_df, feature_list)
+    all_df, feature_list = feature_type_converter(all_df, feature_list)
+
     # Now Split based on training Split
     df_train, df_val = train_test_split(all_df, test_size=validation_split)
     print(f'FIT/TRAIN: {df_train.shape}')
@@ -54,7 +86,22 @@ if __name__ == '__main__':
     preds = xgb_model.predict(df_val[feature_list])
 
     # Report Performance Metrics
-    # FIXME: Put in different metrics for Regression and Classification Models
+    if model_type == 'classifier':
+        # Note: Using labels here might seem extraneous, but it ensures order of the output
+        scores = precision_recall_fscore_support(df_val['sol_level'], preds, average=None, labels=[0, 1, 2])
+
+        # Put the scores into a dataframe
+        scores_T = list(map(list, zip(*scores)))
+        score_df = pd.DataFrame({'level': ['low', 'medium', 'high'], 'precision': scores[0],
+                                 'recall': scores[1], 'fscore': scores[2], 'support': scores[3]})
+        print(score_df)
+    else:
+        rms = mean_squared_error(df_val[target], preds, squared=False)
+        mae = mean_absolute_error(df_val[target], preds)
+        r2 = r2_score(df_val[target], preds)
+        print(f'RMSE: {rms:.3f}')
+        print(f'MAE: {mae:.3f}')
+        print(f'R2 Score: {r2:.3f}')
 
     # Now save the model to the standard place/name
     joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
@@ -97,6 +144,12 @@ def predict_fn(df, model):
     model_dir = os.environ['SM_MODEL_DIR']
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
         features = json.load(fp)
+
+    # Look at/convert Feature Data Types
+    df, _computed_features = feature_type_converter(df, features)
+    df, _computed_features = feature_type_converter(df, _computed_features)
+    print(f"Features: {features}")
+    print(f"Computed Features: {_computed_features}")
 
     # Predict the features against our XGB Model
     predictions = model.predict(df[features])
