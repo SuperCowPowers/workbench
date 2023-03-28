@@ -41,10 +41,6 @@ if __name__ == '__main__':
     print(f"Target: {target}")
     print(f"Features: {str(feature_list)}")
 
-    # Look at/convert Feature Data Types
-    all_df, feature_list = feature_type_converter(all_df, feature_list)
-    all_df, feature_list = feature_type_converter(all_df, feature_list)
-
     # Now Split based on training Split
     df_train, df_val = train_test_split(all_df, test_size=validation_split)
     print(f'FIT/TRAIN: {df_train.shape}')
@@ -67,7 +63,7 @@ if __name__ == '__main__':
     # Report Performance Metrics
     if model_type == 'classifier':
         # Note: Using labels here might seem extraneous, but it ensures order of the output
-        scores = precision_recall_fscore_support(df_val['sol_level'], preds, average=None, labels=[0, 1, 2])
+        scores = precision_recall_fscore_support(df_val[target], preds, average=None, labels=[0, 1, 2])
 
         # Put the scores into a dataframe
         scores_T = list(map(list, zip(*scores)))
@@ -123,18 +119,16 @@ def predict_fn(df, model):
     model_dir = os.environ['SM_MODEL_DIR']
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
         features = json.load(fp)
-
-    # Look at/convert Feature Data Types
-    df, _computed_features = feature_type_converter(df, features)
-    df, _computed_features = feature_type_converter(df, _computed_features)
     print(f"Features: {features}")
-    print(f"Computed Features: {_computed_features}")
 
     # Predict the features against our XGB Model
     predictions = model.predict(df[features])
-    pred_proba = model.predict_proba(df[features])
-
-    # Store our predictions and return the DataFrame
     df['predictions'] = predictions
-    df['pred_proba'] = [json.dumps(p.tolist()) for p in pred_proba]  # We have to do this for CSV serialization
+
+    # Does our model have a 'predict_proba' method? If so add that to the DataFrame as well
+    if getattr(model, 'predict_proba'):
+        pred_proba = model.predict_proba(df[features])
+        df['pred_proba'] = [json.dumps(p.tolist()) for p in pred_proba]  # We have to do this for CSV serialization
+
+    # All done, return the DataFrame
     return df

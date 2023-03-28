@@ -204,8 +204,8 @@ def test():
     # Create the FeatureSet to DF Transform
     feature_to_pandas = FeaturesToPandas('abalone_feature_set')
 
-    # Transform the DataSource into a Pandas DataFrame (with max_rows = 1000)
-    feature_to_pandas.transform(max_rows=1000)
+    # Transform the DataSource into a Pandas DataFrame (with max_rows = 100)
+    feature_to_pandas.transform(max_rows=100)
 
     # Grab the output and show it
     feature_df = feature_to_pandas.get_output()

@@ -57,8 +57,8 @@ def test():
     """Test the ModelToEndpoint Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = 'solubility-regression'
-    output_uuid = 'solubility-regression-endpoint'
+    input_uuid = 'abalone-regression'
+    output_uuid = 'abalone-regression-endpoint'
     ModelToEndpoint(input_uuid, output_uuid).transform()
 
 
