@@ -31,7 +31,7 @@ pip install sageworks
 ```
 
 ### Gettting Started
-SageWorks has a large number of classes and components, the best place to get started is our [SageWorks Wiki](https://github.com/SuperCowPowers/sageworks/wiki). There's a growing set of documentation (with pictures) and step-by-step examples of how to get started with SageWorks.
+SageWorks has a large number of classes and components, the best place to get started is our [SageWorks Wiki](https://github.com/SuperCowPowers/sageworks/wiki). There's a growing set of documentation (with pictures) and step-by-step examples of how to get started with SageWorks. You can also join us on Discord <https://discord.gg/WHAJuz8sw8> for questions and advice on using SageWorks within your organization.
 
 ### SageWorks Zen
 - The AWS SageMaker® set of services is vast and **complex**.
