@@ -126,7 +126,7 @@ def predict_fn(df, model):
     df['predictions'] = predictions
 
     # Does our model have a 'predict_proba' method? If so add that to the DataFrame as well
-    if getattr(model, 'predict_proba'):
+    if getattr(model, 'predict_proba', None):
         pred_proba = model.predict_proba(df[features])
         df['pred_proba'] = [json.dumps(p.tolist()) for p in pred_proba]  # We have to do this for CSV serialization
 

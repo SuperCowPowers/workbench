@@ -185,6 +185,7 @@ class Endpoint(Artifact):
 def test():
     """Test for Endpoint Class"""
     from sageworks.transforms.pandas_transforms.features_to_pandas import FeaturesToPandas
+    from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error
 
     # Grab an Endpoint object and pull some information from it
     my_endpoint = Endpoint('abalone-regression-endpoint')
@@ -214,6 +215,15 @@ def test():
     # Okay now run inference against our Features DataFrame
     result_df = my_endpoint.predict(feature_df)
     print(result_df)
+
+    target = 'class_number_of_rings'
+    result_df[target] = result_df[target].astype(pd.Float64Dtype())
+    rmse = mean_squared_error(result_df[target], result_df['predictions'], squared=True)
+    mae = mean_absolute_error(result_df[target], result_df['predictions'])
+    r2 = r2_score(result_df[target], result_df['predictions'])
+    print(f'RMSE: {rmse:.3f}')
+    print(f'MAE: {mae:.3f}')
+    print(f'R2 Score: {r2:.3f}')
 
 
 if __name__ == "__main__":
