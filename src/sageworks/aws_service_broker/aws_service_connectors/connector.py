@@ -27,7 +27,7 @@ class Connector(ABC):
 
         # Set up the token refresh time
         self.refresh_minutes = token_refresh
-        self.token_refresh_time = time.time() + (self.refresh_minutes * 3600)
+        self.token_refresh_time = time.time() + (self.refresh_minutes * 60)
 
     @abstractmethod
     def check(self) -> bool:
@@ -49,7 +49,7 @@ class Connector(ABC):
             self.boto_session = AWSSageWorksRoleManager().boto_session()
             self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
             self.sm_client = self.sm_session.boto_session.client("sagemaker")
-            self.token_refresh_time = now + (self.refresh_minutes * 3600)
+            self.token_refresh_time = now + (self.refresh_minutes * 60)
 
         # Call the subclass Refresh method
         return self.refresh_impl()
