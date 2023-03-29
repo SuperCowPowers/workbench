@@ -6,6 +6,7 @@ import logging
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
+from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -27,6 +28,9 @@ class Artifact(ABC):
         self.boto_session = AWSSageWorksRoleManager().boto_session()
         self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
         self.sm_client = self.sm_session.boto_session.client("sagemaker")
+
+        # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
+        self.aws_meta = AWSServiceBroker()
 
     @abstractmethod
     def check(self) -> bool:

@@ -11,7 +11,7 @@ from sagemaker import Predictor
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
-from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
+from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class Endpoint(Artifact):
@@ -27,7 +27,6 @@ class Endpoint(Artifact):
 
         # Grab an AWS Metadata Broker object and pull information for Endpoints
         self.endpoint_name = endpoint_name
-        self.aws_meta = AWSServiceBroker()
         self.endpoint_meta = self.aws_meta.get_metadata(ServiceCategory.ENDPOINTS).get(self.endpoint_name)
         self.endpoint_return_columns = None
 

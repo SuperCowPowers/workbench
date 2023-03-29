@@ -9,7 +9,7 @@ from sagemaker.feature_store.feature_store import FeatureStore
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
-from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
+from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class FeatureSet(AthenaSource):
@@ -23,7 +23,6 @@ class FeatureSet(AthenaSource):
 
         # Grab an AWS Metadata Broker object and pull information for Feature Sets
         self.feature_set_name = feature_set_name
-        self.aws_meta = AWSServiceBroker()
         self.feature_meta = self.aws_meta.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
         if self.feature_meta is None:
             # Base Class Initialization

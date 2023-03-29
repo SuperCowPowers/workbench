@@ -6,14 +6,14 @@ from sageworks.transforms.pandas_transforms import pandas_utils
 
 
 class DataToDataExample(DataToDataLight):
-    def __init__(self, input_uuid: str = None, output_uuid: str = None):
+    def __init__(self, input_uuid: str, output_uuid: str):
         """DataToDataExample: Example Class that demonstrates a Data Source to Data Source Transform"""
 
         # Call superclass init
         super().__init__(input_uuid, output_uuid)
 
     def transform_impl(self, drop_na='any'):
-        """Just dropping NaNs but you could do anything that you want, simply take the
+        """Just dropping NaNs, but you could do anything that you want, simply take the
            input dataframe and produce an output dataframe (of any form)"""
 
         # Drop Rows that have NaNs in them

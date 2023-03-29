@@ -5,7 +5,7 @@ from datetime import datetime
 
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source import DataSource
-from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
+from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class AthenaSource(DataSource):
@@ -24,7 +24,6 @@ class AthenaSource(DataSource):
         self.table_name = table_name
 
         # Grab an AWS Metadata Broker object and pull information for Data Sources
-        self.aws_meta = AWSServiceBroker()
         self.catalog_meta = self.aws_meta.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(self.table_name)
 
         # Grab my tags

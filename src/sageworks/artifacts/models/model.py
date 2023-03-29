@@ -5,7 +5,7 @@ from datetime import datetime
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
-from sageworks.aws_service_broker.aws_service_broker import ServiceCategory, AWSServiceBroker
+from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class Model(Artifact):
@@ -21,7 +21,6 @@ class Model(Artifact):
 
         # Grab an AWS Metadata Broker object and pull information for Models
         self.model_name = model_name
-        self.aws_meta = AWSServiceBroker()
         self.model_meta = self.aws_meta.get_metadata(ServiceCategory.MODELS).get(self.model_name)
         if self.model_meta is None:
             # Base Class Initialization
