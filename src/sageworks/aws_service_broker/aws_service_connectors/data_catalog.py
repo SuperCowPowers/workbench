@@ -84,7 +84,8 @@ class DataCatalog(Connector):
 
     def add_table_tags(self, database: str, table_name: str, tags: list):
         """Add some the tags for a specific table"""
-        current_tags = json.loads(wr.catalog.get_table_parameters(database, table_name).get('tags'))
+        current_tags = json.loads(wr.catalog.get_table_parameters(database, table_name,
+                                                                  boto3_session=self.boto_session).get('tags'))
         new_tags = list(set(current_tags).union(set(tags)))
         wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(new_tags)},
                                            database=database,

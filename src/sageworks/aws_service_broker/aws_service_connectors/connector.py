@@ -14,20 +14,35 @@ logging_setup()
 
 
 class Connector(ABC):
-    def __init__(self, token_refresh=45):
-        """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata
-           Args:
-               token_refresh(str): AWS Token Refresh Time in minutes"""
+
+    # Class attributes
+    log = logging.getLogger(__name__)
+
+    # Set up our Boto3 and SageMaker Session and SageMaker Client
+    boto_session = AWSSageWorksRoleManager().boto_session()
+    sm_session = AWSSageWorksRoleManager().sagemaker_session()
+    sm_client = sm_session.boto_session.client("sagemaker")
+
+    # Set up the token refresh time
+    refresh_minutes = 45
+    token_refresh_time = time.time() + (refresh_minutes * 60)
+
+    @classmethod
+    def refresh_class_aws_sessions(cls):
+        """Class method to refresh our AWS Sessions/Tokens"""
+        now = time.time()
+        if now > cls.token_refresh_time:
+            cls.log.info(f"Current Refresh Time: {cls.token_refresh_time}")
+            cls.token_refresh_time = now + (cls.refresh_minutes * 60)
+            cls.log.info(f"New Refresh Time: {cls.token_refresh_time}")
+            cls.log.info('Refreshing AWS SSO Token...')
+            cls.boto_session = AWSSageWorksRoleManager().boto_session()
+            cls.sm_session = AWSSageWorksRoleManager().sagemaker_session()
+            cls.sm_client = cls.sm_session.boto_session.client("sagemaker")
+
+    def __init__(self):
+        """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
         self.log = logging.getLogger(__name__)
-
-        # Set up our Boto3 and SageMaker Session and SageMaker Client
-        self.boto_session = AWSSageWorksRoleManager().boto_session()
-        self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
-        self.sm_client = self.sm_session.boto_session.client("sagemaker")
-
-        # Set up the token refresh time
-        self.refresh_minutes = token_refresh
-        self.token_refresh_time = time.time() + (self.refresh_minutes * 60)
 
     @abstractmethod
     def check(self) -> bool:
@@ -43,13 +58,7 @@ class Connector(ABC):
     def refresh(self) -> bool:
         """Refresh data/metadata associated with this service"""
         # Check if it's time to Refresh our AWS/SSO Token
-        now = time.time()
-        if now > self.token_refresh_time:
-            self.log.info('Refreshing AWS SSO Token...')
-            self.boto_session = AWSSageWorksRoleManager().boto_session()
-            self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
-            self.sm_client = self.sm_session.boto_session.client("sagemaker")
-            self.token_refresh_time = now + (self.refresh_minutes * 60)
+        Connector.refresh_class_aws_sessions()
 
         # Call the subclass Refresh method
         return self.refresh_impl()
