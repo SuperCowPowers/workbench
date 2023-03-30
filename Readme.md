@@ -27,7 +27,7 @@ For more details see: [SageWorks Artitected FrameWork](https://docs.google.com/p
 
 <img width="1008" alt="Screenshot 2023-03-27 at 8 56 00 PM" src="https://user-images.githubusercontent.com/4806709/228117977-91904604-9dfc-4e29-8524-41496e0130d5.png">
 
-<i><b> Clearly illustrated:</b> SageWorks uses Pipeline Graphs to provide intuitive and transparent visibility into AWS Sagemaker Deployments.</i>
+<i><b> Clearly illustrated:</b> SageWorks provides intuitive and transparent visibility into the full pipeline of your AWS Sagemaker Deployments.</i>
 
 ## Installation
 ```
