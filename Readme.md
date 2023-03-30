@@ -13,6 +13,8 @@ For more details see: [SageWorks Artitected FrameWork](https://docs.google.com/p
 
 ## Why SageWorks?
 
+<img align="right" src="docs/images/graph_representation.png" width="300">
+
 - The AWS SageMaker® ecosystem is **awesome** but has a large number of services with significant complexity
 - SageWorks provides **rapid prototyping** through easy to use **classes** and **transforms**
 - SageWorks provides **visibility** and **transparency** into AWS SageMaker® Pipelines
@@ -21,7 +23,9 @@ For more details see: [SageWorks Artitected FrameWork](https://docs.google.com/p
     - What's the ***Provenance*** of a Model in Model Registry?
     - What SageMaker Endpoints are associated with this model?
 
-<img src="docs/images/graph_representation.png" width="400">
+
+
+<img width="1008" alt="Screenshot 2023-03-27 at 8 56 00 PM" src="https://user-images.githubusercontent.com/4806709/228117977-91904604-9dfc-4e29-8524-41496e0130d5.png">
 
 <i><b> Clearly illustrated:</b> SageWorks uses Pipeline Graphs to provide intuitive and transparent visibility into AWS Sagemaker Deployments.</i>
 
@@ -46,10 +50,6 @@ The SageWorks Classes are organized to work in concert with AWS Services. For mo
 
 ### Contributions
 If you'd like to contribute to the SageWorks project, you're more than welcome. All contributions will fall under the existing project [license](https://github.com/SuperCowPowers/sageworks/blob/main/LICENSE). If you are interested in contributing or have questions please feel free to contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com).
-
-
-
-
 
 
 ### SageWorks Alpha Testers Wanted
