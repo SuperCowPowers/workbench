@@ -1,17 +1,19 @@
 """FeatureSet: SageWorks Feature Set accessible through Athena"""
 import time
 from datetime import datetime, timezone
+import pandas as pd
 import awswrangler as wr
 
 from sagemaker.feature_store.feature_group import FeatureGroup
 from sagemaker.feature_store.feature_store import FeatureStore
 
 # SageWorks Imports
+from sageworks.artifacts.artifact import Artifact
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
-class FeatureSet(AthenaSource):
+class FeatureSet(Artifact):
 
     def __init__(self, feature_set_name):
         """FeatureSet: SageWorks Feature Set accessible through Athena
@@ -19,15 +21,15 @@ class FeatureSet(AthenaSource):
         Args:
             feature_set_name (str): Name of Feature Set in SageWorks Metadata.
         """
-        # FIXME: Remove this after some testing
-        # Base Class Initialization
-        # Artifact.__init__(self, feature_set_name)
+        # Call superclass init
+        super().__init__(feature_set_name)
 
         # Grab an AWS Metadata Broker object and pull information for Feature Sets
         self.feature_set_name = feature_set_name
         self.feature_meta = self.aws_meta.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
         if self.feature_meta is None:
             self.log.warning(f"Could not find feature set {self.feature_set_name} within current visibility scope")
+            self.athena_source = None
             return
         else:
             self.record_id = self.feature_meta['RecordIdentifierFeatureName']
@@ -38,9 +40,8 @@ class FeatureSet(AthenaSource):
             self.athena_table = self.feature_meta['sageworks'].get('athena_table')
             self.s3_storage = self.feature_meta['sageworks'].get('s3_storage')
 
-            # Call SuperClass (AthenaSource) Initialization
-            # Note: We would normally do this first, but we need the Athena table/db info
-            super().__init__(self.athena_table, self.athena_database)
+            # Creat our internal AthenaSource
+            self.athena_source = AthenaSource(self.athena_table, self.athena_database)
 
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
@@ -54,6 +55,46 @@ class FeatureSet(AthenaSource):
             self.log.critical(f'FeatureSet.check() {self.feature_set_name} not found in AWS Metadata!')
             return False
         return True
+
+    def meta(self) -> dict:
+        """Get the full AWS metadata for this artifact"""
+        return self.feature_meta
+
+    def arn(self) -> str:
+        """AWS ARN (Amazon Resource Name) for this artifact"""
+        return self.feature_meta['FeatureGroupArn']
+
+    def size(self) -> int:
+        """Return the size of the internal AthenaSource in MegaBytes"""
+        return self.athena_source.size()
+
+    def column_names(self) -> list[str]:
+        """Return the number of columns of the internal AthenaSource"""
+        return self.athena_source.column_names()
+
+    def num_columns(self) -> int:
+        """Return the number of columns of the internal AthenaSource"""
+        return len(self.column_names())
+
+    def num_rows(self) -> int:
+        """Return the number of rows of the internal AthenaSource"""
+        return self.athena_source.num_rows()
+
+    def query(self, query: str) -> pd.DataFrame:
+        """Return the number of rows of the internal AthenaSource"""
+        return self.athena_source.query(query)
+
+    def aws_url(self):
+        """The AWS URL for looking at/querying this data source"""
+        return 'https://us-west-2.console.aws.amazon.com/athena/home'
+
+    def created(self) -> datetime:
+        """Return the datetime when this artifact was created"""
+        return self.feature_meta['CreateTime']
+
+    def modified(self) -> datetime:
+        """Return the datetime when this artifact was last modified"""
+        return self.feature_meta['UpdateTime']
 
     def get_feature_store(self) -> FeatureStore:
         """Return the underlying AWS FeatureStore object. This can be useful for more advanced usage
@@ -140,7 +181,7 @@ def test():
     from sageworks.transforms.pandas_transforms.features_to_pandas import FeaturesToPandas
 
     # Grab a FeatureSet object and pull some information from it
-    my_features = FeatureSet('test-feature-set')
+    my_features = FeatureSet('test_feature_set')
 
     # Call the various methods
 
@@ -159,22 +200,6 @@ def test():
     # Get the metadata and tags associated with this feature set
     print(f"SageWorks Meta: {my_features.sageworks_meta()}")
     print(f"SageWorks Tags: {my_features.sageworks_tags()}")
-
-    # Run a query to only pull back a few columns and rows
-    column_query = ', '.join(columns[:3])
-    query = f'select {column_query} from "{my_features.athena_database}"."{my_features.athena_table}" limit 10'
-    df = my_features.query(query)
-    print(df)
-
-    # Create some training data from our Feature Set
-    s3_path = my_features.create_s3_training_data()
-    print('Training Data Created')
-    print(s3_path)
-
-    # Getting the Feature Set as a Pandas DataFrame
-    my_df = FeaturesToPandas('test-feature-set').get_output()
-    print('Feature Set as Pandas DataFrame')
-    print(my_df.head())
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print('Deleting SageWorks Feature Set...')
