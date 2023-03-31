@@ -7,11 +7,11 @@ from sageworks.artifacts.artifact import Artifact
 
 
 class DataSource(Artifact):
-    def __init__(self):
+    def __init__(self, uuid):
         """DataSource: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)"""
 
         # Call superclass init
-        super().__init__()
+        super().__init__(uuid)
 
     @abstractmethod
     def num_rows(self) -> int:

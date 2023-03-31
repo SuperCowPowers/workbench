@@ -10,6 +10,7 @@ import awswrangler as wr
 from sageworks.views.view import View
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.aws_service_broker.cache import Cache
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
 
 
 class ArtifactsSummary(View):
@@ -20,6 +21,7 @@ class ArtifactsSummary(View):
 
         # Get AWS Service information for ALL the categories (data_source, feature_set, endpoints, etc)
         self.service_info = self.aws_broker.get_all_metadata()
+        self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
 
         # Summary data for ALL the AWS Services
         self.summary_data = {}
@@ -39,11 +41,26 @@ class ArtifactsSummary(View):
         """Return the size of this data in MegaBytes"""
         size_in_mb = self.size_cache.get(s3_path)
         if size_in_mb is None:
-            self.log.info('Computing S3 Object sizes...')
+            self.log.info(f"Computing S3 Object sizes: {s3_path}...")
             size_in_bytes = sum(wr.s3.size_objects(s3_path, boto3_session=self.boto_session).values())
             size_in_mb = f"{ (size_in_bytes/1_000_000):.1f}"
             self.size_cache.set(s3_path, size_in_mb)
         return size_in_mb
+
+    @staticmethod
+    def aws_tags_to_dict(aws_tags):
+        """AWS Tags are in an odd format, so convert to regular dictionary"""
+        return {item['Key']: item['Value'] for item in aws_tags if 'sageworks' in item['Key']}
+
+    def artifact_meta(self, aws_arn):
+        """Get the Metadata for this Artifact"""
+        meta = self.size_cache.get(aws_arn)
+        if meta is None:
+            self.log.info(f'Retrieving Artifact Metadata: {aws_arn}...')
+            aws_tags = self.sm_session.list_tags(aws_arn)
+            meta = self.aws_tags_to_dict(aws_tags)
+            self.size_cache.set(aws_arn, meta)
+        return meta
 
     def view_data(self) -> dict:
         """Get all the data that's useful for this view
@@ -88,14 +105,15 @@ class ArtifactsSummary(View):
                 # Get the size of the S3 Storage Object(s)
                 size = self.s3_objects_size(info['StorageDescriptor']['Location'])
                 summary = {'Name': self.athena_hyperlink(name),
-                           'Version': info.get('VersionId', '-'),
-                           'Size (MB)': size,
+                           'Ver': info.get('VersionId', '-'),
+                           'Size(MB)': size,
                            'Catalog DB': info.get('DatabaseName', '-'),
                            'Created': self.datetime_string(info.get('CreateTime')),
-                           'LastModified': self.datetime_string(info.get('UpdateTime')),
+                           'Modified': self.datetime_string(info.get('UpdateTime')),
                            'Num Columns': self.num_columns(info),
                            'DataLake': info.get('IsRegisteredWithLakeFormation', '-'),
-                           'Tags': str(info.get('tags', '-'), )}
+                           'Tags': info['Parameters'].get('sageworks_tags', '-'),
+                           'Input': str(info['Parameters'].get('sageworks_input', '-'), )}
                 data_summary.append(summary)
 
         return pd.DataFrame(data_summary)
@@ -112,18 +130,23 @@ class ArtifactsSummary(View):
         data_summary = []
         for feature_group, group_info in data.items():
 
+            # Get the tags for this Feature Group
+            arn = group_info['FeatureGroupArn']
+            sageworks_meta = self.artifact_meta(arn)
+
             # Get the size of the S3 Storage Object(s)
             size = self.s3_objects_size(group_info['OfflineStoreConfig']['S3StorageConfig']['S3Uri'])
             summary = {'Feature Group': self.athena_hyperlink(group_info['FeatureGroupName']),
                        'Status': group_info['FeatureGroupStatus'],
-                       'Size (MB)': size,
+                       'Size(MB)': size,
                        'Catalog DB': group_info['OfflineStoreConfig'].get('DataCatalogConfig', {}).get('Database', '-'),
                        'Athena Table': group_info['OfflineStoreConfig'].get('DataCatalogConfig', {}).get('TableName', '-'),
                        'ID/EventTime': f"{group_info['RecordIdentifierFeatureName']}/{group_info['EventTimeFeatureName']}",
                        'Online': str(group_info.get('OnlineStoreConfig', {}).get('EnableOnlineStore', 'False')),
                        'Created': self.datetime_string(group_info.get('CreationTime')),
-                       'LastModified': self.datetime_string(group_info.get('LastModified')),
-                       'Tags': str(group_info.get('tags', '-'), )}
+                       'Modified': self.datetime_string(group_info.get('LastModified')),
+                       'Tags': sageworks_meta.get('sageworks_tags', '-'),
+                       'Input': sageworks_meta.get('sageworks_input', '-')}
             data_summary.append(summary)
 
         return pd.DataFrame(data_summary)
@@ -153,12 +176,12 @@ class ArtifactsSummary(View):
                     tags = '-'
 
                 summary = {'Model Group': model['ModelPackageGroupName'],
-                           'Version': model['ModelPackageVersion'],
+                           'Ver': model['ModelPackageVersion'],
                            'Status': model['ModelPackageStatus'],
                            'Description': description,
                            'Feature Set': feature_set,
                            'Created': self.datetime_string(model.get('CreationTime')),
-                           'LastModified': self.datetime_string(model.get('LastModifiedTime')),
+                           'Modified': self.datetime_string(model.get('LastModifiedTime')),
                            'Tags': tags}
                 data_summary.append(summary)
 
@@ -173,11 +196,10 @@ class ArtifactsSummary(View):
         for endpoint, endpoint_info in data.items():
             summary = {'Name': endpoint_info['EndpointName'],
                        'Status': endpoint_info['EndpointStatus'],
-                       'Description': 'TBD',
                        'Created': self.datetime_string(endpoint_info.get('CreationTime')),
-                       'LastModified': self.datetime_string(endpoint_info.get('LastModifiedTime')),
+                       'Modified': self.datetime_string(endpoint_info.get('LastModifiedTime')),
                        'DataCapture': str(endpoint_info.get('DataCaptureConfig', {}).get('EnableCapture', 'False')),
-                       'SamplingPercent': str(endpoint_info.get('DataCaptureConfig', {}).get('CurrentSamplingPercentage', '-')),
+                       'Sampling(%)': str(endpoint_info.get('DataCaptureConfig', {}).get('CurrentSamplingPercentage', '-')),
                        'Tags': str(endpoint_info.get('tags', '-'), )}
             data_summary.append(summary)
 

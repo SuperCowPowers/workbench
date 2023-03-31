@@ -11,7 +11,7 @@ class FeaturesToPandas(Transform):
         """FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame"""
 
         # Call superclass init
-        super().__init__(input_uuid=feature_set_name)
+        super().__init__(input_uuid=feature_set_name, output_uuid=None)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.FEATURE_SET

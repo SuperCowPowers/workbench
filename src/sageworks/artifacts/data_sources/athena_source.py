@@ -6,6 +6,7 @@ from datetime import datetime
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
 
 
 class AthenaSource(DataSource):
@@ -18,16 +19,13 @@ class AthenaSource(DataSource):
         """
 
         # Call superclass init
-        super().__init__()
+        super().__init__(table_name)
 
         self.data_catalog_db = database
         self.table_name = table_name
 
         # Grab an AWS Metadata Broker object and pull information for Data Sources
         self.catalog_meta = self.aws_meta.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(self.table_name)
-
-        # Grab my tags
-        self._tags = self.catalog_meta.get('Parameters', {}).get('tags', []) if self.catalog_meta else []
 
         # All done
         print(f'AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}')
@@ -52,13 +50,18 @@ class AthenaSource(DataSource):
             self.log.critical(f"Athena Test Query Failed: {exc}")
             return False
 
-    def uuid(self) -> str:
-        """The SageWorks Unique Identifier"""
-        return self.table_name
+    def arn(self) -> str:
+        """AWS ARN (Amazon Resource Name) for this artifact"""
+        # Grab our SageWorks Role Manager, get our AWS account id, and region for ARN creation
+        account_id = AWSSageWorksRoleManager().account_id()
+        region = AWSSageWorksRoleManager().region()
+        arn = f"arn:aws:glue:{region}:{account_id}:table/{self.data_catalog_db}/{self.table_name}"
+        return arn
 
-    def _aws_uuid(self) -> str:
-        """Internal: An AWS Unique Identifier"""
-        return f"CatalogID:{self.catalog_meta['CatalogId']}"
+    def sageworks_meta(self):
+        """Get the SageWorks specific metadata for this Artifact"""
+        params = self.catalog_meta.get('Parameters', {})
+        return {key: value for key, value in params.items() if 'sageworks' in key}
 
     def size(self) -> bool:
         """Return the size of this data in MegaBytes"""
@@ -67,17 +70,8 @@ class AthenaSource(DataSource):
         return size_in_mb
 
     def meta(self):
-        """Get the metadata for this artifact"""
+        """Get the full AWS metadata for this artifact"""
         return self.catalog_meta
-
-    def tags(self):
-        """Get the tags for this artifact"""
-        return self._tags
-
-    def add_tag(self, tag):
-        """Add a tag to this artifact"""
-        # This ensures no duplicate tags
-        self._tags = list(set(self._tags).union([tag]))
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
@@ -149,7 +143,10 @@ def test():
     assert(my_data.check())
 
     # What's my SageWorks UUID
-    print(f"UUID: {my_data.uuid()}")
+    print(f"UUID: {my_data.uuid}")
+
+    # What's my AWS ARN
+    print(f"AWS ARN: {my_data.arn()}")
 
     # Get the S3 Storage for this Data Source
     print(f"S3 Storage: {my_data.s3_storage_location()}")
@@ -160,6 +157,10 @@ def test():
     # When was it created and last modified?
     print(f"Created: {my_data.created()}")
     print(f"Modified: {my_data.modified()}")
+
+    # Get Metadata and tags associated with this Artifact
+    print(f"Meta: {my_data.sageworks_meta()}")
+    print(f"Tags: {my_data.sageworks_tags()}")
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')

@@ -1,6 +1,5 @@
 """PandasToData: Class to publish a Pandas DataFrame as a DataSource"""
 import awswrangler as wr
-import json
 import pandas as pd
 
 # Local imports
@@ -27,8 +26,10 @@ class PandasToData(Transform):
         """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
            store the information about the data to the AWS Data Catalog sageworks database"""
 
-        # Add some tags here
-        tags = ['sageworks', 'public']
+        # Set up our metadata storage
+        sageworks_meta = {'sageworks_tags': self.output_tags}
+        for key, value in self.output_meta.items():
+            sageworks_meta[key] = value
 
         # Create the Output Parquet file S3 Storage Path
         s3_storage_path = f"{self.data_source_s3_path}/{self.output_uuid}"
@@ -38,7 +39,7 @@ class PandasToData(Transform):
                          database=self.data_catalog_db, table=self.output_uuid,
                          description=f'SageWorks data source: {self.output_uuid}',
                          filename_prefix=f'{self.output_uuid}_',
-                         parameters={'tags': json.dumps(tags)},
+                         parameters=sageworks_meta,
                          boto3_session=self.boto_session,
                          partition_cols=None)  # FIXME: Have some logic around partition columns
 
@@ -63,9 +64,11 @@ def test():
     fake_df = pd.DataFrame(fake_data)
 
     # Create my DF to Data Source Transform
-    output_uuid = 'test_fake_data'
+    output_uuid = 'test_data'
     df_to_data = PandasToData(output_uuid)
     df_to_data.set_input(fake_df)
+    df_to_data.set_output_tags(['test', 'small'])
+    df_to_data.set_output_meta({'sageworks_input': 'DataFrame'})
 
     # Store this data into a SageWorks DataSource
     df_to_data.transform()

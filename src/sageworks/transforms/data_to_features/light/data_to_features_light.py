@@ -35,6 +35,8 @@ class DataToFeaturesLight(Transform):
         # Now publish to the output location
         output_features = PandasToFeatures(self.output_uuid)
         output_features.set_input(self.output_df, id_column=id_column, event_time_column=event_time_column)
+        output_features.set_output_tags(self.output_tags)
+        output_features.set_output_meta(self.output_meta)
         output_features.transform(delete_existing=delete_existing)
 
 
@@ -45,7 +47,10 @@ def test():
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'abalone_data'
     output_uuid = 'abalone_feature_set'
-    DataToFeaturesLight(input_uuid, output_uuid).transform(delete_existing=True)
+    data_to_features = DataToFeaturesLight(input_uuid, output_uuid)
+    data_to_features.set_output_tags(['abalone', 'public'])
+    data_to_features.set_output_meta({'sageworks_input': input_uuid})
+    data_to_features.transform(delete_existing=True)
 
 
 if __name__ == "__main__":

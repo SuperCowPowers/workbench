@@ -91,6 +91,12 @@ class PandasToFeatures(Transform):
         # Now convert Categorical Types to One Hot Encoding
         self.input_df = pd.get_dummies(self.input_df, columns=categorical_columns)
 
+    @staticmethod
+    def convert_to_aws_tags(metadata: dict):
+        """Convert a dictionary to the AWS tag format (list of dicts)
+           [ {Key: key_name, Value: value}, {..}, ...] """
+        return [{'Key': key, 'Value': value} for key, value in metadata.items()]
+
     def transform_impl(self, delete_existing=False):
         """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
            store the information about the data to the AWS Data Catalog sageworks database"""
@@ -113,9 +119,11 @@ class PandasToFeatures(Transform):
         my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
         my_feature_group.load_feature_definitions(data_frame=self.input_df)
 
-        # Add some tags here
-        tags = ['sageworks', 'public']
-        print(tags)
+        # Set up our metadata storage
+        sageworks_meta = {'sageworks_tags': self.output_tags}
+        for key, value in self.output_meta.items():
+            sageworks_meta[key] = value
+        aws_tags = self.convert_to_aws_tags(sageworks_meta)
 
         # Create the Output Parquet file S3 Storage Path for this Feature Set
         s3_storage_path = f"{self.feature_set_s3_path}/{self.output_uuid}"
@@ -136,7 +144,8 @@ class PandasToFeatures(Transform):
             record_identifier_name=self.id_column,
             event_time_feature_name=self.event_time_column,
             role_arn=self.sageworks_role_arn,
-            enable_online_store=True
+            enable_online_store=True,
+            tags=aws_tags
             # data_catalog_config=my_config,
             # disable_glue_table_creation=True
         )
@@ -179,6 +188,8 @@ def test():
     # Create my DF to Feature Set Transform
     df_to_features = PandasToFeatures('test-feature-set')
     df_to_features.set_input(fake_df, id_column='id', event_time_column='date')
+    df_to_features.set_output_tags(['test', 'small'])
+    df_to_features.set_output_meta({'sageworks_input': 'DataFrame'})
 
     # Store this dataframe as a SageWorks Feature Set
     df_to_features.transform(delete_existing=True)

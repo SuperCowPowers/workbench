@@ -85,6 +85,15 @@ class AWSSageWorksRoleManager:
         # Make sure we can access stuff with this role
         return SageSession(boto_session=self.boto_session())
 
+    @staticmethod
+    def account_id():
+        """Get the AWS AccountID"""
+        return boto3.client('sts').get_caller_identity()['Account']
+
+    def region(self):
+        """Get the AWS AccountID"""
+        return self.boto_session().region_name
+
 
 if __name__ == '__main__':
 
@@ -110,6 +119,12 @@ if __name__ == '__main__':
     # Get our Boto Session
     boto_session = sageworks_role.boto_session()
     print(boto_session)
+
+    # Get our account ID and region (needed for Data Catalog/Table ARN construction)
+    account_id = sageworks_role.account_id()
+    region = sageworks_role.region()
+    print(f"Account: {account_id}")
+    print(f"Region: {region}")
 
     # Try to access a 'regular' AWS service
     s3 = boto_session.client("s3")

@@ -27,6 +27,8 @@ class CSVToDataSource(Transform):
         # Use the SageWorks Pandas to Data Source class
         pandas_to_data = PandasToData(self.output_uuid)
         pandas_to_data.set_input(df)
+        pandas_to_data.set_output_tags(self.output_tags)
+        pandas_to_data.set_output_meta(self.output_meta)
         pandas_to_data.transform()
 
 
@@ -41,6 +43,8 @@ def test():
 
     # Create my Data Loader
     my_loader = CSVToDataSource(data_path, 'abalone_data')
+    my_loader.set_output_tags('abalone')
+    my_loader.set_output_meta({'sageworks_input': str(data_path)})
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()

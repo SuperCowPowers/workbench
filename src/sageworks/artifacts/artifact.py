@@ -14,9 +14,22 @@ logging_setup()
 
 
 class Artifact(ABC):
-    def __init__(self):
+
+    # Class attributes
+    log = logging.getLogger(__name__)
+
+    # Set up our Boto3 and SageMaker Session and SageMaker Client
+    boto_session = AWSSageWorksRoleManager().boto_session()
+    sm_session = AWSSageWorksRoleManager().sagemaker_session()
+    sm_client = sm_session.boto_session.client("sagemaker")
+
+    # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
+    aws_meta = AWSServiceBroker()
+
+    def __init__(self, uuid):
         """Artifact: Abstract Base Class for all Artifact classes in SageWorks.
                         Artifacts simply reflect and aggregate one or more AWS Services"""
+        self.uuid = uuid
         self.log = logging.getLogger(__name__)
 
         # FIXME: We should have this come from AWS or Config
@@ -24,22 +37,9 @@ class Artifact(ABC):
         self.data_source_s3_path = 's3://scp-sageworks-artifacts/data-sources'
         self.feature_sets_s3_path = 's3://scp-sageworks-artifacts/feature-sets'
 
-        # Set up our Boto3 and SageMaker Session and SageMaker Client
-        self.boto_session = AWSSageWorksRoleManager().boto_session()
-        self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
-        self.sm_client = self.sm_session.boto_session.client("sagemaker")
-
-        # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
-        self.aws_meta = AWSServiceBroker()
-
     @abstractmethod
     def check(self) -> bool:
         """Does the Artifact exist? Can we connect to it?"""
-        pass
-
-    @abstractmethod
-    def uuid(self) -> int:
-        """Return the unique SageWorks identifier for this artifact"""
         pass
 
     @abstractmethod
@@ -58,18 +58,8 @@ class Artifact(ABC):
         pass
 
     @abstractmethod
-    def meta(self):
-        """Get the metadata for this artifact"""
-        pass
-
-    @abstractmethod
-    def tags(self):
-        """Get the tags for this artifact"""
-        pass
-
-    @abstractmethod
-    def add_tag(self, tag):
-        """Add a tag to this artifact"""
+    def arn(self):
+        """AWS ARN (Amazon Resource Name) for this artifact"""
         pass
 
     @abstractmethod
@@ -78,6 +68,34 @@ class Artifact(ABC):
         pass
 
     @abstractmethod
+    def meta(self):
+        """Get the full AWS metadata for this artifact"""
+        pass
+
+    @abstractmethod
     def delete(self):
         """Delete this artifact including all related AWS objects"""
         pass
+
+    @staticmethod
+    def aws_tags_to_dict(aws_tags):
+        """AWS Tags are in an odd format, so convert to regular dictionary"""
+        return {item['Key']: item['Value'] for item in aws_tags if 'sageworks' in item['Key']}
+
+    def sageworks_meta(self):
+        """Get the SageWorks specific metadata for this Artifact"""
+        aws_arn = self.arn()
+        self.log.info(f'Retrieving SageWorks Metadata for Artifact: {aws_arn}...')
+        aws_tags = self.sm_session.list_tags(aws_arn)
+        meta = self.aws_tags_to_dict(aws_tags)
+        return meta
+
+    def sageworks_tags(self):
+        """Get the tags for this artifact"""
+        combined_tags = self.sageworks_meta().get('sageworks_tags', '')
+        tags = combined_tags.split(':')
+        return tags
+
+    def add_tag(self, tag):
+        """Add a tag to this artifact"""
+        self.log.error('add_tag: functionality needs to be added!')

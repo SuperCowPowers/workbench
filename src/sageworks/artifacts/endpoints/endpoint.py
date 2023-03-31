@@ -23,7 +23,7 @@ class Endpoint(Artifact):
             endpoint_name (str): Name of Endpoint in SageWorks
         """
         # Call SuperClass Initialization
-        super().__init__()
+        super().__init__(endpoint_name)
 
         # Grab an AWS Metadata Broker object and pull information for Endpoints
         self.endpoint_name = endpoint_name
@@ -133,10 +133,6 @@ class Endpoint(Artifact):
         for column in df.columns:
             error_df[column] = df[column].values
         return error_df
-
-    def uuid(self) -> str:
-        """The SageWorks Unique Identifier"""
-        return self.endpoint_name
 
     def size(self) -> int:
         """Return the size of this data in MegaBytes"""

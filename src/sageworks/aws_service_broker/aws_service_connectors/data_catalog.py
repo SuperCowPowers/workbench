@@ -2,7 +2,6 @@
 import sys
 import argparse
 import awswrangler as wr
-import json
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
@@ -74,20 +73,28 @@ class DataCatalog(Connector):
     def get_table_tags(self, database: str, table_name: str) -> list:
         """Get the table tag list for the given table name"""
         table = self.get_table(database, table_name)
-        return json.loads(table['Parameters'].get('tags', '[]'))
+
+        # Tags are stored as a string with a ':' delimiter
+        combined_tags = table['Parameters'].get('sageworks_tags', '')
+        tags = combined_tags.split(':')
+        return tags
 
     def set_table_tags(self, database: str, table_name: str, tags: list):
         """Set the tags for a specific table"""
-        wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(tags)},
+        # Tags are stored as a string with a ':' delimiter
+        combined_tags = ':'.join(tags)
+        wr.catalog.upsert_table_parameters(parameters={'sageworks_tags': combined_tags},
                                            database=database,
                                            table=table_name, boto3_session=self.boto_session)
 
     def add_table_tags(self, database: str, table_name: str, tags: list):
         """Add some the tags for a specific table"""
-        current_tags = json.loads(wr.catalog.get_table_parameters(database, table_name,
-                                                                  boto3_session=self.boto_session).get('tags'))
+        current_tags = wr.catalog.get_table_parameters(database, table_name,
+                                                       boto3_session=self.boto_session).get('sageworks_tags')
+        current_tags = current_tags.split(':')
         new_tags = list(set(current_tags).union(set(tags)))
-        wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(new_tags)},
+        new_tags = ':'.join(new_tags)
+        wr.catalog.upsert_table_parameters(parameters={'sageworks_tags': new_tags},
                                            database=database,
                                            table=table_name, boto3_session=self.boto_session)
 
@@ -127,7 +134,7 @@ if __name__ == '__main__':
     print(f"Tags: {my_tags}")
 
     # Set the tags for this table
-    catalog.set_table_tags(my_database, my_table, ['public', 'solubility'])
+    catalog.set_table_tags(my_database, my_table, ['test', 'sageworks'])
 
     # Refresh the connector to get the latest info from AWS Data Catalog
     catalog.refresh()
@@ -137,7 +144,7 @@ if __name__ == '__main__':
     print(f"Tags: {my_tags}")
 
     # Set the tags for this table
-    catalog.add_table_tags(my_database, my_table, ['test', 'sageworks'])
+    catalog.add_table_tags(my_database, my_table, ['test', 'small'])
 
     # Refresh the connector to get the latest info from AWS Data Catalog
     catalog.refresh()

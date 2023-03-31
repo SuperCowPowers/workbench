@@ -17,14 +17,12 @@ class Model(Artifact):
             model_name (str): Name of Model in SageWorks.
         """
         # Call SuperClass Initialization
-        super().__init__()
+        super().__init__(model_name)
 
         # Grab an AWS Metadata Broker object and pull information for Models
         self.model_name = model_name
         self.model_meta = self.aws_meta.get_metadata(ServiceCategory.MODELS).get(self.model_name)
         if self.model_meta is None:
-            # Base Class Initialization
-            Artifact.__init__(self)
             self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
         else:
             self.latest_model = self.model_meta[0]
@@ -52,10 +50,6 @@ class Model(Artifact):
             return False
         return True
 
-    def uuid(self) -> str:
-        """The SageWorks Unique Identifier"""
-        return self.model_name
-
     def size(self) -> bool:
         """Return the size of this data in MegaBytes"""
         return 0
@@ -63,14 +57,6 @@ class Model(Artifact):
     def meta(self):
         """Get the metadata for this artifact"""
         return self.latest_model
-
-    def add_tag(self):
-        """Get the tags for this artifact"""
-        return []
-
-    def tags(self):
-        """Get the tags for this artifact"""
-        return getattr(self, 'model_tags', [])
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
@@ -118,7 +104,7 @@ def test():
     print(f"Tags: {my_model.tags()}")
 
     # Delete the Model
-    my_model.delete()
+    # my_model.delete()
 
 
 if __name__ == "__main__":

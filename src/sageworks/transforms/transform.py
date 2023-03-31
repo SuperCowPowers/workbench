@@ -37,13 +37,14 @@ class TransformOutput(Enum):
 
 
 class Transform(ABC):
-    def __init__(self, input_uuid: str = None, output_uuid: str = None):
+    def __init__(self, input_uuid: str, output_uuid: str):
         """Transform: Abstract Base Class for all transforms in SageWorks"""
 
-        # FIXME: Should this class be a Python dataclass?
         self.log = logging.getLogger(__name__)
         self.input_type = None
         self.output_type = None
+        self.output_tags = list()
+        self.output_meta = dict()
         self.input_uuid = input_uuid
         self.output_uuid = output_uuid
 
@@ -61,6 +62,11 @@ class Transform(ABC):
         # Make sure the AWS data catalog database exists
         self.ensure_aws_catalog_db()
 
+    @abstractmethod
+    def transform_impl(self, **kwargs):
+        """Abstract Method: Implement the Transformation from Input to Output"""
+        pass
+
     def pre_transform(self, **kwargs):
         """Perform any Pre-Transform operations"""
         self.log.info('Pre-Transform...')
@@ -69,10 +75,20 @@ class Transform(ABC):
         """Perform any Post-Transform operations"""
         self.log.info('Post-Transform...')
 
-    @abstractmethod
-    def transform_impl(self, **kwargs):
-        """Abstract Method: Implement the Transformation from Input to Output"""
-        pass
+    def set_output_tags(self, tags: list | str):
+        """Set the tags that will be associated with the output object
+           Args:
+               tags (list | str): The list of tags or a ':' separated string of tags"""
+        if isinstance(tags, list):
+            self.output_tags = ':'.join(tags)
+        else:
+            self.output_tags = tags
+
+    def set_output_meta(self, meta: dict):
+        """Set the metadata that will be associated with the output object
+           Args:
+               meta (dict): A dictionary of metadata"""
+        self.output_meta = meta
 
     @final
     def transform(self, **kwargs):

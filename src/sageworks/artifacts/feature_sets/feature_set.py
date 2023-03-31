@@ -7,7 +7,6 @@ from sagemaker.feature_store.feature_group import FeatureGroup
 from sagemaker.feature_store.feature_store import FeatureStore
 
 # SageWorks Imports
-from sageworks.artifacts.artifact import Artifact
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
@@ -20,14 +19,16 @@ class FeatureSet(AthenaSource):
         Args:
             feature_set_name (str): Name of Feature Set in SageWorks Metadata.
         """
+        # FIXME: Remove this after some testing
+        # Base Class Initialization
+        # Artifact.__init__(self, feature_set_name)
 
         # Grab an AWS Metadata Broker object and pull information for Feature Sets
         self.feature_set_name = feature_set_name
         self.feature_meta = self.aws_meta.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
         if self.feature_meta is None:
-            # Base Class Initialization
-            Artifact.__init__(self)
             self.log.warning(f"Could not find feature set {self.feature_set_name} within current visibility scope")
+            return
         else:
             self.record_id = self.feature_meta['RecordIdentifierFeatureName']
             self.event_time = self.feature_meta['EventTimeFeatureName']
@@ -155,8 +156,9 @@ def test():
     columns = my_features.column_names()
     print(columns)
 
-    # Get the tags associated with this feature set
-    print(f"Tags: {my_features.tags()}")
+    # Get the metadata and tags associated with this feature set
+    print(f"SageWorks Meta: {my_features.sageworks_meta()}")
+    print(f"SageWorks Tags: {my_features.sageworks_tags()}")
 
     # Run a query to only pull back a few columns and rows
     column_query = ', '.join(columns[:3])
@@ -175,8 +177,8 @@ def test():
     print(my_df.head())
 
     # Now delete the AWS artifacts associated with this Feature Set
-    print('Deleting SageWorks Feature Set...')
-    my_features.delete()
+    # print('Deleting SageWorks Feature Set...')
+    # my_features.delete()
 
 
 if __name__ == "__main__":

@@ -39,6 +39,8 @@ class S3ToDataSourceLight(Transform):
         # Use the SageWorks Pandas to Data Source class
         pandas_to_data = PandasToData(self.output_uuid)
         pandas_to_data.set_input(df)
+        pandas_to_data.set_output_tags(self.output_tags)
+        pandas_to_data.set_output_meta(self.output_meta)
         pandas_to_data.transform()
 
 
@@ -47,8 +49,11 @@ def test():
     """Test the S3ToDataSourceLight Class"""
 
     # Create my Data Loader
-    output_uuid = 'test_data'
-    my_loader = S3ToDataSourceLight('s3://scp-sageworks-artifacts/incoming-data/abalone.csv', output_uuid)
+    input_path = 's3://scp-sageworks-artifacts/incoming-data/aqsol_public_data.csv'
+    output_uuid = 'aqsol_data'
+    my_loader = S3ToDataSourceLight(input_path, output_uuid)
+    my_loader.set_output_tags(['aqsol', 'public'])
+    my_loader.set_output_meta({'sageworks_input': input_path})
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()

@@ -34,7 +34,12 @@ def create(table_id: str, df: pd.DataFrame, header_color='rgb(60, 60, 60)',
         # fixed_rows={'headers': True},
         style_table={'maxHeight': '250px', 'overflowY': 'auto'},
         style_as_list_view=True,
-        style_cell={'font-family': 'HelveticaNeue', 'padding': '10px'},
+        style_cell={'font-family': 'HelveticaNeue',
+                    'padding': '10px',
+                    'overflow': 'hidden',
+                    'textOverflow': 'ellipsis',
+                    'maxWidth': 200
+                    },
         style_header={
             'fontSize': 18,
             'backgroundColor': header_color,
