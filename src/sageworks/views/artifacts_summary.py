@@ -166,6 +166,7 @@ class ArtifactsSummary(View):
                 # Get the tags for this Model Group
                 model_group_arn = model['ModelPackageGroupArn']
                 sageworks_meta = self.artifact_meta(model_group_arn)
+
                 summary = {'Model Group': model['ModelPackageGroupName'],
                            'Ver': model['ModelPackageVersion'],
                            'Status': model['ModelPackageStatus'],
@@ -184,13 +185,19 @@ class ArtifactsSummary(View):
 
         # Get Summary information for each endpoint
         for endpoint, endpoint_info in data.items():
+
+            # Get the tags for this Model Group
+            endpoint_arn = endpoint_info['EndpointArn']
+            sageworks_meta = self.artifact_meta(endpoint_arn)
+
             summary = {'Name': endpoint_info['EndpointName'],
                        'Status': endpoint_info['EndpointStatus'],
                        'Created': self.datetime_string(endpoint_info.get('CreationTime')),
                        'Modified': self.datetime_string(endpoint_info.get('LastModifiedTime')),
                        'DataCapture': str(endpoint_info.get('DataCaptureConfig', {}).get('EnableCapture', 'False')),
                        'Sampling(%)': str(endpoint_info.get('DataCaptureConfig', {}).get('CurrentSamplingPercentage', '-')),
-                       'Tags': str(endpoint_info.get('tags', '-'), )}
+                       'Tags': sageworks_meta.get('sageworks_tags', '-'),
+                       'Input': sageworks_meta.get('sageworks_input', '-')}
             data_summary.append(summary)
 
         return pd.DataFrame(data_summary)
