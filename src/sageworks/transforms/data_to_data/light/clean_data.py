@@ -37,25 +37,11 @@ class CleanData(DataToDataLight):
 # Simple test of the CleanData functionality
 def test():
     """Test the CleanData Class"""
-    import pandas as pd
-    from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'test_data'
     output_uuid = 'test_data_clean'
     CleanData(input_uuid, output_uuid).transform(drop_na='any')
-
-    # Grab the output and query it for a dataframe
-    output = AthenaSource(output_uuid)
-    df = output.query(f"select * from {output_uuid} limit 5")
-
-    # Setup Pandas output options
-    pd.set_option('display.max_colwidth', 15)
-    pd.set_option('display.max_columns', 15)
-    pd.set_option('display.width', 1000)
-
-    # Show the dataframe
-    print(df)
 
 
 if __name__ == "__main__":

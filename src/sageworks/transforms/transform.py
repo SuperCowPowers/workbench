@@ -43,7 +43,7 @@ class Transform(ABC):
         self.log = logging.getLogger(__name__)
         self.input_type = None
         self.output_type = None
-        self.output_tags = list()
+        self.output_tags = ''
         self.output_meta = dict()
         self.input_uuid = input_uuid
         self.output_uuid = output_uuid

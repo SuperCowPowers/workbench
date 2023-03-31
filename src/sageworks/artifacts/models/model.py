@@ -45,11 +45,15 @@ class Model(Artifact):
         """Get the metadata for this artifact"""
         return self.latest_model
 
+    def arn(self) -> str:
+        """AWS ARN (Amazon Resource Name) for the Model Package Group"""
+        return self.group_arn()
+
     def group_arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
         return self.latest_model['ModelPackageGroupArn']
 
-    def arn(self) -> str:
+    def model_arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
         return self.latest_model['ModelPackageArn']
 
