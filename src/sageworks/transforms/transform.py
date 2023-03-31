@@ -90,6 +90,21 @@ class Transform(ABC):
                meta (dict): A dictionary of metadata"""
         self.output_meta = meta
 
+    @staticmethod
+    def convert_to_aws_tags(metadata: dict):
+        """Convert a dictionary to the AWS tag format (list of dicts)
+           [ {Key: key_name, Value: value}, {..}, ...] """
+        return [{'Key': key, 'Value': value} for key, value in metadata.items()]
+
+    def get_aws_tags(self):
+        """Get the metadata/tags and convert them into AWS Tag Format"""
+        # Set up our metadata storage
+        sageworks_meta = {'sageworks_tags': self.output_tags}
+        for key, value in self.output_meta.items():
+            sageworks_meta[key] = value
+        aws_tags = self.convert_to_aws_tags(sageworks_meta)
+        return aws_tags
+
     @final
     def transform(self, **kwargs):
         """Perform the Transformation from Input to Output with pre_transform() and post_transform() invocations"""

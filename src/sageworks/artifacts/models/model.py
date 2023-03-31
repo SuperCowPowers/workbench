@@ -45,9 +45,13 @@ class Model(Artifact):
         """Get the metadata for this artifact"""
         return self.latest_model
 
-    def arn(self) -> str:
+    def group_arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
         return self.latest_model['ModelPackageGroupArn']
+
+    def arn(self) -> str:
+        """AWS ARN (Amazon Resource Name) for the Model Package Group"""
+        return self.latest_model['ModelPackageArn']
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
@@ -92,7 +96,8 @@ def test():
     print(f"Model Check: {my_model.check()}")
 
     # Get the ARN of the Model Group
-    print(f"Model ARN: {my_model.arn()}")
+    print(f"Model Group ARN: {my_model.group_arn()}")
+    print(f"Model Package ARN: {my_model.arn()}")
 
     # Get the tags associated with this Model
     print(f"Tags: {my_model.sageworks_tags()}")

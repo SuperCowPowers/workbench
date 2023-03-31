@@ -24,7 +24,7 @@ class ModelToEndpoint(Transform):
         """Compute a Feature Set based on RDKit Descriptors"""
 
         # Get the Model Package ARN for our input model
-        model_package_arn = Model(self.input_uuid).model_package_arn
+        model_package_arn = Model(self.input_uuid).arn()
 
         # Create a Model Package
         model_package = ModelPackage(role=self.sageworks_role_arn, model_package_arn=model_package_arn)
@@ -33,11 +33,15 @@ class ModelToEndpoint(Transform):
         if delete_existing:
             self.delete_endpoint()
 
+        # Get the metadata/tags to push into AWS
+        aws_tags = self.get_aws_tags()
+
         # Deploy an Endpoint
         model_package.deploy(initial_instance_count=1, instance_type='ml.t2.medium',
                              endpoint_name=self.output_uuid,
                              serializer=CSVSerializer(),
-                             deserializer=CSVDeserializer())
+                             deserializer=CSVDeserializer(),
+                             tags=aws_tags)
 
     def delete_endpoint(self):
         """Delete an existing Endpoint and it's Configuration"""
@@ -59,7 +63,10 @@ def test():
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'abalone-regression'
     output_uuid = 'abalone-regression-endpoint'
-    ModelToEndpoint(input_uuid, output_uuid).transform()
+    to_endpoint = ModelToEndpoint(input_uuid, output_uuid)
+    to_endpoint.set_output_tags(['abalone', 'public'])
+    to_endpoint.set_output_meta({'sageworks_input': input_uuid})
+    to_endpoint.transform()
 
 
 if __name__ == "__main__":

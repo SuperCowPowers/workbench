@@ -100,20 +100,11 @@ class FeaturesToModel(Transform):
 
         # Now add our SageWorks meta data
 
-    @staticmethod
-    def convert_to_aws_tags(metadata: dict):
-        """Convert a dictionary to the AWS tag format (list of dicts)
-           [ {Key: key_name, Value: value}, {..}, ...] """
-        return [{'Key': key, 'Value': value} for key, value in metadata.items()]
-
     def create_and_register_model(self):
         """Create and Register the Model"""
 
-        # Set up our metadata storage
-        sageworks_meta = {'sageworks_tags': self.output_tags}
-        for key, value in self.output_meta.items():
-            sageworks_meta[key] = value
-        aws_tags = self.convert_to_aws_tags(sageworks_meta)
+        # Get the metadata/tags to push into AWS
+        aws_tags = self.get_aws_tags()
 
         # Create model group (if it doesn't already exist)
         self.sm_client.create_model_package_group(ModelPackageGroupName=self.output_uuid,
