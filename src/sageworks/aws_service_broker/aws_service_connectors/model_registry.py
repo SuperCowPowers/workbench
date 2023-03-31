@@ -33,7 +33,7 @@ class ModelRegistry(Connector):
         _mg_names = [model_group['ModelPackageGroupName'] for model_group in _model_groups]
 
         # Grab the ModelPackageGroupArn (we store it in the model_data)
-        self.model_package_group_arn = _model_groups[0]['ModelPackageGroupArn']
+        self.model_package_group_arn = _model_groups[0]['ModelPackageGroupArn'] if _model_groups else None
 
         # Get the details for each Model Group and convert to a data structure with direct lookup
         self.model_data = {name: self._model_group_details(name) for name in _mg_names}

@@ -1,5 +1,4 @@
 """Model: SageWorks Model Class"""
-import json
 from datetime import datetime
 
 
@@ -26,25 +25,13 @@ class Model(Artifact):
             self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
         else:
             self.latest_model = self.model_meta[0]
-            self.model_package_arn = self.latest_model['ModelPackageDetails']['ModelPackageArn']
-
-            # Pull Model Package Description Data
-            try:
-                self.model_info = json.loads(self.latest_model['ModelPackageDescription'])
-                self.input = self.model_info['input']
-                self.description = self.model_info['info']
-                self.model_tags = self.model_info['tags']
-            except (json.JSONDecoder, KeyError):
-                self.model_info = self.latest_model['ModelPackageDescription']
-                self.input = '-'
-                self.description = self.model_info
-                self.model_tags = '-'
+            self.description = self.latest_model['ModelPackageDescription']
 
         # All done
         self.log.info(f"Model Initialized: {model_name}")
 
     def check(self) -> bool:
-        """Does the feature_set_name exist in the AWS Metadata?"""
+        """Does the model metadata exist in the AWS Metadata?"""
         if self.model_meta is None:
             self.log.critical(f'Model.check() {self.model_name} not found in AWS Metadata!')
             return False
@@ -85,11 +72,11 @@ class Model(Artifact):
         # First delete the Model Packages within the Model Group
         for model in self.model_meta:
             self.log.info(f"Deleting Model Package {model['ModelPackageArn']}...")
-            self.sm_session.sagemaker_client.delete_model_package(ModelPackageName=model['ModelPackageArn'])
+            self.sm_client.delete_model_package(ModelPackageName=model['ModelPackageArn'])
 
         # Now delete the Model Package Group
         self.log.info(f"Deleting Model Group {self.model_name}...")
-        self.sm_session.sagemaker_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
+        self.sm_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
 
 
 # Simple test of the Model functionality
