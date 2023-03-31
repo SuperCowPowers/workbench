@@ -101,14 +101,7 @@ class FeaturesToModel(Transform):
     def create_and_register_model(self):
         """Create and Register the Model"""
 
-        # Set up our information and tags
-        specs = {
-            "input": self.input_uuid,
-            "output": self.output_uuid,
-            "info": "Test Model: Solubility Regression",
-            "tags": ['sageworks']
-        }
-        model_specs = json.dumps(specs)
+        # Register our model
         model = self.estimator.create_model(role=self.sageworks_role_arn)
         model.register(
             model_package_group_name=self.output_uuid,
@@ -118,7 +111,7 @@ class FeaturesToModel(Transform):
             inference_instances=["ml.t2.medium"],
             transform_instances=["ml.m5.large"],
             approval_status="Approved",
-            description=model_specs
+            description="Test Model: Abalone Regression"
         )
 
 
@@ -129,7 +122,10 @@ def test():
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'abalone_feature_set'
     output_uuid = 'abalone-regression'
-    FeaturesToModel(input_uuid, output_uuid).transform(target='class_number_of_rings', delete_existing=True)
+    to_model = FeaturesToModel(input_uuid, output_uuid)
+    to_model.set_output_tags(['abalone', 'public'])
+    to_model.set_output_meta({'sageworks_input': input_uuid})
+    to_model.transform(target='class_number_of_rings', delete_existing=True)
 
 
 if __name__ == "__main__":

@@ -18,10 +18,10 @@ class Endpoints(Connector):
     def check(self) -> bool:
         """Check if we can reach/connect to this AWS Service"""
         try:
-            self.sm_client.list_model_package_groups()
+            self.sm_client.list_endpoints()
             return True
         except Exception as e:
-            self.log.critical(f"Error connecting to AWS Model Registry Service: {e}")
+            self.log.critical(f"Error connecting to AWS SageMaker Endpoints: {e}")
             return False
 
     def refresh_impl(self):
@@ -31,24 +31,20 @@ class Endpoints(Connector):
         _endpoints = self.sm_client.list_endpoints()['Endpoints']
         _end_names = [_endpoint['EndpointName'] for _endpoint in _endpoints]
 
-        # Get the details for each Model Group and convert to a data structure with direct lookup
+        # Get the details for Endpoints and convert to a data structure with direct lookup
         self.endpoint_data = {name: self._retrieve_details(name) for name in _end_names}
 
     def metadata(self) -> dict:
-        """Get all the table information in this database"""
+        """Get the full AWS metadata about endpoints"""
         return self.endpoint_data
 
     def endpoint_names(self) -> list:
-        """Get all the feature group names in this database"""
+        """Get all the endpoint names in AWS """
         return list(self.endpoint_data.keys())
 
     def endpoint_details(self, endpoint_name: str) -> dict:
-        """Get the details for a specific feature group"""
+        """Get the details for a specific endpoint"""
         return self.endpoint_data.get(endpoint_name)
-
-    def s3_storage(self, endpoint_name: str) -> str:
-        """Get the S3 Location for a specific feature group"""
-        return 'TBD Later'
 
     def _retrieve_details(self, endpoint_name: str) -> dict:
         """Internal: Do not call this method directly, use endpoint_details() instead"""
@@ -70,7 +66,7 @@ if __name__ == '__main__':
         print('Unrecognized args: %s' % commands)
         sys.exit(1)
 
-    # Create the class and get the AWS Model Registry details
+    # Create the class and get the AWS Endpoint details
     my_endpoints = Endpoints()
     my_endpoints.refresh()
 

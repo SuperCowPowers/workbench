@@ -142,13 +142,9 @@ class Endpoint(Artifact):
         """Get the metadata for this artifact"""
         return self.endpoint_meta
 
-    def add_tag(self, tag):
-        """Get the tags for this artifact"""
-        return []
-
-    def tags(self):
-        """Get the tags for this artifact"""
-        return []
+    def arn(self) -> str:
+        """AWS ARN (Amazon Resource Name) for this artifact"""
+        return self.endpoint_meta['EndpointArn']
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
@@ -196,7 +192,7 @@ def test():
     print(my_endpoint.modified())
 
     # Get the tags associated with this Endpoint
-    print(f"Tags: {my_endpoint.tags()}")
+    print(f"Tags: {my_endpoint.sageworks_tags()}")
 
     # Create the FeatureSet to DF Transform
     feature_to_pandas = FeaturesToPandas('abalone_feature_set')

@@ -178,7 +178,6 @@ class FeatureSet(Artifact):
 # Simple test of the FeatureSet functionality
 def test():
     """Test for FeatureSet Class"""
-    from sageworks.transforms.pandas_transforms.features_to_pandas import FeaturesToPandas
 
     # Grab a FeatureSet object and pull some information from it
     my_features = FeatureSet('test_feature_set')

@@ -58,6 +58,10 @@ class Model(Artifact):
         """Get the metadata for this artifact"""
         return self.latest_model
 
+    def arn(self) -> str:
+        """AWS ARN (Amazon Resource Name) for the Model Package Group"""
+        return self.latest_model['ModelPackageGroupArn']
+
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
         return 'https://us-west-2.console.aws.amazon.com/athena/home'
@@ -97,11 +101,17 @@ def test():
 
     # Call the various methods
 
-    # Lets do a check/validation of the Model
+    # Let's do a check/validation of the Model
     print(f"Model Check: {my_model.check()}")
 
+    # Get the ARN of the Model Group
+    print(f"Model ARN: {my_model.arn()}")
+
     # Get the tags associated with this Model
-    print(f"Tags: {my_model.tags()}")
+    print(f"Tags: {my_model.sageworks_tags()}")
+
+    # Get creation time
+    print(f"Created: {my_model.created()}")
 
     # Delete the Model
     # my_model.delete()

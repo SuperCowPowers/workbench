@@ -186,7 +186,7 @@ def test():
     fake_df = pd.DataFrame(fake_data)
 
     # Create my DF to Feature Set Transform
-    df_to_features = PandasToFeatures('test-feature-set')
+    df_to_features = PandasToFeatures('test_feature_set')
     df_to_features.set_input(fake_df, id_column='id', event_time_column='date')
     df_to_features.set_output_tags(['test', 'small'])
     df_to_features.set_output_meta({'sageworks_input': 'DataFrame'})

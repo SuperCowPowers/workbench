@@ -14,6 +14,7 @@ class ModelRegistry(Connector):
 
         # Set up our internal data storage
         self.model_data = {}
+        self.model_package_group_arn = None
 
     def check(self) -> bool:
         """Check if we can reach/connect to this AWS Service"""
@@ -30,6 +31,9 @@ class ModelRegistry(Connector):
         print("Reading Model Registry...")
         _model_groups = self.sm_client.list_model_package_groups()['ModelPackageGroupSummaryList']
         _mg_names = [model_group['ModelPackageGroupName'] for model_group in _model_groups]
+
+        # Grab the ModelPackageGroupArn (we store it in the model_data)
+        self.model_package_group_arn = _model_groups[0]['ModelPackageGroupArn']
 
         # Get the details for each Model Group and convert to a data structure with direct lookup
         self.model_data = {name: self._model_group_details(name) for name in _mg_names}
@@ -58,6 +62,7 @@ class ModelRegistry(Connector):
         for detail in details:
             model_arn = detail['ModelPackageArn']
             detail['ModelPackageDetails'] = self.sm_client.describe_model_package(ModelPackageName=model_arn)
+            detail['ModelPackageGroupArn'] = self.model_package_group_arn
         return details
 
 
@@ -83,6 +88,6 @@ if __name__ == '__main__':
         print(f"\t{my_group_name}")
 
     # Get the details for a specific Model Group
-    my_group = 'Solubility-Models'
+    my_group = 'abalone-regression'
     group_info = model_registry.model_group_details(my_group)
     pprint(group_info)

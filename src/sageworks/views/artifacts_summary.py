@@ -84,10 +84,10 @@ class ArtifactsSummary(View):
         for name, info in data.items():
 
             # Get the size of the S3 Storage Object(s)
-            size = round(int(info.get('ContentLength') / 1_000_000))
+            size = info.get('ContentLength') / 1_000_000
             summary = {'Name': name,
-                       'Size (MB)': size,
-                       'LastModified': self.datetime_string(info.get('LastModified')),
+                       'Size(MB)': f"{size:.1f}",
+                       'Modified': self.datetime_string(info.get('LastModified', '-')),
                        'ContentType': str(info.get('ContentType', '-')),
                        'ServerSideEncryption': info.get('ServerSideEncryption', '-'),
                        'Tags': str(info.get('tags', '-'), )}
@@ -144,7 +144,6 @@ class ArtifactsSummary(View):
                        'ID/EventTime': f"{group_info['RecordIdentifierFeatureName']}/{group_info['EventTimeFeatureName']}",
                        'Online': str(group_info.get('OnlineStoreConfig', {}).get('EnableOnlineStore', 'False')),
                        'Created': self.datetime_string(group_info.get('CreationTime')),
-                       'Modified': self.datetime_string(group_info.get('LastModified')),
                        'Tags': sageworks_meta.get('sageworks_tags', '-'),
                        'Input': sageworks_meta.get('sageworks_input', '-')}
             data_summary.append(summary)
