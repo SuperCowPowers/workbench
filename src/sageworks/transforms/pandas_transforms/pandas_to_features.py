@@ -92,8 +92,8 @@ class PandasToFeatures(Transform):
         self.input_df = pd.get_dummies(self.input_df, columns=categorical_columns)
 
     @staticmethod
-    def remove_nullable_types(df: pd.DataFrame):
-        """Remove the new Pandas 'nullable types' since AWS SageMaker code doesn't currently support them
+    def convert_nullable_types(df: pd.DataFrame):
+        """Convert the new Pandas 'nullable types' since AWS SageMaker code doesn't currently support them
            See: https://github.com/aws/sagemaker-python-sdk/pull/3740"""
         for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
             df[column] = df[column].astype('int64')
@@ -112,8 +112,8 @@ class PandasToFeatures(Transform):
         # Convert object and string types to Categorical
         self.categorical_converter()
 
-        # Remove Int64 and Float64 (see: https://github.com/aws/sagemaker-python-sdk/pull/3740)
-        self.input_df = self.remove_nullable_types(self.input_df)
+        # Convert Int64 and Float64 types (see: https://github.com/aws/sagemaker-python-sdk/pull/3740)
+        self.input_df = self.convert_nullable_types(self.input_df)
 
         # Do we want to delete the existing FeatureSet?
         if delete_existing:
