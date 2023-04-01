@@ -1,4 +1,4 @@
-"""Simple tests of the FeatureSet functionality"""
+"""Tests for the FeatureSet functionality"""
 
 # SageWorks Imports
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet

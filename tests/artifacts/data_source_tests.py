@@ -1,11 +1,11 @@
-"""Simple tests of the DataSource/AthenaSource functionality"""
+"""Tests for the DataSource/AthenaSource functionality"""
 
 # SageWorks Imports
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 
 def test():
-    """Simple tests of the DataSource/AthenaSource functionality"""
+    """Tests for the DataSource/AthenaSource functionality"""
 
     # Retrieve our test Data Source
     my_data = AthenaSource('test_data')

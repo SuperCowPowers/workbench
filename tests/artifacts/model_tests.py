@@ -1,4 +1,4 @@
-"""Simple tests of the Model functionality"""
+"""Tests for the Model functionality"""
 
 # SageWorks Imports
 from sageworks.artifacts.models.model import Model

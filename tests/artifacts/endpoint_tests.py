@@ -1,4 +1,4 @@
-"""Simple tests of the Endpoint functionality"""
+"""Tests for the Endpoint functionality"""
 import pandas as pd
 
 # SageWorks Imports
