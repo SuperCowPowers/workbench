@@ -4,7 +4,7 @@ from pprint import pprint
 import logging
 
 # Local Imports
-from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSAccountClamp
+from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.transforms.transform import TransformOutput as ArtifactType
 from sageworks.utils.sageworks_logging import logging_setup
 

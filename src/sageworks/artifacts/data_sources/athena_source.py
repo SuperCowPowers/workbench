@@ -6,7 +6,7 @@ from datetime import datetime
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSAccountClamp
+from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
 
 class AthenaSource(DataSource):

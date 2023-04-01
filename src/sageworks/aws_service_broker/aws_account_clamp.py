@@ -28,22 +28,29 @@ class AWSAccountClamp:
             - Test out SageMaker Access (with sm_session)
             - Test out SageMake Client (with sm_client)
         """
-        # Check 1 (AWS Identity)
-        self.log.info('*** AWS Identity Check ***')
+        self.log.info('\n*** AWS Identity Check ***')
         self.check_aws_identity()
+        self.log.info('Identity Check Success...')
 
-        self.log.info('*** AWS Assume SageWorks-ExecutionRole Check ***')
+        self.log.info('\n*** AWS Assume SageWorks-ExecutionRole Check ***')
         my_boto_session = self.boto_session()
         self.log.info('Assume Role Success...')
-        self.log.info('*** AWS S3 Access Check ***')
+
+        self.log.info('\n*** AWS S3 Access Check ***')
         s3 = my_boto_session.client("s3")
         results = s3.list_buckets()
         for bucket in results['Buckets']:
             self.log.info(f"\t{bucket['Name']}")
-        self.log.info('*** AWS Sagemaker Session/Client Check ***')
+
+        self.log.info('\n*** AWS Sagemaker Session/Client Check ***')
         sm_client = self.sagemaker_client()
         self.log.info(sm_client.list_feature_groups()['FeatureGroupSummaries'])
-        self.log.info('AWS Account Clamp: AOK!')
+
+        self.log.info('\n*** AWS Sagemaker Session/Client Check ***')
+        sm_client = self.sagemaker_client()
+        self.log.info(sm_client.list_feature_groups()['FeatureGroupSummaries'])
+
+        self.log.info('\nAWS Account Clamp: AOK!')
 
     def check_aws_identity(self) -> bool:
         """Check the AWS Identity currently active"""

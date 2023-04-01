@@ -7,7 +7,7 @@ import logging
 import awswrangler as wr
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSAccountClamp
+from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging

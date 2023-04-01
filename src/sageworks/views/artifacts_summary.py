@@ -9,7 +9,7 @@ import awswrangler as wr
 from sageworks.views.view import View
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.aws_service_broker.cache import Cache
-from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSAccountClamp
+from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
 
 class ArtifactsSummary(View):
