@@ -93,8 +93,8 @@ class Cache(object):
                 self.get(key)
 
 
-def test():
-    """Test for the Cache class"""
+if __name__ == '__main__':
+    """Exercise the Cache class"""
 
     # Create the Cache
     my_cache = Cache(max_size=5, timeout=1)
@@ -145,9 +145,3 @@ def test():
 
     # Also make sure compression call is throttled
     my_cache._compress()  # Should not output a compression message
-
-
-if __name__ == '__main__':
-
-    # Run the test
-    test()

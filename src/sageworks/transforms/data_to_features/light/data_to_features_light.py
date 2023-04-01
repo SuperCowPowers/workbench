@@ -40,9 +40,8 @@ class DataToFeaturesLight(Transform):
         output_features.transform(delete_existing=delete_existing)
 
 
-# Simple test of the DataToFeaturesLight functionality
-def test():
-    """Test the DataToFeaturesLight Class"""
+if __name__ == "__main__":
+    """Exercise the DataToFeaturesLight Class"""
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'test_data'
@@ -51,7 +50,3 @@ def test():
     data_to_features.set_output_tags(['test', 'small'])
     data_to_features.set_output_meta({'sageworks_input': input_uuid})
     data_to_features.transform(id_column='id', event_time_column='date', delete_existing=True)
-
-
-if __name__ == "__main__":
-    test()

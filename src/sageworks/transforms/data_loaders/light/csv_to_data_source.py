@@ -32,14 +32,13 @@ class CSVToDataSource(Transform):
         pandas_to_data.transform()
 
 
-# Simple test of the CSVToDataSource functionality
-def test():
-    """Test the CSVToDataSource Class"""
+if __name__ == "__main__":
+    """Exercise the CSVToDataSource Class"""
     import sys
     from pathlib import Path
 
     # Local/relative path to CSV file (FIXME?)
-    data_path = Path(sys.modules['sageworks'].__file__).parent.parent.parent/'data'/'abalone.csv'
+    data_path = Path(sys.modules['sageworks'].__file__).parent.parent.parent / 'data' / 'abalone.csv'
 
     # Create my Data Loader
     my_loader = CSVToDataSource(data_path, 'abalone_data')
@@ -48,7 +47,3 @@ def test():
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()
-
-
-if __name__ == "__main__":
-    test()

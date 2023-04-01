@@ -114,6 +114,7 @@ class AWSServiceBroker:
 
 
 if __name__ == '__main__':
+    """Exercise the AWS Service Broker Class"""
     from pprint import pprint
 
     # Collect args from the command line

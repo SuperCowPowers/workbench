@@ -115,7 +115,12 @@ class ArtifactsSummary(View):
                            'Input': str(info['Parameters'].get('sageworks_input', '-'), )}
                 data_summary.append(summary)
 
-        return pd.DataFrame(data_summary)
+            # Make sure we have data else return just the column names
+            if data_summary:
+                return pd.DataFrame(data_summary)
+            else:
+                columns = ['Name', 'Ver', 'Size(MB)', 'Catalog DB', 'Created', 'Modified', 'Num Columns', 'DataLake', 'Tags', 'Input']
+                return pd.DataFrame(columns=columns)
 
     @staticmethod
     def athena_hyperlink(name):
@@ -147,7 +152,13 @@ class ArtifactsSummary(View):
                        'Input': sageworks_meta.get('sageworks_input', '-')}
             data_summary.append(summary)
 
-        return pd.DataFrame(data_summary)
+        # Make sure we have data else return just the column namesa
+        if data_summary:
+            return pd.DataFrame(data_summary)
+        else:
+            columns = ['Feature Group', 'Status', 'Size(MB)', 'Catalog DB', 'Athena Table',
+                       'ID/EventTime', 'Online', 'Created', 'Tags', 'Input']
+            return pd.DataFrame(columns=columns)
 
     def models_summary(self):
         """Get summary data about the SageWorks Models"""
@@ -176,7 +187,12 @@ class ArtifactsSummary(View):
                            'Input': sageworks_meta.get('sageworks_input', '-')}
                 data_summary.append(summary)
 
-        return pd.DataFrame(data_summary)
+        # Make sure we have data else return just the column names
+        if data_summary:
+            return pd.DataFrame(data_summary)
+        else:
+            columns = ['Model Group', 'Ver', 'Status', 'Description', 'Created', 'Tags', 'Input']
+            return pd.DataFrame(columns=columns)
 
     def endpoints_summary(self):
         """Get summary data about the SageWorks Endpoints"""
@@ -200,7 +216,12 @@ class ArtifactsSummary(View):
                        'Input': sageworks_meta.get('sageworks_input', '-')}
             data_summary.append(summary)
 
-        return pd.DataFrame(data_summary)
+        # Make sure we have data else return just the column names
+        if data_summary:
+            return pd.DataFrame(data_summary)
+        else:
+            columns = ['Name', 'Status', 'Created', 'Modified', 'DataCapture', 'Sampling(%)', 'Tags', 'Input']
+            return pd.DataFrame(columns=columns)
 
     @staticmethod
     def num_columns(data_info):

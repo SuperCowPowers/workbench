@@ -169,9 +169,8 @@ class PandasToFeatures(Transform):
         self.log.info(f"FeatureSet {feature_group.name} successfully created")
 
 
-# Simple test of the PandasToFeatures functionality
-def test():
-    """Test the PandasToFeatures Class"""
+if __name__ == "__main__":
+    """Exercise the PandasToFeatures Class"""
 
     # Setup Pandas output options
     pd.set_option('display.max_colwidth', 15)
@@ -186,7 +185,7 @@ def test():
         {'id': 3, 'name': 'ted', 'age': 69, 'score': 8.2, 'date': my_datetime},
         {'id': 4, 'name': 'bill', 'age': 24, 'score': 5.3, 'date': my_datetime},
         {'id': 5, 'name': 'sally', 'age': 52, 'score': 9.5, 'date': my_datetime}
-        ]
+    ]
     fake_df = pd.DataFrame(fake_data)
 
     # Create my DF to Feature Set Transform
@@ -197,7 +196,3 @@ def test():
 
     # Store this dataframe as a SageWorks Feature Set
     df_to_features.transform(delete_existing=True)
-
-
-if __name__ == "__main__":
-    test()

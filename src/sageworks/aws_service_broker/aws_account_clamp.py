@@ -132,6 +132,7 @@ class AWSAccountClamp:
 
 
 if __name__ == '__main__':
+    """Exercise the AWS Account Clamp Class"""
 
     # Collect args from the command line
     parser = argparse.ArgumentParser()

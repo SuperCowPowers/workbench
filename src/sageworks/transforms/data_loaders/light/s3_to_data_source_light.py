@@ -44,9 +44,8 @@ class S3ToDataSourceLight(Transform):
         pandas_to_data.transform()
 
 
-# Simple test of the S3ToDataSourceLight functionality
-def test():
-    """Test the S3ToDataSourceLight Class"""
+if __name__ == "__main__":
+    """Exercise the S3ToDataSourceLight Class"""
 
     # Create my Data Loader
     input_path = 's3://scp-sageworks-artifacts/incoming-data/aqsol_public_data.csv'
@@ -57,7 +56,3 @@ def test():
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()
-
-
-if __name__ == "__main__":
-    test()

@@ -45,9 +45,8 @@ class S3HeavyToDataSource(Transform):
                          partition_cols=None)  # FIXME: Have some logic around partition columns
 
 
-# Simple test of the S3HeavyToDataSource functionality
-def test():
-    """Test the S3HeavyToDataSource Class"""
+if __name__ == "__main__":
+    """Exercise the S3HeavyToDataSource Class"""
     import pandas as pd
 
     # Create my Data Loader
@@ -68,7 +67,3 @@ def test():
 
     # Show the dataframe
     print(df)
-
-
-if __name__ == "__main__":
-    test()

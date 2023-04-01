@@ -27,7 +27,7 @@ class Endpoints(Connector):
     def refresh_impl(self):
         """Load/reload the tables in the database"""
         # Grab all the Endpoint Data from SageMaker
-        print("Reading Endpoints from SageMaker...")
+        self.log.info("Reading Endpoints from SageMaker...")
         _endpoints = self.sm_client.list_endpoints()['Endpoints']
         _end_names = [_endpoint['EndpointName'] for _endpoint in _endpoints]
 

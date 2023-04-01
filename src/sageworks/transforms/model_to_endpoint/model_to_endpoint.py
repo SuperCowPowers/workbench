@@ -56,9 +56,8 @@ class ModelToEndpoint(Transform):
             self.log.info(f"Endpoint Config {self.output_uuid} doesn't exist...")
 
 
-# Simple test of the ModelToEndpoint functionality
-def test():
-    """Test the ModelToEndpoint Class"""
+if __name__ == "__main__":
+    """Exercise the ModelToEndpoint Class"""
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'abalone-regression'
@@ -67,7 +66,3 @@ def test():
     to_endpoint.set_output_tags(['abalone', 'public'])
     to_endpoint.set_output_meta({'sageworks_input': input_uuid})
     to_endpoint.transform()
-
-
-if __name__ == "__main__":
-    test()

@@ -50,9 +50,8 @@ class DataToPandas(Transform):
         return self.output_df
 
 
-# Simple test of the DataToPandas functionality
-def test():
-    """Test the DataToPandas Class"""
+if __name__ == "__main__":
+    """Exercise the DataToPandas Class"""
 
     # Setup Pandas output options
     pd.set_option('display.max_colwidth', 15)
@@ -71,7 +70,3 @@ def test():
     # Grab the output dataframe and show it
     my_df = data_to_df.get_output()
     print(my_df)
-
-
-if __name__ == "__main__":
-    test()

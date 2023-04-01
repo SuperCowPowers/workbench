@@ -58,9 +58,8 @@ class FeaturesToPandas(Transform):
         return self.output_df
 
 
-# Simple test of the FeaturesToPandas functionality
-def test():
-    """Test the FeaturesToPandas Class"""
+if __name__ == "__main__":
+    """Exercise the FeaturesToPandas Class"""
 
     # Setup Pandas output options
     pd.set_option('display.max_colwidth', 15)
@@ -76,7 +75,3 @@ def test():
     # Grab the output and show it
     my_df = feature_to_df.get_output()
     print(my_df)
-
-
-if __name__ == "__main__":
-    test()

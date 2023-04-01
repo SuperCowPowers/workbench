@@ -64,15 +64,10 @@ class RDKitDescriptors(DataToFeaturesLight):
         return pd.concat([self.output_df, df_features], axis=1)
 
 
-# Simple test of the RDKitDescriptors functionality
-def test():
-    """Test the RDKitDescriptors Class"""
+if __name__ == "__main__":
+    """Exercise the RDKitDescriptors Class"""
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'aqsol_data'
     output_uuid = 'test_rdkit_features'
     RDKitDescriptors(input_uuid, output_uuid).transform(delete_existing=True)
-
-
-if __name__ == "__main__":
-    test()

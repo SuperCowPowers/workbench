@@ -34,15 +34,10 @@ class CleanData(DataToDataLight):
         self.output_df = pandas_utils.drop_nans(self.input_df, how=drop_na)
 
 
-# Simple test of the CleanData functionality
-def test():
-    """Test the CleanData Class"""
+if __name__ == "__main__":
+    """Exercise the CleanData Class"""
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'test_data'
     output_uuid = 'test_data_clean'
     CleanData(input_uuid, output_uuid).transform(drop_na='any')
-
-
-if __name__ == "__main__":
-    test()

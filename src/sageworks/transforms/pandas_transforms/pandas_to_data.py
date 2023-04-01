@@ -48,9 +48,8 @@ class PandasToData(Transform):
         self.input_df = input_df
 
 
-# Simple test of the PandasToData functionality
-def test():
-    """Test the PandasToData Class"""
+if __name__ == "__main__":
+    """Exercise the PandasToData Class"""
     from datetime import datetime, timezone
 
     # Create some fake data
@@ -60,7 +59,7 @@ def test():
         {'id': 3, 'name': 'ted', 'age': 69, 'score': 8.2, 'date': datetime.now(timezone.utc)},
         {'id': 4, 'name': 'bill', 'age': 24, 'score': 5.3, 'date': datetime.now(timezone.utc)},
         {'id': 5, 'name': 'sally', 'age': 52, 'score': 9.5, 'date': datetime.now(timezone.utc)}
-        ]
+    ]
     fake_df = pd.DataFrame(fake_data)
 
     # Create my DF to Data Source Transform
@@ -73,7 +72,3 @@ def test():
     # Store this data into a SageWorks DataSource
     df_to_data.transform()
     print(f"{output_uuid} stored as a SageWorks DataSource")
-
-
-if __name__ == "__main__":
-    test()
