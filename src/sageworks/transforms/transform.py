@@ -7,7 +7,7 @@ import logging
 import awswrangler as wr
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSAccountClamp
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -54,10 +54,10 @@ class Transform(ABC):
         self.feature_set_s3_path = 's3://scp-sageworks-artifacts/feature-sets'
 
         # Grab a SageWorks Role ARN, Boto3, SageMaker Session, and SageMaker Client
-        self.sageworks_role_arn = AWSSageWorksRoleManager().sageworks_execution_role_arn()
-        self.boto_session = AWSSageWorksRoleManager().boto_session()
-        self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
-        self.sm_client = self.sm_session.boto_session.client("sagemaker")
+        self.sageworks_role_arn = AWSAccountClamp().sageworks_execution_role_arn()
+        self.boto_session = AWSAccountClamp().boto_session()
+        self.sm_session = AWSAccountClamp().sagemaker_session()
+        self.sm_client = AWSAccountClamp().sagemaker_client()
 
         # Make sure the AWS data catalog database exists
         self.ensure_aws_catalog_db()

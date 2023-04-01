@@ -5,7 +5,7 @@ from datetime import datetime
 import logging
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.utils.sageworks_logging import logging_setup
 
@@ -19,9 +19,9 @@ class Artifact(ABC):
     log = logging.getLogger(__name__)
 
     # Set up our Boto3 and SageMaker Session and SageMaker Client
-    boto_session = AWSSageWorksRoleManager().boto_session()
-    sm_session = AWSSageWorksRoleManager().sagemaker_session()
-    sm_client = sm_session.boto_session.client("sagemaker")
+    boto_session = AWSAccountClamp().boto_session()
+    sm_session = AWSAccountClamp().sagemaker_session()
+    sm_client = AWSAccountClamp().sagemaker_client()
 
     # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
     aws_meta = AWSServiceBroker()

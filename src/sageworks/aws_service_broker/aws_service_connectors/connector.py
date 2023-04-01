@@ -6,7 +6,7 @@ import logging
 from typing import final
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSAccountClamp
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Set up logging
@@ -19,9 +19,9 @@ class Connector(ABC):
     log = logging.getLogger(__name__)
 
     # Set up our Boto3 and SageMaker Session and SageMaker Client
-    boto_session = AWSSageWorksRoleManager().boto_session()
-    sm_session = AWSSageWorksRoleManager().sagemaker_session()
-    sm_client = sm_session.boto_session.client("sagemaker")
+    boto_session = AWSAccountClamp().boto_session()
+    sm_session = AWSAccountClamp().sagemaker_session()
+    sm_client = AWSAccountClamp().sagemaker_client()
 
     # Set up the token refresh time
     refresh_minutes = 45
@@ -36,9 +36,9 @@ class Connector(ABC):
             cls.token_refresh_time = now + (cls.refresh_minutes * 60)
             cls.log.info(f"New Refresh Time: {cls.token_refresh_time}")
             cls.log.info('Refreshing AWS SSO Token...')
-            cls.boto_session = AWSSageWorksRoleManager().boto_session()
-            cls.sm_session = AWSSageWorksRoleManager().sagemaker_session()
-            cls.sm_client = cls.sm_session.boto_session.client("sagemaker")
+            cls.boto_session = AWSAccountClamp().boto_session()
+            cls.sm_session = AWSAccountClamp().sagemaker_session()
+            cls.sm_client = AWSAccountClamp().sagemaker_client()
 
     def __init__(self):
         """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""

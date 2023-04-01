@@ -9,7 +9,7 @@ import awswrangler as wr
 from sageworks.views.view import View
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.aws_service_broker.cache import Cache
-from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSAccountClamp
 
 
 class ArtifactsSummary(View):
@@ -20,7 +20,7 @@ class ArtifactsSummary(View):
 
         # Get AWS Service information for ALL the categories (data_source, feature_set, endpoints, etc)
         self.service_info = self.aws_broker.get_all_metadata()
-        self.sm_session = AWSSageWorksRoleManager().sagemaker_session()
+        self.sm_session = AWSAccountClamp().sagemaker_session()
 
         # Summary data for ALL the AWS Services
         self.summary_data = {}

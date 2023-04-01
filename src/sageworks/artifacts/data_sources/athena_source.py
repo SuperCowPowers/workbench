@@ -6,7 +6,7 @@ from datetime import datetime
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSAccountClamp
 
 
 class AthenaSource(DataSource):
@@ -53,8 +53,8 @@ class AthenaSource(DataSource):
     def arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for this artifact"""
         # Grab our SageWorks Role Manager, get our AWS account id, and region for ARN creation
-        account_id = AWSSageWorksRoleManager().account_id()
-        region = AWSSageWorksRoleManager().region()
+        account_id = AWSAccountClamp().account_id()
+        region = AWSAccountClamp().region()
         arn = f"arn:aws:glue:{region}:{account_id}:table/{self.data_catalog_db}/{self.table_name}"
         return arn
 

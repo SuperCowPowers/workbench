@@ -1,4 +1,4 @@
-"""AWSSageWorksRoleManager provides a bit of logic/functionality over the set of AWS IAM Services"""
+"""AWSAccountClamp provides logic/functionality over the set of AWS IAM Services"""
 import sys
 import boto3
 from botocore.exceptions import ClientError, UnauthorizedSSOTokenError
@@ -13,12 +13,37 @@ from sageworks.utils.sageworks_logging import logging_setup
 logging_setup()
 
 
-class AWSSageWorksRoleManager:
+class AWSAccountClamp:
 
     def __init__(self, role_name='SageWorks-ExecutionRole'):
-        """"AWSSageWorksRoleManagerSession: Get the SageWorks Execution Role and/or Session"""
+        """AWSAccountClamp provides logic/functionality over the set of AWS IAM Services"""
         self.log = logging.getLogger(__file__)
         self.role_name = role_name
+
+    def check(self):
+        """Check if the AWS Account Clamp is 100% 'locked in'
+            - Check the current AWS Identity (Print it out)
+            - See if we can 'assume-role' for the SageWorks-ExecutionRole
+            - Test out S3 Access (with boto_session)
+            - Test out SageMaker Access (with sm_session)
+            - Test out SageMake Client (with sm_client)
+        """
+        # Check 1 (AWS Identity)
+        self.log.info('*** AWS Identity Check ***')
+        self.check_aws_identity()
+
+        self.log.info('*** AWS Assume SageWorks-ExecutionRole Check ***')
+        my_boto_session = self.boto_session()
+        self.log.info('Assume Role Success...')
+        self.log.info('*** AWS S3 Access Check ***')
+        s3 = my_boto_session.client("s3")
+        results = s3.list_buckets()
+        for bucket in results['Buckets']:
+            self.log.info(f"\t{bucket['Name']}")
+        self.log.info('*** AWS Sagemaker Session/Client Check ***')
+        sm_client = self.sagemaker_client()
+        self.log.info(sm_client.list_feature_groups()['FeatureGroupSummaries'])
+        self.log.info('AWS Account Clamp: AOK!')
 
     def check_aws_identity(self) -> bool:
         """Check the AWS Identity currently active"""
@@ -26,9 +51,10 @@ class AWSSageWorksRoleManager:
         sts = boto3.client('sts')
         try:
             identity = sts.get_caller_identity()
-            self.log.info("\nAWS Account Info:")
-            self.log.info(f"\tAccount: {identity['Account']}")
-            self.log.info(f"\tARN: {identity['Arn']}")
+            self.log.info("AWS Account Info:")
+            self.log.info(f"Account: {identity['Account']}")
+            self.log.info(f"ARN: {identity['Arn']}")
+            self.log.info(f"Region: {self.region()}")
             return True
         except (ClientError, UnauthorizedSSOTokenError) as exc:
             self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
@@ -73,7 +99,7 @@ class AWSSageWorksRoleManager:
         sts = session.client("sts")
         response = sts.assume_role(
             RoleArn=self.sageworks_execution_role_arn(),
-            RoleSessionName="sageworks-boto3-session"
+            RoleSessionName="sageworks-execution-role-session"
         )
         new_session = boto3.Session(aws_access_key_id=response['Credentials']['AccessKeyId'],
                                     aws_secret_access_key=response['Credentials']['SecretAccessKey'],
@@ -82,8 +108,11 @@ class AWSSageWorksRoleManager:
 
     def sagemaker_session(self):
         """Create a sageworks SageMaker session using sts.assume_role(sageworks_execution_role)"""
-        # Make sure we can access stuff with this role
         return SageSession(boto_session=self.boto_session())
+
+    def sagemaker_client(self):
+        """Create a sageworks SageMaker client using sts.assume_role(sageworks_execution_role)"""
+        return self.sagemaker_session().boto_session.client("sagemaker")
 
     @staticmethod
     def account_id():
@@ -107,33 +136,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Create the class
-    sageworks_role = AWSSageWorksRoleManager()
+    aws_clamp = AWSAccountClamp()
 
-    # Check our AWS identity
-    sageworks_role.check_aws_identity()
-
-    # Get our Execution Role ARN
-    role_arn = sageworks_role.sageworks_execution_role_arn()
-    print(role_arn)
-
-    # Get our Boto Session
-    boto_session = sageworks_role.boto_session()
-    print(boto_session)
-
-    # Get our account ID and region (needed for Data Catalog/Table ARN construction)
-    account_id = sageworks_role.account_id()
-    region = sageworks_role.region()
-    print(f"Account: {account_id}")
-    print(f"Region: {region}")
-
-    # Try to access a 'regular' AWS service
-    s3 = boto_session.client("s3")
-    print(s3.list_buckets())
-
-    # Get our SageMaker Session
-    sagemaker_session = sageworks_role.sagemaker_session()
-    print(sagemaker_session)
-
-    # Try to access a SageMaker AWS services
-    sm_client = sagemaker_session.boto_session.client("sagemaker")
-    print(sm_client.list_feature_groups()['FeatureGroupSummaries'])
+    # Check that out AWS Account Clamp is working AOK
+    aws_clamp.check()

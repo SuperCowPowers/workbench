@@ -2,7 +2,7 @@
 import logging
 
 # Local Imports
-from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSSageWorksRoleManager
+from sageworks.aws_service_broker.aws_sageworks_role_manager import AWSAccountClamp
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -16,7 +16,7 @@ class SageWorksSQS:
         self.queue_url = queue_url
 
         # Grab a SageWorks Session (this allows us to assume the SageWorks-ExecutionRole)
-        self.boto_session = AWSSageWorksRoleManager().boto_session()
+        self.boto_session = AWSAccountClamp().boto_session()
         print(self.boto_session)
 
         # Get our AWS EventBridge Client
