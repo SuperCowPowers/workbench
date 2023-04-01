@@ -64,7 +64,7 @@ class FeatureSet(Artifact):
         """AWS ARN (Amazon Resource Name) for this artifact"""
         return self.feature_meta['FeatureGroupArn']
 
-    def size(self) -> int:
+    def size(self) -> float:
         """Return the size of the internal AthenaSource in MegaBytes"""
         return self.athena_source.size()
 

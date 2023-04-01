@@ -1,7 +1,8 @@
+pytest
 boto3
 botocore
 pandas >= 1.3
 scikit-learn >= 1.1.1
 awswrangler >= 2.15
-sagemaker >= 2.14
+sagemaker >= 2.143
 dash >= 2.8

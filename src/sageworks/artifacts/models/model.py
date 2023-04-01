@@ -37,9 +37,9 @@ class Model(Artifact):
             return False
         return True
 
-    def size(self) -> bool:
+    def size(self) -> float:
         """Return the size of this data in MegaBytes"""
-        return 0
+        return 0.0
 
     def meta(self):
         """Get the metadata for this artifact"""

@@ -63,10 +63,10 @@ class AthenaSource(DataSource):
         params = self.catalog_meta.get('Parameters', {})
         return {key: value for key, value in params.items() if 'sageworks' in key}
 
-    def size(self) -> bool:
+    def size(self) -> float:
         """Return the size of this data in MegaBytes"""
         size_in_bytes = sum(wr.s3.size_objects(self.s3_storage_location(), boto3_session=self.boto_session).values())
-        size_in_mb = round(size_in_bytes / 1_000_000)
+        size_in_mb = size_in_bytes / 1_000_000
         return size_in_mb
 
     def meta(self):
@@ -140,7 +140,7 @@ def test():
     my_data = AthenaSource('test_data')
 
     # Verify that the Athena Data Source exists
-    assert(my_data.check())
+    assert my_data.check()
 
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")

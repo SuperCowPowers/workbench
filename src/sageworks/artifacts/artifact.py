@@ -43,7 +43,7 @@ class Artifact(ABC):
         pass
 
     @abstractmethod
-    def size(self) -> int:
+    def size(self) -> float:
         """Return the size of this artifact in MegaBytes"""
         pass
 

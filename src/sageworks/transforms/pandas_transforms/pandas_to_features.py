@@ -91,6 +91,16 @@ class PandasToFeatures(Transform):
         # Now convert Categorical Types to One Hot Encoding
         self.input_df = pd.get_dummies(self.input_df, columns=categorical_columns)
 
+    @staticmethod
+    def remove_nullable_types(df: pd.DataFrame):
+        """Remove the new Pandas 'nullable types' since AWS SageMaker code doesn't currently support them
+           See: https://github.com/aws/sagemaker-python-sdk/pull/3740"""
+        for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
+            df[column] = df[column].astype('int64')
+        for column in list(df.select_dtypes(include=[pd.Float64Dtype]).columns):
+            df[column] = df[column].astype('float64')
+        return df
+
     def transform_impl(self, delete_existing=False):
         """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
            store the information about the data to the AWS Data Catalog sageworks database"""
@@ -101,6 +111,9 @@ class PandasToFeatures(Transform):
 
         # Convert object and string types to Categorical
         self.categorical_converter()
+
+        # Remove Int64 and Float64 (see: https://github.com/aws/sagemaker-python-sdk/pull/3740)
+        self.input_df = self.remove_nullable_types(self.input_df)
 
         # Do we want to delete the existing FeatureSet?
         if delete_existing:

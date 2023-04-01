@@ -134,9 +134,9 @@ class Endpoint(Artifact):
             error_df[column] = df[column].values
         return error_df
 
-    def size(self) -> int:
+    def size(self) -> float:
         """Return the size of this data in MegaBytes"""
-        return 0
+        return 0.0
 
     def meta(self):
         """Get the metadata for this artifact"""
@@ -185,7 +185,7 @@ def test():
     # Call the various methods
 
     # Let's do a check/validation of the Endpoint
-    assert(my_endpoint.check())
+    assert my_endpoint.check()
 
     # Creation/Modification Times
     print(my_endpoint.created())

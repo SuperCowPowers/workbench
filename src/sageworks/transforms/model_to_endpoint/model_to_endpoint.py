@@ -24,7 +24,7 @@ class ModelToEndpoint(Transform):
         """Compute a Feature Set based on RDKit Descriptors"""
 
         # Get the Model Package ARN for our input model
-        model_package_arn = Model(self.input_uuid).arn()
+        model_package_arn = Model(self.input_uuid).model_arn()
 
         # Create a Model Package
         model_package = ModelPackage(role=self.sageworks_role_arn, model_package_arn=model_package_arn)
