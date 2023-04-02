@@ -158,8 +158,8 @@ class FeatureSet(Artifact):
         remove_fg.delete()
         self.ensure_feature_group_deleted(remove_fg)
 
-        # Delete the Data Catalog Table and S3 Storage Objects
-        super().delete()
+        # Delete our underlying AthenaSource (Data Catalog Table and S3 Storage Objects)
+        self.athena_source.delete()
 
         # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
         s3_delete_path = self.feature_sets_s3_path + f"/{self.feature_set_name}"
