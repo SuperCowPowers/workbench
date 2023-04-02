@@ -60,6 +60,7 @@ class FeaturesToModel(Transform):
         # Get our Feature Set and create an S3 CSV Training dataset
         feature_set = FeatureSet(self.input_uuid)
         s3_training_path = feature_set.create_s3_training_data()
+        self.log.info(f"Created new training data {s3_training_path}...")
 
         # Did they specify a feature list?
         if input_feature_list:
@@ -93,6 +94,10 @@ class FeaturesToModel(Transform):
 
         # Train the estimator
         self.estimator.fit({"train": s3_training_path})
+
+        # Now delete the training data
+        self.log.info(f"Deleting training data {s3_training_path}...")
+        self.boto_session.client("s3").delete_object(Bucket=s3_training_path)
 
         # Do they want to delete any existing models?
         if delete_existing:
