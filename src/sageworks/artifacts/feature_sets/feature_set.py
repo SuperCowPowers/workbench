@@ -1,6 +1,8 @@
 """FeatureSet: SageWorks Feature Set accessible through Athena"""
 import time
 from datetime import datetime, timezone
+
+import botocore.exceptions
 import pandas as pd
 import awswrangler as wr
 
@@ -165,14 +167,18 @@ class FeatureSet(Artifact):
         wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
 
     def ensure_feature_group_deleted(self, feature_group):
-        status = feature_group.describe().get("FeatureGroupStatus")
+        status = "Deleting"
         while status == "Deleting":
             self.log.info("FeatureSet being Deleted...")
-            time.sleep(5)
             try:
                 status = feature_group.describe().get("FeatureGroupStatus")
-            except Exception:  # FIXME
-                break
+            except botocore.exceptions.ClientError as error:
+                # If the exception is a ResourceNotFound, this is fine, otherwise raise all other exceptions
+                if error.response['Error']['Code'] == 'ResourceNotFound':
+                    break
+                else:
+                    raise error
+            time.sleep(1)
         self.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
 

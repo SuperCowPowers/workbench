@@ -121,9 +121,12 @@ class PandasToFeatures(Transform):
         # Do we want to delete the existing FeatureSet?
         if delete_existing:
             try:
-                FeatureSet(self.output_uuid).delete()
-            except botocore.exceptions.ClientError:
+                delete_fs = FeatureSet(self.output_uuid)
+                if delete_fs.check():
+                    delete_fs.delete()
+            except botocore.exceptions.ClientError as exc:
                 self.log.info(f"FeatureSet {self.output_uuid} doesn't exist...")
+                self.log.info(exc)
 
         # Create a Feature Group and load our Feature Definitions
         my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
