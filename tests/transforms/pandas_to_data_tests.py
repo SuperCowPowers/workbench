@@ -1,11 +1,11 @@
-"""Tests for the Data to Data (light) Transforms"""
+"""Tests for the Pandas DataFrame to Data Transforms"""
 
 # Local imports
 from sageworks.transforms.data_to_data.light.data_to_data_light import DataToDataLight
 
 
 def test():
-    """Tests for the Data to Data (light) Transforms"""
+    """Tests for the Pandas DataFrame to Data Transforms"""
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = "abalone_data"

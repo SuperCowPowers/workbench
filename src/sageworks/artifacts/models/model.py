@@ -8,7 +8,6 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class Model(Artifact):
-
     def __init__(self, model_name):
         """Model: SageWorks Model Class
 
@@ -25,7 +24,7 @@ class Model(Artifact):
             self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
         else:
             self.latest_model = self.model_meta[0]
-            self.description = self.latest_model['ModelPackageDescription']
+            self.description = self.latest_model["ModelPackageDescription"]
 
         # All done
         self.log.info(f"Model Initialized: {model_name}")
@@ -33,7 +32,7 @@ class Model(Artifact):
     def check(self) -> bool:
         """Does the model metadata exist in the AWS Metadata?"""
         if self.model_meta is None:
-            self.log.critical(f'Model.check() {self.model_name} not found in AWS Metadata!')
+            self.log.critical(f"Model.check() {self.model_name} not found in AWS Metadata!")
             return False
         return True
 
@@ -51,23 +50,23 @@ class Model(Artifact):
 
     def group_arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
-        return self.latest_model['ModelPackageGroupArn']
+        return self.latest_model["ModelPackageGroupArn"]
 
     def model_arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
-        return self.latest_model['ModelPackageArn']
+        return self.latest_model["ModelPackageArn"]
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        return 'https://us-west-2.console.aws.amazon.com/athena/home'
+        return "https://us-west-2.console.aws.amazon.com/athena/home"
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
-        return self.latest_model['CreationTime']
+        return self.latest_model["CreationTime"]
 
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
-        return self.latest_model['CreationTime']
+        return self.latest_model["CreationTime"]
 
     def delete(self):
         """Delete the Model Packages and the Model Group"""
@@ -80,7 +79,7 @@ class Model(Artifact):
         # First delete the Model Packages within the Model Group
         for model in self.model_meta:
             self.log.info(f"Deleting Model Package {model['ModelPackageArn']}...")
-            self.sm_client.delete_model_package(ModelPackageName=model['ModelPackageArn'])
+            self.sm_client.delete_model_package(ModelPackageName=model["ModelPackageArn"])
 
         # Now delete the Model Package Group
         self.log.info(f"Deleting Model Group {self.model_name}...")
@@ -92,7 +91,7 @@ def test():
     """Test for Model Class"""
 
     # Grab a Model object and pull some information from it
-    my_model = Model('abalone-regression')
+    my_model = Model("abalone-regression")
 
     # Call the various methods
 

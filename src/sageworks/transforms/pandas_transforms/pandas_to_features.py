@@ -37,17 +37,17 @@ class PandasToFeatures(Transform):
     def _ensure_id_column(self):
         """Internal: AWS Feature Store requires an Id field for all data store"""
         if self.id_column is None or self.id_column not in self.input_df.columns:
-            if 'id' not in self.input_df.columns:
-                self.log.info('Generating an id column before FeatureSet Creation...')
-                self.input_df['id'] = self.input_df.index
-            self.id_column = 'id'
+            if "id" not in self.input_df.columns:
+                self.log.info("Generating an id column before FeatureSet Creation...")
+                self.input_df["id"] = self.input_df.index
+            self.id_column = "id"
 
     def _ensure_event_time(self):
         """Internal: AWS Feature Store requires an event_time field for all data stored"""
         if self.event_time_column is None or self.event_time_column not in self.input_df.columns:
             current_datetime = datetime.now(timezone.utc)
-            self.log.info('Generating an event_time column before FeatureSet Creation...')
-            self.event_time_column = 'event_time'
+            self.log.info("Generating an event_time column before FeatureSet Creation...")
+            self.event_time_column = "event_time"
             self.input_df[self.event_time_column] = pd.Series([current_datetime] * len(self.input_df))
 
         # The event_time_column is defined so lets make sure it the right type for Feature Store
@@ -67,8 +67,8 @@ class PandasToFeatures(Transform):
             dt = dt.tz_localize(timezone.utc)
 
         # Convert to ISO-8601 String
-        iso_str = dt.astimezone(timezone.utc).isoformat('T', 'milliseconds')
-        return iso_str.replace('+00:00', 'Z')
+        iso_str = dt.astimezone(timezone.utc).isoformat("T", "milliseconds")
+        return iso_str.replace("+00:00", "Z")
 
     def _convert_objs_to_string(self):
         """Internal: AWS Feature Store doesn't know how to store object dtypes, so convert to String"""
@@ -82,7 +82,10 @@ class PandasToFeatures(Transform):
         categorical_columns = []
         for feature, dtype in self.input_df.dtypes.items():
             print(feature, dtype)
-            if dtype in ['object', 'string'] and feature not in [self.event_time_column, self.id_column]:
+            if dtype in ["object", "string"] and feature not in [
+                self.event_time_column,
+                self.id_column,
+            ]:
                 print(f"Converting object column {feature} to categorical")
                 print(f"Unique Values = {self.input_df[feature].nunique()}")
                 self.input_df[feature] = self.input_df[feature].astype("category")
@@ -94,16 +97,16 @@ class PandasToFeatures(Transform):
     @staticmethod
     def convert_nullable_types(df: pd.DataFrame) -> pd.DataFrame:
         """Convert the new Pandas 'nullable types' since AWS SageMaker code doesn't currently support them
-           See: https://github.com/aws/sagemaker-python-sdk/pull/3740"""
+        See: https://github.com/aws/sagemaker-python-sdk/pull/3740"""
         for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
-            df[column] = df[column].astype('int64')
+            df[column] = df[column].astype("int64")
         for column in list(df.select_dtypes(include=[pd.Float64Dtype]).columns):
-            df[column] = df[column].astype('float64')
+            df[column] = df[column].astype("float64")
         return df
 
     def transform_impl(self, delete_existing=True):
         """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
-           store the information about the data to the AWS Data Catalog sageworks database"""
+        store the information about the data to the AWS Data Catalog sageworks database"""
 
         # Ensure that the input dataframe has id and event_time fields
         self._ensure_id_column()
@@ -173,26 +176,26 @@ if __name__ == "__main__":
     """Exercise the PandasToFeatures Class"""
 
     # Setup Pandas output options
-    pd.set_option('display.max_colwidth', 15)
-    pd.set_option('display.max_columns', 15)
-    pd.set_option('display.width', 1000)
+    pd.set_option("display.max_colwidth", 15)
+    pd.set_option("display.max_columns", 15)
+    pd.set_option("display.width", 1000)
 
     # Create some fake data
     my_datetime = datetime.now(timezone.utc)
     fake_data = [
-        {'id': 1, 'name': 'sue', 'age': 41, 'score': 7.8, 'date': my_datetime},
-        {'id': 2, 'name': 'bob', 'age': 34, 'score': 6.4, 'date': my_datetime},
-        {'id': 3, 'name': 'ted', 'age': 69, 'score': 8.2, 'date': my_datetime},
-        {'id': 4, 'name': 'bill', 'age': 24, 'score': 5.3, 'date': my_datetime},
-        {'id': 5, 'name': 'sally', 'age': 52, 'score': 9.5, 'date': my_datetime}
+        {"id": 1, "name": "sue", "age": 41, "score": 7.8, "date": my_datetime},
+        {"id": 2, "name": "bob", "age": 34, "score": 6.4, "date": my_datetime},
+        {"id": 3, "name": "ted", "age": 69, "score": 8.2, "date": my_datetime},
+        {"id": 4, "name": "bill", "age": 24, "score": 5.3, "date": my_datetime},
+        {"id": 5, "name": "sally", "age": 52, "score": 9.5, "date": my_datetime},
     ]
     fake_df = pd.DataFrame(fake_data)
 
     # Create my DF to Feature Set Transform
-    df_to_features = PandasToFeatures('test_feature_set')
-    df_to_features.set_input(fake_df, id_column='id', event_time_column='date')
-    df_to_features.set_output_tags(['test', 'small'])
-    df_to_features.set_output_meta({'sageworks_input': 'DataFrame'})
+    df_to_features = PandasToFeatures("test_feature_set")
+    df_to_features.set_input(fake_df, id_column="id", event_time_column="date")
+    df_to_features.set_output_tags(["test", "small"])
+    df_to_features.set_output_meta({"sageworks_input": "DataFrame"})
 
     # Store this dataframe as a SageWorks Feature Set
     df_to_features.transform()

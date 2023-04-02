@@ -8,8 +8,12 @@ import logging
 from sageworks.aws_service_broker.cache import Cache
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog
-from sageworks.aws_service_broker.aws_service_connectors.feature_store import FeatureStore
-from sageworks.aws_service_broker.aws_service_connectors.model_registry import ModelRegistry
+from sageworks.aws_service_broker.aws_service_connectors.feature_store import (
+    FeatureStore,
+)
+from sageworks.aws_service_broker.aws_service_connectors.model_registry import (
+    ModelRegistry,
+)
 from sageworks.aws_service_broker.aws_service_connectors.endpoints import Endpoints
 from sageworks.utils.sageworks_logging import logging_setup
 
@@ -20,6 +24,7 @@ logging_setup()
 # Enumerated types for SageWorks Meta Requests
 class ServiceCategory(Enum):
     """Enumerated Types for SageWorks Meta Requests"""
+
     INCOMING_DATA = auto()
     DATA_CATALOG = auto()
     FEATURE_STORE = auto()
@@ -28,11 +33,10 @@ class ServiceCategory(Enum):
 
 
 class AWSServiceBroker:
-
-    def __new__(cls, database_scope=['sageworks', 'sagemaker_featurestore']):
+    def __new__(cls, database_scope=["sageworks", "sagemaker_featurestore"]):
         """AWSServiceBroker Singleton Pattern"""
-        if not hasattr(cls, 'instance'):
-            print('Creating New AWSServiceBroker Instance...')
+        if not hasattr(cls, "instance"):
+            print("Creating New AWSServiceBroker Instance...")
             cls.instance = super(AWSServiceBroker, cls).__new__(cls)
 
             # Class Initialization
@@ -42,11 +46,11 @@ class AWSServiceBroker:
 
     @classmethod
     def __class_init__(cls, database_scope):
-        """"AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
+        """ "AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
         cls.log = logging.getLogger(__file__)
 
         # FIXME: This should be pulled from a config file
-        cls.incoming_data_bucket = 's3://scp-sageworks-artifacts/incoming-data'
+        cls.incoming_data_bucket = "s3://scp-sageworks-artifacts/incoming-data"
 
         # SageWorks category mapping to AWS Services
         # - incoming_data = S3
@@ -73,7 +77,7 @@ class AWSServiceBroker:
             ServiceCategory.DATA_CATALOG: cls.data_catalog,
             ServiceCategory.FEATURE_STORE: cls.feature_store,
             ServiceCategory.MODELS: cls.model_registry,
-            ServiceCategory.ENDPOINTS: cls.endpoints
+            ServiceCategory.ENDPOINTS: cls.endpoints,
         }
 
     @classmethod
@@ -113,18 +117,18 @@ class AWSServiceBroker:
         return {_category: cls.get_metadata(_category) for _category in ServiceCategory}
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     """Exercise the AWS Service Broker Class"""
     from pprint import pprint
 
     # Collect args from the command line
     parser = argparse.ArgumentParser()
-    parser.add_argument('--database', type=str, default='sageworks', help='AWS Data Catalog Database')
+    parser.add_argument("--database", type=str, default="sageworks", help="AWS Data Catalog Database")
     args, commands = parser.parse_known_args()
 
     # Check for unknown args
     if commands:
-        print('Unrecognized args: %s' % commands)
+        print("Unrecognized args: %s" % commands)
         sys.exit(1)
 
     # Create the class

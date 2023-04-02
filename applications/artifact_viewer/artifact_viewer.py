@@ -15,7 +15,7 @@ import callbacks
 
 # Create our Dash Application
 # app = Dash(title='SageWorks Artifacts', external_stylesheets=[dbc.themes.BOOTSTRAP])
-app = Dash(title='SageWorks Artifacts')
+app = Dash(title="SageWorks Artifacts")
 # app = Dash(title='SageWorks Artifacts', external_stylesheets=[dbc.themes.DARKLY])
 server = app.server
 
@@ -31,21 +31,33 @@ def setup_artifact_viewer():
 
     # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
     tables = dict()
-    tables['INCOMING_DATA'] = table.create('INCOMING_DATA', artifacts_summary['INCOMING_DATA'], header_color='rgb(60, 60, 100)')
-    tables['DATA_SOURCES'] = table.create('DATA_SOURCES', artifacts_summary['DATA_SOURCES'], header_color='rgb(100, 60, 60)',
-                                          markdown_columns=['Name'])
-    tables['FEATURE_SETS'] = table.create('FEATURE_SETS', artifacts_summary['FEATURE_SETS'], header_color='rgb(100, 100, 60)',
-                                          markdown_columns=['Feature Group'])
-    tables['MODELS'] = table.create('MODELS', artifacts_summary['MODELS'], header_color='rgb(60, 100, 60)')
-    tables['ENDPOINTS'] = table.create('ENDPOINTS', artifacts_summary['ENDPOINTS'], header_color='rgb(100, 60, 100)')
+    tables["INCOMING_DATA"] = table.create(
+        "INCOMING_DATA",
+        artifacts_summary["INCOMING_DATA"],
+        header_color="rgb(60, 60, 100)",
+    )
+    tables["DATA_SOURCES"] = table.create(
+        "DATA_SOURCES",
+        artifacts_summary["DATA_SOURCES"],
+        header_color="rgb(100, 60, 60)",
+        markdown_columns=["Name"],
+    )
+    tables["FEATURE_SETS"] = table.create(
+        "FEATURE_SETS",
+        artifacts_summary["FEATURE_SETS"],
+        header_color="rgb(100, 100, 60)",
+        markdown_columns=["Feature Group"],
+    )
+    tables["MODELS"] = table.create("MODELS", artifacts_summary["MODELS"], header_color="rgb(60, 100, 60)")
+    tables["ENDPOINTS"] = table.create("ENDPOINTS", artifacts_summary["ENDPOINTS"], header_color="rgb(100, 60, 100)")
 
     # Create our components
     components = {
-        'incoming_data': tables['INCOMING_DATA'],
-        'data_sources': tables['DATA_SOURCES'],
-        'feature_sets': tables['FEATURE_SETS'],
-        'models': tables['MODELS'],
-        'endpoints': tables['ENDPOINTS']
+        "incoming_data": tables["INCOMING_DATA"],
+        "data_sources": tables["DATA_SOURCES"],
+        "feature_sets": tables["FEATURE_SETS"],
+        "models": tables["MODELS"],
+        "endpoints": tables["ENDPOINTS"],
     }
 
     # Setup up our application layout
@@ -66,7 +78,7 @@ def setup_artifact_viewer():
 setup_artifact_viewer()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Run our web application in TEST mode
     # Note: This 'main' is purely for running/testing locally
-    app.run_server(host='0.0.0.0', port=8080, debug=True)
+    app.run_server(host="0.0.0.0", port=8080, debug=True)

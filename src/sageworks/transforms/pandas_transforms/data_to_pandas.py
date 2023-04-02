@@ -33,7 +33,7 @@ class DataToPandas(Transform):
 
         # If the data source has more rows than max_rows, do a sample query
         if num_rows > max_rows:
-            percentage = round(max_rows*100.0/num_rows)
+            percentage = round(max_rows * 100.0 / num_rows)
             self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {max_rows}...")
             query = f"SELECT * FROM {self.input_uuid} TABLESAMPLE BERNOULLI({percentage})"
         else:
@@ -54,12 +54,12 @@ if __name__ == "__main__":
     """Exercise the DataToPandas Class"""
 
     # Setup Pandas output options
-    pd.set_option('display.max_colwidth', 15)
-    pd.set_option('display.max_columns', 15)
-    pd.set_option('display.width', 1000)
+    pd.set_option("display.max_colwidth", 15)
+    pd.set_option("display.max_columns", 15)
+    pd.set_option("display.width", 1000)
 
     # Grab a Data Source
-    data_uuid = 'test_data'
+    data_uuid = "test_data"
 
     # Create the DataSource to DF Transform
     data_to_df = DataToPandas(data_uuid)

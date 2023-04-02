@@ -13,7 +13,7 @@ logging_setup()
 
 
 class View(ABC):
-    def __init__(self, database_scope=['sageworks', 'sagemaker_features']):
+    def __init__(self, database_scope=["sageworks", "sagemaker_features"]):
         """View: View in the database sense: Pulls from the AWS Service Broker and does slice and dice"""
         self.log = logging.getLogger(__name__)
 

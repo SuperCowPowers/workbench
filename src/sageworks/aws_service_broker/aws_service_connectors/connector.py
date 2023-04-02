@@ -35,7 +35,7 @@ class Connector(ABC):
             cls.log.info(f"Current Refresh Time: {cls.token_refresh_time}")
             cls.token_refresh_time = now + (cls.refresh_minutes * 60)
             cls.log.info(f"New Refresh Time: {cls.token_refresh_time}")
-            cls.log.info('Refreshing AWS SSO Token...')
+            cls.log.info("Refreshing AWS SSO Token...")
             cls.boto_session = AWSAccountClamp().boto_session()
             cls.sm_session = AWSAccountClamp().sagemaker_session()
             cls.sm_client = AWSAccountClamp().sagemaker_client()

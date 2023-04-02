@@ -14,7 +14,6 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class FeatureSet(Artifact):
-
     def __init__(self, feature_set_name):
         """FeatureSet: SageWorks Feature Set accessible through Athena
 
@@ -32,13 +31,13 @@ class FeatureSet(Artifact):
             self.athena_source = None
             return
         else:
-            self.record_id = self.feature_meta['RecordIdentifierFeatureName']
-            self.event_time = self.feature_meta['EventTimeFeatureName']
+            self.record_id = self.feature_meta["RecordIdentifierFeatureName"]
+            self.event_time = self.feature_meta["EventTimeFeatureName"]
 
             # Pull Athena and S3 Storage information from metadata
-            self.athena_database = self.feature_meta['sageworks'].get('athena_database')
-            self.athena_table = self.feature_meta['sageworks'].get('athena_table')
-            self.s3_storage = self.feature_meta['sageworks'].get('s3_storage')
+            self.athena_database = self.feature_meta["sageworks"].get("athena_database")
+            self.athena_table = self.feature_meta["sageworks"].get("athena_table")
+            self.s3_storage = self.feature_meta["sageworks"].get("s3_storage")
 
             # Creat our internal AthenaSource
             self.athena_source = AthenaSource(self.athena_table, self.athena_database)
@@ -52,7 +51,7 @@ class FeatureSet(Artifact):
     def check(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.feature_meta is None:
-            self.log.critical(f'FeatureSet.check() {self.feature_set_name} not found in AWS Metadata!')
+            self.log.critical(f"FeatureSet.check() {self.feature_set_name} not found in AWS Metadata!")
             return False
         return True
 
@@ -62,7 +61,7 @@ class FeatureSet(Artifact):
 
     def arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for this artifact"""
-        return self.feature_meta['FeatureGroupArn']
+        return self.feature_meta["FeatureGroupArn"]
 
     def size(self) -> float:
         """Return the size of the internal AthenaSource in MegaBytes"""
@@ -86,33 +85,33 @@ class FeatureSet(Artifact):
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        return 'https://us-west-2.console.aws.amazon.com/athena/home'
+        return "https://us-west-2.console.aws.amazon.com/athena/home"
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
-        return self.feature_meta['CreateTime']
+        return self.feature_meta["CreateTime"]
 
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
-        return self.feature_meta['UpdateTime']
+        return self.feature_meta["UpdateTime"]
 
     def get_feature_store(self) -> FeatureStore:
         """Return the underlying AWS FeatureStore object. This can be useful for more advanced usage
-           with create_dataset() such as Joins and time ranges and a host of other options
-           See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
+        with create_dataset() such as Joins and time ranges and a host of other options
+        See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
         """
         return self.feature_store
 
     def create_s3_training_data(self, training_split=80, test_split=20, val_split=0) -> str:
         """Create some Training Data (S3 CSV) from a Feature Set using standard options. If you want
-           additional options/features use the get_feature_store() method and see AWS docs for all
-           the details: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
-           Args:
-               training_split (int): Percentage of data that goes into the TRAINING set
-               test_split (int): Percentage of data that goes into the TEST set
-               val_split (int): Percentage of data that goes into the VALIDATION set (default=0)
-           Returns:
-               str: The full path/file for the CSV file created by Feature Store create_dataset()
+        additional options/features use the get_feature_store() method and see AWS docs for all
+        the details: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
+        Args:
+            training_split (int): Percentage of data that goes into the TRAINING set
+            test_split (int): Percentage of data that goes into the TEST set
+            val_split (int): Percentage of data that goes into the VALIDATION set (default=0)
+        Returns:
+            str: The full path/file for the CSV file created by Feature Store create_dataset()
         """
 
         # Set up the S3 Query results path
@@ -125,7 +124,7 @@ class FeatureSet(Artifact):
         # Make the query
         athena_query = FeatureGroup(name=self.feature_set_name, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
-        self.log.info('Waiting for Athena Query...')
+        self.log.info("Waiting for Athena Query...")
         athena_query.wait()
         query_execution = athena_query.get_query_execution()
 
@@ -137,14 +136,16 @@ class FeatureSet(Artifact):
         """An Athena query to get the latest snapshot of features"""
         # Remove FeatureGroup metadata columns that might have gotten added
         columns = self.column_names()
-        filter_columns = ['write_time', 'api_invocation_time', 'is_deleted']
-        columns = ', '.join([x for x in columns if x not in filter_columns])
+        filter_columns = ["write_time", "api_invocation_time", "is_deleted"]
+        columns = ", ".join([x for x in columns if x not in filter_columns])
 
-        query = (f'SELECT {columns} '
-                 f'    FROM (SELECT *, row_number() OVER (PARTITION BY {self.record_id} '
-                 f'        ORDER BY {self.event_time} desc, api_invocation_time DESC, write_time DESC) AS row_num '
-                 f'        FROM "{self.athena_table}") '
-                 '    WHERE row_num = 1 and  NOT is_deleted;')
+        query = (
+            f"SELECT {columns} "
+            f"    FROM (SELECT *, row_number() OVER (PARTITION BY {self.record_id} "
+            f"        ORDER BY {self.event_time} desc, api_invocation_time DESC, write_time DESC) AS row_num "
+            f'        FROM "{self.athena_table}") '
+            "    WHERE row_num = 1 and  NOT is_deleted;"
+        )
         return query
 
     def delete(self):
@@ -180,7 +181,7 @@ def test():
     """Test for FeatureSet Class"""
 
     # Grab a FeatureSet object and pull some information from it
-    my_features = FeatureSet('test_feature_set')
+    my_features = FeatureSet("test_feature_set")
 
     # Call the various methods
 
@@ -190,7 +191,7 @@ def test():
     # How many rows and columns?
     num_rows = my_features.num_rows()
     num_columns = my_features.num_columns()
-    print(f'Rows: {num_rows} Columns: {num_columns}')
+    print(f"Rows: {num_rows} Columns: {num_columns}")
 
     # What are the column names?
     columns = my_features.column_names()

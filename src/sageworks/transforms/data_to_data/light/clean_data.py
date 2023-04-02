@@ -12,7 +12,7 @@ class CleanData(DataToDataLight):
         # Call superclass init
         super().__init__(input_uuid, output_uuid)
 
-    def transform_impl(self, drop_na='any'):
+    def transform_impl(self, drop_na="any"):
         """Simple Clean Data, will improve later"""
 
         """
@@ -38,6 +38,6 @@ if __name__ == "__main__":
     """Exercise the CleanData Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = 'test_data'
-    output_uuid = 'test_data_clean'
-    CleanData(input_uuid, output_uuid).transform(drop_na='any')
+    input_uuid = "test_data"
+    output_uuid = "test_data_clean"
+    CleanData(input_uuid, output_uuid).transform(drop_na="any")

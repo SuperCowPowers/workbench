@@ -42,6 +42,6 @@ if __name__ == "__main__":
     """Exercise the DataToDataLight Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = 'abalone_data'
-    output_uuid = 'abalone_data_copy'
+    input_uuid = "abalone_data"
+    output_uuid = "abalone_data_copy"
     DataToDataLight(input_uuid, output_uuid).transform()

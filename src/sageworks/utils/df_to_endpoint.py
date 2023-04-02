@@ -49,7 +49,7 @@ def _dataframe_to_endpoint(predictor, df):
         return results_df
 
     except botocore.exceptions.ClientError as err:
-        if err.response['Error']['Code'] == 'ModelError':  # Model Error
+        if err.response["Error"]["Code"] == "ModelError":  # Model Error
 
             # Base case: DataFrame with 1 Row
             if len(df) == 1:
@@ -63,23 +63,23 @@ def _dataframe_to_endpoint(predictor, df):
 
             # Recurse on binary splits of the dataframe
             num_rows = len(df)
-            split = int(num_rows/2)
-            first_half = _dataframe_to_endpoint(predictor, df[0: split])
-            second_half = _dataframe_to_endpoint(predictor, df[split: num_rows])
+            split = int(num_rows / 2)
+            first_half = _dataframe_to_endpoint(predictor, df[0:split])
+            second_half = _dataframe_to_endpoint(predictor, df[split:num_rows])
             return pd.concat([first_half, second_half], ignore_index=True)
 
         else:
-            print('Unknown Error from Prediction Endpoint')
+            print("Unknown Error from Prediction Endpoint")
             raise err
 
 
 def df_to_endpoint(endpoint, df, dropna=True):
     df_list = []
     for index in range(0, len(df), 500):
-        print('Processing...')
+        print("Processing...")
 
         # Compute partial DataFrames, add them to a list, and concatenate at the end
-        partial_df = _dataframe_to_endpoint(endpoint, df[index:index + 500])
+        partial_df = _dataframe_to_endpoint(endpoint, df[index : index + 500])
         df_list.append(partial_df)
 
     # Concatenate the dataframes
@@ -91,7 +91,7 @@ def df_to_endpoint(endpoint, df, dropna=True):
     # Hard Conversion
     # Note: If are string/object columns we want to use 'ignore' here so those columns
     #       won't raise an error (columns maintain current type)
-    converted_df = combined_df.apply(pd.to_numeric, errors='ignore')
+    converted_df = combined_df.apply(pd.to_numeric, errors="ignore")
 
     # Soft Conversion
     # Convert columns to the best possible dtype that supports the pd.NA missing value.
@@ -107,8 +107,8 @@ def df_to_endpoint(endpoint, df, dropna=True):
 
 def sdf_to_df(sdf_file_path: str) -> pd.DataFrame:
     """Read an SDF file and return the contents as a Pandas DataFrame"""
-    print(f'Reading in SDF File: {sdf_file_path}...')
-    return PandasTools.LoadSDF(sdf_file_path, smilesName='SMILES')
+    print(f"Reading in SDF File: {sdf_file_path}...")
+    return PandasTools.LoadSDF(sdf_file_path, smilesName="SMILES")
 
 
 def endpoint_to_dataframe_tests():
@@ -117,35 +117,35 @@ def endpoint_to_dataframe_tests():
     df = sdf_to_df(args.sdfpath)
 
     # Invoke an Endpoint
-    endpoint_name = 'smiles-to-rdkit-mordred'
+    endpoint_name = "smiles-to-rdkit-mordred"
     endpoint = Predictor(endpoint_name, serializer=CSVSerializer(), deserializer=CSVDeserializer())
 
     # Use the DataFrame helper method
-    print(f'Calling Endpoint: {endpoint_name}...')
+    print(f"Calling Endpoint: {endpoint_name}...")
     endpoint_results = df_to_endpoint(endpoint, df)
     print(endpoint_results.head())
 
     # Now replace one of the SMILES with a NaN
-    df['SMILES'][1] = np.NaN
-    df['SMILES'][3] = np.NaN
-    print(f'Calling Endpoint with a NaN SMILES: {endpoint_name}...')
+    df["SMILES"][1] = np.NaN
+    df["SMILES"][3] = np.NaN
+    print(f"Calling Endpoint with a NaN SMILES: {endpoint_name}...")
     endpoint_results = df_to_endpoint(endpoint, df)
     print(endpoint_results.head())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # This import is only needed for the tests
     from rdkit.Chem import PandasTools
 
     # Collect args from the command line
     parser = argparse.ArgumentParser()
-    parser.add_argument('sdfpath', type=str, help='SDF File Path')
+    parser.add_argument("sdfpath", type=str, help="SDF File Path")
     args, commands = parser.parse_known_args()
 
     # Check for unknown args
     if commands:
-        print('Unrecognized args: %s' % commands)
+        print("Unrecognized args: %s" % commands)
         sys.exit(1)
 
     # Run the tests

@@ -6,7 +6,12 @@ import dash_bootstrap_components as dbc
 # SageWorks Imports
 from sageworks.views.artifacts_summary import ArtifactsSummary
 from sageworks.web_components import confusion_matrix, table, scatter_plot
-from sageworks.web_components import feature_importance, model_data, model_details, feature_details
+from sageworks.web_components import (
+    feature_importance,
+    model_data,
+    model_details,
+    feature_details,
+)
 
 # Local Imports
 import layout
@@ -17,7 +22,7 @@ import callbacks
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
 
 # Create our Dash Application
-app = Dash(title='SageWorks Artifacts', external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(title="SageWorks Artifacts", external_stylesheets=[dbc.themes.BOOTSTRAP])
 # app = Dash(title='Hello World Application', external_stylesheets=[dbc.themes.DARKLY])
 server = app.server
 
@@ -40,11 +45,11 @@ def setup_artifact_viewer():
 
     # Create our components
     components = {
-        'incoming_data': tables['INCOMING_DATA'],
-        'data_sources': tables['DATA_SOURCES'],
-        'feature_sets': tables['FEATURE_SETS'],
-        'models': tables['MODELS'],
-        'endpoints': tables['ENDPOINTS']
+        "incoming_data": tables["INCOMING_DATA"],
+        "data_sources": tables["DATA_SOURCES"],
+        "feature_sets": tables["FEATURE_SETS"],
+        "models": tables["MODELS"],
+        "endpoints": tables["ENDPOINTS"],
     }
 
     # Setup up our application layout
@@ -63,7 +68,7 @@ def setup_artifact_viewer():
 setup_artifact_viewer()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Run our web application in TEST mode
     # Note: This 'main' is purely for running/testing locally
-    app.run_server(host='0.0.0.0', port=8080, debug=True)
+    app.run_server(host="0.0.0.0", port=8080, debug=True)

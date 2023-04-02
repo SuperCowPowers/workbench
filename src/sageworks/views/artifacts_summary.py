@@ -49,13 +49,13 @@ class ArtifactsSummary(View):
     @staticmethod
     def aws_tags_to_dict(aws_tags):
         """AWS Tags are in an odd format, so convert to regular dictionary"""
-        return {item['Key']: item['Value'] for item in aws_tags if 'sageworks' in item['Key']}
+        return {item["Key"]: item["Value"] for item in aws_tags if "sageworks" in item["Key"]}
 
     def artifact_meta(self, aws_arn):
         """Get the Metadata for this Artifact"""
         meta = self.size_cache.get(aws_arn)
         if meta is None:
-            self.log.info(f'Retrieving Artifact Metadata: {aws_arn}...')
+            self.log.info(f"Retrieving Artifact Metadata: {aws_arn}...")
             aws_tags = self.sm_session.list_tags(aws_arn)
             meta = self.aws_tags_to_dict(aws_tags)
             self.size_cache.set(aws_arn, meta)
@@ -64,16 +64,16 @@ class ArtifactsSummary(View):
     def view_data(self) -> dict:
         """Get all the data that's useful for this view
 
-            Returns:
-                dict: Dictionary of Pandas Dataframes, i.e. {'INCOMING_DATA', pd.DataFrame}
-           """
+        Returns:
+            dict: Dictionary of Pandas Dataframes, i.e. {'INCOMING_DATA', pd.DataFrame}
+        """
 
         # We're filling in Summary Data for all the AWS Services
-        self.summary_data['INCOMING_DATA'] = self.incoming_data_summary()
-        self.summary_data['DATA_SOURCES'] = self.data_sources_summary()
-        self.summary_data['FEATURE_SETS'] = self.feature_sets_summary()
-        self.summary_data['MODELS'] = self.models_summary()
-        self.summary_data['ENDPOINTS'] = self.endpoints_summary()
+        self.summary_data["INCOMING_DATA"] = self.incoming_data_summary()
+        self.summary_data["DATA_SOURCES"] = self.data_sources_summary()
+        self.summary_data["FEATURE_SETS"] = self.feature_sets_summary()
+        self.summary_data["MODELS"] = self.models_summary()
+        self.summary_data["ENDPOINTS"] = self.endpoints_summary()
         return self.summary_data
 
     def incoming_data_summary(self):
@@ -83,13 +83,17 @@ class ArtifactsSummary(View):
         for name, info in data.items():
 
             # Get the size of the S3 Storage Object(s)
-            size = info.get('ContentLength') / 1_000_000
-            summary = {'Name': name,
-                       'Size(MB)': f"{size:.1f}",
-                       'Modified': self.datetime_string(info.get('LastModified', '-')),
-                       'ContentType': str(info.get('ContentType', '-')),
-                       'ServerSideEncryption': info.get('ServerSideEncryption', '-'),
-                       'Tags': str(info.get('tags', '-'), )}
+            size = info.get("ContentLength") / 1_000_000
+            summary = {
+                "Name": name,
+                "Size(MB)": f"{size:.1f}",
+                "Modified": self.datetime_string(info.get("LastModified", "-")),
+                "ContentType": str(info.get("ContentType", "-")),
+                "ServerSideEncryption": info.get("ServerSideEncryption", "-"),
+                "Tags": str(
+                    info.get("tags", "-"),
+                ),
+            }
             data_summary.append(summary)
 
         return pd.DataFrame(data_summary)
@@ -102,29 +106,43 @@ class ArtifactsSummary(View):
             for name, info in db_info.items():
 
                 # Get the size of the S3 Storage Object(s)
-                size = self.s3_objects_size(info['StorageDescriptor']['Location'])
-                summary = {'Name': self.athena_hyperlink(name),
-                           'Ver': info.get('VersionId', '-'),
-                           'Size(MB)': size,
-                           'Catalog DB': info.get('DatabaseName', '-'),
-                           # 'Created': self.datetime_string(info.get('CreateTime')),
-                           'Modified': self.datetime_string(info.get('UpdateTime')),
-                           'Num Columns': self.num_columns(info),
-                           'DataLake': info.get('IsRegisteredWithLakeFormation', '-'),
-                           'Tags': info['Parameters'].get('sageworks_tags', '-'),
-                           'Input': str(info['Parameters'].get('sageworks_input', '-'), )}
+                size = self.s3_objects_size(info["StorageDescriptor"]["Location"])
+                summary = {
+                    "Name": self.athena_hyperlink(name),
+                    "Ver": info.get("VersionId", "-"),
+                    "Size(MB)": size,
+                    "Catalog DB": info.get("DatabaseName", "-"),
+                    # 'Created': self.datetime_string(info.get('CreateTime')),
+                    "Modified": self.datetime_string(info.get("UpdateTime")),
+                    "Num Columns": self.num_columns(info),
+                    "DataLake": info.get("IsRegisteredWithLakeFormation", "-"),
+                    "Tags": info["Parameters"].get("sageworks_tags", "-"),
+                    "Input": str(
+                        info["Parameters"].get("sageworks_input", "-"),
+                    ),
+                }
                 data_summary.append(summary)
 
             # Make sure we have data else return just the column names
             if data_summary:
                 return pd.DataFrame(data_summary)
             else:
-                columns = ['Name', 'Ver', 'Size(MB)', 'Catalog DB', 'Modified', 'Num Columns', 'DataLake', 'Tags', 'Input']
+                columns = [
+                    "Name",
+                    "Ver",
+                    "Size(MB)",
+                    "Catalog DB",
+                    "Modified",
+                    "Num Columns",
+                    "DataLake",
+                    "Tags",
+                    "Input",
+                ]
                 return pd.DataFrame(columns=columns)
 
     @staticmethod
     def athena_hyperlink(name):
-        athena_url = 'https://us-west-2.console.aws.amazon.com/athena/home'
+        athena_url = "https://us-west-2.console.aws.amazon.com/athena/home"
         link = f"{name} (<a href='{athena_url}' target='_blank'>query</a>)"
         return link
 
@@ -135,29 +153,39 @@ class ArtifactsSummary(View):
         for feature_group, group_info in data.items():
 
             # Get the tags for this Feature Group
-            arn = group_info['FeatureGroupArn']
+            arn = group_info["FeatureGroupArn"]
             sageworks_meta = self.artifact_meta(arn)
 
             # Get the size of the S3 Storage Object(s)
-            size = self.s3_objects_size(group_info['OfflineStoreConfig']['S3StorageConfig']['S3Uri'])
-            summary = {'Feature Group': self.athena_hyperlink(group_info['FeatureGroupName']),
-                       # 'Status': group_info['FeatureGroupStatus'],
-                       'Size(MB)': size,
-                       'Catalog DB': group_info['OfflineStoreConfig'].get('DataCatalogConfig', {}).get('Database', '-'),
-                       'Athena Table': group_info['OfflineStoreConfig'].get('DataCatalogConfig', {}).get('TableName', '-'),
-                       #'ID/EventTime': f"{group_info['RecordIdentifierFeatureName']}/{group_info['EventTimeFeatureName']}",
-                       'Online': str(group_info.get('OnlineStoreConfig', {}).get('EnableOnlineStore', 'False')),
-                       'Created': self.datetime_string(group_info.get('CreationTime')),
-                       'Tags': sageworks_meta.get('sageworks_tags', '-'),
-                       'Input': sageworks_meta.get('sageworks_input', '-')}
+            size = self.s3_objects_size(group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"])
+            summary = {
+                "Feature Group": self.athena_hyperlink(group_info["FeatureGroupName"]),
+                # 'Status': group_info['FeatureGroupStatus'],
+                "Size(MB)": size,
+                "Catalog DB": group_info["OfflineStoreConfig"].get("DataCatalogConfig", {}).get("Database", "-"),
+                "Athena Table": group_info["OfflineStoreConfig"].get("DataCatalogConfig", {}).get("TableName", "-"),
+                #'ID/EventTime': f"{group_info['RecordIdentifierFeatureName']}/{group_info['EventTimeFeatureName']}",
+                "Online": str(group_info.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
+                "Created": self.datetime_string(group_info.get("CreationTime")),
+                "Tags": sageworks_meta.get("sageworks_tags", "-"),
+                "Input": sageworks_meta.get("sageworks_input", "-"),
+            }
             data_summary.append(summary)
 
         # Make sure we have data else return just the column namesa
         if data_summary:
             return pd.DataFrame(data_summary)
         else:
-            columns = ['Feature Group', 'Size(MB)', 'Catalog DB', 'Athena Table',
-                       'Online', 'Created', 'Tags', 'Input']
+            columns = [
+                "Feature Group",
+                "Size(MB)",
+                "Catalog DB",
+                "Athena Table",
+                "Online",
+                "Created",
+                "Tags",
+                "Input",
+            ]
             return pd.DataFrame(columns=columns)
 
     def models_summary(self):
@@ -167,7 +195,7 @@ class ArtifactsSummary(View):
         for model_group, model_list in data.items():
             # Special Case for Model Groups without any Models
             if not model_list:
-                summary = {'Model Group': model_group}
+                summary = {"Model Group": model_group}
                 data_summary.append(summary)
                 continue
 
@@ -175,23 +203,33 @@ class ArtifactsSummary(View):
             for model in model_list:
 
                 # Get the tags for this Model Group
-                model_group_arn = model['ModelPackageGroupArn']
+                model_group_arn = model["ModelPackageGroupArn"]
                 sageworks_meta = self.artifact_meta(model_group_arn)
 
-                summary = {'Model Group': model['ModelPackageGroupName'],
-                           'Ver': model['ModelPackageVersion'],
-                           'Status': model['ModelPackageStatus'],
-                           'Description': model['ModelPackageDescription'],
-                           'Created': self.datetime_string(model.get('CreationTime')),
-                           'Tags': sageworks_meta.get('sageworks_tags', '-'),
-                           'Input': sageworks_meta.get('sageworks_input', '-')}
+                summary = {
+                    "Model Group": model["ModelPackageGroupName"],
+                    "Ver": model["ModelPackageVersion"],
+                    "Status": model["ModelPackageStatus"],
+                    "Description": model["ModelPackageDescription"],
+                    "Created": self.datetime_string(model.get("CreationTime")),
+                    "Tags": sageworks_meta.get("sageworks_tags", "-"),
+                    "Input": sageworks_meta.get("sageworks_input", "-"),
+                }
                 data_summary.append(summary)
 
         # Make sure we have data else return just the column names
         if data_summary:
             return pd.DataFrame(data_summary)
         else:
-            columns = ['Model Group', 'Ver', 'Status', 'Description', 'Created', 'Tags', 'Input']
+            columns = [
+                "Model Group",
+                "Ver",
+                "Status",
+                "Description",
+                "Created",
+                "Tags",
+                "Input",
+            ]
             return pd.DataFrame(columns=columns)
 
     def endpoints_summary(self):
@@ -203,44 +241,55 @@ class ArtifactsSummary(View):
         for endpoint, endpoint_info in data.items():
 
             # Get the tags for this Model Group
-            endpoint_arn = endpoint_info['EndpointArn']
+            endpoint_arn = endpoint_info["EndpointArn"]
             sageworks_meta = self.artifact_meta(endpoint_arn)
 
-            summary = {'Name': endpoint_info['EndpointName'],
-                       'Status': endpoint_info['EndpointStatus'],
-                       'Created': self.datetime_string(endpoint_info.get('CreationTime')),
-                       'Modified': self.datetime_string(endpoint_info.get('LastModifiedTime')),
-                       'DataCapture': str(endpoint_info.get('DataCaptureConfig', {}).get('EnableCapture', 'False')),
-                       'Sampling(%)': str(endpoint_info.get('DataCaptureConfig', {}).get('CurrentSamplingPercentage', '-')),
-                       'Tags': sageworks_meta.get('sageworks_tags', '-'),
-                       'Input': sageworks_meta.get('sageworks_input', '-')}
+            summary = {
+                "Name": endpoint_info["EndpointName"],
+                "Status": endpoint_info["EndpointStatus"],
+                "Created": self.datetime_string(endpoint_info.get("CreationTime")),
+                "Modified": self.datetime_string(endpoint_info.get("LastModifiedTime")),
+                "DataCapture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
+                "Sampling(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
+                "Tags": sageworks_meta.get("sageworks_tags", "-"),
+                "Input": sageworks_meta.get("sageworks_input", "-"),
+            }
             data_summary.append(summary)
 
         # Make sure we have data else return just the column names
         if data_summary:
             return pd.DataFrame(data_summary)
         else:
-            columns = ['Name', 'Status', 'Created', 'Modified', 'DataCapture', 'Sampling(%)', 'Tags', 'Input']
+            columns = [
+                "Name",
+                "Status",
+                "Created",
+                "Modified",
+                "DataCapture",
+                "Sampling(%)",
+                "Tags",
+                "Input",
+            ]
             return pd.DataFrame(columns=columns)
 
     @staticmethod
     def num_columns(data_info):
         """Helper: Compute the number of columns from the storage descriptor data"""
         try:
-            return len(data_info['StorageDescriptor']['Columns'])
+            return len(data_info["StorageDescriptor"]["Columns"])
         except KeyError:
-            return '-'
+            return "-"
 
     @staticmethod
     def datetime_string(datetime_obj):
         """Helper: Convert DateTime Object into a nice string"""
         if datetime_obj is None:
-            return '-'
+            return "-"
         # Date + Hour Minute
         return datetime_obj.strftime("%Y-%m-%d %H:%M")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # Collect args from the command line
     parser = argparse.ArgumentParser()
@@ -248,14 +297,14 @@ if __name__ == '__main__':
 
     # Check for unknown args
     if commands:
-        print('Unrecognized args: %s' % commands)
+        print("Unrecognized args: %s" % commands)
         sys.exit(1)
 
     # Create the class and get the AWS Model Registry details
     artifact_view = ArtifactsSummary()
 
     # List the Endpoint Names
-    print('ArtifactsSummary:')
+    print("ArtifactsSummary:")
     for category, df in artifact_view.view_data().items():
         print(f"\n{category}")
         print(df.head())

@@ -16,6 +16,7 @@ logging_setup()
 
 class TransformInput(Enum):
     """Enumerated Types for SageWorks Transform Inputs"""
+
     LOCAL_FILE = auto()
     PANDAS_DF = auto()
     SPARK_DF = auto()
@@ -27,6 +28,7 @@ class TransformInput(Enum):
 
 class TransformOutput(Enum):
     """Enumerated Types for SageWorks Transform Outputs"""
+
     PANDAS_DF = auto()
     SPARK_DF = auto()
     S3_OBJECT = auto()
@@ -43,15 +45,15 @@ class Transform(ABC):
         self.log = logging.getLogger(__name__)
         self.input_type = None
         self.output_type = None
-        self.output_tags = ''
+        self.output_tags = ""
         self.output_meta = dict()
         self.input_uuid = input_uuid
         self.output_uuid = output_uuid
 
         # FIXME: We should have this come from AWS or Config
-        self.data_catalog_db = 'sageworks'
-        self.data_source_s3_path = 's3://scp-sageworks-artifacts/data-sources'
-        self.feature_set_s3_path = 's3://scp-sageworks-artifacts/feature-sets'
+        self.data_catalog_db = "sageworks"
+        self.data_source_s3_path = "s3://scp-sageworks-artifacts/data-sources"
+        self.feature_set_s3_path = "s3://scp-sageworks-artifacts/feature-sets"
 
         # Grab a SageWorks Role ARN, Boto3, SageMaker Session, and SageMaker Client
         self.sageworks_role_arn = AWSAccountClamp().sageworks_execution_role_arn()
@@ -60,7 +62,8 @@ class Transform(ABC):
         self.sm_client = AWSAccountClamp().sagemaker_client()
 
         # Make sure the AWS data catalog database exists
-        self.ensure_aws_catalog_db()
+        self.ensure_aws_catalog_db(self.data_catalog_db)
+        self.ensure_aws_catalog_db("sagemaker_featurestore")
 
     @abstractmethod
     def transform_impl(self, **kwargs):
@@ -69,37 +72,37 @@ class Transform(ABC):
 
     def pre_transform(self, **kwargs):
         """Perform any Pre-Transform operations"""
-        self.log.info('Pre-Transform...')
+        self.log.info("Pre-Transform...")
 
     def post_transform(self, **kwargs):
         """Perform any Post-Transform operations"""
-        self.log.info('Post-Transform...')
+        self.log.info("Post-Transform...")
 
     def set_output_tags(self, tags: list | str):
         """Set the tags that will be associated with the output object
-           Args:
-               tags (list | str): The list of tags or a ':' separated string of tags"""
+        Args:
+            tags (list | str): The list of tags or a ':' separated string of tags"""
         if isinstance(tags, list):
-            self.output_tags = ':'.join(tags)
+            self.output_tags = ":".join(tags)
         else:
             self.output_tags = tags
 
     def set_output_meta(self, meta: dict):
         """Set the metadata that will be associated with the output object
-           Args:
-               meta (dict): A dictionary of metadata"""
+        Args:
+            meta (dict): A dictionary of metadata"""
         self.output_meta = meta
 
     @staticmethod
     def convert_to_aws_tags(metadata: dict):
         """Convert a dictionary to the AWS tag format (list of dicts)
-           [ {Key: key_name, Value: value}, {..}, ...] """
-        return [{'Key': key, 'Value': value} for key, value in metadata.items()]
+        [ {Key: key_name, Value: value}, {..}, ...]"""
+        return [{"Key": key, "Value": value} for key, value in metadata.items()]
 
     def get_aws_tags(self):
         """Get the metadata/tags and convert them into AWS Tag Format"""
         # Set up our metadata storage
-        sageworks_meta = {'sageworks_tags': self.output_tags}
+        sageworks_meta = {"sageworks_tags": self.output_tags}
         for key, value in self.output_meta.items():
             sageworks_meta[key] = value
         aws_tags = self.convert_to_aws_tags(sageworks_meta)
@@ -128,6 +131,6 @@ class Transform(ABC):
         """Set the Output UUID (Name) for this Transform"""
         self.output_uuid = output_uuid
 
-    def ensure_aws_catalog_db(self):
+    def ensure_aws_catalog_db(self, catalog_db: str):
         """Ensure that the AWS Catalog Database exists"""
-        wr.catalog.create_database(self.data_catalog_db, exist_ok=True, boto3_session=self.boto_session)
+        wr.catalog.create_database(catalog_db, exist_ok=True, boto3_session=self.boto_session)

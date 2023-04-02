@@ -33,9 +33,9 @@ class ArtifactsSummary(View):
     def view_data(self) -> dict:
         """Get all the data that's useful for this view
 
-            Returns:
-                dict: Dictionary of Pandas Dataframes, i.e. {'INCOMING_DATA', pd.DataFrame}
-           """
+        Returns:
+            dict: Dictionary of Pandas Dataframes, i.e. {'INCOMING_DATA', pd.DataFrame}
+        """
 
         # We're filling in Summary Data for all the AWS Services
         self.summary_data[ServiceCategory.INCOMING_DATA] = self.incoming_data_summary()
@@ -50,12 +50,16 @@ class ArtifactsSummary(View):
         data = self.service_info[ServiceCategory.INCOMING_DATA]
         data_summary = []
         for name, info in data.items():
-            summary = {'Name': name,
-                       'Size': str(info.get('ContentLength', '-')),
-                       'LastModified': str(info.get('LastModified', '-')),
-                       'ContentType': str(info.get('ContentType', '-')),
-                       'ServerSideEncryption': info.get('ServerSideEncryption', '-'),
-                       'Tags': str(info.get('tags', '-'), )}
+            summary = {
+                "Name": name,
+                "Size": str(info.get("ContentLength", "-")),
+                "LastModified": str(info.get("LastModified", "-")),
+                "ContentType": str(info.get("ContentType", "-")),
+                "ServerSideEncryption": info.get("ServerSideEncryption", "-"),
+                "Tags": str(
+                    info.get("tags", "-"),
+                ),
+            }
             data_summary.append(summary)
 
         return pd.DataFrame(data_summary)
@@ -68,18 +72,20 @@ class ArtifactsSummary(View):
             for name, info in db_info.items():
 
                 # We pull from the Concrete Class to get nice API for metadata
-                athena_source = AthenaSource(name, database=info.get('DatabaseName', 'sageworks'))
-                summary = {'Name': athena_source.uuid(),
-                           'Database': athena_source.data_catalog_db,
-                           'Size': '-',  # athena_source.size(),  # This takes TOO LONG
-                           'NumColumns': athena_source.num_columns(),
-                           'NumRows': '-',  # athena_source.num_rows(),  # This takes TOO LONG
-                           'Created': athena_source.created(),
-                           'LastModified': athena_source.modified(),
-                           'Location': athena_source.s3_storage_location(),
-                           'AmazonURL': athena_source.aws_url(),
-                           'DataLake Registered': info.get('IsRegisteredWithLakeFormation', '-'),
-                           'Tags': str(athena_source.tags())}
+                athena_source = AthenaSource(name, database=info.get("DatabaseName", "sageworks"))
+                summary = {
+                    "Name": athena_source.uuid(),
+                    "Database": athena_source.data_catalog_db,
+                    "Size": "-",  # athena_source.size(),  # This takes TOO LONG
+                    "NumColumns": athena_source.num_columns(),
+                    "NumRows": "-",  # athena_source.num_rows(),  # This takes TOO LONG
+                    "Created": athena_source.created(),
+                    "LastModified": athena_source.modified(),
+                    "Location": athena_source.s3_storage_location(),
+                    "AmazonURL": athena_source.aws_url(),
+                    "DataLake Registered": info.get("IsRegisteredWithLakeFormation", "-"),
+                    "Tags": str(athena_source.tags()),
+                }
                 data_summary.append(summary)
 
         return pd.DataFrame(data_summary)
@@ -103,7 +109,7 @@ class ArtifactsSummary(View):
         return self.data_sources_summary()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # Collect args from the command line
     parser = argparse.ArgumentParser()
@@ -111,14 +117,14 @@ if __name__ == '__main__':
 
     # Check for unknown args
     if commands:
-        print('Unrecognized args: %s' % commands)
+        print("Unrecognized args: %s" % commands)
         sys.exit(1)
 
     # Create the class and get the AWS Model Registry details
     artifact_view = ArtifactsSummary()
 
     # List the Endpoint Names
-    print('ArtifactsSummary:')
+    print("ArtifactsSummary:")
     for category, df in artifact_view.view_data().items():
         print(f"\n{category}")
         print(df.head())

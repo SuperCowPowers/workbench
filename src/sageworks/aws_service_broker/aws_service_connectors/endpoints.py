@@ -28,8 +28,8 @@ class Endpoints(Connector):
         """Load/reload the tables in the database"""
         # Grab all the Endpoint Data from SageMaker
         self.log.info("Reading Endpoints from SageMaker...")
-        _endpoints = self.sm_client.list_endpoints()['Endpoints']
-        _end_names = [_endpoint['EndpointName'] for _endpoint in _endpoints]
+        _endpoints = self.sm_client.list_endpoints()["Endpoints"]
+        _end_names = [_endpoint["EndpointName"] for _endpoint in _endpoints]
 
         # Get the details for Endpoints and convert to a data structure with direct lookup
         self.endpoint_data = {name: self._retrieve_details(name) for name in _end_names}
@@ -39,7 +39,7 @@ class Endpoints(Connector):
         return self.endpoint_data
 
     def endpoint_names(self) -> list:
-        """Get all the endpoint names in AWS """
+        """Get all the endpoint names in AWS"""
         return list(self.endpoint_data.keys())
 
     def endpoint_details(self, endpoint_name: str) -> dict:
@@ -54,7 +54,7 @@ class Endpoints(Connector):
         return details
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from pprint import pprint
 
     # Collect args from the command line
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     # Check for unknown args
     if commands:
-        print('Unrecognized args: %s' % commands)
+        print("Unrecognized args: %s" % commands)
         sys.exit(1)
 
     # Create the class and get the AWS Endpoint details
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     my_endpoints.refresh()
 
     # List the Endpoint Names
-    print('Endpoints:')
+    print("Endpoints:")
     for end_name in my_endpoints.endpoint_names():
         print(f"\t{end_name}")
 

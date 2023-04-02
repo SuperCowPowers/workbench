@@ -8,10 +8,10 @@ def test():
     """Tests for the DataSource/AthenaSource functionality"""
 
     # Retrieve our test Data Source
-    my_data = AthenaSource('test_data')
+    my_data = AthenaSource("test_data")
 
     # Verify that the Athena Data Source exists
-    assert(my_data.check())
+    assert my_data.check()
 
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")

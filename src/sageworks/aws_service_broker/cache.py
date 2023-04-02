@@ -7,16 +7,17 @@ import atexit
 
 class Cache(object):
     """In process memory cache. Not thread safe.
-       Usage:
-            cache = Cache(max_size=5, timeout=10)
-            cache.set('foo', 'bar')
-            cache.get('foo')
-            > bar
-            time.sleep(11)
-            cache.get('foo')
-            > None
-            cache.clear()
+    Usage:
+         cache = Cache(max_size=5, timeout=10)
+         cache.set('foo', 'bar')
+         cache.get('foo')
+         > bar
+         time.sleep(11)
+         cache.get('foo')
+         > None
+         cache.clear()
     """
+
     def __init__(self, max_size=1000, timeout=None):
         """Cache Initialization"""
         self.store = OrderedDict()
@@ -40,10 +41,10 @@ class Cache(object):
 
     def get(self, key):
         """Get an item from the cache
-           Args:
-               key: item key
-           Returns:
-               the value of the item or None if the item isn't in the cache
+        Args:
+            key: item key
+        Returns:
+            the value of the item or None if the item isn't in the cache
         """
         data = self.store.get(key)
         if not data:
@@ -61,18 +62,18 @@ class Cache(object):
     def dump(self):
         """Dump the cache (for debugging)"""
         for key in self.store.keys():
-            print(key, ':', self.get(key))
+            print(key, ":", self.get(key))
 
     @property
     def size(self):
         return len(self.store)
 
     def cleanup(self):
-        print('Calling cleanup...')
+        print("Calling cleanup...")
 
     def _check_limit(self):
         """Internal method: check if current cache size exceeds maximum cache
-           size and pop the oldest item in this case"""
+        size and pop the oldest item in this case"""
 
         # First compress
         self._compress()
@@ -83,7 +84,7 @@ class Cache(object):
 
     def _compress(self):
         """Internal method to compress the cache. This method will
-           expire any old items in the cache, making the cache smaller"""
+        expire any old items in the cache, making the cache smaller"""
 
         # Don't compress too often
         now = time.time()
@@ -93,19 +94,19 @@ class Cache(object):
                 self.get(key)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     """Exercise the Cache class"""
 
     # Create the Cache
     my_cache = Cache(max_size=5, timeout=1)
-    my_cache.set('foo', 'bar')
+    my_cache.set("foo", "bar")
 
     # Test storage
-    assert my_cache.get('foo') == 'bar'
+    assert my_cache.get("foo") == "bar"
 
     # Test timeout
     time.sleep(1.1)
-    assert my_cache.get('foo') is None
+    assert my_cache.get("foo") is None
 
     # Test max_size
     my_cache = Cache(max_size=5)
@@ -113,8 +114,8 @@ if __name__ == '__main__':
         my_cache.set(str(i), i)
 
     # So the '0' key should no longer be there FIFO
-    assert my_cache.get('0') is None
-    assert my_cache.get('5') is not None
+    assert my_cache.get("0") is None
+    assert my_cache.get("5") is not None
 
     # Make sure size is working
     assert my_cache.size == 5
@@ -123,13 +124,13 @@ if __name__ == '__main__':
     my_cache.dump()
 
     # Test storing 'null' values
-    my_cache.set(0, 'foo')
-    my_cache.set(0, 'bar')
-    my_cache.set(None, 'foo')
-    my_cache.set('', None)
-    assert my_cache.get('') is None
-    assert my_cache.get(None) == 'foo'
-    assert my_cache.get(0) == 'bar'
+    my_cache.set(0, "foo")
+    my_cache.set(0, "bar")
+    my_cache.set(None, "foo")
+    my_cache.set("", None)
+    assert my_cache.get("") is None
+    assert my_cache.get(None) == "foo"
+    assert my_cache.get(0) == "bar"
 
     # Test the cache compression
     my_cache = Cache(max_size=5, timeout=1)

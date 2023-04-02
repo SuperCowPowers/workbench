@@ -33,15 +33,15 @@ class FeaturesToPandas(Transform):
 
         # Get the list of columns (and subtract metadata columns that might get added)
         columns = input_data.column_names()
-        filter_columns = ['write_time', 'api_invocation_time', 'is_deleted']
-        columns = ', '.join([x for x in columns if x not in filter_columns])
+        filter_columns = ["write_time", "api_invocation_time", "is_deleted"]
+        columns = ", ".join([x for x in columns if x not in filter_columns])
 
         # Get the number of rows in the Feature Set
         num_rows = input_data.num_rows()
 
         # If the data source has more rows than max_rows, do a sample query
         if num_rows > max_rows:
-            percentage = round(max_rows*100.0/num_rows)
+            percentage = round(max_rows * 100.0 / num_rows)
             self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {max_rows}...")
             query = f'SELECT {columns} FROM "{table}" TABLESAMPLE BERNOULLI({percentage})'
         else:
@@ -62,12 +62,12 @@ if __name__ == "__main__":
     """Exercise the FeaturesToPandas Class"""
 
     # Setup Pandas output options
-    pd.set_option('display.max_colwidth', 15)
-    pd.set_option('display.max_columns', 15)
-    pd.set_option('display.width', 1000)
+    pd.set_option("display.max_colwidth", 15)
+    pd.set_option("display.max_columns", 15)
+    pd.set_option("display.width", 1000)
 
     # Create the FeatureSet to DF Transform
-    feature_to_df = FeaturesToPandas('test-feature-set')
+    feature_to_df = FeaturesToPandas("test-feature-set")
 
     # Transform the DataSource into a Pandas DataFrame (with max_rows = 1000)
     feature_to_df.transform(max_rows=1000)

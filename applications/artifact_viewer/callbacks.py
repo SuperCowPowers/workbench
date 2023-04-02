@@ -6,7 +6,12 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.web_components.model_data import ModelData
-from sageworks.web_components import feature_importance, confusion_matrix, model_details, feature_details
+from sageworks.web_components import (
+    feature_importance,
+    confusion_matrix,
+    model_details,
+    feature_details,
+)
 from sageworks.views.artifacts_summary import ArtifactsSummary
 
 # Cheese Sauce
@@ -14,60 +19,40 @@ all_data = None
 
 
 def update_artifact_data(app: Dash, sageworks_artifacts: ArtifactsSummary):
-
-    @app.callback(
-        Output('last-updated', 'children'),
-        Input('interval-component', 'n_intervals')
-    )
+    @app.callback(Output("last-updated", "children"), Input("interval-component", "n_intervals"))
     def time_updated(n):
         global all_data
-        print('Calling Artifact Refresh...')
+        print("Calling Artifact Refresh...")
         sageworks_artifacts.refresh()
         all_data = sageworks_artifacts.view_data()
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
 def update_artifact_tables(app: Dash):
-
-    @app.callback(
-        Output('INCOMING_DATA', 'data'),
-        Input('interval-component', 'n_intervals')
-    )
+    @app.callback(Output("INCOMING_DATA", "data"), Input("interval-component", "n_intervals"))
     def incoming_data_update(n):
-        incoming_data = all_data['INCOMING_DATA']
-        return incoming_data.to_dict('records')
+        incoming_data = all_data["INCOMING_DATA"]
+        return incoming_data.to_dict("records")
 
-    @app.callback(
-        Output('DATA_SOURCES', 'data'),
-        Input('interval-component', 'n_intervals')
-    )
+    @app.callback(Output("DATA_SOURCES", "data"), Input("interval-component", "n_intervals"))
     def data_sources_update(n):
-        data_sources = all_data['DATA_SOURCES']
-        return data_sources.to_dict('records')
+        data_sources = all_data["DATA_SOURCES"]
+        return data_sources.to_dict("records")
 
-    @app.callback(
-        Output('FEATURE_SETS', 'data'),
-        Input('interval-component', 'n_intervals')
-    )
+    @app.callback(Output("FEATURE_SETS", "data"), Input("interval-component", "n_intervals"))
     def feature_sets_update(n):
-        feature_sets = all_data['FEATURE_SETS']
-        return feature_sets.to_dict('records')
+        feature_sets = all_data["FEATURE_SETS"]
+        return feature_sets.to_dict("records")
 
-    @app.callback(
-        Output('MODELS', 'data'),
-        Input('interval-component', 'n_intervals')
-    )
+    @app.callback(Output("MODELS", "data"), Input("interval-component", "n_intervals"))
     def models_update(n):
-        models = all_data['MODELS']
-        return models.to_dict('records')
+        models = all_data["MODELS"]
+        return models.to_dict("records")
 
-    @app.callback(
-        Output('ENDPOINTS', 'data'),
-        Input('interval-component', 'n_intervals')
-    )
+    @app.callback(Output("ENDPOINTS", "data"), Input("interval-component", "n_intervals"))
     def endpoints_update(n):
-        endpoints = all_data['ENDPOINTS']
-        return endpoints.to_dict('records')
+        endpoints = all_data["ENDPOINTS"]
+        return endpoints.to_dict("records")
 
 
 # Highlights the selected row in the table
@@ -80,7 +65,10 @@ def table_row_select(app: Dash, table_name: str):
         if selected_rows is None:
             return dash.no_update
         foo = [
-            {"if": {"filter_query": "{{id}} ={}".format(i)}, "backgroundColor": "rgb(100, 100, 100)"}
+            {
+                "if": {"filter_query": "{{id}} ={}".format(i)},
+                "backgroundColor": "rgb(100, 100, 100)",
+            }
             for i in selected_rows
         ]
         return foo
@@ -89,11 +77,11 @@ def table_row_select(app: Dash, table_name: str):
 # Updates the feature importance and confusion matrix figures when a model is selected
 def update_figures(app: Dash, model_data: ModelData):
     @app.callback(
-        [Output('feature_importance', "figure"), Output('confusion_matrix', "figure")],
-        Input('model_table', "derived_viewport_selected_row_ids"),
+        [Output("feature_importance", "figure"), Output("confusion_matrix", "figure")],
+        Input("model_table", "derived_viewport_selected_row_ids"),
     )
     def generate_new_figures(selected_rows):
-        print(f'Selected Rows: {selected_rows}')
+        print(f"Selected Rows: {selected_rows}")
 
         # If there's no selection we're going to return figures for the first row (0)
         if not selected_rows:
@@ -117,11 +105,11 @@ def update_figures(app: Dash, model_data: ModelData):
 # Updates the model details when a model row is selected
 def update_model_details(app: Dash, model_data: ModelData):
     @app.callback(
-        Output('model_details', "children"),
-        Input('model_table', "derived_viewport_selected_row_ids"),
+        Output("model_details", "children"),
+        Input("model_table", "derived_viewport_selected_row_ids"),
     )
     def generate_new_markdown(selected_rows):
-        print(f'Selected Rows: {selected_rows}')
+        print(f"Selected Rows: {selected_rows}")
 
         # If there's no selection we're going to return the model details for the first row (0)
         if not selected_rows:
@@ -141,11 +129,11 @@ def update_model_details(app: Dash, model_data: ModelData):
 # Updates the feature details when a model row is selected
 def update_feature_details(app: Dash, model_data: ModelData):
     @app.callback(
-        Output('feature_details', "children"),
-        Input('model_table', "derived_viewport_selected_row_ids"),
+        Output("feature_details", "children"),
+        Input("model_table", "derived_viewport_selected_row_ids"),
     )
     def generate_new_markdown(selected_rows):
-        print(f'Selected Rows: {selected_rows}')
+        print(f"Selected Rows: {selected_rows}")
 
         # If there's no selection we're going to return the feature details for the first row (0)
         if not selected_rows:

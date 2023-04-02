@@ -37,11 +37,14 @@ class ModelToEndpoint(Transform):
         aws_tags = self.get_aws_tags()
 
         # Deploy an Endpoint
-        model_package.deploy(initial_instance_count=1, instance_type='ml.t2.medium',
-                             endpoint_name=self.output_uuid,
-                             serializer=CSVSerializer(),
-                             deserializer=CSVDeserializer(),
-                             tags=aws_tags)
+        model_package.deploy(
+            initial_instance_count=1,
+            instance_type="ml.t2.medium",
+            endpoint_name=self.output_uuid,
+            serializer=CSVSerializer(),
+            deserializer=CSVDeserializer(),
+            tags=aws_tags,
+        )
 
     def delete_endpoint(self):
         """Delete an existing Endpoint and it's Configuration"""
@@ -60,9 +63,9 @@ if __name__ == "__main__":
     """Exercise the ModelToEndpoint Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = 'abalone-regression'
-    output_uuid = 'abalone-regression-endpoint'
+    input_uuid = "abalone-regression"
+    output_uuid = "abalone-regression-endpoint"
     to_endpoint = ModelToEndpoint(input_uuid, output_uuid)
-    to_endpoint.set_output_tags(['abalone', 'public'])
-    to_endpoint.set_output_meta({'sageworks_input': input_uuid})
+    to_endpoint.set_output_tags(["abalone", "public"])
+    to_endpoint.set_output_meta({"sageworks_input": input_uuid})
     to_endpoint.transform()

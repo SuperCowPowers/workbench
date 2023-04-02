@@ -11,6 +11,7 @@ from sageworks.aws_service_broker.aws_service_connectors.connector import Connec
 # Class to retrieve object/file information from an AWS S3 Bucket
 class S3Bucket(Connector):
     """S3Bucket: Class to retrieve object/file information from an AWS S3 Bucket"""
+
     def __init__(self, bucket: str):
         # Call SuperClass Initialization
         super().__init__()
@@ -33,7 +34,7 @@ class S3Bucket(Connector):
         # Grab all the files in this bucket
         self.log.info(f"Reading S3 Bucket: {self.bucket}...")
         _aws_file_info = wr.s3.describe_objects(self.bucket, boto3_session=self.boto_session)
-        self.s3_bucket_data = {full_path.split('/')[-1]: info for full_path, info in _aws_file_info.items()}
+        self.s3_bucket_data = {full_path.split("/")[-1]: info for full_path, info in _aws_file_info.items()}
 
     def metadata(self) -> dict:
         """Get all the metadata for the files in this bucket"""
@@ -48,17 +49,22 @@ class S3Bucket(Connector):
         return self.s3_bucket_data[file]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from pprint import pprint
 
     # Collect args from the command line
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bucket', type=str, default='s3://scp-sageworks-artifacts/incoming-data', help='AWS S3 Bucket')
+    parser.add_argument(
+        "--bucket",
+        type=str,
+        default="s3://scp-sageworks-artifacts/incoming-data",
+        help="AWS S3 Bucket",
+    )
     args, commands = parser.parse_known_args()
 
     # Check for unknown args
     if commands:
-        print('Unrecognized args: %s' % commands)
+        print("Unrecognized args: %s" % commands)
         sys.exit(1)
 
     # Create the class and get the AWS Data Catalog database info
@@ -70,5 +76,5 @@ if __name__ == '__main__':
         print(f"\t{file_name}")
 
     # Get additional info for a specific file
-    my_file_info = s3_bucket.file_info('abalone.csv')
+    my_file_info = s3_bucket.file_info("abalone.csv")
     pprint(my_file_info)

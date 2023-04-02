@@ -10,7 +10,7 @@ from sageworks.aws_service_broker.aws_service_connectors.connector import Connec
 
 class FeatureStore(Connector):
     def __init__(self):
-        """"FeatureStore: Helper Class for the AWS Feature Store Service"""
+        """ "FeatureStore: Helper Class for the AWS Feature Store Service"""
         # Call SuperClass Initialization
         super().__init__()
 
@@ -30,18 +30,20 @@ class FeatureStore(Connector):
         """Load/reload the tables in the database"""
         # Grab all the Feature Groups in the AWS Feature Store
         print("Reading Feature Store Database...")
-        _feature_groups = self.sm_client.list_feature_groups()['FeatureGroupSummaries']
-        _fg_names = [feature_group['FeatureGroupName'] for feature_group in _feature_groups]
+        _feature_groups = self.sm_client.list_feature_groups()["FeatureGroupSummaries"]
+        _fg_names = [feature_group["FeatureGroupName"] for feature_group in _feature_groups]
 
         # Get the details for each Feature Group and convert to a data structure with direct lookup
         self.feature_data = {name: self._feature_group_details(name) for name in _fg_names}
 
         # Also add additional details under the sageworks section for each Feature Group
         for fg_name in _fg_names:
-            add_data = {'athena_database': self.athena_database_name(fg_name),
-                        'athena_table': self.athena_table_name(fg_name),
-                        's3_storage': self.s3_storage(fg_name)}
-            self.feature_data[fg_name]['sageworks'] = add_data
+            add_data = {
+                "athena_database": self.athena_database_name(fg_name),
+                "athena_table": self.athena_table_name(fg_name),
+                "s3_storage": self.s3_storage(fg_name),
+            }
+            self.feature_data[fg_name]["sageworks"] = add_data
 
     def metadata(self) -> dict:
         """Get all the table information in this database"""
@@ -58,39 +60,45 @@ class FeatureStore(Connector):
     def athena_database_name(self, feature_group_name: str) -> str:
         """Get the Athena Database Name for a specific feature group"""
         try:
-            return self.feature_data[feature_group_name]['OfflineStoreConfig']['DataCatalogConfig']['Database']
+            return self.feature_data[feature_group_name]["OfflineStoreConfig"]["DataCatalogConfig"]["Database"]
         except KeyError:
-            return '-'
+            return "-"
 
     def athena_table_name(self, feature_group_name: str) -> str:
         """Get the Athena Table Name for a specific feature group"""
         try:
-            return self.feature_data[feature_group_name]['OfflineStoreConfig']['DataCatalogConfig']['TableName']
+            return self.feature_data[feature_group_name]["OfflineStoreConfig"]["DataCatalogConfig"]["TableName"]
         except KeyError:
-            return '-'
+            return "-"
 
     def s3_storage(self, feature_group_name: str) -> str:
         """Get the S3 Location for a specific feature group"""
-        return self.feature_data[feature_group_name]['OfflineStoreConfig']['S3StorageConfig']['ResolvedOutputS3Uri']
+        return self.feature_data[feature_group_name]["OfflineStoreConfig"]["S3StorageConfig"]["ResolvedOutputS3Uri"]
 
     def get_feature_group_tags(self, feature_group_name: str) -> list:
         """Get the table tag list for the given table name"""
         feature_group = self.feature_group_details(feature_group_name)
-        return json.loads(feature_group['Parameters'].get('tags', '[]'))
+        return json.loads(feature_group["Parameters"].get("tags", "[]"))
 
     def set_feature_group_tags(self, database: str, table_name: str, tags: list):
         """Set the tags for a specific feature group"""
-        wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(tags)},
-                                           database=database,
-                                           table=table_name, boto3_session=self.boto_session)
+        wr.catalog.upsert_table_parameters(
+            parameters={"tags": json.dumps(tags)},
+            database=database,
+            table=table_name,
+            boto3_session=self.boto_session,
+        )
 
-    def add_feature_group_tags(self, database: str,  table_name: str, tags: list):
+    def add_feature_group_tags(self, database: str, table_name: str, tags: list):
         """Add some the tags for a specific feature set"""
-        current_tags = json.loads(wr.catalog.get_table_parameters(database, table_name).get('tags'))
+        current_tags = json.loads(wr.catalog.get_table_parameters(database, table_name).get("tags"))
         new_tags = list(set(current_tags).union(set(tags)))
-        wr.catalog.upsert_table_parameters(parameters={'tags': json.dumps(new_tags)},
-                                           database=database,
-                                           table=table_name, boto3_session=self.boto_session)
+        wr.catalog.upsert_table_parameters(
+            parameters={"tags": json.dumps(new_tags)},
+            database=database,
+            table=table_name,
+            boto3_session=self.boto_session,
+        )
 
     def _feature_group_details(self, feature_group_name: str) -> dict:
         """Internal: Do not call this method directly, use feature_group_details() instead"""
@@ -103,8 +111,8 @@ class FeatureStore(Connector):
         """Construct an Athena 'snapshot' query for the given feature group"""
         database = self.athena_database_name(feature_group_name)
         table = self.athena_table_name(feature_group_name)
-        event_time = 'event_time'
-        record_id = 'id'
+        event_time = "event_time"
+        record_id = "id"
         query = f"""
             SELECT *
             FROM
@@ -119,7 +127,7 @@ class FeatureStore(Connector):
         return query
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from pprint import pprint
 
     # Collect args from the command line
@@ -128,7 +136,7 @@ if __name__ == '__main__':
 
     # Check for unknown args
     if commands:
-        print('Unrecognized args: %s' % commands)
+        print("Unrecognized args: %s" % commands)
         sys.exit(1)
 
     # Create the class and get the AWS Feature Store details
@@ -136,7 +144,7 @@ if __name__ == '__main__':
     feature_store.refresh()
 
     # List the Feature Groups
-    print('Feature Groups:')
+    print("Feature Groups:")
     for fname in feature_store.feature_group_names():
         print(f"\t{fname}")
 

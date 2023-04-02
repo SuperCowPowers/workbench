@@ -28,14 +28,14 @@ class Artifact(ABC):
 
     def __init__(self, uuid):
         """Artifact: Abstract Base Class for all Artifact classes in SageWorks.
-                        Artifacts simply reflect and aggregate one or more AWS Services"""
+        Artifacts simply reflect and aggregate one or more AWS Services"""
         self.uuid = uuid
         self.log = logging.getLogger(__name__)
 
         # FIXME: We should have this come from AWS or Config
-        self.data_catalog_db = 'sageworks'
-        self.data_source_s3_path = 's3://scp-sageworks-artifacts/data-sources'
-        self.feature_sets_s3_path = 's3://scp-sageworks-artifacts/feature-sets'
+        self.data_catalog_db = "sageworks"
+        self.data_source_s3_path = "s3://scp-sageworks-artifacts/data-sources"
+        self.feature_sets_s3_path = "s3://scp-sageworks-artifacts/feature-sets"
 
     @abstractmethod
     def check(self) -> bool:
@@ -80,22 +80,22 @@ class Artifact(ABC):
     @staticmethod
     def aws_tags_to_dict(aws_tags):
         """AWS Tags are in an odd format, so convert to regular dictionary"""
-        return {item['Key']: item['Value'] for item in aws_tags if 'sageworks' in item['Key']}
+        return {item["Key"]: item["Value"] for item in aws_tags if "sageworks" in item["Key"]}
 
     def sageworks_meta(self):
         """Get the SageWorks specific metadata for this Artifact"""
         aws_arn = self.arn()
-        self.log.info(f'Retrieving SageWorks Metadata for Artifact: {aws_arn}...')
+        self.log.info(f"Retrieving SageWorks Metadata for Artifact: {aws_arn}...")
         aws_tags = self.sm_session.list_tags(aws_arn)
         meta = self.aws_tags_to_dict(aws_tags)
         return meta
 
     def sageworks_tags(self):
         """Get the tags for this artifact"""
-        combined_tags = self.sageworks_meta().get('sageworks_tags', '')
-        tags = combined_tags.split(':')
+        combined_tags = self.sageworks_meta().get("sageworks_tags", "")
+        tags = combined_tags.split(":")
         return tags
 
     def add_tag(self, tag):
         """Add a tag to this artifact"""
-        self.log.error('add_tag: functionality needs to be added!')
+        self.log.error("add_tag: functionality needs to be added!")

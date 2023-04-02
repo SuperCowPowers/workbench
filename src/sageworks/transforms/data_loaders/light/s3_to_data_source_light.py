@@ -18,14 +18,14 @@ class S3ToDataSourceLight(Transform):
         self.output_type = TransformOutput.DATA_SOURCE
 
     def input_size_mb(self) -> int:
-        """ Get the size of the input S3 object in MBytes"""
+        """Get the size of the input S3 object in MBytes"""
         size_in_bytes = wr.s3.size_objects(self.input_uuid, boto3_session=self.boto_session)[self.input_uuid]
-        size_in_mb = round(size_in_bytes/1_000_000)
+        size_in_mb = round(size_in_bytes / 1_000_000)
         return size_in_mb
 
     def transform_impl(self, overwrite: bool = True):
         """Convert the CSV data into Parquet Format in the SageWorks Data Sources Bucket, and
-           store the information about the data to the AWS Data Catalog sageworks database"""
+        store the information about the data to the AWS Data Catalog sageworks database"""
 
         # Sanity Check for S3 Object size
         object_megabytes = self.input_size_mb()
@@ -48,11 +48,11 @@ if __name__ == "__main__":
     """Exercise the S3ToDataSourceLight Class"""
 
     # Create my Data Loader
-    input_path = 's3://scp-sageworks-artifacts/incoming-data/aqsol_public_data.csv'
-    output_uuid = 'aqsol_data'
+    input_path = "s3://scp-sageworks-artifacts/incoming-data/aqsol_public_data.csv"
+    output_uuid = "aqsol_data"
     my_loader = S3ToDataSourceLight(input_path, output_uuid)
-    my_loader.set_output_tags(['aqsol', 'public'])
-    my_loader.set_output_meta({'sageworks_input': input_path})
+    my_loader.set_output_tags(["aqsol", "public"])
+    my_loader.set_output_meta({"sageworks_input": input_path})
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()

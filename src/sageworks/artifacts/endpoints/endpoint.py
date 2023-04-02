@@ -15,7 +15,6 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class Endpoint(Artifact):
-
     def __init__(self, endpoint_name):
         """Endpoint: SageWorks Endpoint Class
 
@@ -36,30 +35,34 @@ class Endpoint(Artifact):
     def check(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.endpoint_meta is None:
-            self.log.critical(f'Endpoint.check() {self.endpoint_name} not found in AWS Metadata!')
+            self.log.critical(f"Endpoint.check() {self.endpoint_name} not found in AWS Metadata!")
             return False
         return True
 
     def predict(self, feature_df: pd.DataFrame) -> pd.DataFrame:
         """Run inference/prediction on the given Feature DataFrame
-           Args:
-               feature_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
-           Returns:
-               pd.DataFrame: Return the feature DataFrame with two additional columns (prediction, pred_proba)
+        Args:
+            feature_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
+        Returns:
+            pd.DataFrame: Return the feature DataFrame with two additional columns (prediction, pred_proba)
         """
 
         # Create our Endpoint Predictor Class
-        predictor = Predictor(self.endpoint_name, sagemaker_session=self.sm_session,
-                              serializer=CSVSerializer(), deserializer=CSVDeserializer())
+        predictor = Predictor(
+            self.endpoint_name,
+            sagemaker_session=self.sm_session,
+            serializer=CSVSerializer(),
+            deserializer=CSVDeserializer(),
+        )
 
         # Now split up the dataframe into 500 row chunks, send those chunks to our
         # endpoint (with error handling) and stitch all the chunks back together
         df_list = []
         for index in range(0, len(feature_df), 500):
-            print('Processing...')
+            print("Processing...")
 
             # Compute partial DataFrames, add them to a list, and concatenate at the end
-            partial_df = self._endpoint_error_handling(predictor, feature_df[index:index + 500])
+            partial_df = self._endpoint_error_handling(predictor, feature_df[index : index + 500])
             df_list.append(partial_df)
 
         # Concatenate the dataframes
@@ -71,7 +74,7 @@ class Endpoint(Artifact):
         # Hard Conversion
         # Note: If are string/object columns we want to use 'ignore' here so those columns
         #       won't raise an error (columns maintain current type)
-        converted_df = combined_df.apply(pd.to_numeric, errors='ignore')
+        converted_df = combined_df.apply(pd.to_numeric, errors="ignore")
 
         # Soft Conversion
         # Convert columns to the best possible dtype that supports the pd.NA missing value.
@@ -102,7 +105,7 @@ class Endpoint(Artifact):
             return results_df
 
         except botocore.exceptions.ClientError as err:
-            if err.response['Error']['Code'] == 'ModelError':  # Model Error
+            if err.response["Error"]["Code"] == "ModelError":  # Model Error
 
                 # Base case: DataFrame with 1 Row
                 if len(feature_df) == 1:
@@ -117,12 +120,12 @@ class Endpoint(Artifact):
                 # Recurse on binary splits of the dataframe
                 num_rows = len(feature_df)
                 split = int(num_rows / 2)
-                first_half = self._endpoint_error_handling(predictor, feature_df[0: split])
-                second_half = self._endpoint_error_handling(predictor, feature_df[split: num_rows])
+                first_half = self._endpoint_error_handling(predictor, feature_df[0:split])
+                second_half = self._endpoint_error_handling(predictor, feature_df[split:num_rows])
                 return pd.concat([first_half, second_half], ignore_index=True)
 
             else:
-                print('Unknown Error from Prediction Endpoint')
+                print("Unknown Error from Prediction Endpoint")
                 raise err
 
     def _error_df(self, df, all_columns):
@@ -144,19 +147,19 @@ class Endpoint(Artifact):
 
     def arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for this artifact"""
-        return self.endpoint_meta['EndpointArn']
+        return self.endpoint_meta["EndpointArn"]
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        return 'https://us-west-2.console.aws.amazon.com/athena/home'
+        return "https://us-west-2.console.aws.amazon.com/athena/home"
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
-        return self.endpoint_meta['CreationTime']
+        return self.endpoint_meta["CreationTime"]
 
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
-        return self.endpoint_meta['LastModifiedTime']
+        return self.endpoint_meta["LastModifiedTime"]
 
     def delete(self):
         """Delete the Endpoint and Endpoint Config"""
@@ -175,12 +178,14 @@ class Endpoint(Artifact):
 # Simple test of the Endpoint functionality
 def test():
     """Test for Endpoint Class"""
-    from sageworks.transforms.pandas_transforms.features_to_pandas import FeaturesToPandas
+    from sageworks.transforms.pandas_transforms.features_to_pandas import (
+        FeaturesToPandas,
+    )
     from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error
     from math import sqrt
 
     # Grab an Endpoint object and pull some information from it
-    my_endpoint = Endpoint('abalone-regression-endpoint')
+    my_endpoint = Endpoint("abalone-regression-endpoint")
 
     # Call the various methods
 
@@ -195,7 +200,7 @@ def test():
     print(f"Tags: {my_endpoint.sageworks_tags()}")
 
     # Create the FeatureSet to DF Transform
-    feature_to_pandas = FeaturesToPandas('abalone_feature_set')
+    feature_to_pandas = FeaturesToPandas("abalone_feature_set")
 
     # Transform the DataSource into a Pandas DataFrame (with max_rows = 100)
     feature_to_pandas.transform(max_rows=100)
@@ -208,14 +213,14 @@ def test():
     result_df = my_endpoint.predict(feature_df)
     print(result_df)
 
-    target = 'class_number_of_rings'
+    target = "class_number_of_rings"
     result_df[target] = result_df[target].astype(pd.Float64Dtype())
-    rmse = sqrt(mean_squared_error(result_df[target], result_df['predictions']))
-    mae = mean_absolute_error(result_df[target], result_df['predictions'])
-    r2 = r2_score(result_df[target], result_df['predictions'])
-    print(f'RMSE: {rmse:.3f}')
-    print(f'MAE: {mae:.3f}')
-    print(f'R2 Score: {r2:.3f}')
+    rmse = sqrt(mean_squared_error(result_df[target], result_df["predictions"]))
+    mae = mean_absolute_error(result_df[target], result_df["predictions"])
+    r2 = r2_score(result_df[target], result_df["predictions"])
+    print(f"RMSE: {rmse:.3f}")
+    print(f"MAE: {mae:.3f}")
+    print(f"R2 Score: {r2:.3f}")
 
 
 if __name__ == "__main__":

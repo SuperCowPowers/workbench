@@ -9,11 +9,12 @@ from sageworks.aws_service_broker.aws_service_connectors.connector import Connec
 
 class DataCatalog(Connector):
     """DataCatalog: Helper Class for the AWS Data Catalog"""
-    def __init__(self, database_scope: (str, list) = 'sageworks'):
+
+    def __init__(self, database_scope: (str, list) = "sageworks"):
         """DataCatalog: Helper Class for the AWS Data Catalog
-           Args: -
-               database_scope (str, list) - The scope of the databases to query (default = 'sageworks',
-                                            can be list ['a', 'b'], also 'all' for account wide scope)
+        Args: -
+            database_scope (str, list) - The scope of the databases to query (default = 'sageworks',
+                                         can be list ['a', 'b'], also 'all' for account wide scope)
         """
         # Call SuperClass Initialization
         super().__init__()
@@ -43,7 +44,7 @@ class DataCatalog(Connector):
             table_list = wr.catalog.get_tables(database=database, boto3_session=self.boto_session)
 
             # Convert to a data structure with direct lookup
-            self.data_catalog_metadata[database] = {table['Name']: table for table in table_list}
+            self.data_catalog_metadata[database] = {table["Name"]: table for table in table_list}
 
     def metadata(self) -> dict:
         """Get all the table information in this database"""
@@ -51,8 +52,8 @@ class DataCatalog(Connector):
 
     def get_scoped_database_list(self):
         """Return a list of databases within the defined scope for this class"""
-        all_databases = [db['Name'] for db in wr.catalog.get_databases(boto3_session=self.boto_session)]
-        if self.database_scope == ['all']:
+        all_databases = [db["Name"] for db in wr.catalog.get_databases(boto3_session=self.boto_session)]
+        if self.database_scope == ["all"]:
             return all_databases
 
         # Return a subset of the databases
@@ -75,31 +76,38 @@ class DataCatalog(Connector):
         table = self.get_table(database, table_name)
 
         # Tags are stored as a string with a ':' delimiter
-        combined_tags = table['Parameters'].get('sageworks_tags', '')
-        tags = combined_tags.split(':')
+        combined_tags = table["Parameters"].get("sageworks_tags", "")
+        tags = combined_tags.split(":")
         return tags
 
     def set_table_tags(self, database: str, table_name: str, tags: list):
         """Set the tags for a specific table"""
         # Tags are stored as a string with a ':' delimiter
-        combined_tags = ':'.join(tags)
-        wr.catalog.upsert_table_parameters(parameters={'sageworks_tags': combined_tags},
-                                           database=database,
-                                           table=table_name, boto3_session=self.boto_session)
+        combined_tags = ":".join(tags)
+        wr.catalog.upsert_table_parameters(
+            parameters={"sageworks_tags": combined_tags},
+            database=database,
+            table=table_name,
+            boto3_session=self.boto_session,
+        )
 
     def add_table_tags(self, database: str, table_name: str, tags: list):
         """Add some the tags for a specific table"""
-        current_tags = wr.catalog.get_table_parameters(database, table_name,
-                                                       boto3_session=self.boto_session).get('sageworks_tags')
-        current_tags = current_tags.split(':')
+        current_tags = wr.catalog.get_table_parameters(database, table_name, boto3_session=self.boto_session).get(
+            "sageworks_tags"
+        )
+        current_tags = current_tags.split(":")
         new_tags = list(set(current_tags).union(set(tags)))
-        new_tags = ':'.join(new_tags)
-        wr.catalog.upsert_table_parameters(parameters={'sageworks_tags': new_tags},
-                                           database=database,
-                                           table=table_name, boto3_session=self.boto_session)
+        new_tags = ":".join(new_tags)
+        wr.catalog.upsert_table_parameters(
+            parameters={"sageworks_tags": new_tags},
+            database=database,
+            table=table_name,
+            boto3_session=self.boto_session,
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from pprint import pprint
 
     # Collect args from the command line
@@ -108,7 +116,7 @@ if __name__ == '__main__':
 
     # Check for unknown args
     if commands:
-        print('Unrecognized args: %s' % commands)
+        print("Unrecognized args: %s" % commands)
         sys.exit(1)
 
     # Create the class and get the AWS Data Catalog database info
@@ -124,8 +132,8 @@ if __name__ == '__main__':
             print(f"\t{name}")
 
     # Get a specific table
-    my_database = 'sageworks'
-    my_table = 'test_data'
+    my_database = "sageworks"
+    my_table = "test_data"
     table_info = catalog.get_table(my_database, my_table)
     pprint(table_info)
 
@@ -134,7 +142,7 @@ if __name__ == '__main__':
     print(f"Tags: {my_tags}")
 
     # Set the tags for this table
-    catalog.set_table_tags(my_database, my_table, ['test', 'sageworks'])
+    catalog.set_table_tags(my_database, my_table, ["test", "sageworks"])
 
     # Refresh the connector to get the latest info from AWS Data Catalog
     catalog.refresh()
@@ -144,7 +152,7 @@ if __name__ == '__main__':
     print(f"Tags: {my_tags}")
 
     # Set the tags for this table
-    catalog.add_table_tags(my_database, my_table, ['test', 'small'])
+    catalog.add_table_tags(my_database, my_table, ["test", "small"])
 
     # Refresh the connector to get the latest info from AWS Data Catalog
     catalog.refresh()

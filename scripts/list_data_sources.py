@@ -8,7 +8,8 @@ from sageworks.utils.glue_meta import GlueMeta
 
 # Class: List Tags
 class ListTags:
-    """ListTags: """
+    """ListTags:"""
+
     def __init__(self, catalog_database: str):
         # Our Glue Meta Class takes care of the low level details
         self.glue_meta = GlueMeta(catalog_database, skip_ignore=False)
@@ -22,16 +23,21 @@ class ListTags:
                 print(f"\t{key}: {value}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # Collect args from the command line
     parser = argparse.ArgumentParser()
-    parser.add_argument('--database', type=str, default='sageworks', help='The AWS catalog database name')
+    parser.add_argument(
+        "--database",
+        type=str,
+        default="sageworks",
+        help="The AWS catalog database name",
+    )
     args, commands = parser.parse_known_args()
 
     # Check for unknown args
     if commands:
-        print('Unrecognized args: %s' % commands)
+        print("Unrecognized args: %s" % commands)
         sys.exit(1)
 
     # Create our Class and List the Tags

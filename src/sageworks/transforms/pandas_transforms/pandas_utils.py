@@ -13,22 +13,22 @@ log = logging.getLogger(__name__)
 
 
 def get_percent_nan(df):
-    log.info('Dataframe ({:d} rows)'.format(len(df)))
+    log.info("Dataframe ({:d} rows)".format(len(df)))
     s = df.isna().mean().round(3) * 100.0
-    s.name = 'percent_nan'
+    s.name = "percent_nan"
     return s
 
 
 def unique(df):
     s = df.nunique()
-    s.name = 'num_unique'
+    s.name = "num_unique"
     return s
 
 
 def examples(df):
     first_n = [df[c].unique()[:10].tolist() for c in df.columns]
     s = pd.Series(first_n, df.columns)
-    s.name = 'examples'
+    s.name = "examples"
     return s
 
 
@@ -37,12 +37,12 @@ def info(df):
     s2 = unique(df)
     s3 = examples(df)
     info_df = pd.concat([s1, s2, s3], axis=1)
-    return info_df.sort_values('percent_nan')
+    return info_df.sort_values("percent_nan")
 
 
-def drop_nans(input_df: pd.DataFrame, how: str = 'any', nan_drop_percent: float = 10) -> pd.DataFrame:
+def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float = 10) -> pd.DataFrame:
     """Dropping NaNs in rows and columns. Obviously lots of ways to do this, so picked some reasonable defaults,
-       we can certainly change this later with a more formal set of operations and arguments"""
+    we can certainly change this later with a more formal set of operations and arguments"""
 
     # Grab input number of rows
     orig_num_rows = len(input_df)
@@ -74,17 +74,52 @@ def test():
     from datetime import datetime
 
     # Setup Pandas output options
-    pd.set_option('display.max_colwidth', 15)
-    pd.set_option('display.max_columns', 15)
-    pd.set_option('display.width', 1000)
+    pd.set_option("display.max_colwidth", 15)
+    pd.set_option("display.max_columns", 15)
+    pd.set_option("display.width", 1000)
 
     # Create some fake data
     fake_data = [
-        {'id': 1, 'name': 'sue', 'age': pd.NA, 'score': 7.8, 'date': datetime.now(), 'hobby': pd.NA},
-        {'id': 2, 'name': 'bob', 'age': 34, 'score': pd.NA, 'date': datetime.now(), 'hobby': pd.NA},
-        {'id': 3, 'name': 'ted', 'age': 69, 'score': 8.2, 'date': datetime.now(), 'hobby': 'robots'},
-        {'id': 4, 'name': 'bill', 'age': pd.NA, 'score': 5.3, 'date': datetime.now(), 'hobby': pd.NA},
-        {'id': 5, 'name': 'sally', 'age': 52, 'score': 9.5, 'date': datetime.now(), 'hobby': 'games'}
+        {
+            "id": 1,
+            "name": "sue",
+            "age": pd.NA,
+            "score": 7.8,
+            "date": datetime.now(),
+            "hobby": pd.NA,
+        },
+        {
+            "id": 2,
+            "name": "bob",
+            "age": 34,
+            "score": pd.NA,
+            "date": datetime.now(),
+            "hobby": pd.NA,
+        },
+        {
+            "id": 3,
+            "name": "ted",
+            "age": 69,
+            "score": 8.2,
+            "date": datetime.now(),
+            "hobby": "robots",
+        },
+        {
+            "id": 4,
+            "name": "bill",
+            "age": pd.NA,
+            "score": 5.3,
+            "date": datetime.now(),
+            "hobby": pd.NA,
+        },
+        {
+            "id": 5,
+            "name": "sally",
+            "age": 52,
+            "score": 9.5,
+            "date": datetime.now(),
+            "hobby": "games",
+        },
     ]
     fake_df = pd.DataFrame(fake_data)
 

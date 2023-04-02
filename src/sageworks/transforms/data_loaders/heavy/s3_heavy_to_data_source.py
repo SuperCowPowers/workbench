@@ -24,10 +24,10 @@ class S3HeavyToDataSource(Transform):
 
     def transform_impl(self, overwrite: bool = True):
         """Convert the CSV data into Parquet Format in the SageWorks S3 Bucket, and
-           store the information about the data to the AWS Data Catalog sageworks database"""
+        store the information about the data to the AWS Data Catalog sageworks database"""
 
         # Add some tags here
-        tags = ['sageworks', 'public']
+        tags = ["sageworks", "public"]
 
         # Read in the S3 CSV as a Pandas DataFrame
         df = wr.s3.read_csv(self.input_uuid, low_memory=False, boto3_session=self.boto_session)
@@ -36,13 +36,19 @@ class S3HeavyToDataSource(Transform):
         s3_storage_path = f"{self.data_source_s3_path}/{self.output_uuid}"
 
         # Write out the DataFrame to Parquet/DataStore/Athena
-        wr.s3.to_parquet(df, path=s3_storage_path, dataset=True, mode='overwrite',
-                         database=self.data_catalog_db, table=self.output_uuid,
-                         description=f'SageWorks data source: {self.output_uuid}',
-                         filename_prefix=f'{self.output_uuid}_',
-                         parameters={'tags': json.dumps(tags)},
-                         boto3_session=self.boto_session,
-                         partition_cols=None)  # FIXME: Have some logic around partition columns
+        wr.s3.to_parquet(
+            df,
+            path=s3_storage_path,
+            dataset=True,
+            mode="overwrite",
+            database=self.data_catalog_db,
+            table=self.output_uuid,
+            description=f"SageWorks data source: {self.output_uuid}",
+            filename_prefix=f"{self.output_uuid}_",
+            parameters={"tags": json.dumps(tags)},
+            boto3_session=self.boto_session,
+            partition_cols=None,
+        )  # FIXME: Have some logic around partition columns
 
 
 if __name__ == "__main__":
@@ -50,8 +56,8 @@ if __name__ == "__main__":
     import pandas as pd
 
     # Create my Data Loader
-    output_uuid = 'test_heavy_data'
-    my_loader = S3HeavyToDataSource('s3://scp-sageworks-artifacts/incoming-data/abalone.csv', output_uuid)
+    output_uuid = "test_heavy_data"
+    my_loader = S3HeavyToDataSource("s3://scp-sageworks-artifacts/incoming-data/abalone.csv", output_uuid)
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()
@@ -61,9 +67,9 @@ if __name__ == "__main__":
     df = output.query(f"select * from {output_uuid} limit 5")
 
     # Setup Pandas output options
-    pd.set_option('display.max_colwidth', 15)
-    pd.set_option('display.max_columns', 15)
-    pd.set_option('display.width', 1000)
+    pd.set_option("display.max_colwidth", 15)
+    pd.set_option("display.max_columns", 15)
+    pd.set_option("display.width", 1000)
 
     # Show the dataframe
     print(df)

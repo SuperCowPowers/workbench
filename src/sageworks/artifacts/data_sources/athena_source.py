@@ -11,7 +11,8 @@ from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
 class AthenaSource(DataSource):
     """AthenaSource: SageWorks Data Source accessible through Athena"""
-    def __init__(self, table_name, database='sageworks'):
+
+    def __init__(self, table_name, database="sageworks"):
         """AthenaSource Initialization
 
         Args:
@@ -25,17 +26,19 @@ class AthenaSource(DataSource):
         self.table_name = table_name
 
         # Grab an AWS Metadata Broker object and pull information for Data Sources
-        self.catalog_meta = self.aws_meta.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(self.table_name)
+        self.catalog_meta = self.aws_meta.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(
+            self.table_name
+        )
 
         # All done
-        print(f'AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}')
+        print(f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}")
 
     def check(self) -> bool:
         """Validation Checks for this Data Source"""
 
         # We're we able to pull AWS Metadata for this table_name?"""
         if self.catalog_meta is None:
-            self.log.critical(f'AthenaSource.check() {self.table_name} not found in SageWorks Metadata!')
+            self.log.critical(f"AthenaSource.check() {self.table_name} not found in SageWorks Metadata!")
             return False
         return True
 
@@ -60,8 +63,8 @@ class AthenaSource(DataSource):
 
     def sageworks_meta(self):
         """Get the SageWorks specific metadata for this Artifact"""
-        params = self.catalog_meta.get('Parameters', {})
-        return {key: value for key, value in params.items() if 'sageworks' in key}
+        params = self.catalog_meta.get("Parameters", {})
+        return {key: value for key, value in params.items() if "sageworks" in key}
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -75,20 +78,20 @@ class AthenaSource(DataSource):
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        return 'https://us-west-2.console.aws.amazon.com/athena/home'
+        return "https://us-west-2.console.aws.amazon.com/athena/home"
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
-        return self.catalog_meta['CreateTime']
+        return self.catalog_meta["CreateTime"]
 
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
-        return self.catalog_meta['UpdateTime']
+        return self.catalog_meta["UpdateTime"]
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
         count_df = self.query(f'select count(*) AS count from "{self.data_catalog_db}"."{self.table_name}"')
-        return count_df['count'][0]
+        return count_df["count"][0]
 
     def num_columns(self) -> int:
         """Return the number of columns for this Data Source"""
@@ -96,7 +99,7 @@ class AthenaSource(DataSource):
 
     def column_names(self) -> list[str]:
         """Return the column names for this Athena Table"""
-        return [item['Name'] for item in self.catalog_meta['StorageDescriptor']['Columns']]
+        return [item["Name"] for item in self.catalog_meta["StorageDescriptor"]["Columns"]]
 
     def query(self, query: str) -> pd.DataFrame:
         """Query the AthenaSource"""
@@ -107,7 +110,7 @@ class AthenaSource(DataSource):
 
     def s3_storage_location(self) -> str:
         """Get the S3 Storage Location for this Data Source"""
-        return self.catalog_meta['StorageDescriptor']['Location']
+        return self.catalog_meta["StorageDescriptor"]["Location"]
 
     def athena_test_query(self):
         """Validate that Athena Queries are working"""
@@ -137,7 +140,7 @@ def test():
     """Test for AthenaSource Class"""
 
     # Retrieve a Data Source
-    my_data = AthenaSource('test_data')
+    my_data = AthenaSource("test_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.check()

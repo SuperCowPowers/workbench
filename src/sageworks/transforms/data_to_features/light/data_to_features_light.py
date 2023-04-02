@@ -31,7 +31,6 @@ class DataToFeaturesLight(Transform):
 
     def post_transform(self, id_column=None, event_time_column=None, delete_existing=True):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set"""
-
         # Now publish to the output location
         output_features = PandasToFeatures(self.output_uuid)
         output_features.set_input(self.output_df, id_column=id_column, event_time_column=event_time_column)
@@ -44,9 +43,9 @@ if __name__ == "__main__":
     """Exercise the DataToFeaturesLight Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = 'test_data'
-    output_uuid = 'test_feature_set'
+    input_uuid = "test_data"
+    output_uuid = "test_feature_set"
     data_to_features = DataToFeaturesLight(input_uuid, output_uuid)
-    data_to_features.set_output_tags(['test', 'small'])
-    data_to_features.set_output_meta({'sageworks_input': input_uuid})
-    data_to_features.transform(id_column='id', event_time_column='date')
+    data_to_features.set_output_tags(["test", "small"])
+    data_to_features.set_output_meta({"sageworks_input": input_uuid})
+    data_to_features.transform(id_column="id", event_time_column="date")

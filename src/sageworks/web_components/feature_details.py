@@ -10,8 +10,10 @@ def create_markdown(feature_info: dict):
 
     markdown = ""
     for (feature, value) in feature_list:
-        markdown += f"- **{feature}** ({value}): Cool stuff about descriptor {feature} that we get later " \
+        markdown += (
+            f"- **{feature}** ({value}): Cool stuff about descriptor {feature} that we get later "
             "[{feature}](https://www.rdkit.org/docs/source/rdkit.Chem.Crippen.html#rdkit.Chem.Crippen.MolLogP)\n"
+        )
 
     # Add the additional info section
     markdown += """
@@ -29,4 +31,4 @@ def create(feature_info: dict) -> dcc.Markdown:
     """Create a Markdown Component for the Feature Details"""
 
     # Generate a figure and wrap it in a Dash Graph Component
-    return dcc.Markdown(id='feature_details', children=create_markdown(feature_info))
+    return dcc.Markdown(id="feature_details", children=create_markdown(feature_info))

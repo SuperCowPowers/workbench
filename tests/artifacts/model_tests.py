@@ -8,7 +8,7 @@ def test():
     """Simple test of the Model functionality"""
 
     # Grab a Model object and pull some information from it
-    my_model = Model('abalone-regression')
+    my_model = Model("abalone-regression")
 
     # Call the various methods
 

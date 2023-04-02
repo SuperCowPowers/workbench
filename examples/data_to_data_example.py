@@ -12,9 +12,9 @@ class DataToDataExample(DataToDataLight):
         # Call superclass init
         super().__init__(input_uuid, output_uuid)
 
-    def transform_impl(self, drop_na='any'):
+    def transform_impl(self, drop_na="any"):
         """Just dropping NaNs, but you could do anything that you want, simply take the
-           input dataframe and produce an output dataframe (of any form)"""
+        input dataframe and produce an output dataframe (of any form)"""
 
         # Drop Rows that have NaNs in them
         self.output_df = pandas_utils.drop_nans(self.input_df, how=drop_na)
@@ -25,9 +25,9 @@ def test():
     """Test the DataToDataExample Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = 'test_data'
-    output_uuid = 'test_data_clean'
-    DataToDataExample(input_uuid, output_uuid).transform(drop_na='any')
+    input_uuid = "test_data"
+    output_uuid = "test_data_clean"
+    DataToDataExample(input_uuid, output_uuid).transform(drop_na="any")
 
 
 if __name__ == "__main__":

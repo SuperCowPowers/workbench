@@ -1,7 +1,10 @@
 """Tests for the AWS Service Broker"""
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker, ServiceCategory
+from sageworks.aws_service_broker.aws_service_broker import (
+    AWSServiceBroker,
+    ServiceCategory,
+)
 
 
 def test():
