@@ -101,7 +101,7 @@ class PandasToFeatures(Transform):
             df[column] = df[column].astype('float64')
         return df
 
-    def transform_impl(self, delete_existing=False):
+    def transform_impl(self, delete_existing=True):
         """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
            store the information about the data to the AWS Data Catalog sageworks database"""
 
@@ -195,4 +195,4 @@ if __name__ == "__main__":
     df_to_features.set_output_meta({'sageworks_input': 'DataFrame'})
 
     # Store this dataframe as a SageWorks Feature Set
-    df_to_features.transform(delete_existing=True)
+    df_to_features.transform()

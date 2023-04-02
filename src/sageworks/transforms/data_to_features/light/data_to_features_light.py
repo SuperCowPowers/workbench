@@ -29,7 +29,7 @@ class DataToFeaturesLight(Transform):
         """Base Class is simply an identity transform"""
         self.output_df = self.input_df
 
-    def post_transform(self, id_column=None, event_time_column=None, delete_existing=False):
+    def post_transform(self, id_column=None, event_time_column=None, delete_existing=True):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set"""
 
         # Now publish to the output location
@@ -49,4 +49,4 @@ if __name__ == "__main__":
     data_to_features = DataToFeaturesLight(input_uuid, output_uuid)
     data_to_features.set_output_tags(['test', 'small'])
     data_to_features.set_output_meta({'sageworks_input': input_uuid})
-    data_to_features.transform(id_column='id', event_time_column='date', delete_existing=True)
+    data_to_features.transform(id_column='id', event_time_column='date')

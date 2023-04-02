@@ -53,7 +53,7 @@ class FeaturesToModel(Transform):
             fp.write(xgb_script)
         return script_name
 
-    def transform_impl(self, target, input_feature_list=None, delete_existing=False):
+    def transform_impl(self, target, input_feature_list=None, delete_existing=True):
         """Generic Features to Model: Note you should create a new class and inherit from
            this one to include specific logic for your Feature Set/Model"""
 
@@ -134,4 +134,4 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(input_uuid, output_uuid)
     to_model.set_output_tags(['abalone', 'public'])
     to_model.set_output_meta({'sageworks_input': input_uuid})
-    to_model.transform(target='class_number_of_rings', delete_existing=True)
+    to_model.transform(target='class_number_of_rings')

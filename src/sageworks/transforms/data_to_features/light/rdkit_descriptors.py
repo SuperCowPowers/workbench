@@ -70,4 +70,4 @@ if __name__ == "__main__":
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = 'aqsol_data'
     output_uuid = 'test_rdkit_features'
-    RDKitDescriptors(input_uuid, output_uuid).transform(delete_existing=True)
+    RDKitDescriptors(input_uuid, output_uuid).transform()
