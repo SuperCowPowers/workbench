@@ -107,7 +107,7 @@ class ArtifactsSummary(View):
                            'Ver': info.get('VersionId', '-'),
                            'Size(MB)': size,
                            'Catalog DB': info.get('DatabaseName', '-'),
-                           'Created': self.datetime_string(info.get('CreateTime')),
+                           # 'Created': self.datetime_string(info.get('CreateTime')),
                            'Modified': self.datetime_string(info.get('UpdateTime')),
                            'Num Columns': self.num_columns(info),
                            'DataLake': info.get('IsRegisteredWithLakeFormation', '-'),
@@ -119,7 +119,7 @@ class ArtifactsSummary(View):
             if data_summary:
                 return pd.DataFrame(data_summary)
             else:
-                columns = ['Name', 'Ver', 'Size(MB)', 'Catalog DB', 'Created', 'Modified', 'Num Columns', 'DataLake', 'Tags', 'Input']
+                columns = ['Name', 'Ver', 'Size(MB)', 'Catalog DB', 'Modified', 'Num Columns', 'DataLake', 'Tags', 'Input']
                 return pd.DataFrame(columns=columns)
 
     @staticmethod
@@ -141,11 +141,11 @@ class ArtifactsSummary(View):
             # Get the size of the S3 Storage Object(s)
             size = self.s3_objects_size(group_info['OfflineStoreConfig']['S3StorageConfig']['S3Uri'])
             summary = {'Feature Group': self.athena_hyperlink(group_info['FeatureGroupName']),
-                       'Status': group_info['FeatureGroupStatus'],
+                       # 'Status': group_info['FeatureGroupStatus'],
                        'Size(MB)': size,
                        'Catalog DB': group_info['OfflineStoreConfig'].get('DataCatalogConfig', {}).get('Database', '-'),
                        'Athena Table': group_info['OfflineStoreConfig'].get('DataCatalogConfig', {}).get('TableName', '-'),
-                       'ID/EventTime': f"{group_info['RecordIdentifierFeatureName']}/{group_info['EventTimeFeatureName']}",
+                       #'ID/EventTime': f"{group_info['RecordIdentifierFeatureName']}/{group_info['EventTimeFeatureName']}",
                        'Online': str(group_info.get('OnlineStoreConfig', {}).get('EnableOnlineStore', 'False')),
                        'Created': self.datetime_string(group_info.get('CreationTime')),
                        'Tags': sageworks_meta.get('sageworks_tags', '-'),
@@ -156,8 +156,8 @@ class ArtifactsSummary(View):
         if data_summary:
             return pd.DataFrame(data_summary)
         else:
-            columns = ['Feature Group', 'Status', 'Size(MB)', 'Catalog DB', 'Athena Table',
-                       'ID/EventTime', 'Online', 'Created', 'Tags', 'Input']
+            columns = ['Feature Group', 'Size(MB)', 'Catalog DB', 'Athena Table',
+                       'Online', 'Created', 'Tags', 'Input']
             return pd.DataFrame(columns=columns)
 
     def models_summary(self):

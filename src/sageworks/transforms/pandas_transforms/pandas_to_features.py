@@ -92,7 +92,7 @@ class PandasToFeatures(Transform):
         self.input_df = pd.get_dummies(self.input_df, columns=categorical_columns)
 
     @staticmethod
-    def convert_nullable_types(df: pd.DataFrame):
+    def convert_nullable_types(df: pd.DataFrame) -> pd.DataFrame:
         """Convert the new Pandas 'nullable types' since AWS SageMaker code doesn't currently support them
            See: https://github.com/aws/sagemaker-python-sdk/pull/3740"""
         for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
