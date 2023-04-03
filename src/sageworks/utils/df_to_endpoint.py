@@ -79,7 +79,7 @@ def df_to_endpoint(endpoint, df, dropna=True):
         print("Processing...")
 
         # Compute partial DataFrames, add them to a list, and concatenate at the end
-        partial_df = _dataframe_to_endpoint(endpoint, df[index: index + 500])
+        partial_df = _dataframe_to_endpoint(endpoint, df[index : index + 500])
         df_list.append(partial_df)
 
     # Concatenate the dataframes

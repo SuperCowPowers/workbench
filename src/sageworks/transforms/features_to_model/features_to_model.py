@@ -98,8 +98,9 @@ class FeaturesToModel(Transform):
 
         # Now delete the training data
         self.log.info(f"Deleting training data {s3_training_path}...")
-        wr.s3.delete_objects([s3_training_path, s3_training_path.replace('.csv', '.csv.metadata')],
-                             boto3_session=self.boto_session)
+        wr.s3.delete_objects(
+            [s3_training_path, s3_training_path.replace(".csv", ".csv.metadata")], boto3_session=self.boto_session
+        )
 
         # Do they want to delete any existing models?
         if delete_existing:

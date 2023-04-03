@@ -10,12 +10,6 @@ from sageworks.transforms.transform import Transform
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 
-# Good Reference for AWS FeatureStore functionality
-# - https://sagemaker-examples.readthedocs.io/en/latest/sagemaker-featurestore/feature_store_introduction.html
-# AWS ROLES
-# IMPORTANT: You must attach the following policies to your execution role: * AmazonS3FullAccess * AmazonSageMakerFeatureStoreAccess
-
-
 class PandasToFeatures(Transform):
     def __init__(self, output_uuid):
         """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)"""

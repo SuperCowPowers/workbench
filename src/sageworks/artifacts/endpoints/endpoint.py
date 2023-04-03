@@ -62,7 +62,7 @@ class Endpoint(Artifact):
             print("Processing...")
 
             # Compute partial DataFrames, add them to a list, and concatenate at the end
-            partial_df = self._endpoint_error_handling(predictor, feature_df[index: index + 500])
+            partial_df = self._endpoint_error_handling(predictor, feature_df[index : index + 500])
             df_list.append(partial_df)
 
         # Concatenate the dataframes

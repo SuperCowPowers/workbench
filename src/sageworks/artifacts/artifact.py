@@ -107,8 +107,8 @@ class Artifact(ABC):
 
     def info(self) -> dict:
         """This is a generic information method for all Artifacts
-           If you want to add more information, call the details() method
-           which is implemented by the specific Artifact class"""
+        If you want to add more information, call the details() method
+        which is implemented by the specific Artifact class"""
         return {
             "uuid": self.uuid,
             "aws_arn": self.arn(),

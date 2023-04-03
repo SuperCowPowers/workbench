@@ -39,7 +39,7 @@ class TransformOutput(Enum):
 
 
 class Transform(ABC):
-    def __init__(self, input_uuid: str, output_uuid: str):
+    def __init__(self, input_uuid: str | None, output_uuid: str | None):
         """Transform: Abstract Base Class for all transforms in SageWorks"""
 
         self.log = logging.getLogger(__name__)

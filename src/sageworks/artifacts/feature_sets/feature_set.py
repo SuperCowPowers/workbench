@@ -181,7 +181,7 @@ class FeatureSet(Artifact):
                 status = feature_group.describe().get("FeatureGroupStatus")
             except botocore.exceptions.ClientError as error:
                 # If the exception is a ResourceNotFound, this is fine, otherwise raise all other exceptions
-                if error.response['Error']['Code'] == 'ResourceNotFound':
+                if error.response["Error"]["Code"] == "ResourceNotFound":
                     break
                 else:
                     raise error
