@@ -35,6 +35,8 @@ class DataToDataLight(Transform):
         # Now publish to the output location
         output_data_source = PandasToData(self.output_uuid)
         output_data_source.set_input(self.output_df)
+        output_data_source.set_output_tags(self.output_tags)
+        output_data_source.set_output_meta(self.output_meta)
         output_data_source.transform()
 
 
@@ -44,4 +46,7 @@ if __name__ == "__main__":
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = "abalone_data"
     output_uuid = "abalone_data_copy"
-    DataToDataLight(input_uuid, output_uuid).transform()
+    data_to_data = DataToDataLight(input_uuid, output_uuid)
+    data_to_data.set_output_tags(["abalone", "public"])
+    data_to_data.set_output_meta({"sageworks_input": input_uuid})
+    data_to_data.transform(delete_existing=True)

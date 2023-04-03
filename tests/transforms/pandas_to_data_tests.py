@@ -10,7 +10,10 @@ def test():
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = "abalone_data"
     output_uuid = "abalone_data_copy"
-    DataToDataLight(input_uuid, output_uuid).transform(delete_existing=True)
+    data_to_data = DataToDataLight(input_uuid, output_uuid)
+    data_to_data.set_output_tags(["abalone", "public"])
+    data_to_data.set_output_meta({"sageworks_input": input_uuid})
+    data_to_data.transform(delete_existing=True)
 
 
 if __name__ == "__main__":
