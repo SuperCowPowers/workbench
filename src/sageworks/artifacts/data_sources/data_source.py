@@ -32,3 +32,11 @@ class DataSource(Artifact):
     def query(self, query: str) -> pd.DataFrame:
         """Query the DataSource"""
         pass
+
+    def details(self) -> dict:
+        """Additional Details about this DataSource Artifact"""
+        details = self.info()
+        details["num_rows"] = self.num_rows()
+        details["num_columns"] = self.num_columns()
+        details["column_names"] = self.column_names()
+        return details

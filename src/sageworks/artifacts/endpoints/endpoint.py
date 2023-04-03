@@ -62,7 +62,7 @@ class Endpoint(Artifact):
             print("Processing...")
 
             # Compute partial DataFrames, add them to a list, and concatenate at the end
-            partial_df = self._endpoint_error_handling(predictor, feature_df[index : index + 500])
+            partial_df = self._endpoint_error_handling(predictor, feature_df[index: index + 500])
             df_list.append(partial_df)
 
         # Concatenate the dataframes
@@ -160,6 +160,12 @@ class Endpoint(Artifact):
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
         return self.endpoint_meta["LastModifiedTime"]
+
+    def details(self) -> dict:
+        """Additional Details about this Endpoint"""
+        details = self.info()
+        # Fill in more details here if needed
+        return details
 
     def delete(self):
         """Delete the Endpoint and Endpoint Config"""

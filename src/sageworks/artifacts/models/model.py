@@ -68,6 +68,13 @@ class Model(Artifact):
         """Return the datetime when this artifact was last modified"""
         return self.latest_model["CreationTime"]
 
+    def details(self) -> dict:
+        """Additional Details about this Endpoint"""
+        details = self.info()
+        details["model_package_group_arn"] = self.group_arn()
+        details["model_package_arn"] = self.model_arn()
+        return details
+
     def delete(self):
         """Delete the Model Packages and the Model Group"""
 

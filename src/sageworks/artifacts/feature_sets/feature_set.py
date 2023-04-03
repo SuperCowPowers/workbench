@@ -91,11 +91,12 @@ class FeatureSet(Artifact):
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
-        return self.feature_meta["CreateTime"]
+        return self.feature_meta["CreationTime"]
 
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
-        return self.feature_meta["UpdateTime"]
+        # Note: We can't currently figure out how to this from AWS Metadata
+        return self.feature_meta["CreationTime"]
 
     def get_feature_store(self) -> FeatureStore:
         """Return the underlying AWS FeatureStore object. This can be useful for more advanced usage
@@ -149,6 +150,12 @@ class FeatureSet(Artifact):
             "    WHERE row_num = 1 and  NOT is_deleted;"
         )
         return query
+
+    def details(self) -> dict:
+        """Additional Details about this FeatureSet"""
+        details = self.info()
+        # Fill in more details here if needed
+        return details
 
     def delete(self):
         """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""

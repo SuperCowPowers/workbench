@@ -43,6 +43,11 @@ class Artifact(ABC):
         pass
 
     @abstractmethod
+    def details(self) -> dict:
+        """Additional Details about this Artifact"""
+        pass
+
+    @abstractmethod
     def size(self) -> float:
         """Return the size of this artifact in MegaBytes"""
         pass
@@ -99,3 +104,18 @@ class Artifact(ABC):
     def add_tag(self, tag):
         """Add a tag to this artifact"""
         self.log.error("add_tag: functionality needs to be added!")
+
+    def info(self) -> dict:
+        """This is a generic information method for all Artifacts
+           If you want to add more information, call the details() method
+           which is implemented by the specific Artifact class"""
+        return {
+            "uuid": self.uuid,
+            "aws_arn": self.arn(),
+            "aws_url": self.aws_url(),
+            "size": self.size(),
+            "created": self.created(),
+            "modified": self.modified(),
+            "sageworks_tags": self.sageworks_tags(),
+            "sageworks_meta": self.sageworks_meta(),
+        }

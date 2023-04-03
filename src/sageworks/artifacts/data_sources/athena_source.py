@@ -119,6 +119,12 @@ class AthenaSource(DataSource):
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
+    def details(self) -> dict:
+        """Additional Details about this AthenaSource Artifact"""
+        details = super().details()
+        details["s3_storage_location"] = self.s3_storage_location()
+        return details
+
     def delete(self):
         """Delete the AWS Data Catalog Table and S3 Storage Objects"""
 
