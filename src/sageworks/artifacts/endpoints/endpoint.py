@@ -181,12 +181,9 @@ class Endpoint(Artifact):
             self.log.info(f"Endpoint Config {self.endpoint_name} doesn't exist...")
 
 
-# Simple test of the Endpoint functionality
-def test():
-    """Test for Endpoint Class"""
-    from sageworks.transforms.pandas_transforms.features_to_pandas import (
-        FeaturesToPandas,
-    )
+if __name__ == "__main__":
+    """Exercise the Endpoint Class"""
+    from sageworks.transforms.pandas_transforms.features_to_pandas import FeaturesToPandas
     from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error
     from math import sqrt
 
@@ -227,7 +224,3 @@ def test():
     print(f"RMSE: {rmse:.3f}")
     print(f"MAE: {mae:.3f}")
     print(f"R2 Score: {r2:.3f}")
-
-
-if __name__ == "__main__":
-    test()

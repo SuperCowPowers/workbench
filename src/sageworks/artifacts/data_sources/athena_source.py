@@ -141,9 +141,8 @@ class AthenaSource(DataSource):
         wr.s3.delete_objects(self.s3_storage_location(), boto3_session=self.boto_session)
 
 
-# Simple test of the AthenaSource functionality
-def test():
-    """Test for AthenaSource Class"""
+if __name__ == "__main__":
+    """Exercise the AthenaSource Class"""
 
     # Retrieve a Data Source
     my_data = AthenaSource("test_data")
@@ -174,7 +173,3 @@ def test():
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')
     # my_data.delete()
-
-
-if __name__ == "__main__":
-    test()
