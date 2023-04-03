@@ -25,19 +25,40 @@ def unique(df):
     return s
 
 
-def examples(df):
-    first_n = [df[c].unique()[:10].tolist() for c in df.columns]
+def column_dtypes(df):
+    s = df.dtypes
+    s.name = "dtype"
+    return s
+
+
+def examples(df, non_numeric_columns):
+    first_n = [df[c].unique()[:5].tolist() if c in non_numeric_columns else ["-"] for c in df.columns]
+    first_n = [", ".join([str(x) for x in _list]) for _list in first_n]
     s = pd.Series(first_n, df.columns)
     s.name = "examples"
     return s
 
 
 def info(df):
-    s1 = get_percent_nan(df)
-    s2 = unique(df)
-    s3 = examples(df)
-    info_df = pd.concat([s1, s2, s3], axis=1)
-    return info_df.sort_values("percent_nan")
+
+    # Get the number of unique values for each column
+    s0 = column_dtypes(df)
+    s1 = df.count()
+    s1.name = 'count'
+    s2 = get_percent_nan(df)
+    s3 = unique(df)
+
+    # Remove all the numeric columns from the original dataframe
+    non_numeric_columns = df.select_dtypes(exclude='number').columns.tolist()
+    s4 = examples(df, non_numeric_columns)
+
+    # Concatenate the series together
+    return pd.concat([s0, s1, s2, s3, s4], axis=1)
+
+
+def numeric_stats(df):
+    """Simple function to get the numeric stats for a dataframe"""
+    return df.describe().round(2).T.drop('count', axis=1)
 
 
 def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float = 10) -> pd.DataFrame:
@@ -69,12 +90,12 @@ def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float 
     return output_df
 
 
-def test():
-    """Test the Pandas Utility Methods"""
+if __name__ == "__main__":
+    """Exercise the Pandas Utility Methods"""
     from datetime import datetime
 
     # Setup Pandas output options
-    pd.set_option("display.max_colwidth", 15)
+    pd.set_option("display.max_colwidth", 35)
     pd.set_option("display.max_columns", 15)
     pd.set_option("display.width", 1000)
 
@@ -122,17 +143,21 @@ def test():
         },
     ]
     fake_df = pd.DataFrame(fake_data)
+    fake_df["name"] = fake_df["name"].astype(pd.StringDtype())
+    fake_df["age"] = fake_df["age"].astype(pd.Int64Dtype())
+    fake_df["score"] = fake_df["score"].astype(pd.Float64Dtype())
+    fake_df["hobby"] = fake_df["hobby"].astype(pd.StringDtype())
 
     # Get the info about this dataframe
     info_df = info(fake_df)
 
     # Show the info dataframe
-    log.info(info_df)
+    print(info_df)
+
+    # Get min/max/mean/median/std for numeric columns
+    stats_df = numeric_stats(fake_df)
+    print(stats_df)
 
     # Clean the DataFrame
     clean_df = drop_nans(fake_df)
     log.info(clean_df)
-
-
-if __name__ == "__main__":
-    test()
