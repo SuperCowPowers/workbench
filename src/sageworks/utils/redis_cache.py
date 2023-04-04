@@ -80,6 +80,9 @@ class RedisCache(object):
         if not key or not value:
             return
 
+        # Redis wants strings for keys
+        key = str(key) if not isinstance(key, str) else key
+
         # Set the value in redis with the expire
         self.redis.set(key, value, ex=self.expire)
 
@@ -87,6 +90,10 @@ class RedisCache(object):
         """Internal Method: Get an item from the redis_cache"""
         if not key:
             return None
+
+        # Redis wants strings for keys
+        key = str(key) if not isinstance(key, str) else key
+
         return self.redis.get(key)
 
     def clear(self):
