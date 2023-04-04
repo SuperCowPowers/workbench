@@ -8,7 +8,7 @@ import atexit
 class Cache(object):
     """In process memory cache. Not thread safe.
     Usage:
-         cache = Cache(max_size=5, timeout=10)
+         cache = Cache(max_size=5, expire=10)
          cache.set('foo', 'bar')
          cache.get('foo')
          > bar
@@ -18,11 +18,11 @@ class Cache(object):
          cache.clear()
     """
 
-    def __init__(self, max_size=1000, timeout=None):
+    def __init__(self, max_size=1000, expire=None):
         """Cache Initialization"""
         self.store = OrderedDict()
         self.max_size = max_size
-        self.timeout = timeout
+        self.expire = expire
         self._compression_timer = 600
         self._last_compression = time.time()
 
@@ -36,7 +36,7 @@ class Cache(object):
                value: the value associated with this key
         """
         self._check_limit()
-        _expire = time.time() + self.timeout if self.timeout else None
+        _expire = time.time() + self.expire if self.expire else None
         self.store[key] = (value, _expire)
 
     def get(self, key):
@@ -98,13 +98,13 @@ if __name__ == "__main__":
     """Exercise the Cache class"""
 
     # Create the Cache
-    my_cache = Cache(max_size=5, timeout=1)
+    my_cache = Cache(max_size=5, expire=1)
     my_cache.set("foo", "bar")
 
     # Test storage
     assert my_cache.get("foo") == "bar"
 
-    # Test timeout
+    # Test expire
     time.sleep(1.1)
     assert my_cache.get("foo") is None
 
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     assert my_cache.get(0) == "bar"
 
     # Test the cache compression
-    my_cache = Cache(max_size=5, timeout=1)
+    my_cache = Cache(max_size=5, expire=1)
     for i in range(5):
         my_cache.set(str(i), i)
     my_cache._compression_timer = 1

@@ -5,7 +5,7 @@ from enum import Enum, auto
 import logging
 
 # SageWorks Imports
-from sageworks.aws_service_broker.cache import Cache
+from sageworks.utils.cache import Cache
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog
 from sageworks.aws_service_broker.aws_service_connectors.feature_store import (
@@ -68,7 +68,7 @@ class AWSServiceBroker:
         # Model Monitors
 
         # Temporal Cache for Metadata
-        cls.meta_cache = Cache(timeout=10)
+        cls.meta_cache = Cache(expire=10)
 
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler

@@ -7,8 +7,8 @@ import awswrangler as wr
 
 # SageWorks Imports
 from sageworks.views.view import View
+from sageworks.utils.cache import Cache
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.aws_service_broker.cache import Cache
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
 
