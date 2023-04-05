@@ -6,6 +6,7 @@ import botocore
 from sagemaker.feature_store.feature_group import FeatureGroup
 
 # Local imports
+from sageworks.utils.iso_8601 import datetime_to_iso8601
 from sageworks.transforms.transform import Transform
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
@@ -49,20 +50,8 @@ class PandasToFeatures(Transform):
             self.log.info(f"Converting {self.event_time_column} to ISOFormat Date String before FeatureSet Creation...")
 
             # Convert the datetime DType to ISO-8601 string
-            self.input_df[self.event_time_column] = self.input_df[self.event_time_column].map(self._iso8601_utc)
+            self.input_df[self.event_time_column] = self.input_df[self.event_time_column].map(datetime_to_iso8601)
             self.input_df[self.event_time_column] = self.input_df[self.event_time_column].astype(pd.StringDtype())
-
-    @staticmethod
-    def _iso8601_utc(dt):
-        """convert datetime to string in UTC format (yyyy-MM-dd'T'HH:mm:ss.SSSZ)"""
-
-        # Check for TimeZone
-        if dt.tzinfo is None:
-            dt = dt.tz_localize(timezone.utc)
-
-        # Convert to ISO-8601 String
-        iso_str = dt.astimezone(timezone.utc).isoformat("T", "milliseconds")
-        return iso_str.replace("+00:00", "Z")
 
     def _convert_objs_to_string(self):
         """Internal: AWS Feature Store doesn't know how to store object dtypes, so convert to String"""

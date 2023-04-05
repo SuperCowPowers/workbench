@@ -33,9 +33,10 @@ setup(
     install_requires=[
         "boto3",
         "awswrangler",
-        "sagemaker >= 2.14",
+        "sagemaker >= 2.143",
         "pandas",
         "scikit-learn",
+        "redis",
         "dash",
         "dash-bootstrap-components",
     ],
