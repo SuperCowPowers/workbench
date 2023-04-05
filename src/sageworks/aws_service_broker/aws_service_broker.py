@@ -9,12 +9,8 @@ from threading import Thread
 from sageworks.utils.redis_cache import RedisCache
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog
-from sageworks.aws_service_broker.aws_service_connectors.feature_store import (
-    FeatureStore,
-)
-from sageworks.aws_service_broker.aws_service_connectors.model_registry import (
-    ModelRegistry,
-)
+from sageworks.aws_service_broker.aws_service_connectors.feature_store import FeatureStore
+from sageworks.aws_service_broker.aws_service_connectors.model_registry import ModelRegistry
 from sageworks.aws_service_broker.aws_service_connectors.endpoints import Endpoints
 from sageworks.utils.sageworks_logging import logging_setup
 

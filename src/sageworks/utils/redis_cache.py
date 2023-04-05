@@ -1,7 +1,6 @@
 """A Redis Database Cache Class"""
 import json
 import redis
-import time
 import logging
 from datetime import datetime, date
 
@@ -87,13 +86,15 @@ class RedisCache(object):
         if not key or not value:
             return
 
-        # Set the value in redis with the expire
+        # Set the value in redis with optional postfix and the expire
         self.redis.set(str(key) + self.postfix, value, ex=self.expire)
 
     def _get(self, key):
         """Internal Method: Get an item from the redis_cache"""
         if not key:
             return None
+
+        # Get the value in redis with optional postfix
         return self.redis.get(str(key) + self.postfix)
 
     def clear(self):
