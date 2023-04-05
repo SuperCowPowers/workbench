@@ -3,9 +3,10 @@ import sys
 import argparse
 from enum import Enum, auto
 import logging
+from threading import Thread
 
 # SageWorks Imports
-from sageworks.utils.cache import Cache
+from sageworks.utils.redis_cache import RedisCache
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog
 from sageworks.aws_service_broker.aws_service_connectors.feature_store import (
@@ -33,14 +34,19 @@ class ServiceCategory(Enum):
 
 
 class AWSServiceBroker:
-    def __new__(cls, database_scope=["sageworks", "sagemaker_featurestore"]):
+
+    # Note: This database_scope is a list of databases that we want to pull metadata from
+    #       At some point, we should pull this from a config file.
+    database_scope = ["sageworks", "sagemaker_featurestore"]
+
+    def __new__(cls):
         """AWSServiceBroker Singleton Pattern"""
         if not hasattr(cls, "instance"):
             print("Creating New AWSServiceBroker Instance...")
             cls.instance = super(AWSServiceBroker, cls).__new__(cls)
 
             # Class Initialization
-            cls.instance.__class_init__(database_scope)
+            cls.instance.__class_init__(cls.database_scope)
 
         return cls.instance
 
@@ -67,8 +73,10 @@ class AWSServiceBroker:
         cls.endpoints = Endpoints()
         # Model Monitors
 
-        # Temporal Cache for Metadata
-        cls.meta_cache = Cache(expire=10)
+        # Redis Cache for Metadata
+        cls.meta_cache = RedisCache()
+        cls.fresh_cache = RedisCache(expire=20, postfix=":fresh")
+        cls.open_threads = []
 
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler
@@ -90,6 +98,7 @@ class AWSServiceBroker:
         # Refresh the connection for the given category and pull new data
         cls.connection_map[category].refresh()
         cls.meta_cache.set(category, cls.connection_map[category].metadata())
+        cls.fresh_cache.set(category, True)
 
     @classmethod
     def get_metadata(cls, category: ServiceCategory) -> dict:
@@ -101,12 +110,25 @@ class AWSServiceBroker:
         Returns:
             dict: The Metadata for the Requested Service Category
         """
-        # Check the Temporal Cache
+        # Is the metadata fresh?
+        if cls.fresh_cache.get(category):
+            cls.log.info(f"Metadata for {category} is fresh!")
+            return cls.meta_cache.get(category)
+
+        # If the metadata is stale, launch a thread to refresh it
+        else:
+            cls.log.info(f"Metadata for {category} is stale. Launching Refresh Thread...")
+            thread = Thread(target=cls.refresh_meta, args=(category,))
+            cls.open_threads.append(thread)
+            thread.start()
+            return cls.meta_cache.get(category)
+
+        # Do we have the metadata in the cache?
         meta_data = cls.meta_cache.get(category)
         if meta_data is not None:
             return meta_data
         else:
-            # If we don't have the data in the cache, we need to refresh it
+            # If we don't have the metadata in the cache, we need to BLOCK and get it
             cls.log.info(f"Refreshing data for {category}...")
             cls.refresh_meta(category)
             return cls.meta_cache.get(category)
@@ -115,6 +137,12 @@ class AWSServiceBroker:
     def get_all_metadata(cls) -> dict:
         """Pull the metadata for ALL the Service Categories"""
         return {_category: cls.get_metadata(_category) for _category in ServiceCategory}
+
+    @classmethod
+    def wait_for_refreshes(cls) -> None:
+        """Wait for any open threads to finish"""
+        for thread in cls.open_threads:
+            thread.join()
 
 
 if __name__ == "__main__":
@@ -142,3 +170,6 @@ if __name__ == "__main__":
     # Get the Metadata for ALL the categories
     # NOTE: There should be NO Refreshes in the logs
     pprint(aws_broker.get_all_metadata())
+
+    # Wait for any open threads to finish
+    aws_broker.wait_for_refreshes()

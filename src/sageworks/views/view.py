@@ -13,12 +13,12 @@ logging_setup()
 
 
 class View(ABC):
-    def __init__(self, database_scope=["sageworks", "sagemaker_features"]):
+    def __init__(self):
         """View: View in the database sense: Pulls from the AWS Service Broker and does slice and dice"""
         self.log = logging.getLogger(__name__)
 
         # Grab an AWS Metadata Broker object for pulling AWS Service information
-        self.aws_broker = AWSServiceBroker(database_scope=database_scope)
+        self.aws_broker = AWSServiceBroker()
         self.boto_session = AWSAccountClamp().boto_session()
 
     @abstractmethod

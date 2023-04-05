@@ -14,8 +14,8 @@ logging_setup()
 class DataSourceEDA:
     def __init__(self, data_source_uuid: str):
         """DataSourceEDA: Provide basic EDA (Exploratory Data Analysis) for a DataSource
-            Args:
-                data_source_uuid (AthenaSource): DataSource for Exploratory Data Analysis"""
+        Args:
+            data_source_uuid (AthenaSource): DataSource for Exploratory Data Analysis"""
         self.log = logging.getLogger(__name__)
         self.data_source_uuid = data_source_uuid
 

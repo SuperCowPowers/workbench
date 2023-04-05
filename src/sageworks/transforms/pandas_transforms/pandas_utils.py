@@ -44,12 +44,12 @@ def info(df):
     # Get the number of unique values for each column
     s0 = column_dtypes(df)
     s1 = df.count()
-    s1.name = 'count'
+    s1.name = "count"
     s2 = get_percent_nan(df)
     s3 = unique(df)
 
     # Remove all the numeric columns from the original dataframe
-    non_numeric_columns = df.select_dtypes(exclude='number').columns.tolist()
+    non_numeric_columns = df.select_dtypes(exclude="number").columns.tolist()
     s4 = examples(df, non_numeric_columns)
 
     # Concatenate the series together
@@ -58,7 +58,7 @@ def info(df):
 
 def numeric_stats(df):
     """Simple function to get the numeric stats for a dataframe"""
-    return df.describe().round(2).T.drop('count', axis=1)
+    return df.describe().round(2).T.drop("count", axis=1)
 
 
 def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float = 10) -> pd.DataFrame:
