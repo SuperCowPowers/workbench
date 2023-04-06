@@ -38,7 +38,8 @@ tables["FEATURE_SETS"] = table.create(
     header_color="rgb(100, 100, 60)",
     markdown_columns=["Feature Group"],
 )
-tables["MODELS"] = table.create("MODELS", artifacts_summary["MODELS"], header_color="rgb(60, 100, 60)")
+tables["MODELS"] = table.create("MODELS", artifacts_summary["MODELS"],
+                                header_color="rgb(60, 100, 60)", markdown_columns=["Model Group"],)
 tables["ENDPOINTS"] = table.create("ENDPOINTS", artifacts_summary["ENDPOINTS"], header_color="rgb(100, 60, 100)")
 
 # Create our components

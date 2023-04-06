@@ -56,7 +56,7 @@ def create(
             "backgroundColor": "rgb(80, 80, 80)",
             "color": "rgb(200, 200, 200)",
         },
-        markdown_options={"html": True},
+        markdown_options={"html": True}
     )
     return table
 

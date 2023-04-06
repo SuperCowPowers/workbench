@@ -31,7 +31,7 @@ def artifact_layout(components: dict) -> html.Div:
             dbc.Row(components["models"]),
             dbc.Row(html.H3("Endpoints"), style={"padding": "10px 0px 0px 0px"}),
             dbc.Row(components["endpoints"]),
-            dcc.Interval(id="interval-component", interval=5000, n_intervals=0),
+            dcc.Interval(id="main-updater", interval=5000, n_intervals=0),
         ],
         style={"margin": "30px"},
     )
