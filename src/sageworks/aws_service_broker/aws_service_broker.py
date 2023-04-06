@@ -106,28 +106,31 @@ class AWSServiceBroker:
         Returns:
             dict: The Metadata for the Requested Service Category
         """
-        # Is the metadata fresh?
-        if cls.fresh_cache.get(category):
-            cls.log.info(f"Metadata for {category} is fresh!")
+        # Logic:
+        # - NO metadata in the cache, we need to BLOCK and get it
+        # - Metadata is in the cache but is stale, launch a thread to refresh, return stale data
+        # - Metadata is in the cache and is fresh, so we just return it
+
+        # Do we have the metadata in the cache?
+        meta_data = cls.meta_cache.get(category)
+
+        # If we don't have the metadata in the cache, we need to BLOCK and get it
+        if meta_data is None:
+            cls.log.info(f"Blocking: Getting metadata for {category}...")
+            cls.refresh_meta(category)
             return cls.meta_cache.get(category)
 
-        # If the metadata is stale, launch a thread to refresh it
-        else:
-            cls.log.info(f"Metadata for {category} is stale. Launching Refresh Thread...")
+        # Is the metadata stale?
+        if cls.fresh_cache.get(category) is None:
+            cls.log.info(f"Async: Metadata for {category} is stale, launching refresh thread...")
             thread = Thread(target=cls.refresh_meta, args=(category,))
             cls.open_threads.append(thread)
             thread.start()
             return cls.meta_cache.get(category)
 
-        # Do we have the metadata in the cache?
-        meta_data = cls.meta_cache.get(category)
-        if meta_data is not None:
-            return meta_data
-        else:
-            # If we don't have the metadata in the cache, we need to BLOCK and get it
-            cls.log.info(f"Refreshing data for {category}...")
-            cls.refresh_meta(category)
-            return cls.meta_cache.get(category)
+        # If the metadata is fresh, just return it
+        cls.log.info(f"Metadata for {category} is fresh!")
+        return cls.meta_cache.get(category)
 
     @classmethod
     def get_all_metadata(cls) -> dict:

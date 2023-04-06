@@ -4,6 +4,7 @@ import argparse
 
 import pandas as pd
 import awswrangler as wr
+from dash import html
 
 # SageWorks Imports
 from sageworks.views.view import View
@@ -102,48 +103,48 @@ class ArtifactsSummary(View):
         """Get summary data about the SageWorks DataSources"""
         data = self.service_info[ServiceCategory.DATA_CATALOG]
         data_summary = []
-        for database, db_info in data.items():
-            for name, info in db_info.items():
+        for name, info in data['sageworks'].items():  # Just the sageworks database (not sagemaker_featurestore)
 
-                # Get the size of the S3 Storage Object(s)
-                size = self.s3_objects_size(info["StorageDescriptor"]["Location"])
-                summary = {
-                    "Name": self.athena_hyperlink(name),
-                    "Ver": info.get("VersionId", "-"),
-                    "Size(MB)": size,
-                    "Catalog DB": info.get("DatabaseName", "-"),
-                    # 'Created': self.datetime_string(info.get('CreateTime')),
-                    "Modified": self.datetime_string(info.get("UpdateTime")),
-                    "Num Columns": self.num_columns(info),
-                    "DataLake": info.get("IsRegisteredWithLakeFormation", "-"),
-                    "Tags": info["Parameters"].get("sageworks_tags", "-"),
-                    "Input": str(
-                        info["Parameters"].get("sageworks_input", "-"),
-                    ),
-                }
-                data_summary.append(summary)
+            # Get the size of the S3 Storage Object(s)
+            size = self.s3_objects_size(info["StorageDescriptor"]["Location"])
+            summary = {
+                "Name": self.hyperlinks(name, 'data_sources'),
+                "Ver": info.get("VersionId", "-"),
+                "Size(MB)": size,
+                "Catalog DB": info.get("DatabaseName", "-"),
+                # 'Created': self.datetime_string(info.get('CreateTime')),
+                "Modified": self.datetime_string(info.get("UpdateTime")),
+                "Num Columns": self.num_columns(info),
+                "DataLake": info.get("IsRegisteredWithLakeFormation", "-"),
+                "Tags": info.get("Parameters", {}).get("sageworks_tags", "-"),
+                "Input": str(
+                    info.get("Parameters", {}).get("sageworks_input", "-"),
+                ),
+            }
+            data_summary.append(summary)
 
-            # Make sure we have data else return just the column names
-            if data_summary:
-                return pd.DataFrame(data_summary)
-            else:
-                columns = [
-                    "Name",
-                    "Ver",
-                    "Size(MB)",
-                    "Catalog DB",
-                    "Modified",
-                    "Num Columns",
-                    "DataLake",
-                    "Tags",
-                    "Input",
-                ]
-                return pd.DataFrame(columns=columns)
+        # Make sure we have data else return just the column names
+        if data_summary:
+            return pd.DataFrame(data_summary)
+        else:
+            columns = [
+                "Name",
+                "Ver",
+                "Size(MB)",
+                "Catalog DB",
+                "Modified",
+                "Num Columns",
+                "DataLake",
+                "Tags",
+                "Input",
+            ]
+            return pd.DataFrame(columns=columns)
 
     @staticmethod
-    def athena_hyperlink(name):
+    def hyperlinks(name, detail_type):
         athena_url = "https://us-west-2.console.aws.amazon.com/athena/home"
-        link = f"{name} (<a href='{athena_url}' target='_blank'>query</a>)"
+        link = f"<a href='{detail_type}' target='_blank'>{name}</a>"
+        link += f" (<a href='{athena_url}' target='_blank'>query</a>)"
         return link
 
     def feature_sets_summary(self):
@@ -159,7 +160,7 @@ class ArtifactsSummary(View):
             # Get the size of the S3 Storage Object(s)
             size = self.s3_objects_size(group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"])
             summary = {
-                "Feature Group": self.athena_hyperlink(group_info["FeatureGroupName"]),
+                "Feature Group": self.hyperlinks(group_info["FeatureGroupName"], 'feature_sets'),
                 # 'Status': group_info['FeatureGroupStatus'],
                 "Size(MB)": size,
                 "Catalog DB": group_info["OfflineStoreConfig"].get("DataCatalogConfig", {}).get("Database", "-"),
@@ -172,7 +173,7 @@ class ArtifactsSummary(View):
             }
             data_summary.append(summary)
 
-        # Make sure we have data else return just the column namesa
+        # Make sure we have data else return just the column names
         if data_summary:
             return pd.DataFrame(data_summary)
         else:
@@ -207,7 +208,7 @@ class ArtifactsSummary(View):
                 sageworks_meta = self.artifact_meta(model_group_arn)
 
                 summary = {
-                    "Model Group": model["ModelPackageGroupName"],
+                    "Model Group": self.hyperlinks(model["ModelPackageGroupName"], 'models'),
                     "Ver": model["ModelPackageVersion"],
                     "Status": model["ModelPackageStatus"],
                     "Description": model["ModelPackageDescription"],

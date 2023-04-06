@@ -1,15 +1,15 @@
 """Layout for the model scoreboard"""
-from dash import Dash, html, dcc
+from dash import html, dcc
 import dash_bootstrap_components as dbc
 
 
-def artifact_layout(app: Dash, components: dict) -> html.Div:
+def artifact_layout(components: dict) -> html.Div:
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
         children=[
             dbc.Row(
                 [
-                    html.H2(app.title),
+                    html.H2("SageWorks: Artifacts"),
                     html.Div(
                         "Last Updated: ",
                         id="last-updated",

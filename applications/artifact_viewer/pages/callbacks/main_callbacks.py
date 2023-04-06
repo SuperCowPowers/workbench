@@ -18,7 +18,7 @@ from sageworks.views.artifacts_summary import ArtifactsSummary
 all_data = None
 
 
-def update_artifact_data(app: Dash, sageworks_artifacts: ArtifactsSummary):
+def update_last_updated(app: Dash, sageworks_artifacts: ArtifactsSummary):
     @app.callback(Output("last-updated", "children"), Input("interval-component", "n_intervals"))
     def time_updated(n):
         global all_data
