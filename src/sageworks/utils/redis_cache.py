@@ -24,15 +24,18 @@ class RedisCache(object):
     # Setup logger (class attribute)
     log = logging.getLogger(__name__)
 
-    def __init__(self, expire=None, db=0, postfix=""):  # No expiration, standard 0 db, no postfix on keys
+    def __init__(self, expire=None, db=0, prefix="", postfix=""):  # No expiration, standard 0 db, no postfix on keys
         """RedisCache Initialization"""
 
         # Quick connection test
         self.ping()
 
-        # Setup redis handles
+        # Setup instance variables
         self.expire = expire
-        self.postfix = postfix
+        self.base_prefix = "sageworks:"  # Prefix all keys with the SageWorks namespace
+        self.prefix = prefix if not prefix or prefix.endswith(":") else prefix + ":"
+        self.prefix = self.base_prefix + self.prefix
+        self.postfix = postfix if not postfix or postfix.startswith(":") else ":" + postfix
         self.host, self.port, self.password = self.get_redis_config()
         self.redis = redis.Redis(
             self.host, port=self.port, password=self.password, charset="utf-8", decode_responses=True, db=db
@@ -87,7 +90,7 @@ class RedisCache(object):
             return
 
         # Set the value in redis with optional postfix and the expire
-        self.redis.set(str(key) + self.postfix, value, ex=self.expire)
+        self.redis.set(self.prefix + str(key) + self.postfix, value, ex=self.expire)
 
     def _get(self, key):
         """Internal Method: Get an item from the redis_cache"""
@@ -95,7 +98,7 @@ class RedisCache(object):
             return None
 
         # Get the value in redis with optional postfix
-        return self.redis.get(str(key) + self.postfix)
+        return self.redis.get(self.prefix + str(key) + self.postfix)
 
     def clear(self):
         """Clear the redis_cache"""
@@ -105,7 +108,7 @@ class RedisCache(object):
     def dump(self):
         """Dump the redis_cache (for debugging)"""
         for key in self.redis.scan_iter():
-            print(key, ":", self.get(key))
+            print(key, ":", self.redis.get(key))
 
     @property
     def size(self):
@@ -135,15 +138,13 @@ class RedisCache(object):
 
 if __name__ == "__main__":
     """Exercise the RedisCache class"""
-
-    # Use a test database
-    test_db = 15
+    import time
 
     # Test Redis ConnectionError
     RedisCache.ping()
 
     # Create the RedisCache
-    my_redis_cache = RedisCache()
+    my_redis_cache = RedisCache(prefix="test")
 
     # Delete anything in the test database
     my_redis_cache.clear()
@@ -151,10 +152,11 @@ if __name__ == "__main__":
     # Test storage
     my_redis_cache.set("foo", "bar")
     assert my_redis_cache.get("foo") == "bar"
+    my_redis_cache.dump()
     my_redis_cache.clear()
 
-    # Create the RedisCache with an expire
-    my_redis_cache = RedisCache(expire=1)
+    # Create the RedisCache with an expiry
+    my_redis_cache = RedisCache(expire=1, prefix="test")
 
     # Test expire
     my_redis_cache.set("foo", "bar")
@@ -188,7 +190,7 @@ if __name__ == "__main__":
     assert data == ret_data
 
     # Test keys with postfix
-    my_redis_cache = RedisCache(postfix=":fresh")
+    my_redis_cache = RedisCache(prefix="test", postfix="fresh")
     my_redis_cache.set("foo", "bar")
     assert my_redis_cache.get("foo") == "bar"
 
