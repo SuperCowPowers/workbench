@@ -4,7 +4,6 @@ import argparse
 
 import pandas as pd
 import awswrangler as wr
-from dash import html
 
 # SageWorks Imports
 from sageworks.views.view import View
