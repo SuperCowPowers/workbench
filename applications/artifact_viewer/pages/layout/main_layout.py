@@ -1,9 +1,9 @@
-"""Layout for the model scoreboard"""
+"""Main Layout: Layout for the Main page in the Artifact Viewer"""
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 
 
-def artifact_layout(components: dict) -> html.Div:
+def main_layout(components: dict) -> html.Div:
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
         children=[

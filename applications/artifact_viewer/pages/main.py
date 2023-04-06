@@ -7,7 +7,7 @@ from sageworks.views.artifacts_summary import ArtifactsSummary
 from sageworks.web_components import table
 
 # Local Imports
-from pages.layout.main_layout import artifact_layout
+from pages.layout.main_layout import main_layout
 import pages.callbacks.main_callbacks as callbacks
 
 register_page(__name__, path='/')
@@ -57,4 +57,4 @@ callbacks.update_last_updated(app, sageworks_artifacts)
 callbacks.update_artifact_tables(app)
 
 # Set up our layout (Dash looks for a var called layout)
-layout = artifact_layout(components)
+layout = main_layout(components)

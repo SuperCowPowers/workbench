@@ -41,7 +41,13 @@ class ArtifactsSummary(View):
         size_in_mb = self.size_cache.get(s3_path)
         if size_in_mb is None:
             self.log.info(f"Computing S3 Object sizes: {s3_path}...")
+            # FIXME: We have a ticket for an optimized way to do this so for now instead
+            #        of waiting for the size to be computed we're just going to return 0.0
+            """
             size_in_bytes = sum(wr.s3.size_objects(s3_path, boto3_session=self.boto_session).values())
+            """
+            self.log.info(f"TEMP: Returning 0 S3 Object sizes: {s3_path}...")
+            size_in_bytes = 0.0
             size_in_mb = f"{ (size_in_bytes/1_000_000):.1f}"
             self.size_cache.set(s3_path, size_in_mb)
         return size_in_mb

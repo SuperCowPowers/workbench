@@ -7,36 +7,36 @@ from sageworks.views.artifacts_summary import ArtifactsSummary
 from sageworks.web_components import table
 
 # Local Imports
-from pages.layout.data_sources_layout import data_sources_layout
+from pages.layout.feature_sets_layout import feature_sets_layout
 import pages.callbacks.data_sources_callbacks as callbacks
 
-register_page(__name__, path='/data_sources')
+register_page(__name__, path='/feature_sets')
 
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks
 sageworks_artifacts = ArtifactsSummary()
-data_sources_summary = sageworks_artifacts.data_sources_summary()
+feature_sets_summary = sageworks_artifacts.feature_sets_summary()
 
 # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
 tables = dict()
-tables["DATA_SOURCES_DETAILS"] = table.create(
-    "DATA_SOURCES_DETAILS",
-    data_sources_summary,
-    header_color="rgb(100, 60, 60)",
-    markdown_columns=["Name"],
+tables["FEATURE_SETS_DETAILS"] = table.create(
+    "FEATURE_SETS_DETAILS",
+    feature_sets_summary,
+    header_color="rgb(100, 100, 60)",
+    markdown_columns=["Feature Group"],
 )
 
 # Create our components
 components = {
-    "data_sources_details": tables["DATA_SOURCES_DETAILS"]
+    "feature_sets_details": tables["FEATURE_SETS_DETAILS"]
 }
 
 # Setup our callbacks/connections
 app = dash.get_app()
-callbacks.update_last_updated(app, sageworks_artifacts)
-callbacks.update_data_sources_table(app)
+# callbacks.update_last_updated(app, sageworks_artifacts)
+# callbacks.update_feature_sets_table(app)
 
 # Set up our layout (Dash looks for a var called layout)
-layout = data_sources_layout(components)
+layout = feature_sets_layout(components)
