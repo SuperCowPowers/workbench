@@ -18,7 +18,7 @@ register_page(__name__, path="/models")
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 
-# First try to set the components into 'dark' mode
+# Put the components into 'dark' mode
 load_figure_template("darkly")
 
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks

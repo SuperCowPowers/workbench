@@ -1,10 +1,8 @@
 """DataSources:  A SageWorks Web Interface to view, interact, and manage Data Sources"""
-import os
 from dash import register_page
 import dash
 
 # SageWorks Imports
-from sageworks.web_components import model_data
 from sageworks.web_components import scatter_plot
 from sageworks.views.artifacts_summary import ArtifactsSummary
 from sageworks.web_components import table
@@ -17,10 +15,6 @@ register_page(__name__, path="/feature_sets")
 
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
-
-# Read in our fake model data
-data_path = os.path.join(os.path.dirname(__file__), "data/toy_data.csv")
-fake_model_info = model_data.ModelData(data_path)
 
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks
 sageworks_artifacts = ArtifactsSummary()
@@ -36,13 +30,14 @@ feature_sets_table = table.create(
 )
 
 # Create a fake scatter plot
-model_df = fake_model_info.get_model_df()
-scatter = scatter_plot.create(model_df)
+scatter1 = scatter_plot.create()
+scatter2 = scatter_plot.create(variant=2)
 
 # Create our components
 components = {
     "feature_sets_details": feature_sets_table,
-    "scatter_plot": scatter
+    "scatter1": scatter1,
+    "scatter2": scatter2
 }
 
 # Setup our callbacks/connections

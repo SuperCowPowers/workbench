@@ -23,7 +23,10 @@ def data_sources_layout(components: dict) -> html.Div:
                 ]
             ),
             dbc.Row(components["data_sources_details"]),
-            dbc.Row(components["scatter_plot"]),
+            dbc.Row([
+                dbc.Col(components["histo_plot"]),
+                dbc.Col(components["box_plot"]),
+            ]),
             dcc.Interval(id="data-sources-updater", interval=5000, n_intervals=0),
         ],
         style={"margin": "30px"},

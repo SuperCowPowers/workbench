@@ -1,4 +1,4 @@
-"""A scatter plot component"""
+"""A histogram component"""
 from dash import dcc
 import pandas as pd
 import plotly.express as px
@@ -6,7 +6,7 @@ import plotly.express as px
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
 def create(df: pd.DataFrame = None, variant=1) -> dcc.Graph:
-    """Create a Scatter Plot"""
+    """Create a Histogram Plot"""
     gap_df = px.data.gapminder()
 
     # TEMP
@@ -30,22 +30,17 @@ def create(df: pd.DataFrame = None, variant=1) -> dcc.Graph:
         },
         inplace=True,
     )
-
-    color_map = px.colors.qualitative.Plotly
     if variant == 1:
-        log_x = True
+        gap_df = gap_df[gap_df["awesome"] < 10000]
     else:
-        gap_df['awesome'] = 50000-gap_df['awesome']
-        log_x = True
-    fig = px.scatter(
+        gap_df = gap_df[gap_df["awesome"] > 20000]
+
+    fig = px.histogram(
         gap_df,
         x="awesome",
         y="stuff",
-        size="logS",
         color="Project",
-        log_x=log_x,
-        size_max=60,
         title="Cool Stuff",
-        color_discrete_sequence=color_map,
+        color_discrete_sequence=px.colors.qualitative.Antique,
     )
-    return dcc.Graph(id="scatter_plot", figure=fig)
+    return dcc.Graph(id="histogram", figure=fig)
