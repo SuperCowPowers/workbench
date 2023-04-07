@@ -10,7 +10,7 @@ from sageworks.web_components import table
 from pages.layout.data_sources_layout import data_sources_layout
 import pages.callbacks.data_sources_callbacks as callbacks
 
-register_page(__name__, path='/data_sources')
+register_page(__name__, path="/data_sources")
 
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
@@ -20,13 +20,12 @@ sageworks_artifacts = ArtifactsSummary()
 data_sources_summary = sageworks_artifacts.data_sources_summary()
 
 # Create a table to display the data sources
-data_sources_table = table.create("DATA_SOURCES_DETAILS", data_sources_summary, header_color="rgb(100, 60, 60)",
-                                  markdown_columns=["Name"])
+data_sources_table = table.create(
+    "DATA_SOURCES_DETAILS", data_sources_summary, header_color="rgb(100, 60, 60)", markdown_columns=["Name"]
+)
 
 # Create our components
-components = {
-    "data_sources_details": data_sources_table
-}
+components = {"data_sources_details": data_sources_table}
 
 # Setup our callbacks/connections
 app = dash.get_app()

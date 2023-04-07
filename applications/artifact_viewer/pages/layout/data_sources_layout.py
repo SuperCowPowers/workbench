@@ -19,7 +19,7 @@ def data_sources_layout(components: dict) -> html.Div:
                             "padding": "0px 0px 0px 160px",
                         },
                     ),
-                    dbc.Row(style={"padding": "30px 0px 0px 0px"})
+                    dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                 ]
             ),
             dbc.Row(components["data_sources_details"]),

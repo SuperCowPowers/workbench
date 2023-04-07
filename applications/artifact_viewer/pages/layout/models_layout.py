@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 def models_layout(components: dict) -> html.Div:
     layout = html.Div(
         children=[
-            dbc.Row(html.H2('SageWorks: Models (Mockup)')),
+            dbc.Row(html.H2("SageWorks: Models (Mockup)")),
             html.Div(
                 "Last Updated: ",
                 id="last-updated-models",

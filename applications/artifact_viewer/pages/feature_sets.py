@@ -10,7 +10,7 @@ from sageworks.web_components import table
 from pages.layout.feature_sets_layout import feature_sets_layout
 import pages.callbacks.feature_sets_callbacks as callbacks
 
-register_page(__name__, path='/feature_sets')
+register_page(__name__, path="/feature_sets")
 
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
@@ -21,13 +21,12 @@ feature_sets_summary = sageworks_artifacts.feature_sets_summary()
 
 
 # Create a table to display the feature sets
-feature_sets_table = table.create("FEATURE_SETS_DETAILS", feature_sets_summary, header_color="rgb(100, 100, 60)",
-                                  markdown_columns=["Feature Group"])
+feature_sets_table = table.create(
+    "FEATURE_SETS_DETAILS", feature_sets_summary, header_color="rgb(100, 100, 60)", markdown_columns=["Feature Group"]
+)
 
 # Create our components
-components = {
-    "feature_sets_details": feature_sets_table
-}
+components = {"feature_sets_details": feature_sets_table}
 
 # Setup our callbacks/connections
 app = dash.get_app()

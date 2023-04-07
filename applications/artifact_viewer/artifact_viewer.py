@@ -12,7 +12,7 @@ import dash_bootstrap_components as dbc
 # Create our Dash Application
 # app = Dash(title='SageWorks: Artifacts', external_stylesheets=[dbc.themes.BOOTSTRAP], use_pages=True)
 # app = Dash(title="SageWorks: Artifacts", use_pages=True)
-app = Dash(title='SageWorks: Artifacts', external_stylesheets=[dbc.themes.DARKLY], use_pages=True)
+app = Dash(title="SageWorks: Artifacts", external_stylesheets=[dbc.themes.DARKLY], use_pages=True)
 server = app.server
 
 app.layout = dash.page_container

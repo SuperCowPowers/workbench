@@ -10,7 +10,7 @@ from sageworks.web_components import table
 from pages.layout.main_layout import main_layout
 import pages.callbacks.main_callbacks as callbacks
 
-register_page(__name__, path='/')
+register_page(__name__, path="/")
 
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
@@ -38,8 +38,12 @@ tables["FEATURE_SETS"] = table.create(
     header_color="rgb(100, 100, 60)",
     markdown_columns=["Feature Group"],
 )
-tables["MODELS"] = table.create("MODELS", artifacts_summary["MODELS"],
-                                header_color="rgb(60, 100, 60)", markdown_columns=["Model Group"],)
+tables["MODELS"] = table.create(
+    "MODELS",
+    artifacts_summary["MODELS"],
+    header_color="rgb(60, 100, 60)",
+    markdown_columns=["Model Group"],
+)
 tables["ENDPOINTS"] = table.create("ENDPOINTS", artifacts_summary["ENDPOINTS"], header_color="rgb(100, 60, 100)")
 
 # Create our components

@@ -3,8 +3,14 @@ from dash import dash_table
 import pandas as pd
 
 
-def create(table_id: str, df: pd.DataFrame, header_color="rgb(60, 60, 60)", show_columns: list[str] = None,
-           row_select=False, markdown_columns: list[str] = None) -> dash_table:
+def create(
+    table_id: str,
+    df: pd.DataFrame,
+    header_color="rgb(60, 60, 60)",
+    show_columns: list[str] = None,
+    row_select=False,
+    markdown_columns: list[str] = None,
+) -> dash_table:
     """Create a Table"""
 
     # To select rows we need to set up an ID for each row
@@ -50,7 +56,7 @@ def create(table_id: str, df: pd.DataFrame, header_color="rgb(60, 60, 60)", show
             "backgroundColor": "rgb(60, 60, 60)",
             "color": "rgb(200, 200, 200)",
         },
-        markdown_options={"html": True}
+        markdown_options={"html": True},
     )
     return table
 

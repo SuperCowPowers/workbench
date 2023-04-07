@@ -102,12 +102,12 @@ class ArtifactsSummary(View):
         """Get summary data about the SageWorks DataSources"""
         data = self.service_info[ServiceCategory.DATA_CATALOG]
         data_summary = []
-        for name, info in data['sageworks'].items():  # Just the sageworks database (not sagemaker_featurestore)
+        for name, info in data["sageworks"].items():  # Just the sageworks database (not sagemaker_featurestore)
 
             # Get the size of the S3 Storage Object(s)
             size = self.s3_objects_size(info["StorageDescriptor"]["Location"])
             summary = {
-                "Name": self.hyperlinks(name, 'data_sources'),
+                "Name": self.hyperlinks(name, "data_sources"),
                 "Ver": info.get("VersionId", "-"),
                 "Size(MB)": size,
                 "Catalog DB": info.get("DatabaseName", "-"),
@@ -159,7 +159,7 @@ class ArtifactsSummary(View):
             # Get the size of the S3 Storage Object(s)
             size = self.s3_objects_size(group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"])
             summary = {
-                "Feature Group": self.hyperlinks(group_info["FeatureGroupName"], 'feature_sets'),
+                "Feature Group": self.hyperlinks(group_info["FeatureGroupName"], "feature_sets"),
                 # 'Status': group_info['FeatureGroupStatus'],
                 "Size(MB)": size,
                 "Catalog DB": group_info["OfflineStoreConfig"].get("DataCatalogConfig", {}).get("Database", "-"),
@@ -209,7 +209,7 @@ class ArtifactsSummary(View):
                 # Do they want the full details or just the concise summary?
                 if concise:
                     summary = {
-                        "Model Group": self.hyperlinks(model["ModelPackageGroupName"], 'models'),
+                        "Model Group": self.hyperlinks(model["ModelPackageGroupName"], "models"),
                         "Description": model["ModelPackageDescription"],
                         "Created": self.datetime_string(model.get("CreationTime")),
                         "Tags": sageworks_meta.get("sageworks_tags", "-"),
@@ -217,7 +217,7 @@ class ArtifactsSummary(View):
                     }
                 else:
                     summary = {
-                        "Model Group": self.hyperlinks(model["ModelPackageGroupName"], 'models'),
+                        "Model Group": self.hyperlinks(model["ModelPackageGroupName"], "models"),
                         "Ver": model["ModelPackageVersion"],
                         "Status": model["ModelPackageStatus"],
                         "Description": model["ModelPackageDescription"],

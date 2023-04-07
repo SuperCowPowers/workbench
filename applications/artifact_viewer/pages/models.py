@@ -13,7 +13,7 @@ from sageworks.views.artifacts_summary import ArtifactsSummary
 from pages.layout.models_layout import models_layout
 import pages.callbacks.models_callbacks as callbacks
 
-register_page(__name__, path='/models')
+register_page(__name__, path="/models")
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 
@@ -26,8 +26,13 @@ data_path = os.path.join(os.path.dirname(__file__), "data/toy_data.csv")
 model_info = model_data.ModelData(data_path)
 
 # Create a table to display the models
-models_table = table.create("models_table", models_summary, header_color="rgb(60, 100, 60)",
-                            markdown_columns=["Model Group"], row_select="single")
+models_table = table.create(
+    "models_table",
+    models_summary,
+    header_color="rgb(60, 100, 60)",
+    markdown_columns=["Model Group"],
+    row_select="single",
+)
 
 # Create our components
 model_df = model_info.get_model_df()
