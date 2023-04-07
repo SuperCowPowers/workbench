@@ -1,4 +1,4 @@
-"""HelloWorld: A SageWorks HelloWorld Application"""
+"""Main: The main SageWorks Web Interface to view, interact, and manage SageWorks Artifacts"""
 from dash import register_page
 import dash
 
@@ -44,7 +44,11 @@ tables["MODELS"] = table.create(
     header_color="rgb(60, 100, 60)",
     markdown_columns=["Model Group"],
 )
-tables["ENDPOINTS"] = table.create("ENDPOINTS", sageworks_artifacts["ENDPOINTS"], header_color="rgb(100, 60, 100)")
+tables["ENDPOINTS"] = table.create(
+    "ENDPOINTS",
+    sageworks_artifacts["ENDPOINTS"],
+    header_color="rgb(100, 60, 100)",
+    markdown_columns=["Name"])
 
 # Create our components
 components = {

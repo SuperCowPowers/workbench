@@ -255,10 +255,10 @@ class ArtifactsSummary(View):
             sageworks_meta = self.artifact_meta(endpoint_arn)
 
             summary = {
-                "Name": endpoint_info["EndpointName"],
+                "Name": self.hyperlinks(endpoint_info["EndpointName"], "endpoints"),
                 "Status": endpoint_info["EndpointStatus"],
                 "Created": self.datetime_string(endpoint_info.get("CreationTime")),
-                "Modified": self.datetime_string(endpoint_info.get("LastModifiedTime")),
+                # "Modified": self.datetime_string(endpoint_info.get("LastModifiedTime")),
                 "DataCapture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
                 "Sampling(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),

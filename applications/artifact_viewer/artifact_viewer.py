@@ -15,10 +15,12 @@ import dash_bootstrap_components as dbc
 app = Dash(title="SageWorks: Artifacts", external_stylesheets=[dbc.themes.DARKLY], use_pages=True)
 server = app.server
 
+# For Multi-Page Applications, we need to create a 'page container' to hold all the pages
 app.layout = dash.page_container
 
 
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
     # Note: This 'main' is purely for running/testing locally
-    app.run_server(host="0.0.0.0", port=8080, debug=True)
+    # app.run_server(host="0.0.0.0", port=8080, debug=True)
+    app.run_server(host="0.0.0.0", port=8080)

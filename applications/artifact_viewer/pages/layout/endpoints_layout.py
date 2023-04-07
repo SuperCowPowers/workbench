@@ -1,18 +1,18 @@
-"""DataSources Layout: Layout for the DataSources page in the Artifact Viewer"""
+"""Endpoints Layout: Layout for the Endpoints page in the Artifact Viewer"""
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 
 
-def data_sources_layout(components: dict) -> html.Div:
+def endpoints_layout(components: dict) -> html.Div:
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
         children=[
             dbc.Row(
                 [
-                    html.H2("SageWorks: DataSources (Mockup)"),
+                    html.H2("SageWorks: Endpoints (Mockup)"),
                     html.Div(
                         "Last Updated: ",
-                        id="last-updated-data-sources",
+                        id="last-updated-endpoints",
                         style={
                             "color": "rgb(140, 200, 140)",
                             "fontSize": 15,
@@ -22,9 +22,9 @@ def data_sources_layout(components: dict) -> html.Div:
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                 ]
             ),
-            dbc.Row(components["data_sources_details"]),
+            dbc.Row(components["endpoints_details"]),
             dbc.Row(components["scatter_plot"]),
-            dcc.Interval(id="data-sources-updater", interval=5000, n_intervals=0),
+            dcc.Interval(id="endpoints-updater", interval=10000, n_intervals=0),
         ],
         style={"margin": "30px"},
     )

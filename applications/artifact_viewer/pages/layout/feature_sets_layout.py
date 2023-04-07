@@ -23,6 +23,7 @@ def feature_sets_layout(components: dict) -> html.Div:
                 ]
             ),
             dbc.Row(components["feature_sets_details"]),
+            dbc.Row(components["scatter_plot"]),
             dcc.Interval(id="feature-sets-updater", interval=5000, n_intervals=0),
         ],
         style={"margin": "30px"},

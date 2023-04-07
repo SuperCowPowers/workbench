@@ -25,7 +25,7 @@ load_figure_template("darkly")
 artifacts_summary = ArtifactsSummary()
 models_summary = artifacts_summary.models_summary(concise=True)
 
-# Read in our model data
+# Read in our fake model data
 data_path = os.path.join(os.path.dirname(__file__), "data/toy_data.csv")
 fake_model_info = model_data.ModelData(data_path)
 
