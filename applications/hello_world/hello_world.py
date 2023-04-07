@@ -5,17 +5,11 @@ import dash_bootstrap_components as dbc
 
 # SageWorks Imports
 from sageworks.views.artifacts_summary import ArtifactsSummary
-from sageworks.web_components import confusion_matrix, table, scatter_plot
-from sageworks.web_components import (
-    feature_importance,
-    model_data,
-    model_details,
-    feature_details,
-)
+from sageworks.web_components import table
+
 
 # Local Imports
 import layout
-import callbacks
 
 
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to

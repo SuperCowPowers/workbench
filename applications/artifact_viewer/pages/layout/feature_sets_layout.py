@@ -9,7 +9,7 @@ def feature_sets_layout(components: dict) -> html.Div:
         children=[
             dbc.Row(
                 [
-                    html.H2("SageWorks: FeatureSets"),
+                    html.H2("SageWorks: FeatureSets (Mockup)"),
                     html.Div(
                         "Last Updated: ",
                         id="last-updated-feature-sets",

@@ -3,7 +3,6 @@ import sys
 import argparse
 
 import pandas as pd
-import awswrangler as wr
 
 # SageWorks Imports
 from sageworks.views.view import View

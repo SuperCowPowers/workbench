@@ -8,7 +8,7 @@ from sageworks.web_components import table
 
 # Local Imports
 from pages.layout.feature_sets_layout import feature_sets_layout
-import pages.callbacks.data_sources_callbacks as callbacks
+import pages.callbacks.feature_sets_callbacks as callbacks
 
 register_page(__name__, path='/feature_sets')
 
@@ -35,8 +35,8 @@ components = {
 
 # Setup our callbacks/connections
 app = dash.get_app()
-# callbacks.update_last_updated(app, sageworks_artifacts)
-# callbacks.update_feature_sets_table(app)
+callbacks.update_last_updated(app)
+callbacks.update_feature_sets_table(app, sageworks_artifacts)
 
 # Set up our layout (Dash looks for a var called layout)
 layout = feature_sets_layout(components)

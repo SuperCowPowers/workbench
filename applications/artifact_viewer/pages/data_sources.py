@@ -35,8 +35,8 @@ components = {
 
 # Setup our callbacks/connections
 app = dash.get_app()
-callbacks.update_last_updated(app, sageworks_artifacts)
-callbacks.update_data_sources_table(app)
+callbacks.update_last_updated(app)
+callbacks.update_data_sources_table(app, sageworks_artifacts)
 
 # Set up our layout (Dash looks for a var called layout)
 layout = data_sources_layout(components)
