@@ -25,7 +25,7 @@ class ArtifactsSummary(View):
         self.summary_data = {}
 
         # S3 Object Size Cache
-        self.size_cache = Cache(expire=600)
+        self.size_cache = Cache(expire=60)
 
     def check(self) -> bool:
         """Can we connect to this view/service?"""

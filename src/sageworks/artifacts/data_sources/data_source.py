@@ -29,6 +29,15 @@ class DataSource(Artifact):
         pass
 
     @abstractmethod
+    def column_types(self) -> list[str]:
+        """Return the column types for this Data Source"""
+        pass
+
+    def column_details(self) -> dict:
+        """Return the column details for this Data Source"""
+        return {name: type_ for name, type_ in zip(self.column_names(), self.column_types())}
+
+    @abstractmethod
     def query(self, query: str) -> pd.DataFrame:
         """Query the DataSource"""
         pass

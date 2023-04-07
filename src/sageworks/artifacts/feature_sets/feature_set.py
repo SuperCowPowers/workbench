@@ -70,8 +70,16 @@ class FeatureSet(Artifact):
         return self.athena_source.size()
 
     def column_names(self) -> list[str]:
-        """Return the number of columns of the internal AthenaSource"""
+        """Return the column names of the internal AthenaSource"""
         return self.athena_source.column_names()
+
+    def column_types(self) -> list[str]:
+        """Return the column types of the internal AthenaSource"""
+        return self.athena_source.column_types()
+
+    def column_details(self) -> list[str]:
+        """Return the column types of the internal AthenaSource"""
+        return self.athena_source.column_details()
 
     def num_columns(self) -> int:
         """Return the number of columns of the internal AthenaSource"""
@@ -140,7 +148,7 @@ class FeatureSet(Artifact):
         # Remove FeatureGroup metadata columns that might have gotten added
         columns = self.column_names()
         filter_columns = ["write_time", "api_invocation_time", "is_deleted"]
-        columns = ", ".join([x for x in columns if x not in filter_columns])
+        columns = ", ".join(['"'+x+'"' for x in columns if x not in filter_columns])
 
         query = (
             f"SELECT {columns} "

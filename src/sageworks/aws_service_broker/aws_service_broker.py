@@ -71,7 +71,7 @@ class AWSServiceBroker:
 
         # Redis Cache for Metadata
         cls.meta_cache = RedisCache()
-        cls.fresh_cache = RedisCache(expire=30, postfix=":fresh")
+        cls.fresh_cache = RedisCache(expire=5, postfix=":fresh")
         cls.open_threads = []
 
         # This connection map sets up the connector objects for each category of metadata

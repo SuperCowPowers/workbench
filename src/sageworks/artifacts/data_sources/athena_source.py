@@ -101,6 +101,10 @@ class AthenaSource(DataSource):
         """Return the column names for this Athena Table"""
         return [item["Name"] for item in self.catalog_meta["StorageDescriptor"]["Columns"]]
 
+    def column_types(self) -> list[str]:
+        """Return the column types of the internal AthenaSource"""
+        return [item["Type"] for item in self.catalog_meta["StorageDescriptor"]["Columns"]]
+
     def query(self, query: str) -> pd.DataFrame:
         """Query the AthenaSource"""
         df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db, boto3_session=self.boto_session)
@@ -165,6 +169,10 @@ if __name__ == "__main__":
     # When was it created and last modified?
     print(f"Created: {my_data.created()}")
     print(f"Modified: {my_data.modified()}")
+
+    # Column Names and Types
+    print(f"Column Names: {my_data.column_names()}")
+    print(f"Column Types: {my_data.column_types()}")
 
     # Get Metadata and tags associated with this Artifact
     print(f"Meta: {my_data.sageworks_meta()}")

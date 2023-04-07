@@ -1,10 +1,10 @@
-"""Data Class for the models"""
+"""ModelData Class for storing and managing the data associated with model"""
 import pandas as pd
 import json
 
 
 class ModelData:
-    """Data Class for storing and managing the data associated with model"""
+    """"ModelData Class for storing and managing the data associated with model"""
 
     def __init__(self, path):
         self._data = pd.read_csv(path, parse_dates=["date_created"])
@@ -31,6 +31,7 @@ class ModelData:
 
 # Test for our ModelData Class
 if __name__ == "__main__":
-    models = ModelData("../../data/model_data.csv")
+    file_path = "/Users/briford/work/sageworks/applications/artifact_viewer/pages/data/toy_data.csv"
+    models = ModelData(file_path)
     print(models.get_model_feature_importance(0))
     print(models.get_model_confusion_matrix(1))

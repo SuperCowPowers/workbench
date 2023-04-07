@@ -67,9 +67,13 @@ class FeaturesToModel(Transform):
         if input_feature_list:
             feature_list = input_feature_list
 
-        # Try to figure out features (this is a big guess)
+        # Try to figure out features with this logic
+        # - Don't include id, event_time columns
+        # - Don't include AWS generated columns (e.g. write_time, api_invocation_time, is_deleted)
+        # - Don't include any columns that are of type string
+        # - The rest of the columns are assumed to be features
         else:
-            self.log.warning("Guessing at the feature list...")
+            self.log.warning("Guessing at the feature list, please specify a feature list!")
             all_columns = feature_set.column_names()
             filter_list = [
                 "id",
@@ -79,6 +83,13 @@ class FeaturesToModel(Transform):
                 "is_deleted",
             ] + [target]
             feature_list = [c for c in all_columns if c not in filter_list]
+
+            # Now remove any string or datetime columns from the Feature List
+            # Note: AWS Feature Store has 4 column types (string, integral, fractional, and timestamp)
+            # Note2: The 'bigint' type = integral and 'double' type = fractional
+            column_details = feature_set.column_details()
+            feature_list = [c for c in feature_list if column_details[c] not in ["string", "timestamp"]]
+            self.log.info(f"Guessed feature list: {feature_list}")
 
         # Generate our model script
         script_path = self.generate_model_script(target, feature_list, "regression")
@@ -123,7 +134,7 @@ class FeaturesToModel(Transform):
         # Create model group (if it doesn't already exist)
         self.sm_client.create_model_package_group(
             ModelPackageGroupName=self.output_uuid,
-            ModelPackageGroupDescription="Test Model: Abalone Regression",
+            ModelPackageGroupDescription="Test Model: AQSol Regression",
             Tags=aws_tags,
         )
 
@@ -137,7 +148,7 @@ class FeaturesToModel(Transform):
             inference_instances=["ml.t2.medium"],
             transform_instances=["ml.m5.large"],
             approval_status="Approved",
-            description="Test Model: Abalone Regression",
+            description="Test Model: AQSol Regression",
         )
 
 
@@ -145,9 +156,18 @@ if __name__ == "__main__":
     """Exercise the FeaturesToModel Class"""
 
     # Create the class with inputs and outputs and invoke the transform
+    """
     input_uuid = "abalone_feature_set"
     output_uuid = "abalone-regression"
     to_model = FeaturesToModel(input_uuid, output_uuid)
     to_model.set_output_tags(["abalone", "public"])
     to_model.set_output_meta({"sageworks_input": input_uuid})
     to_model.transform(target="class_number_of_rings")
+    """
+
+    input_uuid = "aqsol_feature_set"
+    output_uuid = "aqsol-regression"
+    to_model = FeaturesToModel(input_uuid, output_uuid)
+    to_model.set_output_tags(["aqsol", "public"])
+    to_model.set_output_meta({"sageworks_input": input_uuid})
+    to_model.transform(target="solubility")

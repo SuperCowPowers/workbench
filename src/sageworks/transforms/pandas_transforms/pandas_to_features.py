@@ -65,14 +65,13 @@ class PandasToFeatures(Transform):
         categorical_columns = []
         for feature, dtype in self.input_df.dtypes.items():
             print(feature, dtype)
-            if dtype in ["object", "string"] and feature not in [
-                self.event_time_column,
-                self.id_column,
-            ]:
-                print(f"Converting object column {feature} to categorical")
-                print(f"Unique Values = {self.input_df[feature].nunique()}")
-                self.input_df[feature] = self.input_df[feature].astype("category")
-                categorical_columns.append(feature)
+            if dtype in ["object", "string"] and feature not in [self.event_time_column, self.id_column]:
+                unique_values = self.input_df[feature].nunique()
+                print(f"Unique Values = {unique_values}")
+                if unique_values < 5:
+                    print(f"Converting object column {feature} to categorical")
+                    self.input_df[feature] = self.input_df[feature].astype("category")
+                    categorical_columns.append(feature)
 
         # Now convert Categorical Types to One Hot Encoding
         self.input_df = pd.get_dummies(self.input_df, columns=categorical_columns)

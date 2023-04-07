@@ -43,9 +43,10 @@ if __name__ == "__main__":
     """Exercise the DataToFeaturesLight Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "test_data"
-    output_uuid = "test_feature_set"
+    input_uuid = "aqsol_data"
+    output_uuid = "aqsol_feature_set"
     data_to_features = DataToFeaturesLight(input_uuid, output_uuid)
-    data_to_features.set_output_tags(["test", "small"])
+    data_to_features.set_output_tags(["aqsol", "public"])
     data_to_features.set_output_meta({"sageworks_input": input_uuid})
-    data_to_features.transform(id_column="id", event_time_column="date")
+    # data_to_features.transform(id_column="id", event_time_column="date")
+    data_to_features.transform(id_column="id")
