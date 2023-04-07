@@ -25,6 +25,9 @@ class ModelData:
 
     def get_model_feature_importance(self, row_index):
         """Get the model feature importance for this model (via row_index)"""
+        if not isinstance(row_index, int):
+            raise RuntimeError(f"row_index must be an integer not {type(row_index)}: {row_index}")
+
         row = self._data.iloc[row_index]
         return json.loads(row["feature_importance"])
 
@@ -32,6 +35,6 @@ class ModelData:
 # Test for our ModelData Class
 if __name__ == "__main__":
     file_path = "/Users/briford/work/sageworks/applications/artifact_viewer/pages/data/toy_data.csv"
-    models = ModelData(file_path)
-    print(models.get_model_feature_importance(0))
-    print(models.get_model_confusion_matrix(1))
+    model_data = ModelData(file_path)
+    print(model_data.get_model_feature_importance(0))
+    print(model_data.get_model_confusion_matrix(1))

@@ -31,12 +31,13 @@ def table_row_select(app: Dash, table_name: str):
         Input(table_name, "derived_viewport_selected_row_ids"),
     )
     def style_selected_rows(selected_rows):
-        if selected_rows is None:
+        print(f"Selected Rows: {selected_rows}")
+        if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         foo = [
             {
                 "if": {"filter_query": "{{id}} ={}".format(i)},
-                "backgroundColor": "rgb(200, 220, 200)",
+                "backgroundColor": "rgb(80, 80, 80)",
             }
             for i in selected_rows
         ]
@@ -53,7 +54,7 @@ def update_figures(app: Dash, model_data: ModelData):
         print(f"Selected Rows: {selected_rows}")
 
         # If there's no selection we're going to return figures for the first row (0)
-        if not selected_rows:
+        if not selected_rows or selected_rows[0] is None:
             selected_rows = [0]
 
         # Grab the data for this row
@@ -81,7 +82,7 @@ def update_model_details(app: Dash, model_data: ModelData):
         print(f"Selected Rows: {selected_rows}")
 
         # If there's no selection we're going to return the model details for the first row (0)
-        if not selected_rows:
+        if not selected_rows or selected_rows[0] is None:
             selected_rows = [0]
 
         # Grab the data for this row
@@ -105,7 +106,7 @@ def update_feature_details(app: Dash, model_data: ModelData):
         print(f"Selected Rows: {selected_rows}")
 
         # If there's no selection we're going to return the feature details for the first row (0)
-        if not selected_rows:
+        if not selected_rows or selected_rows[0] is None:
             selected_rows = [0]
 
         # Grab the data for this row
