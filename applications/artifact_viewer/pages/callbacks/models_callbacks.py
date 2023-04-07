@@ -2,15 +2,26 @@
 import dash
 from dash import Dash
 from dash.dependencies import Input, Output
+from datetime import datetime
 
 # SageWorks Imports
 from sageworks.web_components.model_data import ModelData
-from sageworks.web_components import (
-    feature_importance,
-    confusion_matrix,
-    model_details,
-    feature_details,
-)
+from sageworks.web_components import feature_importance, confusion_matrix, model_details, feature_details
+from sageworks.views.artifacts_summary import ArtifactsSummary
+
+
+def update_last_updated(app: Dash):
+    @app.callback(Output("last-updated-models", "children"), Input("models-updater", "n_intervals"))
+    def time_updated(n):
+        return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
+
+
+def update_models_table(app: Dash, sageworks_artifacts: ArtifactsSummary):
+    @app.callback(Output("models_table", "data"), Input("models-updater", "n_intervals"))
+    def data_sources_update(n):
+        print("Calling DataSources Refresh...")
+        models = sageworks_artifacts.models_summary()
+        return models.to_dict("records")
 
 
 # Highlights the selected row in the table
@@ -36,7 +47,7 @@ def table_row_select(app: Dash, table_name: str):
 def update_figures(app: Dash, model_data: ModelData):
     @app.callback(
         [Output("feature_importance", "figure"), Output("confusion_matrix", "figure")],
-        Input("model_table", "derived_viewport_selected_row_ids"),
+        Input("models_table", "derived_viewport_selected_row_ids"),
     )
     def generate_new_figures(selected_rows):
         print(f"Selected Rows: {selected_rows}")
@@ -64,7 +75,7 @@ def update_figures(app: Dash, model_data: ModelData):
 def update_model_details(app: Dash, model_data: ModelData):
     @app.callback(
         Output("model_details", "children"),
-        Input("model_table", "derived_viewport_selected_row_ids"),
+        Input("models_table", "derived_viewport_selected_row_ids"),
     )
     def generate_new_markdown(selected_rows):
         print(f"Selected Rows: {selected_rows}")
@@ -88,7 +99,7 @@ def update_model_details(app: Dash, model_data: ModelData):
 def update_feature_details(app: Dash, model_data: ModelData):
     @app.callback(
         Output("feature_details", "children"),
-        Input("model_table", "derived_viewport_selected_row_ids"),
+        Input("models_table", "derived_viewport_selected_row_ids"),
     )
     def generate_new_markdown(selected_rows):
         print(f"Selected Rows: {selected_rows}")

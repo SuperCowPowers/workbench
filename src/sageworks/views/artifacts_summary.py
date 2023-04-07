@@ -1,7 +1,7 @@
 """ArtifactsSummary pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
 import sys
 import argparse
-
+import awswrangler as wr
 import pandas as pd
 
 # SageWorks Imports
@@ -25,7 +25,7 @@ class ArtifactsSummary(View):
         self.summary_data = {}
 
         # S3 Object Size Cache
-        self.size_cache = Cache(expire=60)
+        self.size_cache = Cache(expire=600)
 
     def check(self) -> bool:
         """Can we connect to this view/service?"""
@@ -40,13 +40,7 @@ class ArtifactsSummary(View):
         size_in_mb = self.size_cache.get(s3_path)
         if size_in_mb is None:
             self.log.info(f"Computing S3 Object sizes: {s3_path}...")
-            # FIXME: We have a ticket for an optimized way to do this so for now instead
-            #        of waiting for the size to be computed we're just going to return 0.0
-            """
             size_in_bytes = sum(wr.s3.size_objects(s3_path, boto3_session=self.boto_session).values())
-            """
-            self.log.info(f"TEMP: Returning 0 S3 Object sizes: {s3_path}...")
-            size_in_bytes = 0.0
             size_in_mb = f"{ (size_in_bytes/1_000_000):.1f}"
             self.size_cache.set(s3_path, size_in_mb)
         return size_in_mb
@@ -60,7 +54,7 @@ class ArtifactsSummary(View):
         """Get the Metadata for this Artifact"""
         meta = self.size_cache.get(aws_arn)
         if meta is None:
-            self.log.info(f"Retrieving Artifact Metadata: {aws_arn}...")
+            self.log.info(f"Retrieving Artifact Tags, Metadata, and S3 Object Size: {aws_arn}...")
             aws_tags = self.sm_session.list_tags(aws_arn)
             meta = self.aws_tags_to_dict(aws_tags)
             self.size_cache.set(aws_arn, meta)
@@ -74,6 +68,7 @@ class ArtifactsSummary(View):
         """
 
         # We're filling in Summary Data for all the AWS Services
+        self.log.warning("Refreshing ALL AWS Service Broker Metadata...")
         self.summary_data["INCOMING_DATA"] = self.incoming_data_summary()
         self.summary_data["DATA_SOURCES"] = self.data_sources_summary()
         self.summary_data["FEATURE_SETS"] = self.feature_sets_summary()
@@ -148,7 +143,7 @@ class ArtifactsSummary(View):
     def hyperlinks(name, detail_type):
         athena_url = "https://us-west-2.console.aws.amazon.com/athena/home"
         link = f"<a href='{detail_type}' target='_blank'>{name}</a>"
-        link += f" (<a href='{athena_url}' target='_blank'>query</a>)"
+        link += f" [<a href='{athena_url}' target='_blank'>query</a>]"
         return link
 
     def feature_sets_summary(self):
@@ -193,15 +188,15 @@ class ArtifactsSummary(View):
             ]
             return pd.DataFrame(columns=columns)
 
-    def models_summary(self):
+    def models_summary(self, concise=False):
         """Get summary data about the SageWorks Models"""
         data = self.service_info[ServiceCategory.MODELS]
-        data_summary = []
+        model_summary = []
         for model_group, model_list in data.items():
             # Special Case for Model Groups without any Models
             if not model_list:
                 summary = {"Model Group": model_group}
-                data_summary.append(summary)
+                model_summary.append(summary)
                 continue
 
             # Get Summary information for each model in the model_list
@@ -211,20 +206,30 @@ class ArtifactsSummary(View):
                 model_group_arn = model["ModelPackageGroupArn"]
                 sageworks_meta = self.artifact_meta(model_group_arn)
 
-                summary = {
-                    "Model Group": self.hyperlinks(model["ModelPackageGroupName"], 'models'),
-                    "Ver": model["ModelPackageVersion"],
-                    "Status": model["ModelPackageStatus"],
-                    "Description": model["ModelPackageDescription"],
-                    "Created": self.datetime_string(model.get("CreationTime")),
-                    "Tags": sageworks_meta.get("sageworks_tags", "-"),
-                    "Input": sageworks_meta.get("sageworks_input", "-"),
-                }
-                data_summary.append(summary)
+                # Do they want the full details or just the concise summary?
+                if concise:
+                    summary = {
+                        "Model Group": self.hyperlinks(model["ModelPackageGroupName"], 'models'),
+                        "Description": model["ModelPackageDescription"],
+                        "Created": self.datetime_string(model.get("CreationTime")),
+                        "Tags": sageworks_meta.get("sageworks_tags", "-"),
+                        "Input": sageworks_meta.get("sageworks_input", "-"),
+                    }
+                else:
+                    summary = {
+                        "Model Group": self.hyperlinks(model["ModelPackageGroupName"], 'models'),
+                        "Ver": model["ModelPackageVersion"],
+                        "Status": model["ModelPackageStatus"],
+                        "Description": model["ModelPackageDescription"],
+                        "Created": self.datetime_string(model.get("CreationTime")),
+                        "Tags": sageworks_meta.get("sageworks_tags", "-"),
+                        "Input": sageworks_meta.get("sageworks_input", "-"),
+                    }
+                model_summary.append(summary)
 
         # Make sure we have data else return just the column names
-        if data_summary:
-            return pd.DataFrame(data_summary)
+        if model_summary:
+            return pd.DataFrame(model_summary)
         else:
             columns = [
                 "Model Group",

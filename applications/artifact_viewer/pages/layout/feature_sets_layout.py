@@ -16,9 +16,10 @@ def feature_sets_layout(components: dict) -> html.Div:
                         style={
                             "color": "rgb(140, 200, 140)",
                             "fontSize": 15,
-                            "padding": "0px 0px 0px 120px",
+                            "padding": "0px 0px 0px 160px",
                         },
                     ),
+                    dbc.Row(style={"padding": "30px 0px 0px 0px"})
                 ]
             ),
             dbc.Row(components["feature_sets_details"]),

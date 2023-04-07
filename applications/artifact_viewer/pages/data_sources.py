@@ -19,18 +19,13 @@ register_page(__name__, path='/data_sources')
 sageworks_artifacts = ArtifactsSummary()
 data_sources_summary = sageworks_artifacts.data_sources_summary()
 
-# Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
-tables = dict()
-tables["DATA_SOURCES_DETAILS"] = table.create(
-    "DATA_SOURCES_DETAILS",
-    data_sources_summary,
-    header_color="rgb(100, 60, 60)",
-    markdown_columns=["Name"],
-)
+# Create a table to display the data sources
+data_sources_table = table.create("DATA_SOURCES_DETAILS", data_sources_summary, header_color="rgb(100, 60, 60)",
+                                  markdown_columns=["Name"])
 
 # Create our components
 components = {
-    "data_sources_details": tables["DATA_SOURCES_DETAILS"]
+    "data_sources_details": data_sources_table
 }
 
 # Setup our callbacks/connections

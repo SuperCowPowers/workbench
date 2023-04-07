@@ -1,5 +1,5 @@
 """Artifact Viewer: A SageWorks Application for viewing and managing SageWorks Artifacts"""
-from dash import Dash, dcc, html
+from dash import Dash
 import dash
 import dash_bootstrap_components as dbc
 
@@ -15,12 +15,7 @@ import dash_bootstrap_components as dbc
 app = Dash(title='SageWorks: Artifacts', external_stylesheets=[dbc.themes.DARKLY], use_pages=True)
 server = app.server
 
-app.layout = html.Div(
-    children=[
-        dcc.Store(id='foo', data='foo'),
-        dcc.Store(id='bar', data='bar'),
-        dash.page_container,
-    ])
+app.layout = dash.page_container
 
 
 if __name__ == "__main__":

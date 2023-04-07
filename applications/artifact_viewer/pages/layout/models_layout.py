@@ -1,5 +1,5 @@
 """Layout for the models page"""
-from dash import Dash, html
+from dash import dcc, html
 import dash_bootstrap_components as dbc
 
 
@@ -7,12 +7,23 @@ def models_layout(components: dict) -> html.Div:
     layout = html.Div(
         children=[
             dbc.Row(html.H2('SageWorks: Models (Mockup)')),
+            html.Div(
+                "Last Updated: ",
+                id="last-updated-models",
+                style={
+                    "color": "rgb(140, 200, 140)",
+                    "fontSize": 15,
+                    "padding": "0px 0px 0px 160px",
+                },
+            ),
+            dcc.Interval(id="models-updater", interval=10000, n_intervals=0),
+            dbc.Row(style={"padding": "30px 0px 0px 0px"}),
             dbc.Row(
                 [
                     # Model Table and Model Details
                     dbc.Col(
                         [
-                            dbc.Row(components["model_table"]),
+                            dbc.Row(components["models_table"]),
                             dbc.Row(
                                 html.H3("Model Details"),
                                 style={"padding": "50px 0px 0px 0px"},

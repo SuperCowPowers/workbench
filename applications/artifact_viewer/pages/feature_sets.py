@@ -19,18 +19,14 @@ register_page(__name__, path='/feature_sets')
 sageworks_artifacts = ArtifactsSummary()
 feature_sets_summary = sageworks_artifacts.feature_sets_summary()
 
-# Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
-tables = dict()
-tables["FEATURE_SETS_DETAILS"] = table.create(
-    "FEATURE_SETS_DETAILS",
-    feature_sets_summary,
-    header_color="rgb(100, 100, 60)",
-    markdown_columns=["Feature Group"],
-)
+
+# Create a table to display the feature sets
+feature_sets_table = table.create("FEATURE_SETS_DETAILS", feature_sets_summary, header_color="rgb(100, 100, 60)",
+                                  markdown_columns=["Feature Group"])
 
 # Create our components
 components = {
-    "feature_sets_details": tables["FEATURE_SETS_DETAILS"]
+    "feature_sets_details": feature_sets_table
 }
 
 # Setup our callbacks/connections
