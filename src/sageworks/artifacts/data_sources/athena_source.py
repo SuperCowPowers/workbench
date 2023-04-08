@@ -12,18 +12,29 @@ from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 class AthenaSource(DataSource):
     """AthenaSource: SageWorks Data Source accessible through Athena"""
 
-    def __init__(self, table_name, database="sageworks"):
+    @classmethod
+    def info(cls):
+        """Print out usage information about AthenaSource"""
+        print('AthenaSource: SageWorks Data Source accessible through Athena')
+        print('Usage:')
+        print('\tmy_data = AthenaSource(data_uuid, database="sageworks")')
+        print('\tmy_data.summary()')
+        print('\tmy_data.details()')
+        print('\tdf = my_data.query(f"select * from {data_uuid} limit 5")')
+
+    def __init__(self, data_uuid, database="sageworks"):
         """AthenaSource Initialization
 
         Args:
-            table_name (str): Name of Athena Table
+            data_uuid (str): Name of Athena Table
+            database (str): Athena Database Name
         """
 
         # Call superclass init
-        super().__init__(table_name)
+        super().__init__(data_uuid)
 
         self.data_catalog_db = database
-        self.table_name = table_name
+        self.table_name = data_uuid
 
         # Grab an AWS Metadata Broker object and pull information for Data Sources
         self.catalog_meta = self.aws_meta.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(

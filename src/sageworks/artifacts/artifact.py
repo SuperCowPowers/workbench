@@ -26,6 +26,12 @@ class Artifact(ABC):
     # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
     aws_meta = AWSServiceBroker()
 
+    @classmethod
+    @abstractmethod
+    def info(cls):
+        """Abstract Class Method: Return common usage information about the Artifact"""
+        pass
+
     def __init__(self, uuid):
         """Artifact: Abstract Base Class for all Artifact classes in SageWorks.
         Artifacts simply reflect and aggregate one or more AWS Services"""
@@ -105,9 +111,9 @@ class Artifact(ABC):
         """Add a tag to this artifact"""
         self.log.error("add_tag: functionality needs to be added!")
 
-    def info(self) -> dict:
-        """This is a generic information method for all Artifacts
-        If you want to add more information, call the details() method
+    def summary(self) -> dict:
+        """This is generic summary information for all Artifacts. If you
+        want to get more detailed information, call the details() method
         which is implemented by the specific Artifact class"""
         return {
             "uuid": self.uuid,

@@ -16,17 +16,28 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class FeatureSet(Artifact):
-    def __init__(self, feature_set_name):
-        """FeatureSet: SageWorks Feature Set accessible through Athena
+    """FeatureSet: SageWorks Feature Set accessible through Athena"""
+
+    @classmethod
+    def info(cls):
+        """Print out usage information about FeatureSet"""
+        print('FeatureSet: SageWorks FeatureSet Class')
+        print('Usage:')
+        print('\tmy_features = FeatureSet(feature_uuid)')
+        print('\tmy_features.summary()')
+        print('\tmy_features.details()')
+
+    def __init__(self, feature_uuid):
+        """FeatureSet Initialization
 
         Args:
-            feature_set_name (str): Name of Feature Set in SageWorks Metadata.
+            feature_uuid (str): Name of Feature Set in SageWorks Metadata.
         """
         # Call superclass init
-        super().__init__(feature_set_name)
+        super().__init__(feature_uuid)
 
         # Grab an AWS Metadata Broker object and pull information for Feature Sets
-        self.feature_set_name = feature_set_name
+        self.feature_set_name = feature_uuid
         self.feature_meta = self.aws_meta.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
         if self.feature_meta is None:
             self.log.warning(f"Could not find feature set {self.feature_set_name} within current visibility scope")
@@ -48,7 +59,7 @@ class FeatureSet(Artifact):
         self.feature_store = FeatureStore(self.sm_session)
 
         # All done
-        self.log.info(f"FeatureSet Initialized: {feature_set_name}")
+        self.log.info(f"FeatureSet Initialized: {self.feature_set_name}")
 
     def check(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
@@ -161,7 +172,7 @@ class FeatureSet(Artifact):
 
     def details(self) -> dict:
         """Additional Details about this FeatureSet"""
-        details = self.info()
+        details = self.summary()
         # Fill in more details here if needed
         return details
 

@@ -44,7 +44,7 @@ class DataSource(Artifact):
 
     def details(self) -> dict:
         """Additional Details about this DataSource Artifact"""
-        details = self.info()
+        details = self.summary()
         details["num_rows"] = self.num_rows()
         details["num_columns"] = self.num_columns()
         details["column_names"] = self.column_names()

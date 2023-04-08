@@ -15,22 +15,33 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class Endpoint(Artifact):
-    def __init__(self, endpoint_name):
-        """Endpoint: SageWorks Endpoint Class
+    """Endpoint: SageWorks Endpoint Class"""
+
+    @classmethod
+    def info(cls):
+        """Print out usage information about FeatureSet"""
+        print('Endpoint: SageWorks Endpoint Class')
+        print('Usage:')
+        print('\tmy_endpoint = Endpoint(endpoint_uuid)')
+        print('\tmy_endpoint.summary()')
+        print('\tmy_endpoint.details()')
+
+    def __init__(self, endpoint_uuid):
+        """Endpoint Initialization
 
         Args:
-            endpoint_name (str): Name of Endpoint in SageWorks
+            endpoint_uuid (str): Name of Endpoint in SageWorks
         """
         # Call SuperClass Initialization
-        super().__init__(endpoint_name)
+        super().__init__(endpoint_uuid)
 
         # Grab an AWS Metadata Broker object and pull information for Endpoints
-        self.endpoint_name = endpoint_name
+        self.endpoint_name = endpoint_uuid
         self.endpoint_meta = self.aws_meta.get_metadata(ServiceCategory.ENDPOINTS).get(self.endpoint_name)
         self.endpoint_return_columns = None
 
         # All done
-        self.log.info(f"Endpoint Initialized: {endpoint_name}")
+        self.log.info(f"Endpoint Initialized: {self.endpoint_name}")
 
     def check(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
@@ -163,7 +174,7 @@ class Endpoint(Artifact):
 
     def details(self) -> dict:
         """Additional Details about this Endpoint"""
-        details = self.info()
+        details = self.summary()
         # Fill in more details here if needed
         return details
 

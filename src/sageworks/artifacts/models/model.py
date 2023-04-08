@@ -8,17 +8,28 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class Model(Artifact):
-    def __init__(self, model_name):
-        """Model: SageWorks Model Class
+    """Model: SageWorks Model Class"""
+
+    @classmethod
+    def info(cls):
+        """Print out usage information about the Model Class"""
+        print('Model: SageWorks Model Class')
+        print('Usage:')
+        print('\tmy_model = Model(model_uuid)')
+        print('\tmy_model.summary()')
+        print('\tmy_model.details()')
+
+    def __init__(self, model_uuid):
+        """Model Initialization
 
         Args:
-            model_name (str): Name of Model in SageWorks.
+            model_uuid (str): Name of Model in SageWorks.
         """
         # Call SuperClass Initialization
-        super().__init__(model_name)
+        super().__init__(model_uuid)
 
         # Grab an AWS Metadata Broker object and pull information for Models
-        self.model_name = model_name
+        self.model_name = model_uuid
         self.model_meta = self.aws_meta.get_metadata(ServiceCategory.MODELS).get(self.model_name)
         if self.model_meta is None:
             self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
@@ -27,7 +38,7 @@ class Model(Artifact):
             self.description = self.latest_model["ModelPackageDescription"]
 
         # All done
-        self.log.info(f"Model Initialized: {model_name}")
+        self.log.info(f"Model Initialized: {self.model_name}")
 
     def check(self) -> bool:
         """Does the model metadata exist in the AWS Metadata?"""
@@ -70,7 +81,7 @@ class Model(Artifact):
 
     def details(self) -> dict:
         """Additional Details about this Endpoint"""
-        details = self.info()
+        details = self.summary()
         details["model_package_group_arn"] = self.group_arn()
         details["model_package_arn"] = self.model_arn()
         return details

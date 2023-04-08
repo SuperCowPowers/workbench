@@ -19,7 +19,7 @@ class PandasToData(Transform):
         print('PandasToData: Publish a Pandas DataFrame to a SageWorks DataSource')
         print('Usage:')
         print('\tdf_to_data = PandasToData(output_uuid)')
-        print('\tdf_to_data.set_output_tags(["test", "small"]')
+        print('\tdf_to_data.set_output_tags(["test", "small"])')
         print('\tdf_to_data.set_output_meta({"sageworks_input": "DataFrame"}')
         print('\tdf_to_data.set_input(test_df)')
         print('\tdf_to_data.transform(delete_existing=True/False)')
