@@ -26,7 +26,7 @@ def models_layout(components: dict) -> html.Div:
                             dbc.Row(components["models_table"]),
                             dbc.Row(
                                 html.H3("Model Details"),
-                                style={"padding": "50px 0px 0px 0px"},
+                                style={"padding": "50px 0px 0px 20px"},
                             ),
                             dbc.Row(
                                 [
@@ -46,10 +46,10 @@ def models_layout(components: dict) -> html.Div:
                             dbc.Row(
                                 html.H3(
                                     "Feature Details",
-                                    style={"padding": "10px 0px 0px 0px"},
+                                    style={"padding": "20px 0px 0px 20px"},
                                 )
                             ),
-                            dbc.Row(components["feature_details"]),
+                            dbc.Row(components["feature_details"], style={"padding": "0px 0px 0px 20px"}),
                         ],
                         width=4,
                     ),

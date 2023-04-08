@@ -33,17 +33,27 @@ def create(df: pd.DataFrame = None, variant=1) -> dcc.Graph:
 
     color_map = px.colors.qualitative.Plotly
     if variant == 1:
-        log_x = True
-    else:
+        pass
+    elif variant == 2:
         gap_df['awesome'] = 50000-gap_df['awesome']
-        log_x = True
+    else:
+        gap_df.replace(
+            {
+                "Project X": "Training",
+                "Project Y": "Training",
+                "Project Z": "Training",
+                "Project A": "Testing",
+                "Project B": "Testing",
+            },
+            inplace=True,
+        )
     fig = px.scatter(
         gap_df,
         x="awesome",
         y="stuff",
         size="logS",
         color="Project",
-        log_x=log_x,
+        log_x=True,
         size_max=60,
         title="Cool Stuff",
         color_discrete_sequence=color_map,

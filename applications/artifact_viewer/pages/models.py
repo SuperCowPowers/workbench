@@ -42,7 +42,7 @@ models_table = table.create(
 model_df = fake_model_info.get_model_df()
 details = model_details.create(fake_model_info.get_model_details(0))
 c_matrix = confusion_matrix.create(fake_model_info.get_model_confusion_matrix(0))
-scatter = scatter_plot.create(model_df)
+scatter = scatter_plot.create(model_df, variant=3)
 my_feature_importance = feature_importance.create(fake_model_info.get_model_feature_importance(0))
 my_feature_details = feature_details.create(fake_model_info.get_model_feature_importance(0))
 components = {

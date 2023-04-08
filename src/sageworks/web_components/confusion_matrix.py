@@ -40,7 +40,7 @@ def create_figure(matrix: list[list[float]]):
     fig.add_annotation(
         dict(
             font=dict(size=14),
-            x=-0.25,
+            x=-0.20,
             y=0.5,
             showarrow=False,
             text="Actual value",
