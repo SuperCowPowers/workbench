@@ -20,11 +20,23 @@ except ImportError:
 
 
 class RDKitDescriptors(DataToFeaturesLight):
-    def __init__(self, input_uuid: str, output_uuid: str):
-        """RDKitDescriptors: Compute a Feature Set based on RDKit Descriptors"""
+    """RDKitDescriptors: Create a FeatureSet (RDKit Descriptors) from a DataSource"""
+
+    @classmethod
+    def info(cls):
+        """Print out usage information about RDKitDescriptors"""
+        print('RDKitDescriptors: Create a FeatureSet (RDKit Descriptors) from a DataSource')
+        print('Usage:')
+        print('\tto_features = RDKitDescriptors(data_uuid, feature_uuid)')
+        print('\tto_features.set_output_tags(["aqsol", "rdkit", "whatever"])')
+        print('\tto_features.set_output_meta({"sageworks_input": data_uuid})')
+        print('\tto_features.transform(delete_existing=True/False)')
+
+    def __init__(self, data_uuid: str, feature_uuid: str):
+        """RDKitDescriptors Initialization"""
 
         # Call superclass init
-        super().__init__(input_uuid, output_uuid)
+        super().__init__(data_uuid, feature_uuid)
 
         # Turn off warnings for RDKIT (revisit this)
         RDLogger.DisableLog("rdApp.*")
@@ -70,6 +82,4 @@ if __name__ == "__main__":
     """Exercise the RDKitDescriptors Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "aqsol_data"
-    output_uuid = "test_rdkit_features"
-    RDKitDescriptors(input_uuid, output_uuid).transform()
+    RDKitDescriptors("aqsol_data", "test_rdkit_features").transform()

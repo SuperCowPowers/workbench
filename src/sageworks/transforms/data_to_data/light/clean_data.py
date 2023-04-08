@@ -6,11 +6,23 @@ from sageworks.transforms.pandas_transforms import pandas_utils
 
 
 class CleanData(DataToDataLight):
-    def __init__(self, input_uuid: str, output_uuid: str):
-        """CleanData: Class for filtering, sub-setting, and value constraints on Light DataSources uses Pandas"""
+    """CleanData:Class for filtering, sub-setting, and value constraints on Light DataSources"""
+
+    @classmethod
+    def info(cls):
+        """Print out usage information about CleanData"""
+        print('CleanData: Class for filtering, sub-setting, and value constraints on Light DataSources')
+        print('Usage:')
+        print('\tclean_data = DataToDataLight(input_data_uuid, output_data_uuid)')
+        print('\tclean_data.set_output_tags(["abalone", "clean", "whatever"])')
+        print('\tclean_data.set_output_meta({"sageworks_input": input_data_uuid})')
+        print('\tclean_data.transform(delete_existing=True/False)')
+
+    def __init__(self, input_data_uuid: str, output_data_uuid: str):
+        """CleanData Initialization"""
 
         # Call superclass init
-        super().__init__(input_uuid, output_uuid)
+        super().__init__(input_data_uuid, output_data_uuid)
 
     def transform_impl(self, drop_na="any"):
         """Simple Clean Data, will improve later"""

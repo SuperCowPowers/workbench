@@ -8,11 +8,23 @@ from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
 
 
 class CSVToDataSource(Transform):
-    def __init__(self, input_uuid, output_uuid):
+    """CSVToDataSource: Class to move local CSV Files into a SageWorks DataSource"""
+
+    @classmethod
+    def info(cls):
+        """Print out usage information about CSVToDataSource"""
+        print('CSVToDataSource: Class to move local CSV Files into a SageWorks DataSource')
+        print('Usage:')
+        print('\tcsv_to_data = CSVToDataSource(csv_file_path, data_uuid)')
+        print('\tcsv_to_data.set_output_tags(["abalone", "csv", "whatever"])')
+        print('\tcsv_to_data.set_output_meta({"sageworks_input": csv_file_path})')
+        print('\tcsv_to_data.transform(delete_existing=True/False)')
+
+    def __init__(self, csv_file_path, data_uuid):
         """CSVToDataSource: Class to move local CSV Files into a SageWorks DataSource"""
 
         # Call superclass init
-        super().__init__(input_uuid, output_uuid)
+        super().__init__(csv_file_path, data_uuid)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.LOCAL_FILE

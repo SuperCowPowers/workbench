@@ -10,11 +10,23 @@ from sageworks.artifacts.models.model import Model
 
 
 class ModelToEndpoint(Transform):
-    def __init__(self, input_uuid: str, output_uuid: str):
-        """ModelToEndpoint: Deploy an Endpoint for a Model"""
+    """ModelToEndpoint: Deploy an Endpoint for a Model"""
+
+    @classmethod
+    def info(cls):
+        """Print out usage information about ModelToEndpoint"""
+        print('ModelToEndpoint: Deploy an Endpoint for a Model')
+        print('Usage:')
+        print('\tto_endpoint = ModelToEndpoint(model_uuid, endpoint_uuid)')
+        print('\tto_endpoint.set_output_tags(["aqsol", "public", "whatever"])')
+        print('\tto_endpoint.set_output_meta({"sageworks_input": model_uuid})')
+        print('\tto_endpoint.transform(delete_existing=True/False)')
+
+    def __init__(self, model_uuid: str, endpoint_uuid: str):
+        """ModelToEndpoint Initialization"""
 
         # Call superclass init
-        super().__init__(input_uuid, output_uuid)
+        super().__init__(model_uuid, endpoint_uuid)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.MODEL

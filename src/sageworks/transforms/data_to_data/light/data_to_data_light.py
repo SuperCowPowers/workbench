@@ -7,11 +7,23 @@ from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
 
 
 class DataToDataLight(Transform):
-    def __init__(self, input_uuid: str, output_uuid: str):
-        """DataToDataLight: Base Class for Light DataSource to DataSource using Pandas"""
+    """DataToDataLight: Base Class for Light DataSource to DataSource using Pandas"""
+
+    @classmethod
+    def info(cls):
+        """Print out usage information about DataToDataLight"""
+        print('DataToDataLight: Base Class for Light DataSource to DataSource using Pandas')
+        print('Usage:')
+        print('\tto_data = DataToDataLight(input_data_uuid, output_data_uuid)')
+        print('\tto_data.set_output_tags(["abalone", "public", "whatever"])')
+        print('\tto_data.set_output_meta({"sageworks_input": input_data_uuid})')
+        print('\tto_data.transform(delete_existing=True/False)')
+
+    def __init__(self, input_data_uuid: str, output_data_uuid: str):
+        """DataToDataLight Initialization"""
 
         # Call superclass init
-        super().__init__(input_uuid, output_uuid)
+        super().__init__(input_data_uuid, output_data_uuid)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.DATA_SOURCE

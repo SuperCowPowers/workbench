@@ -7,11 +7,23 @@ from sageworks.transforms.pandas_transforms.pandas_to_features import PandasToFe
 
 
 class DataToFeaturesLight(Transform):
-    def __init__(self, input_uuid: str, output_uuid: str):
-        """DataToFeaturesLight: Base Class for Light DataSource to DataSource using Pandas"""
+    """"DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas"""
+
+    @classmethod
+    def info(cls):
+        """Print out usage information about DataToFeaturesLight"""
+        print('DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas')
+        print('Usage:')
+        print('\tto_features = DataToFeaturesLight(data_uuid, feature_uuid)')
+        print('\tto_features.set_output_tags(["abalone", "public", "whatever"])')
+        print('\tto_features.set_output_meta({"sageworks_input": data_uuid})')
+        print('\tto_features.transform(id_column="id"/None, event_time_column="date"/None)')
+
+    def __init__(self, data_uuid: str, feature_uuid: str):
+        """DataToFeaturesLight Initialization"""
 
         # Call superclass init
-        super().__init__(input_uuid, output_uuid)
+        super().__init__(data_uuid, feature_uuid)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.DATA_SOURCE

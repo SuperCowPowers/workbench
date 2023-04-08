@@ -12,11 +12,24 @@ from sageworks.artifacts.models.model import Model
 
 
 class FeaturesToModel(Transform):
-    def __init__(self, input_uuid: str, output_uuid: str):
-        """FeaturesToModel: Train/Create a Model from a Feature Set"""
+    """FeaturesToModel: Train/Create a Model from a FeatureSet"""
+
+    @classmethod
+    def info(cls):
+        """Print out usage information about FeaturesToModel"""
+        print('FeaturesToModel: Train/Create a Model from a FeatureSet')
+        print('Usage:')
+        print('\tto_model = ModelToEndpoint(feature_uuid, model_uuid)')
+        print('\tto_model.set_output_tags(["aqsol", "public", "whatever"])')
+        print('\tto_model.set_output_meta({"sageworks_input": feature_uuid})')
+        print('\tto_model.transform(target="solubility", input_feature_list=<features>,')
+        print('\t                   model_type="regression/classification", delete_existing=True/False)')
+
+    def __init__(self, feature_uuid: str, model_uuid: str):
+        """FeaturesToModel Initialization"""
 
         # Call superclass init
-        super().__init__(input_uuid, output_uuid)
+        super().__init__(feature_uuid, model_uuid)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.FEATURE_SET
@@ -24,7 +37,7 @@ class FeaturesToModel(Transform):
         self.estimator = None
         self.model_script_dir = None
 
-    def generate_model_script(self, target: str, feature_list: list[str], model_type) -> str:
+    def generate_model_script(self, target: str, feature_list: list[str], model_type: str) -> str:
         """Fill in the model template with specific target and feature_list
         Args:
             target (str): Column name of the target variable
@@ -54,7 +67,7 @@ class FeaturesToModel(Transform):
             fp.write(xgb_script)
         return script_name
 
-    def transform_impl(self, target, input_feature_list=None, delete_existing=True):
+    def transform_impl(self, target, input_feature_list=None, model_type="regression", delete_existing=True):
         """Generic Features to Model: Note you should create a new class and inherit from
         this one to include specific logic for your Feature Set/Model"""
 
@@ -92,7 +105,7 @@ class FeaturesToModel(Transform):
             self.log.info(f"Guessed feature list: {feature_list}")
 
         # Generate our model script
-        script_path = self.generate_model_script(target, feature_list, "regression")
+        script_path = self.generate_model_script(target, feature_list, model_type)
 
         # Create a Sagemaker Model with our script
         self.estimator = SKLearn(
@@ -170,4 +183,4 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(input_uuid, output_uuid)
     to_model.set_output_tags(["aqsol", "public"])
     to_model.set_output_meta({"sageworks_input": input_uuid})
-    to_model.transform(target="solubility")
+    to_model.transform(target="solubility", model_type="regression")

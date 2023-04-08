@@ -7,11 +7,23 @@ from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
 
 
 class S3ToDataSourceLight(Transform):
-    def __init__(self, input_uuid, output_uuid):
-        """S3ToDataSourceLight: Class to move LIGHT S3 Files into a SageWorks DataSource"""
+    """S3ToDataSourceLight: Class to move LIGHT S3 Files into a SageWorks DataSource"""
+
+    @classmethod
+    def info(cls):
+        """Print out usage information about S3ToDataSourceLight"""
+        print('S3ToDataSourceLight: Class to move LIGHT S3 Files into a SageWorks DataSource')
+        print('Usage:')
+        print('\tto_data = S3ToDataSourceLight(s3_path, data_uuid)')
+        print('\tto_data.set_output_tags(["abalone", "whatever"])')
+        print('\tto_data.set_output_meta({"sageworks_input": s3_path})')
+        print('\tto_data.transform(delete_existing=True/False)')
+
+    def __init__(self, s3_path, data_uuid):
+        """S3ToDataSourceLight Initialization"""
 
         # Call superclass init
-        super().__init__(input_uuid, output_uuid)
+        super().__init__(s3_path, data_uuid)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.S3_OBJECT

@@ -39,6 +39,13 @@ class TransformOutput(Enum):
 
 
 class Transform(ABC):
+
+    @classmethod
+    @abstractmethod
+    def info(cls):
+        """Abstract Class Method: Return common usage information about the Transform"""
+        pass
+
     def __init__(self, input_uuid: str | None, output_uuid: str | None):
         """Transform: Abstract Base Class for all transforms in SageWorks"""
 
@@ -64,10 +71,6 @@ class Transform(ABC):
         # Make sure the AWS data catalog database exists
         self.ensure_aws_catalog_db(self.data_catalog_db)
         self.ensure_aws_catalog_db("sagemaker_featurestore")
-
-    def info(self):
-        """Abstract Method: Return some information about common uses of the Transform"""
-        print('Transform: Base Class for all transforms within SageWorks')
 
     @abstractmethod
     def transform_impl(self, **kwargs):

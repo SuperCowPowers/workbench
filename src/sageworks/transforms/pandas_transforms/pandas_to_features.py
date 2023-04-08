@@ -12,8 +12,21 @@ from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 
 class PandasToFeatures(Transform):
+    """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)"""
+
+    @classmethod
+    def info(cls):
+        """Print out usage information about PandasToFeatures"""
+        print('PandasToFeatures: Publish a Pandas DataFrame to a SageWorks FeatureSet')
+        print('Usage:')
+        print('\tto_features = PandasToFeatures(output_uuid)')
+        print('\tto_features.set_output_tags(["small", "public", "whatever"])')
+        print('\tto_features.set_output_meta({"sageworks_input": "DataFrame"})')
+        print('\tto_features.set_input(df, id_column="id"/None, event_time_column="date"/None)')
+        print('\tto_features.transform(delete_existing=True/False)')
+
     def __init__(self, output_uuid: str):
-        """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)"""
+        """PandasToFeatures Initialization"""
 
         # Call superclass init
         super().__init__(None, output_uuid)
