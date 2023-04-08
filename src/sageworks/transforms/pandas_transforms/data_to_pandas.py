@@ -7,7 +7,7 @@ from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 
 class DataToPandas(Transform):
-    def __init__(self, input_uuid=None):
+    def __init__(self, input_uuid: str):
         """DataToPandas: Class to transform a Data Source into a Pandas DataFrame"""
 
         # Call superclass init

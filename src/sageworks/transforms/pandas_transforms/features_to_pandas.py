@@ -7,7 +7,7 @@ from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 
 class FeaturesToPandas(Transform):
-    def __init__(self, feature_set_name: str = None):
+    def __init__(self, feature_set_name: str):
         """FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame"""
 
         # Call superclass init

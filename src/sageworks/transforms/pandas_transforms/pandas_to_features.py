@@ -12,7 +12,7 @@ from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 
 class PandasToFeatures(Transform):
-    def __init__(self, output_uuid):
+    def __init__(self, output_uuid: str):
         """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)"""
 
         # Call superclass init

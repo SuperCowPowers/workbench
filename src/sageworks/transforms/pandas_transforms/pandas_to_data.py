@@ -11,7 +11,7 @@ logging_setup()
 
 
 class PandasToData(Transform):
-    def __init__(self, output_uuid):
+    def __init__(self, output_uuid: str):
         """PandasToData: Class to publish a Pandas DataFrame as a DataSource"""
 
         # Call superclass init

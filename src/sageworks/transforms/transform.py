@@ -65,6 +65,10 @@ class Transform(ABC):
         self.ensure_aws_catalog_db(self.data_catalog_db)
         self.ensure_aws_catalog_db("sagemaker_featurestore")
 
+    def info(self):
+        """Abstract Method: Return some information about common uses of the Transform"""
+        print('Transform: Base Class for all transforms within SageWorks')
+
     @abstractmethod
     def transform_impl(self, **kwargs):
         """Abstract Method: Implement the Transformation from Input to Output"""
