@@ -10,17 +10,14 @@ from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
 
 class AthenaSource(DataSource):
-    """AthenaSource: SageWorks Data Source accessible through Athena"""
+    """AthenaSource: SageWorks Data Source accessible through Athena
 
-    @classmethod
-    def info(cls):
-        """Print out usage information about AthenaSource"""
-        print('AthenaSource: SageWorks Data Source accessible through Athena')
-        print('Usage:')
-        print('\tmy_data = AthenaSource(data_uuid, database="sageworks")')
-        print('\tmy_data.summary()')
-        print('\tmy_data.details()')
-        print('\tdf = my_data.query(f"select * from {data_uuid} limit 5")')
+       Common Usage:
+           my_data = AthenaSource(data_uuid, database="sageworks")
+           my_data.summary()
+           my_data.details()
+           df = my_data.query(f"select * from {data_uuid} limit 5")
+    """
 
     def __init__(self, data_uuid, database="sageworks"):
         """AthenaSource Initialization

@@ -16,16 +16,13 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class FeatureSet(Artifact):
-    """FeatureSet: SageWorks Feature Set accessible through Athena"""
+    """FeatureSet: SageWorks Feature Set accessible through Athena
 
-    @classmethod
-    def info(cls):
-        """Print out usage information about FeatureSet"""
-        print('FeatureSet: SageWorks FeatureSet Class')
-        print('Usage:')
-        print('\tmy_features = FeatureSet(feature_uuid)')
-        print('\tmy_features.summary()')
-        print('\tmy_features.details()')
+       Common Usage:
+           my_features = FeatureSet(feature_uuid)
+           my_features.summary()
+           my_features.details()
+    """
 
     def __init__(self, feature_uuid):
         """FeatureSet Initialization

@@ -7,16 +7,13 @@ from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 
 class DataToPandas(Transform):
-    """DataToPandas: Class to transform a Data Source into a Pandas DataFrame"""
+    """DataToPandas: Class to transform a Data Source into a Pandas DataFrame
 
-    @classmethod
-    def info(cls):
-        """Print out usage information about DataToPandas"""
-        print('DataToPandas: Transform a DataSource into a local Pandas DataFrame')
-        print('Usage:')
-        print('\tdata_to_df = DataToPandas(data_source_uuid)')
-        print('\tdata_to_df.transform(max_rows=<optional max rows to sample>)')
-        print('\tmy_df = data_to_df.get_output()')
+       Common Usage:
+           data_to_df = DataToPandas(data_source_uuid)
+           data_to_df.transform(max_rows=<optional max rows to sample>)
+           my_df = data_to_df.get_output()
+    """
 
     def __init__(self, input_uuid: str):
         """DataToPandas Initialization"""

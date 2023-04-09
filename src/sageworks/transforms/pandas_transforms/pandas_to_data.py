@@ -11,18 +11,15 @@ logging_setup()
 
 
 class PandasToData(Transform):
-    """PandasToData: Class to publish a Pandas DataFrame as a DataSource"""
+    """PandasToData: Class to publish a Pandas DataFrame as a DataSource
 
-    @classmethod
-    def info(cls):
-        """Print out usage information about PandasToData"""
-        print('PandasToData: Publish a Pandas DataFrame to a SageWorks DataSource')
-        print('Usage:')
-        print('\tdf_to_data = PandasToData(output_uuid)')
-        print('\tdf_to_data.set_output_tags(["test", "small"])')
-        print('\tdf_to_data.set_output_meta({"sageworks_input": "DataFrame"}')
-        print('\tdf_to_data.set_input(test_df)')
-        print('\tdf_to_data.transform(delete_existing=True/False)')
+       Common Usage:
+           df_to_data = PandasToData(output_uuid)
+           df_to_data.set_output_tags(["test", "small"])
+           df_to_data.set_output_meta({"sageworks_input": "DataFrame"})
+           df_to_data.set_input(test_df)
+           df_to_data.transform(delete_existing=True/False)
+    """
 
     def __init__(self, output_uuid: str):
         """PandasToData Initialization"""

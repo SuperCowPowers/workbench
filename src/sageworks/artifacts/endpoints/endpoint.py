@@ -15,16 +15,13 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class Endpoint(Artifact):
-    """Endpoint: SageWorks Endpoint Class"""
+    """Endpoint: SageWorks Endpoint Class
 
-    @classmethod
-    def info(cls):
-        """Print out usage information about FeatureSet"""
-        print('Endpoint: SageWorks Endpoint Class')
-        print('Usage:')
-        print('\tmy_endpoint = Endpoint(endpoint_uuid)')
-        print('\tmy_endpoint.summary()')
-        print('\tmy_endpoint.details()')
+       Common Usage:
+           my_endpoint = Endpoint(endpoint_uuid)
+           my_endpoint.summary()
+           my_endpoint.details()
+    """
 
     def __init__(self, endpoint_uuid):
         """Endpoint Initialization

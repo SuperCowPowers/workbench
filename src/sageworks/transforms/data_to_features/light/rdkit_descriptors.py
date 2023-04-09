@@ -20,17 +20,14 @@ except ImportError:
 
 
 class RDKitDescriptors(DataToFeaturesLight):
-    """RDKitDescriptors: Create a FeatureSet (RDKit Descriptors) from a DataSource"""
+    """RDKitDescriptors: Create a FeatureSet (RDKit Descriptors) from a DataSource
 
-    @classmethod
-    def info(cls):
-        """Print out usage information about RDKitDescriptors"""
-        print('RDKitDescriptors: Create a FeatureSet (RDKit Descriptors) from a DataSource')
-        print('Usage:')
-        print('\tto_features = RDKitDescriptors(data_uuid, feature_uuid)')
-        print('\tto_features.set_output_tags(["aqsol", "rdkit", "whatever"])')
-        print('\tto_features.set_output_meta({"sageworks_input": data_uuid})')
-        print('\tto_features.transform(delete_existing=True/False)')
+       Common Usage:
+           to_features = RDKitDescriptors(data_uuid, feature_uuid)
+           to_features.set_output_tags(["aqsol", "rdkit", "whatever"])
+           to_features.set_output_meta({"sageworks_input": data_uuid})
+           to_features.transform(delete_existing=True/False)
+    """
 
     def __init__(self, data_uuid: str, feature_uuid: str):
         """RDKitDescriptors Initialization"""

@@ -10,17 +10,14 @@ from sageworks.artifacts.models.model import Model
 
 
 class ModelToEndpoint(Transform):
-    """ModelToEndpoint: Deploy an Endpoint for a Model"""
+    """ModelToEndpoint: Deploy an Endpoint for a Model
 
-    @classmethod
-    def info(cls):
-        """Print out usage information about ModelToEndpoint"""
-        print('ModelToEndpoint: Deploy an Endpoint for a Model')
-        print('Usage:')
-        print('\tto_endpoint = ModelToEndpoint(model_uuid, endpoint_uuid)')
-        print('\tto_endpoint.set_output_tags(["aqsol", "public", "whatever"])')
-        print('\tto_endpoint.set_output_meta({"sageworks_input": model_uuid})')
-        print('\tto_endpoint.transform(delete_existing=True/False)')
+       Common Usage:
+           to_endpoint = ModelToEndpoint(model_uuid, endpoint_uuid)
+           to_endpoint.set_output_tags(["aqsol", "public", "whatever"])
+           to_endpoint.set_output_meta({"sageworks_input": model_uuid})
+           to_endpoint.transform(delete_existing=True/False)
+    """
 
     def __init__(self, model_uuid: str, endpoint_uuid: str):
         """ModelToEndpoint Initialization"""

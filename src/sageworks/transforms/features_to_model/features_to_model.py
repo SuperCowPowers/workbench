@@ -12,18 +12,15 @@ from sageworks.artifacts.models.model import Model
 
 
 class FeaturesToModel(Transform):
-    """FeaturesToModel: Train/Create a Model from a FeatureSet"""
+    """FeaturesToModel: Train/Create a Model from a FeatureSet
 
-    @classmethod
-    def info(cls):
-        """Print out usage information about FeaturesToModel"""
-        print('FeaturesToModel: Train/Create a Model from a FeatureSet')
-        print('Usage:')
-        print('\tto_model = ModelToEndpoint(feature_uuid, model_uuid)')
-        print('\tto_model.set_output_tags(["aqsol", "public", "whatever"])')
-        print('\tto_model.set_output_meta({"sageworks_input": feature_uuid})')
-        print('\tto_model.transform(target="solubility", input_feature_list=<features>,')
-        print('\t                   model_type="regression/classification", delete_existing=True/False)')
+       Common Usage:
+           to_model = FeaturesToModel(feature_uuid, model_uuid)
+           to_model.set_output_tags(["aqsol", "public", "whatever"])
+           to_model.set_output_meta({"sageworks_input": feature_uuid})
+           to_model.transform(target="solubility", input_feature_list=<features>,
+                              model_type="regression/classification", delete_existing=True/False)
+    """
 
     def __init__(self, feature_uuid: str, model_uuid: str):
         """FeaturesToModel Initialization"""

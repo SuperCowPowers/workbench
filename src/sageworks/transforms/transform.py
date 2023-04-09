@@ -39,15 +39,11 @@ class TransformOutput(Enum):
 
 
 class Transform(ABC):
-
-    @classmethod
-    @abstractmethod
-    def info(cls):
-        """Abstract Class Method: Return common usage information about the Transform"""
-        pass
+    """Transform: Base Class for all transforms within SageWorks. Inherited Classes
+       must implement the abstract transform_impl() method"""
 
     def __init__(self, input_uuid: str | None, output_uuid: str | None):
-        """Transform: Abstract Base Class for all transforms in SageWorks"""
+        """Transform Initialization"""
 
         self.log = logging.getLogger(__name__)
         self.input_type = None

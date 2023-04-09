@@ -7,16 +7,13 @@ from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 
 class FeaturesToPandas(Transform):
-    """"FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame"""
+    """FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame
 
-    @classmethod
-    def info(cls):
-        """Print out usage information about FeaturesToPandas"""
-        print('FeaturesToPandas: Transform a FeatureSet into a local Pandas DataFrame')
-        print('Usage:')
-        print('\tfeature_to_df = FeaturesToPandas(data_source_uuid)')
-        print('\tfeature_to_df.transform(max_rows=<optional max rows to sample>)')
-        print('\tmy_df = feature_to_df.get_output()')
+       Common Usage:
+           feature_to_df = FeaturesToPandas(data_source_uuid)
+           feature_to_df.transform(max_rows=<optional max rows to sample>)
+           my_df = feature_to_df.get_output()
+    """
 
     def __init__(self, feature_set_name: str):
         """FeaturesToPandas Initialization"""

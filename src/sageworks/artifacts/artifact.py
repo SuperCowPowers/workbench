@@ -14,6 +14,8 @@ logging_setup()
 
 
 class Artifact(ABC):
+    """Artifact: Abstract Base Class for all Artifact classes in SageWorks.
+       Artifacts simply reflect and aggregate one or more AWS Services"""
 
     # Class attributes
     log = logging.getLogger(__name__)
@@ -26,15 +28,8 @@ class Artifact(ABC):
     # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
     aws_meta = AWSServiceBroker()
 
-    @classmethod
-    @abstractmethod
-    def info(cls):
-        """Abstract Class Method: Return common usage information about the Artifact"""
-        pass
-
     def __init__(self, uuid):
-        """Artifact: Abstract Base Class for all Artifact classes in SageWorks.
-        Artifacts simply reflect and aggregate one or more AWS Services"""
+        """Artifact Initialization"""
         self.uuid = uuid
         self.log = logging.getLogger(__name__)
 

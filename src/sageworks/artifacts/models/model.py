@@ -8,16 +8,13 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
 class Model(Artifact):
-    """Model: SageWorks Model Class"""
+    """Model: SageWorks Model Class
 
-    @classmethod
-    def info(cls):
-        """Print out usage information about the Model Class"""
-        print('Model: SageWorks Model Class')
-        print('Usage:')
-        print('\tmy_model = Model(model_uuid)')
-        print('\tmy_model.summary()')
-        print('\tmy_model.details()')
+       Common Usage:
+           my_model = Model(model_uuid)
+           my_model.summary()
+           my_model.details()
+    """
 
     def __init__(self, model_uuid):
         """Model Initialization
