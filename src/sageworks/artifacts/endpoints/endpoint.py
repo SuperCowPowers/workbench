@@ -19,8 +19,10 @@ class Endpoint(Artifact):
 
        Common Usage:
            my_endpoint = Endpoint(endpoint_uuid)
-           my_endpoint.summary()
-           my_endpoint.details()
+           prediction_df = my_endpoint.predict(test_df)
+           metrics = my_endpoint.performance_metrics(target_column, prediction_df)
+           for metric, value in metrics.items():
+               print(f"{metric}: {value:0.3f}")
     """
 
     def __init__(self, endpoint_uuid):
@@ -175,6 +177,19 @@ class Endpoint(Artifact):
         # Fill in more details here if needed
         return details
 
+    def performance_metrics(self, target: str, prediction_df: pd.DataFrame) -> dict:
+        """Compute the performance metrics for this Endpoint"""
+
+        # Compute the metrics
+        metrics = {
+            "MAE": mean_absolute_error(prediction_df[target], prediction_df["prediction"]),
+            "RMSE": sqrt(mean_squared_error(prediction_df[target], prediction_df["prediction"])),
+            "R2": r2_score(prediction_df[target], prediction_df["prediction"]),
+        }
+
+        # Return the metrics
+        return metrics
+
     def delete(self):
         """Delete the Endpoint and Endpoint Config"""
 
@@ -221,14 +236,11 @@ if __name__ == "__main__":
     print(feature_df)
 
     # Okay now run inference against our Features DataFrame
-    result_df = my_endpoint.predict(feature_df)
-    print(result_df)
+    prediction_df = my_endpoint.predict(feature_df)
+    print(prediction_df)
 
-    target = "class_number_of_rings"
-    result_df[target] = result_df[target].astype(pd.Float64Dtype())
-    rmse = sqrt(mean_squared_error(result_df[target], result_df["predictions"]))
-    mae = mean_absolute_error(result_df[target], result_df["predictions"])
-    r2 = r2_score(result_df[target], result_df["predictions"])
-    print(f"RMSE: {rmse:.3f}")
-    print(f"MAE: {mae:.3f}")
-    print(f"R2 Score: {r2:.3f}")
+    # Compute performance metrics for out test predictions
+    target_column = "class_number_of_rings"
+    metrics = my_endpoint.performance_metrics(target_column, prediction_df)
+    for metric, value in metrics.items():
+        print(f"{metric}: {value:0.3f}")

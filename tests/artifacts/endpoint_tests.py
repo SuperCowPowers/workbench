@@ -42,14 +42,11 @@ def test():
     result_df = my_endpoint.predict(feature_df)
     print(result_df)
 
-    target = "class_number_of_rings"
-    result_df[target] = result_df[target].astype(pd.Float64Dtype())
-    rmse = sqrt(mean_squared_error(result_df[target], result_df["predictions"]))
-    mae = mean_absolute_error(result_df[target], result_df["predictions"])
-    r2 = r2_score(result_df[target], result_df["predictions"])
-    print(f"RMSE: {rmse:.3f}")
-    print(f"MAE: {mae:.3f}")
-    print(f"R2 Score: {r2:.3f}")
+    # Compute performance metrics for our test predictions
+    target_column = "class_number_of_rings"
+    metrics = my_endpoint.performance_metrics(target_column, prediction_df)
+    for metric, value in metrics.items():
+        print(f"{metric}: {value:0.3f}")
 
 
 if __name__ == "__main__":

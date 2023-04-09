@@ -123,7 +123,7 @@ def predict_fn(df, model):
 
     # Predict the features against our XGB Model
     predictions = model.predict(df[features])
-    df['predictions'] = predictions
+    df['prediction'] = predictions
 
     # Does our model have a 'predict_proba' method? If so add that to the DataFrame as well
     if getattr(model, 'predict_proba', None):
