@@ -13,7 +13,7 @@ class CSVToDataSource(Transform):
     Common Usage:
         csv_to_data = CSVToDataSource(csv_file_path, data_uuid)
         csv_to_data.set_output_tags(["abalone", "csv", "whatever"])
-        csv_to_data.transform(delete_existing=True/False)
+        csv_to_data.transform()
     """
 
     def __init__(self, csv_file_path, data_uuid):

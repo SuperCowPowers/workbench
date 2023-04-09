@@ -10,9 +10,9 @@ class S3ToDataSourceLight(Transform):
     """S3ToDataSourceLight: Class to move LIGHT S3 Files into a SageWorks DataSource
 
     Common Usage:
-        to_data = S3ToDataSourceLight(s3_path, data_uuid)
-        to_data.set_output_tags(["abalone", "whatever"])
-        to_data.transform(delete_existing=True/False)
+        s3_to_data = S3ToDataSourceLight(s3_path, data_uuid)
+        s3_to_data.set_output_tags(["abalone", "whatever"])
+        s3_to_data.transform()
     """
 
     def __init__(self, s3_path, data_uuid):
