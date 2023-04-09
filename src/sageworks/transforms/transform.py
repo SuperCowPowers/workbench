@@ -49,9 +49,9 @@ class Transform(ABC):
         self.input_type = None
         self.output_type = None
         self.output_tags = ""
-        self.output_meta = dict()
         self.input_uuid = input_uuid
         self.output_uuid = output_uuid
+        self.output_meta = {'sageworks_input': self.input_uuid}
 
         # FIXME: We should have this come from AWS or Config
         self.data_catalog_db = "sageworks"
@@ -90,11 +90,11 @@ class Transform(ABC):
         else:
             self.output_tags = tags
 
-    def set_output_meta(self, meta: dict):
-        """Set the metadata that will be associated with the output object
+    def add_output_meta(self, meta: dict):
+        """Add additional metadata that will be associated with the output artifact
         Args:
             meta (dict): A dictionary of metadata"""
-        self.output_meta = meta
+        self.output_meta = self.output_meta | meta
 
     @staticmethod
     def convert_to_aws_tags(metadata: dict):

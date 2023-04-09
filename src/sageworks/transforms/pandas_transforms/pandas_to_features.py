@@ -17,7 +17,6 @@ class PandasToFeatures(Transform):
     Common Usage:
         to_features = PandasToFeatures(output_uuid)
         to_features.set_output_tags(["abalone", "public", "whatever"])
-        to_features.set_output_meta({"sageworks_input": "DataFrame"})
         to_features.set_input(df, id_column="id"/None, event_time_column="date"/None)
         to_features.transform(delete_existing=True/False)
     """
@@ -190,7 +189,6 @@ if __name__ == "__main__":
     df_to_features = PandasToFeatures("test_feature_set")
     df_to_features.set_input(fake_df, id_column="id", event_time_column="date")
     df_to_features.set_output_tags(["test", "small"])
-    df_to_features.set_output_meta({"sageworks_input": "DataFrame"})
 
     # Store this dataframe as a SageWorks Feature Set
     df_to_features.transform()

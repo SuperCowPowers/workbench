@@ -12,7 +12,6 @@ class S3ToDataSourceLight(Transform):
     Common Usage:
         to_data = S3ToDataSourceLight(s3_path, data_uuid)
         to_data.set_output_tags(["abalone", "whatever"])
-        to_data.set_output_meta({"sageworks_input": s3_path})
         to_data.transform(delete_existing=True/False)
     """
 
@@ -49,7 +48,7 @@ class S3ToDataSourceLight(Transform):
         pandas_to_data = PandasToData(self.output_uuid)
         pandas_to_data.set_input(df)
         pandas_to_data.set_output_tags(self.output_tags)
-        pandas_to_data.set_output_meta(self.output_meta)
+        pandas_to_data.add_output_meta(self.output_meta)
         pandas_to_data.transform()
 
 
@@ -61,7 +60,6 @@ if __name__ == "__main__":
     output_uuid = "aqsol_data"
     my_loader = S3ToDataSourceLight(input_path, output_uuid)
     my_loader.set_output_tags(["aqsol", "public"])
-    my_loader.set_output_meta({"sageworks_input": input_path})
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()

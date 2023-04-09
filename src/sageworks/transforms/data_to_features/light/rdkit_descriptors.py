@@ -25,7 +25,6 @@ class RDKitDescriptors(DataToFeaturesLight):
     Common Usage:
         to_features = RDKitDescriptors(data_uuid, feature_uuid)
         to_features.set_output_tags(["aqsol", "rdkit", "whatever"])
-        to_features.set_output_meta({"sageworks_input": data_uuid})
         to_features.transform(delete_existing=True/False)
     """
 

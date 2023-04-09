@@ -15,7 +15,6 @@ def test():
     output_uuid = "test_feature_set"
     data_to_features = DataToFeaturesLight(input_uuid, output_uuid)
     data_to_features.set_output_tags(["test", "small"])
-    data_to_features.set_output_meta({"sageworks_input": input_uuid})
     data_to_features.transform(id_column="id", event_time_column="date", delete_existing=True)
 
 

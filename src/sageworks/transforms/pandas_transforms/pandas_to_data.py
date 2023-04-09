@@ -16,7 +16,6 @@ class PandasToData(Transform):
     Common Usage:
         df_to_data = PandasToData(output_uuid)
         df_to_data.set_output_tags(["test", "small"])
-        df_to_data.set_output_meta({"sageworks_input": "DataFrame"})
         df_to_data.set_input(test_df)
         df_to_data.transform(delete_existing=True/False)
     """
@@ -79,7 +78,6 @@ if __name__ == "__main__":
     df_to_data = PandasToData(output_uuid)
     df_to_data.set_input(test_df)
     df_to_data.set_output_tags(["test", "small"])
-    df_to_data.set_output_meta({"sageworks_input": "DataFrame"})
 
     # Store this data into a SageWorks DataSource
     df_to_data.transform()

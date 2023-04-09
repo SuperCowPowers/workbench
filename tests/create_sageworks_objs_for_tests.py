@@ -20,23 +20,19 @@ if __name__ == "__main__":
     # Create the test_data DataSource
     my_loader = CSVToDataSource(test_data_path, "test_data")
     my_loader.set_output_tags("test:small")
-    my_loader.set_output_meta({"sageworks_input": str(test_data_path)})
     my_loader.transform()
 
     # Create the abalone_data DataSource
     my_loader = CSVToDataSource(abalone_data_path, "abalone_data")
     my_loader.set_output_tags("abalone:public")
-    my_loader.set_output_meta({"sageworks_input": str(abalone_data_path)})
     my_loader.transform()
 
     # Create the test_feature_set FeatureSet
     data_to_features = DataToFeaturesLight("test_data", "test_feature_set")
     data_to_features.set_output_tags(["test", "small"])
-    data_to_features.set_output_meta({"sageworks_input": "test_data"})
     data_to_features.transform(id_column="id", event_time_column="date")
 
     # Create the abalone_feature_set FeatureSet
     data_to_features = DataToFeaturesLight("abalone_data", "abalone_feature_set")
     data_to_features.set_output_tags(["abalone", "public"])
-    data_to_features.set_output_meta({"sageworks_input": "abalone_data"})
     data_to_features.transform()

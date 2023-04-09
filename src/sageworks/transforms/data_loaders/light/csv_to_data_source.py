@@ -13,7 +13,6 @@ class CSVToDataSource(Transform):
     Common Usage:
         csv_to_data = CSVToDataSource(csv_file_path, data_uuid)
         csv_to_data.set_output_tags(["abalone", "csv", "whatever"])
-        csv_to_data.set_output_meta({"sageworks_input": csv_file_path})
         csv_to_data.transform(delete_existing=True/False)
     """
 
@@ -48,7 +47,7 @@ class CSVToDataSource(Transform):
         pandas_to_data = PandasToData(self.output_uuid)
         pandas_to_data.set_input(df)
         pandas_to_data.set_output_tags(self.output_tags)
-        pandas_to_data.set_output_meta(self.output_meta)
+        pandas_to_data.add_output_meta(self.output_meta)
         pandas_to_data.transform()
 
 
@@ -63,7 +62,6 @@ if __name__ == "__main__":
     # Create my Data Loader
     my_loader = CSVToDataSource(data_path, "test_data")
     my_loader.set_output_tags("test:small")
-    my_loader.set_output_meta({"sageworks_input": str(data_path)})
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()

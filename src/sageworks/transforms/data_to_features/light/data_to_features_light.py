@@ -12,7 +12,6 @@ class DataToFeaturesLight(Transform):
     Common Usage:
         to_features = DataToFeaturesLight(data_uuid, feature_uuid)
         to_features.set_output_tags(["abalone", "public", "whatever"])
-        to_features.set_output_meta({"sageworks_input": data_uuid})
         to_features.transform(id_column="id"/None, event_time_column="date"/None)
     """
 
@@ -44,7 +43,7 @@ class DataToFeaturesLight(Transform):
         output_features = PandasToFeatures(self.output_uuid)
         output_features.set_input(self.output_df, id_column=id_column, event_time_column=event_time_column)
         output_features.set_output_tags(self.output_tags)
-        output_features.set_output_meta(self.output_meta)
+        output_features.add_output_meta(self.output_meta)
         output_features.transform(delete_existing=delete_existing)
 
 
@@ -56,6 +55,5 @@ if __name__ == "__main__":
     output_uuid = "aqsol_feature_set"
     data_to_features = DataToFeaturesLight(input_uuid, output_uuid)
     data_to_features.set_output_tags(["aqsol", "public"])
-    data_to_features.set_output_meta({"sageworks_input": input_uuid})
     # data_to_features.transform(id_column="id", event_time_column="date")
     data_to_features.transform(id_column="id")

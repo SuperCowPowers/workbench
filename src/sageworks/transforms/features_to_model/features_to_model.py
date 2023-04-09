@@ -17,7 +17,6 @@ class FeaturesToModel(Transform):
     Common Usage:
         to_model = FeaturesToModel(feature_uuid, model_uuid)
         to_model.set_output_tags(["aqsol", "public", "whatever"])
-        to_model.set_output_meta({"sageworks_input": feature_uuid})
         to_model.transform(target="solubility", input_feature_list=<features>,
                            model_type="regression/classification", delete_existing=True/False)
     """
@@ -171,7 +170,6 @@ if __name__ == "__main__":
     output_uuid = "abalone-regression"
     to_model = FeaturesToModel(input_uuid, output_uuid)
     to_model.set_output_tags(["abalone", "public"])
-    to_model.set_output_meta({"sageworks_input": input_uuid})
     to_model.transform(target="class_number_of_rings")
     """
 
@@ -179,5 +177,4 @@ if __name__ == "__main__":
     output_uuid = "aqsol-regression"
     to_model = FeaturesToModel(input_uuid, output_uuid)
     to_model.set_output_tags(["aqsol", "public"])
-    to_model.set_output_meta({"sageworks_input": input_uuid})
     to_model.transform(target="solubility", model_type="regression")
