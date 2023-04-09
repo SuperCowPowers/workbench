@@ -26,7 +26,7 @@ feature_sets_table = table.create(
     feature_sets_summary,
     header_color="rgb(100, 100, 60)",
     row_select="single",
-    markdown_columns=["Feature Group"]
+    markdown_columns=["Feature Group"],
 )
 
 # Create a fake scatter plot
@@ -34,11 +34,7 @@ scatter1 = scatter_plot.create()
 scatter2 = scatter_plot.create(variant=2)
 
 # Create our components
-components = {
-    "feature_sets_details": feature_sets_table,
-    "scatter1": scatter1,
-    "scatter2": scatter2
-}
+components = {"feature_sets_details": feature_sets_table, "scatter1": scatter1, "scatter2": scatter2}
 
 # Setup our callbacks/connections
 app = dash.get_app()

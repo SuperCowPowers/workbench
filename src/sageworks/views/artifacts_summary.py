@@ -81,7 +81,6 @@ class ArtifactsSummary(View):
         data = self.service_info[ServiceCategory.INCOMING_DATA]
         data_summary = []
         for name, info in data.items():
-
             # Get the size of the S3 Storage Object(s)
             size = info.get("ContentLength") / 1_000_000
             summary = {
@@ -103,7 +102,6 @@ class ArtifactsSummary(View):
         data = self.service_info[ServiceCategory.DATA_CATALOG]
         data_summary = []
         for name, info in data["sageworks"].items():  # Just the sageworks database (not sagemaker_featurestore)
-
             # Get the size of the S3 Storage Object(s)
             size = self.s3_objects_size(info["StorageDescriptor"]["Location"])
             summary = {
@@ -151,7 +149,6 @@ class ArtifactsSummary(View):
         data = self.service_info[ServiceCategory.FEATURE_STORE]
         data_summary = []
         for feature_group, group_info in data.items():
-
             # Get the tags for this Feature Group
             arn = group_info["FeatureGroupArn"]
             sageworks_meta = self.artifact_meta(arn)
@@ -201,7 +198,6 @@ class ArtifactsSummary(View):
 
             # Get Summary information for each model in the model_list
             for model in model_list:
-
                 # Get the tags for this Model Group
                 model_group_arn = model["ModelPackageGroupArn"]
                 sageworks_meta = self.artifact_meta(model_group_arn)
@@ -249,7 +245,6 @@ class ArtifactsSummary(View):
 
         # Get Summary information for each endpoint
         for endpoint, endpoint_info in data.items():
-
             # Get the tags for this Model Group
             endpoint_arn = endpoint_info["EndpointArn"]
             sageworks_meta = self.artifact_meta(endpoint_arn)
@@ -300,7 +295,6 @@ class ArtifactsSummary(View):
 
 
 if __name__ == "__main__":
-
     # Collect args from the command line
     parser = argparse.ArgumentParser()
     args, commands = parser.parse_known_args()

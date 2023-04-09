@@ -12,11 +12,11 @@ from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 class AthenaSource(DataSource):
     """AthenaSource: SageWorks Data Source accessible through Athena
 
-       Common Usage:
-           my_data = AthenaSource(data_uuid, database="sageworks")
-           my_data.summary()
-           my_data.details()
-           df = my_data.query(f"select * from {data_uuid} limit 5")
+    Common Usage:
+        my_data = AthenaSource(data_uuid, database="sageworks")
+        my_data.summary()
+        my_data.details()
+        df = my_data.query(f"select * from {data_uuid} limit 5")
     """
 
     def __init__(self, data_uuid, database="sageworks"):

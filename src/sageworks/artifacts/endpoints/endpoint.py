@@ -17,12 +17,12 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 class Endpoint(Artifact):
     """Endpoint: SageWorks Endpoint Class
 
-       Common Usage:
-           my_endpoint = Endpoint(endpoint_uuid)
-           prediction_df = my_endpoint.predict(test_df)
-           metrics = my_endpoint.performance_metrics(target_column, prediction_df)
-           for metric, value in metrics.items():
-               print(f"{metric}: {value:0.3f}")
+    Common Usage:
+        my_endpoint = Endpoint(endpoint_uuid)
+        prediction_df = my_endpoint.predict(test_df)
+        metrics = my_endpoint.performance_metrics(target_column, prediction_df)
+        for metric, value in metrics.items():
+            print(f"{metric}: {value:0.3f}")
     """
 
     def __init__(self, endpoint_uuid):
@@ -116,7 +116,6 @@ class Endpoint(Artifact):
 
         except botocore.exceptions.ClientError as err:
             if err.response["Error"]["Code"] == "ModelError":  # Model Error
-
                 # Base case: DataFrame with 1 Row
                 if len(feature_df) == 1:
                     # If we don't have ANY known good results we're kinda screwed

@@ -9,7 +9,7 @@ def create_markdown(feature_info: dict):
     feature_list = sorted(feature_info.items(), key=lambda x: x[1], reverse=True)
 
     markdown = ""
-    for (feature, value) in feature_list:
+    for feature, value in feature_list:
         markdown += (
             f"- **{feature}** ({value}): Cool stuff about descriptor {feature} that we get later "
             "[{feature}](https://www.rdkit.org/docs/source/rdkit.Chem.Crippen.html#rdkit.Chem.Crippen.MolLogP)\n"

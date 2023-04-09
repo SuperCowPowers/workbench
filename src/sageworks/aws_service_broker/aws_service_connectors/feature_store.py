@@ -10,7 +10,7 @@ from sageworks.aws_service_broker.aws_service_connectors.connector import Connec
 
 class FeatureStore(Connector):
     def __init__(self):
-        """ "FeatureStore: Helper Class for the AWS Feature Store Service"""
+        """FeatureStore: Helper Class for the AWS Feature Store Service"""
         # Call SuperClass Initialization
         super().__init__()
 

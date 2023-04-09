@@ -30,7 +30,6 @@ class ServiceCategory(Enum):
 
 
 class AWSServiceBroker:
-
     # Note: This database_scope is a list of databases that we want to pull metadata from
     #       At some point, we should pull this from a config file.
     database_scope = ["sageworks", "sagemaker_featurestore"]
@@ -48,7 +47,7 @@ class AWSServiceBroker:
 
     @classmethod
     def __class_init__(cls, database_scope):
-        """ "AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
+        """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
         cls.log = logging.getLogger(__file__)
 
         # FIXME: This should be pulled from a config file

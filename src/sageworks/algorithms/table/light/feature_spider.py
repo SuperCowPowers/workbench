@@ -10,7 +10,6 @@ from sklearn.preprocessing import StandardScaler
 # Feature Spider Class
 class FeatureSpider:
     def __init__(self, df: pd.DataFrame, features: list, id_column: str, target: str):
-
         # Check for expected columns (used later)
         for column in [id_column, target] + features:
             if column not in df.columns:
@@ -157,7 +156,6 @@ class FeatureSpider:
             # Note: by definition this observation will be in the neighbors so account for that
             my_htg_set = set()
             for n_index, dist, target in zip(neigh_indexes, neigh_distances, target_values):
-
                 # Skip myself
                 if n_index == my_index:
                     continue
@@ -165,7 +163,6 @@ class FeatureSpider:
                 # Compute target differences `within_distance` feature space
                 _diff = abs(my_target - target)
                 if dist <= within_distance and _diff > target_diff:
-
                     # Update the individual HTG set for this observation
                     my_htg_set.add((n_index, dist, _diff, target))
 

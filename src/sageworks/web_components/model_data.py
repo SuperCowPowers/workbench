@@ -4,7 +4,7 @@ import json
 
 
 class ModelData:
-    """"ModelData Class for storing and managing the data associated with model"""
+    """ModelData Class for storing and managing the data associated with model"""
 
     def __init__(self, path):
         self._data = pd.read_csv(path, parse_dates=["date_created"])

@@ -40,7 +40,6 @@ def examples(df, non_numeric_columns):
 
 
 def info(df):
-
     # Get the number of unique values for each column
     s0 = column_dtypes(df)
     s1 = df.count()

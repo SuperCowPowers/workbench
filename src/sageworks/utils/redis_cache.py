@@ -35,8 +35,7 @@ class RedisCache:
 
     # Open the Redis connection (class object)
     log.info(f"Opening Redis connection to: {host}:{port}...")
-    redis_db = redis.Redis(host, port=port, password=password,
-                           charset="utf-8", decode_responses=True, db=0)
+    redis_db = redis.Redis(host, port=port, password=password, charset="utf-8", decode_responses=True, db=0)
     try:
         redis_db.ping()
         log.info(f"Redis connection success: {host}:{port}...")

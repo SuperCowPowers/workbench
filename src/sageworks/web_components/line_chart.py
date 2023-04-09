@@ -9,7 +9,7 @@ def create(df: pd.DataFrame = None) -> dcc.Graph:
     """Create a Line Chart"""
 
     df = px.data.stocks(indexed=True) - 1
-    df.columns.name = 'Endpoints'
+    df.columns.name = "Endpoints"
     # TEMP
     df.rename(
         {

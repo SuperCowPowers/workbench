@@ -13,12 +13,12 @@ logging_setup()
 class PandasToData(Transform):
     """PandasToData: Class to publish a Pandas DataFrame as a DataSource
 
-       Common Usage:
-           df_to_data = PandasToData(output_uuid)
-           df_to_data.set_output_tags(["test", "small"])
-           df_to_data.set_output_meta({"sageworks_input": "DataFrame"})
-           df_to_data.set_input(test_df)
-           df_to_data.transform(delete_existing=True/False)
+    Common Usage:
+        df_to_data = PandasToData(output_uuid)
+        df_to_data.set_output_tags(["test", "small"])
+        df_to_data.set_output_meta({"sageworks_input": "DataFrame"})
+        df_to_data.set_input(test_df)
+        df_to_data.transform(delete_existing=True/False)
     """
 
     def __init__(self, output_uuid: str):

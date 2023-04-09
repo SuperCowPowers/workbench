@@ -18,10 +18,10 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 class FeatureSet(Artifact):
     """FeatureSet: SageWorks Feature Set accessible through Athena
 
-       Common Usage:
-           my_features = FeatureSet(feature_uuid)
-           my_features.summary()
-           my_features.details()
+    Common Usage:
+        my_features = FeatureSet(feature_uuid)
+        my_features.summary()
+        my_features.details()
     """
 
     def __init__(self, feature_uuid):
@@ -156,7 +156,7 @@ class FeatureSet(Artifact):
         # Remove FeatureGroup metadata columns that might have gotten added
         columns = self.column_names()
         filter_columns = ["write_time", "api_invocation_time", "is_deleted"]
-        columns = ", ".join(['"'+x+'"' for x in columns if x not in filter_columns])
+        columns = ", ".join(['"' + x + '"' for x in columns if x not in filter_columns])
 
         query = (
             f"SELECT {columns} "

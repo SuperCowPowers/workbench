@@ -22,7 +22,6 @@ server = app.server
 
 
 def setup_artifact_viewer():
-
     # Set Default Template for figures
     # load_figure_template('darkly')
 
@@ -33,7 +32,6 @@ def setup_artifact_viewer():
     # Just a bunch of tables for now :)
     tables = {}
     for service_category, artifact_info_df in artifacts_summary.items():
-
         # Grab the Artifact Information DataFrame for each AWS Service
         tables[service_category] = table.create(service_category, artifact_info_df)
 

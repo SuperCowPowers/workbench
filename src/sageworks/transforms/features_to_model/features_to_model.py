@@ -14,12 +14,12 @@ from sageworks.artifacts.models.model import Model
 class FeaturesToModel(Transform):
     """FeaturesToModel: Train/Create a Model from a FeatureSet
 
-       Common Usage:
-           to_model = FeaturesToModel(feature_uuid, model_uuid)
-           to_model.set_output_tags(["aqsol", "public", "whatever"])
-           to_model.set_output_meta({"sageworks_input": feature_uuid})
-           to_model.transform(target="solubility", input_feature_list=<features>,
-                              model_type="regression/classification", delete_existing=True/False)
+    Common Usage:
+        to_model = FeaturesToModel(feature_uuid, model_uuid)
+        to_model.set_output_tags(["aqsol", "public", "whatever"])
+        to_model.set_output_meta({"sageworks_input": feature_uuid})
+        to_model.transform(target="solubility", input_feature_list=<features>,
+                           model_type="regression/classification", delete_existing=True/False)
     """
 
     def __init__(self, feature_uuid: str, model_uuid: str):

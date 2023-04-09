@@ -7,13 +7,13 @@ from sageworks.transforms.pandas_transforms.pandas_to_features import PandasToFe
 
 
 class DataToFeaturesLight(Transform):
-    """"DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas
+    """DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas
 
-        Common Usage:
-            to_features = DataToFeaturesLight(data_uuid, feature_uuid)
-            to_features.set_output_tags(["abalone", "public", "whatever"])
-            to_features.set_output_meta({"sageworks_input": data_uuid})
-            to_features.transform(id_column="id"/None, event_time_column="date"/None)
+    Common Usage:
+        to_features = DataToFeaturesLight(data_uuid, feature_uuid)
+        to_features.set_output_tags(["abalone", "public", "whatever"])
+        to_features.set_output_meta({"sageworks_input": data_uuid})
+        to_features.transform(id_column="id"/None, event_time_column="date"/None)
     """
 
     def __init__(self, data_uuid: str, feature_uuid: str):

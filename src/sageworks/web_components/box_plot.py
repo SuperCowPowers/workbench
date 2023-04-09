@@ -12,10 +12,7 @@ def create(df: pd.DataFrame = None) -> dcc.Graph:
 
     # TEMP
     df.rename(
-        {
-            "total_bill": "awesome",
-            "time": "Variable Comparison"
-        },
+        {"total_bill": "awesome", "time": "Variable Comparison"},
         axis=1,
         inplace=True,
     )

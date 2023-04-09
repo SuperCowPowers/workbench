@@ -9,11 +9,11 @@ from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
 class S3ToDataSourceLight(Transform):
     """S3ToDataSourceLight: Class to move LIGHT S3 Files into a SageWorks DataSource
 
-       Common Usage:
-           to_data = S3ToDataSourceLight(s3_path, data_uuid)
-           to_data.set_output_tags(["abalone", "whatever"])
-           to_data.set_output_meta({"sageworks_input": s3_path})
-           to_data.transform(delete_existing=True/False)
+    Common Usage:
+        to_data = S3ToDataSourceLight(s3_path, data_uuid)
+        to_data.set_output_tags(["abalone", "whatever"])
+        to_data.set_output_meta({"sageworks_input": s3_path})
+        to_data.transform(delete_existing=True/False)
     """
 
     def __init__(self, s3_path, data_uuid):

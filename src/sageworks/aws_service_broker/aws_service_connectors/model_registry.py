@@ -8,7 +8,7 @@ from sageworks.aws_service_broker.aws_service_connectors.connector import Connec
 
 class ModelRegistry(Connector):
     def __init__(self):
-        """ "ModelRegistry: Helper Class for the AWS Model Registry Service"""
+        """ModelRegistry: Helper Class for the AWS Model Registry Service"""
         # Call SuperClass Initialization
         super().__init__()
 

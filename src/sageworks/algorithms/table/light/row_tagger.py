@@ -22,7 +22,6 @@ class RowTagger:
         min_dist: float,
         min_target_diff: float,
     ):
-
         # Set up some parameters
         self.id_column = id_column
         self.min_dist = min_dist

@@ -14,7 +14,6 @@ logging_setup()
 
 
 class Connector(ABC):
-
     # Class attributes
     log = logging.getLogger(__name__)
 

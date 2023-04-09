@@ -14,12 +14,12 @@ from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 class PandasToFeatures(Transform):
     """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)
 
-       Common Usage:
-           to_features = PandasToFeatures(output_uuid)
-           to_features.set_output_tags(["abalone", "public", "whatever"])
-           to_features.set_output_meta({"sageworks_input": "DataFrame"})
-           to_features.set_input(df, id_column="id"/None, event_time_column="date"/None)
-           to_features.transform(delete_existing=True/False)
+    Common Usage:
+        to_features = PandasToFeatures(output_uuid)
+        to_features.set_output_tags(["abalone", "public", "whatever"])
+        to_features.set_output_meta({"sageworks_input": "DataFrame"})
+        to_features.set_input(df, id_column="id"/None, event_time_column="date"/None)
+        to_features.transform(delete_existing=True/False)
     """
 
     def __init__(self, output_uuid: str):

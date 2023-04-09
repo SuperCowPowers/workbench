@@ -15,7 +15,7 @@ logging_setup()
 
 class Artifact(ABC):
     """Artifact: Abstract Base Class for all Artifact classes in SageWorks.
-       Artifacts simply reflect and aggregate one or more AWS Services"""
+    Artifacts simply reflect and aggregate one or more AWS Services"""
 
     # Class attributes
     log = logging.getLogger(__name__)

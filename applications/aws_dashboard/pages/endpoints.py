@@ -26,17 +26,14 @@ endpoints_table = table.create(
     endpoints_summary,
     header_color="rgb(100, 60, 100)",
     row_select="single",
-    markdown_columns=["Name"]
+    markdown_columns=["Name"],
 )
 
 # Create a fake scatter plot
 endpoint_traffic = line_chart.create()
 
 # Create our components
-components = {
-    "endpoints_details": endpoints_table,
-    "endpoint_traffic": endpoint_traffic
-}
+components = {"endpoints_details": endpoints_table, "endpoint_traffic": endpoint_traffic}
 
 # Setup our callbacks/connections
 app = dash.get_app()

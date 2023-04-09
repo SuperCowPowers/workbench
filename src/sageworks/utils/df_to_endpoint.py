@@ -50,7 +50,6 @@ def _dataframe_to_endpoint(predictor, df):
 
     except botocore.exceptions.ClientError as err:
         if err.response["Error"]["Code"] == "ModelError":  # Model Error
-
             # Base case: DataFrame with 1 Row
             if len(df) == 1:
                 # If we don't have ANY known good results we're kinda screwed
@@ -112,7 +111,6 @@ def sdf_to_df(sdf_file_path: str) -> pd.DataFrame:
 
 
 def endpoint_to_dataframe_tests():
-
     # Read in our SDF File
     df = sdf_to_df(args.sdfpath)
 
@@ -134,7 +132,6 @@ def endpoint_to_dataframe_tests():
 
 
 if __name__ == "__main__":
-
     # This import is only needed for the tests
     from rdkit.Chem import PandasTools
 

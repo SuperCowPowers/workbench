@@ -9,11 +9,11 @@ from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
 class DataToDataLight(Transform):
     """DataToDataLight: Base Class for Light DataSource to DataSource using Pandas
 
-       Common Usage:
-           to_data = DataToDataLight(input_data_uuid, output_data_uuid)
-           to_data.set_output_tags(["abalone", "public", "whatever"])
-           to_data.set_output_meta({"sageworks_input": input_data_uuid})
-           to_data.transform(delete_existing=True/False)
+    Common Usage:
+        to_data = DataToDataLight(input_data_uuid, output_data_uuid)
+        to_data.set_output_tags(["abalone", "public", "whatever"])
+        to_data.set_output_meta({"sageworks_input": input_data_uuid})
+        to_data.transform(delete_existing=True/False)
     """
 
     def __init__(self, input_data_uuid: str, output_data_uuid: str):

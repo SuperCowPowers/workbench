@@ -10,11 +10,11 @@ from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
 class CSVToDataSource(Transform):
     """CSVToDataSource: Class to move local CSV Files into a SageWorks DataSource
 
-       Common Usage:
-           csv_to_data = CSVToDataSource(csv_file_path, data_uuid)
-           csv_to_data.set_output_tags(["abalone", "csv", "whatever"])
-           csv_to_data.set_output_meta({"sageworks_input": csv_file_path})
-           csv_to_data.transform(delete_existing=True/False)
+    Common Usage:
+        csv_to_data = CSVToDataSource(csv_file_path, data_uuid)
+        csv_to_data.set_output_tags(["abalone", "csv", "whatever"])
+        csv_to_data.set_output_meta({"sageworks_input": csv_file_path})
+        csv_to_data.transform(delete_existing=True/False)
     """
 
     def __init__(self, csv_file_path, data_uuid):

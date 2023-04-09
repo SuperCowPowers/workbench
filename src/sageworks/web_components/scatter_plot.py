@@ -35,7 +35,7 @@ def create(df: pd.DataFrame = None, variant=1) -> dcc.Graph:
     if variant == 1:
         pass
     elif variant == 2:
-        gap_df['awesome'] = 50000-gap_df['awesome']
+        gap_df["awesome"] = 50000 - gap_df["awesome"]
     else:
         gap_df.replace(
             {

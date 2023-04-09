@@ -30,7 +30,7 @@ data_sources_table = table.create(
     data_sources_summary,
     header_color="rgb(100, 60, 60)",
     row_select="single",
-    markdown_columns=["Name"]
+    markdown_columns=["Name"],
 )
 
 # Create a fake scatter plot

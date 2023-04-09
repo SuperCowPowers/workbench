@@ -25,7 +25,6 @@ class ListTags:
 
 
 if __name__ == "__main__":
-
     # Collect args from the command line
     parser = argparse.ArgumentParser()
     parser.add_argument(

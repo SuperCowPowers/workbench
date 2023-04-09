@@ -35,7 +35,7 @@ models_table = table.create(
     models_summary,
     header_color="rgb(60, 100, 60)",
     row_select="single",
-    markdown_columns=["Model Group"]
+    markdown_columns=["Model Group"],
 )
 
 # Create all the other components on this page
