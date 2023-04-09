@@ -8,7 +8,7 @@ SageWorks is a medium granularity framework that manages and aggregates AWS® Se
 
 <img src="docs/images/sageworks_concepts.png">
 
-For more details see: [SageWorks Artitected FrameWork](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing)
+### Full SageWorks OverView: [SageWorks Architected FrameWork](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing)
 
 
 ## Why SageWorks?
@@ -36,7 +36,9 @@ pip install sageworks
 ```
 
 ### Gettting Started
-SageWorks has a large number of classes and components, the best place to get started is our [SageWorks Wiki](https://github.com/SuperCowPowers/sageworks/wiki). There's a growing set of documentation (with pictures) and step-by-step examples of how to get started with SageWorks. You can also join us on Discord <https://discord.gg/WHAJuz8sw8> for questions and advice on using SageWorks within your organization.
+SageWorks has a large number of classes and components, the best place to get started is our [SageWorks Overview](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing) and [SageWorks Wiki](https://github.com/SuperCowPowers/sageworks/wiki) for developers wanting to try out the Python API. 
+
+You can also join us on Discord <https://discord.gg/WHAJuz8sw8> for questions and advice on using SageWorks within your organization.
 
 ### SageWorks Zen
 - The AWS SageMaker® set of services is vast and **complex**.
