@@ -9,7 +9,7 @@ def data_sources_layout(components: dict) -> html.Div:
         children=[
             dbc.Row(
                 [
-                    html.H2("SageWorks: DataSources (Mockup)"),
+                    html.H2("SageWorks: DataSources (Alpha)"),
                     html.Div(
                         "Last Updated: ",
                         id="last-updated-data-sources",

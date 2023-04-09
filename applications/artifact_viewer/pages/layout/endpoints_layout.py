@@ -9,7 +9,7 @@ def endpoints_layout(components: dict) -> html.Div:
         children=[
             dbc.Row(
                 [
-                    html.H2("SageWorks: Endpoints (Mockup)"),
+                    html.H2("SageWorks: Endpoints (Alpha)"),
                     html.Div(
                         "Last Updated: ",
                         id="last-updated-endpoints",
