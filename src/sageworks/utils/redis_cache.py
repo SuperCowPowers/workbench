@@ -6,9 +6,13 @@ from datetime import datetime, date
 
 # Local Imports
 from sageworks.utils.iso_8601 import datetime_to_iso8601, iso8601_to_datetime
+from sageworks.utils.sageworks_logging import logging_setup
+
+# Setup Logging
+logging_setup()
 
 
-class RedisCache(object):
+class RedisCache:
     """A Redis Database Cache Class
     Usage:
          redis_cache = RedisCache(expire=10)
@@ -24,11 +28,25 @@ class RedisCache(object):
     # Setup logger (class attribute)
     log = logging.getLogger(__name__)
 
-    def __init__(self, expire=None, db=0, prefix="", postfix=""):  # No expiration, standard 0 db, no postfix on keys
-        """RedisCache Initialization"""
+    # FIXME: Get these from SageWorks configuration
+    host = "localhost"
+    port = 6379
+    password = None
 
-        # Quick connection test
-        self.ping()
+    # Open the Redis connection (class object)
+    log.info(f"Opening Redis connection to: {host}:{port}...")
+    redis_db = redis.Redis(host, port=port, password=password,
+                           charset="utf-8", decode_responses=True, db=0)
+    try:
+        redis_db.ping()
+        log.info(f"Redis connection success: {host}:{port}...")
+    except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
+        msg = f"Could not connect to Redis Database: {host}:{port}..."
+        log.critical(msg)
+        raise RuntimeError(msg)
+
+    def __init__(self, expire=None, prefix="", postfix=""):  # No expiration, standard 0 db, no postfix on keys
+        """RedisCache Initialization"""
 
         # Setup instance variables
         self.expire = expire
@@ -36,34 +54,6 @@ class RedisCache(object):
         self.prefix = prefix if not prefix or prefix.endswith(":") else prefix + ":"
         self.prefix = self.base_prefix + self.prefix
         self.postfix = postfix if not postfix or postfix.startswith(":") else ":" + postfix
-        self.host, self.port, self.password = self.get_redis_config()
-        self.redis = redis.Redis(
-            self.host, port=self.port, password=self.password, charset="utf-8", decode_responses=True, db=db
-        )
-
-    @classmethod
-    def ping(cls):
-        """Helper method to quickly ping the Redis database"""
-        host, port, password = cls.get_redis_config()
-        r = redis.Redis(host, port=port, password=password, socket_timeout=1)
-
-        # Test the connection to the Redis database
-        cls.log.info("Opening Redis connection to: {:s}...".format(host))
-        try:
-            r.ping()
-            cls.log.info("Redis connection success: {:s}...".format(host))
-        except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
-            msg = "Could not connect to Redis Database -- host:{:s}  port:{:d}".format(host, port)
-            cls.log.critical(msg)
-            raise RuntimeError(msg)
-
-    @staticmethod
-    def get_redis_config():
-        """Grab the Redis config values for host, port, pass"""
-        host = "localhost"
-        port = 6379
-        password = None
-        return host, port, password
 
     def set(self, key, value):
         """Add an item to the redis_cache, all items are JSON serialized
@@ -90,29 +80,31 @@ class RedisCache(object):
             return
 
         # Set the value in redis with optional postfix and the expire
-        self.redis.set(self.prefix + str(key) + self.postfix, value, ex=self.expire)
+        self.redis_db.set(self.prefix + str(key) + self.postfix, value, ex=self.expire)
 
     def _get(self, key):
-        """Internal Method: Get an item from the redis_cache"""
+        """Internal Method: Get an item from the redis_db_cache"""
         if not key:
             return None
 
         # Get the value in redis with optional postfix
-        return self.redis.get(self.prefix + str(key) + self.postfix)
+        return self.redis_db.get(self.prefix + str(key) + self.postfix)
 
-    def clear(self):
+    @classmethod
+    def clear(cls):
         """Clear the redis_cache"""
         print("Clearing Redis Cache...")
-        self.redis.flushall()
+        cls.redis_db.flushall()
 
-    def dump(self):
+    @classmethod
+    def dump(cls):
         """Dump the redis_cache (for debugging)"""
-        for key in self.redis.scan_iter():
-            print(key, ":", self.redis.get(key))
+        for key in cls.redis_db.scan_iter():
+            print(key, ":", cls.redis_db.get(key))
 
-    @property
-    def size(self):
-        return self.redis.dbsize()
+    @classmethod
+    def size(cls):
+        return cls.redis_db.dbsize()
 
     @staticmethod
     def serialize_datetime(obj):
@@ -140,10 +132,7 @@ if __name__ == "__main__":
     """Exercise the RedisCache class"""
     import time
 
-    # Test Redis ConnectionError
-    RedisCache.ping()
-
-    # Create the RedisCache
+    # Create a RedisCache
     my_redis_cache = RedisCache(prefix="test")
 
     # Delete anything in the test database
@@ -166,8 +155,8 @@ if __name__ == "__main__":
     # Make sure size is working
     for i in range(1, 6):
         my_redis_cache.set(str(i), i)
-    print(my_redis_cache.size)
-    assert my_redis_cache.size == 5
+    print(my_redis_cache.size())
+    assert my_redis_cache.size() == 5
 
     # Dump the redis_cache
     my_redis_cache.dump()
@@ -196,4 +185,4 @@ if __name__ == "__main__":
 
     # Clear out the Redis Cache
     my_redis_cache.clear()
-    assert my_redis_cache.size == 0
+    assert my_redis_cache.size() == 0
