@@ -24,7 +24,7 @@ def endpoints_layout(components: dict) -> html.Div:
             ),
             dbc.Row(components["endpoints_details"]),
             dbc.Row(components["endpoint_traffic"]),
-            dcc.Interval(id="endpoints-updater", interval=10000, n_intervals=0),
+            dcc.Interval(id="endpoints-updater", interval=5000, n_intervals=0),
         ],
         style={"margin": "30px"},
     )
