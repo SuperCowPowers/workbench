@@ -18,7 +18,7 @@ def get_files(dir_name):
 setup(
     name="sageworks",
     # use_scm_version=True,
-    version="0.1.2",
+    version="0.1.4",
     description="SageWorks: An easy to use WorkBench for creating and deploying SageMaker Models",
     long_description=readme,
     long_description_content_type="text/markdown",

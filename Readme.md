@@ -43,9 +43,11 @@ pip install sageworks
 ### Gettting Started
 SageWorks has a large number of classes and components, the best place to get started is our [SageWorks Overview](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing) and [SageWorks Wiki](https://github.com/SuperCowPowers/sageworks/wiki) for developers wanting to try out the Python API. 
 
+Video: [SageWorks Getting Started](https://drive.google.com/file/d/1iO7IuQtTYdx4BtQjxv9lI1aVJ2ZcAo43/view?usp=sharing) shows an informal screen capture + chatting while I'm coding. The video demonstrates creating an entire AWS ML Pipeline, from data ingestion, to feature sets, to models and endpoints.
+
 You can also join us on Discord <https://discord.gg/WHAJuz8sw8> for questions and advice on using SageWorks within your organization.
 
-### SageWorks Zen
+### SageWorks Zen``
 - The AWS SageMaker® set of services is vast and **complex**.
 - SageWorks Classes encapsulate, organize, and manage sets of AWS® Services.
 - **Heavy** transforms typically use **[AWS Athena](https://aws.amazon.com/athena/)** or **[Apache Spark](https://spark.apache.org/)** (AWS Glue/EMR Serverless).
