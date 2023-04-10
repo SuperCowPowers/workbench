@@ -5,6 +5,9 @@ import pandas as pd
 import numpy as np
 from io import StringIO
 
+from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error
+from math import sqrt
+
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
 from sagemaker import Predictor
@@ -206,8 +209,6 @@ class Endpoint(Artifact):
 if __name__ == "__main__":
     """Exercise the Endpoint Class"""
     from sageworks.transforms.pandas_transforms.features_to_pandas import FeaturesToPandas
-    from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error
-    from math import sqrt
 
     # Grab an Endpoint object and pull some information from it
     my_endpoint = Endpoint("abalone-regression-endpoint")
