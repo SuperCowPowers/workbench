@@ -8,7 +8,12 @@ SageWorks is a medium granularity framework that manages and aggregates AWS® Se
 
 <img src="docs/images/sageworks_concepts.png">
 
-### Full SageWorks OverView: [SageWorks Architected FrameWork](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing)
+### Full SageWorks OverView
+[SageWorks Architected FrameWork](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing)
+
+### Getting Started Video Demo
+[SageWorks Getting Started](https://drive.google.com/file/d/1iO7IuQtTYdx4BtQjxv9lI1aVJ2ZcAo43/view?usp=sharing) This video is an informal screen capture + chatting while I'm coding. The video demonstrates creating an entire AWS ML Pipeline, from data ingestion, to feature sets, to models and endpoints.
+
 
 
 ## Why SageWorks?
