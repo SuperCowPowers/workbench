@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 
 class SageWorksConfig:
     """SageWorksConfig provides a set of utilities to read the SageWorks config file"""
+
     def __init__(self):
         self.log = logging.getLogger(__file__)
 
@@ -37,8 +38,8 @@ class SageWorksConfig:
         """Find the config file"""
 
         # Do we have an ENV var for the test_data path or config file?
-        config_path = os.environ.get('SAGEWORKS_CONFIG_PATH') or self.default_config_path
-        config_file = os.environ.get('SAGEWORKS_CONFIG_FILE') or 'sageworks_config.ini'
+        config_path = os.environ.get("SAGEWORKS_CONFIG_PATH") or self.default_config_path
+        config_file = os.environ.get("SAGEWORKS_CONFIG_FILE") or "sageworks_config.ini"
         return os.path.join(config_path, config_file)
 
     def get_config_sections(self) -> list:
@@ -54,11 +55,11 @@ class SageWorksConfig:
         try:
             return self.sageworks_config[section][key]
         except KeyError:
-            log.critical('Could not find config key: {:s}:{:s}'.format(section, key))
+            log.critical("Could not find config key: {:s}:{:s}".format(section, key))
             return None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     """Exercise the SageWorks config utility methods"""
 
     # Create a SageWorksConfig object
@@ -72,4 +73,4 @@ if __name__ == '__main__':
             print(key, sw_config.get_config_value(section, key))
 
     # Try an unknown config key
-    sw_config.get_config_value('UNKNOWN', 'KEY')
+    sw_config.get_config_value("UNKNOWN", "KEY")

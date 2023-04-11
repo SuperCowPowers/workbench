@@ -52,7 +52,7 @@ class Transform(ABC):
         self.output_tags = ""
         self.input_uuid = input_uuid
         self.output_uuid = output_uuid
-        self.output_meta = {'sageworks_input': self.input_uuid}
+        self.output_meta = {"sageworks_input": self.input_uuid}
 
         # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings
         sageworks_config = SageWorksConfig()
