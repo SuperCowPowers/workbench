@@ -11,10 +11,6 @@ SageWorks is a medium granularity framework that manages and aggregates AWS® Se
 ### Full SageWorks OverView
 [SageWorks Architected FrameWork](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing)
 
-### Getting Started Video Demo
-[SageWorks Getting Started](https://drive.google.com/file/d/1iO7IuQtTYdx4BtQjxv9lI1aVJ2ZcAo43/view?usp=sharing) This video is an informal screen capture + chatting while I'm coding. The video demonstrates creating an entire AWS ML Pipeline, from data ingestion, to feature sets, to models and endpoints.
-
-
 
 ## Why SageWorks?
 
@@ -40,12 +36,12 @@ SageWorks is a medium granularity framework that manages and aggregates AWS® Se
 pip install sageworks
 ```
 
-### Gettting Started
-SageWorks has a large number of classes and components, the best place to get started is our [SageWorks Overview](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing) and [SageWorks Wiki](https://github.com/SuperCowPowers/sageworks/wiki) for developers wanting to try out the Python API. 
 
-Video: [SageWorks Getting Started](https://drive.google.com/file/d/1iO7IuQtTYdx4BtQjxv9lI1aVJ2ZcAo43/view?usp=sharing) shows an informal screen capture + chatting while I'm coding. The video demonstrates creating an entire AWS ML Pipeline, from data ingestion, to feature sets, to models and endpoints.
-
-You can also join us on Discord <https://discord.gg/WHAJuz8sw8> for questions and advice on using SageWorks within your organization.
+### Getting Started
+- [SageWorks Overview](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing) slide desk of SageWorks Architecture.
+- [SageWorks Wiki: Getting Started](https://github.com/SuperCowPowers/sageworks/wiki/Getting-Started-with-SageWorks) for initial AWS/config/repository set up. 
+- [Coding with SageWorks Video](https://drive.google.com/file/d/1iO7IuQtTYdx4BtQjxv9lI1aVJ2ZcAo43/view?usp=sharing) Demonstrates creating an entire AWS ML Pipeline, from data ingestion, to feature sets, to models and endpoints.
+- [Discord](https://discord.gg/WHAJuz8sw8) for questions and advice on using SageWorks within your organization.
 
 ### SageWorks Zen
 - The AWS SageMaker® set of services is vast and **complex**.
