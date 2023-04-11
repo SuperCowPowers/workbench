@@ -54,9 +54,12 @@ class S3ToDataSourceLight(Transform):
 
 if __name__ == "__main__":
     """Exercise the S3ToDataSourceLight Class"""
+    from sageworks.utils.sageworks_config import SageWorksConfig
 
     # Create my Data Loader
-    input_path = "s3://scp-sageworks-artifacts/incoming-data/aqsol_public_data.csv"
+    sageworks_config = SageWorksConfig()
+    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET")
+    input_path = sageworks_bucket + "/incoming-data/aqsol_public_data.csv"
     output_uuid = "aqsol_data"
     my_loader = S3ToDataSourceLight(input_path, output_uuid)
     my_loader.set_output_tags(["aqsol", "public"])

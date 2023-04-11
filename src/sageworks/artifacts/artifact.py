@@ -7,6 +7,7 @@ import logging
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
+from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -28,15 +29,17 @@ class Artifact(ABC):
     # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
     aws_meta = AWSServiceBroker()
 
+    # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings
+    sageworks_config = SageWorksConfig()
+    data_catalog_db = "sageworks"
+    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET")
+    data_source_s3_path = sageworks_bucket + "/data-sources"
+    feature_sets_s3_path = sageworks_bucket + "/feature-sets"
+
     def __init__(self, uuid):
         """Artifact Initialization"""
         self.uuid = uuid
         self.log = logging.getLogger(__name__)
-
-        # FIXME: We should have this come from AWS or Config
-        self.data_catalog_db = "sageworks"
-        self.data_source_s3_path = "s3://scp-sageworks-artifacts/data-sources"
-        self.feature_sets_s3_path = "s3://scp-sageworks-artifacts/feature-sets"
 
     @abstractmethod
     def check(self) -> bool:

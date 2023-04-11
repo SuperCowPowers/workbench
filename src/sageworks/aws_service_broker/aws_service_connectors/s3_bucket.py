@@ -1,6 +1,4 @@
 """S3Bucket: Class to retrieve object/file information from an AWS S3 Bucket"""
-import sys
-import argparse
 import awswrangler as wr
 
 
@@ -51,24 +49,17 @@ class S3Bucket(Connector):
 
 if __name__ == "__main__":
     from pprint import pprint
+    from sageworks.utils.sageworks_config import SageWorksConfig
 
-    # Collect args from the command line
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--bucket",
-        type=str,
-        default="s3://scp-sageworks-artifacts/incoming-data",
-        help="AWS S3 Bucket",
-    )
-    args, commands = parser.parse_known_args()
-
-    # Check for unknown args
-    if commands:
-        print("Unrecognized args: %s" % commands)
-        sys.exit(1)
+    # Create my Data Loader
+    sageworks_config = SageWorksConfig()
+    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET")
+    incoming_data_bucket = sageworks_bucket + "/incoming-data"
 
     # Create the class and get the AWS Data Catalog database info
-    s3_bucket = S3Bucket(args.bucket)
+    s3_bucket = S3Bucket(incoming_data_bucket)
+    s3_bucket.check()
+    s3_bucket.refresh()
 
     # List files in the bucket
     print(f"{s3_bucket.bucket}")

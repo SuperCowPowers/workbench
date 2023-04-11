@@ -54,10 +54,17 @@ class S3HeavyToDataSource(Transform):
 if __name__ == "__main__":
     """Exercise the S3HeavyToDataSource Class"""
     import pandas as pd
+    from sageworks.utils.sageworks_config import SageWorksConfig
+
+    # Create my Data Loader
+    sageworks_config = SageWorksConfig()
+    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET")
+    incoming_data_bucket = sageworks_bucket + "/incoming-data"
+    incoming_data = incoming_data_bucket + "/abalone.csv"
 
     # Create my Data Loader
     output_uuid = "test_heavy_data"
-    my_loader = S3HeavyToDataSource("s3://scp-sageworks-artifacts/incoming-data/abalone.csv", output_uuid)
+    my_loader = S3HeavyToDataSource(incoming_data, output_uuid)
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()

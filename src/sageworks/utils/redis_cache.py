@@ -6,6 +6,7 @@ from datetime import datetime, date
 
 # Local Imports
 from sageworks.utils.iso_8601 import datetime_to_iso8601, iso8601_to_datetime
+from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -28,10 +29,11 @@ class RedisCache:
     # Setup logger (class attribute)
     log = logging.getLogger(__name__)
 
-    # FIXME: Get these from SageWorks configuration
-    host = "localhost"
-    port = 6379
-    password = None
+    # Grab our SageWorksConfig for SageWorks specific settings
+    sageworks_config = SageWorksConfig()
+    host = sageworks_config.get_config_value("SAGEWORKS_REDIS", "HOST")
+    port = sageworks_config.get_config_value("SAGEWORKS_REDIS", "PORT")
+    password = sageworks_config.get_config_value("SAGEWORKS_REDIS", "PASSWORD")
 
     # Open the Redis connection (class object)
     log.info(f"Opening Redis connection to: {host}:{port}...")

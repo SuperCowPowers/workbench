@@ -12,6 +12,7 @@ from sageworks.aws_service_broker.aws_service_connectors.data_catalog import Dat
 from sageworks.aws_service_broker.aws_service_connectors.feature_store import FeatureStore
 from sageworks.aws_service_broker.aws_service_connectors.model_registry import ModelRegistry
 from sageworks.aws_service_broker.aws_service_connectors.endpoints import Endpoints
+from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -50,8 +51,10 @@ class AWSServiceBroker:
         """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
         cls.log = logging.getLogger(__file__)
 
-        # FIXME: This should be pulled from a config file
-        cls.incoming_data_bucket = "s3://scp-sageworks-artifacts/incoming-data"
+        # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings
+        sageworks_config = SageWorksConfig()
+        sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET")
+        cls.incoming_data_bucket = sageworks_bucket + "/incoming-data"
 
         # SageWorks category mapping to AWS Services
         # - incoming_data = S3

@@ -27,29 +27,31 @@ class AWSAccountClamp:
         - Test out SageMaker Access (with sm_session)
         - Test out SageMake Client (with sm_client)
         """
-        self.log.info("\n*** AWS Identity Check ***")
+        self.log.info("*** AWS Identity Check ***")
         self.check_aws_identity()
         self.log.info("Identity Check Success...")
 
-        self.log.info("\n*** AWS Assume SageWorks-ExecutionRole Check ***")
-        my_boto_session = self.boto_session()
+        self.log.info("*** AWS Assume SageWorks-ExecutionRole Check ***")
+        check_boto_session = self.boto_session()
         self.log.info("Assume Role Success...")
 
-        self.log.info("\n*** AWS S3 Access Check ***")
-        s3 = my_boto_session.client("s3")
-        results = s3.list_buckets()
-        for bucket in results["Buckets"]:
-            self.log.info(f"\t{bucket['Name']}")
+        self.log.info("*** AWS App Config Check ***")
+        self.check_app_config(check_boto_session)
+        self.log.info("App Config Check Success...")
 
-        self.log.info("\n*** AWS Sagemaker Session/Client Check ***")
+        self.log.info("*** AWS S3 Access Check ***")
+        self.check_s3_access(check_boto_session)
+        self.log.info("S3 Access Check Success...")
+
+        self.log.info("*** AWS Sagemaker Session/Client Check ***")
         sm_client = self.sagemaker_client()
         self.log.info(sm_client.list_feature_groups()["FeatureGroupSummaries"])
 
-        self.log.info("\n*** AWS Sagemaker Session/Client Check ***")
+        self.log.info("*** AWS Sagemaker Session/Client Check ***")
         sm_client = self.sagemaker_client()
         self.log.info(sm_client.list_feature_groups()["FeatureGroupSummaries"])
 
-        self.log.info("\nAWS Account Clamp: AOK!")
+        self.log.info("AWS Account Clamp: AOK!")
 
     def check_aws_identity(self) -> bool:
         """Check the AWS Identity currently active"""
@@ -66,6 +68,25 @@ class AWSAccountClamp:
             self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
             self.log.critical(exc)
             sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
+
+    def check_app_config(self, boto_session: boto3.Session) -> bool:
+        """Check if the AWS AppConfig Service is enabled"""
+        # FIXME: This will be enabled later
+        return True
+        appconfig = boto_session.client("appconfig")
+        try:
+            appconfig.list_applications()
+            return True
+        except (ClientError, UnauthorizedSSOTokenError) as exc:
+            self.log.critical("AWS AppConfig Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+            self.log.critical(exc)
+            sys.exit(1)
+
+    def check_s3_access(self, boto_session: boto3.Session) -> bool:
+        s3 = boto_session.client("s3")
+        results = s3.list_buckets()
+        for bucket in results["Buckets"]:
+            self.log.info(f"\t{bucket['Name']}")
 
     def is_sageworks_role(self) -> bool:
         """Check if the current AWS Identity is the SageWorks Role"""
