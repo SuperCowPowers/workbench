@@ -1,5 +1,4 @@
 """Tests for the Endpoint functionality"""
-import pandas as pd
 
 # SageWorks Imports
 from sageworks.artifacts.endpoints.endpoint import Endpoint
@@ -7,14 +6,10 @@ from sageworks.artifacts.endpoints.endpoint import Endpoint
 
 def test():
     """Simple test of the Endpoint functionality"""
-    from sageworks.transforms.pandas_transforms.features_to_pandas import (
-        FeaturesToPandas,
-    )
-    from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error
-    from math import sqrt
+    from sageworks.transforms.pandas_transforms.features_to_pandas import FeaturesToPandas
 
     # Grab an Endpoint object and pull some information from it
-    my_endpoint = Endpoint("abalone-regression-endpoint")
+    my_endpoint = Endpoint("abalone-regression-end")
 
     # Call the various methods
 
@@ -44,7 +39,7 @@ def test():
 
     # Compute performance metrics for our test predictions
     target_column = "class_number_of_rings"
-    metrics = my_endpoint.performance_metrics(target_column, prediction_df)
+    metrics = my_endpoint.performance_metrics(target_column, result_df)
     for metric, value in metrics.items():
         print(f"{metric}: {value:0.3f}")
 

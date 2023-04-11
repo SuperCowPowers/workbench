@@ -50,8 +50,8 @@ class Transform(ABC):
         self.input_type = None
         self.output_type = None
         self.output_tags = ""
-        self.input_uuid = input_uuid
-        self.output_uuid = output_uuid
+        self.input_uuid = str(input_uuid)  # Occasionally we get a pathlib.Path object
+        self.output_uuid = str(output_uuid)  # Occasionally we get a pathlib.Path object
         self.output_meta = {"sageworks_input": self.input_uuid}
 
         # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings

@@ -124,7 +124,7 @@ class PandasToFeatures(Transform):
         my_feature_group.load_feature_definitions(data_frame=self.input_df)
 
         # Create the Output Parquet file S3 Storage Path for this Feature Set
-        s3_storage_path = f"{self.feature_set_s3_path}/{self.output_uuid}"
+        s3_storage_path = f"{self.feature_sets_s3_path}/{self.output_uuid}"
 
         # Data Catalog Config
         # FIXME: AWS wants to put Feature Groups into the 'sagemaker_features' database

@@ -165,16 +165,8 @@ if __name__ == "__main__":
     """Exercise the FeaturesToModel Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    """
     input_uuid = "abalone_feature_set"
     output_uuid = "abalone-regression"
     to_model = FeaturesToModel(input_uuid, output_uuid)
     to_model.set_output_tags(["abalone", "public"])
     to_model.transform(target="class_number_of_rings")
-    """
-
-    input_uuid = "aqsol_feature_set"
-    output_uuid = "aqsol-regression"
-    to_model = FeaturesToModel(input_uuid, output_uuid)
-    to_model.set_output_tags(["aqsol", "public"])
-    to_model.transform(target="solubility", model_type="regression")

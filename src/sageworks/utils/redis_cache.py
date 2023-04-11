@@ -33,7 +33,7 @@ class RedisCache:
     sageworks_config = SageWorksConfig()
     host = sageworks_config.get_config_value("SAGEWORKS_REDIS", "HOST")
     port = sageworks_config.get_config_value("SAGEWORKS_REDIS", "PORT")
-    password = sageworks_config.get_config_value("SAGEWORKS_REDIS", "PASSWORD")
+    password = sageworks_config.get_config_value("SAGEWORKS_REDIS", "PASSWORD") or None
 
     # Open the Redis connection (class object)
     log.info(f"Opening Redis connection to: {host}:{port}...")
