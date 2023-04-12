@@ -17,5 +17,6 @@ def update_endpoints_table(app: Dash, sageworks_artifacts: ArtifactsSummary):
     @app.callback(Output("ENDPOINTS_DETAILS", "data"), Input("endpoints-updater", "n_intervals"))
     def data_sources_update(n):
         print("Calling FeatureSets Refresh...")
+        sageworks_artifacts.refresh()
         endpoints = sageworks_artifacts.endpoints_summary()
         return endpoints.to_dict("records")

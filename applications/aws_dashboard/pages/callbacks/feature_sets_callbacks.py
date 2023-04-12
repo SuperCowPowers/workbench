@@ -17,5 +17,6 @@ def update_feature_sets_table(app: Dash, sageworks_artifacts: ArtifactsSummary):
     @app.callback(Output("FEATURE_SETS_DETAILS", "data"), Input("feature-sets-updater", "n_intervals"))
     def data_sources_update(n):
         print("Calling FeatureSets Refresh...")
+        sageworks_artifacts.refresh()
         feature_sets = sageworks_artifacts.feature_sets_summary()
         return feature_sets.to_dict("records")

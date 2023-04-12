@@ -10,13 +10,13 @@ from sageworks.views.artifacts_summary import ArtifactsSummary
 all_data = None
 
 
-def update_last_updated(app: Dash, artifacts_summary: ArtifactsSummary):
+def update_last_updated(app: Dash, sageworks_artifacts: ArtifactsSummary):
     @app.callback(Output("last-updated", "children"), Input("main-updater", "n_intervals"))
     def time_updated(n):
         global all_data
         print("Calling ALL Artifact Refresh...")
-        artifacts_summary.refresh()
-        all_data = artifacts_summary.view_data()
+        sageworks_artifacts.refresh()
+        all_data = sageworks_artifacts.view_data()
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
