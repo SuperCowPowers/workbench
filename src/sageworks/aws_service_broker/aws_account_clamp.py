@@ -63,6 +63,7 @@ class AWSAccountClamp:
         results = s3.list_buckets()
         for bucket in results["Buckets"]:
             self.log.info(f"\t{bucket['Name']}")
+        return True
 
     def is_sageworks_role(self) -> bool:
         """Check if the current AWS Identity is the SageWorks Role"""
@@ -77,8 +78,8 @@ class AWSAccountClamp:
 
     def sageworks_execution_role_arn(self):
         """Get the SageWorks Execution Role"""
+        iam = boto3.client("iam")
         try:
-            iam = boto3.client("iam")
             role_arn = iam.get_role(RoleName=self.role_name)["Role"]["Arn"]
             return role_arn
         except iam.exceptions.NoSuchEntityException as exc:
@@ -89,12 +90,6 @@ class AWSAccountClamp:
             self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
             self.log.critical(exc)
             sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
-
-    def _session_expiration_time(self):
-        """Internal: Get the our AWS Session expiration time"""
-        now = datetime.now(timezone.utc)
-        session_expiration_time = now + self.session_time_delta
-        return session_expiration_time
 
     def _session_credentials(self):
         """Internal: Set up our AWS Session credentials for automatic refresh"""
@@ -112,6 +107,7 @@ class AWSAccountClamp:
             "token": response.get("SessionToken"),
             "expiry_time": response.get("Expiration").isoformat(),
         }
+        self.log.info(f"Credentials Refreshed: Expires at {credentials['expiry_time']}")
         return credentials
 
     def boto_session(self):
