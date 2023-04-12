@@ -23,8 +23,8 @@ class Artifact(ABC):
 
     # Set up our Boto3 and SageMaker Session and SageMaker Client
     boto_session = AWSAccountClamp().boto_session()
-    sm_session = AWSAccountClamp().sagemaker_session()
-    sm_client = AWSAccountClamp().sagemaker_client()
+    sm_session = AWSAccountClamp().sagemaker_session(boto_session)
+    sm_client = AWSAccountClamp().sagemaker_client(boto_session)
 
     # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
     aws_meta = AWSServiceBroker()

@@ -136,13 +136,15 @@ class AWSAccountClamp:
         refreshable_session = boto3.Session(botocore_session=session)
         return refreshable_session
 
-    def sagemaker_session(self):
+    def sagemaker_session(self, session: boto3.Session = None):
         """Create a sageworks SageMaker session (using our boto3 refreshable session)"""
-        return SageSession(boto_session=self.boto_session())
+        session = session or self.boto_session()
+        return SageSession(boto_session=session)
 
-    def sagemaker_client(self):
+    def sagemaker_client(self, session: boto3.Session = None):
         """Create a sageworks SageMaker client (using our boto3 refreshable session)"""
-        return self.boto_session().client("sagemaker")
+        session = session or self.boto_session()
+        return session.client("sagemaker")
 
     @staticmethod
     def account_id():

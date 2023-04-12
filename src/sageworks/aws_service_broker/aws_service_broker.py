@@ -12,6 +12,7 @@ from sageworks.aws_service_broker.aws_service_connectors.data_catalog import Dat
 from sageworks.aws_service_broker.aws_service_connectors.feature_store import FeatureStore
 from sageworks.aws_service_broker.aws_service_connectors.model_registry import ModelRegistry
 from sageworks.aws_service_broker.aws_service_connectors.endpoints import Endpoints
+from sageworks.aws_service_broker.aws_service_connectors.artifact_info import ArtifactInfo
 from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
 
@@ -69,6 +70,8 @@ class AWSServiceBroker:
         cls.feature_store = FeatureStore()
         cls.model_registry = ModelRegistry()
         cls.endpoints = Endpoints()
+        cls.artifact_info = ArtifactInfo()
+
         # Model Monitors
 
         # Redis Cache for Metadata
@@ -171,6 +174,10 @@ if __name__ == "__main__":
     # Get the Metadata for ALL the categories
     # NOTE: There should be NO Refreshes in the logs
     pprint(aws_broker.get_all_metadata())
+
+    # Get S3 object sizes
+    # incoming_data_size = aws_broker.artifact_info.s3_object_sizes(aws_broker.incoming_data.s3_path)
+    # print(f"Incoming Data Size: {incoming_data_size} MB")
 
     # Wait for any open threads to finish
     aws_broker.wait_for_refreshes()

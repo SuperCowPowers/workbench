@@ -64,8 +64,8 @@ class Transform(ABC):
         # Grab a SageWorks Role ARN, Boto3, SageMaker Session, and SageMaker Client
         self.sageworks_role_arn = AWSAccountClamp().sageworks_execution_role_arn()
         self.boto_session = AWSAccountClamp().boto_session()
-        self.sm_session = AWSAccountClamp().sagemaker_session()
-        self.sm_client = AWSAccountClamp().sagemaker_client()
+        self.sm_session = AWSAccountClamp().sagemaker_session(self.boto_session)
+        self.sm_client = AWSAccountClamp().sagemaker_client(self.boto_session)
 
         # Make sure the AWS data catalog database exists
         self.ensure_aws_catalog_db(self.data_catalog_db)

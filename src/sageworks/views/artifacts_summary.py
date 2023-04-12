@@ -1,14 +1,11 @@
 """ArtifactsSummary pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
 import sys
 import argparse
-import awswrangler as wr
 import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.view import View
-from sageworks.utils.cache import Cache
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
 
 class ArtifactsSummary(View):
@@ -20,8 +17,8 @@ class ArtifactsSummary(View):
         # Get AWS Service information for ALL the categories (data_source, feature_set, endpoints, etc)
         self.aws_artifact_data = self.aws_broker.get_all_metadata()
 
-        # S3 Object Size Cache
-        self.size_cache = Cache(expire=60)
+        # Get a handle to the AWS Artifact Information class
+        self.artifact_info = self.aws_broker.artifact_info
 
     def check(self) -> bool:
         """Can we connect to this view/service?"""
@@ -30,31 +27,6 @@ class ArtifactsSummary(View):
     def refresh(self):
         """Refresh data/metadata associated with this view"""
         self.aws_artifact_data = self.aws_broker.get_all_metadata()
-
-    def s3_objects_size(self, s3_path) -> int:
-        """Return the size of this data in MegaBytes"""
-        size_in_mb = self.size_cache.get(s3_path)
-        if size_in_mb is None:
-            self.log.info(f"Computing S3 Object sizes: {s3_path}...")
-            size_in_bytes = sum(wr.s3.size_objects(s3_path, boto3_session=self.boto_session).values())
-            size_in_mb = f"{ (size_in_bytes/1_000_000):.1f}"
-            self.size_cache.set(s3_path, size_in_mb)
-        return size_in_mb
-
-    @staticmethod
-    def aws_tags_to_dict(aws_tags):
-        """AWS Tags are in an odd format, so convert to regular dictionary"""
-        return {item["Key"]: item["Value"] for item in aws_tags if "sageworks" in item["Key"]}
-
-    def artifact_meta(self, aws_arn):
-        """Get the Metadata for this Artifact"""
-        meta = self.size_cache.get(aws_arn)
-        if meta is None:
-            self.log.info(f"Retrieving Artifact Tags, Metadata, and S3 Object Size: {aws_arn}...")
-            aws_tags = self.sm_session.list_tags(aws_arn)
-            meta = self.aws_tags_to_dict(aws_tags)
-            self.size_cache.set(aws_arn, meta)
-        return meta
 
     def view_data(self) -> dict:
         """Get all the data that's useful for this view
@@ -100,7 +72,7 @@ class ArtifactsSummary(View):
         data_summary = []
         for name, info in data["sageworks"].items():  # Just the sageworks database (not sagemaker_featurestore)
             # Get the size of the S3 Storage Object(s)
-            size = self.s3_objects_size(info["StorageDescriptor"]["Location"])
+            size = self.artifact_info.s3_object_sizes(info["StorageDescriptor"]["Location"])
             summary = {
                 "Name": self.hyperlinks(name, "data_sources"),
                 "Ver": info.get("VersionId", "-"),
@@ -148,10 +120,10 @@ class ArtifactsSummary(View):
         for feature_group, group_info in data.items():
             # Get the tags for this Feature Group
             arn = group_info["FeatureGroupArn"]
-            sageworks_meta = self.artifact_meta(arn)
+            sageworks_meta = self.artifact_info.get_info(arn)
 
             # Get the size of the S3 Storage Object(s)
-            size = self.s3_objects_size(group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"])
+            size = self.artifact_info.s3_object_sizes(group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"])
             summary = {
                 "Feature Group": self.hyperlinks(group_info["FeatureGroupName"], "feature_sets"),
                 # 'Status': group_info['FeatureGroupStatus'],
@@ -197,7 +169,7 @@ class ArtifactsSummary(View):
             for model in model_list:
                 # Get the tags for this Model Group
                 model_group_arn = model["ModelPackageGroupArn"]
-                sageworks_meta = self.artifact_meta(model_group_arn)
+                sageworks_meta = self.artifact_info.get_info(model_group_arn)
 
                 # Do they want the full details or just the concise summary?
                 if concise:
@@ -244,7 +216,7 @@ class ArtifactsSummary(View):
         for endpoint, endpoint_info in data.items():
             # Get the tags for this Model Group
             endpoint_arn = endpoint_info["EndpointArn"]
-            sageworks_meta = self.artifact_meta(endpoint_arn)
+            sageworks_meta = self.artifact_info.get_info(endpoint_arn)
 
             summary = {
                 "Name": self.hyperlinks(endpoint_info["EndpointName"], "endpoints"),

@@ -51,12 +51,12 @@ if __name__ == "__main__":
     from pprint import pprint
     from sageworks.utils.sageworks_config import SageWorksConfig
 
-    # Create my Data Loader
+    # Grab out incoming data bucket for something to test with
     sageworks_config = SageWorksConfig()
     sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET")
     incoming_data_bucket = sageworks_bucket + "/incoming-data"
 
-    # Create the class and get the AWS Data Catalog database info
+    # Create the class and check the functionality
     s3_bucket = S3Bucket(incoming_data_bucket)
     s3_bucket.check()
     s3_bucket.refresh()
