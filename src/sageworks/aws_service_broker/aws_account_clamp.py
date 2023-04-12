@@ -2,11 +2,15 @@
 import sys
 import boto3
 from botocore.exceptions import ClientError, UnauthorizedSSOTokenError
+from botocore.credentials import RefreshableCredentials
+from botocore.session import get_session
 from sagemaker.session import Session as SageSession
-import argparse
+from datetime import datetime
+from time import time
 import logging
 
 # SageWorks Imports
+from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -14,44 +18,14 @@ logging_setup()
 
 
 class AWSAccountClamp:
-    def __init__(self, role_name="SageWorks-ExecutionRole"):
+    def __init__(self):
         """AWSAccountClamp provides logic/functionality over the set of AWS IAM Services"""
         self.log = logging.getLogger(__file__)
+
+        # Grab the AWS Role Name from the SageWorks Config
+        config = SageWorksConfig()
+        role_name = config.get_config_value("SAGEWORKS_AWS", "SAGEWORKS_ROLE")
         self.role_name = role_name
-
-    def check(self):
-        """Check if the AWS Account Clamp is 100% 'locked in'
-        - Check the current AWS Identity (Print it out)
-        - See if we can 'assume-role' for the SageWorks-ExecutionRole
-        - Test out S3 Access (with boto_session)
-        - Test out SageMaker Access (with sm_session)
-        - Test out SageMake Client (with sm_client)
-        """
-        self.log.info("*** AWS Identity Check ***")
-        self.check_aws_identity()
-        self.log.info("Identity Check Success...")
-
-        self.log.info("*** AWS Assume SageWorks-ExecutionRole Check ***")
-        check_boto_session = self.boto_session()
-        self.log.info("Assume Role Success...")
-
-        self.log.info("*** AWS App Config Check ***")
-        self.check_app_config(check_boto_session)
-        self.log.info("App Config Check Success...")
-
-        self.log.info("*** AWS S3 Access Check ***")
-        self.check_s3_access(check_boto_session)
-        self.log.info("S3 Access Check Success...")
-
-        self.log.info("*** AWS Sagemaker Session/Client Check ***")
-        sm_client = self.sagemaker_client()
-        self.log.info(sm_client.list_feature_groups()["FeatureGroupSummaries"])
-
-        self.log.info("*** AWS Sagemaker Session/Client Check ***")
-        sm_client = self.sagemaker_client()
-        self.log.info(sm_client.list_feature_groups()["FeatureGroupSummaries"])
-
-        self.log.info("AWS Account Clamp: AOK!")
 
     def check_aws_identity(self) -> bool:
         """Check the AWS Identity currently active"""
@@ -92,7 +66,7 @@ class AWSAccountClamp:
         """Check if the current AWS Identity is the SageWorks Role"""
         sts = boto3.client("sts")
         try:
-            if "SageWorks-ExecutionRole" in sts.get_caller_identity()["Arn"]:
+            if self.role_name in sts.get_caller_identity()["Arn"]:
                 return True
         except (ClientError, UnauthorizedSSOTokenError) as exc:
             self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
@@ -114,26 +88,55 @@ class AWSAccountClamp:
             self.log.critical(exc)
             sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
 
-    def boto_session(self):
-        """Create a sageworks session using sts.assume_role(sageworks_execution_role)"""
+    def _session_credentials(self):
+        """Internal: Set up our AWS Session credentials for automatic refresh"""
+
+        # Assume the SageWorks Execution Role and get credentials
+        session = boto3.Session()
 
         # First check if we have already assumed the SageWorks Execution Role
         if self.is_sageworks_role():
-            return boto3.Session()
+            session_credentials = session.get_credentials().__dict__
+            credentials = {
+                "access_key": session_credentials.get("access_key"),
+                "secret_key": session_credentials.get("secret_key"),
+                "token": session_credentials.get("token"),
+                "expiry_time": datetime.fromtimestamp(time() + self.session_ttl).isoformat(),
+            }
+            return credentials
 
-        # Okay we need to assume the SageWorks Execution Role and Return a boto3 session
-        session = boto3.Session()
-        sts = session.client("sts")
-        response = sts.assume_role(
-            RoleArn=self.sageworks_execution_role_arn(),
-            RoleSessionName="sageworks-execution-role-session",
+        # Okay we need to assume the SageWorks Execution Role and then pull the credentials
+        else:
+            sts = session.client("sts")
+            response = sts.assume_role(
+                RoleArn=self.sageworks_execution_role_arn(),
+                RoleSessionName="sageworks-execution-role-session",
+            ).get("Credentials")
+            credentials = {
+                "access_key": response.get("AccessKeyId"),
+                "secret_key": response.get("SecretAccessKey"),
+                "token": response.get("SessionToken"),
+                "expiry_time": response.get("Expiration").isoformat(),
+            }
+            return credentials
+
+    def boto_session(self):
+        """Create a *refreshable* AWS/boto session so that clients don't get TOKEN timeouts"""
+
+        # Get our refreshable credentials
+        refreshable_credentials = RefreshableCredentials.create_from_metadata(
+            metadata=self._session_credentials(),
+            refresh_using=self._session_credentials,
+            method="sts-assume-role",
         )
-        new_session = boto3.Session(
-            aws_access_key_id=response["Credentials"]["AccessKeyId"],
-            aws_secret_access_key=response["Credentials"]["SecretAccessKey"],
-            aws_session_token=response["Credentials"]["SessionToken"],
-        )
-        return new_session
+
+        # Attach the refreshable credentials to a generic boto3 session
+        session = get_session()
+        session._credentials = refreshable_credentials
+
+        # Create a new boto3 session using the refreshable credentials
+        refreshable_session = boto3.Session(botocore_session=session)
+        return refreshable_session
 
     def sagemaker_session(self):
         """Create a sageworks SageMaker session using sts.assume_role(sageworks_execution_role)"""
@@ -156,17 +159,11 @@ class AWSAccountClamp:
 if __name__ == "__main__":
     """Exercise the AWS Account Clamp Class"""
 
-    # Collect args from the command line
-    parser = argparse.ArgumentParser()
-    args, commands = parser.parse_known_args()
-
-    # Check for unknown args
-    if commands:
-        print("Unrecognized args: %s" % commands)
-        sys.exit(1)
+    # Import the Check Class to test this class :)
+    from sageworks.aws_service_broker.aws_account_check import AWSAccountCheck
 
     # Create the class
-    aws_clamp = AWSAccountClamp()
+    aws_account_check = AWSAccountCheck()
 
     # Check that out AWS Account Clamp is working AOK
-    aws_clamp.check()
+    aws_account_check.check()

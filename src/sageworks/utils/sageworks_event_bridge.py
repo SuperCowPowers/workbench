@@ -18,7 +18,7 @@ class SageWorksEventBridge:
         self.log = logging.getLogger(__name__)
         self.event_bus = bus_name
 
-        # Grab a SageWorks Session (this allows us to assume the SageWorks-ExecutionRole)
+        # Grab a SageWorks Session (this allows us to assume the SageWorks ExecutionRole)
         self.boto_session = AWSAccountClamp().boto_session()
 
         # Get our AWS EventBridge Client
