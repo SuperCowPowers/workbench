@@ -18,11 +18,7 @@ class ArtifactsSummary(View):
         super().__init__()
 
         # Get AWS Service information for ALL the categories (data_source, feature_set, endpoints, etc)
-        self.service_info = self.aws_broker.get_all_metadata()
-        self.sm_session = AWSAccountClamp().sagemaker_session()
-
-        # Summary data for ALL the AWS Services
-        self.summary_data = {}
+        self.aws_artifact_data = self.aws_broker.get_all_metadata()
 
         # S3 Object Size Cache
         self.size_cache = Cache(expire=60)
@@ -33,9 +29,9 @@ class ArtifactsSummary(View):
 
     def refresh(self):
         """Refresh data/metadata associated with this view"""
-        self.service_info = self.aws_broker.get_all_metadata()
+        self.aws_artifact_data = self.aws_broker.get_all_metadata()
 
-    def s3_objects_size(self, s3_path) -> bool:
+    def s3_objects_size(self, s3_path) -> int:
         """Return the size of this data in MegaBytes"""
         size_in_mb = self.size_cache.get(s3_path)
         if size_in_mb is None:
@@ -68,17 +64,18 @@ class ArtifactsSummary(View):
         """
 
         # We're filling in Summary Data for all the AWS Services
-        self.log.warning("Refreshing ALL AWS Service Broker Metadata...")
-        self.summary_data["INCOMING_DATA"] = self.incoming_data_summary()
-        self.summary_data["DATA_SOURCES"] = self.data_sources_summary()
-        self.summary_data["FEATURE_SETS"] = self.feature_sets_summary()
-        self.summary_data["MODELS"] = self.models_summary()
-        self.summary_data["ENDPOINTS"] = self.endpoints_summary()
-        return self.summary_data
+        summary_data = {
+            "INCOMING_DATA": self.incoming_data_summary(),
+            "DATA_SOURCES": self.data_sources_summary(),
+            "FEATURE_SETS": self.feature_sets_summary(),
+            "MODELS": self.models_summary(),
+            "ENDPOINTS": self.endpoints_summary()
+        }
+        return summary_data
 
     def incoming_data_summary(self):
         """Get summary data about data in the incoming-data S3 Bucket"""
-        data = self.service_info[ServiceCategory.INCOMING_DATA]
+        data = self.aws_artifact_data[ServiceCategory.INCOMING_DATA]
         data_summary = []
         for name, info in data.items():
             # Get the size of the S3 Storage Object(s)
@@ -99,7 +96,7 @@ class ArtifactsSummary(View):
 
     def data_sources_summary(self):
         """Get summary data about the SageWorks DataSources"""
-        data = self.service_info[ServiceCategory.DATA_CATALOG]
+        data = self.aws_artifact_data[ServiceCategory.DATA_CATALOG]
         data_summary = []
         for name, info in data["sageworks"].items():  # Just the sageworks database (not sagemaker_featurestore)
             # Get the size of the S3 Storage Object(s)
@@ -146,7 +143,7 @@ class ArtifactsSummary(View):
 
     def feature_sets_summary(self):
         """Get summary data about the SageWorks FeatureSets"""
-        data = self.service_info[ServiceCategory.FEATURE_STORE]
+        data = self.aws_artifact_data[ServiceCategory.FEATURE_STORE]
         data_summary = []
         for feature_group, group_info in data.items():
             # Get the tags for this Feature Group
@@ -187,7 +184,7 @@ class ArtifactsSummary(View):
 
     def models_summary(self, concise=False):
         """Get summary data about the SageWorks Models"""
-        data = self.service_info[ServiceCategory.MODELS]
+        data = self.aws_artifact_data[ServiceCategory.MODELS]
         model_summary = []
         for model_group, model_list in data.items():
             # Special Case for Model Groups without any Models
@@ -240,7 +237,7 @@ class ArtifactsSummary(View):
 
     def endpoints_summary(self):
         """Get summary data about the SageWorks Endpoints"""
-        data = self.service_info[ServiceCategory.ENDPOINTS]
+        data = self.aws_artifact_data[ServiceCategory.ENDPOINTS]
         data_summary = []
 
         # Get Summary information for each endpoint

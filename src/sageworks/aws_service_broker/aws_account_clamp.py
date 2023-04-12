@@ -1,4 +1,4 @@
-"""AWSAccountClamp provides logic/functionality over the set of AWS IAM Services"""
+"""AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
 import sys
 import boto3
 from botocore.exceptions import ClientError, UnauthorizedSSOTokenError
@@ -18,7 +18,7 @@ logging_setup()
 
 class AWSAccountClamp:
     def __init__(self):
-        """AWSAccountClamp provides logic/functionality over the set of AWS IAM Services"""
+        """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
         self.log = logging.getLogger(__file__)
 
         # Grab the AWS Role Name from the SageWorks Config
@@ -26,7 +26,7 @@ class AWSAccountClamp:
         role_name = config.get_config_value("SAGEWORKS_AWS", "SAGEWORKS_ROLE")
         self.role_name = role_name
 
-        # The default AWS Session TTL is 1 hour so we'll set our TTL to 50 minutes
+        # The default AWS Assume Role TTL is 1 hour, so we'll set our TTL to 50 minutes
         self.session_time_delta = timedelta(minutes=50)
 
     def check_aws_identity(self) -> bool:
@@ -117,7 +117,7 @@ class AWSAccountClamp:
     def boto_session(self):
         """Create a *refreshable* AWS/boto session so that clients don't get TOKEN timeouts"""
 
-        # FIXME: If we're already using the SageWorks Execution Role, then we don't need refreshable credentials
+        # If we're already using the SageWorks Execution Role, then we don't need refreshable credentials
         if self.is_sageworks_role():
             return boto3.Session()
 
@@ -137,12 +137,12 @@ class AWSAccountClamp:
         return refreshable_session
 
     def sagemaker_session(self):
-        """Create a sageworks SageMaker session using sts.assume_role(sageworks_execution_role)"""
+        """Create a sageworks SageMaker session (using our boto3 refreshable session)"""
         return SageSession(boto_session=self.boto_session())
 
     def sagemaker_client(self):
-        """Create a sageworks SageMaker client using sts.assume_role(sageworks_execution_role)"""
-        return self.sagemaker_session().boto_session.client("sagemaker")
+        """Create a sageworks SageMaker client (using our boto3 refreshable session)"""
+        return self.boto_session().client("sagemaker")
 
     @staticmethod
     def account_id():
