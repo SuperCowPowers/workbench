@@ -1,6 +1,5 @@
 """S3HeavyToDataSource: Class to move HEAVY S3 Files into a SageWorks DataSource"""
 import awswrangler as wr
-import json
 
 # Local imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
@@ -32,10 +31,17 @@ class S3HeavyToDataSource(Transform):
         # Read in the S3 CSV as a Pandas DataFrame
         df = wr.s3.read_csv(self.input_uuid, low_memory=False, boto3_session=self.boto_session)
 
+        # Set up our metadata storage
+        sageworks_meta = {"sageworks_tags": tags}
+        for key, value in self.output_meta.items():
+            sageworks_meta[key] = value
+
         # Create the Output Parquet file S3 Storage Path
         s3_storage_path = f"{self.data_source_s3_path}/{self.output_uuid}"
 
         # Write out the DataFrame to Parquet/DataStore/Athena
+        description = f"SageWorks data source: {self.output_uuid}"
+        glue_table_settings = {"description": description, "parameters": sageworks_meta}
         wr.s3.to_parquet(
             df,
             path=s3_storage_path,
@@ -43,11 +49,10 @@ class S3HeavyToDataSource(Transform):
             mode="overwrite",
             database=self.data_catalog_db,
             table=self.output_uuid,
-            description=f"SageWorks data source: {self.output_uuid}",
             filename_prefix=f"{self.output_uuid}_",
-            parameters={"tags": json.dumps(tags)},
             boto3_session=self.boto_session,
             partition_cols=None,
+            glue_table_settings=glue_table_settings,
         )  # FIXME: Have some logic around partition columns
 
 

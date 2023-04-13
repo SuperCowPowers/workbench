@@ -32,7 +32,7 @@ setup(
     data_files=get_files("data") + get_files("examples"),
     install_requires=[
         "boto3",
-        "awswrangler",
+        "awswrangler >= 3.0.0",
         "sagemaker >= 2.143",
         "pandas",
         "scikit-learn",

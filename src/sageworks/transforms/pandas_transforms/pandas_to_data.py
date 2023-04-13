@@ -24,7 +24,7 @@ class PandasToData(Transform):
         """PandasToData Initialization"""
 
         # Call superclass init
-        super().__init__(None, output_uuid)
+        super().__init__("DataFrame", output_uuid)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.PANDAS_DF
@@ -44,6 +44,8 @@ class PandasToData(Transform):
         s3_storage_path = f"{self.data_source_s3_path}/{self.output_uuid}"
 
         # Write out the DataFrame to Parquet/DataStore/Athena
+        description = f"SageWorks data source: {self.output_uuid}"
+        glue_table_settings = {"description": description, "parameters": sageworks_meta}
         wr.s3.to_parquet(
             self.input_df,
             path=s3_storage_path,
@@ -51,11 +53,10 @@ class PandasToData(Transform):
             mode="overwrite",
             database=self.data_catalog_db,
             table=self.output_uuid,
-            description=f"SageWorks data source: {self.output_uuid}",
             filename_prefix=f"{self.output_uuid}_",
-            parameters=sageworks_meta,
             boto3_session=self.boto_session,
             partition_cols=None,
+            glue_table_settings=glue_table_settings,
         )  # FIXME: Have some logic around partition columns
 
     def set_input(self, input_df: pd.DataFrame):
@@ -71,7 +72,7 @@ if __name__ == "__main__":
     # Load some small test data
     # Local/relative path to CSV file (FIXME?)
     data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
-    test_df = pd.DataFrame(data_path)
+    test_df = pd.read_csv(data_path)
 
     # Create my DF to Data Source Transform
     output_uuid = "test_data"

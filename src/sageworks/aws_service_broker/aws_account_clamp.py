@@ -5,7 +5,7 @@ from botocore.exceptions import ClientError, UnauthorizedSSOTokenError
 from botocore.credentials import RefreshableCredentials
 from botocore.session import get_session
 from sagemaker.session import Session as SageSession
-from datetime import datetime, timezone, timedelta
+from datetime import timedelta
 import logging
 
 # SageWorks Imports

@@ -25,7 +25,7 @@ class PandasToFeatures(Transform):
         """PandasToFeatures Initialization"""
 
         # Call superclass init
-        super().__init__(None, output_uuid)
+        super().__init__("DataFrame", output_uuid)
 
         # Set up all my instance attributes
         self.input_df = None

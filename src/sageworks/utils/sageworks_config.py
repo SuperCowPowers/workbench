@@ -22,6 +22,9 @@ class SageWorksConfig:
 
         # Locate the configuration file
         self.config_file = self.locate_config_file()
+        if not self.config_file:
+            self.log.critical("Unable to locate SageWorks Config File...")
+            sys.exit(1)
 
         # Read in the configuration file
         self.sageworks_config = ConfigParser()
@@ -33,7 +36,6 @@ class SageWorksConfig:
         # Check for an ENV Var for the config file path
         env_config_file = os.environ.get("SAGEWORKS_CONFIG_FILE")
         if env_config_file:
-
             self.log.info(f"Using ENV VAR for SAGEWORKS_CONFIG_FILE: {env_config_file}")
 
             # Check for configuration file existence
@@ -43,7 +45,7 @@ class SageWorksConfig:
                 self.log.warning(f"Config Not Found: {env_config_file} does not exist")
 
         # Check the User's home directory for a config file
-        home_config_file = Path.home() / "config" / "sageworks" / "sageworks_config.ini"
+        home_config_file = Path.home() / ".config" / "sageworks" / "sageworks_config.ini"
         if os.path.exists(home_config_file):
             return home_config_file
         else:

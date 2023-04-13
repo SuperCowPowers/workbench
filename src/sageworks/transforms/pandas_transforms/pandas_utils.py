@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 
 def get_percent_nan(df):
-    log.info("Dataframe ({:d} rows)".format(len(df)))
+    log.info("DataFrame ({:d} rows)".format(len(df)))
     s = df.isna().mean().round(3) * 100.0
     s.name = "percent_nan"
     return s

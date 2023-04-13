@@ -43,7 +43,7 @@ class Transform(ABC):
     """Transform: Base Class for all transforms within SageWorks. Inherited Classes
     must implement the abstract transform_impl() method"""
 
-    def __init__(self, input_uuid: str | None, output_uuid: str | None):
+    def __init__(self, input_uuid: str, output_uuid: str):
         """Transform Initialization"""
 
         self.log = logging.getLogger(__name__)

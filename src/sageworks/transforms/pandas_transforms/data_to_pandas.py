@@ -19,7 +19,7 @@ class DataToPandas(Transform):
         """DataToPandas Initialization"""
 
         # Call superclass init
-        super().__init__(input_uuid, None)
+        super().__init__(input_uuid, "DataFrame")
 
         # Set up all my instance attributes
         self.input_type = TransformInput.DATA_SOURCE
