@@ -176,8 +176,8 @@ if __name__ == "__main__":
     pprint(aws_broker.get_all_metadata())
 
     # Get S3 object sizes
-    # incoming_data_size = aws_broker.artifact_info.s3_object_sizes(aws_broker.incoming_data.s3_path)
-    # print(f"Incoming Data Size: {incoming_data_size} MB")
+    incoming_data_size = aws_broker.artifact_info.s3_object_sizes(aws_broker.incoming_data.bucket)
+    print(f"Incoming Data Size: {incoming_data_size} MB")
 
     # Wait for any open threads to finish
     aws_broker.wait_for_refreshes()
