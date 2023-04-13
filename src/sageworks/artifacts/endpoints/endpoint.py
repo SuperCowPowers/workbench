@@ -39,7 +39,7 @@ class Endpoint(Artifact):
 
         # Grab an AWS Metadata Broker object and pull information for Endpoints
         self.endpoint_name = endpoint_uuid
-        self.endpoint_meta = self.aws_meta.get_metadata(ServiceCategory.ENDPOINTS).get(self.endpoint_name)
+        self.endpoint_meta = self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS).get(self.endpoint_name)
         self.endpoint_return_columns = None
 
         # All done

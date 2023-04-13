@@ -27,7 +27,7 @@ class Model(Artifact):
 
         # Grab an AWS Metadata Broker object and pull information for Models
         self.model_name = model_uuid
-        self.model_meta = self.aws_meta.get_metadata(ServiceCategory.MODELS).get(self.model_name)
+        self.model_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS).get(self.model_name)
         if self.model_meta is None:
             self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
         else:

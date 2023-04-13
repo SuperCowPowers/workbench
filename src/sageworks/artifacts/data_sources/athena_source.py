@@ -34,7 +34,7 @@ class AthenaSource(DataSource):
         self.table_name = data_uuid
 
         # Grab an AWS Metadata Broker object and pull information for Data Sources
-        self.catalog_meta = self.aws_meta.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(
+        self.catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(
             self.table_name
         )
 

@@ -27,7 +27,7 @@ class Artifact(ABC):
     sm_client = AWSAccountClamp().sagemaker_client(boto_session)
 
     # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
-    aws_meta = AWSServiceBroker()
+    aws_broker = AWSServiceBroker()
 
     # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings
     sageworks_config = SageWorksConfig()
@@ -86,6 +86,10 @@ class Artifact(ABC):
         """Delete this artifact including all related AWS objects"""
         pass
 
+    def set_tags(self, tag):
+        """Set the tags for this artifact"""
+        self.log.error("set_tags: functionality needs to be added!")
+
     @staticmethod
     def aws_tags_to_dict(aws_tags):
         """AWS Tags are in an odd format, so convert to regular dictionary"""
@@ -104,10 +108,6 @@ class Artifact(ABC):
         combined_tags = self.sageworks_meta().get("sageworks_tags", "")
         tags = combined_tags.split(":")
         return tags
-
-    def add_tag(self, tag):
-        """Add a tag to this artifact"""
-        self.log.error("add_tag: functionality needs to be added!")
 
     def summary(self) -> dict:
         """This is generic summary information for all Artifacts. If you
