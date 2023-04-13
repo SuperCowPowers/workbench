@@ -33,10 +33,10 @@ class ArtifactInfo(Connector):
 
     def s3_object_sizes(self, s3_path) -> int:
         """Return the sum of all the s3 objects sizes for the given s3 path
-            Args:
-                s3_path (str): S3 Path for recursive aggregation
-            Returns:
-                int: Sum of object size in this s3 path in MegaBytes
+        Args:
+            s3_path (str): S3 Path for recursive aggregation
+        Returns:
+            int: Sum of object size in this s3 path in MegaBytes
         """
         size_in_mb = self.artifact_info_cache.get(s3_path)
         if size_in_mb is None:
@@ -48,10 +48,10 @@ class ArtifactInfo(Connector):
 
     def get_info(self, aws_arn) -> dict:
         """Retrieve information on AWS Artifacts (tags, metadata, etc)
-            Args:
-                aws_arn (str): AWS ARN for the artifact
-            Returns:
-                dict: Dictionary of AWS Artifact information
+        Args:
+            aws_arn (str): AWS ARN for the artifact
+        Returns:
+            dict: Dictionary of AWS Artifact information
         """
         info = self.artifact_info_cache.get(aws_arn)
         if info is None:
@@ -72,10 +72,10 @@ if __name__ == "__main__":
     from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
     # Grab one of our test DataSources for something to test with
-    data_source = AthenaSource('abalone_data')
+    data_source = AthenaSource("abalone_data")
     details = data_source.details()
-    arn = details['aws_arn']
-    s3_location = details['s3_storage_location']
+    arn = details["aws_arn"]
+    s3_location = details["s3_storage_location"]
 
     # Create the class and get the info about the artifact
     my_info = ArtifactInfo()

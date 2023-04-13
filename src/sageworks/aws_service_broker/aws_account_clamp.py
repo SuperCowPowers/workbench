@@ -95,7 +95,7 @@ class AWSAccountClamp:
         """Internal: Set up our AWS Session credentials for automatic refresh"""
 
         # Assume the SageWorks Execution Role and then pull the credentials
-        self.log.info('Assuming the SageWorks Execution Role and Refreshing Credentials...')
+        self.log.info("Assuming the SageWorks Execution Role and Refreshing Credentials...")
         sts = boto3.Session().client("sts")
         response = sts.assume_role(
             RoleArn=self.sageworks_execution_role_arn(),

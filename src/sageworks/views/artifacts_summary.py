@@ -41,7 +41,7 @@ class ArtifactsSummary(View):
             "DATA_SOURCES": self.data_sources_summary(),
             "FEATURE_SETS": self.feature_sets_summary(),
             "MODELS": self.models_summary(),
-            "ENDPOINTS": self.endpoints_summary()
+            "ENDPOINTS": self.endpoints_summary(),
         }
         return summary_data
 
