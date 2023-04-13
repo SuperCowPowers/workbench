@@ -11,6 +11,7 @@ logging_setup()
 
 class AWSAccountCheck:
     """AWSAccountCheck runs a bunch of tests/checks to ensure SageWorks AWS Setup"""
+
     def __init__(self):
         """AWSAccountCheck Initialization"""
         self.log = logging.getLogger(__file__)

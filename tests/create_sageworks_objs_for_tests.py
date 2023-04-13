@@ -1,5 +1,5 @@
 """This Script creates the SageWorks Artifacts in AWS needed for the tests
-   
+
    DataSources:
        - test_data
        - abalone_data
