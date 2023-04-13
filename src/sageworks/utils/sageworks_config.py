@@ -20,27 +20,51 @@ class SageWorksConfig:
     def __init__(self):
         self.log = logging.getLogger(__file__)
 
-        # FIXME: This is a hack to get the config file path
-        self.default_config_path = self.get_default_config_path()
-        self.config_file = self.get_config_file_path()
+        # Locate the configuration file
+        self.config_file = self.locate_config_file()
 
         # Read in the configuration file
         self.sageworks_config = ConfigParser()
         self.sageworks_config.read(self.config_file)
 
+    def locate_config_file(self):
+        """Locate the sageworks configuration file"""
+
+        # Check for an ENV Var for the config file path
+        env_config_file = os.environ.get("SAGEWORKS_CONFIG_FILE")
+        if env_config_file:
+
+            self.log.info(f"Using ENV VAR for SAGEWORKS_CONFIG_FILE: {env_config_file}")
+
+            # Check for configuration file existence
+            if os.path.exists(env_config_file):
+                return env_config_file
+            else:
+                self.log.warning(f"Config Not Found: {env_config_file} does not exist")
+
+        # Check the User's home directory for a config file
+        home_config_file = Path.home() / "config" / "sageworks" / "sageworks_config.ini"
+        if os.path.exists(home_config_file):
+            return home_config_file
+        else:
+            self.log.warning(f"Config Not Found: {home_config_file} does not exist")
+
+        # Last resort, check the git repository for a config file
+        repo_config_file = self.get_repository_config_path() / "config" / "sageworks_config.ini"
+        if os.path.exists(repo_config_file):
+            self.log.info("Using Repository Config... you probably want to fix this")
+            self.log.info(f"Repository Config: {repo_config_file}")
+            return repo_config_file
+        else:
+            self.log.warning(f"Config Not Found: {repo_config_file} does not exist")
+
+        # Totally failed to find a config file
+        return None
+
     @staticmethod
-    def get_default_config_path():
-        """Get the default config path"""
-        # FIXME: This is a hack to get the config file path
+    def get_repository_config_path():
+        """Get the default config path for finding the config from the git repository"""
         return Path(sys.modules["sageworks"].__file__).parent.parent.parent
-
-    def get_config_file_path(self):
-        """Find the config file"""
-
-        # Do we have an ENV var for the test_data path or config file?
-        config_path = os.environ.get("SAGEWORKS_CONFIG_PATH") or self.default_config_path
-        config_file = os.environ.get("SAGEWORKS_CONFIG_FILE") or "sageworks_config.ini"
-        return os.path.join(config_path, config_file)
 
     def get_config_sections(self) -> list:
         """Grab the section names out of the config file"""
@@ -71,6 +95,3 @@ if __name__ == "__main__":
         keys = sw_config.get_config_section_keys(section)
         for key in keys:
             print(key, sw_config.get_config_value(section, key))
-
-    # Try an unknown config key
-    sw_config.get_config_value("UNKNOWN", "KEY")
