@@ -80,7 +80,7 @@ class AthenaSource(DataSource):
         size_in_mb = size_in_bytes / 1_000_000
         return size_in_mb
 
-    def meta(self):
+    def aws_meta(self):
         """Get the full AWS metadata for this artifact"""
         return self.catalog_meta
 

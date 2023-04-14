@@ -77,7 +77,7 @@ class Artifact(ABC):
         pass
 
     @abstractmethod
-    def meta(self):
+    def aws_meta(self):
         """Get the full AWS metadata for this artifact"""
         pass
 

@@ -66,7 +66,7 @@ class FeatureSet(Artifact):
             return False
         return True
 
-    def meta(self) -> dict:
+    def aws_meta(self) -> dict:
         """Get the full AWS metadata for this artifact"""
         return self.feature_meta
 
@@ -79,19 +79,19 @@ class FeatureSet(Artifact):
         return self.data_source.size()
 
     def column_names(self) -> list[str]:
-        """Return the column names of the internal DataSource"""
-        return self.data_source.column_names()
+        """Return the column names of the Feature Set"""
+        return list(self.column_details().keys())
 
     def column_types(self) -> list[str]:
-        """Return the column types of the internal DataSource"""
-        return self.data_source.column_types()
+        """Return the column types of the Feature Set"""
+        return list(self.column_details().values())
 
-    def column_details(self) -> list[str]:
-        """Return the column details of the internal DataSource"""
-        return self.data_source.column_details()
+    def column_details(self) -> dict:
+        """Return the column details of the Feature Set"""
+        return {item["FeatureName"]: item["FeatureType"] for item in self.feature_meta["FeatureDefinitions"]}
 
     def num_columns(self) -> int:
-        """Return the number of columns of the internal DataSource"""
+        """Return the number of columns of the Feature Set"""
         return len(self.column_names())
 
     def num_rows(self) -> int:
@@ -99,7 +99,7 @@ class FeatureSet(Artifact):
         return self.data_source.num_rows()
 
     def query(self, query: str) -> pd.DataFrame:
-        """Return the number of rows of the internal DataSource"""
+        """Query the internal DataSource"""
         return self.data_source.query(query)
 
     def aws_url(self):
