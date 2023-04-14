@@ -64,7 +64,7 @@ class ArtifactInfo(Connector):
                 aws_tags = self.sm_session.list_tags(aws_arn)
                 info = self._aws_tags_to_dict(aws_tags)
             except botocore.exceptions.ClientError as exc:
-                if exc.response['Error']['Code'] == "ValidationException":
+                if exc.response["Error"]["Code"] == "ValidationException":
                     self.log.error(f"This method doesn't work on DataSources: {exc}")
                     return {}
                 else:

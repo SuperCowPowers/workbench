@@ -97,8 +97,8 @@ class Artifact(ABC):
 
     def sageworks_meta(self):
         """Get the SageWorks specific metadata for this Artifact
-           Note: This functionality will work for FeatureSets, Models, and Endpoints
-           but not for DataSources. DataSources need to overwrite this method
+        Note: This functionality will work for FeatureSets, Models, and Endpoints
+        but not for DataSources. DataSources need to overwrite this method
         """
         aws_arn = self.arn()
         self.log.info(f"Retrieving SageWorks Metadata for Artifact: {aws_arn}...")
