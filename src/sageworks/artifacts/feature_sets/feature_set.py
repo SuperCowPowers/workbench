@@ -11,6 +11,7 @@ from sagemaker.feature_store.feature_store import FeatureStore
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
+from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
@@ -38,7 +39,7 @@ class FeatureSet(Artifact):
         self.feature_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
         if self.feature_meta is None:
             self.log.warning(f"Could not find feature set {self.feature_set_name} within current visibility scope")
-            self.athena_source = None
+            self.data_source = None
             return
         else:
             self.record_id = self.feature_meta["RecordIdentifierFeatureName"]
@@ -49,8 +50,8 @@ class FeatureSet(Artifact):
             self.athena_table = self.feature_meta["sageworks"].get("athena_table")
             self.s3_storage = self.feature_meta["sageworks"].get("s3_storage")
 
-            # Creat our internal AthenaSource
-            self.athena_source = AthenaSource(self.athena_table, self.athena_database)
+            # Creat our internal DataSource (hardcoded to Athena for now)
+            self.data_source = AthenaSource(self.athena_table, self.athena_database)
 
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
@@ -74,32 +75,32 @@ class FeatureSet(Artifact):
         return self.feature_meta["FeatureGroupArn"]
 
     def size(self) -> float:
-        """Return the size of the internal AthenaSource in MegaBytes"""
-        return self.athena_source.size()
+        """Return the size of the internal DataSource in MegaBytes"""
+        return self.data_source.size()
 
     def column_names(self) -> list[str]:
-        """Return the column names of the internal AthenaSource"""
-        return self.athena_source.column_names()
+        """Return the column names of the internal DataSource"""
+        return self.data_source.column_names()
 
     def column_types(self) -> list[str]:
-        """Return the column types of the internal AthenaSource"""
-        return self.athena_source.column_types()
+        """Return the column types of the internal DataSource"""
+        return self.data_source.column_types()
 
     def column_details(self) -> list[str]:
-        """Return the column types of the internal AthenaSource"""
-        return self.athena_source.column_details()
+        """Return the column details of the internal DataSource"""
+        return self.data_source.column_details()
 
     def num_columns(self) -> int:
-        """Return the number of columns of the internal AthenaSource"""
+        """Return the number of columns of the internal DataSource"""
         return len(self.column_names())
 
     def num_rows(self) -> int:
-        """Return the number of rows of the internal AthenaSource"""
-        return self.athena_source.num_rows()
+        """Return the number of rows of the internal DataSource"""
+        return self.data_source.num_rows()
 
     def query(self, query: str) -> pd.DataFrame:
-        """Return the number of rows of the internal AthenaSource"""
-        return self.athena_source.query(query)
+        """Return the number of rows of the internal DataSource"""
+        return self.data_source.query(query)
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
@@ -113,6 +114,10 @@ class FeatureSet(Artifact):
         """Return the datetime when this artifact was last modified"""
         # Note: We can't currently figure out how to this from AWS Metadata
         return self.feature_meta["CreationTime"]
+
+    def get_data_source(self) -> DataSource:
+        """Return the underlying DataSource object"""
+        return self.data_source
 
     def get_feature_store(self) -> FeatureStore:
         """Return the underlying AWS FeatureStore object. This can be useful for more advanced usage
@@ -168,10 +173,38 @@ class FeatureSet(Artifact):
         return query
 
     def details(self) -> dict:
-        """Additional Details about this FeatureSet"""
-        details = self.summary()
-        # Fill in more details here if needed
-        return details
+        """Additional Details about this FeatureSet
+        Returns:
+            dict: A dictionary of details about this FeatureSet
+        Notes:
+            - num_columns
+            - num_rows
+            - column_details
+            - storage_type ('athena' or 'rds')
+            - storage_uuid
+
+        Drill Down:
+        You can use the fs.get_data_source().details() method to get additional
+        details on the underlying DataSource object.
+        """
+        # Include the summary information in the details
+        fs_details = self.summary()
+
+        # Number of Columns
+        fs_details["num_columns"] = self.num_columns()
+
+        # Number of Rows
+        fs_details["num_rows"] = self.num_rows()
+
+        # Column Details
+        fs_details["column_details"] = self.column_details()
+
+        # Underlying Storage Details
+        fs_details["storage_type"] = "athena"  # TODO: Add RDS support
+        fs_details["storage_uuid"] = self.data_source.uuid
+
+        # Return the details
+        return fs_details
 
     def delete(self):
         """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
@@ -181,8 +214,8 @@ class FeatureSet(Artifact):
         remove_fg.delete()
         self.ensure_feature_group_deleted(remove_fg)
 
-        # Delete our underlying AthenaSource (Data Catalog Table and S3 Storage Objects)
-        self.athena_source.delete()
+        # Delete our underlying DataSource (Data Catalog Table and S3 Storage Objects)
+        self.data_source.delete()
 
         # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
         s3_delete_path = self.feature_sets_s3_path + f"/{self.feature_set_name}"
@@ -205,9 +238,9 @@ class FeatureSet(Artifact):
         self.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
 
-# Simple test of the FeatureSet functionality
-def test():
-    """Test for FeatureSet Class"""
+if __name__ == "__main__":
+    """Exercise for FeatureSet Class"""
+    from pprint import pprint
 
     # Grab a FeatureSet object and pull some information from it
     my_features = FeatureSet("test_feature_set")
@@ -230,10 +263,21 @@ def test():
     print(f"SageWorks Meta: {my_features.sageworks_meta()}")
     print(f"SageWorks Tags: {my_features.sageworks_tags()}")
 
+    # Get a summary for this Feature Set
+    print("\nSummary:")
+    pprint(my_features.summary())
+
+    # Get the details for this Feature Set
+    print("\nDetails:")
+    details = my_features.details()
+    pprint(details)
+
+    # Now do deep dive on storage
+    if details["storage_type"] == "athena":
+        storage = my_features.get_data_source()
+        print("\nStorage Details:")
+        pprint(storage.details())
+
     # Now delete the AWS artifacts associated with this Feature Set
     # print('Deleting SageWorks Feature Set...')
     # my_features.delete()
-
-
-if __name__ == "__main__":
-    test()

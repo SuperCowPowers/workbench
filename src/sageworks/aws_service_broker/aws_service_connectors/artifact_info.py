@@ -84,10 +84,11 @@ class ArtifactInfo(Connector):
 if __name__ == "__main__":
     from pprint import pprint
     from sageworks.artifacts.data_sources.athena_source import AthenaSource
+    from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
-    # Grab one of our test DataSources for something to test with
-    data_source = AthenaSource("abalone_data")
-    details = data_source.details()
+    # Grab one of our test FeatureSets for something to test with
+    feature_set = FeatureSet("abalone_features")
+    details = feature_set.details()
     arn = details["aws_arn"]
     s3_location = details["s3_storage_location"]
 
@@ -97,3 +98,9 @@ if __name__ == "__main__":
     size = my_info.s3_object_sizes(s3_location)
     pprint(meta)
     print(f"Size: {size} MB")
+
+    # Grab one of our test DataSources for something to test with
+    data_source = AthenaSource("abalone_data")
+    details = data_source.details()
+    arn = details["aws_arn"]
+    s3_location = details["s3_storage_location"]
