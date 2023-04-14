@@ -1,4 +1,5 @@
 """ArtifactInfo: Class to retrieve information (tags, meta, size) from an AWS Artifact"""
+import botocore
 import awswrangler as wr
 
 
@@ -46,8 +47,9 @@ class ArtifactInfo(Connector):
             self.artifact_info_cache.set(s3_path, size_in_mb)
         return size_in_mb
 
-    def get_info(self, aws_arn) -> dict:
-        """Retrieve information on AWS Artifacts (tags, metadata, etc)
+    def get_sagemaker_obj_info(self, aws_arn) -> dict:
+        """Retrieve information on AWS *SageMaker* Objects (tags, metadata, etc)
+           This method will ONLY work for FeatureSets, Models, and Endpoints but fail for DataSources
         Args:
             aws_arn (str): AWS ARN for the artifact
         Returns:
@@ -56,8 +58,20 @@ class ArtifactInfo(Connector):
         info = self.artifact_info_cache.get(aws_arn)
         if info is None:
             self.log.info(f"Retrieving Artifact Tags and Metadata: {aws_arn}...")
-            aws_tags = self.sm_session.list_tags(aws_arn)
-            info = self._aws_tags_to_dict(aws_tags)
+
+            # This class will work for FeatureSets, Models, and Endpoints but fail for DataSources
+            try:
+                aws_tags = self.sm_session.list_tags(aws_arn)
+                info = self._aws_tags_to_dict(aws_tags)
+            except botocore.exceptions.ClientError as exc:
+                if exc.response['Error']['Code'] == "ValidationException":
+                    self.log.error(f"This method doesn't work on DataSources: {exc}")
+                    return {}
+                else:
+                    self.log.crtical(f"Unknown Error: {exc}")
+                    raise exc
+
+            # Set the artifact info cache
             self.artifact_info_cache.set(aws_arn, info)
         return info
 
@@ -79,7 +93,7 @@ if __name__ == "__main__":
 
     # Create the class and get the info about the artifact
     my_info = ArtifactInfo()
-    meta = my_info.get_info(arn)
+    meta = my_info.get_sagemaker_obj_info(arn)
     size = my_info.s3_object_sizes(s3_location)
     pprint(meta)
     print(f"Size: {size} MB")

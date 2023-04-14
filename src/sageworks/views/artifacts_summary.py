@@ -120,7 +120,7 @@ class ArtifactsSummary(View):
         for feature_group, group_info in data.items():
             # Get the tags for this Feature Group
             arn = group_info["FeatureGroupArn"]
-            sageworks_meta = self.artifact_info.get_info(arn)
+            sageworks_meta = self.artifact_info.get_sagemaker_obj_info(arn)
 
             # Get the size of the S3 Storage Object(s)
             size = self.artifact_info.s3_object_sizes(group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"])
@@ -169,7 +169,7 @@ class ArtifactsSummary(View):
             for model in model_list:
                 # Get the tags for this Model Group
                 model_group_arn = model["ModelPackageGroupArn"]
-                sageworks_meta = self.artifact_info.get_info(model_group_arn)
+                sageworks_meta = self.artifact_info.get_sagemaker_obj_info(model_group_arn)
 
                 # Do they want the full details or just the concise summary?
                 if concise:
@@ -216,7 +216,7 @@ class ArtifactsSummary(View):
         for endpoint, endpoint_info in data.items():
             # Get the tags for this Model Group
             endpoint_arn = endpoint_info["EndpointArn"]
-            sageworks_meta = self.artifact_info.get_info(endpoint_arn)
+            sageworks_meta = self.artifact_info.get_sagemaker_obj_info(endpoint_arn)
 
             summary = {
                 "Name": self.hyperlinks(endpoint_info["EndpointName"], "endpoints"),
