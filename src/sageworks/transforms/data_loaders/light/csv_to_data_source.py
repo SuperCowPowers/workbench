@@ -1,4 +1,5 @@
 """CSVToDataSource: Class to move local CSV Files into a SageWorks DataSource"""
+import os
 import pandas as pd
 from pandas.errors import ParserError
 
@@ -32,12 +33,16 @@ class CSVToDataSource(Transform):
             try:
                 df[c] = pd.to_datetime(df[c])
             except (ParserError, ValueError):
-                self.log.info(f"Column {c} could not be converted to datetime...")
+                self.log.debug(f"Column {c} could not be converted to datetime...")
         return df
 
     def transform_impl(self, overwrite: bool = True):
         """Convert the local CSV file into Parquet Format in the SageWorks Data Sources Bucket, and
         store the information about the data to the AWS Data Catalog sageworks database"""
+
+        # Report the transformation initiation
+        csv_file = os.path.basename(self.input_uuid)
+        self.log.info(f"Starting {csv_file} -->  DataSource: {self.output_uuid}...")
 
         # Read in the Local CSV as a Pandas DataFrame
         df = pd.read_csv(self.input_uuid, low_memory=False)
@@ -49,6 +54,9 @@ class CSVToDataSource(Transform):
         pandas_to_data.set_output_tags(self.output_tags)
         pandas_to_data.add_output_meta(self.output_meta)
         pandas_to_data.transform()
+
+        # Report the transformation results
+        self.log.info(f"{csv_file} -->  DataSource: {self.output_uuid} Complete!")
 
 
 if __name__ == "__main__":

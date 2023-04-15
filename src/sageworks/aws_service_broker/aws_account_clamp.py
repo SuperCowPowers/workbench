@@ -95,7 +95,7 @@ class AWSAccountClamp:
         """Internal: Set up our AWS Session credentials for automatic refresh"""
 
         # Assume the SageWorks Execution Role and then pull the credentials
-        self.log.info("Assuming the SageWorks Execution Role and Refreshing Credentials...")
+        self.log.debug("Assuming the SageWorks Execution Role and Refreshing Credentials...")
         sts = boto3.Session().client("sts")
         response = sts.assume_role(
             RoleArn=self.sageworks_execution_role_arn(),
@@ -107,7 +107,7 @@ class AWSAccountClamp:
             "token": response.get("SessionToken"),
             "expiry_time": response.get("Expiration").isoformat(),
         }
-        self.log.info(f"Credentials Refreshed: Expires at {credentials['expiry_time']}")
+        self.log.debug(f"Credentials Refreshed: Expires at {credentials['expiry_time']}")
         return credentials
 
     def boto_session(self):

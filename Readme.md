@@ -43,6 +43,9 @@ pip install sageworks
 - [Coding with SageWorks Video](https://drive.google.com/file/d/1iO7IuQtTYdx4BtQjxv9lI1aVJ2ZcAo43/view?usp=sharing) Demonstrates creating an entire AWS ML Pipeline, from data ingestion, to feature sets, to models and endpoints.
 - Join our [Discord](https://discord.gg/WHAJuz8sw8) for questions and advice on using SageWorks within your organization.
 
+### SageWorks Analysis Notebooks
+- [SageWorks Pipeline](https://nbviewer.jupyter.org/github/SuperCowPowers/sageworks/blob/main/notebooks/ML_Pipeline_with_SageWorks.ipynb): Building an AWS® ML Pipeline from Start to Finish
+
 ### SageWorks Zen
 - The AWS SageMaker® set of services is vast and **complex**.
 - SageWorks Classes encapsulate, organize, and manage sets of AWS® Services.

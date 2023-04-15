@@ -78,11 +78,11 @@ class Transform(ABC):
 
     def pre_transform(self, **kwargs):
         """Perform any Pre-Transform operations"""
-        self.log.info("Pre-Transform...")
+        self.log.debug("Pre-Transform...")
 
     def post_transform(self, **kwargs):
         """Perform any Post-Transform operations"""
-        self.log.info("Post-Transform...")
+        self.log.debug("Post-Transform...")
 
     def set_output_tags(self, tags: list | str):
         """Set the tags that will be associated with the output object
