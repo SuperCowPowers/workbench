@@ -39,7 +39,8 @@ pip install sageworks
 
 ### Getting Started
 - [SageWorks Overview](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing) Slides that cover and illustrate the SageWorks Modeling Pipeline.
-- [Initial Setup and Installation](https://github.com/SuperCowPowers/sageworks/wiki/Initial-Setup-and-Installation) for initial AWS/config/repository set up. 
+- [Initial Setup and Installation](https://github.com/SuperCowPowers/sageworks/wiki/Initial-Setup-and-Installation) for initial AWS/config/repository set up.
+- [SageWorks Pipeline](https://nbviewer.jupyter.org/github/SuperCowPowers/sageworks/blob/main/notebooks/ML_Pipeline_with_SageWorks.ipynb): Building an AWS® ML Pipeline from Start to Finish
 - [Coding with SageWorks Video](https://drive.google.com/file/d/1iO7IuQtTYdx4BtQjxv9lI1aVJ2ZcAo43/view?usp=sharing) Demonstrates creating an entire AWS ML Pipeline, from data ingestion, to feature sets, to models and endpoints.
 - Join our [Discord](https://discord.gg/WHAJuz8sw8) for questions and advice on using SageWorks within your organization.
 
