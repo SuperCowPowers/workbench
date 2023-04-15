@@ -31,21 +31,16 @@ SageWorks is a medium granularity framework that manages and aggregates AWS® Se
 
 <i><b> Clearly illustrated:</b> SageWorks provides intuitive and transparent visibility into the full pipeline of your AWS Sagemaker Deployments.</i>
 
-## Installation
-```
-pip install sageworks
-```
 
-
-### Getting Started
+## Getting Started
 - [SageWorks Overview](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing) Slides that cover and illustrate the SageWorks Modeling Pipeline.
-- [Initial Setup and Installation](https://github.com/SuperCowPowers/sageworks/wiki/Initial-Setup-and-Installation) for initial AWS/config/repository set up.
-- [SageWorks Pipeline](https://nbviewer.jupyter.org/github/SuperCowPowers/sageworks/blob/main/notebooks/ML_Pipeline_with_SageWorks.ipynb): Building an AWS® ML Pipeline from Start to Finish
-- [Coding with SageWorks Video](https://drive.google.com/file/d/1iO7IuQtTYdx4BtQjxv9lI1aVJ2ZcAo43/view?usp=sharing) Demonstrates creating an entire AWS ML Pipeline, from data ingestion, to feature sets, to models and endpoints.
+- [Initial Setup and Installation](https://github.com/SuperCowPowers/sageworks/wiki/Initial-Setup-and-Installation) for initial AWS/config/repository set up. 
+- [SageWorks Pipeline](https://nbviewer.jupyter.org/github/SuperCowPowers/sageworks/blob/main/notebooks/ML_Pipeline_with_SageWorks.ipynb) Building an AWS® ML Pipeline from start to finish.
+- [Coding with SageWorks Video](https://drive.google.com/file/d/1iO7IuQtTYdx4BtQjxv9lI1aVJ2ZcAo43/view?usp=sharing) Informal coding + chatting while building a full ML pipeline.
 - Join our [Discord](https://discord.gg/WHAJuz8sw8) for questions and advice on using SageWorks within your organization.
 
 ### SageWorks Analysis Notebooks
-- [SageWorks Pipeline](https://nbviewer.jupyter.org/github/SuperCowPowers/sageworks/blob/main/notebooks/ML_Pipeline_with_SageWorks.ipynb): Building an AWS® ML Pipeline from Start to Finish
+- [SageWorks Pipeline](https://nbviewer.jupyter.org/github/SuperCowPowers/sageworks/blob/main/notebooks/ML_Pipeline_with_SageWorks.ipynb) Building an AWS® ML Pipeline from Start to Finish
 
 ### SageWorks Zen
 - The AWS SageMaker® set of services is vast and **complex**.
