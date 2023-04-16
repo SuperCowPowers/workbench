@@ -16,9 +16,10 @@ class FeaturesToModel(Transform):
 
     Common Usage:
         to_model = FeaturesToModel(feature_uuid, model_uuid)
-        to_model.set_output_tags(["aqsol", "public", "whatever"])
-        to_model.transform(target="solubility", input_feature_list=<features>,
-                           model_type="regression/classification", delete_existing=True/False)
+        to_model.set_output_tags(["abalone", "public", "whatever"])
+        to_model.transform(target="class_number_of_rings", description="Abalone Regression Model".
+                           input_feature_list=<features>, model_type="regression/classification",
+                           delete_existing=True/False)
     """
 
     def __init__(self, feature_uuid: str, model_uuid: str):
@@ -32,6 +33,7 @@ class FeaturesToModel(Transform):
         self.output_type = TransformOutput.MODEL
         self.estimator = None
         self.model_script_dir = None
+        self.model_description = None
 
     def generate_model_script(self, target: str, feature_list: list[str], model_type: str) -> str:
         """Fill in the model template with specific target and feature_list
@@ -63,9 +65,18 @@ class FeaturesToModel(Transform):
             fp.write(xgb_script)
         return script_name
 
-    def transform_impl(self, target, input_feature_list=None, model_type="regression", delete_existing=True):
+    def transform_impl(self, target, description, feature_list=None, model_type="regression", delete_existing=True):
         """Generic Features to Model: Note you should create a new class and inherit from
-        this one to include specific logic for your Feature Set/Model"""
+        this one to include specific logic for your Feature Set/Model
+        Args:
+            target (str): Column name of the target variable
+            description (str): Description of the model
+            feature_list (list[str]): A list of columns for the features
+            model_type (str): regression or classification
+            delete_existing (bool): Delete the existing model if it exists
+        """
+        # Set our model description
+        self.model_description = description
 
         # Get our Feature Set and create an S3 CSV Training dataset
         feature_set = FeatureSet(self.input_uuid)
@@ -79,10 +90,11 @@ class FeaturesToModel(Transform):
         # Try to figure out features with this logic
         # - Don't include id, event_time columns
         # - Don't include AWS generated columns (e.g. write_time, api_invocation_time, is_deleted)
-        # - Don't include any columns that are of type string
+        # - Don't include the target column
+        # - Don't include any columns that are of type string or timestamp
         # - The rest of the columns are assumed to be features
         else:
-            self.log.warning("Guessing at the feature list, please specify a feature list!")
+            self.log.warning("Guessing at the feature list, HIGHLY SUGGESTED to specify an explicit feature list!")
             all_columns = feature_set.column_names()
             filter_list = [
                 "id",
@@ -157,7 +169,7 @@ class FeaturesToModel(Transform):
             inference_instances=["ml.t2.medium"],
             transform_instances=["ml.m5.large"],
             approval_status="Approved",
-            description="Test Model: AQSol Regression",
+            description=self.model_description,
         )
 
 

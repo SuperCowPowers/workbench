@@ -109,6 +109,10 @@ class PandasToFeatures(Transform):
         # Convert Int64 and Float64 types (see: https://github.com/aws/sagemaker-python-sdk/pull/3740)
         self.input_df = self.convert_nullable_types(self.input_df)
 
+        # FeatureSet Internal Storage (Athena) will convert columns names to lowercase, so we need
+        # to make sure that the column names are lowercase to match and avoid downstream issues
+        self.input_df.columns = self.input_df.columns.str.lower()
+
         # Do we want to delete the existing FeatureSet?
         if delete_existing:
             try:

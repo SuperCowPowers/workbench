@@ -1,4 +1,5 @@
 """Endpoint: SageWorks Endpoint Class"""
+import sys
 from datetime import datetime
 import botocore
 import pandas as pd
@@ -28,7 +29,7 @@ class Endpoint(Artifact):
             print(f"{metric}: {value:0.3f}")
     """
 
-    def __init__(self, endpoint_uuid):
+    def __init__(self, endpoint_uuid, exit_on_error=True):
         """Endpoint Initialization
 
         Args:
@@ -41,6 +42,7 @@ class Endpoint(Artifact):
         self.endpoint_name = endpoint_uuid
         self.endpoint_meta = self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS).get(self.endpoint_name)
         self.endpoint_return_columns = None
+        self.exit_on_error = exit_on_error
 
         # All done
         self.log.info(f"Endpoint Initialized: {self.endpoint_name}")
@@ -119,6 +121,11 @@ class Endpoint(Artifact):
 
         except botocore.exceptions.ClientError as err:
             if err.response["Error"]["Code"] == "ModelError":  # Model Error
+                # Report the error
+                self.log.critical(f"Endpoint prediction error: {err.response.get('Message')}")
+                if self.exit_on_error:
+                    sys.exit(1)
+
                 # Base case: DataFrame with 1 Row
                 if len(feature_df) == 1:
                     # If we don't have ANY known good results we're kinda screwed
