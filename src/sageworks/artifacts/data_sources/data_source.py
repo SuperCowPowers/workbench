@@ -1,51 +1,53 @@
-"""DataSource: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)"""
-from abc import abstractmethod
-import pandas as pd
+"""DataSource: A Factory for Data Sources (Athena, RDS, etc)"""
 
 # Local imports
-from sageworks.artifacts.artifact import Artifact
+from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 
-class DataSource(Artifact):
-    def __init__(self, uuid):
-        """DataSource: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)"""
+class DataSource:
+    def __new__(cls, uuid, data_source_type: str = "athena"):
+        """DataSource: A Factory for Data Sources (Athena, RDS, etc)
+        Args:
+            uuid: The UUID of the DataSource
+            data_source_type: The type of DataSource (athena, rds, etc)
+        Returns:
+            object: A concrete DataSource class (AthenaSource, RDSSource)
+        """
+        if data_source_type == "athena":
+            return AthenaSource(uuid)
+        else:
+            raise NotImplementedError(f"DataSource type {data_source_type} not implemented")
 
-        # Call superclass init
-        super().__init__(uuid)
 
-    @abstractmethod
-    def num_rows(self) -> int:
-        """Return the number of rows for this Data Source"""
-        pass
+if __name__ == "__main__":
+    """Exercise the DataSource Factory Class"""
 
-    @abstractmethod
-    def num_columns(self) -> int:
-        """Return the number of columns for this Data Source"""
-        pass
+    # Retrieve a Data Source
+    my_data = DataSource("test_data")
 
-    @abstractmethod
-    def column_names(self) -> list[str]:
-        """Return the column names for this Data Source"""
-        pass
+    # Verify that the Athena Data Source exists
+    assert my_data.check()
 
-    @abstractmethod
-    def column_types(self) -> list[str]:
-        """Return the column types for this Data Source"""
-        pass
+    # What's my SageWorks UUID
+    print(f"UUID: {my_data.uuid}")
 
-    def column_details(self) -> dict:
-        """Return the column details for this Data Source"""
-        return {name: type_ for name, type_ in zip(self.column_names(), self.column_types())}
+    # What's my AWS ARN
+    print(f"AWS ARN: {my_data.arn()}")
 
-    @abstractmethod
-    def query(self, query: str) -> pd.DataFrame:
-        """Query the DataSource"""
-        pass
+    # Get the S3 Storage for this Data Source
+    print(f"S3 Storage: {my_data.s3_storage_location()}")
 
-    def details(self) -> dict:
-        """Additional Details about this DataSource Artifact"""
-        details = self.summary()
-        details["num_rows"] = self.num_rows()
-        details["num_columns"] = self.num_columns()
-        details["column_details"] = self.column_details()
-        return details
+    # What's the size of the data?
+    print(f"Size of Data (MB): {my_data.size()}")
+
+    # When was it created and last modified?
+    print(f"Created: {my_data.created()}")
+    print(f"Modified: {my_data.modified()}")
+
+    # Column Names and Types
+    print(f"Column Names: {my_data.column_names()}")
+    print(f"Column Types: {my_data.column_types()}")
+
+    # Get Metadata and tags associated with this Artifact
+    print(f"Meta: {my_data.sageworks_meta()}")
+    print(f"Tags: {my_data.sageworks_tags()}")

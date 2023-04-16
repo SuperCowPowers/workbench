@@ -4,12 +4,12 @@ import awswrangler as wr
 from datetime import datetime
 
 # SageWorks Imports
-from sageworks.artifacts.data_sources.data_source import DataSource
+from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
 
-class AthenaSource(DataSource):
+class AthenaSource(DataSourceAbstract):
     """AthenaSource: SageWorks Data Source accessible through Athena
 
     Common Usage:
