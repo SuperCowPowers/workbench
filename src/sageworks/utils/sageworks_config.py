@@ -92,8 +92,8 @@ if __name__ == "__main__":
     sw_config = SageWorksConfig()
 
     config_sections = sw_config.get_config_sections()
-    print(config_sections)
     for section in config_sections:
+        print(f"Config Section: {section}")
         keys = sw_config.get_config_section_keys(section)
         for key in keys:
-            print(key, sw_config.get_config_value(section, key))
+            print(f"\t{key}: {sw_config.get_config_value(section, key)}")
