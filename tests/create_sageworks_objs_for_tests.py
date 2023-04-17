@@ -1,13 +1,18 @@
 """This Script creates the SageWorks Artifacts in AWS needed for the tests
 
-   DataSources:
-       - test_data
-       - abalone_data
-   FeatureSets:
-       - test_feature_set
-       - abalone_feature_set
+DataSources:
+    - test_data
+    - abalone_data
+FeatureSets:
+    - test_feature_set
+    - abalone_feature_set
+Models:
+    - abalone-regression
+Endpoints:
+    - abalone-regression-end
 """
 import sys
+import time
 from pathlib import Path
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
@@ -54,6 +59,8 @@ if __name__ == "__main__":
         features_to_model = FeaturesToModel("abalone_feature_set", "abalone-regression")
         features_to_model.set_output_tags(["abalone", "regression"])
         features_to_model.transform(target="class_number_of_rings", description="Abalone Regression Model")
+        print('Waiting for the Model to be created...')
+        time.sleep(10)
 
     # Create the abalone_regression Endpoint
     if not Endpoint("abalone-regression-end").check():
