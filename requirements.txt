@@ -8,3 +8,5 @@ scikit-learn >= 1.1.1
 awswrangler >= 3.0.0
 sagemaker >= 2.143
 dash >= 2.8
+dash-bootstrap-components
+dash-bootstrap-templates
