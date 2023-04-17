@@ -32,7 +32,7 @@ class ArtifactsSummary(View):
         """Get all the data that's useful for this view
 
         Returns:
-            dict: Dictionary of Pandas Dataframes, i.e. {'INCOMING_DATA', pd.DataFrame}
+            dict: Dictionary of Pandas Dataframes, e.g. {'INCOMING_DATA': pd.DataFrame, ...}
         """
 
         # We're filling in Summary Data for all the AWS Services
