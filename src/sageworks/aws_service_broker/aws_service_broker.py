@@ -138,8 +138,10 @@ class AWSServiceBroker:
         return cls.meta_cache.get(category)
 
     @classmethod
-    def get_all_metadata(cls) -> dict:
+    def get_all_metadata(cls, warn=True) -> dict:
         """Pull the metadata for ALL the Service Categories"""
+        if warn:
+            cls.log.warning("Getting ALL AWS Metadata: You should call get_metadata() with specific categories")
         return {_category: cls.get_metadata(_category) for _category in ServiceCategory}
 
     @classmethod
