@@ -27,13 +27,19 @@ class JSONToDataSource(Transform):
         self.input_type = TransformInput.LOCAL_FILE
         self.output_type = TransformOutput.DATA_SOURCE
 
-    def convert_columns_to_datetime(self, df: pd.DataFrame) -> pd.DataFrame:
+    def convert_object_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Try to automatically convert object columns to datetime columns"""
         for c in df.columns[df.dtypes == "object"]:  # Look at the object columns
             try:
                 df[c] = pd.to_datetime(df[c])
             except (ParserError, ValueError, TypeError):
                 self.log.debug(f"Column {c} could not be converted to datetime...")
+
+                # Now try to convert object to string
+                try:
+                    df[c] = df[c].astype(str)
+                except (ParserError, ValueError, TypeError):
+                    self.log.info(f"Column {c} could not be converted to string...")
         return df
 
     def transform_impl(self, overwrite: bool = True):
@@ -46,7 +52,7 @@ class JSONToDataSource(Transform):
 
         # Read in the Local JSON as a Pandas DataFrame
         df = pd.read_json(self.input_uuid, lines=True)
-        df = self.convert_columns_to_datetime(df)
+        df = self.convert_object_columns(df)
 
         # Use the SageWorks Pandas to Data Source class
         pandas_to_data = PandasToData(self.output_uuid)
