@@ -10,13 +10,18 @@ class S3ToDataSourceLight(Transform):
     """S3ToDataSourceLight: Class to move LIGHT S3 Files into a SageWorks DataSource
 
     Common Usage:
-        s3_to_data = S3ToDataSourceLight(s3_path, data_uuid)
+        s3_to_data = S3ToDataSourceLight(s3_path, data_uuid, datatype="csv/json")
         s3_to_data.set_output_tags(["abalone", "whatever"])
         s3_to_data.transform()
     """
 
-    def __init__(self, s3_path, data_uuid):
-        """S3ToDataSourceLight Initialization"""
+    def __init__(self, s3_path: str, data_uuid: str, datatype: str = "csv"):
+        """S3ToDataSourceLight Initialization
+        Args:
+            s3_path (str): The S3 Path to the file to be transformed
+            data_uuid (str): The UUID of the SageWorks DataSource to be created
+            datatype (str): The datatype of the file to be transformed (defaults to "csv")
+        """
 
         # Call superclass init
         super().__init__(s3_path, data_uuid)
@@ -24,6 +29,7 @@ class S3ToDataSourceLight(Transform):
         # Set up all my instance attributes
         self.input_type = TransformInput.S3_OBJECT
         self.output_type = TransformOutput.DATA_SOURCE
+        self.datatype = datatype
 
     def input_size_mb(self) -> int:
         """Get the size of the input S3 object in MBytes"""
@@ -42,7 +48,10 @@ class S3ToDataSourceLight(Transform):
             return
 
         # Read in the S3 CSV as a Pandas DataFrame
-        df = wr.s3.read_csv(self.input_uuid, low_memory=False, boto3_session=self.boto_session)
+        if self.datatype == "csv":
+            df = wr.s3.read_csv(self.input_uuid, low_memory=False, boto3_session=self.boto_session)
+        else:
+            df = wr.s3.read_json(self.input_uuid, lines=True, boto3_session=self.boto_session)
 
         # Use the SageWorks Pandas to Data Source class
         pandas_to_data = PandasToData(self.output_uuid)
