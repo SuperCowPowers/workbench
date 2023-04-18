@@ -33,12 +33,16 @@ if __name__ == "__main__":
         my_loader = CSVToDataSource(test_data_path, "test_data")
         my_loader.set_output_tags("test:small")
         my_loader.transform()
+        print('Waiting for the test_data to be created...')
+        time.sleep(5)
 
     # Create the abalone_data DataSource
     if not DataSource("abalone_data").check():
         my_loader = CSVToDataSource(abalone_data_path, "abalone_data")
         my_loader.set_output_tags("abalone:public")
         my_loader.transform()
+        print('Waiting for the abalone_data to be created...')
+        time.sleep(5)
 
     # Create the test_feature_set FeatureSet
     if not FeatureSet("test_feature_set").check():
