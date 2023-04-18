@@ -70,24 +70,27 @@ class ArtifactsSummary(View):
         """Get summary data about the SageWorks DataSources"""
         data = self.aws_artifact_data[ServiceCategory.DATA_CATALOG]
         data_summary = []
-        for name, info in data["sageworks"].items():  # Just the sageworks database (not sagemaker_featurestore)
-            # Get the size of the S3 Storage Object(s)
-            size = self.artifact_info.s3_object_sizes(info["StorageDescriptor"]["Location"])
-            summary = {
-                "Name": self.hyperlinks(name, "data_sources"),
-                "Ver": info.get("VersionId", "-"),
-                "Size(MB)": size,
-                "Catalog DB": info.get("DatabaseName", "-"),
-                # 'Created': self.datetime_string(info.get('CreateTime')),
-                "Modified": self.datetime_string(info.get("UpdateTime")),
-                "Num Columns": self.num_columns(info),
-                "DataLake": info.get("IsRegisteredWithLakeFormation", "-"),
-                "Tags": info.get("Parameters", {}).get("sageworks_tags", "-"),
-                "Input": str(
-                    info.get("Parameters", {}).get("sageworks_input", "-"),
-                ),
-            }
-            data_summary.append(summary)
+
+        # Get the SageWorks DataSources
+        if "sageworks" in data:
+            for name, info in data["sageworks"].items():  # Just the sageworks database (not sagemaker_featurestore)
+                # Get the size of the S3 Storage Object(s)
+                size = self.artifact_info.s3_object_sizes(info["StorageDescriptor"]["Location"])
+                summary = {
+                    "Name": self.hyperlinks(name, "data_sources"),
+                    "Ver": info.get("VersionId", "-"),
+                    "Size(MB)": size,
+                    "Catalog DB": info.get("DatabaseName", "-"),
+                    # 'Created': self.datetime_string(info.get('CreateTime')),
+                    "Modified": self.datetime_string(info.get("UpdateTime")),
+                    "Num Columns": self.num_columns(info),
+                    "DataLake": info.get("IsRegisteredWithLakeFormation", "-"),
+                    "Tags": info.get("Parameters", {}).get("sageworks_tags", "-"),
+                    "Input": str(
+                        info.get("Parameters", {}).get("sageworks_input", "-"),
+                    ),
+                }
+                data_summary.append(summary)
 
         # Make sure we have data else return just the column names
         if data_summary:
