@@ -83,22 +83,21 @@ class FeaturesToModel(Transform):
         s3_training_path = feature_set.create_s3_training_data()
         self.log.info(f"Created new training data {s3_training_path}...")
 
-        # Did they specify a feature list?
-        if input_feature_list:
-            feature_list = input_feature_list
+        # If they didn't specify a feature list, try to guess it
+        if feature_list is None:
 
-        # Try to figure out features with this logic
-        # - Don't include id, event_time columns
-        # - Don't include AWS generated columns (e.g. write_time, api_invocation_time, is_deleted)
-        # - Don't include the target column
-        # - Don't include any columns that are of type string or timestamp
-        # - The rest of the columns are assumed to be features
-        else:
+            # Try to figure out features with this logic
+            # - Don't include id, event_time, or training columns
+            # - Don't include AWS generated columns (e.g. write_time, api_invocation_time, is_deleted)
+            # - Don't include the target columns
+            # - Don't include any columns that are of type string or timestamp
+            # - The rest of the columns are assumed to be features
             self.log.warning("Guessing at the feature list, HIGHLY SUGGESTED to specify an explicit feature list!")
             all_columns = feature_set.column_names()
             filter_list = [
                 "id",
                 "event_time",
+                "training",
                 "write_time",
                 "api_invocation_time",
                 "is_deleted",

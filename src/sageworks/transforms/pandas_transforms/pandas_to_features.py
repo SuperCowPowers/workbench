@@ -1,6 +1,7 @@
 """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)"""
 from datetime import datetime, timezone
 import pandas as pd
+import numpy as np
 import time
 import botocore
 from sagemaker.feature_store.feature_group import FeatureGroup
@@ -31,59 +32,61 @@ class PandasToFeatures(Transform):
         self.input_df = None
         self.id_column = None
         self.event_time_column = None
+        self.output_df = None
 
     def set_input(self, input_df: pd.DataFrame, id_column=None, event_time_column=None):
         """Set the Input DataFrame for this Transform"""
         self.id_column = id_column
         self.event_time_column = event_time_column
         self.input_df = input_df
+        self.output_df = self.input_df.copy()
 
     def _ensure_id_column(self):
         """Internal: AWS Feature Store requires an Id field for all data store"""
-        if self.id_column is None or self.id_column not in self.input_df.columns:
-            if "id" not in self.input_df.columns:
+        if self.id_column is None or self.id_column not in self.output_df.columns:
+            if "id" not in self.output_df.columns:
                 self.log.info("Generating an id column before FeatureSet Creation...")
-                self.input_df["id"] = self.input_df.index
+                self.output_df["id"] = self.output_df.index
             self.id_column = "id"
 
     def _ensure_event_time(self):
         """Internal: AWS Feature Store requires an event_time field for all data stored"""
-        if self.event_time_column is None or self.event_time_column not in self.input_df.columns:
+        if self.event_time_column is None or self.event_time_column not in self.output_df.columns:
             current_datetime = datetime.now(timezone.utc)
             self.log.info("Generating an event_time column before FeatureSet Creation...")
             self.event_time_column = "event_time"
-            self.input_df[self.event_time_column] = pd.Series([current_datetime] * len(self.input_df))
+            self.output_df[self.event_time_column] = pd.Series([current_datetime] * len(self.output_df))
 
         # The event_time_column is defined so lets make sure it the right type for Feature Store
-        if pd.api.types.is_datetime64_any_dtype(self.input_df[self.event_time_column]):
+        if pd.api.types.is_datetime64_any_dtype(self.output_df[self.event_time_column]):
             self.log.info(f"Converting {self.event_time_column} to ISOFormat Date String before FeatureSet Creation...")
 
             # Convert the datetime DType to ISO-8601 string
-            self.input_df[self.event_time_column] = self.input_df[self.event_time_column].map(datetime_to_iso8601)
-            self.input_df[self.event_time_column] = self.input_df[self.event_time_column].astype(pd.StringDtype())
+            self.output_df[self.event_time_column] = self.output_df[self.event_time_column].map(datetime_to_iso8601)
+            self.output_df[self.event_time_column] = self.output_df[self.event_time_column].astype(pd.StringDtype())
 
     def _convert_objs_to_string(self):
         """Internal: AWS Feature Store doesn't know how to store object dtypes, so convert to String"""
-        for col in self.input_df:
-            if pd.api.types.is_object_dtype(self.input_df[col].dtype):
-                self.input_df[col] = self.input_df[col].astype(pd.StringDtype())
+        for col in self.output_df:
+            if pd.api.types.is_object_dtype(self.output_df[col].dtype):
+                self.output_df[col] = self.output_df[col].astype(pd.StringDtype())
 
     # Helper Methods
     def categorical_converter(self):
         """Convert object and string types to Categorical"""
         categorical_columns = []
-        for feature, dtype in self.input_df.dtypes.items():
+        for feature, dtype in self.output_df.dtypes.items():
             print(feature, dtype)
             if dtype in ["object", "string"] and feature not in [self.event_time_column, self.id_column]:
-                unique_values = self.input_df[feature].nunique()
+                unique_values = self.output_df[feature].nunique()
                 print(f"Unique Values = {unique_values}")
                 if unique_values < 5:
                     print(f"Converting object column {feature} to categorical")
-                    self.input_df[feature] = self.input_df[feature].astype("category")
+                    self.output_df[feature] = self.output_df[feature].astype("category")
                     categorical_columns.append(feature)
 
         # Now convert Categorical Types to One Hot Encoding
-        self.input_df = pd.get_dummies(self.input_df, columns=categorical_columns)
+        self.output_df = pd.get_dummies(self.output_df, columns=categorical_columns)
 
     @staticmethod
     def convert_nullable_types(df: pd.DataFrame) -> pd.DataFrame:
@@ -107,11 +110,14 @@ class PandasToFeatures(Transform):
         self.categorical_converter()
 
         # Convert Int64 and Float64 types (see: https://github.com/aws/sagemaker-python-sdk/pull/3740)
-        self.input_df = self.convert_nullable_types(self.input_df)
+        self.output_df = self.convert_nullable_types(self.output_df)
 
         # FeatureSet Internal Storage (Athena) will convert columns names to lowercase, so we need
         # to make sure that the column names are lowercase to match and avoid downstream issues
-        self.input_df.columns = self.input_df.columns.str.lower()
+        self.output_df.columns = self.output_df.columns.str.lower()
+
+        # Mark 80% of the data as training and 20% as validation/test
+        self.output_df["training"] = np.random.binomial(size=len(self.output_df), n=1, p=0.8)
 
         # Do we want to delete the existing FeatureSet?
         if delete_existing:
@@ -125,7 +131,7 @@ class PandasToFeatures(Transform):
 
         # Create a Feature Group and load our Feature Definitions
         my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
-        my_feature_group.load_feature_definitions(data_frame=self.input_df)
+        my_feature_group.load_feature_definitions(data_frame=self.output_df)
 
         # Create the Output Parquet file S3 Storage Path for this Feature Set
         s3_storage_path = f"{self.feature_sets_s3_path}/{self.output_uuid}"
@@ -159,7 +165,7 @@ class PandasToFeatures(Transform):
         self.ensure_feature_group_created(my_feature_group)
 
         # Now we actually push the data into the Feature Group
-        my_feature_group.ingest(self.input_df, max_processes=4)
+        my_feature_group.ingest(self.output_df, max_processes=4)
 
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")

@@ -38,7 +38,7 @@ class FeatureSet(Artifact):
         self.feature_set_name = feature_uuid
         self.feature_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
         if self.feature_meta is None:
-            self.log.warning(f"Could not find feature set {self.feature_set_name} within current visibility scope")
+            self.log.info(f"Could not find feature set {self.feature_set_name} within current visibility scope")
             self.data_source = None
             return
         else:

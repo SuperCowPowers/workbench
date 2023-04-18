@@ -41,7 +41,7 @@ class RDKitDescriptors(DataToFeaturesLight):
         """Compute a Feature Set based on RDKit Descriptors"""
 
         # Note: The parent class manages the input_df and output_df
-        #       So we simply need to grab the input and produce the output
+        #       So we simply need to grab the input_df and produce the output_df
 
         # Remove all the dataframe columns except for ID and SMILES
         self.output_df = self.input_df[["id", "smiles", "solubility"]]
