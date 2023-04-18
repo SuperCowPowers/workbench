@@ -62,7 +62,7 @@ class FeatureSet(Artifact):
     def check(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.feature_meta is None:
-            self.log.critical(f"FeatureSet.check() {self.feature_set_name} not found in AWS Metadata!")
+            self.log.info(f"FeatureSet.check() {self.feature_set_name} not found in AWS Metadata!")
             return False
         return True
 

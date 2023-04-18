@@ -40,7 +40,7 @@ class Model(Artifact):
     def check(self) -> bool:
         """Does the model metadata exist in the AWS Metadata?"""
         if self.model_meta is None:
-            self.log.critical(f"Model.check() {self.model_name} not found in AWS Metadata!")
+            self.log.info(f"Model.check() {self.model_name} not found in AWS Metadata!")
             return False
         return True
 
