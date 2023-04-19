@@ -170,7 +170,7 @@ class Endpoint(Artifact):
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        return "https://us-west-2.console.aws.amazon.com/athena/home"
+        return f"https://{self.aws_region}.console.aws.amazon.com/athena/home"
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""

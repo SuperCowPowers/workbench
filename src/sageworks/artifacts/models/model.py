@@ -66,7 +66,7 @@ class Model(Artifact):
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        return "https://us-west-2.console.aws.amazon.com/athena/home"
+        return f"https://{self.aws_region}.console.aws.amazon.com/athena/home"
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
@@ -101,9 +101,8 @@ class Model(Artifact):
         self.sm_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
 
 
-# Simple test of the Model functionality
-def test():
-    """Test for Model Class"""
+if __name__ == "__main__":
+    """Exercise the Model Class"""
 
     # Grab a Model object and pull some information from it
     my_model = Model("abalone-regression")
@@ -125,7 +124,3 @@ def test():
 
     # Delete the Model
     # my_model.delete()
-
-
-if __name__ == "__main__":
-    test()

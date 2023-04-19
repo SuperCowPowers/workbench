@@ -86,7 +86,7 @@ class AthenaSource(DataSourceAbstract):
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        return "https://us-west-2.console.aws.amazon.com/athena/home"
+        return f"https://{self.aws_region}.console.aws.amazon.com/athena/home"
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
@@ -165,8 +165,9 @@ if __name__ == "__main__":
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")
 
-    # What's my AWS ARN
+    # What's my AWS ARN and URL
     print(f"AWS ARN: {my_data.arn()}")
+    print(f"AWS URL: {my_data.aws_url()}")
 
     # Get the S3 Storage for this Data Source
     print(f"S3 Storage: {my_data.s3_storage_location()}")

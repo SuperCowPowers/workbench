@@ -31,8 +31,9 @@ if __name__ == "__main__":
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")
 
-    # What's my AWS ARN
+    # What's my AWS ARN and URL
     print(f"AWS ARN: {my_data.arn()}")
+    print(f"AWS URL: {my_data.aws_url()}")
 
     # Get the S3 Storage for this Data Source
     print(f"S3 Storage: {my_data.s3_storage_location()}")

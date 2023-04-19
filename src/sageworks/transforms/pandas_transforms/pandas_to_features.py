@@ -29,7 +29,6 @@ class PandasToFeatures(Transform):
         super().__init__("DataFrame", output_uuid)
 
         # Set up all my instance attributes
-        self.input_df = None
         self.id_column = None
         self.event_time_column = None
         self.output_df = None
@@ -38,8 +37,7 @@ class PandasToFeatures(Transform):
         """Set the Input DataFrame for this Transform"""
         self.id_column = id_column
         self.event_time_column = event_time_column
-        self.input_df = input_df
-        self.output_df = self.input_df.copy()
+        self.output_df = input_df.copy()
 
     def _ensure_id_column(self):
         """Internal: AWS Feature Store requires an Id field for all data store"""
