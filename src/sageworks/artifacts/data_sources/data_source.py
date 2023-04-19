@@ -5,6 +5,14 @@ from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 
 class DataSource:
+    """DataSource: SageWorks Data Source is the best source for your data
+
+    Common Usage:
+        my_data = DataSource(data_uuid)
+        my_data.summary()
+        my_data.details()
+        df = my_data.query(f"select * from {data_uuid} limit 5")
+    """
     def __new__(cls, uuid, data_source_type: str = "athena"):
         """DataSource: A Factory for Data Sources (Athena, RDS, etc)
         Args:
