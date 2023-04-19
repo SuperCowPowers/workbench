@@ -49,7 +49,7 @@ class PandasToData(Transform):
                 # Now try to convert object to string
                 try:
                     df[c] = df[c].astype(str)
-                    df[c] = df[c].str.replace("'", "\"")  # This is for nested JSON
+                    df[c] = df[c].str.replace("'", '"')  # This is for nested JSON
                 except (ParserError, ValueError, TypeError):
                     self.log.info(f"Column {c} could not be converted to string...")
         return df
