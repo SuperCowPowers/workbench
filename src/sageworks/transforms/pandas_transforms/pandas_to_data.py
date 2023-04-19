@@ -18,7 +18,7 @@ class PandasToData(Transform):
         df_to_data.transform(delete_existing=True/False)
     """
 
-    def __init__(self, output_uuid: str, output_file_format: str = "parquet"):
+    def __init__(self, output_uuid: str, output_file_format: str = "parquet", **kwargs):
         """PandasToData Initialization
         Args:
             output_uuid (str): The UUID of the DataSource to create

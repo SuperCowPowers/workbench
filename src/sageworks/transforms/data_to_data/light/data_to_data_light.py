@@ -41,7 +41,7 @@ class DataToDataLight(Transform):
         """At this point the output DataFrame should be populated, so publish it as a DataSource"""
 
         # Now publish to the output location
-        output_data_source = PandasToData(self.output_uuid)
+        output_data_source = PandasToData(self.output_uuid, **kwargs)
         output_data_source.set_input(self.output_df)
         output_data_source.set_output_tags(self.output_tags)
         output_data_source.add_output_meta(self.output_meta)

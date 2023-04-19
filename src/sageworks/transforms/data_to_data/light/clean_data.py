@@ -20,7 +20,7 @@ class CleanData(DataToDataLight):
         # Call superclass init
         super().__init__(input_data_uuid, output_data_uuid)
 
-    def transform_impl(self, drop_na="any"):
+    def transform_impl(self, drop_na="any", **kwargs):
         """Simple Clean Data, will improve later"""
 
         """
@@ -49,3 +49,9 @@ if __name__ == "__main__":
     input_uuid = "test_data"
     output_uuid = "test_data_clean"
     CleanData(input_uuid, output_uuid).transform(drop_na="any")
+
+    input_uuid = "test_data_json"
+    output_uuid = "test_data_json_clean"
+    data_to_data = CleanData(input_uuid, output_uuid)
+    data_to_data.set_output_tags(["test", "json", "clean"])
+    data_to_data.transform(output_file_format="jsonl", delete_existing=True)
