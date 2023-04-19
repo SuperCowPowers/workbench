@@ -1,7 +1,6 @@
 """JSONToDataSource: Class to move local JSON Files into a SageWorks DataSource"""
 import os
 import pandas as pd
-from pandas.errors import ParserError
 
 # Local imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput

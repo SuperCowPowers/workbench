@@ -49,6 +49,7 @@ class PandasToData(Transform):
                 # Now try to convert object to string
                 try:
                     df[c] = df[c].astype(str)
+                    df[c] = df[c].str.replace("'", "\"")  # This is for nested JSON
                 except (ParserError, ValueError, TypeError):
                     self.log.info(f"Column {c} could not be converted to string...")
         return df
@@ -143,7 +144,7 @@ if __name__ == "__main__":
     # Create my DF to with JSONL format
     data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.json"
     test_df = pd.read_json(data_path, orient="records", lines=True)
-    output_uuid = "test_json_data"
+    output_uuid = "test_data_json"
     df_to_data = PandasToData(output_uuid, output_file_format="jsonl")
     df_to_data.set_input(test_df)
     df_to_data.set_output_tags(["test", "json"])
