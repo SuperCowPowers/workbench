@@ -1,4 +1,4 @@
-"""DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)"""
+"""DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, JSONL, Parquet, RDS, etc)"""
 from abc import abstractmethod
 import pandas as pd
 
@@ -8,7 +8,7 @@ from sageworks.artifacts.artifact import Artifact
 
 class DataSourceAbstract(Artifact):
     def __init__(self, uuid):
-        """DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, Parquet, RDS, etc)"""
+        """DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, JSONL, Parquet, RDS, etc)"""
 
         # Call superclass init
         super().__init__(uuid)

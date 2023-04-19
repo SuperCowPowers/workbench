@@ -4,11 +4,8 @@ import pandas as pd
 from pandas.errors import ParserError
 
 # Local imports
-from sageworks.utils.sageworks_logging import logging_setup
+from sageworks.utils.iso_8601 import datetime_to_iso8601
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
-
-# Setup Logging
-logging_setup()
 
 
 class PandasToData(Transform):
@@ -21,8 +18,12 @@ class PandasToData(Transform):
         df_to_data.transform(delete_existing=True/False)
     """
 
-    def __init__(self, output_uuid: str):
-        """PandasToData Initialization"""
+    def __init__(self, output_uuid: str, output_file_format: str = "parquet"):
+        """PandasToData Initialization
+        Args:
+            output_uuid (str): The UUID of the DataSource to create
+            output_file_format (str): The file format to store the S3 object data in
+            """
 
         # Call superclass init
         super().__init__("DataFrame", output_uuid)
@@ -30,6 +31,7 @@ class PandasToData(Transform):
         # Set up all my instance attributes
         self.input_type = TransformInput.PANDAS_DF
         self.output_type = TransformOutput.DATA_SOURCE
+        self.output_file_format = output_file_format
         self.output_df = None
 
     def set_input(self, input_df: pd.DataFrame):
@@ -51,9 +53,22 @@ class PandasToData(Transform):
                     self.log.info(f"Column {c} could not be converted to string...")
         return df
 
+    @staticmethod
+    def convert_datetime_columns(df: pd.DataFrame) -> pd.DataFrame:
+        """Convert datetime columns to ISO-8601 string"""
+        datetime_type = ["datetime", "datetime64", "datetime64[ns]", "datetimetz"]
+        for c in df.select_dtypes(include=datetime_type).columns:
+            df[c] = df[c].map(datetime_to_iso8601)
+            df[c] = df[c].astype(pd.StringDtype())
+        return df
+
     def transform_impl(self, overwrite: bool = True):
         """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
-        store the information about the data to the AWS Data Catalog sageworks database"""
+        store the information about the data to the AWS Data Catalog sageworks database
+
+        Args:
+            overwrite (bool): Overwrite the existing data in the SageWorks S3 Bucket
+        """
 
         # Set up our metadata storage
         sageworks_meta = {"sageworks_tags": self.output_tags}
@@ -66,21 +81,43 @@ class PandasToData(Transform):
         # Convert Object Columns to Datetime or String
         self.output_df = self.convert_object_columns(self.output_df)
 
-        # Write out the DataFrame to Parquet/DataStore/Athena
+        # Now convert datetime columns to ISO-8601 string
+        self.output_df = self.convert_datetime_columns(self.output_df)
+
+        # Write out the DataFrame to AWS Data Catalog in either Parquet or JSONL format
         description = f"SageWorks data source: {self.output_uuid}"
         glue_table_settings = {"description": description, "parameters": sageworks_meta}
-        wr.s3.to_parquet(
-            self.output_df,
-            path=s3_storage_path,
-            dataset=True,
-            mode="overwrite",
-            database=self.data_catalog_db,
-            table=self.output_uuid,
-            filename_prefix=f"{self.output_uuid}_",
-            boto3_session=self.boto_session,
-            partition_cols=None,
-            glue_table_settings=glue_table_settings,
-        )  # FIXME: Have some logic around partition columns
+        if self.output_file_format == "parquet":
+            wr.s3.to_parquet(
+                self.output_df,
+                path=s3_storage_path,
+                dataset=True,
+                mode="overwrite",
+                database=self.data_catalog_db,
+                table=self.output_uuid,
+                filename_prefix=f"{self.output_uuid}_",
+                boto3_session=self.boto_session,
+                partition_cols=None,
+                glue_table_settings=glue_table_settings,
+            )  # FIXME: Have some logic around partition columns
+        elif self.output_file_format == "jsonl":
+            wr.s3.to_json(
+                self.output_df,
+                path=s3_storage_path,
+                orient='records',
+                lines=True,
+                date_format='iso',
+                dataset=True,
+                mode="overwrite",
+                database=self.data_catalog_db,
+                table=self.output_uuid,
+                filename_prefix=f"{self.output_uuid}_",
+                boto3_session=self.boto_session,
+                partition_cols=None,
+                glue_table_settings=glue_table_settings,
+            )
+        else:
+            raise ValueError(f"Unsupported file format: {self.output_file_format}")
 
 
 if __name__ == "__main__":
@@ -94,10 +131,22 @@ if __name__ == "__main__":
     test_df = pd.read_csv(data_path)
 
     # Create my DF to Data Source Transform
-    output_uuid = "test_data"
-    df_to_data = PandasToData(output_uuid)
+    my_data_name = "test_data"
+    df_to_data = PandasToData(my_data_name)
     df_to_data.set_input(test_df)
     df_to_data.set_output_tags(["test", "small"])
+
+    # Store this data into a SageWorks DataSource
+    df_to_data.transform()
+    print(f"{my_data_name} stored as a SageWorks DataSource")
+
+    # Create my DF to with JSONL format
+    data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.json"
+    test_df = pd.read_json(data_path, orient="records", lines=True)
+    output_uuid = "test_json_data"
+    df_to_data = PandasToData(output_uuid, output_file_format="jsonl")
+    df_to_data.set_input(test_df)
+    df_to_data.set_output_tags(["test", "json"])
 
     # Store this data into a SageWorks DataSource
     df_to_data.transform()
