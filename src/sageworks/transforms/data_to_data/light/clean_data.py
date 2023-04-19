@@ -54,4 +54,4 @@ if __name__ == "__main__":
     output_uuid = "test_data_json_clean"
     data_to_data = CleanData(input_uuid, output_uuid)
     data_to_data.set_output_tags(["test", "json", "clean"])
-    data_to_data.transform(output_file_format="jsonl", delete_existing=True)
+    data_to_data.transform(drop_na="any")

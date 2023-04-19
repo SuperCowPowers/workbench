@@ -31,8 +31,12 @@ class PandasToData(Transform):
         # Set up all my instance attributes
         self.input_type = TransformInput.PANDAS_DF
         self.output_type = TransformOutput.DATA_SOURCE
-        self.output_file_format = output_file_format
         self.output_df = None
+
+        # Give a message that Parquet is best in most cases
+        if output_file_format != "parquet":
+            self.log.warning("Parquet format works the best in most cases please consider using it")
+        self.output_file_format = output_file_format
 
     def set_input(self, input_df: pd.DataFrame):
         """Set the DataFrame Input for this Transform"""
@@ -101,7 +105,14 @@ class PandasToData(Transform):
                 partition_cols=None,
                 glue_table_settings=glue_table_settings,
             )  # FIXME: Have some logic around partition columns
+
+        # Note: In general Parquet works will for most uses cases. We recommend using Parquet
+        #       You can use JSON_EXTRACT on Parquet string field, and it works great.
         elif self.output_file_format == "jsonl":
+            self.log.warning("We recommend using Parquet format for most use cases")
+            self.log.warning("If you have a use case that requires JSONL please contact SageWorks support")
+            self.log.warning("We'd like to understand what functionality JSONL is providing that isn't already")
+            self.log.warning("provided with Parquet and JSON_EXTRACT() for your Athena Queries")
             wr.s3.to_json(
                 self.output_df,
                 path=s3_storage_path,
@@ -145,7 +156,7 @@ if __name__ == "__main__":
     data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.json"
     test_df = pd.read_json(data_path, orient="records", lines=True)
     output_uuid = "test_data_json"
-    df_to_data = PandasToData(output_uuid, output_file_format="jsonl")
+    df_to_data = PandasToData(output_uuid)
     df_to_data.set_input(test_df)
     df_to_data.set_output_tags(["test", "json"])
 

@@ -38,7 +38,7 @@ class JSONToDataSource(Transform):
         df = pd.read_json(self.input_uuid, lines=True)
 
         # Use the SageWorks Pandas to Data Source class
-        pandas_to_data = PandasToData(self.output_uuid, output_file_format="jsonl")
+        pandas_to_data = PandasToData(self.output_uuid)
         pandas_to_data.set_input(df)
         pandas_to_data.set_output_tags(self.output_tags)
         pandas_to_data.add_output_meta(self.output_meta)
