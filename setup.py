@@ -39,7 +39,7 @@ setup(
         "redis",
         "dash",
         "dash-bootstrap-components",
-        "dash-bootstrap-templates"
+        "dash-bootstrap-templates",
     ],
     license="MIT",
     keywords="SageMaker, Machine Learning, AWS, Python, Utilities",

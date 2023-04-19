@@ -85,7 +85,6 @@ class FeaturesToModel(Transform):
 
         # If they didn't specify a feature list, try to guess it
         if feature_list is None:
-
             # Try to figure out features with this logic
             # - Don't include id, event_time, or training columns
             # - Don't include AWS generated columns (e.g. write_time, api_invocation_time, is_deleted)

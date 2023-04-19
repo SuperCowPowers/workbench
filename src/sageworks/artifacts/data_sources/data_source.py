@@ -13,6 +13,7 @@ class DataSource:
         my_data.details()
         df = my_data.query(f"select * from {data_uuid} limit 5")
     """
+
     def __new__(cls, uuid, data_source_type: str = "athena"):
         """DataSource: A Factory for Data Sources (Athena, RDS, etc)
         Args:
