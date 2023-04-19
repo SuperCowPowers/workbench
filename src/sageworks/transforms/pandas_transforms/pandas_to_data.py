@@ -1,6 +1,7 @@
 """PandasToData: Class to publish a Pandas DataFrame as a DataSource"""
 import awswrangler as wr
 import pandas as pd
+from pandas.errors import ParserError
 
 # Local imports
 from sageworks.utils.sageworks_logging import logging_setup
@@ -29,7 +30,26 @@ class PandasToData(Transform):
         # Set up all my instance attributes
         self.input_type = TransformInput.PANDAS_DF
         self.output_type = TransformOutput.DATA_SOURCE
-        self.input_df = None
+        self.output_df = None
+
+    def set_input(self, input_df: pd.DataFrame):
+        """Set the DataFrame Input for this Transform"""
+        self.output_df = input_df.copy()
+
+    def convert_object_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Try to automatically convert object columns to datetime or string columns"""
+        for c in df.columns[df.dtypes == "object"]:  # Look at the object columns
+            try:
+                df[c] = pd.to_datetime(df[c])
+            except (ParserError, ValueError, TypeError):
+                self.log.debug(f"Column {c} could not be converted to datetime...")
+
+                # Now try to convert object to string
+                try:
+                    df[c] = df[c].astype(str)
+                except (ParserError, ValueError, TypeError):
+                    self.log.info(f"Column {c} could not be converted to string...")
+        return df
 
     def transform_impl(self, overwrite: bool = True):
         """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
@@ -43,11 +63,14 @@ class PandasToData(Transform):
         # Create the Output Parquet file S3 Storage Path
         s3_storage_path = f"{self.data_source_s3_path}/{self.output_uuid}"
 
+        # Convert Object Columns to Datetime or String
+        self.output_df = self.convert_object_columns(self.output_df)
+
         # Write out the DataFrame to Parquet/DataStore/Athena
         description = f"SageWorks data source: {self.output_uuid}"
         glue_table_settings = {"description": description, "parameters": sageworks_meta}
         wr.s3.to_parquet(
-            self.input_df,
+            self.output_df,
             path=s3_storage_path,
             dataset=True,
             mode="overwrite",
@@ -58,10 +81,6 @@ class PandasToData(Transform):
             partition_cols=None,
             glue_table_settings=glue_table_settings,
         )  # FIXME: Have some logic around partition columns
-
-    def set_input(self, input_df: pd.DataFrame):
-        """Set the DataFrame Input for this Transform"""
-        self.input_df = input_df
 
 
 if __name__ == "__main__":
