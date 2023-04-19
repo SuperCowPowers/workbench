@@ -23,7 +23,7 @@ class PandasToData(Transform):
         Args:
             output_uuid (str): The UUID of the DataSource to create
             output_file_format (str): The file format to store the S3 object data in
-            """
+        """
 
         # Call superclass init
         super().__init__("DataFrame", output_uuid)
@@ -104,9 +104,9 @@ class PandasToData(Transform):
             wr.s3.to_json(
                 self.output_df,
                 path=s3_storage_path,
-                orient='records',
+                orient="records",
                 lines=True,
-                date_format='iso',
+                date_format="iso",
                 dataset=True,
                 mode="overwrite",
                 database=self.data_catalog_db,
