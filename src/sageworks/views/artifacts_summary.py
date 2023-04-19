@@ -6,6 +6,7 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.views.view import View
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
+from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
 
 class ArtifactsSummary(View):
@@ -16,6 +17,7 @@ class ArtifactsSummary(View):
 
         # Get AWS Service information for ALL the categories (data_source, feature_set, endpoints, etc)
         self.aws_artifact_data = self.aws_broker.get_all_metadata()
+        self.aws_account_clamp = AWSAccountClamp()
 
         # Get a handle to the AWS Artifact Information class
         self.artifact_info = self.aws_broker.artifact_info
@@ -109,9 +111,8 @@ class ArtifactsSummary(View):
             ]
             return pd.DataFrame(columns=columns)
 
-    @staticmethod
-    def hyperlinks(name, detail_type):
-        athena_url = "https://us-west-2.console.aws.amazon.com/athena/home"
+    def hyperlinks(self, name, detail_type):
+        athena_url = f"https://{self.aws_account_clamp.region()}.console.aws.amazon.com/athena/home"
         link = f"<a href='{detail_type}' target='_blank'>{name}</a>"
         link += f" [<a href='{athena_url}' target='_blank'>query</a>]"
         return link

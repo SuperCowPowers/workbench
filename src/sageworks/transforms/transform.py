@@ -62,10 +62,11 @@ class Transform(ABC):
         self.feature_sets_s3_path = sageworks_bucket + "/feature-sets"
 
         # Grab a SageWorks Role ARN, Boto3, SageMaker Session, and SageMaker Client
-        self.sageworks_role_arn = AWSAccountClamp().sageworks_execution_role_arn()
-        self.boto_session = AWSAccountClamp().boto_session()
-        self.sm_session = AWSAccountClamp().sagemaker_session(self.boto_session)
-        self.sm_client = AWSAccountClamp().sagemaker_client(self.boto_session)
+        self.aws_account_clamp = AWSAccountClamp()
+        self.sageworks_role_arn = self.aws_account_clamp.sageworks_execution_role_arn()
+        self.boto_session = self.aws_account_clamp.boto_session()
+        self.sm_session = self.aws_account_clamp.sagemaker_session(self.boto_session)
+        self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto_session)
 
         # Make sure the AWS data catalog database exists
         self.ensure_aws_catalog_db(self.data_catalog_db)

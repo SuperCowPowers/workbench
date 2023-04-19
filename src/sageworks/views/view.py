@@ -19,8 +19,9 @@ class View(ABC):
 
         # Grab an AWS Metadata Broker object for pulling AWS Service information
         self.aws_broker = AWSServiceBroker()
-        self.boto_session = AWSAccountClamp().boto_session()
-        self.sm_session = AWSAccountClamp().sagemaker_session()
+        self.aws_account_clamp = AWSAccountClamp()
+        self.boto_session = self.aws_account_clamp.boto_session()
+        self.sm_session = self.aws_account_clamp.sagemaker_session()
 
     @abstractmethod
     def check(self) -> bool:
