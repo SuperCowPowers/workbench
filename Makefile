@@ -11,7 +11,7 @@ help:
 	@echo "release - package and upload a release"
 	@echo "sdist - package"
 
-clean: clean-build clean-pyc
+clean: clean-build clean-pyc clean-misc
 
 clean-build:
 	find . -name 'build' -exec rm -rf {} +
@@ -29,11 +29,14 @@ clean-pyc:
 	find . -name '*.pyo' -exec rm -rf {} +
 	find . -name '*~' -exec rm -rf {} +
 
+clean-misc:
+	find . -name '.ipynb_checkpoints' -exec rm -rf {} +
+
 lint:
-	flake8 src tests
+	flake8 src/sageworks tests
 
 test:
-	py.test
+	tox
 
 test-all:
 	tox
