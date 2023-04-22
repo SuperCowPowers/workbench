@@ -48,6 +48,7 @@ class S3Bucket(Connector):
 
 
 if __name__ == "__main__":
+    """Exercises the S3Bucket Class"""
     from pprint import pprint
     from sageworks.utils.sageworks_config import SageWorksConfig
 
