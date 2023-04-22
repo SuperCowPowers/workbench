@@ -70,7 +70,7 @@ class AWSAccountCheck:
         self.log.info("Redis Database Check Success...")
 
     def check(self):
-        """Check if the AWS Account Clamp is 100% 'locked in'"""
+        """Check if the AWS Account is Setup Correctly"""
         self.log.info("*** AWS Identity Check ***")
         self.aws_clamp.check_aws_identity()
         self.log.info("Identity Check Success...")
@@ -78,12 +78,6 @@ class AWSAccountCheck:
         self.log.info("*** AWS Assume SageWorks ExecutionRole Check ***")
         check_boto_session = self.aws_clamp.boto_session()
         self.log.info("Assume Role Success...")
-
-        # Check that the SageWorks S3 Bucket and Subfolders are created
-        self.check_s3_bucket_subfolders()
-
-        # Check that the Redis Database is available
-        self.redis_check()
 
         self.log.info("*** AWS App Config Check ***")
         self.aws_clamp.check_app_config(check_boto_session)
@@ -93,9 +87,11 @@ class AWSAccountCheck:
         self.aws_clamp.check_s3_access(check_boto_session)
         self.log.info("S3 Access Check Success...")
 
-        self.log.info("*** AWS Sagemaker Session/Client Check ***")
-        sm_client = self.aws_clamp.sagemaker_client()
-        self.log.info(sm_client.list_feature_groups()["FeatureGroupSummaries"])
+        # Check that the SageWorks S3 Bucket and Sub-folders are created
+        self.check_s3_bucket_subfolders()
+
+        # Check that the Redis Database is available
+        self.redis_check()
 
         self.log.info("*** AWS Sagemaker Session/Client Check ***")
         sm_client = self.aws_clamp.sagemaker_client()
