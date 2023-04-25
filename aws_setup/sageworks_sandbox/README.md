@@ -1,7 +1,7 @@
 # SageWorks Sandbox AWS Deployment
 
 To run/deploy the SageWorks AWS Sandbox you'll need install a couple of Python packages
-either in a Python VirtualENV of your choice (PyENV is good) or any Python3 will do
+either in a Python VirtualENV of your choice (PyENV is good) or any Python3 will do. You'll also need to use a newer version of node such as node v19.6
 
 ```
 $ pip install -r requirements.txt
