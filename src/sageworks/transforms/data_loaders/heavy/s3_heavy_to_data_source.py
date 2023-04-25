@@ -70,6 +70,8 @@ class S3HeavyToDataSource(Transform):
         for key, value in self.output_meta.items():
             sageworks_meta[key] = value
 
+        # Create a Glue Catalog Database Table
+
         # Generate a Glue Catalog Table
         description = f"SageWorks data source: {self.output_uuid}"
         self.glueContext.catalog.create_table(
