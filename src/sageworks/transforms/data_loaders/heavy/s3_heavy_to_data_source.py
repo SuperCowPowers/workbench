@@ -41,7 +41,6 @@ class S3HeavyToDataSource:
         s3_storage_path = f"{self.data_source_s3_path}/{self.output_uuid}"
 
         # Read JSONL files from S3 and infer schema dynamically
-        # self.log.info(f"Reading JSONL files from {self.input_uuid}...")
         self.log.info(f"Reading JSONL files from {self.input_uuid}...")
         input_dyf = self.glue_context.create_dynamic_frame.from_options(
             connection_type="s3",
@@ -58,19 +57,16 @@ class S3HeavyToDataSource:
         input_dyf.show(5)
 
         # Write Parquet files to S3
-        # self.log.info(f"Writing Parquet files to {s3_storage_path}...")
         self.log.info(f"Writing Parquet files to {s3_storage_path}...")
+        self.glue_context.purge_s3_path(s3_storage_path, {"retentionPeriod": 0})
         self.glue_context.write_dynamic_frame.from_options(
             frame=input_dyf,
-            connection_type="catalog",
+            connection_type="s3",
             connection_options={
-                "path": s3_storage_path,
-                "catalog_database": "sageworks",
-                "catalog_table": self.output_uuid,
+                "path": s3_storage_path
+                # "partitionKeys": ["year", "month", "day"],
             },
-            format="parquet",
-            format_options={"compression": "snappy", "parquetVersion": "2.0"},
-            transformation_ctx="datasink",
+            format="parquet"
         )
 
         # Set up our SageWorks metadata (description, tags, etc)
@@ -87,10 +83,7 @@ class S3HeavyToDataSource:
             "Parameters": sageworks_meta,
             "TableType": "EXTERNAL_TABLE",
             "StorageDescriptor": {
-                "Columns": [
-                    {"Name": col.name, "Type": col.dataType.typeName()}
-                    for col in input_dyf.schema().fields
-                ],
+                "Columns": [{"Name": col.name, "Type": col.dataType.typeName()} for col in input_dyf.schema().fields],
                 "Location": s3_storage_path,
                 "InputFormat": "org.apache.hadoop.mapred.TextInputFormat",
                 "OutputFormat": "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat",
@@ -107,9 +100,7 @@ class S3HeavyToDataSource:
         if overwrite:
             glue_client = boto3.client("glue")
             try:
-                glue_client.delete_table(
-                    DatabaseName="sageworks", Name=self.output_uuid
-                )
+                glue_client.delete_table(DatabaseName="sageworks", Name=self.output_uuid)
                 self.log.info(f"Deleting Data Catalog Table: {self.output_uuid}...")
             except ClientError as e:
                 if e.response["Error"]["Code"] != "EntityNotFoundException":
