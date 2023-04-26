@@ -130,6 +130,17 @@ class AthenaSource(DataSourceAbstract):
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
+    def get_sample_rows(self, max_rows: int = 1000) -> pd.DataFrame:
+        # If the data source has more rows than max_rows, do a sample query
+        num_rows = self.num_rows()
+        if num_rows > max_rows:
+            percentage = round(max_rows * 100.0 / num_rows)
+            self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {max_rows}...")
+            query = f"SELECT * FROM {self.table_name} TABLESAMPLE BERNOULLI({percentage})"
+        else:
+            query = f"SELECT * FROM {self.table_name}"
+        return self.query(query)
+
     def details(self) -> dict:
         """Additional Details about this AthenaSource Artifact"""
         details = super().details()
@@ -185,6 +196,12 @@ if __name__ == "__main__":
     # Get Metadata and tags associated with this Artifact
     print(f"Meta: {my_data.sageworks_meta()}")
     print(f"Tags: {my_data.sageworks_tags()}")
+
+    # Get a sample of the data
+    df = my_data.get_sample_rows()
+    print(f"Sample Data: {df.shape}")
+    print(df.columns)
+    print(df.head())
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')
