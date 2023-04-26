@@ -18,6 +18,7 @@ clean-build:
 	find . -name '_build' -exec rm -rf {} +
 	find . -name 'dist' -exec rm -rf {} +
 	find . -name '*.egg-info' -exec rm -rf {} +
+	find . -name '*.eggs' -exec rm -rf {} +
 	find . -name '*.tar.gz' -exec rm -rf {} +
 	find . -name '.tox' -exec rm -rf {} +
 	find . -name '.coverage' -exec rm -rf {} +
