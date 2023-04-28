@@ -51,7 +51,7 @@ class RedisCache:
         log.info(f"Redis connection success: {host}:{port}...")
     except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
         msg = f"Could not connect to Redis Database: {host}:{port}..."
-        log.critical(msg)
+        log.warning(msg)
 
     @classmethod
     def check(cls):
