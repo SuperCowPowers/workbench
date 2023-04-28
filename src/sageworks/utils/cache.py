@@ -18,7 +18,7 @@ class Cache(object):
          cache.clear()
     """
 
-    def __init__(self, max_size=1000, expire=None):
+    def __init__(self, max_size=10000, expire=None):
         """Cache Initialization"""
         self.store = OrderedDict()
         self.max_size = max_size

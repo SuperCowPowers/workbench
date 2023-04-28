@@ -6,6 +6,7 @@ import logging
 from threading import Thread
 
 # SageWorks Imports
+from sageworks.utils.cache import Cache
 from sageworks.utils.redis_cache import RedisCache
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog
@@ -74,10 +75,15 @@ class AWSServiceBroker:
 
         # Model Monitors
 
-        # Redis Cache for Metadata
-        cls.meta_cache = RedisCache()
-        cls.fresh_cache = RedisCache(expire=10, postfix=":fresh")
-        cls.open_threads = []
+        # Cache for Metadata
+        if RedisCache().check():
+            cls.meta_cache = RedisCache()
+            cls.fresh_cache = RedisCache(expire=10, postfix=":fresh")
+            cls.open_threads = []
+        else:
+            cls.meta_cache = Cache()
+            cls.fresh_cache = Cache(expire=10)
+            cls.open_threads = []
 
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler

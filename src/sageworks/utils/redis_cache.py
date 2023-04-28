@@ -39,6 +39,7 @@ class RedisCache:
 
     # Open the Redis connection (class object)
     log.info(f"Opening Redis connection to: {host}:{port}...")
+    redis_db = None
     try:
         # Create a temporary connection to test the connection
         _redis_db = redis.Redis(host, port=port, password=password, socket_timeout=1)
@@ -51,7 +52,10 @@ class RedisCache:
     except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
         msg = f"Could not connect to Redis Database: {host}:{port}..."
         log.critical(msg)
-        sys.exit(1)
+
+    @classmethod
+    def check(cls):
+        return cls.redis_db is not None
 
     def __init__(self, expire=None, prefix="", postfix=""):  # No expiration, standard 0 db, no postfix on keys
         """RedisCache Initialization"""
@@ -142,6 +146,9 @@ if __name__ == "__main__":
 
     # Create a RedisCache
     my_redis_cache = RedisCache(prefix="test")
+    if not my_redis_cache.check():
+        print("Redis not available, exiting...")
+        exit(1)
 
     # Delete anything in the test database
     my_redis_cache.clear()
