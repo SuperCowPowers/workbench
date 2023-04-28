@@ -5,7 +5,7 @@ from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
 from sageworks.web_components import histogram, box_plot
-from sageworks.views.artifacts_summary import ArtifactsSummary
+from sageworks.views.data_source_view import DataSourceView
 from sageworks.web_components import table
 
 # Local Imports
@@ -21,8 +21,8 @@ register_page(__name__, path="/data_sources")
 load_figure_template("darkly")
 
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks
-sageworks_artifacts = ArtifactsSummary()
-data_sources_summary = sageworks_artifacts.data_sources_summary()
+data_source_view = DataSourceView()
+data_sources_summary = data_source_view.data_sources_summary()
 
 # Create a table to display the data sources
 data_sources_table = table.create(
@@ -47,7 +47,7 @@ components = {
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.update_last_updated(app)
-callbacks.update_data_sources_table(app, sageworks_artifacts)
+callbacks.update_data_sources_table(app, data_source_view)
 
 # Set up our layout (Dash looks for a var called layout)
 layout = data_sources_layout(components)

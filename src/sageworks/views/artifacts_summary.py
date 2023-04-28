@@ -47,7 +47,7 @@ class ArtifactsSummary(View):
         }
         return summary_data
 
-    def incoming_data_summary(self):
+    def incoming_data_summary(self) -> pd.DataFrame:
         """Get summary data about data in the incoming-data S3 Bucket"""
         data = self.aws_artifact_data[ServiceCategory.INCOMING_DATA]
         data_summary = []
@@ -68,7 +68,7 @@ class ArtifactsSummary(View):
 
         return pd.DataFrame(data_summary)
 
-    def data_sources_summary(self):
+    def data_sources_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks DataSources"""
         data = self.aws_artifact_data[ServiceCategory.DATA_CATALOG]
         data_summary = []
@@ -117,7 +117,7 @@ class ArtifactsSummary(View):
         link += f" [<a href='{athena_url}' target='_blank'>query</a>]"
         return link
 
-    def feature_sets_summary(self):
+    def feature_sets_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks FeatureSets"""
         data = self.aws_artifact_data[ServiceCategory.FEATURE_STORE]
         data_summary = []
@@ -158,7 +158,7 @@ class ArtifactsSummary(View):
             ]
             return pd.DataFrame(columns=columns)
 
-    def models_summary(self, concise=False):
+    def models_summary(self, concise=False) -> pd.DataFrame:
         """Get summary data about the SageWorks Models"""
         data = self.aws_artifact_data[ServiceCategory.MODELS]
         model_summary = []
@@ -211,7 +211,7 @@ class ArtifactsSummary(View):
             ]
             return pd.DataFrame(columns=columns)
 
-    def endpoints_summary(self):
+    def endpoints_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Endpoints"""
         data = self.aws_artifact_data[ServiceCategory.ENDPOINTS]
         data_summary = []
