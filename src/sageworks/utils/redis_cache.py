@@ -1,5 +1,7 @@
 """A Redis Database Cache Class"""
 import json
+import sys
+
 import redis
 import logging
 from datetime import datetime, date
@@ -37,14 +39,19 @@ class RedisCache:
 
     # Open the Redis connection (class object)
     log.info(f"Opening Redis connection to: {host}:{port}...")
-    redis_db = redis.Redis(host, port=port, password=password, charset="utf-8", decode_responses=True, db=0)
     try:
-        redis_db.ping()
+        # Create a temporary connection to test the connection
+        _redis_db = redis.Redis(host, port=port, password=password, socket_timeout=1)
+        _redis_db.ping()
+
+        # Now create the actual connection
+        redis_db = redis.Redis(host, port=port, password=password, charset="utf-8",
+                               decode_responses=True, db=0)
         log.info(f"Redis connection success: {host}:{port}...")
     except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
         msg = f"Could not connect to Redis Database: {host}:{port}..."
         log.critical(msg)
-        raise RuntimeError(msg)
+        sys.exit(1)
 
     def __init__(self, expire=None, prefix="", postfix=""):  # No expiration, standard 0 db, no postfix on keys
         """RedisCache Initialization"""
