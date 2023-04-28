@@ -58,17 +58,6 @@ class AWSAccountCheck:
                 self.log.critical(f'The {folder} prefix does not exist')
                 sys.exit(1)
 
-    def redis_check(self):
-        """Check if the Redis Database is available"""
-        self.log.info("*** Redis Database Check ***")
-        try:
-            from sageworks.utils.redis_cache import RedisCache
-            RedisCache(prefix="test")
-        except RuntimeError as err:
-            self.log.critical(f"Redis Database Check Failed: {err}")
-            sys.exit(1)
-        self.log.info("Redis Database Check Success...")
-
     def check(self):
         """Check if the AWS Account is Setup Correctly"""
         self.log.info("*** AWS Identity Check ***")
@@ -89,9 +78,6 @@ class AWSAccountCheck:
 
         # Check that the SageWorks S3 Bucket and Sub-folders are created
         self.check_s3_bucket_subfolders()
-
-        # Check that the Redis Database is available
-        self.redis_check()
 
         self.log.info("*** AWS Sagemaker Session/Client Check ***")
         sm_client = self.aws_clamp.sagemaker_client()

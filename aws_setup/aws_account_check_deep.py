@@ -23,10 +23,26 @@ from sageworks.transforms.data_to_features.light.data_to_features_light import D
 from sageworks.transforms.features_to_model.features_to_model import FeaturesToModel
 from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 
+
+def redis_check():
+    """Check if the Redis Database is available"""
+    print("*** Redis Database Check ***")
+    try:
+        from sageworks.utils.redis_cache import RedisCache
+        RedisCache(prefix="test")
+    except RuntimeError as err:
+        print(f"CRITICAL: Redis Database Check Failed: {err}")
+        sys.exit(1)
+    print("Redis Database Check Success...")
+
+
 if __name__ == "__main__":
     # Get the path to the dataset in the repository data directory
     test_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
     abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
+
+    # Check that the Redis Database is available
+    redis_check()
 
     # Create the test_data DataSource
     if not DataSource("test_data").check():
