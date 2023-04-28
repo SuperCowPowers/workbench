@@ -86,6 +86,11 @@ class DataSourceView(View):
         return link
 
     @staticmethod
+    def data_source_sample(data_uuid, max_rows=50) -> pd.DataFrame:
+        """Get a sample dataframe for the given DataSources"""
+        return DataSource(data_uuid).sample_df(max_rows=max_rows)
+
+    @staticmethod
     def num_columns(data_info):
         """Helper: Compute the number of columns from the storage descriptor data"""
         try:
@@ -113,10 +118,13 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Create the class and get the AWS Model Registry details
-    artifact_view = DataSourceView()
+    data_view = DataSourceView()
 
     # List the Endpoint Names
-    print("DataSourceView:")
-    for category, df in artifact_view.view_data().items():
-        print(f"\n{category}")
-        print(df.head())
+    print("DataSourcesSummary:")
+    summary = data_view.view_data()["DATA_SOURCES"]
+    print(summary.head())
+
+    # Get a sample dataframe for the given DataSources
+    sample_df = data_view.data_source_sample('abalone_data')
+    print(sample_df.head())

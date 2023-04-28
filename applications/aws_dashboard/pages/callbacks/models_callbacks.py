@@ -19,7 +19,7 @@ def update_last_updated(app: Dash):
 def update_models_table(app: Dash, sageworks_artifacts: ArtifactsSummary):
     @app.callback(Output("models_table", "data"), Input("models-updater", "n_intervals"))
     def data_sources_update(n):
-        print("Calling DataSources Refresh...")
+        print("Calling Models Refresh...")
         sageworks_artifacts.refresh()
         models = sageworks_artifacts.models_summary()
         return models.to_dict("records")

@@ -10,6 +10,7 @@ def create(
     show_columns: list[str] = None,
     row_select=False,
     markdown_columns: list[str] = None,
+    max_height: str = "250px",
 ) -> dash_table:
     """Create a Table"""
 
@@ -37,7 +38,7 @@ def create(
         cell_selectable=False,
         selected_rows=[0],
         # fixed_rows={'headers': True},
-        style_table={"maxHeight": "250px", "overflowY": "auto"},
+        style_table={"maxHeight": max_height, "overflowY": "auto"},
         style_as_list_view=True,
         style_cell={
             "font-family": "HelveticaNeue",
@@ -59,9 +60,3 @@ def create(
         markdown_options={"html": True},
     )
     return table
-
-
-# Storage
-"""
-
-"""

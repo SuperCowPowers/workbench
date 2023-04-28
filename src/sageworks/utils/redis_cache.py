@@ -1,6 +1,5 @@
 """A Redis Database Cache Class"""
 import json
-import sys
 
 import redis
 import logging

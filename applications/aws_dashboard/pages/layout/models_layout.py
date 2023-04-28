@@ -16,7 +16,6 @@ def models_layout(components: dict) -> html.Div:
                     "padding": "0px 0px 0px 160px",
                 },
             ),
-            dcc.Interval(id="models-updater", interval=5000, n_intervals=0),
             dbc.Row(style={"padding": "30px 0px 0px 0px"}),
             dbc.Row(
                 [
@@ -55,6 +54,7 @@ def models_layout(components: dict) -> html.Div:
                     ),
                 ]
             ),
+            dcc.Interval(id="models-updater", interval=5000, n_intervals=0),
         ],
         style={"margin": "30px"},
     )

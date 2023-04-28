@@ -16,8 +16,11 @@ class ArtifactsSummary(View):
         super().__init__()
 
         # Get AWS Service information for ALL the categories (data_source, feature_set, endpoints, etc)
-        self.aws_artifact_data = self.aws_broker.get_all_metadata()
-        self.aws_account_clamp = AWSAccountClamp()
+        self.aws_artifact_data = {}
+        self.refresh()
+
+        # Get AWS Account Region
+        self.aws_region = AWSAccountClamp().region()
 
         # Get a handle to the AWS Artifact Information class
         self.artifact_info = self.aws_broker.artifact_info
@@ -112,7 +115,7 @@ class ArtifactsSummary(View):
             return pd.DataFrame(columns=columns)
 
     def hyperlinks(self, name, detail_type):
-        athena_url = f"https://{self.aws_account_clamp.region()}.console.aws.amazon.com/athena/home"
+        athena_url = f"https://{self.aws_region}.console.aws.amazon.com/athena/home"
         link = f"<a href='{detail_type}' target='_blank'>{name}</a>"
         link += f" [<a href='{athena_url}' target='_blank'>query</a>]"
         return link
