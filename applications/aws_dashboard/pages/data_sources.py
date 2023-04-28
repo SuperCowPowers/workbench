@@ -1,5 +1,4 @@
 """DataSources:  A SageWorks Web Interface to view, interact, and manage Data Sources"""
-import pandas as pd
 from dash import register_page
 import dash
 from dash_bootstrap_templates import load_figure_template
@@ -35,11 +34,7 @@ data_sources_summary = table.create(
 )
 
 # Grab the first 5 rows of the first data source
-if data_source_view.data_sources_meta:
-    first_data_uuid = list(data_source_view.data_sources_meta.keys())[0]
-    sample_rows = data_source_view.data_source_sample(first_data_uuid).head(5)
-else:
-    sample_rows = pd.DataFrame()
+sample_rows = data_source_view.data_source_sample(0)
 data_source_sample_rows = table.create(
     "data_source_sample_rows",
     sample_rows,
@@ -64,7 +59,8 @@ app = dash.get_app()
 callbacks.update_last_updated(app)
 
 # FIXME: Updating the table somehow breaks the row selection callback
-# callbacks.update_data_sources_table(app, data_source_view)
+callbacks.update_data_sources_summary(app, data_source_view)
+callbacks.update_data_source_sample_rows(app, data_source_view)
 
 # Callback for the data sources table
 callbacks.table_row_select(app, "data_sources_summary")

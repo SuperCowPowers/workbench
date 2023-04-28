@@ -33,20 +33,30 @@ def table_row_select(app: Dash, table_name: str):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
-        foo = [
+        row_style = [
             {
                 "if": {"filter_query": "{{id}} ={}".format(i)},
                 "backgroundColor": "rgb(80, 80, 80)",
             }
             for i in selected_rows
         ]
-        return foo
+        return row_style
 
 
 def update_data_source_sample_rows(app: Dash, data_source_view: DataSourceView):
-    @app.callback(Output("data_source_sample_rows", "data"), Input("data-sources-updater", "n_intervals"))
-    def data_sources_update(n):
+    @app.callback(
+        [Output("data_source_sample_rows", "columns"), Output("data_source_sample_rows", "data")],
+        Input("data_sources_summary", "derived_viewport_selected_row_ids"),
+    )
+    def sample_rows_update(selected_rows):
+        print(f"Selected Rows: {selected_rows}")
+        if not selected_rows or selected_rows[0] is None:
+            return dash.no_update
         print("Calling DataSource Sample Rows Refresh...")
-        data_source_view.refresh()
-        data_sources = data_source_view.data_sources_summary()
-        return data_sources.to_dict("records")
+        sample_rows = data_source_view.data_source_sample(selected_rows[0]).head(5)
+
+        # The columns need to be in a special format for the DataTable
+        column_setup = [{"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns]
+
+        # Return the columns and the data
+        return [column_setup, sample_rows.to_dict("records")]

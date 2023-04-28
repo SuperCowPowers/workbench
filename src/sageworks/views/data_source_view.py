@@ -85,10 +85,15 @@ class DataSourceView(View):
         link += f" [<a href='{athena_url}' target='_blank'>query</a>]"
         return link
 
-    @staticmethod
-    def data_source_sample(data_uuid, max_rows=50) -> pd.DataFrame:
-        """Get a sample dataframe for the given DataSources"""
-        return DataSource(data_uuid).sample_df(max_rows=max_rows)
+    def data_source_sample(self, data_source_index: int, max_rows=5) -> pd.DataFrame:
+        """Get a sample dataframe for the given DataSource Index"""
+        # Grab the first 5 rows of the first data source
+        if self.data_sources_meta and data_source_index < len(self.data_sources_meta):
+            data_uuid = list(self.data_sources_meta.keys())[data_source_index]
+            sample_rows = DataSource(data_uuid).sample_df(max_rows=max(max_rows, 100)).head(max_rows)
+        else:
+            sample_rows = pd.DataFrame()
+        return sample_rows
 
     @staticmethod
     def num_columns(data_info):
@@ -126,5 +131,5 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get a sample dataframe for the given DataSources
-    sample_df = data_view.data_source_sample('abalone_data')
+    sample_df = data_view.data_source_sample(0)
     print(sample_df.head())
