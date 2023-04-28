@@ -130,7 +130,7 @@ class AthenaSource(DataSourceAbstract):
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
-    def get_sample_rows(self, max_rows: int = 1000) -> pd.DataFrame:
+    def sample_df(self, max_rows: int = 1000) -> pd.DataFrame:
         # If the data source has more rows than max_rows, do a sample query
         num_rows = self.num_rows()
         if num_rows > max_rows:
@@ -198,7 +198,7 @@ if __name__ == "__main__":
     print(f"Tags: {my_data.sageworks_tags()}")
 
     # Get a sample of the data
-    df = my_data.get_sample_rows()
+    df = my_data.sample_df()
     print(f"Sample Data: {df.shape}")
     print(df.columns)
     print(df.head())

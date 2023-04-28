@@ -1,21 +1,31 @@
-"""DataSource: A Factory for Data Sources (Athena, RDS, etc)"""
+"""DataSource: A Factory for DataSources (Athena, RDS, etc)"""
 
 # Local imports
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 
 class DataSource:
-    """DataSource: SageWorks Data Source is the best source for your data
+    """DataSource: SageWorks DataSource is the best source for your data
 
     Common Usage:
         my_data = DataSource(data_uuid)
         my_data.summary()
         my_data.details()
         df = my_data.query(f"select * from {data_uuid} limit 5")
+
+    Methods: (implemented by subclasses)
+        num_rows(): Return the number of rows for this DataSource
+        num_columns(): Return the number of columns
+        column_names(): Return the column names
+        column_types(): Return the column types
+        column_details(): Return the column details
+        query(query: str): Returns a pd.DataFrame with the query results
+        sample_df(max_rows: int=1000): Returns a SAMPLED pd.DataFrame from this DataSource
+        details(): Returns additional details about this DataSource
     """
 
     def __new__(cls, uuid, data_source_type: str = "athena"):
-        """DataSource: A Factory for Data Sources (Athena, RDS, etc)
+        """DataSource: A Factory for DataSources (Athena, RDS, etc)
         Args:
             uuid: The UUID of the DataSource
             data_source_type: The type of DataSource (athena, rds, etc)
@@ -31,10 +41,10 @@ class DataSource:
 if __name__ == "__main__":
     """Exercise the DataSource Factory Class"""
 
-    # Retrieve a Data Source
+    # Retrieve a DataSource
     my_data = DataSource("test_data")
 
-    # Verify that the Athena Data Source exists
+    # Verify that the Athena DataSource exists
     assert my_data.check()
 
     # What's my SageWorks UUID
@@ -44,7 +54,7 @@ if __name__ == "__main__":
     print(f"AWS ARN: {my_data.arn()}")
     print(f"AWS URL: {my_data.aws_url()}")
 
-    # Get the S3 Storage for this Data Source
+    # Get the S3 Storage for this DataSource
     print(f"S3 Storage: {my_data.s3_storage_location()}")
 
     # What's the size of the data?

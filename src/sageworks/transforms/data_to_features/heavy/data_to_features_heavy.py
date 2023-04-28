@@ -32,7 +32,7 @@ class DataToFeaturesHeavy(Transform):
         self.id_column = None
         self.event_time_column = None
         self.input_data_source = DataSource(input_uuid)
-        self.input_sample_df = self.input_data_source.get_sample_rows()
+        self.input_sample_df = self.input_data_source.sample_df()
         self.output_database = "sagemaker_featurestore"
 
     @staticmethod

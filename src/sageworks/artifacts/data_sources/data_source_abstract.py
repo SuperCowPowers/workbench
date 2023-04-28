@@ -42,6 +42,11 @@ class DataSourceAbstract(Artifact):
         """Query the DataSourceAbstract"""
         pass
 
+    @abstractmethod
+    def sample_df(self, max_rows: int = 1000) -> pd.DataFrame:
+        """Return a sample DataFrame from this DataSource"""
+        pass
+
     def details(self) -> dict:
         """Additional Details about this DataSourceAbstract Artifact"""
         details = self.summary()
