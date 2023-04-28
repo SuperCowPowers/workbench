@@ -34,7 +34,7 @@ SageWorks is a medium granularity framework that manages and aggregates AWS® Se
 
 ## Getting Started
 - [SageWorks Overview](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing) Slides that cover and illustrate the SageWorks Modeling Pipeline.
-- [Initial Setup and Installation](https://github.com/SuperCowPowers/sageworks/wiki/Initial-Setup-and-Installation) for initial AWS/config/repository set up. 
+- [Onboarding-SageWorks-to-AWS] (https://github.com/SuperCowPowers/sageworks/wiki/Onboarding-SageWorks-to-AWS) to install the SageWorks Stack to your AWS Account. 
 - [SageWorks Pipeline](https://nbviewer.jupyter.org/github/SuperCowPowers/sageworks/blob/main/notebooks/ML_Pipeline_with_SageWorks.ipynb) Building an AWS® ML Pipeline from start to finish.
 - [Coding with SageWorks Video](https://drive.google.com/file/d/1iO7IuQtTYdx4BtQjxv9lI1aVJ2ZcAo43/view?usp=sharing) Informal coding + chatting while building a full ML pipeline.
 - Join our [Discord](https://discord.gg/WHAJuz8sw8) for questions and advice on using SageWorks within your organization.
