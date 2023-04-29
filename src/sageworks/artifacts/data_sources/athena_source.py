@@ -141,7 +141,7 @@ class AthenaSource(DataSourceAbstract):
             # so we need to make sure we have at least 100 rows for the sample
             # and then we can limit the output to max_rows
             sample_rows = max(max_rows, 100)
-            percentage = round(sample_rows * 100.0 / num_rows)
+            percentage = min(100, round(sample_rows * 100.0 / num_rows))
             self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {max_rows}...")
             query = f"SELECT * FROM {self.table_name} TABLESAMPLE BERNOULLI({percentage})"
         else:
