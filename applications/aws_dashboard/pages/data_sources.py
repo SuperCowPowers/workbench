@@ -58,12 +58,13 @@ components = {
 app = dash.get_app()
 callbacks.update_last_updated(app)
 
-# FIXME: Updating the table somehow breaks the row selection callback
+# Periodic updated to the data sources summary
 callbacks.update_data_sources_summary(app, data_source_view)
-callbacks.update_data_source_sample_rows(app, data_source_view)
 
-# Callback for the data sources table
+# Callbacks for when a data source is selected
 callbacks.table_row_select(app, "data_sources_summary")
+callbacks.update_sample_rows_header(app)
+callbacks.update_data_source_sample_rows(app, data_source_view)
 
 # Set up our layout (Dash looks for a var called layout)
 layout = data_sources_layout(components)

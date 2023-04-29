@@ -43,10 +43,23 @@ def table_row_select(app: Dash, table_name: str):
         return row_style
 
 
+def update_sample_rows_header(app: Dash):
+    @app.callback(
+        Output("sample_rows_header", "children"),
+        Input("data_sources_summary", "derived_viewport_selected_row_ids"),
+        prevent_initial_call=True
+    )
+    def update_sample_header(selected_rows):
+        return "Sampled Rows: Updating..."
+
+
 def update_data_source_sample_rows(app: Dash, data_source_view: DataSourceView):
     @app.callback(
-        [Output("data_source_sample_rows", "columns"), Output("data_source_sample_rows", "data")],
+        [Output("sample_rows_header", "children", allow_duplicate=True),
+         Output("data_source_sample_rows", "columns"),
+         Output("data_source_sample_rows", "data")],
         Input("data_sources_summary", "derived_viewport_selected_row_ids"),
+        prevent_initial_call=True
     )
     def sample_rows_update(selected_rows):
         print(f"Selected Rows: {selected_rows}")
@@ -55,8 +68,12 @@ def update_data_source_sample_rows(app: Dash, data_source_view: DataSourceView):
         print("Calling DataSource Sample Rows Refresh...")
         sample_rows = data_source_view.data_source_sample(selected_rows[0]).head(5)
 
+        # Name of the data source
+        data_source_name = data_source_view.data_source_name(selected_rows[0])
+        header = f"Sampled Rows: {data_source_name}"
+
         # The columns need to be in a special format for the DataTable
         column_setup = [{"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns]
 
         # Return the columns and the data
-        return [column_setup, sample_rows.to_dict("records")]
+        return [header, column_setup, sample_rows.to_dict("records")]

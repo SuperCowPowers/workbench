@@ -87,13 +87,21 @@ class DataSourceView(View):
 
     def data_source_sample(self, data_source_index: int, max_rows=5) -> pd.DataFrame:
         """Get a sample dataframe for the given DataSource Index"""
-        # Grab the first 5 rows of the first data source
+        # Grab the a sample of N rows of the data source
         if self.data_sources_meta and data_source_index < len(self.data_sources_meta):
             data_uuid = list(self.data_sources_meta.keys())[data_source_index]
-            sample_rows = DataSource(data_uuid).sample_df(max_rows=max(max_rows, 100)).head(max_rows)
+            sample_rows = DataSource(data_uuid).sample_df(max_rows=max_rows).head(max_rows)
         else:
             sample_rows = pd.DataFrame()
         return sample_rows
+
+    def data_source_name(self, data_source_index: int) -> str:
+        """Helper method for getting the data source name for the given DataSource Index"""
+        if self.data_sources_meta and data_source_index < len(self.data_sources_meta):
+            data_uuid = list(self.data_sources_meta.keys())[data_source_index]
+            return data_uuid
+        else:
+            return "Unknown"
 
     @staticmethod
     def num_columns(data_info):

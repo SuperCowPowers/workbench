@@ -131,15 +131,22 @@ class AthenaSource(DataSourceAbstract):
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
     def sample_df(self, max_rows: int = 1000) -> pd.DataFrame:
-        # If the data source has more rows than max_rows, do a sample query
+        """Pull a sample of rows from the DataSource
+        Args:
+            max_rows (int): Maximum number of rows to pull
+        """
         num_rows = self.num_rows()
         if num_rows > max_rows:
-            percentage = round(max_rows * 100.0 / num_rows)
+            # With Bernoulli Sampling it can give you 0 rows on small samples
+            # so we need to make sure we have at least 100 rows for the sample
+            # and then we can limit the output to max_rows
+            sample_rows = max(max_rows, 100)
+            percentage = round(sample_rows * 100.0 / num_rows)
             self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {max_rows}...")
             query = f"SELECT * FROM {self.table_name} TABLESAMPLE BERNOULLI({percentage})"
         else:
             query = f"SELECT * FROM {self.table_name}"
-        return self.query(query)
+        return self.query(query).head(max_rows)
 
     def details(self) -> dict:
         """Additional Details about this AthenaSource Artifact"""
@@ -167,7 +174,7 @@ if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
 
     # Retrieve a Data Source
-    my_data = AthenaSource("test_data")
+    my_data = AthenaSource("abalone_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.check()
@@ -198,10 +205,9 @@ if __name__ == "__main__":
     print(f"Tags: {my_data.sageworks_tags()}")
 
     # Get a sample of the data
-    df = my_data.sample_df()
+    df = my_data.sample_df(10)
     print(f"Sample Data: {df.shape}")
-    print(df.columns)
-    print(df.head())
+    print(df)
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')

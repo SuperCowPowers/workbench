@@ -38,7 +38,7 @@ def create(
         cell_selectable=False,
         selected_rows=[0],
         # fixed_rows={'headers': True},
-        style_table={"maxHeight": max_height, "overflowY": "auto"},
+        style_table={"maxHeight": max_height, "overflowX": "auto", "overflowY": "auto"},
         style_as_list_view=True,
         style_cell={
             "font-family": "HelveticaNeue",
