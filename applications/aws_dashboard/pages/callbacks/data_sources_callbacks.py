@@ -2,7 +2,7 @@
 from datetime import datetime
 import dash
 from dash import Dash
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.data_source_view import DataSourceView
@@ -15,12 +15,16 @@ def update_last_updated(app: Dash):
 
 
 def update_data_sources_summary(app: Dash, data_source_view: DataSourceView):
-    @app.callback(Output("data_sources_summary", "data"), Input("data-sources-updater", "n_intervals"))
-    def data_sources_update(n):
+    @app.callback(
+        [Output("data_sources_summary", "data"), Output("data_sources_summary", "selected_rows")],
+        Input("data-sources-updater", "n_intervals"),
+        State("data_sources_summary", "selected_rows")
+    )
+    def data_sources_update(n, selected_rows):
         print("Calling DataSources Summary Refresh...")
         data_source_view.refresh()
         data_sources = data_source_view.data_sources_summary()
-        return data_sources.to_dict("records")
+        return [data_sources.to_dict("records"), selected_rows]
 
 
 # Highlights the selected row in the table

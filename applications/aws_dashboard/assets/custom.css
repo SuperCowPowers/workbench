@@ -324,8 +324,11 @@ li {
 /* Tables
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 table {
-  border: 3px solid #222222;
+  border: 4px solid #222222;
   border-collapse: collapse;
+}
+tr {
+  border: 1px solid #666666;
 }
 th:not(.CalendarDay),
 td:not(.CalendarDay) {

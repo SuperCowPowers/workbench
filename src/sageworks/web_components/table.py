@@ -11,6 +11,7 @@ def create(
     row_select=False,
     markdown_columns: list[str] = None,
     max_height: str = "250px",
+    columns_editable: bool = False,
 ) -> dash_table:
     """Create a Table"""
 
@@ -26,7 +27,10 @@ def create(
     column_setup = []
     for c in show_columns:
         presentation = "markdown" if markdown_columns and c in markdown_columns else "input"
-        column_setup.append({"name": c, "id": c, "presentation": presentation})
+        if columns_editable:
+            column_setup.append({"name": c, "id": c, "deletable": True, "selectable": True})
+        else:
+            column_setup.append({"name": c, "id": c, "presentation": presentation})
 
     # Create the Dash Table
     table = dash_table.DataTable(
@@ -42,20 +46,22 @@ def create(
         style_as_list_view=True,
         style_cell={
             "font-family": "HelveticaNeue",
-            "padding": "10px",
+            "padding": "5px",
             "overflow": "hidden",
             "textOverflow": "ellipsis",
-            "maxWidth": 200,
+            "maxWidth": 250
         },
         style_header={
-            "fontSize": 18,
+            "textAlign": "left",
+            "fontSize": 16,
             "backgroundColor": header_color,
-            "color": "rgb(200, 200, 200)",
+            "color": "rgb(200, 200, 200)"
         },
         style_data={
-            "fontSize": 18,
+            "fontSize": 14,
             "backgroundColor": "rgb(60, 60, 60)",
             "color": "rgb(200, 200, 200)",
+            "border": "0px"
         },
         markdown_options={"html": True},
     )
