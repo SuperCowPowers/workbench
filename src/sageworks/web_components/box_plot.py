@@ -14,9 +14,9 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objects.Figure:
     numeric_columns = [col for col in numeric_columns if len(df[col].unique()) > 1]  # Only columns > 1 unique value
     numeric_columns = [col for col in numeric_columns if col not in ['id', 'Id', 'ID', 'Id_']]  # Remove id columns
     fig = make_subplots(rows=1, cols=len(numeric_columns))
-    for i, var in enumerate(numeric_columns):
+    for i, col in enumerate(numeric_columns):
         fig.add_trace(
-            go.Box(y=df[var], name=var, notched=True, showlegend=False),
+            go.Box(y=df[col], name=col, notched=True, showlegend=False),
             row=1, col=i+1
         )
     fig.update_traces(boxpoints='all', jitter=.2)
