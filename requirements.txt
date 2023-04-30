@@ -11,3 +11,4 @@ plotly
 dash >= 2.8
 dash-bootstrap-components
 dash-bootstrap-templates
+aws-cdk-lib >= 2.76.0
