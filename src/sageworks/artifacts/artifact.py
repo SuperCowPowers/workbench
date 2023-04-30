@@ -36,11 +36,7 @@ class Artifact(ABC):
     data_catalog_db = "sageworks"
     sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
     data_source_s3_path = "s3://" + sageworks_bucket + "/data-sources"
-    feature_sets_s3_path = "s3://" +sageworks_bucket + "/feature-sets"
-
-    # Make sure the AWS data catalog database exists
-    self.ensure_aws_catalog_db(self.data_catalog_db)
-    self.ensure_aws_catalog_db("sagemaker_featurestore")
+    feature_sets_s3_path = "s3://" + sageworks_bucket + "/feature-sets"
 
     def __init__(self, uuid):
         """Artifact Initialization"""
