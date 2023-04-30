@@ -1,12 +1,10 @@
 from aws_cdk import (
-    # Duration,
     Stack,
-    # aws_sqs as sqs,
     aws_iam as iam,
     aws_s3 as s3,
+    aws_glue_alpha as glue
 )
 from constructs import Construct
-from sageworks.utils.sageworks_config import SageWorksConfig
 
 
 class SageworksStack(Stack):
@@ -20,11 +18,22 @@ class SageworksStack(Stack):
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        self.sageworks_execution_role = self.create_execution_role(sageworks_role_name)
-        self.add_artifact_bucket(s3_bucket_name)
+        # Create the SageWorks Artifact Bucket (must be created before Roles)
+        self.artifact_bucket = self.add_artifact_bucket(s3_bucket_name)
 
-        # TODO: Use this if we need a duplicate role
-        # self.glue_service_role = self.create_execution_role("AWSGlueServiceRole-Sageworks")
+        # Create our main SageWorks Execution Role and the Glue Service Role
+        self.sageworks_execution_role = self.create_execution_role(sageworks_role_name)
+        self.glue_service_role = self.create_execution_role("AWSGlueServiceRole-Sageworks")
+
+        # Create the SageWorks Data Catalog Databases
+        self.create_data_catalog_databases()
+
+    def add_artifact_bucket(self, bucket_name) -> s3.Bucket:
+        return s3.Bucket(
+            self,
+            id=bucket_name,
+            bucket_name=bucket_name,
+        )
 
     def create_execution_role(self, role_name) -> iam.Role:
         execution_role = iam.Role(
@@ -45,16 +54,22 @@ class SageworksStack(Stack):
             iam.PolicyStatement(
                 actions=["s3:*", "s3-object-lambda:*"],
                 resources=[
-                    "arn:aws:s3:::aws-athena-query-results",
-                    "arn:aws:s3:::*sageworks-artifacts*",
+                    "arn:aws:s3:::aws-athena-query-results*/*",
+                    f"arn:aws:s3:::{self.artifact_bucket.bucket_name}/*",
                 ],
             )
         )
         return execution_role
 
-    def add_artifact_bucket(self, bucket_name) -> None:
-        self.artifact_bucket = s3.CfnBucket(
+    def create_data_catalog_databases(self) -> None:
+        # Create two Data Catalog Databases (sageworks and sagemaker_featurestore)
+        glue.Database(
             self,
-            id=bucket_name,
-            bucket_name=bucket_name,
+            id="sageworks_database",
+            database_name="sageworks"
+        )
+        glue.Database(
+            self,
+            id="sagemaker_featurestore_database",
+            database_name="sagemaker_featurestore"
         )

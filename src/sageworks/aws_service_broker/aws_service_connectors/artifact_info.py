@@ -68,7 +68,7 @@ class ArtifactInfo(Connector):
                     self.log.error(f"This method doesn't work on DataSources: {exc}")
                     return {}
                 else:
-                    self.log.crtical(f"Unknown Error: {exc}")
+                    self.log.critical(f"Unknown Error: {exc}")
                     raise exc
 
             # Set the artifact info cache
