@@ -8,7 +8,12 @@ from sageworks_sandbox.sageworks_sandbox_stack import SageworksStack
 # resource in sageworks_sandbox/sageworks_sandbox_stack.py
 def test_sqs_queue_created():
     app = core.App()
-    stack = SageworksStack(app, "sageworks-sandbox", "my-test-company-name")
+    stack = SageworksStack(
+        app,
+        "sageworks-sandbox",
+        "test-scp-sageworks-artifacts",
+        "SageWorks-ExecutionRole",
+    )
     template = Template.from_stack(stack)
 
     # TODO: Check for specific properties

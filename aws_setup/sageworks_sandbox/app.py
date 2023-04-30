@@ -3,13 +3,22 @@
 import aws_cdk as cdk
 
 from sageworks_sandbox.sageworks_sandbox_stack import SageworksStack
+from sageworks.utils.sageworks_config import SageWorksConfig
 
+sageworks_config: SageWorksConfig = SageWorksConfig()
 
 app = cdk.App()
+
+s3_bucket_name = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+sageworks_role_name = sageworks_config.get_config_value(
+    "SAGEWORKS_AWS", "SAGEWORKS_ROLE_NAME"
+)
+
 sandbox_stack = SageworksStack(
     app,
     "SageworksSandbox",
-    company_name="TODO-Company-Name"
+    s3_bucket_name=s3_bucket_name,
+    sageworks_role_name=sageworks_role_name
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
     # but a single synthesized template can be deployed anywhere.
