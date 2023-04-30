@@ -55,8 +55,8 @@ class AWSServiceBroker:
 
         # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings
         sageworks_config = SageWorksConfig()
-        sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET")
-        cls.incoming_data_bucket = sageworks_bucket + "/incoming-data"
+        sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+        cls.incoming_data_bucket = "s3://" + sageworks_bucket + "/incoming-data"
 
         # SageWorks category mapping to AWS Services
         # - incoming_data = S3

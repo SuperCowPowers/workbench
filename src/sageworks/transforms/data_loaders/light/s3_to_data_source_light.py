@@ -87,8 +87,8 @@ if __name__ == "__main__":
 
     # Create my Data Loader
     sageworks_config = SageWorksConfig()
-    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET")
-    input_path = sageworks_bucket + "/incoming-data/aqsol_public_data.csv"
+    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+    input_path = "s3://" + sageworks_bucket + "/incoming-data/aqsol_public_data.csv"
     output_uuid = "aqsol_data"
     my_loader = S3ToDataSourceLight(input_path, output_uuid)
     my_loader.set_output_tags(["aqsol", "public"])

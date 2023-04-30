@@ -1,7 +1,6 @@
 """AWSAccountCheck runs a bunch of tests/checks to ensure SageWorks AWS Setup"""
 import sys
 import logging
-from urllib.parse import urlparse
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
@@ -30,8 +29,7 @@ class AWSAccountCheck:
 
         self.log.info("*** AWS SageWorks Bucket Check ***")
         s3 = self.aws_clamp.boto_session().resource("s3")
-        bucket_path = self.config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET")
-        bucket_name = urlparse(bucket_path).netloc
+        bucket_name = self.config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
         bucket = s3.Bucket(bucket_name)
 
         # Check if the bucket exists
@@ -55,8 +53,7 @@ class AWSAccountCheck:
             if folder in prefixes:
                 self.log.info(f'The {folder} prefix exists')
             else:
-                self.log.critical(f'The {folder} prefix does not exist')
-                sys.exit(1)
+                self.log.info(f'The {folder} prefix does not exist...which is fine...')
 
     def check(self):
         """Check if the AWS Account is Setup Correctly"""

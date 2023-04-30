@@ -54,8 +54,8 @@ if __name__ == "__main__":
 
     # Grab out incoming data bucket for something to test with
     sageworks_config = SageWorksConfig()
-    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET")
-    incoming_data_bucket = sageworks_bucket + "/incoming-data"
+    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+    incoming_data_bucket = "s3://" + sageworks_bucket + "/incoming-data"
 
     # Create the class and check the functionality
     s3_bucket = S3Bucket(incoming_data_bucket)

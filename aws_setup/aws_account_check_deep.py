@@ -14,6 +14,7 @@ Endpoints:
 import sys
 import time
 from pathlib import Path
+from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 from sageworks.artifacts.models.model import Model
@@ -30,16 +31,19 @@ def redis_check():
     try:
         from sageworks.utils.redis_cache import RedisCache
         RedisCache(prefix="test")
+        print("Redis Database Check Success...")
     except RuntimeError as err:
-        print(f"CRITICAL: Redis Database Check Failed: {err}")
-        sys.exit(1)
-    print("Redis Database Check Success...")
+        print(f"Redis Database Check Failed: {err} but this is fine.. Redis is optional")
 
 
 if __name__ == "__main__":
     # Get the path to the dataset in the repository data directory
     test_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
     abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
+
+    """Check if the AWS Account is Setup Correctly"""
+    print("*** AWS Identity Check ***")
+    AWSAccountClamp().check_aws_identity()
 
     # Check that the Redis Database is available
     redis_check()

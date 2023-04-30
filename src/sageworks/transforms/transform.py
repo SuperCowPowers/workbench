@@ -57,9 +57,9 @@ class Transform(ABC):
         # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings
         sageworks_config = SageWorksConfig()
         self.data_catalog_db = "sageworks"
-        sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET")
-        self.data_source_s3_path = sageworks_bucket + "/data-sources"
-        self.feature_sets_s3_path = sageworks_bucket + "/feature-sets"
+        sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+        self.data_source_s3_path = "s3://" + sageworks_bucket + "/data-sources"
+        self.feature_sets_s3_path = "s3://" + sageworks_bucket + "/feature-sets"
 
         # Grab a SageWorks Role ARN, Boto3, SageMaker Session, and SageMaker Client
         self.aws_account_clamp = AWSAccountClamp()

@@ -23,7 +23,7 @@ class AWSAccountClamp:
 
         # Grab the AWS Role Name from the SageWorks Config
         config = SageWorksConfig()
-        role_name = config.get_config_value("SAGEWORKS_AWS", "SAGEWORKS_ROLE")
+        role_name = config.get_config_value("SAGEWORKS_AWS", "SAGEWORKS_ROLE_NAME")
         self.role_name = role_name
 
         # The default AWS Assume Role TTL is 1 hour, so we'll set our TTL to 50 minutes
