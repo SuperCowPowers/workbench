@@ -7,9 +7,7 @@ app = cdk.App()
 
 sageworks_config: SageWorksConfig = SageWorksConfig()
 s3_bucket_name = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
-sageworks_role_name = sageworks_config.get_config_value(
-    "SAGEWORKS_AWS", "SAGEWORKS_ROLE_NAME"
-)
+sageworks_role_name = sageworks_config.get_config_value("SAGEWORKS_AWS", "SAGEWORKS_ROLE_NAME")
 
 sandbox_stack = SageworksStack(
     app,
