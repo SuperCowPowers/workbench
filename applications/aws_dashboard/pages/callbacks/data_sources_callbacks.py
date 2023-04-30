@@ -6,6 +6,7 @@ from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.data_source_view import DataSourceView
+from sageworks.web_components import violin_plot
 
 
 def update_last_updated(app: Dash):
@@ -70,7 +71,7 @@ def update_data_source_sample_rows(app: Dash, data_source_view: DataSourceView):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling DataSource Sample Rows Refresh...")
-        sample_rows = data_source_view.data_source_sample(selected_rows[0]).head(5)
+        sample_rows = data_source_view.data_source_sample(selected_rows[0])
 
         # Name of the data source
         data_source_name = data_source_view.data_source_name(selected_rows[0])
@@ -81,3 +82,19 @@ def update_data_source_sample_rows(app: Dash, data_source_view: DataSourceView):
 
         # Return the columns and the data
         return [header, column_setup, sample_rows.to_dict("records")]
+
+
+def update_violin_plots(app: Dash, data_source_view: DataSourceView):
+    """Updates the Violin Plots when a new data source is selected"""
+    @app.callback(
+        Output("violin_plot", "figure"),
+        Input("data_sources_summary", "derived_viewport_selected_row_ids"),
+        prevent_initial_call=True
+    )
+    def generate_new_violin_plot(selected_rows):
+        print(f"Selected Rows: {selected_rows}")
+        if not selected_rows or selected_rows[0] is None:
+            return dash.no_update
+        print("Calling DataSource Sample Rows Refresh...")
+        sample_rows = data_source_view.data_source_sample(selected_rows[0])
+        return violin_plot.create_figure(sample_rows)

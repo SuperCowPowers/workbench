@@ -4,7 +4,7 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import histogram, box_plot
+from sageworks.web_components import violin_plot
 from sageworks.views.data_source_view import DataSourceView
 from sageworks.web_components import table
 
@@ -33,25 +33,25 @@ data_sources_summary = table.create(
     markdown_columns=["Name"],
 )
 
-# Grab the first 5 rows of the first data source
+# Grab the a sample of rows from the first data source
 sample_rows = data_source_view.data_source_sample(0)
 data_source_sample_rows = table.create(
     "data_source_sample_rows",
     sample_rows,
     header_color="rgb(60, 60, 100)",
-    max_height="300px"
+    max_height="200px",
+    fixed_headers=True
 )
 
-# Create a fake scatter plot
-histo = histogram.create()
-box = box_plot.create()
+# Create a box plot of all the numeric columns in the sample rows
+# histo = histogram.create()
+violin = violin_plot.create(sample_rows)
 
 # Create our components
 components = {
     "data_sources_summary": data_sources_summary,
     "data_source_sample_rows": data_source_sample_rows,
-    "histo_plot": histo,
-    "box_plot": box,
+    "violin_plot": violin
 }
 
 # Setup our callbacks/connections
@@ -65,6 +65,7 @@ callbacks.update_data_sources_summary(app, data_source_view)
 callbacks.table_row_select(app, "data_sources_summary")
 callbacks.update_sample_rows_header(app)
 callbacks.update_data_source_sample_rows(app, data_source_view)
+callbacks.update_violin_plots(app, data_source_view)
 
 # Set up our layout (Dash looks for a var called layout)
 layout = data_sources_layout(components)
