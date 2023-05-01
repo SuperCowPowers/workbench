@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 
 
 # SageWorks Imports
-from sageworks.views.artifacts_summary import ArtifactsSummary
+from sageworks.views.web_artifacts_summary import WebArtifactsSummary
 from sageworks.web_components import table
 
 
@@ -26,12 +26,12 @@ def setup_artifact_viewer():
     # load_figure_template('darkly')
 
     # Grab a view that gives us a summary of all the artifacts currently in SageWorks
-    sageworks_artifacts = ArtifactsSummary()
-    artifacts_summary = sageworks_artifacts.view_data()
+    sageworks_artifacts = WebArtifactsSummary()
+    web_artifacts_summary = sageworks_artifacts.view_data()
 
     # Just a bunch of tables for now :)
     tables = {}
-    for service_category, artifact_info_df in artifacts_summary.items():
+    for service_category, artifact_info_df in web_artifacts_summary.items():
         # Grab the Artifact Information DataFrame for each AWS Service
         tables[service_category] = table.create(service_category, artifact_info_df)
 

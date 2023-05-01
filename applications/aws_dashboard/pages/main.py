@@ -3,7 +3,7 @@ from dash import register_page
 import dash
 
 # SageWorks Imports
-from sageworks.views.artifacts_summary import ArtifactsSummary
+from sageworks.views.web_artifacts_summary import WebArtifactsSummary
 from sageworks.web_components import table
 
 # Local Imports
@@ -16,8 +16,8 @@ register_page(__name__, path="/")
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks
-artifacts_summary = ArtifactsSummary()
-sageworks_artifacts = artifacts_summary.view_data()
+web_artifacts_summary = WebArtifactsSummary()
+sageworks_artifacts = web_artifacts_summary.view_data()
 
 # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
 tables = dict()
@@ -59,7 +59,7 @@ components = {
 
 # Setup our callbacks/connections
 app = dash.get_app()
-callbacks.update_last_updated(app, artifacts_summary)
+callbacks.update_last_updated(app, web_artifacts_summary)
 callbacks.update_artifact_tables(app)
 
 # Set up our layout (Dash looks for a var called layout)

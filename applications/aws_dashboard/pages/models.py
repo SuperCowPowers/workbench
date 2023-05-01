@@ -8,7 +8,7 @@ from dash_bootstrap_templates import load_figure_template
 
 from sageworks.web_components import confusion_matrix, table, scatter_plot
 from sageworks.web_components import feature_importance, model_data, model_details, feature_details
-from sageworks.views.artifacts_summary import ArtifactsSummary
+from sageworks.views.web_artifacts_summary import WebArtifactsSummary
 
 # Local Imports
 from pages.layout.models_layout import models_layout
@@ -22,8 +22,8 @@ register_page(__name__, path="/models")
 load_figure_template("darkly")
 
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks
-artifacts_summary = ArtifactsSummary()
-models_summary = artifacts_summary.models_summary(concise=True)
+web_artifacts_summary = WebArtifactsSummary()
+models_summary = web_artifacts_summary.models_summary(concise=True)
 
 # Read in our fake model data
 data_path = os.path.join(os.path.dirname(__file__), "data/toy_data.csv")

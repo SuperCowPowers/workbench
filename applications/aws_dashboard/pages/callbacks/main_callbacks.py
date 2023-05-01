@@ -4,13 +4,13 @@ from dash import Dash
 from dash.dependencies import Input, Output
 
 # SageWorks Imports
-from sageworks.views.artifacts_summary import ArtifactsSummary
+from sageworks.views.web_artifacts_summary import WebArtifactsSummary
 
 # Cheese Sauce
 all_data = None
 
 
-def update_last_updated(app: Dash, sageworks_artifacts: ArtifactsSummary):
+def update_last_updated(app: Dash, sageworks_artifacts: WebArtifactsSummary):
     @app.callback(Output("last-updated", "children"), Input("main-updater", "n_intervals"))
     def time_updated(n):
         global all_data

@@ -5,7 +5,7 @@ from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
 from sageworks.web_components import violin_plot
-from sageworks.views.data_source_view import DataSourceView
+from sageworks.views.web_data_source_view import WebDataSourceView
 from sageworks.web_components import table
 
 # Local Imports
@@ -21,8 +21,8 @@ register_page(__name__, path="/data_sources")
 load_figure_template("darkly")
 
 # Grab a view that gives us a summary of the DataSources in SageWorks
-data_source_view = DataSourceView()
-summary_data = data_source_view.data_sources_summary()
+web_data_source_view = WebDataSourceView()
+summary_data = web_data_source_view.data_sources_summary()
 
 # Create a table to display the data sources
 data_sources_summary = table.create(
@@ -34,7 +34,7 @@ data_sources_summary = table.create(
 )
 
 # Grab the a sample of rows from the first data source
-sample_rows = data_source_view.data_source_sample(0)
+sample_rows = web_data_source_view.data_source_sample(0)
 data_source_sample_rows = table.create(
     "data_source_sample_rows",
     sample_rows,
@@ -59,13 +59,13 @@ app = dash.get_app()
 callbacks.update_last_updated(app)
 
 # Periodic updated to the data sources summary
-callbacks.update_data_sources_summary(app, data_source_view)
+callbacks.update_data_sources_summary(app, web_data_source_view)
 
 # Callbacks for when a data source is selected
 callbacks.table_row_select(app, "data_sources_summary")
 callbacks.update_sample_rows_header(app)
-callbacks.update_data_source_sample_rows(app, data_source_view)
-callbacks.update_violin_plots(app, data_source_view)
+callbacks.update_data_source_sample_rows(app, web_data_source_view)
+callbacks.update_violin_plots(app, web_data_source_view)
 
 # Set up our layout (Dash looks for a var called layout)
 layout = data_sources_layout(components)
