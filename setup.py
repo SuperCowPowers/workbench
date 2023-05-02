@@ -18,7 +18,7 @@ def get_files(dir_name):
 setup(
     name="sageworks",
     # use_scm_version=True,
-    version="0.1.4.2",
+    version="0.1.4.3",
     description="SageWorks: A Python WorkBench for creating and deploying SageMaker Models",
     long_description=readme,
     long_description_content_type="text/markdown",
@@ -40,6 +40,7 @@ setup(
         "dash",
         "dash-bootstrap-components",
         "dash-bootstrap-templates",
+        "termcolor"
     ],
     license="MIT",
     keywords="SageMaker, Machine Learning, AWS, Python, Utilities",
