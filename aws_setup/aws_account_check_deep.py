@@ -54,7 +54,7 @@ if __name__ == "__main__":
         my_loader.set_output_tags("test:small")
         my_loader.transform()
         print("Waiting for the test_data to be created...")
-        time.sleep(5)
+        time.sleep(10)
 
     # Create the abalone_data DataSource
     if not DataSource("abalone_data").check():
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         my_loader.set_output_tags("abalone:public")
         my_loader.transform()
         print("Waiting for the abalone_data to be created...")
-        time.sleep(5)
+        time.sleep(10)
 
     # Create the test_feature_set FeatureSet
     if not FeatureSet("test_feature_set").check():
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         features_to_model.set_output_tags(["abalone", "regression"])
         features_to_model.transform(target="class_number_of_rings", description="Abalone Regression Model")
         print("Waiting for the Model to be created...")
-        time.sleep(10)
+        time.sleep(20)
 
     # Create the abalone_regression Endpoint
     if not Endpoint("abalone-regression-end").check():
