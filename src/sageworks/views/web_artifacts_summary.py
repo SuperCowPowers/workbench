@@ -69,7 +69,19 @@ class WebArtifactsSummary(View):
             }
             data_summary.append(summary)
 
-        return pd.DataFrame(data_summary)
+        # Make sure we have data else return just the column names
+        if data_summary:
+            return pd.DataFrame(data_summary)
+        else:
+            columns = [
+                "Name",
+                "Size(MB)",
+                "Modified",
+                "ContentType",
+                "ServerSideEncryption",
+                "Tags"
+            ]
+            return pd.DataFrame(columns=columns)
 
     def data_sources_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks DataSources"""

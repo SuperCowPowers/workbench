@@ -59,7 +59,7 @@ class Artifacts(View):
                       "FEATURE_SETS": "yellow",
                       "MODELS": "green",
                       "ENDPOINTS": "magenta"}
-        header = f"\n{'='*111}\n{header_text}\n{'-'*111}"
+        header = f"\n{'='*111}\n{header_text}\n{'='*111}"
         return colored(header, color_map[header_text])
 
     def dump(self) -> None:

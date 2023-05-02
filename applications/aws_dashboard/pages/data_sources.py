@@ -58,8 +58,9 @@ components = {
 app = dash.get_app()
 callbacks.update_last_updated(app)
 
-# Periodic updated to the data sources summary
-callbacks.update_data_sources_summary(app, web_data_source_view)
+# Periodic update to the data sources summary
+# FIXME: This causes issues with the table selections
+# callbacks.update_data_sources_summary(app, web_data_source_view)
 
 # Callbacks for when a data source is selected
 callbacks.table_row_select(app, "data_sources_summary")
