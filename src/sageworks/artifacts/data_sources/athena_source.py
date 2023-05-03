@@ -148,6 +148,28 @@ class AthenaSource(DataSourceAbstract):
             query = f"SELECT * FROM {self.table_name}"
         return self.query(query).head(max_rows)
 
+    def quartiles(self) -> dict:
+        """Compute Quartiles for all the numeric columns in a DataSource
+        Returns:
+            dict(dict): A dictionary of quartiles for each column in the form
+                 {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},
+                  'col2': ...}
+        """
+        quartile_data = []
+        # For every column in the table that is numeric, get the quartiles
+        for column, data_type in zip(self.column_names(), self.column_types()):
+            print(column, data_type)
+            if data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
+                query = f"SELECT MIN({column}) AS min, " \
+                        f"approx_percentile({column}, 0.25) AS q1, " \
+                        f"approx_percentile({column}, 0.5) AS median, " \
+                        f"approx_percentile({column}, 0.75) AS q3, " \
+                        f"MAX({column}) AS max FROM {self.table_name}"
+                result_df = self.query(query)
+                result_df['column_name'] = column
+                quartile_data.append(result_df)
+        return pd.concat(quartile_data).set_index('column_name').to_dict(orient='index')
+
     def details(self) -> dict:
         """Additional Details about this AthenaSource Artifact"""
         details = super().details()
@@ -172,6 +194,7 @@ class AthenaSource(DataSourceAbstract):
 
 if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
+    from pprint import pprint
 
     # Retrieve a Data Source
     my_data = AthenaSource("abalone_data")
@@ -208,6 +231,11 @@ if __name__ == "__main__":
     df = my_data.sample_df(10)
     print(f"Sample Data: {df.shape}")
     print(df)
+
+    # Get quartiles for all the columns
+    quartile_info = my_data.quartiles()
+    print("Quartiles")
+    pprint(quartile_info)
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')

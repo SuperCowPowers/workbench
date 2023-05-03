@@ -21,7 +21,9 @@ class DataSource:
         column_details(): Return the column details
         query(query: str): Returns a pd.DataFrame with the query results
         sample_df(max_rows: int=1000): Returns a SAMPLED pd.DataFrame from this DataSource
+        summary(): Returns a summary of this DataSource
         details(): Returns additional details about this DataSource
+        quartiles(): Returns the quartiles for each numeric column in this DataSource
     """
 
     def __new__(cls, uuid, data_source_type: str = "athena"):
@@ -42,7 +44,7 @@ if __name__ == "__main__":
     """Exercise the DataSource Factory Class"""
 
     # Retrieve a DataSource
-    my_data = DataSource("test_data")
+    my_data = DataSource("abalone_data")
 
     # Verify that the Athena DataSource exists
     assert my_data.check()
@@ -71,3 +73,6 @@ if __name__ == "__main__":
     # Get Metadata and tags associated with this Artifact
     print(f"Meta: {my_data.sageworks_meta()}")
     print(f"Tags: {my_data.sageworks_tags()}")
+
+    # Get a SAMPLE of the data
+    print(f"Sample Data: {my_data.sample_df()}")

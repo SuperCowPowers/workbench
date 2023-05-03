@@ -54,11 +54,11 @@ class Artifacts(View):
 
     def header_text(self, header_text: str) -> str:
         """Colorize text for the terminal"""
-        color_map = { "INCOMING_DATA": "cyan",
-                      "DATA_SOURCES": "red",
-                      "FEATURE_SETS": "yellow",
-                      "MODELS": "green",
-                      "ENDPOINTS": "magenta"}
+        color_map = {"INCOMING_DATA": "cyan",
+                     "DATA_SOURCES": "red",
+                     "FEATURE_SETS": "yellow",
+                     "MODELS": "green",
+                     "ENDPOINTS": "magenta"}
         header = f"\n{'='*111}\n{header_text}\n{'='*111}"
         return colored(header, color_map[header_text])
 
