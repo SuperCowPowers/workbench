@@ -22,8 +22,9 @@ class SageworksStack(Stack):
         self.artifact_bucket = self.add_artifact_bucket(s3_bucket_name)
 
         # Create our main SageWorks Execution Role and the Glue Service Role
-        self.sageworks_execution_role = self.create_execution_role(sageworks_role_name)
-        self.glue_service_role = self.create_execution_role("AWSGlueServiceRole-Sageworks")
+        self.sageworks_execution_role = self.create_execution_role(sageworks_role_name, iam.AnyPrincipal())
+        self.glue_service_role = self.create_execution_role("AWSGlueServiceRole-Sageworks",
+                                                            iam.ServicePrincipal("glue.amazonaws.com"))
 
         # Create the SageWorks Data Catalog Databases
         self.create_data_catalog_databases()
@@ -35,11 +36,11 @@ class SageworksStack(Stack):
             bucket_name=bucket_name,
         )
 
-    def create_execution_role(self, role_name) -> iam.Role:
+    def create_execution_role(self, role_name, assumed_by) -> iam.Role:
         execution_role = iam.Role(
             self,
             id=role_name,
-            assumed_by=iam.AnyPrincipal(),
+            assumed_by=assumed_by,
             managed_policies=[
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSGlueServiceRole"
