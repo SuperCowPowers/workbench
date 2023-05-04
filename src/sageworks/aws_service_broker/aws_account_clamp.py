@@ -1,7 +1,7 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
 import sys
 import boto3
-from botocore.exceptions import ClientError, UnauthorizedSSOTokenError
+from botocore.exceptions import ClientError, UnauthorizedSSOTokenError, TokenRetrievalError
 from botocore.credentials import RefreshableCredentials
 from botocore.session import get_session
 from sagemaker.session import Session as SageSession
@@ -71,7 +71,7 @@ class AWSAccountClamp:
         try:
             if self.role_name in sts.get_caller_identity()["Arn"]:
                 return True
-        except (ClientError, UnauthorizedSSOTokenError) as exc:
+        except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError) as exc:
             self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
             self.log.critical(exc)
             sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
