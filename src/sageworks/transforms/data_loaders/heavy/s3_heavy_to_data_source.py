@@ -112,7 +112,7 @@ class S3HeavyToDataSource:
 
         # Converting the Spark Types to Athena Types
         def to_athena_type(col):
-            athena_type_map = {"long": "bigint",  "struct": "string"}
+            athena_type_map = {"long": "bigint", "struct": "string"}
             spark_type = col.dataType.typeName()
             return athena_type_map.get(spark_type, spark_type)
 
@@ -167,8 +167,8 @@ if __name__ == "__main__":
     job.init(args["JOB_NAME"], args)
 
     # Test the Heavy Data Loader
-    input_path = "s3://scp-sageworks-artifacts/incoming-data/jsonl-data/"
-    data_output_uuid = "heavy_data_test"
+    input_path = "s3://scp-sageworks-artifacts/incoming-data/dns/"
+    data_output_uuid = "heavy_dns"
     my_loader = S3HeavyToDataSource(glueContext, input_path, data_output_uuid)
 
     # Store this data as a SageWorks DataSource
