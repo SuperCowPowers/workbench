@@ -8,6 +8,8 @@ from awsglue.utils import getResolvedOptions
 from awsglue.context import GlueContext
 from awsglue.job import Job
 from pyspark.context import SparkContext
+from awsglue.dynamicframe import DynamicFrame
+from awsglue.transforms import ApplyMapping
 
 
 class S3HeavyToDataSource:
@@ -30,6 +32,34 @@ class S3HeavyToDataSource:
         # Our Spark Context
         self.glue_context = glue_context
 
+    @staticmethod
+    def column_type_conversion(input_dyf: DynamicFrame) -> DynamicFrame:
+        """Convert the column types from the input data (Spark) to the output data (Athena/Parquet)"""
+        # Define the mapping from Spark data types to Athena data types
+        type_mapping = {"struct": "string"}
+
+        # Get the column names and types from the input data
+        column_names_types = [(col.name, col.dataType.typeName()) for col in input_dyf.schema().fields]
+        input_dyf.printSchema()
+
+        # Define the mapping from input column names/types (Spark) to output column names/types (Athena) with any transformations
+        mapping = []
+        for name, col_type in column_names_types:
+            output_type = type_mapping.get(col_type, col_type)
+            if col_type == "timestamp":
+                # Apply to_timestamp transformation for timestamp columns
+                output_type = f"to_timestamp({name})"
+            mapping.append((name, col_type, name, output_type))
+        print(mapping)
+
+        # Apply the mapping and convert data types
+        output_dyf = ApplyMapping.apply(
+            frame=input_dyf,
+            mappings=mapping,
+            transformation_ctx="applymapping")
+        output_dyf.printSchema()
+        return output_dyf
+
     def transform(self, input_type: str = "json", overwrite: bool = True):
         """Convert the CSV or JSON data into Parquet Format in the SageWorks S3 Bucket, and
         store the information about the data to the AWS Data Catalog sageworks database"""
@@ -51,16 +81,18 @@ class S3HeavyToDataSource:
             },
             format=input_type,
             # format_options={'jsonPath': 'auto'}, Look into this later
-            transformation_ctx="apply_mapping",
         )
         self.log.info("Incoming DataFrame...")
         input_dyf.show(5)
+
+        # Convert the columns types from Spark types to Athena/Parquet types
+        output_dyf = self.column_type_conversion(input_dyf)
 
         # Write Parquet files to S3
         self.log.info(f"Writing Parquet files to {s3_storage_path}...")
         self.glue_context.purge_s3_path(s3_storage_path, {"retentionPeriod": 0})
         self.glue_context.write_dynamic_frame.from_options(
-            frame=input_dyf,
+            frame=output_dyf,
             connection_type="s3",
             connection_options={
                 "path": s3_storage_path
@@ -77,13 +109,21 @@ class S3HeavyToDataSource:
 
         # Create a new table in the AWS Data Catalog
         self.log.info(f"Creating Data Catalog Table: {self.output_uuid}...")
+
+        # Converting the Spark Types to Athena Types
+        def to_athena_type(col):
+            athena_type_map = {"long": "bigint",  "struct": "string"}
+            spark_type = col.dataType.typeName()
+            return athena_type_map.get(spark_type, spark_type)
+
+        column_name_types = [{"Name": col.name, "Type": to_athena_type(col)} for col in output_dyf.schema().fields]
         table_input = {
             "Name": self.output_uuid,
             "Description": description,
             "Parameters": sageworks_meta,
             "TableType": "EXTERNAL_TABLE",
             "StorageDescriptor": {
-                "Columns": [{"Name": col.name, "Type": col.dataType.typeName()} for col in input_dyf.schema().fields],
+                "Columns": column_name_types,
                 "Location": s3_storage_path,
                 "InputFormat": "org.apache.hadoop.mapred.TextInputFormat",
                 "OutputFormat": "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat",
