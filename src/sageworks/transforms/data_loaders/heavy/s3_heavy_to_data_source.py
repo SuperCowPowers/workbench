@@ -36,7 +36,7 @@ class S3HeavyToDataSource:
     def column_type_conversion(input_dyf: DynamicFrame) -> DynamicFrame:
         """Convert the column types from the input data (Spark) to the output data (Athena/Parquet)"""
         # Define the mapping from Spark data types to Athena data types
-        type_mapping = {"struct": "string"}
+        type_mapping = {"struct": "string", "choice": "long"}
 
         # Get the column names and types from the input data
         column_names_types = [(col.name, col.dataType.typeName()) for col in input_dyf.schema().fields]
