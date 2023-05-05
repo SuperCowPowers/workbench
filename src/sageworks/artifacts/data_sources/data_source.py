@@ -24,6 +24,8 @@ class DataSource:
         summary(): Returns a summary of this DataSource
         details(): Returns additional details about this DataSource
         quartiles(): Returns the quartiles for each numeric column in this DataSource
+        sageworks_meta(): Returns the SageWorks Metadata for this DataSource
+        sageworks_tags(): Returns the SageWorks Tags for this DataSource
     """
 
     def __new__(cls, uuid, data_source_type: str = "athena"):

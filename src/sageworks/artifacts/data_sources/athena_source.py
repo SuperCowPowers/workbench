@@ -148,7 +148,7 @@ class AthenaSource(DataSourceAbstract):
             query = f"SELECT * FROM {self.table_name}"
         return self.query(query).head(max_rows)
 
-    def quartiles(self) -> dict:
+    def quartiles(self) -> dict[dict]:
         """Compute Quartiles for all the numeric columns in a DataSource
         Returns:
             dict(dict): A dictionary of quartiles for each column in the form

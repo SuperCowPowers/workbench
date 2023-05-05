@@ -47,6 +47,16 @@ class DataSourceAbstract(Artifact):
         """Return a sample DataFrame from this DataSource"""
         pass
 
+    @abstractmethod
+    def quartiles(self) -> dict[dict]:
+        """Compute Quartiles for all the numeric columns in a DataSource
+        Returns:
+            dict(dict): A dictionary of quartiles for each column in the form
+                 {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},
+                  'col2': ...}
+        """
+        pass
+
     def details(self) -> dict:
         """Additional Details about this DataSourceAbstract Artifact"""
         details = self.summary()
@@ -54,3 +64,5 @@ class DataSourceAbstract(Artifact):
         details["num_columns"] = self.num_columns()
         details["column_details"] = self.column_details()
         return details
+
+

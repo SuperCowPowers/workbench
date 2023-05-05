@@ -92,12 +92,7 @@ class Artifact(ABC):
         """Set the tags for this artifact"""
         self.log.error("set_tags: functionality needs to be added!")
 
-    @staticmethod
-    def aws_tags_to_dict(aws_tags):
-        """AWS Tags are in an odd format, so convert to regular dictionary"""
-        return {item["Key"]: item["Value"] for item in aws_tags if "sageworks" in item["Key"]}
-
-    def sageworks_meta(self):
+    def sageworks_meta(self) -> dict:
         """Get the SageWorks specific metadata for this Artifact
         Note: This functionality will work for FeatureSets, Models, and Endpoints
         but not for DataSources. DataSources need to overwrite this method
@@ -105,10 +100,10 @@ class Artifact(ABC):
         aws_arn = self.arn()
         self.log.info(f"Retrieving SageWorks Metadata for Artifact: {aws_arn}...")
         aws_tags = self.sm_session.list_tags(aws_arn)
-        meta = self.aws_tags_to_dict(aws_tags)
+        meta = self._aws_tags_to_dict(aws_tags)
         return meta
 
-    def sageworks_tags(self):
+    def sageworks_tags(self) -> list:
         """Get the tags for this artifact"""
         combined_tags = self.sageworks_meta().get("sageworks_tags", "")
         tags = combined_tags.split(":")
@@ -128,3 +123,8 @@ class Artifact(ABC):
             "sageworks_tags": self.sageworks_tags(),
             "sageworks_meta": self.sageworks_meta(),
         }
+
+    @staticmethod
+    def _aws_tags_to_dict(aws_tags):
+        """Internal: AWS Tags are in an odd format, so convert to regular dictionary"""
+        return {item["Key"]: item["Value"] for item in aws_tags if "sageworks" in item["Key"]}
