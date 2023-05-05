@@ -30,7 +30,7 @@ def test():
     print(f"Modified: {my_data.modified()}")
 
     # Get Metadata and tags associated with this Artifact
-    print(f"Meta: {my_data.sageworks_meta()}")
+    print(f"Meta: {my_data.meta()}")
     print(f"Tags: {my_data.sageworks_tags()}")
 
     # Now delete the AWS artifacts associated with this DataSource

@@ -70,7 +70,7 @@ class AthenaSource(DataSourceAbstract):
 
     def sageworks_meta(self):
         """Get the SageWorks specific metadata for this Artifact"""
-        params = self.catalog_meta.get("Parameters", {})
+        params = self.meta().get("Parameters", {})
         return {key: value for key, value in params.items() if "sageworks" in key}
 
     def size(self) -> float:
@@ -79,8 +79,8 @@ class AthenaSource(DataSourceAbstract):
         size_in_mb = size_in_bytes / 1_000_000
         return size_in_mb
 
-    def aws_meta(self):
-        """Get the full AWS metadata for this artifact"""
+    def meta(self) -> dict:
+        """Get the FULL AWS metadata for this artifact"""
         return self.catalog_meta
 
     def aws_url(self):
@@ -176,6 +176,7 @@ class AthenaSource(DataSourceAbstract):
         """Additional Details about this AthenaSource Artifact"""
         details = super().details()
         details["s3_storage_location"] = self.s3_storage_location()
+        details.update(self.meta())
         return details
 
     def delete(self):
@@ -226,7 +227,7 @@ if __name__ == "__main__":
     print(f"Column Types: {my_data.column_types()}")
 
     # Get Metadata and tags associated with this Artifact
-    print(f"Meta: {my_data.sageworks_meta()}")
+    print(f"Meta: {my_data.meta()}")
     print(f"Tags: {my_data.sageworks_tags()}")
 
     # Get a sample of the data

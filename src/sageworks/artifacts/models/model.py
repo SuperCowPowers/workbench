@@ -48,7 +48,7 @@ class Model(Artifact):
         """Return the size of this data in MegaBytes"""
         return 0.0
 
-    def aws_meta(self):
+    def meta(self) -> dict:
         """Get the metadata for this artifact"""
         return self.latest_model
 
@@ -81,6 +81,7 @@ class Model(Artifact):
         details = self.summary()
         details["model_package_group_arn"] = self.group_arn()
         details["model_package_arn"] = self.model_arn()
+        details.update(self.meta())
         return details
 
     def delete(self):

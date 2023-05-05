@@ -25,7 +25,7 @@ def test():
     print(columns)
 
     # Get the metadata and tags associated with this feature set
-    print(f"SageWorks Meta: {my_features.sageworks_meta()}")
+    print(f"Meta: {my_features.meta()}")
     print(f"SageWorks Tags: {my_features.sageworks_tags()}")
 
     # Now delete the AWS artifacts associated with this Feature Set

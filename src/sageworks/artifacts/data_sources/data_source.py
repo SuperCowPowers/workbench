@@ -24,6 +24,7 @@ class DataSource:
         summary(): Returns a summary of this DataSource
         details(): Returns additional details about this DataSource
         quartiles(): Returns the quartiles for each numeric column in this DataSource
+        meta(): Returns ALL AWS Metadata for this DataSource
         sageworks_meta(): Returns the SageWorks Metadata for this DataSource
         sageworks_tags(): Returns the SageWorks Tags for this DataSource
     """
@@ -73,7 +74,7 @@ if __name__ == "__main__":
     print(f"Column Types: {my_data.column_types()}")
 
     # Get Metadata and tags associated with this Artifact
-    print(f"Meta: {my_data.sageworks_meta()}")
+    print(f"Meta: {my_data.meta()}")
     print(f"Tags: {my_data.sageworks_tags()}")
 
     # Get a SAMPLE of the data

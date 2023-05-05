@@ -160,7 +160,7 @@ class Endpoint(Artifact):
         """Return the size of this data in MegaBytes"""
         return 0.0
 
-    def aws_meta(self):
+    def meta(self) -> dict:
         """Get the metadata for this artifact"""
         return self.endpoint_meta
 
@@ -183,7 +183,7 @@ class Endpoint(Artifact):
     def details(self) -> dict:
         """Additional Details about this Endpoint"""
         details = self.summary()
-        # Fill in more details here if needed
+        details.update(self.meta())
         return details
 
     def performance_metrics(self, target: str, prediction_df: pd.DataFrame) -> dict:

@@ -66,7 +66,7 @@ class FeatureSet(Artifact):
             return False
         return True
 
-    def aws_meta(self) -> dict:
+    def meta(self) -> dict:
         """Get the full AWS metadata for this artifact"""
         return self.feature_meta
 
@@ -202,6 +202,9 @@ class FeatureSet(Artifact):
         # Underlying Storage Details
         fs_details["storage_type"] = "athena"  # TODO: Add RDS support
         fs_details["storage_uuid"] = self.data_source.uuid
+
+        # Full Metadata from AWS
+        fs_details.update(self.meta())
 
         # Return the details
         return fs_details

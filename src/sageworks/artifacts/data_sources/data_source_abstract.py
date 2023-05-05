@@ -63,6 +63,7 @@ class DataSourceAbstract(Artifact):
         details["num_rows"] = self.num_rows()
         details["num_columns"] = self.num_columns()
         details["column_details"] = self.column_details()
+        details.update(self.meta())
         return details
 
 
