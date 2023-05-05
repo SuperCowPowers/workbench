@@ -43,7 +43,7 @@ class DataSourceAbstract(Artifact):
         pass
 
     @abstractmethod
-    def sample_df(self, max_rows: int = 1000) -> pd.DataFrame:
+    def sample_df(self) -> pd.DataFrame:
         """Return a sample DataFrame from this DataSource"""
         pass
 

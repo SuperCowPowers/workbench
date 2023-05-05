@@ -36,7 +36,8 @@ class FeatureSet(Artifact):
 
         # Grab an AWS Metadata Broker object and pull information for Feature Sets
         self.feature_set_name = feature_uuid
-        self.feature_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
+        self.feature_meta = None
+        self.refresh()
         if self.feature_meta is None:
             self.log.info(f"Could not find feature set {self.feature_set_name} within current visibility scope")
             self.data_source = None
@@ -58,6 +59,10 @@ class FeatureSet(Artifact):
 
         # All done
         self.log.info(f"FeatureSet Initialized: {self.feature_set_name}")
+
+    def refresh(self):
+        """Refresh our internal AWS Feature Store metadata"""
+        self.feature_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
 
     def check(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
@@ -240,13 +245,29 @@ class FeatureSet(Artifact):
             time.sleep(1)
         self.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
+    def quartiles(self) -> dict:
+        """Get the quartiles for all numeric columns of the underlying DataSource
+        Returns:
+            dict: A dictionary of quartiles for all numeric columns
+        """
+        return self.data_source.quartiles()
+
+    def sample_df(self) -> pd.DataFrame:
+        """Get a sample of the data from the underlying DataSource"""
+        return self.data_source.sample_df()
+
 
 if __name__ == "__main__":
     """Exercise for FeatureSet Class"""
     from pprint import pprint
 
+    # Setup Pandas output options
+    pd.set_option("display.max_colwidth", 50)
+    pd.set_option("display.max_columns", 15)
+    pd.set_option("display.width", 1000)
+
     # Grab a FeatureSet object and pull some information from it
-    my_features = FeatureSet("test_feature_set")
+    my_features = FeatureSet("abalone_feature_set")
 
     # Call the various methods
     # What's my AWS ARN and URL
@@ -283,6 +304,16 @@ if __name__ == "__main__":
         storage = my_features.get_data_source()
         print("\nStorage Details:")
         pprint(storage.details())
+
+    # Get a sample of the data
+    df = my_features.sample_df()
+    print(f"Sample Data: {df.shape}")
+    print(df)
+
+    # Get quartiles for all the columns
+    quartile_info = my_features.quartiles()
+    print("Quartiles")
+    pprint(quartile_info)
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print('Deleting SageWorks Feature Set...')

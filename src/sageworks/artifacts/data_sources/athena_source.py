@@ -261,7 +261,6 @@ if __name__ == "__main__":
     # Verify that the Athena Data Source exists
     assert my_data.check()
 
-    """
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")
 
@@ -288,10 +287,9 @@ if __name__ == "__main__":
     print(f"Tags: {my_data.sageworks_tags()}")
 
     # Get a sample of the data
-    df = my_data.sample_df(10)
+    df = my_data.sample_df()
     print(f"Sample Data: {df.shape}")
     print(df)
-    """
 
     # Get the SageWorks Metadata for this Data Source
     meta = my_data.sageworks_meta()
@@ -304,9 +302,9 @@ if __name__ == "__main__":
     pprint(my_data.sageworks_meta())
 
     # Get quartiles for all the columns
-    # quartile_info = my_data.quartiles()
-    # print("Quartiles")
-    # pprint(quartile_info)
+    quartile_info = my_data.quartiles()
+    print("Quartiles")
+    pprint(quartile_info)
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')

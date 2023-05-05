@@ -86,12 +86,12 @@ class WebDataSourceView(View):
         link += f" [<a href='{athena_url}' target='_blank'>query</a>]"
         return link
 
-    def data_source_sample(self, data_source_index: int, max_rows=100) -> pd.DataFrame:
+    def data_source_sample(self, data_source_index: int) -> pd.DataFrame:
         """Get a sample dataframe for the given DataSource Index"""
         # Grab the a sample of N rows of the data source
         if self.data_sources_meta and data_source_index < len(self.data_sources_meta):
             data_uuid = list(self.data_sources_meta.keys())[data_source_index]
-            sample_rows = DataSource(data_uuid).sample_df(max_rows=max_rows).head(max_rows)
+            sample_rows = DataSource(data_uuid).sample_df()
         else:
             sample_rows = pd.DataFrame()
         return sample_rows

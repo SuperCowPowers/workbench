@@ -20,7 +20,7 @@ class DataSource:
         column_types(): Return the column types
         column_details(): Return the column details
         query(query: str): Returns a pd.DataFrame with the query results
-        sample_df(max_rows: int=1000): Returns a SAMPLED pd.DataFrame from this DataSource
+        sample_df(): Returns a SAMPLED pd.DataFrame from this DataSource
         summary(): Returns a summary of this DataSource
         details(): Returns additional details about this DataSource
         quartiles(): Returns the quartiles for each numeric column in this DataSource

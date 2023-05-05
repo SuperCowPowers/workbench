@@ -77,8 +77,7 @@ class PandasToData(Transform):
 
         # Set up our metadata storage
         sageworks_meta = {"sageworks_tags": self.output_tags}
-        for key, value in self.output_meta.items():
-            sageworks_meta[key] = value
+        sageworks_meta.update(self.output_meta)
 
         # Create the Output Parquet file S3 Storage Path
         s3_storage_path = f"{self.data_source_s3_path}/{self.output_uuid}"
