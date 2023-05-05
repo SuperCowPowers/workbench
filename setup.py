@@ -40,7 +40,7 @@ setup(
         "dash",
         "dash-bootstrap-components",
         "dash-bootstrap-templates",
-        "termcolor"
+        "termcolor",
     ],
     license="MIT",
     keywords="SageMaker, Machine Learning, AWS, Python, Utilities",

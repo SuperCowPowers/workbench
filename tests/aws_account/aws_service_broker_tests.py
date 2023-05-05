@@ -22,7 +22,3 @@ def test():
     # Get the Metadata for ALL the categories
     # NOTE: There should be NO Refreshes in the logs
     pprint(aws_broker.get_all_metadata())
-
-
-if __name__ == "__main__":
-    test()

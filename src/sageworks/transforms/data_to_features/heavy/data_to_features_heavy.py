@@ -78,7 +78,7 @@ class DataToFeaturesHeavy(Transform):
             s3_output=s3_storage_path,
             write_compression="snappy",
             boto3_session=self.boto_session,
-            wait=True
+            wait=True,
         )
         self.log.info(f"FeatureSet Data Created: {info}")
 
@@ -94,9 +94,9 @@ class DataToFeaturesHeavy(Transform):
         aws_tags = self.get_aws_tags()
 
         # Data Catalog Config
-        my_config = DataCatalogConfig(table_name=self.output_uuid,
-                                      catalog='AwsDataCatalog',
-                                      database=self.output_database)
+        my_config = DataCatalogConfig(
+            table_name=self.output_uuid, catalog="AwsDataCatalog", database=self.output_database
+        )
 
         # Write out the DataFrame to Parquet/FeatureSet/Athena
         my_feature_group.create(
@@ -107,7 +107,7 @@ class DataToFeaturesHeavy(Transform):
             enable_online_store=True,
             tags=aws_tags,
             data_catalog_config=my_config,
-            disable_glue_table_creation=True
+            disable_glue_table_creation=True,
         )
 
         # Ensure/wait for the feature group to be created
@@ -130,5 +130,4 @@ if __name__ == "__main__":
     data_to_features_heavy.set_output_tags(["test", "heavy"])
 
     # Store this dataframe as a SageWorks Feature Set
-    data_to_features_heavy.transform(query="SELECT * FROM heavy_data_test",
-                                     id_column="id", event_time_column="date")
+    data_to_features_heavy.transform(query="SELECT * FROM heavy_data_test", id_column="id", event_time_column="date")

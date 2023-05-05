@@ -54,11 +54,13 @@ class Artifacts(View):
 
     def header_text(self, header_text: str) -> str:
         """Colorize text for the terminal"""
-        color_map = {"INCOMING_DATA": "cyan",
-                     "DATA_SOURCES": "red",
-                     "FEATURE_SETS": "yellow",
-                     "MODELS": "green",
-                     "ENDPOINTS": "magenta"}
+        color_map = {
+            "INCOMING_DATA": "cyan",
+            "DATA_SOURCES": "red",
+            "FEATURE_SETS": "yellow",
+            "MODELS": "green",
+            "ENDPOINTS": "magenta",
+        }
         header = f"\n{'='*111}\n{header_text}\n{'='*111}"
         return colored(header, color_map[header_text])
 
@@ -153,12 +155,12 @@ class Artifacts(View):
                 model_group_arn = model["ModelPackageGroupArn"]
                 sageworks_meta = self.artifact_info.get_sagemaker_obj_info(model_group_arn)
                 summary = {
-                        "Model Group": model["ModelPackageGroupName"],
-                        "Description": model["ModelPackageDescription"],
-                        "Created": self.datetime_string(model.get("CreationTime")),
-                        "Tags": sageworks_meta.get("sageworks_tags", "-"),
-                        "Input": sageworks_meta.get("sageworks_input", "-"),
-                    }
+                    "Model Group": model["ModelPackageGroupName"],
+                    "Description": model["ModelPackageDescription"],
+                    "Created": self.datetime_string(model.get("CreationTime")),
+                    "Tags": sageworks_meta.get("sageworks_tags", "-"),
+                    "Input": sageworks_meta.get("sageworks_input", "-"),
+                }
                 model_summary.append(summary)
         return pd.DataFrame(model_summary)
 

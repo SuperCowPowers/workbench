@@ -30,6 +30,7 @@ def redis_check():
     print("*** Redis Database Check ***")
     try:
         from sageworks.utils.redis_cache import RedisCache
+
         RedisCache(prefix="test")
         print("Redis Database Check Success...")
     except RuntimeError as err:

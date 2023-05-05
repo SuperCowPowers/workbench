@@ -34,10 +34,10 @@ class AWSAccountCheck:
 
         # Check if the bucket exists
         if bucket.creation_date is None:
-            self.log.critical(f'The {bucket_name} bucket does not exist')
+            self.log.critical(f"The {bucket_name} bucket does not exist")
             sys.exit(1)
         else:
-            self.log.info(f'The {bucket_name} bucket exists')
+            self.log.info(f"The {bucket_name} bucket exists")
 
         # Check if the sub-folders exists
         sub_folders = ["incoming-data", "data-sources", "feature-sets", "athena-queries"]
@@ -45,15 +45,15 @@ class AWSAccountCheck:
         # Get all object prefixes in the bucket
         prefixes = set()
         for obj in bucket.objects.all():
-            prefix = obj.key.split('/')[0]
+            prefix = obj.key.split("/")[0]
             prefixes.add(prefix)
 
         # Check for the existence of the sub-folders
         for folder in sub_folders:
             if folder in prefixes:
-                self.log.info(f'The {folder} prefix exists')
+                self.log.info(f"The {folder} prefix exists")
             else:
-                self.log.info(f'The {folder} prefix does not exist...which is fine...')
+                self.log.info(f"The {folder} prefix does not exist...which is fine...")
 
     def check(self):
         """Check if the AWS Account is Setup Correctly"""

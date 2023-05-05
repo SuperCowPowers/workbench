@@ -42,7 +42,7 @@ def create(
         row_selectable=row_select,
         cell_selectable=False,
         selected_rows=[0],
-        fixed_rows={'headers': fixed_headers},
+        fixed_rows={"headers": fixed_headers},
         style_table={"maxHeight": max_height, "overflowX": "auto", "overflowY": "auto"},
         style_as_list_view=True,
         style_cell={
@@ -50,19 +50,19 @@ def create(
             "padding": "5px",
             "overflow": "hidden",
             "textOverflow": "ellipsis",
-            "maxWidth": 250
+            "maxWidth": 250,
         },
         style_header={
             "textAlign": "left",
             "fontSize": 16,
             "backgroundColor": header_color,
-            "color": "rgb(200, 200, 200)"
+            "color": "rgb(200, 200, 200)",
         },
         style_data={
             "fontSize": 14,
             "backgroundColor": "rgb(60, 60, 60)",
             "color": "rgb(200, 200, 200)",
-            "border": "0px"
+            "border": "0px",
         },
         markdown_options={"html": True},
     )

@@ -11,7 +11,8 @@ from sageworks.artifacts.data_sources.data_source import DataSource
 
 class WebDataSourceView(View):
     def __init__(self):
-        """WebDataSourceView pulls DataSource metadata from the AWS Service Broker with Details Panels on each DataSource"""
+        """WebDataSourceView pulls DataSource metadata from the AWS Service
+        Broker with Details Panels on each DataSource"""
         # Call SuperClass Initialization
         super().__init__()
 

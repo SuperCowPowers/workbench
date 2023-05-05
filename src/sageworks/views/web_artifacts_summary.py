@@ -73,14 +73,7 @@ class WebArtifactsSummary(View):
         if data_summary:
             return pd.DataFrame(data_summary)
         else:
-            columns = [
-                "Name",
-                "Size(MB)",
-                "Modified",
-                "ContentType",
-                "ServerSideEncryption",
-                "Tags"
-            ]
+            columns = ["Name", "Size(MB)", "Modified", "ContentType", "ServerSideEncryption", "Tags"]
             return pd.DataFrame(columns=columns)
 
     def data_sources_summary(self) -> pd.DataFrame:

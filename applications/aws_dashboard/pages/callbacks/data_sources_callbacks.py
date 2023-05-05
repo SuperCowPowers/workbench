@@ -19,7 +19,7 @@ def update_data_sources_summary(app: Dash, web_data_source_view: WebDataSourceVi
     @app.callback(
         [Output("data_sources_summary", "data"), Output("data_sources_summary", "selected_rows")],
         Input("data-sources-updater", "n_intervals"),
-        State("data_sources_summary", "selected_rows")
+        State("data_sources_summary", "selected_rows"),
     )
     def data_sources_update(n, selected_rows):
         print("Calling DataSources Summary Refresh...")
@@ -52,7 +52,7 @@ def update_sample_rows_header(app: Dash):
     @app.callback(
         Output("sample_rows_header", "children"),
         Input("data_sources_summary", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def update_sample_header(selected_rows):
         return "Sampled Rows: Updating..."
@@ -60,11 +60,13 @@ def update_sample_rows_header(app: Dash):
 
 def update_data_source_sample_rows(app: Dash, web_data_source_view: WebDataSourceView):
     @app.callback(
-        [Output("sample_rows_header", "children", allow_duplicate=True),
-         Output("data_source_sample_rows", "columns"),
-         Output("data_source_sample_rows", "data")],
+        [
+            Output("sample_rows_header", "children", allow_duplicate=True),
+            Output("data_source_sample_rows", "columns"),
+            Output("data_source_sample_rows", "data"),
+        ],
         Input("data_sources_summary", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def sample_rows_update(selected_rows):
         print(f"Selected Rows: {selected_rows}")
@@ -86,10 +88,11 @@ def update_data_source_sample_rows(app: Dash, web_data_source_view: WebDataSourc
 
 def update_violin_plots(app: Dash, web_data_source_view: WebDataSourceView):
     """Updates the Violin Plots when a new data source is selected"""
+
     @app.callback(
         Output("violin_plot", "figure"),
         Input("data_sources_summary", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def generate_new_violin_plot(selected_rows):
         print(f"Selected Rows: {selected_rows}")

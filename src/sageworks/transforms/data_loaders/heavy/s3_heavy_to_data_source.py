@@ -54,10 +54,7 @@ class S3HeavyToDataSource:
         print(mapping)
 
         # Apply the mapping and convert data types
-        output_dyf = ApplyMapping.apply(
-            frame=input_dyf,
-            mappings=mapping,
-            transformation_ctx="applymapping")
+        output_dyf = ApplyMapping.apply(frame=input_dyf, mappings=mapping, transformation_ctx="applymapping")
         output_dyf.printSchema()
         return output_dyf
 
@@ -99,7 +96,7 @@ class S3HeavyToDataSource:
                 "path": s3_storage_path
                 # "partitionKeys": ["year", "month", "day"],
             },
-            format="parquet"
+            format="parquet",
         )
 
         # Set up our SageWorks metadata (description, tags, etc)

@@ -45,8 +45,7 @@ class RedisCache:
         _redis_db.ping()
 
         # Now create the actual connection
-        redis_db = redis.Redis(host, port=port, password=password, charset="utf-8",
-                               decode_responses=True, db=0)
+        redis_db = redis.Redis(host, port=port, password=password, charset="utf-8", decode_responses=True, db=0)
         log.info(f"Redis connection success: {host}:{port}...")
     except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
         msg = f"Could not connect to Redis Database: {host}:{port}..."

@@ -36,11 +36,7 @@ data_sources_summary = table.create(
 # Grab the a sample of rows from the first data source
 sample_rows = web_data_source_view.data_source_sample(0)
 data_source_sample_rows = table.create(
-    "data_source_sample_rows",
-    sample_rows,
-    header_color="rgb(60, 60, 100)",
-    max_height="200px",
-    fixed_headers=True
+    "data_source_sample_rows", sample_rows, header_color="rgb(60, 60, 100)", max_height="200px", fixed_headers=True
 )
 
 # Create a box plot of all the numeric columns in the sample rows
@@ -51,7 +47,7 @@ violin = violin_plot.create(sample_rows)
 components = {
     "data_sources_summary": data_sources_summary,
     "data_source_sample_rows": data_source_sample_rows,
-    "violin_plot": violin
+    "violin_plot": violin,
 }
 
 # Setup our callbacks/connections

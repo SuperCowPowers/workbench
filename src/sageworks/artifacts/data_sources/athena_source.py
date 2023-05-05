@@ -160,15 +160,17 @@ class AthenaSource(DataSourceAbstract):
         for column, data_type in zip(self.column_names(), self.column_types()):
             print(column, data_type)
             if data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
-                query = f"SELECT MIN({column}) AS min, " \
-                        f"approx_percentile({column}, 0.25) AS q1, " \
-                        f"approx_percentile({column}, 0.5) AS median, " \
-                        f"approx_percentile({column}, 0.75) AS q3, " \
-                        f"MAX({column}) AS max FROM {self.table_name}"
+                query = (
+                    f"SELECT MIN({column}) AS min, "
+                    f"approx_percentile({column}, 0.25) AS q1, "
+                    f"approx_percentile({column}, 0.5) AS median, "
+                    f"approx_percentile({column}, 0.75) AS q3, "
+                    f"MAX({column}) AS max FROM {self.table_name}"
+                )
                 result_df = self.query(query)
-                result_df['column_name'] = column
+                result_df["column_name"] = column
                 quartile_data.append(result_df)
-        return pd.concat(quartile_data).set_index('column_name').to_dict(orient='index')
+        return pd.concat(quartile_data).set_index("column_name").to_dict(orient="index")
 
     def details(self) -> dict:
         """Additional Details about this AthenaSource Artifact"""
