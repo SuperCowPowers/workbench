@@ -42,7 +42,8 @@ class S3HeavyToDataSource:
         column_names_types = [(col.name, col.dataType.typeName()) for col in input_dyf.schema().fields]
         input_dyf.printSchema()
 
-        # Define the mapping from input column names/types (Spark) to output column names/types (Athena) with any transformations
+        # Define the mapping from input column names/types (Spark) to output
+        # column names and types that are compatible with Athena/Parquet.
         mapping = []
         for name, col_type in column_names_types:
             output_type = type_mapping.get(col_type, col_type)

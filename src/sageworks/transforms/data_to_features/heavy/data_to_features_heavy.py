@@ -47,7 +47,7 @@ class DataToFeaturesHeavy(Transform):
             df[column] = df[column].astype("float64")
         return df
 
-    def transform_impl(self, id_column: str, event_time_column: str = None, delete_existing: bool = True):
+    def transform_impl(self, query, id_column: str, event_time_column: str = None, delete_existing: bool = True):
         """Convert the Data Source into a Feature Set, also storing the information
         about the data to the AWS Data Catalog sageworks database and create S3 Objects"""
 
@@ -69,7 +69,6 @@ class DataToFeaturesHeavy(Transform):
         s3_storage_path = f"{self.feature_sets_s3_path}"
 
         # Now we'll make a Query of the Data Source to create a FeatureSet
-        query = f"SELECT * FROM {self.input_data_source.table_name}"
         self.log.info(f"Creating FeatureSet Data with Query: {query}")
         info = wr.athena.create_ctas_table(
             sql=query,
@@ -131,4 +130,5 @@ if __name__ == "__main__":
     data_to_features_heavy.set_output_tags(["test", "heavy"])
 
     # Store this dataframe as a SageWorks Feature Set
-    data_to_features_heavy.transform(id_column="id", event_time_column="date")
+    data_to_features_heavy.transform(query="SELECT * FROM heavy_data_test",
+                                     id_column="id", event_time_column="date")
