@@ -2,6 +2,7 @@
 import pandas as pd
 import awswrangler as wr
 from datetime import datetime
+import json
 
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
@@ -32,13 +33,18 @@ class AthenaSource(DataSourceAbstract):
         self.data_catalog_db = database
         self.table_name = data_uuid
 
-        # Grab an AWS Metadata Broker object and pull information for Data Sources
-        self.catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(
-            self.table_name
-        )
+        # Refresh our internal catalog metadata
+        self.catalog_meta = None
+        self.refresh()
 
         # All done
         print(f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}")
+
+    def refresh(self):
+        """Refresh our internal catalog metadata"""
+        self.catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG)[self.data_catalog_db].get(
+            self.table_name
+        )
 
     def check(self) -> bool:
         """Validation Checks for this Data Source"""
@@ -72,6 +78,35 @@ class AthenaSource(DataSourceAbstract):
         """Get the SageWorks specific metadata for this Artifact"""
         params = self.meta().get("Parameters", {})
         return {key: value for key, value in params.items() if "sageworks" in key}
+
+    def upsert_sageworks_meta(self, new_meta: dict):
+        """Add SageWorks specific metadata to this Artifact
+        Args:
+            new_meta (dict): Dictionary of new metadata to add
+        """
+        # Grab our existing metadata
+        meta = self.sageworks_meta()
+
+        # Make sure the new data has keys that are valid
+        for key in new_meta.keys():
+            if not key.startswith("sageworks_"):
+                new_meta[f"sageworks_{key}"] = new_meta.pop(key)
+
+        # Now convert any non-string values to JSON strings
+        for key, value in new_meta.items():
+            if not isinstance(value, str):
+                new_meta[key] = json.dumps(value)
+
+        # Update our existing metadata with the new metadata
+        meta.update(new_meta)
+
+        # Store our updated metadata
+        wr.catalog.upsert_table_parameters(
+            parameters=meta,
+            database=self.data_catalog_db,
+            table=self.table_name,
+            boto3_session=self.boto_session,
+        )
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -130,23 +165,32 @@ class AthenaSource(DataSourceAbstract):
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
-    def sample_df(self, max_rows: int = 1000) -> pd.DataFrame:
-        """Pull a sample of rows from the DataSource
-        Args:
-            max_rows (int): Maximum number of rows to pull
-        """
+    def sample_df(self) -> pd.DataFrame:
+        """Pull a sample of rows from the DataSource"""
+
+        # First check if we have already computed the quartiles
+        if self.sageworks_meta().get("sageworks_sample_rows"):
+            return pd.read_json(self.sageworks_meta()["sageworks_sample_rows"], orient="records", lines=True)
+
+        # Note: Hardcoded to 100 rows so that metadata storage is consistent
+        sample_rows = 100
         num_rows = self.num_rows()
-        if num_rows > max_rows:
-            # With Bernoulli Sampling it can give you 0 rows on small samples
-            # so we need to make sure we have at least 100 rows for the sample
-            # and then we can limit the output to max_rows
-            sample_rows = max(max_rows, 100)
-            percentage = min(100, round(sample_rows * 100.0 / num_rows))
-            self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {max_rows}...")
+        if num_rows > sample_rows:
+            # Bernoulli Sampling has reasonable variance so we're going to +1 the
+            # sample percentage and then simply clamp it to 100 rows
+            percentage = round(sample_rows * 100.0 / num_rows) + 1
+            self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {sample_rows}...")
             query = f"SELECT * FROM {self.table_name} TABLESAMPLE BERNOULLI({percentage})"
         else:
             query = f"SELECT * FROM {self.table_name}"
-        return self.query(query).head(max_rows)
+        sample_df = self.query(query).head(sample_rows)
+
+        # Store the sample_df in our SageWorks metadata
+        rows_json = sample_df.to_json(orient="records", lines=True)
+        self.upsert_sageworks_meta({"sageworks_sample_rows": rows_json})
+
+        # Return the sample_df
+        return sample_df
 
     def quartiles(self) -> dict[dict]:
         """Compute Quartiles for all the numeric columns in a DataSource
@@ -155,8 +199,14 @@ class AthenaSource(DataSourceAbstract):
                  {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},
                   'col2': ...}
         """
-        quartile_data = []
+
+        # First check if we have already computed the quartiles
+        if self.sageworks_meta().get("sageworks_quartiles"):
+            return json.loads(self.sageworks_meta()["sageworks_quartiles"])
+
         # For every column in the table that is numeric, get the quartiles
+        self.log.info("Computing Quartiles for all numeric columns (this may take a while)...")
+        quartile_data = []
         for column, data_type in zip(self.column_names(), self.column_types()):
             print(column, data_type)
             if data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
@@ -170,7 +220,13 @@ class AthenaSource(DataSourceAbstract):
                 result_df = self.query(query)
                 result_df["column_name"] = column
                 quartile_data.append(result_df)
-        return pd.concat(quartile_data).set_index("column_name").to_dict(orient="index")
+        quartile_data = pd.concat(quartile_data).set_index("column_name").to_dict(orient="index")
+
+        # Push the quartile data into our DataSource Metadata
+        self.upsert_sageworks_meta({"sageworks_quartiles": quartile_data})
+
+        # Return the quartile data
+        return quartile_data
 
     def details(self) -> dict:
         """Additional Details about this AthenaSource Artifact"""
@@ -205,6 +261,7 @@ if __name__ == "__main__":
     # Verify that the Athena Data Source exists
     assert my_data.check()
 
+    """
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")
 
@@ -234,11 +291,22 @@ if __name__ == "__main__":
     df = my_data.sample_df(10)
     print(f"Sample Data: {df.shape}")
     print(df)
+    """
+
+    # Get the SageWorks Metadata for this Data Source
+    meta = my_data.sageworks_meta()
+    print("SageWorks Meta")
+    pprint(meta)
+
+    # Add some SageWorks Metadata to this Data Source
+    my_data.upsert_sageworks_meta({"sageworks_tags": "abalone:public"})
+    print("SageWorks Meta NEW")
+    pprint(my_data.sageworks_meta())
 
     # Get quartiles for all the columns
-    quartile_info = my_data.quartiles()
-    print("Quartiles")
-    pprint(quartile_info)
+    # quartile_info = my_data.quartiles()
+    # print("Quartiles")
+    # pprint(quartile_info)
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')

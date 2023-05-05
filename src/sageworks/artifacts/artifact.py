@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 import logging
+import json
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
@@ -88,20 +89,29 @@ class Artifact(ABC):
         """Delete this artifact including all related AWS objects"""
         pass
 
-    def set_tags(self, tag):
-        """Set the tags for this artifact"""
-        self.log.error("set_tags: functionality needs to be added!")
-
     def sageworks_meta(self) -> dict:
         """Get the SageWorks specific metadata for this Artifact
         Note: This functionality will work for FeatureSets, Models, and Endpoints
-        but not for DataSources. DataSources need to overwrite this method
+              but not for DataSources. DataSources need to overwrite this method
         """
         aws_arn = self.arn()
         self.log.info(f"Retrieving SageWorks Metadata for Artifact: {aws_arn}...")
         aws_tags = self.sm_session.list_tags(aws_arn)
         meta = self._aws_tags_to_dict(aws_tags)
         return meta
+
+    def upsert_sageworks_meta(self, new_meta: dict):
+        """Add SageWorks specific metadata to this Artifact
+        Args:
+            new_meta (dict): Dictionary of new metadata to add
+        Note:
+            This functionality will work for FeatureSets, Models, and Endpoints
+            but not for DataSources. DataSources need to overwrite this method
+        """
+        aws_arn = self.arn()
+        self.log.info(f"Upserting SageWorks Metadata for Artifact: {aws_arn}...")
+        aws_tags = self._dict_to_aws_tags(new_meta)
+        self.sm_session.sagemaker_client.add_tags(ResourceArn=aws_arn, Tags=aws_tags)
 
     def sageworks_tags(self) -> list:
         """Get the tags for this artifact"""
@@ -125,6 +135,24 @@ class Artifact(ABC):
         }
 
     @staticmethod
-    def _aws_tags_to_dict(aws_tags):
+    def _aws_tags_to_dict(aws_tags) -> dict:
         """Internal: AWS Tags are in an odd format, so convert to regular dictionary"""
         return {item["Key"]: item["Value"] for item in aws_tags if "sageworks" in item["Key"]}
+
+    @staticmethod
+    def _dict_to_aws_tags(meta_data: dict) -> list:
+        """Internal: AWS Tags are in an odd format, so we need to dictionary
+        Args:
+            meta_data (dict): Dictionary of metadata to convert to AWS Tags
+        """
+
+        # First convert any non-string values to JSON strings
+        for key, value in meta_data.items():
+            if not isinstance(value, str):
+                meta_data[key] = json.dumps(value)
+
+        # Now convert to AWS Tags format
+        aws_tags = []
+        for key, value in meta_data.items():
+            aws_tags.append({"Key": key, "Value": value})
+        return aws_tags
