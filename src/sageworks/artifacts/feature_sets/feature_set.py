@@ -37,6 +37,7 @@ class FeatureSet(Artifact):
         # Grab an AWS Metadata Broker object and pull information for Feature Sets
         self.feature_set_name = feature_uuid
         self.feature_meta = None
+        self.data_source = None
         self.refresh()
         if self.feature_meta is None:
             self.log.info(f"Could not find feature set {self.feature_set_name} within current visibility scope")
@@ -51,7 +52,7 @@ class FeatureSet(Artifact):
             self.athena_table = self.feature_meta["sageworks"].get("athena_table")
             self.s3_storage = self.feature_meta["sageworks"].get("s3_storage")
 
-            # Creat our internal DataSource (hardcoded to Athena for now)
+            # Create our internal DataSource (hardcoded to Athena for now)
             self.data_source = AthenaSource(self.athena_table, self.athena_database)
 
         # Spin up our Feature Store
@@ -63,6 +64,8 @@ class FeatureSet(Artifact):
     def refresh(self):
         """Refresh our internal AWS Feature Store metadata"""
         self.feature_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
+        if self.data_source is not None:
+            self.data_source.refresh()
 
     def check(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
