@@ -96,6 +96,37 @@ class WebDataSourceView(View):
             sample_rows = pd.DataFrame()
         return sample_rows
 
+    def data_source_quartiles(self, data_source_index: int) -> (dict, None):
+        """Get all columns quartiles for the given DataSource Index"""
+        if self.data_sources_meta and data_source_index < len(self.data_sources_meta):
+            data_uuid = list(self.data_sources_meta.keys())[data_source_index]
+            quartiles_data = DataSource(data_uuid).quartiles()
+            print(quartiles_data)
+            return quartiles_data
+        else:
+            return None
+
+    def data_source_smart_sample(self, data_source_index: int) -> pd.DataFrame:
+        """Get a SMART sample dataframe for the given DataSource Index
+        Note:
+            SMART here means a sample data + quartiles for each column"""
+        # Sample DataFrame
+        sample_rows = self.data_source_sample(data_source_index)
+
+        # Quartiles Data
+        quartiles_data = self.data_source_quartiles(data_source_index)
+        if quartiles_data is None:
+            return sample_rows
+
+        # Convert the Quartiles Data into a DataFrame
+        quartiles_dict_list = dict()
+        for col_name, quartiles in quartiles_data.items():
+            quartiles_dict_list[col_name] = quartiles.values()
+        quartiles_df = pd.DataFrame(quartiles_dict_list)
+
+        # Combine the sample rows with the quartiles data
+        return pd.concat([sample_rows, quartiles_df]).reset_index(drop=True)
+
     def data_source_name(self, data_source_index: int) -> str:
         """Helper method for getting the data source name for the given DataSource Index"""
         if self.data_sources_meta and data_source_index < len(self.data_sources_meta):
@@ -140,5 +171,6 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get a sample dataframe for the given DataSources
-    sample_df = data_view.data_source_sample(0)
+    sample_df = data_view.data_source_smart_sample(0)
+    print(sample_df.shape)
     print(sample_df.head())

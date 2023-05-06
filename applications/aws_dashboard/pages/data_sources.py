@@ -40,8 +40,8 @@ data_source_sample_rows = table.create(
 )
 
 # Create a box plot of all the numeric columns in the sample rows
-# histo = histogram.create()
-violin = violin_plot.create(sample_rows)
+smart_sample_rows = web_data_source_view.data_source_smart_sample(0)
+violin = violin_plot.create(smart_sample_rows)
 
 # Create our components
 components = {

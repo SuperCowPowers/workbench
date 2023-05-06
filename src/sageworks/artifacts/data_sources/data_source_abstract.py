@@ -43,13 +43,20 @@ class DataSourceAbstract(Artifact):
         pass
 
     @abstractmethod
-    def sample_df(self) -> pd.DataFrame:
-        """Return a sample DataFrame from this DataSource"""
+    def sample_df(self, recompute: bool = False) -> pd.DataFrame:
+        """Return a sample DataFrame from this DataSource
+        Args:
+            recompute(bool): Recompute the sample (default: False)
+        Returns:
+            pd.DataFrame: A sample DataFrame from this DataSource
+        """
         pass
 
     @abstractmethod
-    def quartiles(self) -> dict[dict]:
+    def quartiles(self, recompute: bool = False) -> dict[dict]:
         """Compute Quartiles for all the numeric columns in a DataSource
+        Args:
+            recompute(bool): Recompute the quartiles (default: False)
         Returns:
             dict(dict): A dictionary of quartiles for each column in the form
                  {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},

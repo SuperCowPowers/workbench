@@ -165,11 +165,16 @@ class AthenaSource(DataSourceAbstract):
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
-    def sample_df(self) -> pd.DataFrame:
-        """Pull a sample of rows from the DataSource"""
+    def sample_df(self, recompute: bool = False) -> pd.DataFrame:
+        """Pull a sample of rows from the DataSource
+        Args:
+            recompute(bool): Recompute the sample (default: False)
+        Returns:
+            pd.DataFrame: A sample DataFrame from this DataSource
+        """
 
         # First check if we have already computed the quartiles
-        if self.sageworks_meta().get("sageworks_sample_rows"):
+        if self.sageworks_meta().get("sageworks_sample_rows") and not recompute:
             return pd.read_json(self.sageworks_meta()["sageworks_sample_rows"], orient="records", lines=True)
 
         # Note: Hardcoded to 100 rows so that metadata storage is consistent
@@ -192,8 +197,10 @@ class AthenaSource(DataSourceAbstract):
         # Return the sample_df
         return sample_df
 
-    def quartiles(self) -> dict[dict]:
+    def quartiles(self, recompute=False) -> dict[dict]:
         """Compute Quartiles for all the numeric columns in a DataSource
+        Args:
+            recompute: Recompute the quartiles (default: False)
         Returns:
             dict(dict): A dictionary of quartiles for each column in the form
                  {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},
@@ -201,7 +208,7 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # First check if we have already computed the quartiles
-        if self.sageworks_meta().get("sageworks_quartiles"):
+        if self.sageworks_meta().get("sageworks_quartiles") and not recompute:
             return json.loads(self.sageworks_meta()["sageworks_quartiles"])
 
         # For every column in the table that is numeric, get the quartiles

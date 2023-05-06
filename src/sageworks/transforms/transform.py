@@ -5,11 +5,14 @@ from enum import Enum, auto
 from typing import final
 import logging
 import awswrangler as wr
+from time import sleep
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
+from sageworks.artifacts.data_sources.data_source import DataSource
+from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 # Setup Logging
 logging_setup()
@@ -84,6 +87,23 @@ class Transform(ABC):
     def post_transform(self, **kwargs):
         """Perform any Post-Transform operations"""
         self.log.debug("Post-Transform...")
+
+        # For DataSource and FeatureSet outputs we'll compute sample rows and quartiles
+        if self.output_type == TransformOutput.DATA_SOURCE:
+            self.log.info("Computing Sample Rows and Quartiles...")
+            ds = DataSource(self.output_uuid)
+            ds.sample_df()
+            ds.quartiles()
+            ds.refresh()
+            sleep(1)
+
+        elif self.output_type == TransformOutput.FEATURE_SET:
+            self.log.info("Computing Sample Rows and Quartiles...")
+            fs = FeatureSet(self.output_uuid)
+            fs.sample_df()
+            fs.quartiles()
+            fs.refresh()
+            sleep(1)
 
     def set_output_tags(self, tags: list | str):
         """Set the tags that will be associated with the output object

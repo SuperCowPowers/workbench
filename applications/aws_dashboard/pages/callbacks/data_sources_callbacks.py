@@ -99,5 +99,5 @@ def update_violin_plots(app: Dash, web_data_source_view: WebDataSourceView):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling DataSource Sample Rows Refresh...")
-        sample_rows = web_data_source_view.data_source_sample(selected_rows[0])
-        return violin_plot.create_figure(sample_rows)
+        smart_sample_rows = web_data_source_view.data_source_smart_sample(selected_rows[0])
+        return violin_plot.create_figure(smart_sample_rows)
