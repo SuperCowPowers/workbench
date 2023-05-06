@@ -2,13 +2,13 @@
 
 # SageWorks<sup><i>TM</i></sup>
 
-<img height="370" align="left" src="https://user-images.githubusercontent.com/4806709/236641571-fc38899a-8b92-4b7c-80a0-cc9d39b92e4a.png">
-<img height="370" aligh="right" src="https://user-images.githubusercontent.com/4806709/236641581-51777977-bca4-4af3-8bec-fb1758c964b8.png">
+<img height="360" align="left" src="https://user-images.githubusercontent.com/4806709/236641571-fc38899a-8b92-4b7c-80a0-cc9d39b92e4a.png">
+<img height="360" aligh="right" src="https://user-images.githubusercontent.com/4806709/236641581-51777977-bca4-4af3-8bec-fb1758c964b8.png">
 #### SageWorks: The scientist's workbench powered by AWS® for scalability, flexibility, and security.
 
 SageWorks is a medium granularity framework that manages and aggregates AWS® Services into classes and concepts. When you use SageWorks you think about **DataSources**, **FeatureSets**, **Models**, and **Endpoints**. Underneath the hood those classes handle all the details around updating and managing a **complex set of AWS Services**. All the power and none of the pain so that your team can **Do Science Faster!**
 
-<img src="docs/images/sageworks_concepts.png">
+<img width="600" align="center" src="docs/images/sageworks_concepts.png">
 
 ### Full SageWorks OverView
 [SageWorks Architected FrameWork](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing)
