@@ -108,11 +108,12 @@ class AWSServiceBroker:
         cls.fresh_cache.set(category, True)
 
     @classmethod
-    def get_metadata(cls, category: ServiceCategory) -> dict:
+    def get_metadata(cls, category: ServiceCategory, force_fresh=False) -> dict:
         """Pull Metadata for the given Service Category
 
         Args:
             category (ServiceCategory): The Service Category to pull metadata from
+            force_fresh (bool, optional): Force a refresh of the metadata. Defaults to False.
 
         Returns:
             dict: The Metadata for the Requested Service Category
@@ -126,7 +127,7 @@ class AWSServiceBroker:
         meta_data = cls.meta_cache.get(category)
 
         # If we don't have the metadata in the cache, we need to BLOCK and get it
-        if meta_data is None:
+        if meta_data is None or force_fresh:
             cls.log.info(f"Blocking: Getting metadata for {category}...")
             cls.refresh_meta(category)
             return cls.meta_cache.get(category)
@@ -144,11 +145,15 @@ class AWSServiceBroker:
         return cls.meta_cache.get(category)
 
     @classmethod
-    def get_all_metadata(cls, warn=True) -> dict:
-        """Pull the metadata for ALL the Service Categories"""
-        if warn:
-            cls.log.warning("Getting ALL AWS Metadata: You should call get_metadata() with specific categories")
-        return {_category: cls.get_metadata(_category) for _category in ServiceCategory}
+    def get_all_metadata(cls, force_fresh=False) -> dict:
+        """Pull the metadata for ALL the Service Categories
+        Args:
+            force_fresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+        Returns:
+            dict: The Metadata for ALL the Service Categories
+        """
+        cls.log.warning("Getting ALL AWS Metadata: You should call get_metadata() with specific categories")
+        return {_category: cls.get_metadata(_category, force_fresh) for _category in ServiceCategory}
 
     @classmethod
     def wait_for_refreshes(cls) -> None:
@@ -182,6 +187,10 @@ if __name__ == "__main__":
     # Get the Metadata for ALL the categories
     # NOTE: There should be NO Refreshes in the logs
     pprint(aws_broker.get_all_metadata())
+
+    # Get the Metadata for ALL the categories
+    # NOTE: This should force a refresh of the metadata
+    pprint(aws_broker.get_all_metadata(force_fresh=True))
 
     # Get S3 object sizes
     incoming_data_size = aws_broker.artifact_info.s3_object_sizes(aws_broker.incoming_data.bucket)

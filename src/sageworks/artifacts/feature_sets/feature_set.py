@@ -61,11 +61,15 @@ class FeatureSet(Artifact):
         # All done
         self.log.info(f"FeatureSet Initialized: {self.feature_set_name}")
 
-    def refresh(self):
-        """Refresh our internal AWS Feature Store metadata"""
-        self.feature_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE).get(self.feature_set_name)
+    def refresh(self, force_fresh: bool = False):
+        """Refresh our internal AWS Feature Store metadata
+        Args:
+            force_fresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+        """
+        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_fresh=force_fresh)
+        self.feature_meta = _catalog_meta.get(self.feature_set_name)
         if self.data_source is not None:
-            self.data_source.refresh()
+            self.data_source.refresh(force_fresh=force_fresh)
 
     def check(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
