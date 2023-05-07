@@ -19,13 +19,21 @@ def update_data_sources_summary(app: Dash, web_data_source_view: WebDataSourceVi
     @app.callback(
         [Output("data_sources_summary", "data"), Output("data_sources_summary", "selected_rows")],
         Input("data-sources-updater", "n_intervals"),
-        State("data_sources_summary", "selected_rows"),
+        State("data_sources_summary", "selected_row_ids"),
     )
     def data_sources_update(n, selected_rows):
         print("Calling DataSources Summary Refresh...")
+        print(f"Selected Rows: {selected_rows}")
+
+        # Update the view to get the latest data and then update out data for the table
         web_data_source_view.refresh()
-        data_sources = web_data_source_view.data_sources_summary()
-        return [data_sources.to_dict("records"), selected_rows]
+        table_data = web_data_source_view.data_sources_summary()
+
+        # We need to convert the row_ids into just one row index
+        selected_row_index = [selected_rows[0]] if selected_rows else [0]
+
+        # Return the table data and the selected row index
+        return [table_data.to_dict("records"), selected_row_index]
 
 
 # Highlights the selected row in the table
