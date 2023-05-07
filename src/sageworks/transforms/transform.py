@@ -86,24 +86,28 @@ class Transform(ABC):
 
     def post_transform(self, **kwargs):
         """Perform any Post-Transform operations"""
-        self.log.debug("Post-Transform...")
+        self.log.info("Post-Transform...")
 
         # For DataSource and FeatureSet outputs we'll compute sample rows and quartiles
         if self.output_type == TransformOutput.DATA_SOURCE:
             self.log.info("Computing Sample Rows and Quartiles...")
+            while not DataSource(self.output_uuid).check():
+                self.log.info("Waiting for DataSource to be created...")
+                sleep(1)
             ds = DataSource(self.output_uuid)
             ds.sample_df()
             ds.quartiles()
-            ds.refresh()
-            sleep(1)
+            ds.refresh(force_fresh=True)
 
         elif self.output_type == TransformOutput.FEATURE_SET:
             self.log.info("Computing Sample Rows and Quartiles...")
+            while not FeatureSet(self.output_uuid).check():
+                self.log.info("Waiting for FeatureSet to be created...")
+                sleep(1)
             fs = FeatureSet(self.output_uuid)
             fs.sample_df()
             fs.quartiles()
-            fs.refresh()
-            sleep(1)
+            fs.refresh(force_fresh=True)
 
     def set_output_tags(self, tags: list | str):
         """Set the tags that will be associated with the output object
