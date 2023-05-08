@@ -52,10 +52,13 @@ components = {
 
 # Setup our callbacks/connections
 app = dash.get_app()
-callbacks.refresh_data_sources(app, data_source_broker)
+
+# Refresh our timer and data sources broker
+# callbacks.refresh_timer(app)
+callbacks.refresh_data_broker(app, data_source_broker)
 
 # Periodic update to the data sources summary
-# callbacks.update_data_sources_table(app)
+callbacks.update_data_sources_table(app)
 
 # Callbacks for when a data source is selected
 callbacks.table_row_select(app, "data_sources_table")

@@ -8,15 +8,26 @@ from dash.dependencies import Input, Output, State
 from sageworks.views.web_data_source_view import WebDataSourceView
 from sageworks.web_components import violin_plot
 
-summary_data = WebDataSourceView().data_sources_summary()
+# Cheese Sauce
+data_source_rows = WebDataSourceView().data_sources_summary()
+data_source_rows["id"] = data_source_rows.index
 
-
-def refresh_data_sources(app: Dash, web_data_source_view: WebDataSourceView):
+"""
+def refresh_timer(app: Dash):
     @app.callback(Output("last-updated-data-sources", "children"), Input("data-sources-updater", "n_intervals"))
-    def time_updated(n):
-        global summary_data
-        web_data_source_view.refresh()
-        summary_data = web_data_source_view.data_sources_summary()
+    def time_updated(_n):
+        return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
+"""
+
+def refresh_data_broker(app: Dash, data_source_broker: WebDataSourceView):
+    @app.callback(Output("last-updated-data-sources", "children"),
+                  Input("data-sources-updater", "n_intervals"))
+    def time_updated(_n):
+        global data_source_rows
+        data_source_broker.refresh()
+        data_source_rows = data_source_broker.data_sources_summary()
+        data_source_rows["id"] = data_source_rows.index
+        print(data_source_rows)
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
@@ -27,32 +38,10 @@ def update_data_sources_table(app: Dash):
         prevent_initial_call=True
     )
     def data_sources_update(_n):
-        global summary_data
-        print("Calling DataSources Table Refresh...")
+        """Return the table data as a dictionary"""
+        global data_source_rows
+        return data_source_rows.to_dict("records")
 
-        # Return the table data and the selected row index
-        return summary_data.to_dict("records")
-
-"""
-def update_data_sources_table(app: Dash):
-    @app.callback(
-        [Output("data_sources_table", "data"), Output("data_sources_table", "selected_rows")],
-        Input("data-sources-updater", "n_intervals"),
-        State("data_sources_table", "selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def data_sources_update(_n, selected_rows):
-        global summary_data
-        print("Calling DataSources Summary Refresh...")
-        print(summary_data)
-        print(f"Selected Rows: {selected_rows}")
-
-        # We need to convert the row_ids into just one row index
-        selected_row_output = selected_rows if selected_rows else [0]
-
-        # Return the table data and the selected row index
-        return [summary_data.to_dict("records"), selected_row_output]
-"""
 
 # Highlights the selected row in the table
 def table_row_select(app: Dash, table_name: str):
