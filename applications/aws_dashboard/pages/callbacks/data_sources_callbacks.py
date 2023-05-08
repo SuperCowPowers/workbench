@@ -8,33 +8,51 @@ from dash.dependencies import Input, Output, State
 from sageworks.views.web_data_source_view import WebDataSourceView
 from sageworks.web_components import violin_plot
 
+summary_data = WebDataSourceView().data_sources_summary()
 
-def update_last_updated(app: Dash):
+
+def refresh_data_sources(app: Dash, web_data_source_view: WebDataSourceView):
     @app.callback(Output("last-updated-data-sources", "children"), Input("data-sources-updater", "n_intervals"))
     def time_updated(n):
+        global summary_data
+        web_data_source_view.refresh()
+        summary_data = web_data_source_view.data_sources_summary()
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
-def update_data_sources_summary(app: Dash, web_data_source_view: WebDataSourceView):
+def update_data_sources_table(app: Dash):
     @app.callback(
-        [Output("data_sources_summary", "data"), Output("data_sources_summary", "selected_rows")],
+        Output("data_sources_table", "data"),
         Input("data-sources-updater", "n_intervals"),
-        State("data_sources_summary", "selected_row_ids"),
+        prevent_initial_call=True
     )
-    def data_sources_update(n, selected_rows):
-        print("Calling DataSources Summary Refresh...")
-        print(f"Selected Rows: {selected_rows}")
-
-        # Update the view to get the latest data and then update out data for the table
-        web_data_source_view.refresh()
-        table_data = web_data_source_view.data_sources_summary()
-
-        # We need to convert the row_ids into just one row index
-        selected_row_index = [selected_rows[0]] if selected_rows else [0]
+    def data_sources_update(_n):
+        global summary_data
+        print("Calling DataSources Table Refresh...")
 
         # Return the table data and the selected row index
-        return [table_data.to_dict("records"), selected_row_index]
+        return summary_data.to_dict("records")
 
+"""
+def update_data_sources_table(app: Dash):
+    @app.callback(
+        [Output("data_sources_table", "data"), Output("data_sources_table", "selected_rows")],
+        Input("data-sources-updater", "n_intervals"),
+        State("data_sources_table", "selected_row_ids"),
+        prevent_initial_call=True,
+    )
+    def data_sources_update(_n, selected_rows):
+        global summary_data
+        print("Calling DataSources Summary Refresh...")
+        print(summary_data)
+        print(f"Selected Rows: {selected_rows}")
+
+        # We need to convert the row_ids into just one row index
+        selected_row_output = selected_rows if selected_rows else [0]
+
+        # Return the table data and the selected row index
+        return [summary_data.to_dict("records"), selected_row_output]
+"""
 
 # Highlights the selected row in the table
 def table_row_select(app: Dash, table_name: str):
@@ -59,7 +77,7 @@ def table_row_select(app: Dash, table_name: str):
 def update_sample_rows_header(app: Dash):
     @app.callback(
         Output("sample_rows_header", "children"),
-        Input("data_sources_summary", "derived_viewport_selected_row_ids"),
+        Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
     def update_sample_header(selected_rows):
@@ -73,7 +91,7 @@ def update_data_source_sample_rows(app: Dash, web_data_source_view: WebDataSourc
             Output("data_source_sample_rows", "columns"),
             Output("data_source_sample_rows", "data"),
         ],
-        Input("data_sources_summary", "derived_viewport_selected_row_ids"),
+        Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
     def sample_rows_update(selected_rows):
@@ -99,7 +117,7 @@ def update_violin_plots(app: Dash, web_data_source_view: WebDataSourceView):
 
     @app.callback(
         Output("violin_plot", "figure"),
-        Input("data_sources_summary", "derived_viewport_selected_row_ids"),
+        Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
     def generate_new_violin_plot(selected_rows):

@@ -22,7 +22,7 @@ def data_sources_layout(components: dict) -> html.Div:
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                 ]
             ),
-            dbc.Row(components["data_sources_summary"]),
+            dbc.Row(components["data_sources_table"]),
             dbc.Row(html.H3("Sampled Rows", id="sample_rows_header"), style={"padding": "30px 0px 10px 0px"}),
             dbc.Row(components["data_source_sample_rows"], style={"padding": "0px 0px 30px 0px"}),
             dbc.Row(components["violin_plot"]),
