@@ -73,8 +73,6 @@ class AWSServiceBroker:
         cls.endpoints = Endpoints()
         cls.artifact_info = ArtifactInfo()
 
-        # Model Monitors
-
         # Cache for Metadata
         if RedisCache().check():
             cls.meta_cache = RedisCache()
