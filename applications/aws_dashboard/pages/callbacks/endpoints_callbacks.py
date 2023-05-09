@@ -8,7 +8,10 @@ from sageworks.views.web_artifacts_summary import WebArtifactsSummary
 
 
 def update_last_updated(app: Dash):
-    @app.callback(Output("last-updated-endpoints", "children"), Input("endpoints-updater", "n_intervals"))
+    @app.callback(
+        Output("last-updated-endpoints", "children"),
+        Input("endpoints-updater", "n_intervals"),
+    )
     def time_updated(n):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 

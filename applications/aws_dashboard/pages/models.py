@@ -7,7 +7,12 @@ from dash_bootstrap_templates import load_figure_template
 # SageWorks Imports
 
 from sageworks.web_components import confusion_matrix, table, scatter_plot
-from sageworks.web_components import feature_importance, model_data, model_details, feature_details
+from sageworks.web_components import (
+    feature_importance,
+    model_data,
+    model_details,
+    feature_details,
+)
 from sageworks.views.web_artifacts_summary import WebArtifactsSummary
 
 # Local Imports

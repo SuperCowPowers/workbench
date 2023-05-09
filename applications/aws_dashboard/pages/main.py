@@ -45,7 +45,10 @@ tables["MODELS"] = table.create(
     markdown_columns=["Model Group"],
 )
 tables["ENDPOINTS"] = table.create(
-    "ENDPOINTS", sageworks_artifacts["ENDPOINTS"], header_color="rgb(100, 60, 100)", markdown_columns=["Name"]
+    "ENDPOINTS",
+    sageworks_artifacts["ENDPOINTS"],
+    header_color="rgb(100, 60, 100)",
+    markdown_columns=["Name"],
 )
 
 # Create our components

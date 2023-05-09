@@ -36,7 +36,10 @@ data_sources_table = table.create(
 # Grab a sample of rows from the first data source
 sample_rows = data_source_broker.data_source_sample(0)
 data_source_sample_rows = table.create(
-    "data_source_sample_rows", sample_rows, header_color="rgb(60, 60, 100)", max_height="200px"
+    "data_source_sample_rows",
+    sample_rows,
+    header_color="rgb(60, 60, 100)",
+    max_height="200px",
 )
 
 # Create a box plot of all the numeric columns in the sample rows

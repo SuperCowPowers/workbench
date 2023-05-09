@@ -37,7 +37,10 @@ def setup_model_details_view():
     # Create our components
     model_df = model_info.get_model_df()
     model_table = table.create(
-        "model_table", model_df, show_columns=["model_name", "date_created", "f_scores"], row_select="single"
+        "model_table",
+        model_df,
+        show_columns=["model_name", "date_created", "f_scores"],
+        row_select="single",
     )
     details = model_details.create(model_info.get_model_details(0))
     c_matrix = confusion_matrix.create(model_info.get_model_confusion_matrix(0))

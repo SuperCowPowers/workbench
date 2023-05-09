@@ -48,7 +48,10 @@ def models_layout(components: dict) -> html.Div:
                                     style={"padding": "20px 0px 0px 20px"},
                                 )
                             ),
-                            dbc.Row(components["feature_details"], style={"padding": "0px 0px 0px 20px"}),
+                            dbc.Row(
+                                components["feature_details"],
+                                style={"padding": "0px 0px 0px 20px"},
+                            ),
                         ],
                         width=4,
                     ),

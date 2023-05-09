@@ -33,7 +33,10 @@ endpoints_table = table.create(
 endpoint_traffic = line_chart.create()
 
 # Create our components
-components = {"endpoints_details": endpoints_table, "endpoint_traffic": endpoint_traffic}
+components = {
+    "endpoints_details": endpoints_table,
+    "endpoint_traffic": endpoint_traffic,
+}
 
 # Setup our callbacks/connections
 app = dash.get_app()

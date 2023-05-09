@@ -2,7 +2,7 @@
 from datetime import datetime
 import dash
 from dash import Dash
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.web_data_source_view import WebDataSourceView
@@ -19,9 +19,12 @@ def refresh_timer(app: Dash):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 """
 
+
 def refresh_data_broker(app: Dash, data_source_broker: WebDataSourceView):
-    @app.callback(Output("last-updated-data-sources", "children"),
-                  Input("data-sources-updater", "n_intervals"))
+    @app.callback(
+        Output("last-updated-data-sources", "children"),
+        Input("data-sources-updater", "n_intervals"),
+    )
     def time_updated(_n):
         global data_source_rows
         data_source_broker.refresh()
@@ -35,7 +38,7 @@ def update_data_sources_table(app: Dash):
     @app.callback(
         Output("data_sources_table", "data"),
         Input("data-sources-updater", "n_intervals"),
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def data_sources_update(_n):
         """Return the table data as a dictionary"""

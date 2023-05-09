@@ -34,7 +34,11 @@ scatter1 = scatter_plot.create()
 scatter2 = scatter_plot.create(variant=2)
 
 # Create our components
-components = {"feature_sets_details": feature_sets_table, "scatter1": scatter1, "scatter2": scatter2}
+components = {
+    "feature_sets_details": feature_sets_table,
+    "scatter1": scatter1,
+    "scatter2": scatter2,
+}
 
 # Setup our callbacks/connections
 app = dash.get_app()
