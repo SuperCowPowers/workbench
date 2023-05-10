@@ -25,7 +25,7 @@ logging_setup()
 class ServiceCategory(Enum):
     """Enumerated Types for SageWorks Meta Requests"""
 
-    INCOMING_DATA = auto()
+    INCOMING_DATA_S3 = auto()
     DATA_CATALOG = auto()
     FEATURE_STORE = auto()
     MODELS = auto()
@@ -56,7 +56,9 @@ class AWSServiceBroker:
         # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings
         sageworks_config = SageWorksConfig()
         sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
-        cls.incoming_data_bucket = "s3://" + sageworks_bucket + "/incoming-data"
+        cls.incoming_data_bucket = "s3://" + sageworks_bucket + "/incoming-data/"
+        cls.data_sources_bucket = "s3://" + sageworks_bucket + "/data-sources/"
+        cls.feature_sets_bucket = "s3://" + sageworks_bucket + "/feature-sets/"
 
         # SageWorks category mapping to AWS Services
         # - incoming_data = S3
@@ -86,7 +88,7 @@ class AWSServiceBroker:
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler
         cls.connection_map = {
-            ServiceCategory.INCOMING_DATA: cls.incoming_data,
+            ServiceCategory.INCOMING_DATA_S3: cls.incoming_data,
             ServiceCategory.DATA_CATALOG: cls.data_catalog,
             ServiceCategory.FEATURE_STORE: cls.feature_store,
             ServiceCategory.MODELS: cls.model_registry,

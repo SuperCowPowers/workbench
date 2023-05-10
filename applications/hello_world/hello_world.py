@@ -37,7 +37,7 @@ def setup_artifact_viewer():
 
     # Create our components
     components = {
-        "incoming_data": tables["INCOMING_DATA"],
+        "incoming_data": tables["INCOMING_DATA_S3"],
         "data_sources": tables["DATA_SOURCES"],
         "feature_sets": tables["FEATURE_SETS"],
         "models": tables["MODELS"],

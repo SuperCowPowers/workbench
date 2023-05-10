@@ -43,7 +43,7 @@ class ArtifactInfo(Connector):
         if size_in_mb is None:
             self.log.info(f"Computing S3 Object sizes: {s3_path}...")
             size_in_bytes = sum(wr.s3.size_objects(s3_path, boto3_session=self.boto_session).values())
-            size_in_mb = f"{ (size_in_bytes/1_000_000):.1f}"
+            size_in_mb = f"{ (size_in_bytes/1_000_000):.2f}"
             self.artifact_info_cache.set(s3_path, size_in_mb)
         return size_in_mb
 

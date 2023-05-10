@@ -42,6 +42,13 @@ class S3Bucket(Connector):
         """Get all the file names in this bucket"""
         return list(self.s3_bucket_data.keys())
 
+    def bucket_size(self) -> list:
+        """For all the files in this bucket/prefix recursively SUM up the sizes"""
+        sizes = []
+        for file, info in self.s3_bucket_data.items():
+            sizes.append(info["ContentLength"])
+        return sum(sizes)
+
     def file_info(self, file: str) -> dict:
         """Get additional info about this specific file"""
         return self.s3_bucket_data[file]
@@ -55,7 +62,7 @@ if __name__ == "__main__":
     # Grab out incoming data bucket for something to test with
     sageworks_config = SageWorksConfig()
     sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
-    incoming_data_bucket = "s3://" + sageworks_bucket + "/incoming-data"
+    incoming_data_bucket = "s3://" + sageworks_bucket + "/incoming-data/"
 
     # Create the class and check the functionality
     s3_bucket = S3Bucket(incoming_data_bucket)
@@ -66,6 +73,9 @@ if __name__ == "__main__":
     print(f"{s3_bucket.bucket}")
     for file_name in s3_bucket.file_names():
         print(f"\t{file_name}")
+
+    # Get the size of all the objects in this bucket
+    print(f"Bucket Size: {s3_bucket.bucket_size()}")
 
     # Get additional info for a specific file
     my_file_info = s3_bucket.file_info("abalone.csv")

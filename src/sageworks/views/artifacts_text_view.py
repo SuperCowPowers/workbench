@@ -39,12 +39,12 @@ class ArtifactsTextView(View):
         """Get all the data that's useful for this view
 
         Returns:
-            dict: Dictionary of Pandas Dataframes, e.g. {'INCOMING_DATA': pd.DataFrame, ...}
+            dict: Dictionary of Pandas Dataframes, e.g. {'INCOMING_DATA_S3': pd.DataFrame, ...}
         """
 
         # We're filling in Summary Data for all the AWS Services
         summary_data = {
-            "INCOMING_DATA": self.incoming_data_summary(),
+            "INCOMING_DATA_S3": self.incoming_data_summary(),
             "DATA_SOURCES": self.data_sources_summary(),
             "FEATURE_SETS": self.feature_sets_summary(),
             "MODELS": self.models_summary(),
@@ -56,7 +56,7 @@ class ArtifactsTextView(View):
     def header_text(header_text: str) -> str:
         """Colorize text for the terminal"""
         color_map = {
-            "INCOMING_DATA": "cyan",
+            "INCOMING_DATA_S3": "cyan",
             "DATA_SOURCES": "red",
             "FEATURE_SETS": "yellow",
             "MODELS": "green",
@@ -76,7 +76,7 @@ class ArtifactsTextView(View):
 
     def incoming_data_summary(self) -> pd.DataFrame:
         """Get summary data about data in the incoming-data S3 Bucket"""
-        data = self.aws_artifact_data[ServiceCategory.INCOMING_DATA]
+        data = self.aws_artifact_data[ServiceCategory.INCOMING_DATA_S3]
         data_summary = []
         for name, info in data.items():
             # Get the size of the S3 Storage Object(s)
@@ -217,6 +217,9 @@ if __name__ == "__main__":
 
     # Create the class and get the AWS Model Registry details
     artifacts = ArtifactsTextView()
+
+    # Pull the data for all Artifacts in the AWS Account
+    artifacts.view_data()
 
     # Give a text summary of all the Artifacts in the AWS Account
     artifacts.summary()
