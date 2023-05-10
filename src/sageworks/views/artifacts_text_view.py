@@ -44,7 +44,7 @@ class ArtifactsTextView(View):
 
         # We're filling in Summary Data for all the AWS Services
         summary_data = {
-            "INCOMING_DATA_S3": self.incoming_data_summary(),
+            "INCOMING_DATA": self.incoming_data_summary(),
             "DATA_SOURCES": self.data_sources_summary(),
             "FEATURE_SETS": self.feature_sets_summary(),
             "MODELS": self.models_summary(),
@@ -56,7 +56,7 @@ class ArtifactsTextView(View):
     def header_text(header_text: str) -> str:
         """Colorize text for the terminal"""
         color_map = {
-            "INCOMING_DATA_S3": "cyan",
+            "INCOMING_DATA": "cyan",
             "DATA_SOURCES": "red",
             "FEATURE_SETS": "yellow",
             "MODELS": "green",

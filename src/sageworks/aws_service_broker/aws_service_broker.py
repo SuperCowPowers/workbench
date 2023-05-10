@@ -26,6 +26,8 @@ class ServiceCategory(Enum):
     """Enumerated Types for SageWorks Meta Requests"""
 
     INCOMING_DATA_S3 = auto()
+    DATA_SOURCES_S3 = auto()
+    FEATURE_SETS_S3 = auto()
     DATA_CATALOG = auto()
     FEATURE_STORE = auto()
     MODELS = auto()
@@ -68,7 +70,9 @@ class AWSServiceBroker:
         # - endpoints = Sagemaker Endpoints, Model Monitors
 
         # Pull in AWS Service Connectors
-        cls.incoming_data = S3Bucket(cls.incoming_data_bucket)
+        cls.incoming_data_s3 = S3Bucket(cls.incoming_data_bucket)
+        cls.data_sources_s3 = S3Bucket(cls.data_sources_bucket)
+        cls.feature_sets_s3 = S3Bucket(cls.feature_sets_bucket)
         cls.data_catalog = DataCatalog(database_scope)
         cls.feature_store = FeatureStore()
         cls.model_registry = ModelRegistry()
@@ -88,7 +92,9 @@ class AWSServiceBroker:
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler
         cls.connection_map = {
-            ServiceCategory.INCOMING_DATA_S3: cls.incoming_data,
+            ServiceCategory.INCOMING_DATA_S3: cls.incoming_data_s3,
+            ServiceCategory.DATA_SOURCES_S3: cls.data_sources_s3,
+            ServiceCategory.FEATURE_SETS_S3: cls.feature_sets_s3,
             ServiceCategory.DATA_CATALOG: cls.data_catalog,
             ServiceCategory.FEATURE_STORE: cls.feature_store,
             ServiceCategory.MODELS: cls.model_registry,
