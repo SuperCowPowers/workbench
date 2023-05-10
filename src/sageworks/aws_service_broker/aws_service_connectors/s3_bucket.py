@@ -32,7 +32,7 @@ class S3Bucket(Connector):
         # Grab all the files in this bucket
         self.log.info(f"Reading S3 Bucket: {self.bucket}...")
         _aws_file_info = wr.s3.describe_objects(self.bucket, boto3_session=self.boto_session)
-        self.s3_bucket_data = {full_path.split("/")[-1]: info for full_path, info in _aws_file_info.items()}
+        self.s3_bucket_data = {full_path: info for full_path, info in _aws_file_info.items()}
 
     def metadata(self) -> dict:
         """Get all the metadata for the files in this bucket"""

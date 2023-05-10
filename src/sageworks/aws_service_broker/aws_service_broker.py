@@ -167,6 +167,26 @@ class AWSServiceBroker:
         for thread in cls.open_threads:
             thread.join()
 
+    @classmethod
+    def get_s3_object_sizes(cls, category: ServiceCategory, prefix: str = "") -> int:
+        """Get the total size of all the objects in the given S3 Prefix
+        Args:
+            category (ServiceCategory): Can be either INCOMING_DATA_S3, DATA_SOURCES_S3, or FEATURE_SETS_S3
+            prefix (str): The S3 Prefix, all files under this prefix will be summed up
+        Returns:
+            int: The total size of all the objects in the given S3 Prefix
+        """
+        # Get the metadata for the given category
+        meta_data = cls.get_metadata(category)
+
+        # Get the total size of all the objects in the given S3 Prefix
+        total_size = 0
+        prefix = prefix.rstrip("/") + "/" if prefix else ""
+        for file, info in meta_data.items():
+            if prefix in file:
+                total_size += info["ContentLength"]
+        return total_size
+
 
 if __name__ == "__main__":
     """Exercise the AWS Service Broker Class"""
@@ -196,11 +216,17 @@ if __name__ == "__main__":
 
     # Get the Metadata for ALL the categories
     # NOTE: This should force a refresh of the metadata
-    pprint(aws_broker.get_all_metadata(force_fresh=True))
+    # pprint(aws_broker.get_all_metadata(force_fresh=True))
 
     # Get S3 object sizes
-    incoming_data_size = aws_broker.artifact_info.s3_object_sizes(aws_broker.incoming_data.bucket)
-    print(f"Incoming Data Size: {incoming_data_size} MB")
+    incoming_data_size = aws_broker.get_s3_object_sizes(ServiceCategory.INCOMING_DATA_S3)
+    print(f"Incoming Data Size: {incoming_data_size} Bytes")
+
+    data_sources_size = aws_broker.get_s3_object_sizes(ServiceCategory.DATA_SOURCES_S3)
+    print(f"Data Sources Size: {data_sources_size} Bytes")
+
+    abalone_size = aws_broker.get_s3_object_sizes(ServiceCategory.DATA_SOURCES_S3, prefix="abalone_data")
+    print(f"Abalone Size: {abalone_size} Bytes")
 
     # Wait for any open threads to finish
     aws_broker.wait_for_refreshes()

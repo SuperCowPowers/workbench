@@ -96,12 +96,12 @@ class ArtifactsTextView(View):
 
     def data_sources_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks DataSources"""
-        data = self.aws_artifact_data[ServiceCategory.DATA_CATALOG]
+        data_catalog = self.aws_artifact_data[ServiceCategory.DATA_CATALOG]
         data_summary = []
 
         # Get the SageWorks DataSources
-        if "sageworks" in data:
-            for name, info in data["sageworks"].items():  # Just the sageworks database (not sagemaker_featurestore)
+        if "sageworks" in data_catalog:
+            for name, info in data_catalog["sageworks"].items():  # Just the sageworks database (not sagemaker_featurestore)
                 # Get the size of the S3 Storage Object(s)
                 size = self.artifact_info.s3_object_sizes(info["StorageDescriptor"]["Location"])
                 summary = {
