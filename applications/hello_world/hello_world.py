@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 
 
 # SageWorks Imports
-from sageworks.views.web_artifacts_summary import WebArtifactsSummary
+from sageworks.views.artifacts_web_view import ArtifactsWebView
 from sageworks.web_components import table
 
 
@@ -26,7 +26,7 @@ def setup_artifact_viewer():
     # load_figure_template('darkly')
 
     # Grab a view that gives us a summary of all the artifacts currently in SageWorks
-    sageworks_artifacts = WebArtifactsSummary()
+    sageworks_artifacts = ArtifactsWebView()
     web_artifacts_summary = sageworks_artifacts.view_data()
 
     # Just a bunch of tables for now :)

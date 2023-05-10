@@ -13,7 +13,7 @@ from sageworks.web_components import (
     model_details,
     feature_details,
 )
-from sageworks.views.web_artifacts_summary import WebArtifactsSummary
+from sageworks.views.artifacts_web_view import ArtifactsWebView
 
 # Local Imports
 from pages.layout.models_layout import models_layout
@@ -27,7 +27,7 @@ register_page(__name__, path="/models")
 load_figure_template("darkly")
 
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks
-web_artifacts_summary = WebArtifactsSummary()
+web_artifacts_summary = ArtifactsWebView()
 models_summary = web_artifacts_summary.models_summary(concise=True)
 
 # Read in our fake model data

@@ -4,7 +4,7 @@ from dash import Dash
 from dash.dependencies import Input, Output
 
 # SageWorks Imports
-from sageworks.views.web_artifacts_summary import WebArtifactsSummary
+from sageworks.views.artifacts_web_view import ArtifactsWebView
 
 
 def update_last_updated(app: Dash):
@@ -16,7 +16,7 @@ def update_last_updated(app: Dash):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
-def update_endpoints_table(app: Dash, sageworks_artifacts: WebArtifactsSummary):
+def update_endpoints_table(app: Dash, sageworks_artifacts: ArtifactsWebView):
     @app.callback(Output("ENDPOINTS_DETAILS", "data"), Input("endpoints-updater", "n_intervals"))
     def data_sources_update(n):
         print("Calling FeatureSets Refresh...")

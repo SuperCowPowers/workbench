@@ -12,7 +12,7 @@ from sageworks.web_components import (
     model_details,
     feature_details,
 )
-from sageworks.views.web_artifacts_summary import WebArtifactsSummary
+from sageworks.views.artifacts_web_view import ArtifactsWebView
 
 
 def update_last_updated(app: Dash):
@@ -24,7 +24,7 @@ def update_last_updated(app: Dash):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
-def update_models_table(app: Dash, sageworks_artifacts: WebArtifactsSummary):
+def update_models_table(app: Dash, sageworks_artifacts: ArtifactsWebView):
     @app.callback(Output("models_table", "data"), Input("models-updater", "n_intervals"))
     def data_sources_update(n):
         print("Calling Models Refresh...")

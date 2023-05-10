@@ -1,4 +1,4 @@
-"""WebArtifactsSummary pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
+"""ArtifactsWebView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
 import sys
 import argparse
 import pandas as pd
@@ -9,9 +9,9 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
 
-class WebArtifactsSummary(View):
+class ArtifactsWebView(View):
     def __init__(self):
-        """WebArtifactsSummary pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
+        """ArtifactsWebView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
         # Call SuperClass Initialization
         super().__init__()
 
@@ -286,10 +286,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Create the class and get the AWS Model Registry details
-    artifact_view = WebArtifactsSummary()
+    artifact_view = ArtifactsWebView()
 
     # List the Endpoint Names
-    print("WebArtifactsSummary:")
+    print("ArtifactsWebView:")
     for category, df in artifact_view.view_data().items():
         print(f"\n{category}")
         print(df.head())
