@@ -1,4 +1,4 @@
-"""Artifacts pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
+"""ArtifactsTextView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
 import sys
 import argparse
 import pandas as pd
@@ -9,9 +9,9 @@ from sageworks.views.view import View
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
-class Artifacts(View):
+class ArtifactsTextView(View):
     def __init__(self):
-        """Artifacts pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
+        """ArtifactsTextView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
         # Call SuperClass Initialization
         super().__init__()
 
@@ -69,7 +69,7 @@ class Artifacts(View):
         for name, df in self.view_data().items():
             print(self.header_text(name))
             if df.empty:
-                print("\tNo Artifacts Found")
+                print("\tNo ArtifactsTextView Found")
             else:
                 print(df.to_string(index=False))
 
@@ -215,13 +215,13 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Create the class and get the AWS Model Registry details
-    artifacts = Artifacts()
+    artifacts = ArtifactsTextView()
 
     # List the Endpoint Names
-    print("Artifacts:")
+    print("ArtifactsTextView:")
     for category, df in artifacts.view_data().items():
         print(f"\n{category}")
         if df.empty:
-            print("\tNo Artifacts Found")
+            print("\tNo ArtifactsTextView Found")
         else:
             print(df.head())
