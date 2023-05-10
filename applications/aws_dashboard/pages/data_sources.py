@@ -5,7 +5,7 @@ from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
 from sageworks.web_components import violin_plot
-from sageworks.views.web_data_source_view import WebDataSourceView
+from sageworks.views.data_source_web_view import DataSourceWebView
 from sageworks.web_components import table
 
 # Local Imports
@@ -21,7 +21,7 @@ register_page(__name__, path="/data_sources")
 load_figure_template("darkly")
 
 # Grab a view that gives us a summary of the DataSources in SageWorks
-data_source_broker = WebDataSourceView()
+data_source_broker = DataSourceWebView()
 data_source_rows = data_source_broker.data_sources_summary()
 
 # Create a table to display the data sources

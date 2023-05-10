@@ -1,4 +1,4 @@
-"""WebDataSourceView pulls DataSource metadata from the AWS Service Broker with Details Panels on each DataSource"""
+"""DataSourceWebView pulls DataSource metadata from the AWS Service Broker with Details Panels on each DataSource"""
 import sys
 import argparse
 import pandas as pd
@@ -9,9 +9,9 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.artifacts.data_sources.data_source import DataSource
 
 
-class WebDataSourceView(View):
+class DataSourceWebView(View):
     def __init__(self):
-        """WebDataSourceView pulls DataSource metadata from the AWS Service
+        """DataSourceWebView pulls DataSource metadata from the AWS Service
         Broker with Details Panels on each DataSource"""
         # Call SuperClass Initialization
         super().__init__()
@@ -163,7 +163,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Create the class and get the AWS DataSource details
-    data_view = WebDataSourceView()
+    data_view = DataSourceWebView()
 
     # List the DataSources
     print("DataSourcesSummary:")

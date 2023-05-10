@@ -5,15 +5,15 @@ from dash import Dash
 from dash.dependencies import Input, Output
 
 # SageWorks Imports
-from sageworks.views.web_data_source_view import WebDataSourceView
+from sageworks.views.data_source_web_view import DataSourceWebView
 from sageworks.web_components import violin_plot
 
 # Cheese Sauce Global (FIXME)
-data_source_rows = WebDataSourceView().data_sources_summary()
+data_source_rows = DataSourceWebView().data_sources_summary()
 data_source_rows["id"] = data_source_rows.index
 
 
-def refresh_data_broker(app: Dash, data_source_broker: WebDataSourceView):
+def refresh_data_broker(app: Dash, data_source_broker: DataSourceWebView):
     @app.callback(
         Output("last-updated-data-sources", "children"),
         Input("data-sources-updater", "n_intervals"),
@@ -26,7 +26,7 @@ def refresh_data_broker(app: Dash, data_source_broker: WebDataSourceView):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
-def update_data_sources_table(app: Dash, data_source_broker: WebDataSourceView):
+def update_data_sources_table(app: Dash, data_source_broker: DataSourceWebView):
     @app.callback(Output("data_sources_table", "data"), Input("data-sources-updater", "n_intervals"))
     def data_sources_update(_n):
         """Return the table data as a dictionary"""
@@ -55,7 +55,7 @@ def table_row_select(app: Dash, table_name: str):
         return row_style
 
 
-def update_data_source_sample_rows(app: Dash, web_data_source_view: WebDataSourceView):
+def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWebView):
     @app.callback(
         [
             Output("sample_rows_header", "children", allow_duplicate=True),
@@ -70,10 +70,10 @@ def update_data_source_sample_rows(app: Dash, web_data_source_view: WebDataSourc
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling DataSource Sample Rows Refresh...")
-        sample_rows = web_data_source_view.data_source_sample(selected_rows[0])
+        sample_rows = data_source_web_view.data_source_sample(selected_rows[0])
 
         # Name of the data source
-        data_source_name = web_data_source_view.data_source_name(selected_rows[0])
+        data_source_name = data_source_web_view.data_source_name(selected_rows[0])
         header = f"Sampled Rows: {data_source_name}"
 
         # The columns need to be in a special format for the DataTable
@@ -83,7 +83,7 @@ def update_data_source_sample_rows(app: Dash, web_data_source_view: WebDataSourc
         return [header, column_setup, sample_rows.to_dict("records")]
 
 
-def update_violin_plots(app: Dash, web_data_source_view: WebDataSourceView):
+def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
     """Updates the Violin Plots when a new data source is selected"""
 
     @app.callback(
@@ -96,5 +96,5 @@ def update_violin_plots(app: Dash, web_data_source_view: WebDataSourceView):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling DataSource Sample Rows Refresh...")
-        smart_sample_rows = web_data_source_view.data_source_smart_sample(selected_rows[0])
+        smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
         return violin_plot.create_figure(smart_sample_rows)
