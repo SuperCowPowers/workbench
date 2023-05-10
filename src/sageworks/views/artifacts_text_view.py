@@ -52,7 +52,8 @@ class ArtifactsTextView(View):
         }
         return summary_data
 
-    def header_text(self, header_text: str) -> str:
+    @staticmethod
+    def header_text(header_text: str) -> str:
         """Colorize text for the terminal"""
         color_map = {
             "INCOMING_DATA": "cyan",
@@ -64,8 +65,8 @@ class ArtifactsTextView(View):
         header = f"\n{'='*111}\n{header_text}\n{'='*111}"
         return colored(header, color_map[header_text])
 
-    def dump(self) -> None:
-        """Dump all the data to stdout"""
+    def summary(self) -> None:
+        """Give a summary of all the Artifact data to stdout"""
         for name, df in self.view_data().items():
             print(self.header_text(name))
             if df.empty:
@@ -217,11 +218,5 @@ if __name__ == "__main__":
     # Create the class and get the AWS Model Registry details
     artifacts = ArtifactsTextView()
 
-    # List the Endpoint Names
-    print("ArtifactsTextView:")
-    for category, df in artifacts.view_data().items():
-        print(f"\n{category}")
-        if df.empty:
-            print("\tNo ArtifactsTextView Found")
-        else:
-            print(df.head())
+    # Give a text summary of all the Artifacts in the AWS Account
+    artifacts.summary()
