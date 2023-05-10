@@ -82,8 +82,8 @@ class ArtifactsTextView(View):
             # Get the size of the S3 Storage Object(s)
             size = info.get("ContentLength") / 1_000_000
             summary = {
-                "Name": name,
-                "Size(MB)": f"{size:.1f}",
+                "Name": name.split("/")[-1],  # Just the basename of the S3 Object
+                "Size(MB)": f"{size:.2f}",
                 "Modified": self.datetime_string(info.get("LastModified", "-")),
                 "ContentType": str(info.get("ContentType", "-")),
                 "ServerSideEncryption": info.get("ServerSideEncryption", "-"),
@@ -103,7 +103,9 @@ class ArtifactsTextView(View):
         if "sageworks" in data_catalog:
             for name, info in data_catalog["sageworks"].items():  # Just the sageworks database (not sagemaker_featurestore)
                 # Get the size of the S3 Storage Object(s)
-                size = self.artifact_info.s3_object_sizes(info["StorageDescriptor"]["Location"])
+                size = self.aws_broker.get_s3_object_sizes(ServiceCategory.DATA_SOURCES_S3,
+                                                           info["StorageDescriptor"]["Location"])
+                size = f"{size/1_000_000:.2f}"
                 summary = {
                     "Name": name,
                     "Ver": info.get("VersionId", "-"),
@@ -127,7 +129,9 @@ class ArtifactsTextView(View):
             sageworks_meta = self.artifact_info.get_sagemaker_obj_info(arn)
 
             # Get the size of the S3 Storage Object(s)
-            size = self.artifact_info.s3_object_sizes(group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"])
+            size = self.aws_broker.get_s3_object_sizes(ServiceCategory.FEATURE_SETS_S3,
+                                                       group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"])
+            size = f"{size / 1_000_000:.2f}"
             summary = {
                 "Feature Group": group_info["FeatureGroupName"],
                 "Size(MB)": size,
