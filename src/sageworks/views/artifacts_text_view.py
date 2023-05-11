@@ -93,7 +93,13 @@ class ArtifactsTextView(View):
                 ),
             }
             data_summary.append(summary)
-        return pd.DataFrame(data_summary)
+
+        # Make sure we have data else return just the column names
+        if data_summary:
+            return pd.DataFrame(data_summary)
+        else:
+            columns = ["Name", "Size(MB)", "Modified", "ContentType", "ServerSideEncryption", "Tags"]
+            return pd.DataFrame(columns=columns)
 
     def data_sources_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks DataSources"""
@@ -111,14 +117,31 @@ class ArtifactsTextView(View):
                     "Name": name,
                     "Ver": info.get("VersionId", "-"),
                     "Size(MB)": size,
+                    "Modified": self.datetime_string(info.get("UpdateTime")),
                     "Num Columns": self.num_columns(info),
+                    "DataLake": info.get("IsRegisteredWithLakeFormation", "-"),
                     "Tags": info.get("Parameters", {}).get("sageworks_tags", "-"),
                     "Input": str(
                         info.get("Parameters", {}).get("sageworks_input", "-"),
                     ),
                 }
                 data_summary.append(summary)
-        return pd.DataFrame(data_summary)
+
+        # Make sure we have data else return just the column names
+        if data_summary:
+            return pd.DataFrame(data_summary)
+        else:
+            columns = [
+                "Name",
+                "Ver",
+                "Size(MB)",
+                "Modified",
+                "Num Columns",
+                "DataLake",
+                "Tags",
+                "Input",
+            ]
+            return pd.DataFrame(columns=columns)
 
     def feature_sets_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks FeatureSets"""
@@ -137,11 +160,28 @@ class ArtifactsTextView(View):
                 "Size(MB)": size,
                 "Catalog DB": group_info["OfflineStoreConfig"].get("DataCatalogConfig", {}).get("Database", "-"),
                 "Athena Table": group_info["OfflineStoreConfig"].get("DataCatalogConfig", {}).get("TableName", "-"),
+                "Online": str(group_info.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
+                "Created": self.datetime_string(group_info.get("CreationTime")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
             }
             data_summary.append(summary)
-        return pd.DataFrame(data_summary)
+
+        # Make sure we have data else return just the column names
+        if data_summary:
+            return pd.DataFrame(data_summary)
+        else:
+            columns = [
+                "Feature Group",
+                "Size(MB)",
+                "Catalog DB",
+                "Athena Table",
+                "Online",
+                "Created",
+                "Tags",
+                "Input",
+            ]
+            return pd.DataFrame(columns=columns)
 
     def models_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Models"""
@@ -160,13 +200,29 @@ class ArtifactsTextView(View):
                 sageworks_meta = model.get("sageworks_meta", {})
                 summary = {
                     "Model Group": model["ModelPackageGroupName"],
+                    "Ver": model["ModelPackageVersion"],
+                    "Status": model["ModelPackageStatus"],
                     "Description": model["ModelPackageDescription"],
                     "Created": self.datetime_string(model.get("CreationTime")),
                     "Tags": sageworks_meta.get("sageworks_tags", "-"),
                     "Input": sageworks_meta.get("sageworks_input", "-"),
                 }
                 model_summary.append(summary)
-        return pd.DataFrame(model_summary)
+
+        # Make sure we have data else return just the column names
+        if model_summary:
+            return pd.DataFrame(model_summary)
+        else:
+            columns = [
+                "Model Group",
+                "Ver",
+                "Status",
+                "Description",
+                "Created",
+                "Tags",
+                "Input",
+            ]
+            return pd.DataFrame(columns=columns)
 
     def endpoints_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Endpoints"""
@@ -188,7 +244,21 @@ class ArtifactsTextView(View):
                 "Input": sageworks_meta.get("sageworks_input", "-"),
             }
             data_summary.append(summary)
-        return pd.DataFrame(data_summary)
+
+        # Make sure we have data else return just the column names
+        if data_summary:
+            return pd.DataFrame(data_summary)
+        else:
+            columns = [
+                "Name",
+                "Status",
+                "Created",
+                "DataCapture",
+                "Sampling(%)",
+                "Tags",
+                "Input",
+            ]
+            return pd.DataFrame(columns=columns)
 
     @staticmethod
     def num_columns(data_info):
