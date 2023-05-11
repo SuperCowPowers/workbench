@@ -13,7 +13,6 @@ from sageworks.aws_service_broker.aws_service_connectors.data_catalog import Dat
 from sageworks.aws_service_broker.aws_service_connectors.feature_store import FeatureStore
 from sageworks.aws_service_broker.aws_service_connectors.model_registry import ModelRegistry
 from sageworks.aws_service_broker.aws_service_connectors.endpoints import Endpoints
-from sageworks.aws_service_broker.aws_service_connectors.artifact_info import ArtifactInfo
 from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
 
@@ -35,6 +34,7 @@ class ServiceCategory(Enum):
 
 
 class AWSServiceBroker:
+    """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
     # Note: This database_scope is a list of databases that we want to pull metadata from
     #       At some point, we should pull this from a config file.
     database_scope = ["sageworks", "sagemaker_featurestore"]
@@ -77,7 +77,6 @@ class AWSServiceBroker:
         cls.feature_store = FeatureStore()
         cls.model_registry = ModelRegistry()
         cls.endpoints = Endpoints()
-        cls.artifact_info = ArtifactInfo()
 
         # Cache for Metadata
         if RedisCache().check():
@@ -102,7 +101,7 @@ class AWSServiceBroker:
         }
 
     @classmethod
-    def refresh_meta(cls, category: ServiceCategory) -> None:
+    def refresh_aws_data(cls, category: ServiceCategory) -> None:
         """Refresh the Metadata for the given Category
 
         Args:
@@ -129,20 +128,20 @@ class AWSServiceBroker:
         # - Metadata is in the cache but is stale, launch a thread to refresh, return stale data
         # - Metadata is in the cache and is fresh, so we just return it
 
-        # Do we have the metadata in the cache?
+        # Do we have this AWS data already in the cache?
         meta_data = cls.meta_cache.get(category)
 
-        # If we don't have the metadata in the cache, we need to BLOCK and get it
+        # If we don't have the AWS data in the cache, we need to BLOCK and get it
         if meta_data is None or force_fresh:
             cls.log.info(f"Blocking: Getting metadata for {category}...")
-            cls.refresh_meta(category)
+            cls.refresh_aws_data(category)
             return cls.meta_cache.get(category)
 
-        # Is the metadata stale?
+        # Is the AWS data stale?
         if cls.fresh_cache.get(category) is None:
             cls.log.info(f"Async: Metadata for {category} is stale, launching refresh thread...")
             cls.fresh_cache.set(category, True)
-            thread = Thread(target=cls.refresh_meta, args=(category,))
+            thread = Thread(target=cls.refresh_aws_data, args=(category,))
             cls.open_threads.append(thread)
             thread.start()
             return cls.meta_cache.get(category)

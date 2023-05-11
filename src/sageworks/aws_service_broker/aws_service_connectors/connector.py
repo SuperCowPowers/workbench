@@ -46,5 +46,26 @@ class Connector(ABC):
 
     @abstractmethod
     def metadata(self) -> dict:
-        """Return all the metadata for this service"""
+        """Return all the metadata for this AWS Service"""
         pass
+
+    @staticmethod
+    def _aws_tags_to_dict(aws_tags) -> dict:
+        """Internal: AWS Tags are in an odd format, so convert to regular dictionary"""
+        return {item["Key"]: item["Value"] for item in aws_tags if "sageworks" in item["Key"]}
+
+    def sageworks_meta(self, arn: str) -> dict:
+        """Get the SageWorks specific metadata for this Artifact/ARN
+        Note: This functionality will work for Feature Store, Models, and Endpoints
+              but not for Data Catalogs. The Data Catalog class has its own methods
+        """
+        self.log.info(f"Retrieving SageWorks Metadata for Artifact: {arn}...")
+        aws_tags = self.sm_session.list_tags(arn)
+        meta = self._aws_tags_to_dict(aws_tags)
+        return meta
+
+    def sageworks_tags(self, arn: str) -> list:
+        """Get the SageWorks tags for this Artifact/ARN"""
+        combined_tags = self.sageworks_meta(arn).get("sageworks_tags", "")
+        tags = combined_tags.split(":")
+        return tags

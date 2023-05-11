@@ -92,7 +92,7 @@ class Artifact(ABC):
     def sageworks_meta(self) -> dict:
         """Get the SageWorks specific metadata for this Artifact
         Note: This functionality will work for FeatureSets, Models, and Endpoints
-              but not for DataSources. DataSources need to overwrite this method
+              but not for DataSources. The DataSource class overwrites this method.
         """
         aws_arn = self.arn()
         self.log.info(f"Retrieving SageWorks Metadata for Artifact: {aws_arn}...")
@@ -106,7 +106,7 @@ class Artifact(ABC):
             new_meta (dict): Dictionary of new metadata to add
         Note:
             This functionality will work for FeatureSets, Models, and Endpoints
-            but not for DataSources. DataSources need to overwrite this method
+            but not for DataSources. The DataSource class overwrites this method.
         """
         aws_arn = self.arn()
         self.log.info(f"Upserting SageWorks Metadata for Artifact: {aws_arn}...")

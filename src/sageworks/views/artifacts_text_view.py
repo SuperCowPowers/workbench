@@ -7,6 +7,7 @@ from termcolor import colored
 # SageWorks Imports
 from sageworks.views.view import View
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
+from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
 
 class ArtifactsTextView(View):
@@ -19,8 +20,8 @@ class ArtifactsTextView(View):
         self.aws_artifact_data = {}
         self.refresh()
 
-        # Get a handle to the AWS Artifact Information class
-        self.artifact_info = self.aws_broker.artifact_info
+        # Get AWS Account Region
+        self.aws_region = AWSAccountClamp().region()
 
         # Setup Pandas output options
         pd.set_option("display.max_colwidth", 50)
@@ -124,9 +125,8 @@ class ArtifactsTextView(View):
         data = self.aws_artifact_data[ServiceCategory.FEATURE_STORE]
         data_summary = []
         for feature_group, group_info in data.items():
-            # Get the tags for this Feature Group
-            arn = group_info["FeatureGroupArn"]
-            sageworks_meta = self.artifact_info.get_sagemaker_obj_info(arn)
+            # Get the SageWorks metadata for this Feature Group
+            sageworks_meta = group_info.get("sageworks_meta", {})
 
             # Get the size of the S3 Storage Object(s)
             size = self.aws_broker.get_s3_object_sizes(ServiceCategory.FEATURE_SETS_S3,
@@ -147,18 +147,17 @@ class ArtifactsTextView(View):
         """Get summary data about the SageWorks Models"""
         data = self.aws_artifact_data[ServiceCategory.MODELS]
         model_summary = []
-        for model_group, model_list in data.items():
+        for model_group_info, model_list in data.items():
             # Special Case for Model Groups without any Models
             if not model_list:
-                summary = {"Model Group": model_group}
+                summary = {"Model Group": model_group_info}
                 model_summary.append(summary)
                 continue
 
             # Get Summary information for each model in the model_list
             for model in model_list:
-                # Get the tags for this Model Group
-                model_group_arn = model["ModelPackageGroupArn"]
-                sageworks_meta = self.artifact_info.get_sagemaker_obj_info(model_group_arn)
+                # Get the SageWorks metadata for this Model Group
+                sageworks_meta = model.get("sageworks_meta", {})
                 summary = {
                     "Model Group": model["ModelPackageGroupName"],
                     "Description": model["ModelPackageDescription"],
@@ -176,9 +175,8 @@ class ArtifactsTextView(View):
 
         # Get Summary information for each endpoint
         for endpoint, endpoint_info in data.items():
-            # Get the tags for this Model Group
-            endpoint_arn = endpoint_info["EndpointArn"]
-            sageworks_meta = self.artifact_info.get_sagemaker_obj_info(endpoint_arn)
+            # Get the SageWorks metadata for this Endpoint
+            sageworks_meta = endpoint_info.get("sageworks_meta", {})
 
             summary = {
                 "Name": endpoint_info["EndpointName"],

@@ -4,12 +4,12 @@ import argparse
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.views.view import View
+from sageworks.views.artifacts_text_view import ArtifactsTextView
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
 
-class ArtifactsWebView(View):
+class ArtifactsWebView(ArtifactsTextView):
     def __init__(self):
         """ArtifactsWebView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
         # Call SuperClass Initialization

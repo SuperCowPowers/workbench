@@ -36,14 +36,17 @@ class FeatureStore(Connector):
         # Get the details for each Feature Group and convert to a data structure with direct lookup
         self.feature_data = {name: self._feature_group_details(name) for name in _fg_names}
 
-        # Also add additional details under the sageworks section for each Feature Group
+        # Additional details under the sageworks_meta section for each Feature Group
         for fg_name in _fg_names:
+            arn = self.feature_data[fg_name]["FeatureGroupArn"]
+            sageworks_meta = self.sageworks_meta(arn)
             add_data = {
                 "athena_database": self.athena_database_name(fg_name),
                 "athena_table": self.athena_table_name(fg_name),
                 "s3_storage": self.s3_storage(fg_name),
             }
-            self.feature_data[fg_name]["sageworks"] = add_data
+            sageworks_meta.update(add_data)
+            self.feature_data[fg_name]["sageworks_meta"] = sageworks_meta
 
     def metadata(self) -> dict:
         """Get all the table information in this database"""
@@ -74,31 +77,6 @@ class FeatureStore(Connector):
     def s3_storage(self, feature_group_name: str) -> str:
         """Get the S3 Location for a specific feature group"""
         return self.feature_data[feature_group_name]["OfflineStoreConfig"]["S3StorageConfig"]["ResolvedOutputS3Uri"]
-
-    def get_feature_group_tags(self, feature_group_name: str) -> list:
-        """Get the table tag list for the given table name"""
-        feature_group = self.feature_group_details(feature_group_name)
-        return json.loads(feature_group["Parameters"].get("tags", "[]"))
-
-    def set_feature_group_tags(self, database: str, table_name: str, tags: list):
-        """Set the tags for a specific feature group"""
-        wr.catalog.upsert_table_parameters(
-            parameters={"tags": json.dumps(tags)},
-            database=database,
-            table=table_name,
-            boto3_session=self.boto_session,
-        )
-
-    def add_feature_group_tags(self, database: str, table_name: str, tags: list):
-        """Add some the tags for a specific feature set"""
-        current_tags = json.loads(wr.catalog.get_table_parameters(database, table_name).get("tags"))
-        new_tags = list(set(current_tags).union(set(tags)))
-        wr.catalog.upsert_table_parameters(
-            parameters={"tags": json.dumps(new_tags)},
-            database=database,
-            table=table_name,
-            boto3_session=self.boto_session,
-        )
 
     def _feature_group_details(self, feature_group_name: str) -> dict:
         """Internal: Do not call this method directly, use feature_group_details() instead"""
@@ -162,28 +140,11 @@ if __name__ == "__main__":
     # Get the Athena Query for this Feature Group
     my_query = feature_store.snapshot_query(my_group)
 
-    """ TAGS: WIP
     # Get the tags for this Feature Group
-    my_tags = feature_store.get_feature_group_tags(my_group)
+    my_arn = group_info["FeatureGroupArn"]
+    my_tags = feature_store.sageworks_tags(my_arn)
     print(f"Tags: {my_tags}")
 
-    # Set the tags for this table
-    feature_store.set_feature_group_tags(my_group, ['public', 'solubility'])
-
-    # Refresh the connector to get the latest info from AWS Feature Store
-    feature_store.refresh()
-
-    # Get the tags for this table
-    my_tags = feature_store.get_feature_group_tags(my_group)
-    print(f"Tags: {my_tags}")
-
-    # Set the tags for this table
-    feature_store.add_feature_group_tags(my_group, ['test', 'sageworks'])
-
-    # Refresh the connector to get the latest info from AWS Feature Store
-    feature_store.refresh()
-
-    # Get the tags for this table
-    tags = feature_store.get_feature_group_tags(my_group)
-    print(f"Tags: {tags}")
-    """
+    # Get the SageWorks Metadata for this Feature Group
+    my_sageworks_meta = feature_store.sageworks_meta(my_arn)
+    print(f"SageWorks Metadata: {my_sageworks_meta}")

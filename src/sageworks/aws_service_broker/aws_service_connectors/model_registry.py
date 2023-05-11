@@ -38,6 +38,13 @@ class ModelRegistry(Connector):
         # Get the details for each Model Group and convert to a data structure with direct lookup
         self.model_data = {name: self._model_group_details(name) for name in _mg_names}
 
+        # Additional details under the sageworks_meta section for each Model Group
+        for mg_name in _mg_names:
+            sageworks_meta = self.sageworks_meta(self.model_package_group_arn)
+            # Model groups have a list of models
+            for model_info in self.model_data[mg_name]:
+                model_info["sageworks_meta"] = sageworks_meta
+
     def metadata(self) -> dict:
         """Get all the table information in this database"""
         return self.model_data
@@ -91,3 +98,12 @@ if __name__ == "__main__":
     my_group = "abalone-regression"
     group_info = model_registry.model_group_details(my_group)
     pprint(group_info)
+
+    # Get the tags for this Model Group
+    my_arn = model_registry.model_package_group_arn
+    my_tags = model_registry.sageworks_tags(my_arn)
+    print(f"Tags: {my_tags}")
+
+    # Get the SageWorks Metadata for this Model Group
+    my_sageworks_meta = model_registry.sageworks_meta(my_arn)
+    print(f"SageWorks Metadata: {my_sageworks_meta}")

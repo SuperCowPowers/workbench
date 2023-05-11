@@ -120,6 +120,9 @@ if __name__ == "__main__":
     # Get the tags associated with this Model
     print(f"Tags: {my_model.sageworks_tags()}")
 
+    # Get the SageWorks metadata associated with this Model
+    print(f"SageWorks Meta: {my_model.sageworks_meta()}")
+
     # Get creation time
     print(f"Created: {my_model.created()}")
 

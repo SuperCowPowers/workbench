@@ -47,7 +47,7 @@ class DataCatalog(Connector):
             self.data_catalog_metadata[database] = {table["Name"]: table for table in table_list}
 
     def metadata(self) -> dict:
-        """Get all the table information in this database"""
+        """Get all the information for this AWS Data Catalog"""
         return self.data_catalog_metadata
 
     def get_scoped_database_list(self):
