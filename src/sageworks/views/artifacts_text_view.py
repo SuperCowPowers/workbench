@@ -17,11 +17,10 @@ class ArtifactsTextView(View):
         super().__init__()
 
         # Get AWS Service information for ALL the categories (data_source, feature_set, endpoints, etc)
-        self.aws_artifact_data = {}
-        self.refresh()
+        self.aws_artifact_data = self.aws_broker.get_all_metadata()
 
         # Get AWS Account Region
-        self.aws_region = AWSAccountClamp().region()
+        self.aws_region = self.aws_account_clamp.region()
 
         # Setup Pandas output options
         pd.set_option("display.max_colwidth", 50)
@@ -83,7 +82,7 @@ class ArtifactsTextView(View):
             # Get the size of the S3 Storage Object(s)
             size = info.get("ContentLength") / 1_000_000
             summary = {
-                "Name": name.split("/")[-1],  # Just the basename of the S3 Object
+                "Name": "/".join(name.split("/")[-2:]).replace("incoming-data/", ""),
                 "Size(MB)": f"{size:.2f}",
                 "Modified": self.datetime_string(info.get("LastModified", "-")),
                 "ContentType": str(info.get("ContentType", "-")),

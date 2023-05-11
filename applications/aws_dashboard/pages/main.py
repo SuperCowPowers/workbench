@@ -21,9 +21,9 @@ sageworks_artifacts = web_artifacts_summary.view_data()
 
 # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
 tables = dict()
-tables["INCOMING_DATA_S3"] = table.create(
-    "INCOMING_DATA_S3",
-    sageworks_artifacts["INCOMING_DATA_S3"],
+tables["INCOMING_DATA"] = table.create(
+    "INCOMING_DATA",
+    sageworks_artifacts["INCOMING_DATA"],
     header_color="rgb(60, 60, 100)",
 )
 tables["DATA_SOURCES"] = table.create(
@@ -53,7 +53,7 @@ tables["ENDPOINTS"] = table.create(
 
 # Create our components
 components = {
-    "incoming_data": tables["INCOMING_DATA_S3"],
+    "incoming_data": tables["INCOMING_DATA"],
     "data_sources": tables["DATA_SOURCES"],
     "feature_sets": tables["FEATURE_SETS"],
     "models": tables["MODELS"],

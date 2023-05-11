@@ -23,6 +23,8 @@ def create(
     if not show_columns:
         show_columns = df.columns.to_list()
         show_columns.remove("id")
+        if "uuid" in show_columns:
+            show_columns.remove("uuid")
 
     # Column Setup with name, id, and presentation type
     column_setup = []
@@ -51,6 +53,7 @@ def create(
             "overflow": "hidden",
             "textOverflow": "ellipsis",
             "maxWidth": 250,
+            "textAlign": "left",
         },
         style_header={
             "textAlign": "left",
