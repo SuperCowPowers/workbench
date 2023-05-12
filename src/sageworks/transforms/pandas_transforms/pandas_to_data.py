@@ -67,7 +67,7 @@ class PandasToData(Transform):
             df[c] = df[c].astype(pd.StringDtype())
         return df
 
-    def transform_impl(self, overwrite: bool = True):
+    def transform_impl(self, overwrite: bool = True, **kwargs):
         """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
         store the information about the data to the AWS Data Catalog sageworks database
 

@@ -60,7 +60,7 @@ def numeric_stats(df):
     return df.describe().round(2).T.drop("count", axis=1)
 
 
-def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float = 10) -> pd.DataFrame:
+def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float = 20) -> pd.DataFrame:
     """Dropping NaNs in rows and columns. Obviously lots of ways to do this, so picked some reasonable defaults,
     we can certainly change this later with a more formal set of operations and arguments"""
 
@@ -86,6 +86,60 @@ def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float 
         log.info(f"Dropping {orig_num_rows - len(output_df)} rows that have a NaN in them")
         output_df.reset_index(drop=True, inplace=True)
 
+    return output_df
+
+
+def drop_duplicates(input_df: pd.DataFrame) -> pd.DataFrame:
+    """Drop duplicate rows from a dataframe
+    Args:
+        input_df (pd.DataFrame): Input DataFrame
+    Returns:
+        pd.DataFrame: DataFrame with duplicate rows dropped
+    """
+
+    # Drop Duplicates
+    output_df = input_df.drop_duplicates()
+    if input_df.shape[0] != output_df.shape[0]:
+        log.info(f"Dropped {input_df.shape[0] - output_df.shape[0]} duplicate rows")
+    return output_df
+
+
+def drop_outliers_iqr(input_df: pd.DataFrame, scale: float = 1.5) -> pd.DataFrame:
+    """Drop outliers from a dataframe
+    Args:
+        input_df (pd.DataFrame): Input DataFrame
+        scale (float, optional): Scale to use for IQR. Defaults to 1.5.
+    Returns:
+        pd.DataFrame: DataFrame with outliers dropped
+    """
+
+    # Just the numeric columns
+    numeric_df = input_df.select_dtypes(include="number")
+
+    # Drop Outliers using IQR
+    q1 = numeric_df.quantile(0.25, numeric_only=True)
+    q3 = numeric_df.quantile(0.75, numeric_only=True)
+    iqr_scale = (q3 - q1) * scale
+    output_df = input_df[~((numeric_df < (q1 - iqr_scale)) | (numeric_df > (q3 + iqr_scale))).any(axis=1)]
+    if input_df.shape[0] != output_df.shape[0]:
+        log.info(f"Dropped {input_df.shape[0] - output_df.shape[0]} outlier rows")
+    return output_df
+
+
+def drop_outliers_sdev(input_df: pd.DataFrame, sigma: float = 2.0) -> pd.DataFrame:
+    """Drop outliers from a dataframe
+    Args:
+        input_df (pd.DataFrame): Input DataFrame
+        scale (float, optional): Scale to use for Standard Deviation. Defaults to 3.0.
+    Returns:
+        pd.DataFrame: DataFrame with outliers dropped
+    """
+    # Just the numeric columns
+    numeric_df = input_df.select_dtypes(include="number")
+
+    output_df = input_df[numeric_df.apply(lambda x: np.abs(x - x.mean()) / x.std() < sigma).all(axis=1)]
+    if input_df.shape[0] != output_df.shape[0]:
+        log.info(f"Dropped {input_df.shape[0] - output_df.shape[0]} outlier rows")
     return output_df
 
 
@@ -128,18 +182,50 @@ if __name__ == "__main__":
             "id": 4,
             "name": "bill",
             "age": pd.NA,
-            "score": 5.3,
+            "score": 7.3,
             "date": datetime.now(),
             "hobby": pd.NA,
         },
         {
             "id": 5,
+            "name": "biff",
+            "age": 52,
+            "score": 7.4,
+            "date": datetime.now(),
+            "hobby": "robots",
+        },
+        {
+            "id": 6,
             "name": "sally",
             "age": 52,
-            "score": 9.5,
+            "score": 19.5,
             "date": datetime.now(),
             "hobby": "games",
         },
+        {
+            "id": 7,
+            "name": "sammy",
+            "age": 52,
+            "score": 8.5,
+            "date": datetime.now(),
+            "hobby": "games",
+        },
+        {
+            "id": 8,
+            "name": "jimmy",
+            "age": 54,
+            "score": 7.5,
+            "date": datetime.now(),
+            "hobby": "games",
+        },
+        {
+            "id": 9,
+            "name": "timmy",
+            "age": 53,
+            "score": 7.8,
+            "date": datetime.now(),
+            "hobby": "games",
+        }
     ]
     fake_df = pd.DataFrame(fake_data)
     fake_df["name"] = fake_df["name"].astype(pd.StringDtype())
@@ -160,3 +246,10 @@ if __name__ == "__main__":
     # Clean the DataFrame
     clean_df = drop_nans(fake_df)
     log.info(clean_df)
+
+    # Drop Outliers
+    norm_df = drop_outliers_iqr(clean_df)
+    log.info(norm_df)
+
+    norm_df = drop_outliers_sdev(clean_df)
+    log.info(norm_df)

@@ -88,16 +88,16 @@ class Transform(ABC):
         """Perform any Post-Transform operations"""
         self.log.info("Post-Transform...")
 
-        # For DataSource and FeatureSet outputs we'll compute sample rows and quartiles
+        # For DataSource and FeatureSet we'll compute sample rows, quartiles, and value counts
         if self.output_type == TransformOutput.DATA_SOURCE:
             self.log.info("Computing Sample Rows and Quartiles...")
             while not DataSource(self.output_uuid).check():
                 self.log.info("Waiting for DataSource to be created...")
                 sleep(1)
             ds = DataSource(self.output_uuid)
-            ds.refresh(force_fresh=True)
-            ds.sample_df()
-            ds.quartiles()
+            ds.sample_df(recompute=True)
+            ds.quartiles(recompute=True)
+            ds.value_counts(recompute=True)
             ds.refresh(force_fresh=True)
 
         elif self.output_type == TransformOutput.FEATURE_SET:
@@ -106,9 +106,9 @@ class Transform(ABC):
                 self.log.info("Waiting for FeatureSet to be created...")
                 sleep(1)
             fs = FeatureSet(self.output_uuid)
-            fs.refresh(force_fresh=True)
-            fs.sample_df()
-            fs.quartiles()
+            fs.sample_df(recompute=True)
+            fs.quartiles(recompute=True)
+            fs.value_counts(recompute=True)
             fs.refresh(force_fresh=True)
 
     def set_output_tags(self, tags: list | str):

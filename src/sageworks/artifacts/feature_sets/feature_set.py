@@ -253,15 +253,22 @@ class FeatureSet(Artifact):
         self.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
     def quartiles(self) -> dict:
-        """Get the quartiles for all numeric columns of the underlying DataSource
+        """Get the quartiles for the numeric columns of the underlying DataSource
         Returns:
-            dict: A dictionary of quartiles for all numeric columns
+            dict: A dictionary of quartiles for the numeric columns
         """
         return self.data_source.quartiles()
 
     def sample_df(self) -> pd.DataFrame:
         """Get a sample of the data from the underlying DataSource"""
         return self.data_source.sample_df()
+
+    def value_counts(self) -> dict:
+        """Get the quartiles for the string columns of the underlying DataSource
+        Returns:
+            dict: A dictionary of value counts for the string columns
+        """
+        return self.data_source.value_counts()
 
 
 if __name__ == "__main__":

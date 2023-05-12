@@ -199,10 +199,10 @@ class AthenaSource(DataSourceAbstract):
         # Return the sample_df
         return sample_df
 
-    def quartiles(self, recompute=False) -> dict[dict]:
+    def quartiles(self, recompute: bool = False) -> dict[dict]:
         """Compute Quartiles for all the numeric columns in a DataSource
         Args:
-            recompute: Recompute the quartiles (default: False)
+            recompute(bool): Recompute the quartiles (default: False)
         Returns:
             dict(dict): A dictionary of quartiles for each column in the form
                  {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},
@@ -220,22 +220,60 @@ class AthenaSource(DataSourceAbstract):
             print(column, data_type)
             if data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
                 query = (
-                    f"SELECT MIN({column}) AS min, "
-                    f"approx_percentile({column}, 0.25) AS q1, "
-                    f"approx_percentile({column}, 0.5) AS median, "
-                    f"approx_percentile({column}, 0.75) AS q3, "
-                    f"MAX({column}) AS max FROM {self.table_name}"
+                    f"SELECT MIN(\"{column}\") AS min, "
+                    f"approx_percentile(\"{column}\", 0.25) AS q1, "
+                    f"approx_percentile(\"{column}\", 0.5) AS median, "
+                    f"approx_percentile(\"{column}\", 0.75) AS q3, "
+                    f"MAX(\"{column}\") AS max FROM {self.table_name}"
                 )
                 result_df = self.query(query)
                 result_df["column_name"] = column
                 quartile_data.append(result_df)
-        quartile_data = pd.concat(quartile_data).set_index("column_name").to_dict(orient="index")
+        quartile_dict = pd.concat(quartile_data).set_index("column_name").to_dict(orient="index")
 
         # Push the quartile data into our DataSource Metadata
-        self.upsert_sageworks_meta({"sageworks_quartiles": quartile_data})
+        self.upsert_sageworks_meta({"sageworks_quartiles": quartile_dict})
 
         # Return the quartile data
-        return quartile_data
+        return quartile_dict
+
+    def value_counts(self, recompute: bool = False) -> dict[dict]:
+        """Compute 'value_counts' for all the string columns in a DataSource
+        Args:
+            recompute(bool): Recompute the quartiles (default: False)
+        Returns:
+            dict(dict): A dictionary of value counts for each column in the form
+                 {'col1': {'value_1': X, 'value_2': Y, 'value_3': Z,...},
+                  'col2': ...}
+        """
+
+        # First check if we have already computed the quartiles
+        if self.sageworks_meta().get("sageworks_value_counts") and not recompute:
+            return json.loads(self.sageworks_meta()["sageworks_value_counts"])
+
+        # For every column in the table that is numeric, get the quartiles
+        self.log.info("Computing 'value_counts' for all string columns...")
+        value_count_dict = dict()
+        for column, data_type in zip(self.column_names(), self.column_types()):
+            print(column, data_type)
+            if data_type in ["string"]:
+                query = (
+                    f"SELECT \"{column}\", count(*) as count "
+                    f"FROM {self.table_name} "
+                    f"GROUP BY \"{column}\" ORDER BY count DESC limit 10"
+                )
+                # Convert int64 to int so that we can serialize to JSON
+                result_df = self.query(query)
+                result_df["count"] = result_df["count"].astype(int)
+
+                # Convert the result_df into a dictionary
+                value_count_dict[column] = dict(zip(result_df[column], result_df["count"]))
+
+        # Push the value_count data into our DataSource Metadata
+        self.upsert_sageworks_meta({"sageworks_value_counts": value_count_dict})
+
+        # Return the value_count data
+        return value_count_dict
 
     def details(self) -> dict:
         """Additional Details about this AthenaSource Artifact"""
@@ -310,10 +348,15 @@ if __name__ == "__main__":
     print("SageWorks Meta NEW")
     pprint(my_data.sageworks_meta())
 
-    # Get quartiles for all the columns
-    quartile_info = my_data.quartiles()
+    # Get quartiles for numeric columns
+    quartile_info = my_data.quartiles(recompute=True)
     print("Quartiles")
     pprint(quartile_info)
+
+    # Get value_counts for string columns
+    value_count_info = my_data.value_counts(recompute=True)
+    print("Value Counts")
+    pprint(value_count_info)
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')
