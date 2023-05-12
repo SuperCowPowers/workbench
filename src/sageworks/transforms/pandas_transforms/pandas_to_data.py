@@ -15,10 +15,10 @@ class PandasToData(Transform):
         df_to_data = PandasToData(output_uuid)
         df_to_data.set_output_tags(["test", "small"])
         df_to_data.set_input(test_df)
-        df_to_data.transform(delete_existing=True/False)
+        df_to_data.transform()
     """
 
-    def __init__(self, output_uuid: str, output_file_format: str = "parquet", **kwargs):
+    def __init__(self, output_uuid: str, output_file_format: str = "parquet"):
         """PandasToData Initialization
         Args:
             output_uuid (str): The UUID of the DataSource to create

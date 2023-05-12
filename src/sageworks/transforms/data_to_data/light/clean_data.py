@@ -9,7 +9,7 @@ class CleanData(DataToDataLight):
     """CleanData:Class for filtering, sub-setting, and value constraints on Light DataSources
 
     Common Usage:
-        clean_data = DataToDataLight(input_data_uuid, output_data_uuid)
+        clean_data = CleanData(input_data_uuid, output_data_uuid)
         clean_data.set_output_tags(["abalone", "clean", "whatever"])
         clean_data.transform(delete_existing=True/False)
     """
