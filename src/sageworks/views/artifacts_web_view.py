@@ -18,8 +18,8 @@ class ArtifactsWebView(ArtifactsTextView):
 
         # We get the dataframe from the ArtifactsTextView and hyperlink the Name column
         data_df = super().data_sources_summary()
-        data_df['uuid'] = data_df['Name']
-        data_df['Name'] = data_df['Name'].map(lambda x: self.hyperlinks(x, 'data_sources'))
+        data_df["uuid"] = data_df["Name"]
+        data_df["Name"] = data_df["Name"].map(lambda x: self.hyperlinks(x, "data_sources"))
         return data_df
 
     def feature_sets_summary(self) -> pd.DataFrame:
@@ -27,8 +27,8 @@ class ArtifactsWebView(ArtifactsTextView):
 
         # We get the dataframe from the ArtifactsTextView and hyperlink the Feature Group column
         feature_df = super().feature_sets_summary()
-        feature_df['uuid'] = feature_df['Feature Group']
-        feature_df['Feature Group'] = feature_df['Feature Group'].map(lambda x: self.hyperlinks(x, 'feature_sets'))
+        feature_df["uuid"] = feature_df["Feature Group"]
+        feature_df["Feature Group"] = feature_df["Feature Group"].map(lambda x: self.hyperlinks(x, "feature_sets"))
         return feature_df
 
     def models_summary(self, concise=False) -> pd.DataFrame:
@@ -36,8 +36,8 @@ class ArtifactsWebView(ArtifactsTextView):
 
         # We get the dataframe from the ArtifactsTextView and hyperlink the Model Group column
         model_df = super().models_summary()
-        model_df['uuid'] = model_df['Model Group']
-        model_df['Model Group'] = model_df['Model Group'].map(lambda x: self.hyperlinks(x, 'models'))
+        model_df["uuid"] = model_df["Model Group"]
+        model_df["Model Group"] = model_df["Model Group"].map(lambda x: self.hyperlinks(x, "models"))
         return model_df
 
     def endpoints_summary(self) -> pd.DataFrame:
@@ -45,8 +45,8 @@ class ArtifactsWebView(ArtifactsTextView):
 
         # We get the dataframe from the ArtifactsTextView and hyperlink the Name column
         endpoint_df = super().endpoints_summary()
-        endpoint_df['uuid'] = endpoint_df['Name']
-        endpoint_df['Name'] = endpoint_df['Name'].map(lambda x: self.hyperlinks(x, 'endpoints'))
+        endpoint_df["uuid"] = endpoint_df["Name"]
+        endpoint_df["Name"] = endpoint_df["Name"].map(lambda x: self.hyperlinks(x, "endpoints"))
         return endpoint_df
 
     def hyperlinks(self, name, detail_type):

@@ -1,8 +1,6 @@
 """FeatureStore: Helper Class for the AWS Feature Store Service"""
 import sys
 import argparse
-import awswrangler as wr
-import json
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector

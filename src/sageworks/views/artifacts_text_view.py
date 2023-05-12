@@ -7,7 +7,6 @@ from termcolor import colored
 # SageWorks Imports
 from sageworks.views.view import View
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
 
 class ArtifactsTextView(View):
@@ -107,10 +106,11 @@ class ArtifactsTextView(View):
 
         # Get the SageWorks DataSources
         if "sageworks" in data_catalog:
-            for name, info in data_catalog["sageworks"].items():  # Just the sageworks database (not sagemaker_featurestore)
+            for name, info in data_catalog["sageworks"].items():  # Just the sageworks database
                 # Get the size of the S3 Storage Object(s)
-                size = self.aws_broker.get_s3_object_sizes(ServiceCategory.DATA_SOURCES_S3,
-                                                           info["StorageDescriptor"]["Location"])
+                size = self.aws_broker.get_s3_object_sizes(
+                    ServiceCategory.DATA_SOURCES_S3, info["StorageDescriptor"]["Location"]
+                )
                 size = f"{size/1_000_000:.2f}"
                 summary = {
                     "Name": name,
@@ -151,8 +151,9 @@ class ArtifactsTextView(View):
             sageworks_meta = group_info.get("sageworks_meta", {})
 
             # Get the size of the S3 Storage Object(s)
-            size = self.aws_broker.get_s3_object_sizes(ServiceCategory.FEATURE_SETS_S3,
-                                                       group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"])
+            size = self.aws_broker.get_s3_object_sizes(
+                ServiceCategory.FEATURE_SETS_S3, group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"]
+            )
             size = f"{size / 1_000_000:.2f}"
             summary = {
                 "Feature Group": group_info["FeatureGroupName"],

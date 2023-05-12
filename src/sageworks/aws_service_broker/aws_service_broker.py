@@ -35,6 +35,7 @@ class ServiceCategory(Enum):
 
 class AWSServiceBroker:
     """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
+
     # Note: This database_scope is a list of databases that we want to pull metadata from
     #       At some point, we should pull this from a config file.
     database_scope = ["sageworks", "sagemaker_featurestore"]
