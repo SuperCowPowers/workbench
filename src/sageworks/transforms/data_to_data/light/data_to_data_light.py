@@ -12,7 +12,7 @@ class DataToDataLight(Transform):
     Common Usage:
         to_data = DataToDataLight(input_data_uuid, output_data_uuid)
         to_data.set_output_tags(["abalone", "public", "whatever"])
-        to_data.transform(delete_existing=True/False)
+        to_data.transform()
     """
 
     def __init__(self, input_data_uuid: str, output_data_uuid: str):
@@ -56,4 +56,4 @@ if __name__ == "__main__":
     output_uuid = "abalone_data_copy"
     data_to_data = DataToDataLight(input_uuid, output_uuid)
     data_to_data.set_output_tags(["abalone", "public"])
-    data_to_data.transform(delete_existing=True)
+    data_to_data.transform()

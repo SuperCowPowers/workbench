@@ -13,7 +13,7 @@ def test():
     data_to_data = DataToDataLight(input_uuid, output_uuid)
     data_to_data.set_output_tags(["abalone", "public"])
     data_to_data.add_output_meta({"sageworks_input": input_uuid})
-    data_to_data.transform(delete_existing=True)
+    data_to_data.transform()
 
 
 if __name__ == "__main__":

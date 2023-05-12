@@ -48,9 +48,9 @@ class FeatureSet(Artifact):
             self.event_time = self.feature_meta["EventTimeFeatureName"]
 
             # Pull Athena and S3 Storage information from metadata
-            self.athena_database = self.feature_meta["sageworks"].get("athena_database")
-            self.athena_table = self.feature_meta["sageworks"].get("athena_table")
-            self.s3_storage = self.feature_meta["sageworks"].get("s3_storage")
+            self.athena_database = self.feature_meta["sageworks_meta"].get("athena_database")
+            self.athena_table = self.feature_meta["sageworks_meta"].get("athena_table")
+            self.s3_storage = self.feature_meta["sageworks_meta"].get("s3_storage")
 
             # Create our internal DataSource (hardcoded to Athena for now)
             self.data_source = AthenaSource(self.athena_table, self.athena_database)

@@ -12,7 +12,7 @@ def test():
     output_uuid = "abalone_data_copy"
     data_to_data = DataToDataLight(input_uuid, output_uuid)
     data_to_data.set_output_tags(["abalone", "public"])
-    data_to_data.transform(delete_existing=True)
+    data_to_data.transform()
 
 
 if __name__ == "__main__":

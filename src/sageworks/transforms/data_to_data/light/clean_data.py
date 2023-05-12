@@ -11,7 +11,7 @@ class CleanData(DataToDataLight):
     Common Usage:
         clean_data = CleanData(input_data_uuid, output_data_uuid)
         clean_data.set_output_tags(["abalone", "clean", "whatever"])
-        clean_data.transform(delete_existing=True/False)
+        clean_data.transform()
     """
 
     def __init__(self, input_data_uuid: str, output_data_uuid: str):

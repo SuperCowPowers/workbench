@@ -15,7 +15,7 @@ class ModelToEndpoint(Transform):
     Common Usage:
         to_endpoint = ModelToEndpoint(model_uuid, endpoint_uuid)
         to_endpoint.set_output_tags(["aqsol", "public", "whatever"])
-        to_endpoint.transform(delete_existing=True/False)
+        to_endpoint.transform()
     """
 
     def __init__(self, model_uuid: str, endpoint_uuid: str):
@@ -28,7 +28,7 @@ class ModelToEndpoint(Transform):
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 
-    def transform_impl(self, delete_existing=True):
+    def transform_impl(self, delete_existing: bool = True):
         """Compute a Feature Set based on RDKit Descriptors"""
 
         # Get the Model Package ARN for our input model

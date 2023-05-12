@@ -15,7 +15,7 @@ def test():
     output_uuid = "abalone-regression-endpoint"
     to_endpoint = ModelToEndpoint(input_uuid, output_uuid)
     to_endpoint.set_output_tags(["abalone", "public"])
-    to_endpoint.transform(delete_existing=True)
+    to_endpoint.transform()
 
 
 if __name__ == "__main__":

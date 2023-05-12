@@ -37,14 +37,14 @@ class DataToFeaturesLight(Transform):
         """Base Class is simply an identity transform"""
         self.output_df = self.input_df
 
-    def post_transform(self, id_column=None, event_time_column=None, delete_existing=True):
+    def post_transform(self, id_column=None, event_time_column=None):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set"""
         # Now publish to the output location
         output_features = PandasToFeatures(self.output_uuid)
         output_features.set_input(self.output_df, id_column=id_column, event_time_column=event_time_column)
         output_features.set_output_tags(self.output_tags)
         output_features.add_output_meta(self.output_meta)
-        output_features.transform(delete_existing=delete_existing)
+        output_features.transform()
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ class FeaturesToModel(Transform):
         to_model.set_output_tags(["abalone", "public", "whatever"])
         to_model.transform(target="class_number_of_rings", description="Abalone Regression Model".
                            input_feature_list=<features>, model_type="regression/classification",
-                           delete_existing=True/False)
+                           )
     """
 
     def __init__(self, feature_uuid: str, model_uuid: str):

@@ -25,7 +25,7 @@ class RDKitDescriptors(DataToFeaturesLight):
     Common Usage:
         to_features = RDKitDescriptors(data_uuid, feature_uuid)
         to_features.set_output_tags(["aqsol", "rdkit", "whatever"])
-        to_features.transform(delete_existing=True/False)
+        to_features.transform()
     """
 
     def __init__(self, data_uuid: str, feature_uuid: str):

@@ -19,7 +19,7 @@ class PandasToFeatures(Transform):
         to_features = PandasToFeatures(output_uuid)
         to_features.set_output_tags(["abalone", "public", "whatever"])
         to_features.set_input(df, id_column="id"/None, event_time_column="date"/None)
-        to_features.transform(delete_existing=True/False)
+        to_features.transform()
     """
 
     def __init__(self, output_uuid: str):
