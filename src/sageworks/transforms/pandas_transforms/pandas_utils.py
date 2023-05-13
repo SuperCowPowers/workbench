@@ -225,7 +225,7 @@ if __name__ == "__main__":
             "score": 7.8,
             "date": datetime.now(),
             "hobby": "games",
-        }
+        },
     ]
     fake_df = pd.DataFrame(fake_data)
     fake_df["name"] = fake_df["name"].astype(pd.StringDtype())

@@ -220,11 +220,11 @@ class AthenaSource(DataSourceAbstract):
             print(column, data_type)
             if data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
                 query = (
-                    f"SELECT MIN(\"{column}\") AS min, "
-                    f"approx_percentile(\"{column}\", 0.25) AS q1, "
-                    f"approx_percentile(\"{column}\", 0.5) AS median, "
-                    f"approx_percentile(\"{column}\", 0.75) AS q3, "
-                    f"MAX(\"{column}\") AS max FROM {self.table_name}"
+                    f'SELECT MIN("{column}") AS min, '
+                    f'approx_percentile("{column}", 0.25) AS q1, '
+                    f'approx_percentile("{column}", 0.5) AS median, '
+                    f'approx_percentile("{column}", 0.75) AS q3, '
+                    f'MAX("{column}") AS max FROM {self.table_name}'
                 )
                 result_df = self.query(query)
                 result_df["column_name"] = column
@@ -258,9 +258,9 @@ class AthenaSource(DataSourceAbstract):
             print(column, data_type)
             if data_type in ["string"]:
                 query = (
-                    f"SELECT \"{column}\", count(*) as count "
+                    f'SELECT "{column}", count(*) as count '
                     f"FROM {self.table_name} "
-                    f"GROUP BY \"{column}\" ORDER BY count DESC limit 10"
+                    f'GROUP BY "{column}" ORDER BY count DESC limit 10'
                 )
                 # Convert int64 to int so that we can serialize to JSON
                 result_df = self.query(query)
