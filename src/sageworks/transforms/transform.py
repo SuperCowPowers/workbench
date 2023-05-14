@@ -90,26 +90,28 @@ class Transform(ABC):
 
         # For DataSource and FeatureSet we'll compute sample rows, quartiles, and value counts
         if self.output_type == TransformOutput.DATA_SOURCE:
-            self.log.info("Computing Sample Rows and Quartiles...")
+            self.log.info("Computing Details, Sample Rows, and Quartiles...")
             while not DataSource(self.output_uuid).check():
                 self.log.info("Waiting for DataSource to be created...")
                 sleep(1)
             ds = DataSource(self.output_uuid)
-            ds.sample_df(recompute=True)
-            ds.quartiles(recompute=True)
-            ds.value_counts(recompute=True)
             ds.refresh(force_fresh=True)
+            ds.details()
+            ds.sample_df()
+            ds.quartiles()
+            ds.value_counts()
 
         elif self.output_type == TransformOutput.FEATURE_SET:
-            self.log.info("Computing Sample Rows and Quartiles...")
+            self.log.info("Computing Details, Sample Rows, and Quartiles...")
             while not FeatureSet(self.output_uuid).check():
                 self.log.info("Waiting for FeatureSet to be created...")
                 sleep(1)
             fs = FeatureSet(self.output_uuid)
-            fs.sample_df(recompute=True)
-            fs.quartiles(recompute=True)
-            fs.value_counts(recompute=True)
             fs.refresh(force_fresh=True)
+            fs.details()
+            fs.sample_df()
+            fs.quartiles()
+            fs.value_counts()
 
     def set_output_tags(self, tags: list | str):
         """Set the tags that will be associated with the output object

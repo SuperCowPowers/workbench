@@ -6,6 +6,7 @@ from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
 def test():
     """Tests for the DataSource/AthenaSource functionality"""
+    from pprint import pprint
 
     # Retrieve our test Data Source
     my_data = AthenaSource("test_data")
@@ -29,9 +30,12 @@ def test():
     print(f"Created: {my_data.created()}")
     print(f"Modified: {my_data.modified()}")
 
-    # Get Metadata and tags associated with this Artifact
-    print(f"Meta: {my_data.meta()}")
+    # Get Tags associated with this Artifact
     print(f"Tags: {my_data.sageworks_tags()}")
+
+    # Get ALL Metadata associated with this Artifact
+    print("\n\nALL Meta")
+    pprint(my_data.all_meta())
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')

@@ -80,7 +80,7 @@ class Artifact(ABC):
         pass
 
     @abstractmethod
-    def meta(self) -> dict:
+    def all_meta(self) -> dict:
         """Get the full AWS metadata for this artifact"""
         pass
 
@@ -131,7 +131,6 @@ class Artifact(ABC):
             "created": self.created(),
             "modified": self.modified(),
             "sageworks_tags": self.sageworks_tags(),
-            "sageworks_meta": self.sageworks_meta(),
         }
 
     @staticmethod

@@ -73,15 +73,7 @@ if __name__ == "__main__":
     print(now2)
 
     # Test the conversion of all datetime fields to ISO-8601
-    data = {
-        "a": 1,
-        "b": "2",
-        "c": now,
-        "d": {
-            "e": 3,
-            "f": now
-        }
-    }
+    data = {"a": 1, "b": "2", "c": now, "d": {"e": 3, "f": now}}
     print(data)
     data2 = convert_all_to_iso8601(data)
     print(data2)

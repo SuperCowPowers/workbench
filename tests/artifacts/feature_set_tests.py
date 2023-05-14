@@ -6,6 +6,7 @@ from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 def test():
     """Simple test of the FeatureSet functionality"""
+    from pprint import pprint
 
     # Grab a FeatureSet object and pull some information from it
     my_features = FeatureSet("test_feature_set")
@@ -24,9 +25,12 @@ def test():
     columns = my_features.column_names()
     print(columns)
 
-    # Get the metadata and tags associated with this feature set
-    print(f"Meta: {my_features.meta()}")
-    print(f"SageWorks Tags: {my_features.sageworks_tags()}")
+    # Get Tags associated with this Feature Set
+    print(f"Tags: {my_features.sageworks_tags()}")
+
+    # Get ALL Metadata associated with this Feature Set
+    print("\n\nALL Meta")
+    pprint(my_features.all_meta())
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print('Deleting SageWorks Feature Set...')

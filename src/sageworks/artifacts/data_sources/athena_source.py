@@ -79,7 +79,7 @@ class AthenaSource(DataSourceAbstract):
 
     def sageworks_meta(self):
         """Get the SageWorks specific metadata for this Artifact"""
-        params = self.meta().get("Parameters", {})
+        params = self.all_meta().get("Parameters", {})
         return {key: value for key, value in params.items() if "sageworks" in key}
 
     def upsert_sageworks_meta(self, new_meta: dict):
@@ -117,7 +117,7 @@ class AthenaSource(DataSourceAbstract):
         size_in_mb = size_in_bytes / 1_000_000
         return size_in_mb
 
-    def meta(self) -> dict:
+    def all_meta(self) -> dict:
         """Get the FULL AWS metadata for this artifact"""
         return self.catalog_table_meta
 
@@ -321,7 +321,7 @@ if __name__ == "__main__":
     from pprint import pprint
 
     # Retrieve a Data Source
-    my_data = AthenaSource("abalone_data")
+    my_data = AthenaSource("test_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.check()
@@ -347,8 +347,7 @@ if __name__ == "__main__":
     print(f"Column Names: {my_data.column_names()}")
     print(f"Column Types: {my_data.column_types()}")
 
-    # Get Metadata and tags associated with this Artifact
-    print(f"Meta: {my_data.meta()}")
+    # Get Tags associated with this Artifact
     print(f"Tags: {my_data.sageworks_tags()}")
 
     # Get a sample of the data
@@ -358,28 +357,27 @@ if __name__ == "__main__":
 
     # Get the SageWorks Metadata for this Data Source
     meta = my_data.sageworks_meta()
-    print("SageWorks Meta")
-    # pprint(meta)
-
-    # Add some SageWorks Metadata to this Data Source
-    my_data.upsert_sageworks_meta({"sageworks_tags": "abalone:public"})
-    print("SageWorks Meta NEW")
-    # pprint(my_data.sageworks_meta())
+    print("\nSageWorks Meta")
+    pprint(meta)
 
     # Get details for this Data Source
     my_details = my_data.details(recompute=True)
-    print("Details")
+    print("\nDetails")
     pprint(my_details)
 
     # Get quartiles for numeric columns
     quartile_info = my_data.quartiles(recompute=True)
-    print("Quartiles")
+    print("\nQuartiles")
     pprint(quartile_info)
 
     # Get value_counts for string columns
     value_count_info = my_data.value_counts(recompute=True)
-    print("Value Counts")
+    print("\nValue Counts")
     pprint(value_count_info)
+
+    # Get ALL Metadata associated with this Artifact
+    print("\n\nALL Meta")
+    pprint(my_data.all_meta())
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')

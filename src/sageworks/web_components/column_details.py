@@ -13,9 +13,7 @@ def create_markdown(column_info: dict) -> str:
     # Loop through each column and create a markdown entry
     markdown = ""
     for column, info in column_info.items():
-        markdown += (
-            f"- **{column}** ({info}):"
-        )
+        markdown += f"- **{column}** ({info}):"
     return markdown
 
 

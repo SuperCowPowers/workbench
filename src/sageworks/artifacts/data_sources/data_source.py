@@ -24,9 +24,10 @@ class DataSource:
         summary(): Returns a summary of this DataSource
         details(): Returns additional details about this DataSource
         quartiles(): Returns the quartiles for each numeric column in this DataSource
-        meta(): Returns ALL AWS Metadata for this DataSource
+        value_counts(): Returns the value counts for each string column in this DataSource
         sageworks_meta(): Returns the SageWorks Metadata for this DataSource
         sageworks_tags(): Returns the SageWorks Tags for this DataSource
+        all_meta(): Returns ALL AWS Metadata for this DataSource
     """
 
     def __new__(cls, uuid, data_source_type: str = "athena"):
@@ -45,6 +46,7 @@ class DataSource:
 
 if __name__ == "__main__":
     """Exercise the DataSource Factory Class"""
+    from pprint import pprint
 
     # Retrieve a DataSource
     my_data = DataSource("abalone_data")
@@ -73,9 +75,12 @@ if __name__ == "__main__":
     print(f"Column Names: {my_data.column_names()}")
     print(f"Column Types: {my_data.column_types()}")
 
-    # Get Metadata and tags associated with this Artifact
-    print(f"Meta: {my_data.meta()}")
+    # Get Tags associated with this Artifact
     print(f"Tags: {my_data.sageworks_tags()}")
+
+    # Get ALL Metadata associated with this Artifact
+    print("\n\nALL Meta")
+    pprint(my_data.all_meta())
 
     # Get a SAMPLE of the data
     print(f"Sample Data: {my_data.sample_df()}")
