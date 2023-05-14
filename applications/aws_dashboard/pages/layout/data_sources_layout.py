@@ -24,7 +24,6 @@ def data_sources_layout(components: dict) -> html.Div:
             ),
             # List out all the Data Sources
             dbc.Row(components["data_sources_table"]),
-
             # Data Source Details, Sample Rows, and Violin Plots
             # Row [ Column 1                       Column 2 ]
             #       (Row(Data Source Details))     Row(Sample Rows)
@@ -41,11 +40,10 @@ def data_sources_layout(components: dict) -> html.Div:
                             dbc.Row(
                                 components["data_source_details"],
                                 style={"padding": "0px 0px 30px 0px"},
-                            )
+                            ),
                         ],
                         width=4,
                     ),
-
                     # Column 2: Sample Rows and Violin Plots
                     dbc.Col(
                         [
@@ -57,15 +55,14 @@ def data_sources_layout(components: dict) -> html.Div:
                                 components["data_source_sample_rows"],
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
-                            dbc.Row(components["violin_plot"])
+                            dbc.Row(components["violin_plot"]),
                         ],
                         width=8,
                     ),
-
                     # Just the auto updater
-                    dcc.Interval(id="data-sources-updater", interval=5000, n_intervals=0)
+                    dcc.Interval(id="data-sources-updater", interval=5000, n_intervals=0),
                 ]
-            )
+            ),
         ],
         style={"margin": "30px"},
     )
