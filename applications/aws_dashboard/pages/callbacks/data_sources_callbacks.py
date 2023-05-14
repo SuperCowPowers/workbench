@@ -6,7 +6,7 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import violin_plot
+from sageworks.web_components import data_source_details, violin_plot
 
 
 def refresh_data_timer(app: Dash):
@@ -48,10 +48,35 @@ def table_row_select(app: Dash, table_name: str):
         return row_style
 
 
+# Updates the data source details when a row is selected in the summary
+def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebView):
+    @app.callback(
+        [
+            Output("data_details_header", "children"),
+            Output("data_source_details", "children")
+        ],
+        Input("data_sources_table", "derived_viewport_selected_row_ids")
+    )
+    def generate_new_markdown(selected_rows):
+        print(f"Selected Rows: {selected_rows}")
+        if not selected_rows or selected_rows[0] is None:
+            return dash.no_update
+        print("Calling DataSource Details...")
+        data_details = data_source_web_view.data_source_details(selected_rows[0])
+        data_details_markdown = data_source_details.create_markdown(data_details)
+
+        # Name of the data source for the Header
+        data_source_name = data_source_web_view.data_source_name(selected_rows[0])
+        header = f"Details: {data_source_name}"
+
+        # Return the details/markdown for these data details
+        return [header, data_details_markdown]
+
+
 def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWebView):
     @app.callback(
         [
-            Output("sample_rows_header", "children", allow_duplicate=True),
+            Output("sample_rows_header", "children"),
             Output("data_source_sample_rows", "columns"),
             Output("data_source_sample_rows", "data"),
         ],
@@ -62,7 +87,7 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
-        print("Calling DataSource Sample Rows Refresh...")
+        print("Calling DataSource Sample Rows...")
         sample_rows = data_source_web_view.data_source_sample(selected_rows[0])
 
         # Name of the data source

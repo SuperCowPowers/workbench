@@ -21,9 +21,9 @@ def update_last_updated(app: Dash, sageworks_artifacts: ArtifactsWebView):
 
 
 def update_artifact_tables(app: Dash):
-    @app.callback(Output("INCOMING_DATA_S3", "data"), Input("main-updater", "n_intervals"))
+    @app.callback(Output("INCOMING_DATA", "data"), Input("main-updater", "n_intervals"))
     def incoming_data_update(n):
-        incoming_data = all_data["INCOMING_DATA_S3"]
+        incoming_data = all_data["INCOMING_DATA"]
         return incoming_data.to_dict("records")
 
     @app.callback(Output("DATA_SOURCES", "data"), Input("main-updater", "n_intervals"))

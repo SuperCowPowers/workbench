@@ -88,14 +88,8 @@ class DataSourceWebView(ArtifactsWebView):
 
 
 if __name__ == "__main__":
-    # Collect args from the command line
-    parser = argparse.ArgumentParser()
-    args, commands = parser.parse_known_args()
-
-    # Check for unknown args
-    if commands:
-        print("Unrecognized args: %s" % commands)
-        sys.exit(1)
+    # Exercising the DataSourceWebView
+    from pprint import pprint
 
     # Create the class and get the AWS DataSource details
     data_view = DataSourceWebView()
@@ -105,7 +99,13 @@ if __name__ == "__main__":
     summary = data_view.view_data()["DATA_SOURCES"]
     print(summary.head())
 
+    # Get the details for the first DataSource
+    print("\nDataSourceDetails:")
+    details = data_view.data_source_details(0)
+    pprint(details)
+
     # Get a sample dataframe for the given DataSources
+    print("\nSampleDataFrame:")
     sample_df = data_view.data_source_smart_sample(0)
     print(sample_df.shape)
     print(sample_df.head())

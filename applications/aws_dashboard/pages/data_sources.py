@@ -4,9 +4,8 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import violin_plot
+from sageworks.web_components import violin_plot, table, data_source_details
 from sageworks.views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import table
 
 # Local Imports
 from pages.layout.data_sources_layout import data_sources_layout
@@ -33,7 +32,7 @@ data_sources_table = table.create(
     markdown_columns=["Name"],
 )
 
-# Grab a sample of rows from the first data source
+# Grab sample rows from the first data source
 sample_rows = data_source_broker.data_source_sample(0)
 data_source_sample_rows = table.create(
     "data_source_sample_rows",
@@ -42,6 +41,10 @@ data_source_sample_rows = table.create(
     max_height="200px",
 )
 
+# Data Source Details
+details = data_source_broker.data_source_details(0)
+data_details = data_source_details.create("data_source_details", details)
+
 # Create a box plot of all the numeric columns in the sample rows
 smart_sample_rows = data_source_broker.data_source_smart_sample(0)
 violin = violin_plot.create(smart_sample_rows)
@@ -49,6 +52,7 @@ violin = violin_plot.create(smart_sample_rows)
 # Create our components
 components = {
     "data_sources_table": data_sources_table,
+    "data_source_details": data_details,
     "data_source_sample_rows": data_source_sample_rows,
     "violin_plot": violin,
 }
@@ -56,14 +60,15 @@ components = {
 # Setup our callbacks/connections
 app = dash.get_app()
 
-# Refresh our timer and data sources broker
-callbacks.refresh_data_broker(app, data_source_broker)
+# Refresh our data timer
+callbacks.refresh_data_timer(app)
 
-# Periodic update to the data sources summary
+# Periodic update to the data sources summary table
 callbacks.update_data_sources_table(app, data_source_broker)
 
 # Callbacks for when a data source is selected
 callbacks.table_row_select(app, "data_sources_table")
+callbacks.update_data_source_details(app, data_source_broker)
 callbacks.update_data_source_sample_rows(app, data_source_broker)
 callbacks.update_violin_plots(app, data_source_broker)
 
