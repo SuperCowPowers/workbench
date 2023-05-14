@@ -7,6 +7,7 @@ import json
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
+from sageworks.utils.iso_8601 import convert_all_to_iso8601
 
 
 class AthenaSource(DataSourceAbstract):
@@ -240,7 +241,7 @@ class AthenaSource(DataSourceAbstract):
     def value_counts(self, recompute: bool = False) -> dict[dict]:
         """Compute 'value_counts' for all the string columns in a DataSource
         Args:
-            recompute(bool): Recompute the quartiles (default: False)
+            recompute(bool): Recompute the value counts (default: False)
         Returns:
             dict(dict): A dictionary of value counts for each column in the form
                  {'col1': {'value_1': X, 'value_2': Y, 'value_3': Z,...},
@@ -275,11 +276,28 @@ class AthenaSource(DataSourceAbstract):
         # Return the value_count data
         return value_count_dict
 
-    def details(self) -> dict:
-        """Additional Details about this AthenaSource Artifact"""
+    def details(self, recompute: bool = False) -> dict[dict]:
+        """Additional Details about this AthenaSource Artifact
+        Args:
+            recompute(bool): Recompute the details (default: False)
+        Returns:
+            dict(dict): A dictionary of details about this AthenaSource
+        """
+
+        # First check if we have already computed the details
+        if self.sageworks_meta().get("sageworks_details") and not recompute:
+            return json.loads(self.sageworks_meta()["sageworks_details"])
+
         details = super().details()
         details["s3_storage_location"] = self.s3_storage_location()
-        details.update(self.meta())
+
+        # Convert any datetime fields to ISO-8601 strings
+        details = convert_all_to_iso8601(details)
+
+        # Push the details data into our DataSource Metadata
+        self.upsert_sageworks_meta({"sageworks_details": details})
+
+        # Return the details data
         return details
 
     def delete(self):
@@ -341,12 +359,17 @@ if __name__ == "__main__":
     # Get the SageWorks Metadata for this Data Source
     meta = my_data.sageworks_meta()
     print("SageWorks Meta")
-    pprint(meta)
+    # pprint(meta)
 
     # Add some SageWorks Metadata to this Data Source
     my_data.upsert_sageworks_meta({"sageworks_tags": "abalone:public"})
     print("SageWorks Meta NEW")
-    pprint(my_data.sageworks_meta())
+    # pprint(my_data.sageworks_meta())
+
+    # Get details for this Data Source
+    my_details = my_data.details(recompute=True)
+    print("Details")
+    pprint(my_details)
 
     # Get quartiles for numeric columns
     quartile_info = my_data.quartiles(recompute=True)

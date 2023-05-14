@@ -69,6 +69,15 @@ class DataSourceWebView(ArtifactsWebView):
         # Combine the sample rows with the quartiles data
         return pd.concat([sample_rows, quartiles_df]).reset_index(drop=True)
 
+    def data_source_details(self, data_source_index: int) -> (dict, None):
+        """Get all of the details for the given DataSource Index"""
+        data_uuid = self.data_source_name(data_source_index)
+        if data_uuid is not None:
+            details_data = DataSource(data_uuid).details()
+            return details_data
+        else:
+            return None
+
     def data_source_name(self, data_source_index: int) -> (str, None):
         """Helper method for getting the data source name for the given DataSource Index"""
         if not self.data_sources_df.empty and data_source_index < len(self.data_sources_df):

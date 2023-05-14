@@ -64,11 +64,21 @@ class DataSourceAbstract(Artifact):
         """
         pass
 
+    def value_counts(self, recompute: bool = False) -> dict[dict]:
+        """Compute 'value_counts' for all the string columns in a DataSource
+        Args:
+            recompute(bool): Recompute the value counts (default: False)
+        Returns:
+            dict(dict): A dictionary of value counts for each column in the form
+                 {'col1': {'value_1': X, 'value_2': Y, 'value_3': Z,...},
+                  'col2': ...}
+        """
+        pass
+
     def details(self) -> dict:
         """Additional Details about this DataSourceAbstract Artifact"""
         details = self.summary()
         details["num_rows"] = self.num_rows()
         details["num_columns"] = self.num_columns()
         details["column_details"] = self.column_details()
-        details.update(self.meta())
         return details
