@@ -8,21 +8,13 @@ from dash.dependencies import Input, Output
 from sageworks.views.data_source_web_view import DataSourceWebView
 from sageworks.web_components import violin_plot
 
-# Cheese Sauce Global (FIXME)
-data_source_rows = DataSourceWebView().data_sources_summary()
-data_source_rows["id"] = data_source_rows.index
 
-
-def refresh_data_broker(app: Dash, data_source_broker: DataSourceWebView):
+def refresh_data_timer(app: Dash):
     @app.callback(
         Output("last-updated-data-sources", "children"),
         Input("data-sources-updater", "n_intervals"),
     )
     def time_updated(_n):
-        global data_source_rows
-        data_source_broker.refresh()
-        data_source_rows = data_source_broker.data_sources_summary()
-        data_source_rows["id"] = data_source_rows.index
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
@@ -30,8 +22,9 @@ def update_data_sources_table(app: Dash, data_source_broker: DataSourceWebView):
     @app.callback(Output("data_sources_table", "data"), Input("data-sources-updater", "n_intervals"))
     def data_sources_update(_n):
         """Return the table data as a dictionary"""
-        global data_source_rows
-        print(data_source_rows)
+        data_source_broker.refresh()
+        data_source_rows = data_source_broker.data_sources_summary()
+        data_source_rows["id"] = data_source_rows.index
         return data_source_rows.to_dict("records")
 
 
