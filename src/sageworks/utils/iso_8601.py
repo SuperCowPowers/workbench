@@ -34,12 +34,12 @@ def iso8601_to_datetime(iso8601_str: str) -> datetime:
     return datetime.fromisoformat(iso8601_str).replace(tzinfo=timezone.utc)
 
 
-def convert_all_to_iso8601(data: dict) -> dict:
+def convert_all_to_iso8601(data):
     """Convert datetime fields to ISO-8601 string
     Args:
-        data (dict): The data to convert
+        data (arbitrary type): The data to convert
     Returns:
-        dict: The converted data
+        arbitrary type: The converted data
     """
     if isinstance(data, dict):
         result = {}
