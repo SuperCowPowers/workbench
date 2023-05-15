@@ -25,7 +25,7 @@ def create_markdown(data_source_details: dict) -> str:
     # Loop through all the details and replace in the template
     for key, value in data_source_details.items():
         markdown_template = markdown_template.replace(f"<<{key}>>", str(value))
-    markdown_template= markdown_template.replace(f"<<column_details>>", 'tbd')
+    markdown_template = markdown_template.replace("<<column_details>>", "tbd")
     return markdown_template
 
 

@@ -10,23 +10,23 @@ def type_abbrev(type_name: str) -> str:
         str: The type abbreviation
     """
     type_map = {
-        'boolean': 'bool',
-        'tinyint': 'i8',
-        'smallint': 'i16',
-        'integer': 'i32',
-        'bigint': 'i64',
-        'float': 'f32',
-        'double': 'f64',
-        'decimal': 'dec',
-        'char': 'char',
-        'varchar': 'var',
-        'string': 'str',
-        'binary': 'bin',
-        'date': 'date',
-        'timestamp': 'ts',
-        'Fractional': 'frac',
-        'Integral': 'int',
-        'String': 'str'
+        "boolean": "bool",
+        "tinyint": "i8",
+        "smallint": "i16",
+        "integer": "i32",
+        "bigint": "i64",
+        "float": "f32",
+        "double": "f64",
+        "decimal": "dec",
+        "char": "char",
+        "varchar": "var",
+        "string": "str",
+        "binary": "bin",
+        "date": "date",
+        "timestamp": "ts",
+        "Fractional": "frac",
+        "Integral": "int",
+        "String": "str",
     }
     return type_map[type_name]
 
