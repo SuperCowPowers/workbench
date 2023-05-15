@@ -47,7 +47,7 @@ data_details = feature_set_details.create("feature_set_details", details)
 
 # Create a box plot of all the numeric columns in the sample rows
 smart_sample_rows = feature_set_broker.feature_set_smart_sample(0)
-violin = violin_plot.create('feature_set_violin_plot', smart_sample_rows)
+violin = violin_plot.create("feature_set_violin_plot", smart_sample_rows)
 
 # Create our components
 components = {
