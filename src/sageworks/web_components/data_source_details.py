@@ -11,21 +11,41 @@ def create_markdown(data_source_details: dict) -> str:
     """
 
     markdown_template = """
-    - **Rows:** <<num_rows>>
-    - **Columns:** <<num_columns>>
-    - **Created:** <<created>>
-    - **Modified:** <<modified>>
-    - **Tags:** <<sageworks_tags>>
-    - **S3:** <<s3_storage_location>>
+    **Rows:** <<num_rows>>  **Columns:** <<num_columns>>
+    <br>**Created/Modified:** <<created>> / <<modified>>
+    <br>**Tags:** <<sageworks_tags>>
+    <br>**S3:** <<s3_storage_location>>
 
-    #### String Column Values
-    <<value_count_details>>
+    #### String Columns
+    <<column_details_markdown>>
+    """
+    details_template = """
+    <details>
+        <summary><b><<column_name>></b></summary>
+        <ul>
+        <<bullet_list>>
+        </ul>
+    </details>
     """
 
     # Loop through all the details and replace in the template
     for key, value in data_source_details.items():
+        # Hack for dates
+        if '.000Z' in str(value):
+            value = value.replace('.000Z', '').replace('T', ' ')
         markdown_template = markdown_template.replace(f"<<{key}>>", str(value))
-    markdown_template = markdown_template.replace("<<column_details>>", "tbd")
+
+    # Loop through the column details and create collapsible sections
+    details_markdown = ""
+    for column_name, value_counts in data_source_details["value_counts"].items():
+        bullet_list = ""
+        for value, count in value_counts.items():
+            bullet_list += f"<li>{value}: {count}</li>"
+        details_markdown += details_template.replace("<<column_name>>", column_name)\
+            .replace("<<bullet_list>>", bullet_list)
+
+    # Now actually replace the column details in the markdown
+    markdown_template = markdown_template.replace(f"<<column_details_markdown>>", details_markdown)
     return markdown_template
 
 
@@ -39,4 +59,5 @@ def create(component_id: str, data_source_details: dict) -> dcc.Markdown:
     """
 
     # Generate a figure and wrap it in a Dash Graph Component
-    return dcc.Markdown(id=component_id, children=create_markdown(data_source_details))
+    return dcc.Markdown(id=component_id, children=create_markdown(data_source_details),
+                        dangerously_allow_html=True)
