@@ -31,8 +31,8 @@ def create_markdown(data_source_details: dict) -> str:
     # Loop through all the details and replace in the template
     for key, value in data_source_details.items():
         # Hack for dates
-        if '.000Z' in str(value):
-            value = value.replace('.000Z', '').replace('T', ' ')
+        if ".000Z" in str(value):
+            value = value.replace(".000Z", "").replace("T", " ")
         markdown_template = markdown_template.replace(f"<<{key}>>", str(value))
 
     # Loop through the column details and create collapsible sections
@@ -41,11 +41,12 @@ def create_markdown(data_source_details: dict) -> str:
         bullet_list = ""
         for value, count in value_counts.items():
             bullet_list += f"<li>{value}: {count}</li>"
-        details_markdown += details_template.replace("<<column_name>>", column_name)\
-            .replace("<<bullet_list>>", bullet_list)
+        details_markdown += details_template.replace("<<column_name>>", column_name).replace(
+            "<<bullet_list>>", bullet_list
+        )
 
     # Now actually replace the column details in the markdown
-    markdown_template = markdown_template.replace(f"<<column_details_markdown>>", details_markdown)
+    markdown_template = markdown_template.replace("<<column_details_markdown>>", details_markdown)
     return markdown_template
 
 
@@ -59,5 +60,4 @@ def create(component_id: str, data_source_details: dict) -> dcc.Markdown:
     """
 
     # Generate a figure and wrap it in a Dash Graph Component
-    return dcc.Markdown(id=component_id, children=create_markdown(data_source_details),
-                        dangerously_allow_html=True)
+    return dcc.Markdown(id=component_id, children=create_markdown(data_source_details), dangerously_allow_html=True)
