@@ -4,6 +4,7 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.views.artifacts_web_view import ArtifactsWebView
 from sageworks.artifacts.data_sources.data_source import DataSource
+from sageworks.utils.type_abbrev import add_types_to_columns
 
 
 class DataSourceWebView(ArtifactsWebView):
@@ -28,11 +29,17 @@ class DataSourceWebView(ArtifactsWebView):
         """
         return {"DATA_SOURCES": self.data_sources_df}  # Just the DataSources Summary Dataframe
 
-    def data_source_sample(self, data_source_index: int) -> pd.DataFrame:
+    def data_source_sample(self, data_source_index: int, add_types: bool = True) -> pd.DataFrame:
         """Get a sample dataframe for the given DataSource Index"""
         data_uuid = self.data_source_name(data_source_index)
         if data_uuid is not None:
-            sample_rows = DataSource(data_uuid).sample_df()
+            ds = DataSource(data_uuid)
+            sample_rows = ds.sample_df()
+
+            # Add Types to the Columns Names
+            if add_types:
+                column_types = ds.column_details()
+                sample_rows = add_types_to_columns(sample_rows, column_types)
         else:
             sample_rows = pd.DataFrame()
         return sample_rows
@@ -51,7 +58,7 @@ class DataSourceWebView(ArtifactsWebView):
         Note:
             SMART here means a sample data + quartiles for each column"""
         # Sample DataFrame
-        sample_rows = self.data_source_sample(data_source_index)
+        sample_rows = self.data_source_sample(data_source_index, add_types=False)
 
         # Quartiles Data
         quartiles_data = self.data_source_quartiles(data_source_index)

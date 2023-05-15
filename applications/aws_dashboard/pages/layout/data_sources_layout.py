@@ -25,9 +25,18 @@ def data_sources_layout(components: dict) -> html.Div:
             # List out all the Data Sources
             dbc.Row(components["data_sources_table"]),
             # Data Source Details, Sample Rows, and Violin Plots
-            # Row [ Column 1                       Column 2 ]
-            #       (Row(Data Source Details))     Row(Sample Rows)
-            #                                      Row(Violin Plots)
+            # Row [ Sample Rows ]
+            # Row [ Column 1                      Column 2 ]
+            #       (Row(Data Source Details))    Row(Violin Plots)
+            #
+            dbc.Row(
+                html.H3("Sampled Rows", id="sample_rows_header"),
+                style={"padding": "30px 0px 10px 0px"},
+            ),
+            dbc.Row(
+                components["data_source_sample_rows"],
+                style={"padding": "0px 0px 30px 0px"},
+            ),
             dbc.Row(
                 [
                     # Column 1: Data Source Details
@@ -35,7 +44,7 @@ def data_sources_layout(components: dict) -> html.Div:
                         [
                             dbc.Row(
                                 html.H3("Details", id="data_details_header"),
-                                style={"padding": "30px 0px 10px 0px"},
+                                style={"padding": "0px 0px 10px 0px"},
                             ),
                             dbc.Row(
                                 components["data_source_details"],
@@ -47,14 +56,6 @@ def data_sources_layout(components: dict) -> html.Div:
                     # Column 2: Sample Rows and Violin Plots
                     dbc.Col(
                         [
-                            dbc.Row(
-                                html.H3("Sampled Rows", id="sample_rows_header"),
-                                style={"padding": "30px 0px 10px 0px"},
-                            ),
-                            dbc.Row(
-                                components["data_source_sample_rows"],
-                                style={"padding": "0px 0px 30px 0px"},
-                            ),
                             dbc.Row(components["violin_plot"]),
                         ],
                         width=8,
