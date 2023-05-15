@@ -102,7 +102,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
     """Updates the Violin Plots when a new data source is selected"""
 
     @app.callback(
-        Output("violin_plot", "figure"),
+        Output("data_source_violin_plot", "figure"),
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )

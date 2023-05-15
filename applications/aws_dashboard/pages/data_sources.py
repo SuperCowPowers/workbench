@@ -47,7 +47,7 @@ data_details = data_source_details.create("data_source_details", details)
 
 # Create a box plot of all the numeric columns in the sample rows
 smart_sample_rows = data_source_broker.data_source_smart_sample(0)
-violin = violin_plot.create(smart_sample_rows)
+violin = violin_plot.create('data_source_violin_plot', smart_sample_rows)
 
 # Create our components
 components = {

@@ -39,8 +39,14 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
     return fig
 
 
-def create(df: pd.DataFrame) -> dcc.Graph:
-    """Create a Violin Plot Graph Component"""
+def create(component_id: str, df: pd.DataFrame) -> dcc.Graph:
+    """Create a Violin Plot Graph Component
+    Args:
+        component_id (str): The ID of the UI component
+        df (pd.DataFrame): A dataframe of data
+    Returns:
+        dcc.Graph: A Dash Graph Component
+    """
 
     # Generate a figure and wrap it in a Dash Graph Component
-    return dcc.Graph(id="violin_plot", figure=create_figure(df))
+    return dcc.Graph(id=component_id, figure=create_figure(df))

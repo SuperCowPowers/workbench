@@ -1,5 +1,6 @@
 """FeatureSet: SageWorks Feature Set accessible through Athena"""
 import time
+import json
 from datetime import datetime, timezone
 
 import botocore.exceptions
@@ -184,7 +185,7 @@ class FeatureSet(Artifact):
         )
         return query
 
-    def details(self) -> dict:
+    def details_sav(self) -> dict:
         """Additional Details about this FeatureSet
         Returns:
             dict: A dictionary of details about this FeatureSet
@@ -218,6 +219,15 @@ class FeatureSet(Artifact):
         # Return the details
         return fs_details
 
+    def details(self, recompute: bool = False) -> dict[dict]:
+        """Additional Details about this AthenaSource Artifact
+        Args:
+            recompute(bool): Recompute the details (default: False)
+        Returns:
+            dict(dict): A dictionary of details about this AthenaSource
+        """
+        return self.data_source.details(recompute)
+
     def delete(self):
         """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
 
@@ -249,23 +259,32 @@ class FeatureSet(Artifact):
             time.sleep(1)
         self.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
-    def quartiles(self) -> dict:
+    def quartiles(self, recompute: bool = False) -> dict:
         """Get the quartiles for the numeric columns of the underlying DataSource
+        Args:
+            recompute (bool): Recompute the quartiles (default=False)
         Returns:
             dict: A dictionary of quartiles for the numeric columns
         """
-        return self.data_source.quartiles()
+        return self.data_source.quartiles(recompute)
 
-    def sample_df(self) -> pd.DataFrame:
-        """Get a sample of the data from the underlying DataSource"""
-        return self.data_source.sample_df()
+    def sample_df(self, recompute: bool = False) -> pd.DataFrame:
+        """Get a sample of the data from the underlying DataSource
+        Args:
+            recompute (bool): Recompute the sample (default=False)
+        Returns:
+            pd.DataFrame: A sample of the data from the underlying DataSource
+        """
+        return self.data_source.sample_df(recompute)
 
-    def value_counts(self) -> dict:
+    def value_counts(self, recompute: bool = False) -> dict:
         """Get the quartiles for the string columns of the underlying DataSource
+        Args:
+            recompute (bool): Recompute the value counts (default=False)
         Returns:
             dict: A dictionary of value counts for the string columns
         """
-        return self.data_source.value_counts()
+        return self.data_source.value_counts(recompute)
 
 
 if __name__ == "__main__":
