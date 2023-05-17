@@ -268,7 +268,7 @@ class AthenaSource(DataSourceAbstract):
                 result_df["count"] = result_df["count"].astype(int)
 
                 # Convert any NA values to 'NaN' so that we can serialize to JSON
-                result_df.fillna('NaN', inplace=True)
+                result_df.fillna("NaN", inplace=True)
 
                 # Convert the result_df into a dictionary
                 value_count_dict[column] = dict(zip(result_df[column], result_df["count"]))
