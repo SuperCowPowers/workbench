@@ -28,6 +28,10 @@ def create_markdown(feature_set_details: dict) -> str:
     </details>
     """
 
+    # Sanity check
+    if not feature_set_details:
+        return "No details available for this FeatureSet"
+
     # Loop through all the details and replace in the template
     for key, value in feature_set_details.items():
         # Hack for dates

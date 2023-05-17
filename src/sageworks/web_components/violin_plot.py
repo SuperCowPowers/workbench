@@ -19,6 +19,10 @@ def compute_rows_columns(num_plots):
 def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
     """Create a set of Violin Plots for the numeric columns in the dataframe"""
 
+    # Sanity check the dataframe
+    if df is None or df.empty:
+        return go.Figure()
+
     numeric_columns = list(df.select_dtypes("number").columns)
     numeric_columns = [col for col in numeric_columns if len(df[col].unique()) > 1]  # Only columns > 1 unique value
     numeric_columns = [col for col in numeric_columns if col not in ["id", "Id", "ID", "Id_"]]  # Remove id columns

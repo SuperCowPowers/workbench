@@ -252,7 +252,7 @@ class AthenaSource(DataSourceAbstract):
         if self.sageworks_meta().get("sageworks_value_counts") and not recompute:
             return json.loads(self.sageworks_meta()["sageworks_value_counts"])
 
-        # For every column in the table that is numeric, get the quartiles
+        # For every column in the table that is string, compute the value_counts
         self.log.info("Computing 'value_counts' for all string columns...")
         value_count_dict = dict()
         for column, data_type in zip(self.column_names(), self.column_types()):
@@ -266,6 +266,9 @@ class AthenaSource(DataSourceAbstract):
                 # Convert int64 to int so that we can serialize to JSON
                 result_df = self.query(query)
                 result_df["count"] = result_df["count"].astype(int)
+
+                # Convert any NA values to 'NaN' so that we can serialize to JSON
+                result_df.fillna('NaN', inplace=True)
 
                 # Convert the result_df into a dictionary
                 value_count_dict[column] = dict(zip(result_df[column], result_df["count"]))
