@@ -36,7 +36,7 @@ class S3HeavyToDataSource:
     def column_type_conversion(input_dyf: DynamicFrame) -> DynamicFrame:
         """Convert the column types from the input data (Spark) to the output data (Athena/Parquet)"""
         # Define the mapping from Spark data types to Athena data types
-        type_mapping = {"struct": "string", "choice": "long"}
+        type_mapping = {"struct": "string"}
 
         # Get the column names and types from the input data
         column_names_types = [(col.name, col.dataType.typeName()) for col in input_dyf.schema().fields]
@@ -53,8 +53,14 @@ class S3HeavyToDataSource:
             mapping.append((name, col_type, name, output_type))
         print(mapping)
 
-        # Apply the mapping and convert data types
-        output_dyf = ApplyMapping.apply(frame=input_dyf, mappings=mapping, transformation_ctx="applymapping")
+        # Apply the mapping to convert data types
+        output_dyf = input_dyf.apply_mapping(mapping)
+
+        # Now resolve any 'choice' columns
+        specs = [(field.name, "cast:long") for field in input_dyf.schema().fields if field.dataType.typeName() == "choice"]
+        print(specs)
+        if specs:
+            output_dyf = output_dyf.resolveChoice(specs=specs)
         output_dyf.printSchema()
         return output_dyf
 
