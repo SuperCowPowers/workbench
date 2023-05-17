@@ -9,7 +9,7 @@ from awsglue.context import GlueContext
 from awsglue.job import Job
 from pyspark.context import SparkContext
 from awsglue.dynamicframe import DynamicFrame
-from awsglue.transforms import ApplyMapping
+from awsglue.transforms import ApplyMapping, Relationalize
 
 
 class S3HeavyToDataSource:
@@ -83,8 +83,15 @@ class S3HeavyToDataSource:
         self.log.info("Incoming DataFrame...")
         input_dyf.show(5)
 
+        # Create a Dynamic Frame Collection (dfc)
+        dfc = Relationalize.apply(input_dyf, name="root")
+
+        # Aggregate the collection into a single dynamic frame
+        all_data = dfc.select("root")
+
         # Convert the columns types from Spark types to Athena/Parquet types
-        output_dyf = self.column_type_conversion(input_dyf)
+        # output_dyf = self.column_type_conversion(all_data)
+        output_dyf = all_data
 
         # Write Parquet files to S3
         self.log.info(f"Writing Parquet files to {s3_storage_path}...")
@@ -96,7 +103,7 @@ class S3HeavyToDataSource:
                 "path": s3_storage_path
                 # "partitionKeys": ["year", "month", "day"],
             },
-            format="parquet",
+            format="orc",
         )
 
         # Set up our SageWorks metadata (description, tags, etc)
@@ -128,7 +135,8 @@ class S3HeavyToDataSource:
                 "Compressed": True,
                 "NumberOfBuckets": -1,
                 "SerdeInfo": {
-                    "SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+                    # "SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+                    "SerializationLibrary": "org.apache.hadoop.hive.ql.io.orc.OrcSerde",
                     "Parameters": {"serialization.format": "1"},
                 },
             },
