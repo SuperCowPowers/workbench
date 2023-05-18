@@ -6,6 +6,7 @@ import pandas as pd
 def create(
     table_id: str,
     df: pd.DataFrame,
+    column_types: dict = None,
     header_color="rgb(60, 60, 60)",
     show_columns: list[str] = None,
     row_select=False,

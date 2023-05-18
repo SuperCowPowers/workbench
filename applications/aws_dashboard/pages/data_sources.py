@@ -32,18 +32,20 @@ data_sources_table = table.create(
     markdown_columns=["Name"],
 )
 
-# Grab sample rows from the first data source
-sample_rows = data_source_broker.data_source_sample(0)
-data_source_sample_rows = table.create(
-    "data_source_sample_rows",
-    sample_rows,
-    header_color="rgb(60, 60, 100)",
-    max_height="200px",
-)
-
 # Data Source Details
 details = data_source_broker.data_source_details(0)
 data_details = data_source_details.create("data_source_details", details)
+
+# Grab sample rows from the first data source
+sample_rows = data_source_broker.data_source_sample(0)
+column_types = details["column_details"]
+data_source_sample_rows = table.create(
+    "data_source_sample_rows",
+    sample_rows,
+    column_types=column_types,
+    header_color="rgb(60, 60, 100)",
+    max_height="200px",
+)
 
 # Create a box plot of all the numeric columns in the sample rows
 smart_sample_rows = data_source_broker.data_source_smart_sample(0)
