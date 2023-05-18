@@ -1,6 +1,7 @@
 """DataToFeaturesHeavy: Class to Transform a DataSource into a FeatureSet (Athena/FeatureStore)"""
 import time
 import botocore
+import pandas as pd
 from sagemaker.feature_store.feature_group import FeatureGroup
 import awswrangler as wr
 from sagemaker.feature_store.inputs import DataCatalogConfig
@@ -32,6 +33,18 @@ class DataToFeaturesHeavy(Transform):
         self.input_data_source = DataSource(input_uuid)
         self.input_sample_df = self.input_data_source.sample_df()
         self.output_database = "sagemaker_featurestore"
+
+    @staticmethod
+    def convert_column_types(df: pd.DataFrame) -> pd.DataFrame:
+        """Convert the types of the DataFrame to the correct types for the Feature Store"""
+        datetime_type = ["datetime", "datetime64", "datetime64[ns]", "datetimetz"]
+        for column in df.select_dtypes(include=datetime_type).columns:
+            df[column] = df[column].astype("string")
+        for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
+            df[column] = df[column].astype("int64")
+        for column in list(df.select_dtypes(include=[pd.Float64Dtype]).columns):
+            df[column] = df[column].astype("float64")
+        return df
 
     def transform_impl(self, query, id_column: str, event_time_column: str = None, delete_existing: bool = True):
         """Convert the Data Source into a Feature Set, also storing the information
@@ -67,6 +80,13 @@ class DataToFeaturesHeavy(Transform):
             wait=True,
         )
         self.log.info(f"FeatureSet Data Created: {info}")
+
+        # We need to convert some of our column types to the correct types
+        # Feature Store only supports these data types:
+        # - Integral
+        # - Fractional
+        # - String (timestamp/datetime types need to be converted to string)
+        self.input_sample_df = self.convert_datetime_types(self.input_sample_df)
 
         # Create a Feature Group and load our Feature Definitions
         self.log.info(f"Creating FeatureGroup: {self.output_uuid}")
@@ -114,4 +134,4 @@ if __name__ == "__main__":
 
     # Store this dataframe as a SageWorks Feature Set
     query = "SELECT * FROM heavy_dns limit 1000"
-    data_to_features_heavy.transform(query=query, id_column="flow_id.long", event_time_column="timestamp")
+    data_to_features_heavy.transform(query=query, id_column="flow_id", event_time_column="timestamp")
