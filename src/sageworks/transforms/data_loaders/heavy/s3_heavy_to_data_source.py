@@ -9,7 +9,7 @@ from awsglue.context import GlueContext
 from awsglue.job import Job
 from pyspark.context import SparkContext
 from awsglue.dynamicframe import DynamicFrame
-from awsglue.transforms import ApplyMapping, Relationalize
+from awsglue.transforms import Relationalize
 from pyspark.sql.functions import col, to_timestamp
 
 
@@ -42,10 +42,6 @@ class S3HeavyToDataSource:
             DynamicFrame: The converted DynamicFrame
         """
 
-        # Get the column names and types from the input data
-        print('Before Column Conversion')
-        dyf.printSchema()
-
         # Convert the timestamp columns to timestamp types
         spark_df = dyf.toDF()
         for column in time_columns:
@@ -59,9 +55,28 @@ class S3HeavyToDataSource:
         print(specs)
         if specs:
             output_dyf = output_dyf.resolveChoice(specs=specs)
-        print('After Column Conversion')
-        output_dyf.printSchema()
         return output_dyf
+
+    @staticmethod
+    def remove_periods_from_column_names(dyf: DynamicFrame) -> DynamicFrame:
+        """Remove periods from column names in the DynamicFrame
+        Args:
+            dyf (DynamicFrame): The DynamicFrame to convert
+        Returns:
+            DynamicFrame: The converted DynamicFrame
+        """
+        # Extract the column names from the schema
+        old_column_names = [field.name for field in dyf.schema().fields]
+
+        # Create a new list of renamed column names
+        new_column_names = [name.replace('.', '_') for name in old_column_names]
+        print(old_column_names)
+        print(new_column_names)
+
+        # Create a new DynamicFrame with renamed columns
+        for c_old, c_new in zip(old_column_names, new_column_names):
+            dyf = dyf.rename_field(f"`{c_old}`", c_new)
+        return dyf
 
     def transform(self, input_type: str = "json", timestamp_columns: list = None):
         """Convert the CSV or JSON data into Parquet Format in the SageWorks S3 Bucket, and
@@ -94,8 +109,18 @@ class S3HeavyToDataSource:
         # Aggregate the collection into a single dynamic frame
         all_data = dfc.select("root")
 
+        print('Before Column Conversions')
+        all_data.printSchema()
+
+        # Relationalize will put periods in the column names. This will cause
+        # problems later when we try to create a FeatureSet from this DataSource
+        output_dyf = self.remove_periods_from_column_names(all_data)
+
         # Convert the columns types from Spark types to Athena/Parquet types
-        output_dyf = self.column_conversions(all_data, timestamp_columns)
+        output_dyf = self.column_conversions(output_dyf, timestamp_columns)
+
+        print('After Column Conversions')
+        output_dyf.printSchema()
 
         # Write Parquet files to S3
         self.log.info(f"Writing Parquet files to {s3_storage_path}...")
