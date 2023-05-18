@@ -10,6 +10,7 @@ from awsglue.job import Job
 from pyspark.context import SparkContext
 from awsglue.dynamicframe import DynamicFrame
 from awsglue.transforms import ApplyMapping, Relationalize
+from pyspark.sql.functions import col, to_timestamp
 
 
 class S3HeavyToDataSource:
@@ -32,39 +33,37 @@ class S3HeavyToDataSource:
         # Our Spark Context
         self.glue_context = glue_context
 
-    @staticmethod
-    def column_type_conversion(input_dyf: DynamicFrame) -> DynamicFrame:
-        """Convert the column types from the input data (Spark) to the output data (Athena/Parquet)"""
-        # Define the mapping from Spark data types to Athena data types
-        type_mapping = {"struct": "string"}
+    def column_conversions(self, dyf: DynamicFrame, time_columns: list = []) -> DynamicFrame:
+        """Convert columns in the DynamicFrame to the correct data types
+        Args:
+            dyf (DynamicFrame): The DynamicFrame to convert
+            time_columns (list): A list of column names to convert to timestamp
+        Returns:
+            DynamicFrame: The converted DynamicFrame
+        """
 
         # Get the column names and types from the input data
-        column_names_types = [(col.name, col.dataType.typeName()) for col in input_dyf.schema().fields]
-        input_dyf.printSchema()
+        print('Before Column Conversion')
+        dyf.printSchema()
 
-        # Define the mapping from input column names/types (Spark) to output
-        # column names and types that are compatible with Athena/Parquet.
-        mapping = []
-        for name, col_type in column_names_types:
-            output_type = type_mapping.get(col_type, col_type)
-            if col_type == "timestamp":
-                # Apply to_timestamp transformation for timestamp columns
-                output_type = f"to_timestamp({name})"
-            mapping.append((name, col_type, name, output_type))
-        print(mapping)
+        # Convert the timestamp columns to timestamp types
+        spark_df = dyf.toDF()
+        for column in time_columns:
+            spark_df = spark_df.withColumn(column, to_timestamp(col(column)))
 
-        # Apply the mapping to convert data types
-        output_dyf = input_dyf.apply_mapping(mapping)
+        # Convert the Spark DataFrame back to a Glue DynamicFrame
+        output_dyf = DynamicFrame.fromDF(spark_df, self.glue_context, "output_dyf")
 
         # Now resolve any 'choice' columns
-        specs = [(field.name, "cast:long") for field in input_dyf.schema().fields if field.dataType.typeName() == "choice"]
+        specs = [(field.name, "cast:long") for field in dyf.schema().fields if field.dataType.typeName() == "choice"]
         print(specs)
         if specs:
             output_dyf = output_dyf.resolveChoice(specs=specs)
+        print('After Column Conversion')
         output_dyf.printSchema()
         return output_dyf
 
-    def transform(self, input_type: str = "json", overwrite: bool = True):
+    def transform(self, input_type: str = "json", timestamp_columns: list = None):
         """Convert the CSV or JSON data into Parquet Format in the SageWorks S3 Bucket, and
         store the information about the data to the AWS Data Catalog sageworks database"""
 
@@ -96,8 +95,7 @@ class S3HeavyToDataSource:
         all_data = dfc.select("root")
 
         # Convert the columns types from Spark types to Athena/Parquet types
-        # output_dyf = self.column_type_conversion(all_data)
-        output_dyf = all_data
+        output_dyf = self.column_conversions(all_data, timestamp_columns)
 
         # Write Parquet files to S3
         self.log.info(f"Writing Parquet files to {s3_storage_path}...")
@@ -123,7 +121,7 @@ class S3HeavyToDataSource:
 
         # Converting the Spark Types to Athena Types
         def to_athena_type(col):
-            athena_type_map = {"long": "bigint", "struct": "string"}
+            athena_type_map = {"long": "bigint"}
             spark_type = col.dataType.typeName()
             return athena_type_map.get(spark_type, spark_type)
 
@@ -137,26 +135,22 @@ class S3HeavyToDataSource:
                 "Columns": column_name_types,
                 "Location": s3_storage_path,
                 "InputFormat": "org.apache.hadoop.mapred.TextInputFormat",
-                "OutputFormat": "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat",
                 "Compressed": True,
-                "NumberOfBuckets": -1,
                 "SerdeInfo": {
                     # "SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
                     "SerializationLibrary": "org.apache.hadoop.hive.ql.io.orc.OrcSerde",
-                    "Parameters": {"serialization.format": "1"},
                 },
             },
         }
 
         # Delete the Data Catalog Table if it already exists
-        if overwrite:
-            glue_client = boto3.client("glue")
-            try:
-                glue_client.delete_table(DatabaseName="sageworks", Name=self.output_uuid)
-                self.log.info(f"Deleting Data Catalog Table: {self.output_uuid}...")
-            except ClientError as e:
-                if e.response["Error"]["Code"] != "EntityNotFoundException":
-                    raise e
+        glue_client = boto3.client("glue")
+        try:
+            glue_client.delete_table(DatabaseName="sageworks", Name=self.output_uuid)
+            self.log.info(f"Deleting Data Catalog Table: {self.output_uuid}...")
+        except ClientError as e:
+            if e.response["Error"]["Code"] != "EntityNotFoundException":
+                raise e
 
         self.log.info(f"Creating Data Catalog Table: {self.output_uuid}...")
         glue_client.create_table(DatabaseName="sageworks", TableInput=table_input)
@@ -184,7 +178,7 @@ if __name__ == "__main__":
     my_loader = S3HeavyToDataSource(glueContext, input_path, data_output_uuid)
 
     # Store this data as a SageWorks DataSource
-    my_loader.transform()
+    my_loader.transform(timestamp_columns=["timestamp"])
 
     # Commit the Glue Job
     job.commit()

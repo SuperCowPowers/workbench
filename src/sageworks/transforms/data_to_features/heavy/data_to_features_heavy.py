@@ -1,5 +1,4 @@
 """DataToFeaturesHeavy: Class to Transform a DataSource into a FeatureSet (Athena/FeatureStore)"""
-import pandas as pd
 import time
 import botocore
 from sagemaker.feature_store.feature_group import FeatureGroup
@@ -17,9 +16,8 @@ class DataToFeaturesHeavy(Transform):
 
     Common Usage:
         to_features = DataToFeaturesHeavy(output_uuid)
-        to_features.set_output_tags(["abalone", "heavy", "whatever"])
-        to_features.set_input(df, id_column="id"/None, event_time_column="date"/None)
-        to_features.transform()
+        to_features.set_output_tags(["heavy", "whatever"])
+        to_features.transform(query, id_column, event_time_column=None, delete_existing=True)
     """
 
     def __init__(self, input_uuid: str, output_uuid: str):
@@ -34,18 +32,6 @@ class DataToFeaturesHeavy(Transform):
         self.input_data_source = DataSource(input_uuid)
         self.input_sample_df = self.input_data_source.sample_df()
         self.output_database = "sagemaker_featurestore"
-
-    @staticmethod
-    def convert_nullable_types(df: pd.DataFrame) -> pd.DataFrame:
-        """Convert the new Pandas 'nullable types' since AWS SageMaker code doesn't currently support them
-        See: https://github.com/aws/sagemaker-python-sdk/pull/3740"""
-        for column in list(df.select_dtypes(include=[pd.Int32Dtype]).columns):
-            df[column] = df[column].astype("int32")
-        for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
-            df[column] = df[column].astype("int64")
-        for column in list(df.select_dtypes(include=[pd.Float64Dtype]).columns):
-            df[column] = df[column].astype("float64")
-        return df
 
     def transform_impl(self, query, id_column: str, event_time_column: str = None, delete_existing: bool = True):
         """Convert the Data Source into a Feature Set, also storing the information
@@ -81,9 +67,6 @@ class DataToFeaturesHeavy(Transform):
             wait=True,
         )
         self.log.info(f"FeatureSet Data Created: {info}")
-
-        # Convert Int32, Int64 and Float64 types (see: https://github.com/aws/sagemaker-python-sdk/pull/3740)
-        self.input_sample_df = self.convert_nullable_types(self.input_sample_df)
 
         # Create a Feature Group and load our Feature Definitions
         self.log.info(f"Creating FeatureGroup: {self.output_uuid}")
@@ -126,8 +109,9 @@ if __name__ == "__main__":
     """Exercise the DataToFeaturesHeavy Class"""
 
     # Create my DF to Feature Set Transform
-    data_to_features_heavy = DataToFeaturesHeavy("heavy_data_test", "heavy_data_test_features")
+    data_to_features_heavy = DataToFeaturesHeavy("heavy_dns", "heavy_dns")
     data_to_features_heavy.set_output_tags(["test", "heavy"])
 
     # Store this dataframe as a SageWorks Feature Set
-    data_to_features_heavy.transform(query="SELECT * FROM heavy_data_test", id_column="id", event_time_column="date")
+    query = "SELECT * FROM heavy_dns limit 1000"
+    data_to_features_heavy.transform(query=query, id_column="flow_id.long", event_time_column="timestamp")
