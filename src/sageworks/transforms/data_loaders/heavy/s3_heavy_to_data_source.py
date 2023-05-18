@@ -69,7 +69,7 @@ class S3HeavyToDataSource:
         old_column_names = [field.name for field in dyf.schema().fields]
 
         # Create a new list of renamed column names
-        new_column_names = [name.replace('.', '_') for name in old_column_names]
+        new_column_names = [name.replace(".", "_") for name in old_column_names]
         print(old_column_names)
         print(new_column_names)
 
@@ -109,7 +109,7 @@ class S3HeavyToDataSource:
         # Aggregate the collection into a single dynamic frame
         all_data = dfc.select("root")
 
-        print('Before Column Conversions')
+        print("Before Column Conversions")
         all_data.printSchema()
 
         # Relationalize will put periods in the column names. This will cause
@@ -119,7 +119,7 @@ class S3HeavyToDataSource:
         # Convert the columns types from Spark types to Athena/Parquet types
         output_dyf = self.column_conversions(output_dyf, timestamp_columns)
 
-        print('After Column Conversions')
+        print("After Column Conversions")
         output_dyf.printSchema()
 
         # Write Parquet files to S3
