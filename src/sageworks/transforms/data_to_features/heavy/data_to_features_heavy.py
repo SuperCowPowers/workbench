@@ -86,7 +86,7 @@ class DataToFeaturesHeavy(Transform):
         # - Integral
         # - Fractional
         # - String (timestamp/datetime types need to be converted to string)
-        self.input_sample_df = self.convert_datetime_types(self.input_sample_df)
+        self.input_sample_df = self.convert_column_types(self.input_sample_df)
 
         # Create a Feature Group and load our Feature Definitions
         self.log.info(f"Creating FeatureGroup: {self.output_uuid}")
@@ -133,5 +133,5 @@ if __name__ == "__main__":
     data_to_features_heavy.set_output_tags(["test", "heavy"])
 
     # Store this dataframe as a SageWorks Feature Set
-    query = "SELECT * FROM heavy_dns limit 1000"
+    query = "SELECT * FROM heavy_dns"
     data_to_features_heavy.transform(query=query, id_column="flow_id", event_time_column="timestamp")
