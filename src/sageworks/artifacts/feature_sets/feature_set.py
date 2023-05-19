@@ -225,7 +225,11 @@ class FeatureSet(Artifact):
         Returns:
             dict(dict): A dictionary of details about this AthenaSource
         """
-        return self.data_source.details(recompute)
+        my_details = self.data_source.details(recompute)
+
+        # Add some additional FeatureSet details
+        my_details["storage_uuid"] = self.data_source.uuid
+        return my_details
 
     def delete(self):
         """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
@@ -296,7 +300,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Grab a FeatureSet object and pull some information from it
-    my_features = FeatureSet("abalone_feature_set")
+    my_features = FeatureSet("heavy_dns")
 
     # Call the various methods
     # What's my AWS ARN and URL
@@ -325,7 +329,7 @@ if __name__ == "__main__":
 
     # Get the details for this Feature Set
     print("\nDetails:")
-    details = my_features.details()
+    details = my_features.details(recompute=True)
     pprint(details)
 
     # Now do deep dive on storage

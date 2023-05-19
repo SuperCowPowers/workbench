@@ -293,6 +293,7 @@ class AthenaSource(DataSourceAbstract):
 
         details = super().details()
         details["s3_storage_location"] = self.s3_storage_location()
+        details["storage_type"] = "athena"
 
         # Convert any datetime fields to ISO-8601 strings
         details = convert_all_to_iso8601(details)
