@@ -69,12 +69,12 @@ class FeatureSetWebView(ArtifactsWebView):
         return pd.concat([sample_rows, quartiles_df]).reset_index(drop=True)
 
     def feature_set_details(self, feature_set_index: int) -> (dict, None):
-        """Get all of the details for the given FeatureSet Index"""
+        """Get all the details for the given FeatureSet Index"""
         data_uuid = self.feature_set_name(feature_set_index)
         if data_uuid is not None:
-            ds = FeatureSet(data_uuid)
-            details_data = ds.details()
-            details_data["value_counts"] = ds.value_counts()
+            fs = FeatureSet(data_uuid)
+            details_data = fs.data_source.details()
+            details_data["value_counts"] = fs.value_counts()
             return details_data
         else:
             return None

@@ -148,7 +148,7 @@ class AWSServiceBroker:
             return cls.meta_cache.get(category)
 
         # If the metadata is fresh, just return it
-        cls.log.info(f"Metadata for {category} is fresh!")
+        cls.log.debug(f"Metadata for {category} is fresh!")
         return cls.meta_cache.get(category)
 
     @classmethod

@@ -219,17 +219,13 @@ class FeatureSet(Artifact):
         return fs_details
 
     def details(self, recompute: bool = False) -> dict[dict]:
-        """Additional Details about this AthenaSource Artifact
+        """Additional Details about this FeatureSet Artifact
         Args:
             recompute(bool): Recompute the details (default: False)
         Returns:
             dict(dict): A dictionary of details about this AthenaSource
         """
-        my_details = self.data_source.details(recompute)
-
-        # Add some additional FeatureSet details
-        my_details["storage_uuid"] = self.data_source.uuid
-        return my_details
+        return self.all_meta()
 
     def delete(self):
         """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
@@ -333,10 +329,9 @@ if __name__ == "__main__":
     pprint(details)
 
     # Now do deep dive on storage
-    if details["storage_type"] == "athena":
-        storage = my_features.get_data_source()
-        print("\nStorage Details:")
-        pprint(storage.details())
+    storage = my_features.get_data_source()
+    print("\nStorage Details:")
+    pprint(storage.details())
 
     # Get a sample of the data
     df = my_features.sample_df()
