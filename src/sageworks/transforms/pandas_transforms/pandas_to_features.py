@@ -169,6 +169,16 @@ class PandasToFeatures(Transform):
         # Now we actually push the data into the Feature Group
         my_feature_group.ingest(self.output_df, max_processes=4)
 
+        # Feature Group Ingestion takes a while, so we need to wait for it to finish
+        new_fs = FeatureSet(self.output_uuid)
+        expected_rows = len(self.output_df)
+        self.wait_for_rows(new_fs, expected_rows)
+
+        # Now compute the Details, Quartiles, and SampleDF for the FeatureSet
+        new_fs.details()
+        new_fs.quartiles()
+        new_fs.sample_df()
+
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")
         while status == "Creating":
@@ -176,6 +186,14 @@ class PandasToFeatures(Transform):
             time.sleep(5)
             status = feature_group.describe().get("FeatureGroupStatus")
         self.log.info(f"FeatureSet {feature_group.name} successfully created")
+
+    def wait_for_rows(self, new_fs: FeatureSet, expected_rows: int):
+        """Wait for AWS to actually finalize this Feature Group"""
+        rows = new_fs.num_rows()
+        while rows != expected_rows:
+            self.log.info(f"Waiting for AWS finalization {self.output_uuid} (currently {rows} rows)...")
+            time.sleep(30)
+            rows = new_fs.num_rows()
 
     def add_parameters_to_table(self, table_name):
         """Add the parameters to the FeatureSet DataCatalog Table
