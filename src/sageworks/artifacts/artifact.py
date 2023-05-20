@@ -39,6 +39,9 @@ class Artifact(ABC):
     data_source_s3_path = "s3://" + sageworks_bucket + "/data-sources"
     feature_sets_s3_path = "s3://" + sageworks_bucket + "/feature-sets"
 
+    # Status Flag
+    status = 'initializing'
+
     def __init__(self, uuid):
         """Artifact Initialization"""
         self.uuid = uuid

@@ -125,6 +125,7 @@ class DataToFeaturesHeavy(Transform):
 
         # Compute Details, Quartiles, and SampleDF from the Feature Group
         my_feature_set.details()
+        my_feature_set.data_source.details()
         my_feature_set.quartiles()
         my_feature_set.sample_df()
         self.log.info("FeatureSet Object Created")

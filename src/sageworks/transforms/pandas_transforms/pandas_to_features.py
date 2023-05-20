@@ -175,12 +175,13 @@ class PandasToFeatures(Transform):
             self.log.info(f"Failed Rows: {ingest_manager.failed_rows}")
 
         # Feature Group Ingestion takes a while, so we need to wait for it to finish
-        new_fs = FeatureSet(self.output_uuid)
+        new_fs = FeatureSet(self.output_uuid, force_refresh=True)
         expected_rows = len(self.output_df) - len(ingest_manager.failed_rows)
         self.wait_for_rows(new_fs, expected_rows)
 
         # Now compute the Details, Quartiles, and SampleDF for the FeatureSet
         new_fs.details()
+        new_fs.data_source.details()
         new_fs.quartiles()
         new_fs.sample_df()
 
