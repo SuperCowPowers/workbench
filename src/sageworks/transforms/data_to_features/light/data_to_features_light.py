@@ -12,7 +12,7 @@ class DataToFeaturesLight(Transform):
     Common Usage:
         to_features = DataToFeaturesLight(data_uuid, feature_uuid)
         to_features.set_output_tags(["abalone", "public", "whatever"])
-        to_features.transform(id_column="id"/None, event_time_column="date"/None)
+        to_features.transform(id_column="id"/None, event_time_column="date"/None, query=str/None)
     """
 
     def __init__(self, data_uuid: str, feature_uuid: str):
@@ -33,11 +33,19 @@ class DataToFeaturesLight(Transform):
         # Grab the Input (Data Source)
         self.input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
 
-    def transform_impl(self, **kwargs):
-        """Base Class is simply an identity transform"""
-        self.output_df = self.input_df
+    def transform_impl(self, query: str = None, column_select: list = None, **kwargs):
+        """Optional Query to filter the input DataFrame, then publish to the output location
+        Args:
+            query(str): Optional query to filter the input DataFrame
+            column_select(list): Optional list of columns to select from the input DataFrame
+        Notes:
+            Query is a Pandas Expression, e.g. 'col1<2.5 & col2=="x"'
+            Column Select is a list of column names, e.g. ['col3', 'col4']
+        """
+        self.output_df = self.input_df.query(query).reset_index(drop=True) if query else self.input_df
+        self.output_df = self.output_df[column_select] if column_select else self.output_df
 
-    def post_transform(self, id_column=None, event_time_column=None):
+    def post_transform(self, id_column=None, event_time_column=None, **kwargs):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set"""
         # Now publish to the output location
         output_features = PandasToFeatures(self.output_uuid)
@@ -55,5 +63,6 @@ if __name__ == "__main__":
     output_uuid = "abalone_feature_set"
     data_to_features = DataToFeaturesLight(input_uuid, output_uuid)
     data_to_features.set_output_tags(["abalone", "public"])
-    # data_to_features.transform(id_column="id", event_time_column="date")
-    data_to_features.transform(id_column="id")
+    columns = ["sex", "length", "diameter", "height", "whole_weight", "shucked_weight",
+               "viscera_weight", "class_number_of_rings"]
+    data_to_features.transform(query="height < 0.3", column_select=columns)
