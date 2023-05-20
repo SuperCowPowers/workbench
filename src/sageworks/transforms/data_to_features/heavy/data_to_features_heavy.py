@@ -123,7 +123,8 @@ class DataToFeaturesHeavy(Transform):
         self.log.info(f"Creating FeatureSet Object: {self.output_uuid}")
         my_feature_set = FeatureSet(self.output_uuid, force_refresh=True)
 
-        # Compute Quartiles and SampleDF from the Feature Group
+        # Compute Details, Quartiles, and SampleDF from the Feature Group
+        my_feature_set.details()
         my_feature_set.quartiles()
         my_feature_set.sample_df()
         self.log.info("FeatureSet Object Created")
