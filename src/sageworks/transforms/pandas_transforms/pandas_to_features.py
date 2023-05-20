@@ -200,7 +200,7 @@ class PandasToFeatures(Transform):
             sleep_time = 5 if rows else 30
             time.sleep(sleep_time)
             rows = new_fs.num_rows()
-        self.log.info(f"Success: Reached Expected Rows {rows} rows)...")
+        self.log.info(f"Success: Reached Expected Rows ({rows} rows)...")
 
     def add_parameters_to_table(self, table_name):
         """Add the parameters to the FeatureSet DataCatalog Table

@@ -63,6 +63,14 @@ if __name__ == "__main__":
     output_uuid = "abalone_feature_set"
     data_to_features = DataToFeaturesLight(input_uuid, output_uuid)
     data_to_features.set_output_tags(["abalone", "public"])
-    columns = ["sex", "length", "diameter", "height", "whole_weight", "shucked_weight",
-               "viscera_weight", "class_number_of_rings"]
+    columns = [
+        "sex",
+        "length",
+        "diameter",
+        "height",
+        "whole_weight",
+        "shucked_weight",
+        "viscera_weight",
+        "class_number_of_rings",
+    ]
     data_to_features.transform(query="height < 0.3", column_select=columns)
