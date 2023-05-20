@@ -76,8 +76,6 @@ if __name__ == "__main__":
         data_to_features = DataToFeaturesLight("abalone_data", "abalone_feature_set")
         data_to_features.set_output_tags(["abalone", "public"])
         data_to_features.transform()
-        print("AWS takes a LONG time to populate their Feature Store/Groups. Run this script again in 10 minutes...")
-        sys.exit(0)
 
     # Create the abalone_regression Model
     if not Model("abalone-regression").check():
