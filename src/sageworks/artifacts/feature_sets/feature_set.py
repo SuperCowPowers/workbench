@@ -56,7 +56,7 @@ class FeatureSet(Artifact):
             self.s3_storage = self.feature_meta["sageworks_meta"].get("s3_storage")
 
             # Create our internal DataSource (hardcoded to Athena for now)
-            self.data_source = AthenaSource(self.athena_table, self.athena_database)
+            self.data_source = AthenaSource(self.athena_table, self.athena_database, force_refresh=True)
 
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
