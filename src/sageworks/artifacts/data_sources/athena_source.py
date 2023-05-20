@@ -20,12 +20,13 @@ class AthenaSource(DataSourceAbstract):
         df = my_data.query(f"select * from {data_uuid} limit 5")
     """
 
-    def __init__(self, data_uuid, database="sageworks"):
+    def __init__(self, data_uuid, database="sageworks", force_refresh=False):
         """AthenaSource Initialization
 
         Args:
             data_uuid (str): Name of Athena Table
             database (str): Athena Database Name
+            force_refresh (bool): Force a refresh of the metadata
         """
 
         # Call superclass init
@@ -35,19 +36,18 @@ class AthenaSource(DataSourceAbstract):
         self.table_name = data_uuid
 
         # Refresh our internal catalog metadata
-        self.catalog_table_meta = None
-        self.refresh()
+        self.catalog_table_meta = self._refresh_broker(force_refresh)
 
         # All done
         print(f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}")
 
-    def refresh(self, force_fresh: bool = False):
-        """Refresh our internal catalog metadata
+    def _refresh_broker(self, force_refresh=False):
+        """Internal: Refresh our internal catalog metadata
         Args:
-            force_fresh (bool): Force a refresh of the metadata
+            force_refresh (bool): Force a refresh of the metadata
         """
-        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_fresh=force_fresh)
-        self.catalog_table_meta = _catalog_meta[self.data_catalog_db].get(self.table_name)
+        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_fresh=force_refresh)
+        return _catalog_meta[self.data_catalog_db].get(self.table_name)
 
     def check(self) -> bool:
         """Validation Checks for this Data Source"""

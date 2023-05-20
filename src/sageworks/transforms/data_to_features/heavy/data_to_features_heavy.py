@@ -31,7 +31,6 @@ class DataToFeaturesHeavy(Transform):
         self.id_column = None
         self.event_time_column = None
         self.input_data_source = DataSource(input_uuid)
-        self.input_sample_df = self.input_data_source.sample_df()
         self.output_database = "sagemaker_featurestore"
 
     @staticmethod
@@ -56,6 +55,7 @@ class DataToFeaturesHeavy(Transform):
                 delete_fs = FeatureSet(self.output_uuid)
                 if delete_fs.check():
                     delete_fs.delete()
+                    time.sleep(5)
             except botocore.exceptions.ClientError as exc:
                 self.log.info(f"FeatureSet {self.output_uuid} doesn't exist...")
                 self.log.info(exc)
@@ -81,17 +81,20 @@ class DataToFeaturesHeavy(Transform):
         )
         self.log.info(f"FeatureSet Data Created: {info}")
 
+        # Now we're going to use the Athena Query to create a sample DataFrame
+        sample_df = self.input_data_source.query(query + " LIMIT 1000")
+
         # We need to convert some of our column types to the correct types
         # Feature Store only supports these data types:
         # - Integral
         # - Fractional
         # - String (timestamp/datetime types need to be converted to string)
-        self.input_sample_df = self.convert_column_types(self.input_sample_df)
+        sample_df = self.convert_column_types(sample_df)
 
         # Create a Feature Group and load our Feature Definitions
         self.log.info(f"Creating FeatureGroup: {self.output_uuid}")
         my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
-        my_feature_group.load_feature_definitions(data_frame=self.input_sample_df)
+        my_feature_group.load_feature_definitions(data_frame=sample_df)
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
@@ -116,6 +119,15 @@ class DataToFeaturesHeavy(Transform):
         # Ensure/wait for the feature group to be created
         self.ensure_feature_group_created(my_feature_group)
 
+        # Create the FeatureSet Object
+        self.log.info(f"Creating FeatureSet Object: {self.output_uuid}")
+        my_feature_set = FeatureSet(self.output_uuid, force_refresh=True)
+
+        # Compute Quartiles and SampleDF from the Feature Group
+        my_feature_set.quartiles()
+        my_feature_set.sample_df()
+        self.log.info("FeatureSet Object Created")
+
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")
         while status == "Creating":
@@ -123,6 +135,7 @@ class DataToFeaturesHeavy(Transform):
             time.sleep(5)
             status = feature_group.describe().get("FeatureGroupStatus")
         self.log.info(f"FeatureSet {feature_group.name} successfully created")
+        time.sleep(5)
 
 
 if __name__ == "__main__":
@@ -133,5 +146,6 @@ if __name__ == "__main__":
     data_to_features_heavy.set_output_tags(["test", "heavy"])
 
     # Store this dataframe as a SageWorks Feature Set
-    query = "SELECT * FROM heavy_dns"
+    fields = ["timestamp", "flow_id", "in_iface", "proto", "dns_type", "dns_rrtype", "dns_flags", "dns_rcode"]
+    query = f"SELECT {', '.join(fields)} FROM heavy_dns"
     data_to_features_heavy.transform(query=query, id_column="flow_id", event_time_column="timestamp")

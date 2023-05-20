@@ -94,8 +94,7 @@ class Transform(ABC):
             while not DataSource(self.output_uuid).check():
                 self.log.info("Waiting for DataSource to be created...")
                 sleep(1)
-            ds = DataSource(self.output_uuid)
-            ds.refresh(force_fresh=True)
+            ds = DataSource(self.output_uuid, force_refresh=True)
             ds.details()
             ds.sample_df()
             ds.quartiles()
@@ -106,8 +105,7 @@ class Transform(ABC):
             while not FeatureSet(self.output_uuid).check():
                 self.log.info("Waiting for FeatureSet to be created...")
                 sleep(1)
-            fs = FeatureSet(self.output_uuid)
-            fs.refresh(force_fresh=True)
+            fs = FeatureSet(self.output_uuid, force_refresh=True)
             fs.details()
             fs.sample_df()
             fs.quartiles()

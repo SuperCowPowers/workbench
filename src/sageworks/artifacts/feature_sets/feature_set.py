@@ -25,20 +25,23 @@ class FeatureSet(Artifact):
         my_features.details()
     """
 
-    def __init__(self, feature_uuid):
+    def __init__(self, feature_uuid, force_refresh: bool = False):
         """FeatureSet Initialization
 
         Args:
             feature_uuid (str): Name of Feature Set in SageWorks Metadata.
+            force_refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
         """
         # Call superclass init
         super().__init__(feature_uuid)
 
         # Grab an AWS Metadata Broker object and pull information for Feature Sets
         self.feature_set_name = feature_uuid
-        self.feature_meta = None
-        self.data_source = None
-        self.refresh()
+
+        # Refresh our feature and data source metadata
+        self.feature_meta = self._refresh_broker(force_refresh)
+
+        # Sanity check and then set up our FeatureSet attributes
         if self.feature_meta is None:
             self.log.info(f"Could not find feature set {self.feature_set_name} within current visibility scope")
             self.data_source = None
@@ -61,15 +64,13 @@ class FeatureSet(Artifact):
         # All done
         self.log.info(f"FeatureSet Initialized: {self.feature_set_name}")
 
-    def refresh(self, force_fresh: bool = False):
-        """Refresh our internal AWS Feature Store metadata
+    def _refresh_broker(self, force_fresh: bool = False):
+        """Internal: Refresh our internal AWS Feature Store metadata
         Args:
             force_fresh (bool, optional): Force a refresh of the metadata. Defaults to False.
         """
         _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_fresh=force_fresh)
-        self.feature_meta = _catalog_meta.get(self.feature_set_name)
-        if self.data_source is not None:
-            self.data_source.refresh(force_fresh=force_fresh)
+        return _catalog_meta.get(self.feature_set_name)
 
     def check(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
@@ -296,7 +297,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Grab a FeatureSet object and pull some information from it
-    my_features = FeatureSet("heavy_dns")
+    my_features = FeatureSet("abalone_feature_set")
 
     # Call the various methods
     # What's my AWS ARN and URL
