@@ -65,6 +65,12 @@ if __name__ == "__main__":
         print("Waiting for the abalone_data to be created...")
         time.sleep(10)
 
+    # Give user a warning about how long the rest of the script will take
+    print("\n******************************************************************************")
+    print("Note: The rest of this script takes about 20 minutes (AWS finalize/wait times)")
+    print("******************************************************************************\n")
+    time.sleep(5)
+
     # Create the test_feature_set FeatureSet
     if not FeatureSet("test_feature_set").check():
         data_to_features = DataToFeaturesLight("test_data", "test_feature_set")
