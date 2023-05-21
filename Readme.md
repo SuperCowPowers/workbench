@@ -2,14 +2,18 @@
 
 # SageWorks<sup><i>TM</i></sup>
 
+<p align="center">
 <img height="360" align="left" src="https://user-images.githubusercontent.com/4806709/236641571-fc38899a-8b92-4b7c-80a0-cc9d39b92e4a.png">
 <img height="360" aligh="right" src="https://user-images.githubusercontent.com/4806709/236641581-51777977-bca4-4af3-8bec-fb1758c964b8.png">
+</p>
 
 #### SageWorks: The scientist's workbench powered by AWS® for scalability, flexibility, and security.
 
 SageWorks is a medium granularity framework that manages and aggregates AWS® Services into classes and concepts. When you use SageWorks you think about **DataSources**, **FeatureSets**, **Models**, and **Endpoints**. Underneath the hood those classes handle all the details around updating and managing a **complex set of AWS Services**. All the power and none of the pain so that your team can **Do Science Faster!**
 
-<img src="docs/images/sageworks_concepts.png">
+<p align="center">
+<img width="800" src="docs/images/sageworks_concepts.png">
+</p>
 
 ### Full SageWorks OverView
 [SageWorks Architected FrameWork](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing)
@@ -28,15 +32,19 @@ SageWorks is a medium granularity framework that manages and aggregates AWS® Se
     - What SageMaker Endpoints are associated with this model?
 
 
-**Single pane of glass** visibility into the AWS Services that underpin the SageWorks Classes. We can see that SageWorks automatically tags and tracks the inputs of all artifacts providing 'data provenance' for all steps in the AWS modeling pipeline.
+### Single Pane of Glass
+Visibility into the AWS Services that underpin the SageWorks Classes. We can see that SageWorks automatically tags and tracks the inputs of all artifacts providing 'data provenance' for all steps in the AWS modeling pipeline.
 
-<img width="1000" alt="Screenshot 2023-03-31 at 2 16 36 PM" src="https://user-images.githubusercontent.com/4806709/229222245-59e342c1-7254-47de-a453-268448643143.png">
+<p align="center">
+<img width="800" alt="Top Dashboard" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/c4a7f054-e640-407c-9e5c-f9d3ea1bd717.png">
+</p>
 
 <i><b> Clearly illustrated:</b> SageWorks provides intuitive and transparent visibility into the full pipeline of your AWS Sagemaker Deployments.</i>
 
 
 ## Getting Started
 - [SageWorks Overview](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing) Slides that cover and illustrate the SageWorks Modeling Pipeline.
+- [SageWorks Docs/Wiki](https://github.com/SuperCowPowers/sageworks/wiki) Our general documentation for getting started with SageWorks.
 - [SageWorks AWS Onboarding](https://github.com/SuperCowPowers/sageworks/wiki/Onboarding-SageWorks-to-AWS) Deploy the SageWorks Stack to your AWS Account. 
 - [Notebook: Start to Finish AWS ML Pipeline](https://nbviewer.org/github/SuperCowPowers/sageworks/blob/main/notebooks/ML_Pipeline_with_SageWorks.ipynb) Building an AWS® ML Pipeline from start to finish.
 - [Video: Coding with SageWorks](https://drive.google.com/file/d/1iO7IuQtTYdx4BtQjxv9lI1aVJ2ZcAo43/view?usp=sharing) Informal coding + chatting while building a full ML pipeline.
