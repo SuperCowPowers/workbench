@@ -128,6 +128,7 @@ class DataToFeaturesHeavy(Transform):
         my_feature_set.data_source.details()
         my_feature_set.quartiles()
         my_feature_set.sample_df()
+        my_feature_set.set_status("ready")
         self.log.info("FeatureSet Object Created")
 
     def ensure_feature_group_created(self, feature_group):

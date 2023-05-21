@@ -30,20 +30,20 @@ class FeatureSetWebView(ArtifactsWebView):
 
     def feature_set_sample(self, feature_set_index: int) -> pd.DataFrame:
         """Get a sample dataframe for the given FeatureSet Index"""
-        data_uuid = self.feature_set_name(feature_set_index)
-        if data_uuid is not None:
-            ds = FeatureSet(data_uuid)
-            sample_rows = ds.sample_df()
+        uuid = self.feature_set_name(feature_set_index)
+        fs = FeatureSet(uuid)
+        if fs.get_status() == "ready":
+            return fs.sample_df()
         else:
-            sample_rows = pd.DataFrame()
-        return sample_rows
+            return pd.DataFrame({"uuid": [uuid], "status": [f"{fs.get_status()}"]})
 
     def feature_set_quartiles(self, feature_set_index: int) -> (dict, None):
         """Get all columns quartiles for the given FeatureSet Index"""
         data_uuid = self.feature_set_name(feature_set_index)
-        if data_uuid is not None:
-            quartiles_data = FeatureSet(data_uuid).quartiles()
-            return quartiles_data
+        uuid = self.feature_set_name(feature_set_index)
+        fs = FeatureSet(uuid)
+        if fs.get_status() == "ready":
+            return FeatureSet(data_uuid).quartiles()
         else:
             return None
 
@@ -70,9 +70,9 @@ class FeatureSetWebView(ArtifactsWebView):
 
     def feature_set_details(self, feature_set_index: int) -> (dict, None):
         """Get all the details for the given FeatureSet Index"""
-        data_uuid = self.feature_set_name(feature_set_index)
-        if data_uuid is not None:
-            fs = FeatureSet(data_uuid)
+        uuid = self.feature_set_name(feature_set_index)
+        fs = FeatureSet(uuid)
+        if fs.get_status() == "ready":
             details_data = fs.data_source.details()
             details_data["value_counts"] = fs.value_counts()
             return details_data

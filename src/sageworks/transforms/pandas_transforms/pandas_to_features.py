@@ -176,6 +176,7 @@ class PandasToFeatures(Transform):
 
         # Feature Group Ingestion takes a while, so we need to wait for it to finish
         new_fs = FeatureSet(self.output_uuid, force_refresh=True)
+        new_fs.set_status("initializing")
         expected_rows = len(self.output_df) - len(ingest_manager.failed_rows)
         self.wait_for_rows(new_fs, expected_rows)
 
@@ -184,6 +185,7 @@ class PandasToFeatures(Transform):
         new_fs.data_source.details()
         new_fs.quartiles()
         new_fs.sample_df()
+        new_fs.set_status("ready")
 
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")

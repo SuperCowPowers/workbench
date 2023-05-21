@@ -20,7 +20,7 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
     """Create a set of Violin Plots for the numeric columns in the dataframe"""
 
     # Sanity check the dataframe
-    if df is None or df.empty:
+    if df is None or df.empty or list(df.columns) == ["uuid", "status"]:
         return go.Figure()
 
     numeric_columns = list(df.select_dtypes("number").columns)

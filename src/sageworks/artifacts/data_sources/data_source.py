@@ -85,3 +85,6 @@ if __name__ == "__main__":
 
     # Get a SAMPLE of the data
     print(f"Sample Data: {my_data.sample_df()}")
+
+    # Force a refresh of the DataSource
+    my_data = DataSource("abalone_data", force_refresh=True)
