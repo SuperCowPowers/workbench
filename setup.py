@@ -3,11 +3,14 @@
 
 import os
 import glob
-
 from setuptools import setup, find_packages
 
 readme = open("Readme.md").read()
 
+# Requirements
+path = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(path, "requirements.txt")) as f:
+    install_requires = f.read().strip().split("\n")
 
 # Data and Example Files
 def get_files(dir_name):
@@ -30,18 +33,7 @@ setup(
     py_modules=[os.path.splitext(os.path.basename(path))[0] for path in glob.glob("src/*.py")],
     include_package_data=True,
     data_files=get_files("data") + get_files("examples"),
-    install_requires=[
-        "boto3",
-        "awswrangler >= 3.0.0",
-        "sagemaker >= 2.143",
-        "pandas",
-        "scikit-learn",
-        "redis",
-        "dash",
-        "dash-bootstrap-components",
-        "dash-bootstrap-templates",
-        "termcolor",
-    ],
+    install_requires=install_requires,
     license="MIT",
     keywords="SageMaker, Machine Learning, AWS, Python, Utilities",
     classifiers=[
