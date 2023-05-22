@@ -32,17 +32,18 @@ class FeatureSetWebView(ArtifactsWebView):
         """Get a sample dataframe for the given FeatureSet Index"""
         uuid = self.feature_set_name(feature_set_index)
         fs = FeatureSet(uuid)
-        if fs.get_status() == "ready":
+        if fs.check() and fs.get_status() == "ready":
             return fs.sample_df()
         else:
-            return pd.DataFrame({"uuid": [uuid], "status": [f"{fs.get_status()}"]})
+            status = fs.get_status() if fs.check() else "not found"
+            return pd.DataFrame({"uuid": [uuid], "status": [f"{status}"]})
 
     def feature_set_quartiles(self, feature_set_index: int) -> (dict, None):
         """Get all columns quartiles for the given FeatureSet Index"""
         data_uuid = self.feature_set_name(feature_set_index)
         uuid = self.feature_set_name(feature_set_index)
         fs = FeatureSet(uuid)
-        if fs.get_status() == "ready":
+        if fs.check() and fs.get_status() == "ready":
             return FeatureSet(data_uuid).quartiles()
         else:
             return None
@@ -72,7 +73,7 @@ class FeatureSetWebView(ArtifactsWebView):
         """Get all the details for the given FeatureSet Index"""
         uuid = self.feature_set_name(feature_set_index)
         fs = FeatureSet(uuid)
-        if fs.get_status() == "ready":
+        if fs.check() and fs.get_status() == "ready":
             details_data = fs.data_source.details()
             details_data["value_counts"] = fs.value_counts()
             return details_data
