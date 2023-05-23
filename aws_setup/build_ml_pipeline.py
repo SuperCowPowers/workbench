@@ -89,7 +89,7 @@ if __name__ == "__main__":
         features_to_model.set_output_tags(["abalone", "regression"])
         features_to_model.transform(target="class_number_of_rings", description="Abalone Regression Model")
         print("Waiting for the Model to be created...")
-        time.sleep(30)
+        time.sleep(50)
 
     # Create the abalone_regression Endpoint
     if not Endpoint("abalone-regression-end").check():
