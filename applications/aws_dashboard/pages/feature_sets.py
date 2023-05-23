@@ -19,7 +19,7 @@ register_page(__name__, path="/feature_sets", name="Feature Sets")
 # Put the components into 'dark' mode
 load_figure_template("darkly")
 
-# Grab a view that gives us a summary of the DataSources in SageWorks
+# Grab a view that gives us a summary of the FeatureSets in SageWorks
 feature_set_broker = FeatureSetWebView()
 feature_set_rows = feature_set_broker.feature_sets_summary()
 

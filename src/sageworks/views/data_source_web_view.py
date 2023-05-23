@@ -20,13 +20,13 @@ class DataSourceWebView(ArtifactsWebView):
         super().refresh()
         self.data_sources_df = self.data_sources_summary()
 
-    def view_data(self) -> dict:
+    def view_data(self) -> pd.DataFrame:
         """Get all the data that's useful for this view
 
         Returns:
-            dict: Dictionary of Pandas Dataframes, e.g. {'DATA_SOURCES': pd.DataFrame, ...}
+            pd.DataFrame: DataFrame of the DataSources View Data
         """
-        return {"DATA_SOURCES": self.data_sources_df}  # Just the DataSources Summary Dataframe
+        return self.data_sources_df
 
     def data_source_sample(self, data_source_index: int) -> pd.DataFrame:
         """Get a sample dataframe for the given DataSource Index"""
@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
     # List the DataSources
     print("DataSourcesSummary:")
-    summary = data_view.view_data()["DATA_SOURCES"]
+    summary = data_view.view_data()
     print(summary.head())
 
     # Get the details for the first DataSource

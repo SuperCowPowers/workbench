@@ -1,4 +1,4 @@
-"""Callbacks/Connections in the Web User Interface"""
+"""Callbacks for the Model Subpage Web User Interface"""
 import dash
 from dash import Dash
 from dash.dependencies import Input, Output
@@ -12,25 +12,26 @@ from sageworks.web_components import (
     model_details,
     feature_details,
 )
-from sageworks.views.artifacts_web_view import ArtifactsWebView
+from sageworks.views.model_web_view import ModelWebView
 
 
-def update_last_updated(app: Dash):
+def refresh_data_timer(app: Dash):
     @app.callback(
         Output("last-updated-models", "children"),
         Input("models-updater", "n_intervals"),
     )
-    def time_updated(n):
+    def time_updated(_n):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
-def update_models_table(app: Dash, sageworks_artifacts: ArtifactsWebView):
+def update_models_table(app: Dash, model_broker: ModelWebView):
     @app.callback(Output("models_table", "data"), Input("models-updater", "n_intervals"))
-    def data_sources_update(n):
-        print("Calling Models Refresh...")
-        sageworks_artifacts.refresh()
-        models = sageworks_artifacts.models_summary()
-        return models.to_dict("records")
+    def feature_sets_update(_n):
+        """Return the table data as a dictionary"""
+        model_broker.refresh()
+        model_rows = model_broker.models_summary()
+        model_rows["id"] = model_rows.index
+        return model_rows.to_dict("records")
 
 
 # Highlights the selected row in the table
@@ -43,14 +44,14 @@ def table_row_select(app: Dash, table_name: str):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
-        foo = [
+        row_style = [
             {
                 "if": {"filter_query": "{{id}} ={}".format(i)},
                 "backgroundColor": "rgb(80, 80, 80)",
             }
             for i in selected_rows
         ]
-        return foo
+        return row_style
 
 
 # Updates the feature importance and confusion matrix figures when a model is selected

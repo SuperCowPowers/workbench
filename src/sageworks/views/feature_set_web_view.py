@@ -20,13 +20,13 @@ class FeatureSetWebView(ArtifactsWebView):
         super().refresh()
         self.feature_sets_df = self.feature_sets_summary()
 
-    def view_data(self) -> dict:
+    def view_data(self) -> pd.DataFrame:
         """Get all the data that's useful for this view
 
         Returns:
-            dict: Dictionary of Pandas Dataframes, e.g. {'DATA_SOURCES': pd.DataFrame, ...}
+            pd.DataFrame: DataFrame of the FeatureSets View Data
         """
-        return {"DATA_SOURCES": self.feature_sets_df}  # Just the FeatureSets Summary Dataframe
+        return self.feature_sets_df
 
     def feature_set_sample(self, feature_set_index: int) -> pd.DataFrame:
         """Get a sample dataframe for the given FeatureSet Index"""
@@ -94,20 +94,20 @@ if __name__ == "__main__":
     from pprint import pprint
 
     # Create the class and get the AWS FeatureSet details
-    data_view = FeatureSetWebView()
+    feature_view = FeatureSetWebView()
 
     # List the FeatureSets
     print("FeatureSetsSummary:")
-    summary = data_view.view_data()["DATA_SOURCES"]
+    summary = feature_view.view_data()
     print(summary.head())
 
     # Get the details for the first FeatureSet
     print("\nFeatureSetDetails:")
-    details = data_view.feature_set_details(0)
+    details = feature_view.feature_set_details(0)
     pprint(details)
 
     # Get a sample dataframe for the given FeatureSets
     print("\nSampleDataFrame:")
-    sample_df = data_view.feature_set_smart_sample(0)
+    sample_df = feature_view.feature_set_smart_sample(0)
     print(sample_df.shape)
     print(sample_df.head())

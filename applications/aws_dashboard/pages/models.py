@@ -13,7 +13,7 @@ from sageworks.web_components import (
     model_details,
     feature_details,
 )
-from sageworks.views.artifacts_web_view import ArtifactsWebView
+from sageworks.views.model_web_view import ModelWebView
 
 # Local Imports
 from pages.layout.models_layout import models_layout
@@ -26,9 +26,9 @@ register_page(__name__, path="/models")
 # Put the components into 'dark' mode
 load_figure_template("darkly")
 
-# Grab a view that gives us a summary of all the artifacts currently in SageWorks
-web_artifacts_summary = ArtifactsWebView()
-models_summary = web_artifacts_summary.models_summary(concise=True)
+# Grab a view that gives us a summary of the FeatureSets in SageWorks
+model_broker = ModelWebView()
+models_rows = model_broker.models_summary()
 
 # Read in our fake model data
 data_path = os.path.join(os.path.dirname(__file__), "data/toy_data.csv")
@@ -37,7 +37,7 @@ fake_model_info = model_data.ModelData(data_path)
 # Create a table to display the models
 models_table = table.create(
     "models_table",
-    models_summary,
+    models_rows,
     header_color="rgb(60, 100, 60)",
     row_select="single",
     markdown_columns=["Model Group"],
@@ -61,9 +61,8 @@ components = {
 
 # Setup our callbacks/connections
 app = dash.get_app()
-callbacks.update_last_updated(app)
-# FIXME: Updating the table somehow breaks the row selection callback
-# callbacks.update_models_table(app, models_summary)
+callbacks.refresh_data_timer(app)
+callbacks.update_models_table(app, model_broker)
 
 # Callback for the model table
 callbacks.table_row_select(app, "models_table")
