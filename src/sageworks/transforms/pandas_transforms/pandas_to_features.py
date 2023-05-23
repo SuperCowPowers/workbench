@@ -87,10 +87,14 @@ class PandasToFeatures(Transform):
         self.output_df = pd.get_dummies(self.output_df, columns=categorical_columns)
 
     @staticmethod
-    def convert_nullable_types(df: pd.DataFrame) -> pd.DataFrame:
-        """Convert the new Pandas 'nullable types' since AWS SageMaker code doesn't currently support them
-        See: https://github.com/aws/sagemaker-python-sdk/pull/3740"""
+    def convert_column_types(df: pd.DataFrame) -> pd.DataFrame:
+        """Convert the types of the DataFrame to the correct types for the Feature Store"""
+        datetime_type = ["datetime", "datetime64", "datetime64[ns]", "datetimetz"]
+        for column in df.select_dtypes(include=datetime_type).columns:
+            df[column] = df[column].astype("string")
         for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
+            df[column] = df[column].astype("int64")
+        for column in list(df.select_dtypes(include='bool').columns):
             df[column] = df[column].astype("int64")
         for column in list(df.select_dtypes(include=[pd.Float64Dtype]).columns):
             df[column] = df[column].astype("float64")
@@ -107,8 +111,12 @@ class PandasToFeatures(Transform):
         # Convert object and string types to Categorical
         self.categorical_converter()
 
-        # Convert Int64 and Float64 types (see: https://github.com/aws/sagemaker-python-sdk/pull/3740)
-        self.output_df = self.convert_nullable_types(self.output_df)
+        # We need to convert some of our column types to the correct types
+        # Feature Store only supports these data types:
+        # - Integral
+        # - Fractional
+        # - String (timestamp/datetime types need to be converted to string)
+        self.output_df = self.convert_column_types(self.output_df)
 
         # FeatureSet Internal Storage (Athena) will convert columns names to lowercase, so we need
         # to make sure that the column names are lowercase to match and avoid downstream issues
