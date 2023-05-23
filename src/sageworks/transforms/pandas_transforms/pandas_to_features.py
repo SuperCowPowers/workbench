@@ -94,7 +94,7 @@ class PandasToFeatures(Transform):
             df[column] = df[column].astype("string")
         for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
             df[column] = df[column].astype("int64")
-        for column in list(df.select_dtypes(include='bool').columns):
+        for column in list(df.select_dtypes(include="bool").columns):
             df[column] = df[column].astype("int64")
         for column in list(df.select_dtypes(include=[pd.Float64Dtype]).columns):
             df[column] = df[column].astype("float64")

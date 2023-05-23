@@ -12,6 +12,7 @@ path = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(path, "requirements.txt")) as f:
     install_requires = f.read().strip().split("\n")
 
+
 # Data and Example Files
 def get_files(dir_name):
     """Simple directory walker"""
