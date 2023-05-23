@@ -25,7 +25,7 @@ class AWSIdentityCheck:
         """Check the AWS Identity"""
 
         # Log if there's any AWS_PROFILE set
-        active_profile = os.getenv('AWS_PROFILE')
+        active_profile = os.getenv("AWS_PROFILE")
         if active_profile:
             self.log.info(f"Active AWS_PROFILE: {active_profile}")
         else:
