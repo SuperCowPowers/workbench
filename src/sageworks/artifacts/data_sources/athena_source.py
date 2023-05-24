@@ -39,7 +39,7 @@ class AthenaSource(DataSourceAbstract):
         self.catalog_table_meta = self._refresh_broker(force_refresh)
 
         # All done
-        print(f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}")
+        self.log.debug(f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}")
 
     def _refresh_broker(self, force_refresh=False):
         """Internal: Refresh our internal catalog metadata

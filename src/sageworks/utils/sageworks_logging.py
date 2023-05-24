@@ -13,5 +13,5 @@ def logging_setup():
     )
 
     # Make boto be more quiet
-    logging.getLogger("boto3").setLevel(logging.CRITICAL)
-    logging.getLogger("botocore").setLevel(logging.CRITICAL)
+    logging.getLogger("boto3").setLevel(logging.WARNING)
+    logging.getLogger("botocore").setLevel(logging.WARNING)
