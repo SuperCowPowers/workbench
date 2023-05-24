@@ -46,4 +46,9 @@ setup(
         "Programming Language :: Python :: Implementation :: PyPy",
     ],
     setup_requires=["setuptools_scm", "setuptools"],
+    entry_points={
+        "console_scripts": [
+            "sageworks = sageworks.cli.cli:cli",
+        ],
+    },
 )
