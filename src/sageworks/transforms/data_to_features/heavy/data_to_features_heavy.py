@@ -145,7 +145,7 @@ if __name__ == "__main__":
     """Exercise the DataToFeaturesHeavy Class"""
 
     # Create my DF to Feature Set Transform
-    data_to_features_heavy = DataToFeaturesHeavy("heavy_dns", "heavy_dns")
+    data_to_features_heavy = DataToFeaturesHeavy("heavy_dns", "dns_features_1")
     data_to_features_heavy.set_output_tags(["test", "heavy"])
 
     # Store this dataframe as a SageWorks Feature Set
