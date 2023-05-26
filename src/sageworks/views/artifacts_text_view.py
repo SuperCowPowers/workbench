@@ -1,6 +1,6 @@
 """ArtifactsTextView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
 import sys
-import argparse
+import json
 import pandas as pd
 from termcolor import colored
 
@@ -17,9 +17,6 @@ class ArtifactsTextView(View):
 
         # Get AWS Service information for ALL the categories (data_source, feature_set, endpoints, etc)
         self.aws_artifact_data = self.aws_broker.get_all_metadata()
-
-        # Get AWS Account Region
-        self.aws_region = self.aws_account_clamp.region()
 
         # Setup Pandas output options
         pd.set_option("display.max_colwidth", 50)
@@ -71,6 +68,8 @@ class ArtifactsTextView(View):
             if df.empty:
                 print("\tNo ArtifactsTextView Found")
             else:
+                # Remove any columns that start with _
+                df = df.loc[:, ~df.columns.str.startswith("_")]
                 print(df.to_string(index=False))
 
     def incoming_data_summary(self) -> pd.DataFrame:
@@ -123,6 +122,7 @@ class ArtifactsTextView(View):
                     "Input": str(
                         info.get("Parameters", {}).get("sageworks_input", "-"),
                     ),
+                    "_aws_url": self.aws_url(info)  # Hidden Column
                 }
                 data_summary.append(summary)
 
@@ -164,6 +164,7 @@ class ArtifactsTextView(View):
                 "Created": self.datetime_string(group_info.get("CreationTime")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
+                "_aws_url": self.aws_url(group_info)  # Hidden Column
             }
             data_summary.append(summary)
 
@@ -276,16 +277,15 @@ class ArtifactsTextView(View):
         # Date + Hour Minute
         return datetime_obj.strftime("%Y-%m-%d %H:%M")
 
+    @staticmethod
+    def aws_url(artifact_info):
+        """Helper: Try to extract the AWS URL from the Artifact Info Object"""
+        details = artifact_info.get("Parameters", {}).get("sageworks_details", "{}")
+        return json.loads(details).get("aws_url", "unknown")
+
 
 if __name__ == "__main__":
-    # Collect args from the command line
-    parser = argparse.ArgumentParser()
-    args, commands = parser.parse_known_args()
-
-    # Check for unknown args
-    if commands:
-        print("Unrecognized args: %s" % commands)
-        sys.exit(1)
+    import time
 
     # Create the class and get the AWS Model Registry details
     artifacts = ArtifactsTextView()
@@ -295,3 +295,6 @@ if __name__ == "__main__":
 
     # Give a text summary of all the Artifacts in the AWS Account
     artifacts.summary()
+
+    # Give any broker threads time to finish
+    time.sleep(1)
