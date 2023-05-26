@@ -122,7 +122,7 @@ class ArtifactsTextView(View):
                     "Input": str(
                         info.get("Parameters", {}).get("sageworks_input", "-"),
                     ),
-                    "_aws_url": self.aws_url(info)  # Hidden Column
+                    "_aws_url": self.aws_url(info),  # Hidden Column
                 }
                 data_summary.append(summary)
 
@@ -164,7 +164,7 @@ class ArtifactsTextView(View):
                 "Created": self.datetime_string(group_info.get("CreationTime")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
-                "_aws_url": self.aws_url(group_info)  # Hidden Column
+                "_aws_url": self.aws_url(group_info),  # Hidden Column
             }
             data_summary.append(summary)
 

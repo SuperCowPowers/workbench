@@ -147,7 +147,7 @@ class Artifact(ABC):
             "created": self.created(),
             "modified": self.modified(),
             "input": self.get_input(),
-            "sageworks_tags": self.sageworks_tags()
+            "sageworks_tags": self.sageworks_tags(),
         }
 
     @staticmethod
