@@ -41,6 +41,11 @@ class AthenaSource(DataSourceAbstract):
         # All done
         self.log.debug(f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}")
 
+        # Compute our AWS URL
+        query = f"select * from {self.data_catalog_db}.{self.table_name} limit 10"
+        query_exec_id = wr.athena.start_query_execution(sql=query, database=self.data_catalog_db, boto3_session=self.boto_session)
+        self._aws_url = f"https://console.aws.amazon.com/athena/home?force&region={self.aws_region}#query/history/{query_exec_id}"
+
     def _refresh_broker(self, force_refresh=False):
         """Internal: Refresh our internal catalog metadata
         Args:
@@ -123,7 +128,7 @@ class AthenaSource(DataSourceAbstract):
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        return f"https://{self.aws_region}.console.aws.amazon.com/athena/home"
+        return self._aws_url
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
