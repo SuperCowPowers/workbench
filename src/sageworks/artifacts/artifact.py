@@ -119,12 +119,16 @@ class Artifact(ABC):
         tags = combined_tags.split(":")
         return tags
 
+    def get_input(self) -> str:
+        """Get the input data for this artifact"""
+        return self.sageworks_meta().get("sageworks_input", "unknown")
+
     def get_status(self) -> str:
         """Get the status for this artifact"""
         return self.sageworks_meta().get("sageworks_status", "unknown")
 
     def set_status(self, status: str):
-        """Get the status for this artifact
+        """Set the status for this artifact
         Args:
             status (str): Status to set for this artifact
         """
@@ -139,11 +143,11 @@ class Artifact(ABC):
         return {
             "uuid": self.uuid,
             "aws_arn": self.arn(),
-            "aws_url": self.aws_url(),
             "size": self.size(),
             "created": self.created(),
             "modified": self.modified(),
-            "sageworks_tags": self.sageworks_tags(),
+            "input": self.get_input(),
+            "sageworks_tags": self.sageworks_tags()
         }
 
     @staticmethod
