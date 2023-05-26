@@ -116,8 +116,8 @@ class FeatureSet(Artifact):
         return self.data_source.query(query)
 
     def aws_url(self):
-        """The AWS URL for looking at/querying this data source"""
-        return f"https://{self.aws_region}.console.aws.amazon.com/athena/home"
+        """The AWS URL for looking at/querying the underlying data source"""
+        return self.data_source.details().get("aws_url", "unknown")
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
