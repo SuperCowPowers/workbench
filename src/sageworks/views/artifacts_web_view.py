@@ -1,5 +1,4 @@
 """ArtifactsWebView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
-import sys
 import pandas as pd
 
 # SageWorks Imports

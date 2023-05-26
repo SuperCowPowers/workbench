@@ -1,5 +1,4 @@
 """ArtifactsTextView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
-import sys
 import json
 import pandas as pd
 from termcolor import colored

@@ -1,6 +1,5 @@
 """FeatureSet: SageWorks Feature Set accessible through Athena"""
 import time
-import json
 from datetime import datetime, timezone
 
 import botocore.exceptions
@@ -196,7 +195,6 @@ class FeatureSet(Artifact):
         """
         # First check if we have already computed the details
         if self.sageworks_meta().get("details_computed") and not recompute:
-
             # Get the SageWorks Metadata
             meta = self.sageworks_meta()
 
