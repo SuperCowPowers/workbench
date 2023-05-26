@@ -41,11 +41,6 @@ class AthenaSource(DataSourceAbstract):
         # All done
         self.log.debug(f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}")
 
-        # Compute our AWS URL
-        query = f"select * from {self.data_catalog_db}.{self.table_name} limit 10"
-        query_exec_id = wr.athena.start_query_execution(sql=query, database=self.data_catalog_db, boto3_session=self.boto_session)
-        self._aws_url = f"https://console.aws.amazon.com/athena/home?force&region={self.aws_region}#query/history/{query_exec_id}"
-
     def _refresh_broker(self, force_refresh=False):
         """Internal: Refresh our internal catalog metadata
         Args:
@@ -128,7 +123,7 @@ class AthenaSource(DataSourceAbstract):
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        return self._aws_url
+        return self.details().get("aws_url", "unknown")
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
@@ -296,9 +291,17 @@ class AthenaSource(DataSourceAbstract):
         if self.sageworks_meta().get("sageworks_details") and not recompute:
             return json.loads(self.sageworks_meta()["sageworks_details"])
 
+        # Get the details from the base class
         details = super().details()
+
+        # Compute additional details
         details["s3_storage_location"] = self.s3_storage_location()
         details["storage_type"] = "athena"
+
+        # Compute our AWS URL
+        query = f"select * from {self.data_catalog_db}.{self.table_name} limit 10"
+        query_exec_id = wr.athena.start_query_execution(sql=query, database=self.data_catalog_db, boto3_session=self.boto_session)
+        details["aws_url"] = f"https://console.aws.amazon.com/athena/home?force&region={self.aws_region}#query/history/{query_exec_id}"
 
         # Convert any datetime fields to ISO-8601 strings
         details = convert_all_to_iso8601(details)
@@ -330,7 +333,7 @@ if __name__ == "__main__":
     from pprint import pprint
 
     # Retrieve a Data Source
-    my_data = AthenaSource("test_data")
+    my_data = AthenaSource("abalone_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.check()
@@ -338,9 +341,8 @@ if __name__ == "__main__":
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")
 
-    # What's my AWS ARN and URL
+    # What's my AWS ARN
     print(f"AWS ARN: {my_data.arn()}")
-    print(f"AWS URL: {my_data.aws_url()}")
 
     # Get the S3 Storage for this Data Source
     print(f"S3 Storage: {my_data.s3_storage_location()}")
@@ -355,6 +357,9 @@ if __name__ == "__main__":
     # Column Names and Types
     print(f"Column Names: {my_data.column_names()}")
     print(f"Column Types: {my_data.column_types()}")
+
+    # Get the input for this Artifact
+    print(f"Input: {my_data.get_input()}")
 
     # Get Tags associated with this Artifact
     print(f"Tags: {my_data.sageworks_tags()}")
