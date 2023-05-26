@@ -52,7 +52,7 @@ class Connector(ABC):
     @staticmethod
     def _aws_tags_to_dict(aws_tags) -> dict:
         """Internal: AWS Tags are in an odd format, so convert to regular dictionary"""
-        return {item["Key"]: item["Value"] for item in aws_tags if "sageworks" in item["Key"]}
+        return {item["Key"]: item["Value"] for item in aws_tags}
 
     def sageworks_meta(self, arn: str) -> dict:
         """Get the SageWorks specific metadata for this Artifact/ARN

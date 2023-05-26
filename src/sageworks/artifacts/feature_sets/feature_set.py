@@ -1,5 +1,6 @@
 """FeatureSet: SageWorks Feature Set accessible through Athena"""
 import time
+import json
 from datetime import datetime, timezone
 
 import botocore.exceptions
@@ -14,6 +15,7 @@ from sageworks.artifacts.artifact import Artifact
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
+from sageworks.utils.iso_8601 import convert_all_to_iso8601
 
 
 class FeatureSet(Artifact):
@@ -185,48 +187,53 @@ class FeatureSet(Artifact):
         )
         return query
 
-    def details_sav(self) -> dict:
-        """Additional Details about this FeatureSet
-        Returns:
-            dict: A dictionary of details about this FeatureSet
-        Notes:
-            - num_columns
-            - num_rows
-            - column_details
-            - storage_type ('athena' or 'rds')
-            - storage_uuid
-
-        Drill Down:
-        You can use the fs.get_data_source().details() method to get additional
-        details on the underlying DataSource object.
-        """
-        # Include the summary information in the details
-        fs_details = self.summary()
-
-        # Number of Columns
-        fs_details["num_columns"] = self.num_columns()
-
-        # Number of Rows
-        fs_details["num_rows"] = self.num_rows()
-
-        # Column Details
-        fs_details["column_details"] = self.column_details()
-
-        # Underlying Storage Details
-        fs_details["storage_type"] = "athena"  # TODO: Add RDS support
-        fs_details["storage_uuid"] = self.data_source.uuid
-
-        # Return the details
-        return fs_details
-
     def details(self, recompute: bool = False) -> dict[dict]:
         """Additional Details about this FeatureSet Artifact
         Args:
             recompute(bool): Recompute the details (default: False)
         Returns:
-            dict(dict): A dictionary of details about this AthenaSource
+            dict(dict): A dictionary of details about this FeatureSet
         """
-        return self.all_meta()
+        # First check if we have already computed the details
+        if self.sageworks_meta().get("details_computed") and not recompute:
+
+            # Get the SageWorks Metadata
+            meta = self.sageworks_meta()
+
+            # Hack for AWS URL
+            meta["aws_url"] = meta["aws_url"].replace("__question__", "?").replace("__pound__", "#")
+            return meta
+
+        # Create a dictionary of details
+        details = dict()
+        details["details_computed"] = True
+
+        # Number of Columns
+        details["num_columns"] = self.num_columns()
+
+        # Number of Rows
+        details["num_rows"] = self.num_rows()
+
+        # Additional Details
+        details["sageworks_status"] = self.get_status()
+        details["sageworks_input"] = self.get_input()
+        details["sageworks_tags"] = ":".join(self.sageworks_tags())
+
+        # Underlying Storage Details
+        details["storage_type"] = "athena"  # TODO: Add RDS support
+        details["storage_uuid"] = self.data_source.uuid
+
+        # SageMaker Tags have a bunch of constraints so we need to do some replacements
+        details["aws_url"] = self.aws_url().replace("?", "__question__").replace("#", "__pound__")
+
+        # Convert any datetime fields to ISO-8601 strings
+        details = convert_all_to_iso8601(details)
+
+        # Push the details data into our DataSource Metadata
+        self.upsert_sageworks_meta(details)
+
+        # Return the details data
+        return details
 
     def delete(self):
         """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
@@ -326,8 +333,7 @@ if __name__ == "__main__":
 
     # Get the details for this Feature Set
     print("\nDetails:")
-    details = my_features.details(recompute=True)
-    pprint(details)
+    pprint(my_features.details(recompute=True))
 
     # Now do deep dive on storage
     storage = my_features.get_data_source()

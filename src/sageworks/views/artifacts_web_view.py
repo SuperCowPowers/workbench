@@ -39,7 +39,7 @@ class ArtifactsWebView(ArtifactsTextView):
         # Pull the AWS URLs and construct some hyperlinks
         hyperlinked_names = []
         for group_name, aws_url in zip(feature_df["Feature Group"], feature_df["_aws_url"]):
-            hyperlinked_names.append(self.hyperlinks(group_name, "data_sources", aws_url))
+            hyperlinked_names.append(self.hyperlinks(group_name, "feature_sets", aws_url))
         feature_df["Feature Group"] = hyperlinked_names
 
         # Drop the AWS URL column and return the dataframe

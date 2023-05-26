@@ -303,8 +303,8 @@ class AthenaSource(DataSourceAbstract):
         query_exec_id = wr.athena.start_query_execution(
             sql=query, database=self.data_catalog_db, boto3_session=self.boto_session
         )
-        base_url = "https://console.aws.amazon.com/athena/home?force"
-        details["aws_url"] = f"{base_url}&region={self.aws_region}#query/history/{query_exec_id}"
+        base_url = "https://console.aws.amazon.com/athena/home"
+        details["aws_url"] = f"{base_url}?region={self.aws_region}#query/history/{query_exec_id}"
 
         # Convert any datetime fields to ISO-8601 strings
         details = convert_all_to_iso8601(details)

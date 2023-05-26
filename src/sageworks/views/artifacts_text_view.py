@@ -122,7 +122,7 @@ class ArtifactsTextView(View):
                     "Input": str(
                         info.get("Parameters", {}).get("sageworks_input", "-"),
                     ),
-                    "_aws_url": self.aws_url(info),  # Hidden Column
+                    "_aws_url": self.aws_url(info, "DataSource"),  # Hidden Column
                 }
                 data_summary.append(summary)
 
@@ -164,7 +164,7 @@ class ArtifactsTextView(View):
                 "Created": self.datetime_string(group_info.get("CreationTime")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
-                "_aws_url": self.aws_url(group_info),  # Hidden Column
+                "_aws_url": self.aws_url(group_info, "FeatureSet"),  # Hidden Column
             }
             data_summary.append(summary)
 
@@ -278,10 +278,15 @@ class ArtifactsTextView(View):
         return datetime_obj.strftime("%Y-%m-%d %H:%M")
 
     @staticmethod
-    def aws_url(artifact_info):
+    def aws_url(artifact_info, artifact_type="DataSource"):
         """Helper: Try to extract the AWS URL from the Artifact Info Object"""
-        details = artifact_info.get("Parameters", {}).get("sageworks_details", "{}")
-        return json.loads(details).get("aws_url", "unknown")
+        if artifact_type == "DataSource":
+            details = artifact_info.get("Parameters", {}).get("sageworks_details", "{}")
+            return json.loads(details).get("aws_url", "unknown")
+        elif artifact_type == "FeatureSet":
+            aws_url = artifact_info.get("sageworks_meta", {}).get("aws_url", "unknown")
+            # Hack for constraints on the SageMaker Feature Group Tags
+            return aws_url.replace("__question__", "?").replace("__pound__", "#")
 
 
 if __name__ == "__main__":
