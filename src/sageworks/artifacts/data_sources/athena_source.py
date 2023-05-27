@@ -152,7 +152,8 @@ class AthenaSource(DataSourceAbstract):
 
     def query(self, query: str) -> pd.DataFrame:
         """Query the AthenaSource"""
-        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db, boto3_session=self.boto_session)
+        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db,
+                                      ctas_approach=False, boto3_session=self.boto_session)
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
         return df
@@ -164,7 +165,8 @@ class AthenaSource(DataSourceAbstract):
     def athena_test_query(self):
         """Validate that Athena Queries are working"""
         query = f"select count(*) as count from {self.table_name}"
-        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db, boto3_session=self.boto_session)
+        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db,
+                                      ctas_approach=False, boto3_session=self.boto_session)
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
@@ -176,7 +178,7 @@ class AthenaSource(DataSourceAbstract):
             pd.DataFrame: A sample DataFrame from this DataSource
         """
 
-        # First check if we have already computed the quartiles
+        # First check if we have already computed the sample dataframe
         if self.sageworks_meta().get("sageworks_sample_rows") and not recompute:
             return pd.read_json(self.sageworks_meta()["sageworks_sample_rows"], orient="records", lines=True)
 
@@ -184,7 +186,7 @@ class AthenaSource(DataSourceAbstract):
         sample_rows = 100
         num_rows = self.num_rows()
         if num_rows > sample_rows:
-            # Bernoulli Sampling has reasonable variance so we're going to +1 the
+            # Bernoulli Sampling has reasonable variance, so we're going to +1 the
             # sample percentage and then simply clamp it to 100 rows
             percentage = round(sample_rows * 100.0 / num_rows) + 1
             self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {sample_rows}...")
