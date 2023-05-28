@@ -25,6 +25,7 @@ tables["INCOMING_DATA"] = table.create(
     "INCOMING_DATA",
     sageworks_artifacts["INCOMING_DATA"],
     header_color="rgb(60, 60, 100)",
+    markdown_columns=["Name"]
 )
 tables["GLUE_JOBS"] = table.create(
     "GLUE_JOBS",

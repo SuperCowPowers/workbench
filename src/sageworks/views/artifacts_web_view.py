@@ -11,6 +11,23 @@ class ArtifactsWebView(ArtifactsTextView):
         # Call SuperClass Initialization
         super().__init__()
 
+    def incoming_data_summary(self) -> pd.DataFrame:
+        """Get summary data about the AWS Glue Jobs"""
+
+        # We get the dataframe from the ArtifactsTextView
+        s3_data_df = super().incoming_data_summary()
+        s3_data_df["uuid"] = s3_data_df["Name"]
+
+        # Pull the AWS URLs and construct some hyperlinks
+        hyperlinked_names = []
+        for name, aws_url in zip(s3_data_df["Name"], s3_data_df["_aws_url"]):
+            hyperlinked_names.append(self.hyperlinks(name, "glue_jobs", aws_url))
+        s3_data_df["Name"] = hyperlinked_names
+
+        # Drop the AWS URL column and return the dataframe
+        s3_data_df.drop(columns=["_aws_url"], inplace=True)
+        return s3_data_df
+
     def glue_jobs_summary(self) -> pd.DataFrame:
         """Get summary data about the AWS Glue Jobs"""
 

@@ -118,12 +118,12 @@ class AWSServiceBroker:
         cls.fresh_cache.set(category, True)
 
     @classmethod
-    def get_metadata(cls, category: ServiceCategory, force_fresh=False) -> dict:
+    def get_metadata(cls, category: ServiceCategory, force_refresh=False) -> dict:
         """Pull Metadata for the given Service Category
 
         Args:
             category (ServiceCategory): The Service Category to pull metadata from
-            force_fresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+            force_refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
 
         Returns:
             dict: The Metadata for the Requested Service Category
@@ -137,7 +137,7 @@ class AWSServiceBroker:
         meta_data = cls.meta_cache.get(category)
 
         # If we don't have the AWS data in the cache, we need to BLOCK and get it
-        if meta_data is None or force_fresh:
+        if meta_data is None or force_refresh:
             cls.log.info(f"Blocking: Getting metadata for {category}...")
             cls.refresh_aws_data(category)
             return cls.meta_cache.get(category)
@@ -156,15 +156,15 @@ class AWSServiceBroker:
         return cls.meta_cache.get(category)
 
     @classmethod
-    def get_all_metadata(cls, force_fresh=False) -> dict:
+    def get_all_metadata(cls, force_refresh=False) -> dict:
         """Pull the metadata for ALL the Service Categories
         Args:
-            force_fresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+            force_refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
         Returns:
             dict: The Metadata for ALL the Service Categories
         """
         cls.log.warning("Getting ALL AWS Metadata: You should call get_metadata() with specific categories")
-        return {_category: cls.get_metadata(_category, force_fresh) for _category in ServiceCategory}
+        return {_category: cls.get_metadata(_category, force_refresh) for _category in ServiceCategory}
 
     @classmethod
     def wait_for_refreshes(cls) -> None:

@@ -78,17 +78,18 @@ class ArtifactsTextView(View):
         data = self.aws_artifact_data[ServiceCategory.INCOMING_DATA_S3]
         data_summary = []
         for name, info in data.items():
-            # Get the size of the S3 Storage Object(s)
+            # Get the name and the size of the S3 Storage Object(s)
+            name = "/".join(name.split("/")[-2:]).replace("incoming-data/", "")
+            info["Name"] = name
             size = info.get("ContentLength") / 1_000_000
             summary = {
-                "Name": "/".join(name.split("/")[-2:]).replace("incoming-data/", ""),
+                "Name": name,
                 "Size(MB)": f"{size:.2f}",
                 "Modified": self.datetime_string(info.get("LastModified", "-")),
                 "ContentType": str(info.get("ContentType", "-")),
                 "ServerSideEncryption": info.get("ServerSideEncryption", "-"),
-                "Tags": str(
-                    info.get("tags", "-"),
-                ),
+                "Tags": str(info.get("tags", "-")),
+                "_aws_url": self.aws_url(info, "S3"),  # Hidden Column
             }
             data_summary.append(summary)
 
@@ -112,6 +113,8 @@ class ArtifactsTextView(View):
                 "Workers": info["NumberOfWorkers"],
                 "WorkerType": info["WorkerType"],
                 "Modified": self.datetime_string(info.get("LastModifiedOn")),
+                "Status": info["sageworks_meta"]["status"],
+                "LastRun": info["sageworks_meta"]["last_run"],
                 "_aws_url": self.aws_url(info, "GlueJob"),  # Hidden Column
             }
             glue_summary.append(summary)
@@ -125,7 +128,9 @@ class ArtifactsTextView(View):
                 "GlueVersion",
                 "Workers",
                 "WorkerType",
-                "Modified"
+                "Modified",
+                "Status",
+                "LastRun",
             ]
             return pd.DataFrame(columns=columns)
 
@@ -308,9 +313,17 @@ class ArtifactsTextView(View):
         # Date + Hour Minute
         return datetime_obj.strftime("%Y-%m-%d %H:%M")
 
-    def aws_url(self, artifact_info, artifact_type="DataSource"):
+    def aws_url(self, artifact_info, artifact_type):
         """Helper: Try to extract the AWS URL from the Artifact Info Object"""
-        if artifact_type == "GlueJob":
+        if artifact_type == "S3":
+            # Construct the AWS URL for the S3 Bucket
+            name = artifact_info["Name"]
+            region = self.aws_account_clamp.region()
+            s3_prefix = f"incoming-data/{name}"
+            bucket_name = self.aws_account_clamp.sageworks_bucket_name
+            base_url = "https://s3.console.aws.amazon.com/s3/object"
+            return f"{base_url}/{bucket_name}?region={region}&prefix={s3_prefix}"
+        elif artifact_type == "GlueJob":
             # Construct the AWS URL for the Glue Job
             region = self.aws_account_clamp.region()
             job_name = artifact_info["Name"]
