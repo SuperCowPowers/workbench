@@ -46,7 +46,7 @@ class AthenaSource(DataSourceAbstract):
         Args:
             force_refresh (bool): Force a refresh of the metadata
         """
-        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_fresh=force_refresh)
+        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=force_refresh)
         return _catalog_meta[self.data_catalog_db].get(self.table_name)
 
     def check(self) -> bool:
@@ -72,8 +72,8 @@ class AthenaSource(DataSourceAbstract):
     def arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for this artifact"""
         # Grab our SageWorks Role Manager, get our AWS account id, and region for ARN creation
-        account_id = self.aws_account_clamp.account_id()
-        region = self.aws_account_clamp.region()
+        account_id = self.aws_account_clamp.account_id
+        region = self.aws_account_clamp.region
         arn = f"arn:aws:glue:{region}:{account_id}:table/{self.data_catalog_db}/{self.table_name}"
         return arn
 

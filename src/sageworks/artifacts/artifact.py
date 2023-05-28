@@ -27,7 +27,7 @@ class Artifact(ABC):
     boto_session = aws_account_clamp.boto_session()
     sm_session = aws_account_clamp.sagemaker_session(boto_session)
     sm_client = aws_account_clamp.sagemaker_client(boto_session)
-    aws_region = aws_account_clamp.region()
+    aws_region = aws_account_clamp.region
 
     # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
     aws_broker = AWSServiceBroker()

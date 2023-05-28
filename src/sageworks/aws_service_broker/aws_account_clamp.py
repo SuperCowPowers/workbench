@@ -26,8 +26,10 @@ class AWSAccountClamp:
         role_name = config.get_config_value("SAGEWORKS_AWS", "SAGEWORKS_ROLE_NAME")
         self.role_name = role_name
 
-        # Also grab our main SageWorks S3 Bucket Name
+        # Let's fill in some of the AWS Session details
         self.sageworks_bucket_name = config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+        self.account_id = boto3.client("sts").get_caller_identity()["Account"]
+        self.region = boto3.session.Session().region_name
 
         # The default AWS Assume Role TTL is 1 hour, so we'll set our TTL to 50 minutes
         self.session_time_delta = timedelta(minutes=50)
@@ -41,7 +43,7 @@ class AWSAccountClamp:
             self.log.info("AWS Account Info:")
             self.log.info(f"Account: {identity['Account']}")
             self.log.info(f"ARN: {identity['Arn']}")
-            self.log.info(f"Region: {self.region()}")
+            self.log.info(f"Region: {self.region}")
             return True
         except (ClientError, UnauthorizedSSOTokenError) as exc:
             self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
@@ -144,15 +146,6 @@ class AWSAccountClamp:
         """Create a sageworks SageMaker client (using our boto3 refreshable session)"""
         session = session or self.boto_session()
         return session.client("sagemaker")
-
-    @staticmethod
-    def account_id():
-        """Get the AWS AccountID"""
-        return boto3.client("sts").get_caller_identity()["Account"]
-
-    def region(self):
-        """Get the AWS AccountID"""
-        return self.boto_session().region_name
 
 
 if __name__ == "__main__":

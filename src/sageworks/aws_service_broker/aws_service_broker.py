@@ -221,7 +221,7 @@ if __name__ == "__main__":
 
     # Get the Metadata for ALL the categories
     # NOTE: This should force a refresh of the metadata
-    # pprint(aws_broker.get_all_metadata(force_fresh=True))
+    # pprint(aws_broker.get_all_metadata(force_refresh=True))
 
     # Get S3 object sizes
     incoming_data_size = aws_broker.get_s3_object_sizes(ServiceCategory.INCOMING_DATA_S3)

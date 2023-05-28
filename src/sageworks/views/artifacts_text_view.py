@@ -113,8 +113,8 @@ class ArtifactsTextView(View):
                 "Workers": info["NumberOfWorkers"],
                 "WorkerType": info["WorkerType"],
                 "Modified": self.datetime_string(info.get("LastModifiedOn")),
+                "LastRun": self.datetime_string(info["sageworks_meta"]["last_run"]),
                 "Status": info["sageworks_meta"]["status"],
-                "LastRun": info["sageworks_meta"]["last_run"],
                 "_aws_url": self.aws_url(info, "GlueJob"),  # Hidden Column
             }
             glue_summary.append(summary)
@@ -318,16 +318,17 @@ class ArtifactsTextView(View):
         if artifact_type == "S3":
             # Construct the AWS URL for the S3 Bucket
             name = artifact_info["Name"]
-            region = self.aws_account_clamp.region()
+            region = self.aws_account_clamp.region
             s3_prefix = f"incoming-data/{name}"
             bucket_name = self.aws_account_clamp.sageworks_bucket_name
             base_url = "https://s3.console.aws.amazon.com/s3/object"
             return f"{base_url}/{bucket_name}?region={region}&prefix={s3_prefix}"
         elif artifact_type == "GlueJob":
             # Construct the AWS URL for the Glue Job
-            region = self.aws_account_clamp.region()
+            region = self.aws_account_clamp.region
             job_name = artifact_info["Name"]
-            return f"https://{region}.console.aws.amazon.com/gluestudio/home?region={region}#/editor/job/{job_name}/details"
+            base_url = f"https://{region}.console.aws.amazon.com/gluestudio/home"
+            return f"{base_url}?region={region}#/editor/job/{job_name}/details"
         elif artifact_type == "DataSource":
             details = artifact_info.get("Parameters", {}).get("sageworks_details", "{}")
             return json.loads(details).get("aws_url", "unknown")

@@ -63,10 +63,10 @@ class GlueJobs(Connector):
         job_runs = self.glue_client.get_job_runs(JobName=job_name)
 
         # Check if there are any runs
-        if job_runs['JobRuns']:
+        if job_runs["JobRuns"]:
             # Get the most recent run and return the state and start time
-            last_run = job_runs['JobRuns'][0]
-            return {"status": last_run['JobRunState'], "last_run": last_run['StartedOn']}
+            last_run = job_runs["JobRuns"][0]
+            return {"status": last_run["JobRunState"], "last_run": last_run["StartedOn"]}
         else:
             return {"status": "-", "last_run": "-"}
 
@@ -74,8 +74,8 @@ class GlueJobs(Connector):
         """Get the AWS ARN for the given Glue Job name"""
 
         # Construct the ARN for this Glue Job
-        region = self.aws_account_clamp.region()
-        account_id = self.aws_account_clamp.account_id()
+        region = self.aws_account_clamp.region
+        account_id = self.aws_account_clamp.account_id
         job_arn = f"arn:aws:glue:{region}:{account_id}:job/{job_name}"
         return job_arn
 

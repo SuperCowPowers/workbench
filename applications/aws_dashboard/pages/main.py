@@ -22,16 +22,10 @@ sageworks_artifacts = web_artifacts_summary.view_data()
 # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
 tables = dict()
 tables["INCOMING_DATA"] = table.create(
-    "INCOMING_DATA",
-    sageworks_artifacts["INCOMING_DATA"],
-    header_color="rgb(60, 60, 100)",
-    markdown_columns=["Name"]
+    "INCOMING_DATA", sageworks_artifacts["INCOMING_DATA"], header_color="rgb(60, 60, 100)", markdown_columns=["Name"]
 )
 tables["GLUE_JOBS"] = table.create(
-    "GLUE_JOBS",
-    sageworks_artifacts["GLUE_JOBS"],
-    header_color="rgb(60, 60, 100)",
-    markdown_columns=["Name"]
+    "GLUE_JOBS", sageworks_artifacts["GLUE_JOBS"], header_color="rgb(60, 60, 100)", markdown_columns=["Name"]
 )
 tables["DATA_SOURCES"] = table.create(
     "DATA_SOURCES",
