@@ -40,13 +40,13 @@ class ModelRegistry(Connector):
 
         # Additional details under the sageworks_meta section for each Model Group
         for mg_name in _mg_names:
-            sageworks_meta = self.sageworks_meta(self.model_package_group_arn)
+            sageworks_meta = self.sageworks_meta_via_arn(self.model_package_group_arn)
             # Model groups have a list of models
             for model_info in self.model_data[mg_name]:
                 model_info["sageworks_meta"] = sageworks_meta
 
-    def metadata(self) -> dict:
-        """Get all the table information in this database"""
+    def aws_meta(self) -> dict:
+        """Return ALL the AWS metadata for the AWS Model Registry"""
         return self.model_data
 
     def model_group_names(self) -> list:
@@ -56,10 +56,6 @@ class ModelRegistry(Connector):
     def model_group_details(self, model_group_name: str) -> dict:
         """Get the details for a specific feature group"""
         return self.model_data.get(model_group_name)
-
-    def s3_storage(self, model_group_name: str) -> str:
-        """Get the S3 Location for a specific feature group"""
-        return "TBD Later"
 
     def _model_group_details(self, model_group_name: str) -> dict:
         """Internal: Do not call this method directly, use model_group_details() instead"""
@@ -98,12 +94,3 @@ if __name__ == "__main__":
     my_group = "abalone-regression"
     group_info = model_registry.model_group_details(my_group)
     pprint(group_info)
-
-    # Get the tags for this Model Group
-    my_arn = model_registry.model_package_group_arn
-    my_tags = model_registry.sageworks_tags(my_arn)
-    print(f"Tags: {my_tags}")
-
-    # Get the SageWorks Metadata for this Model Group
-    my_sageworks_meta = model_registry.sageworks_meta(my_arn)
-    print(f"SageWorks Metadata: {my_sageworks_meta}")

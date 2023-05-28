@@ -110,7 +110,7 @@ class AWSServiceBroker:
         """
         # Refresh the connection for the given category and pull new data
         cls.connection_map[category].refresh()
-        cls.meta_cache.set(category, cls.connection_map[category].metadata())
+        cls.meta_cache.set(category, cls.connection_map[category].aws_meta())
         cls.fresh_cache.set(category, True)
 
     @classmethod

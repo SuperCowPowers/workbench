@@ -36,10 +36,10 @@ class Endpoints(Connector):
 
         # Additional details under the sageworks_meta section for each Model Group
         for _end_name, end_info in self.endpoint_data.items():
-            sageworks_meta = self.sageworks_meta(end_info["EndpointArn"])
+            sageworks_meta = self.sageworks_meta_via_arn(end_info["EndpointArn"])
             end_info["sageworks_meta"] = sageworks_meta
 
-    def metadata(self) -> dict:
+    def aws_meta(self) -> dict:
         """Get the full AWS metadata about endpoints"""
         return self.endpoint_data
 
@@ -83,12 +83,3 @@ if __name__ == "__main__":
     # Get the details for a specific Endpoint
     endpoint_info = my_endpoints.endpoint_details(end_name)
     pprint(endpoint_info)
-
-    # Get the tags for this Endpoint
-    my_arn = endpoint_info["EndpointArn"]
-    my_tags = my_endpoints.sageworks_tags(my_arn)
-    print(f"Tags: {my_tags}")
-
-    # Get the SageWorks Metadata for this Endpoint
-    my_sageworks_meta = my_endpoints.sageworks_meta(my_arn)
-    print(f"SageWorks Metadata: {my_sageworks_meta}")

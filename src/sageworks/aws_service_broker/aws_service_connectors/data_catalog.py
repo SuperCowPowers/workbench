@@ -46,8 +46,8 @@ class DataCatalog(Connector):
             # Convert to a data structure with direct lookup
             self.data_catalog_metadata[database] = {table["Name"]: table for table in table_list}
 
-    def metadata(self) -> dict:
-        """Get all the information for this AWS Data Catalog"""
+    def aws_meta(self) -> dict:
+        """Return ALL the AWS metadata for this AWS Service"""
         return self.data_catalog_metadata
 
     def get_scoped_database_list(self):
@@ -71,41 +71,6 @@ class DataCatalog(Connector):
         """Get the table information for the given table name"""
         return self.data_catalog_metadata[database].get(table_name)
 
-    def get_table_tags(self, database: str, table_name: str) -> list:
-        """Get the table tag list for the given table name"""
-        table = self.get_table(database, table_name)
-
-        # Tags are stored as a string with a ':' delimiter
-        combined_tags = table["Parameters"].get("sageworks_tags", "")
-        tags = combined_tags.split(":")
-        return tags
-
-    def set_table_tags(self, database: str, table_name: str, tags: list):
-        """Set the tags for a specific table"""
-        # Tags are stored as a string with a ':' delimiter
-        combined_tags = ":".join(tags)
-        wr.catalog.upsert_table_parameters(
-            parameters={"sageworks_tags": combined_tags},
-            database=database,
-            table=table_name,
-            boto3_session=self.boto_session,
-        )
-
-    def add_table_tags(self, database: str, table_name: str, tags: list):
-        """Add some the tags for a specific table"""
-        current_tags = wr.catalog.get_table_parameters(database, table_name, boto3_session=self.boto_session).get(
-            "sageworks_tags"
-        )
-        current_tags = current_tags.split(":")
-        new_tags = list(set(current_tags).union(set(tags)))
-        new_tags = ":".join(new_tags)
-        wr.catalog.upsert_table_parameters(
-            parameters={"sageworks_tags": new_tags},
-            database=database,
-            table=table_name,
-            boto3_session=self.boto_session,
-        )
-
 
 if __name__ == "__main__":
     from pprint import pprint
@@ -125,6 +90,9 @@ if __name__ == "__main__":
     # The connectors need an explicit refresh to populate themselves
     catalog.refresh()
 
+    # Get ALL the AWS metadata for the AWS Data Catalog
+    pprint(catalog.aws_meta())
+
     # List databases and tables
     for my_database in catalog.get_database_names():
         print(f"{my_database}")
@@ -136,27 +104,3 @@ if __name__ == "__main__":
     my_table = "test_data"
     table_info = catalog.get_table(my_database, my_table)
     pprint(table_info)
-
-    # Get the tags for this table
-    my_tags = catalog.get_table_tags(my_database, my_table)
-    print(f"Tags: {my_tags}")
-
-    # Set the tags for this table
-    catalog.set_table_tags(my_database, my_table, ["test", "sageworks"])
-
-    # Refresh the connector to get the latest info from AWS Data Catalog
-    catalog.refresh()
-
-    # Get the tags for this table
-    my_tags = catalog.get_table_tags(my_database, my_table)
-    print(f"Tags: {my_tags}")
-
-    # Set the tags for this table
-    catalog.add_table_tags(my_database, my_table, ["test", "small"])
-
-    # Refresh the connector to get the latest info from AWS Data Catalog
-    catalog.refresh()
-
-    # Get the tags for this table
-    my_tags = catalog.get_table_tags(my_database, my_table)
-    print(f"Tags: {my_tags}")

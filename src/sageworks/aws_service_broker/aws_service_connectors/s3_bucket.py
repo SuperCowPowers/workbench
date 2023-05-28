@@ -34,8 +34,8 @@ class S3Bucket(Connector):
         _aws_file_info = wr.s3.describe_objects(self.bucket, boto3_session=self.boto_session)
         self.s3_bucket_data = {full_path: info for full_path, info in _aws_file_info.items()}
 
-    def metadata(self) -> dict:
-        """Get all the metadata for the files in this bucket"""
+    def aws_meta(self) -> dict:
+        """Return ALL the AWS metadata for the AWS S3 Service"""
         return self.s3_bucket_data
 
     def file_names(self) -> list:

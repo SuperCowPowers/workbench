@@ -37,7 +37,7 @@ class FeatureStore(Connector):
         # Additional details under the sageworks_meta section for each Feature Group
         for fg_name in _fg_names:
             arn = self.feature_data[fg_name]["FeatureGroupArn"]
-            sageworks_meta = self.sageworks_meta(arn)
+            sageworks_meta = self.sageworks_meta_via_arn(arn)
             add_data = {
                 "athena_database": self.athena_database_name(fg_name),
                 "athena_table": self.athena_table_name(fg_name),
@@ -46,12 +46,12 @@ class FeatureStore(Connector):
             sageworks_meta.update(add_data)
             self.feature_data[fg_name]["sageworks_meta"] = sageworks_meta
 
-    def metadata(self) -> dict:
-        """Get all the table information in this database"""
+    def aws_meta(self) -> dict:
+        """Return ALL the AWS metadata for this AWS Feature Store"""
         return self.feature_data
 
     def feature_group_names(self) -> list:
-        """Get all the feature group names in this database"""
+        """Get all the feature group names"""
         return list(self.feature_data.keys())
 
     def feature_group_details(self, feature_group_name: str) -> dict:
@@ -137,12 +137,3 @@ if __name__ == "__main__":
 
     # Get the Athena Query for this Feature Group
     my_query = feature_store.snapshot_query(my_group)
-
-    # Get the tags for this Feature Group
-    my_arn = group_info["FeatureGroupArn"]
-    my_tags = feature_store.sageworks_tags(my_arn)
-    print(f"Tags: {my_tags}")
-
-    # Get the SageWorks Metadata for this Feature Group
-    my_sageworks_meta = feature_store.sageworks_meta(my_arn)
-    print(f"SageWorks Metadata: {my_sageworks_meta}")
