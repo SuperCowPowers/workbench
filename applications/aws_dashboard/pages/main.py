@@ -26,6 +26,12 @@ tables["INCOMING_DATA"] = table.create(
     sageworks_artifacts["INCOMING_DATA"],
     header_color="rgb(60, 60, 100)",
 )
+tables["GLUE_JOBS"] = table.create(
+    "GLUE_JOBS",
+    sageworks_artifacts["GLUE_JOBS"],
+    header_color="rgb(60, 60, 100)",
+    markdown_columns=["Name"]
+)
 tables["DATA_SOURCES"] = table.create(
     "DATA_SOURCES",
     sageworks_artifacts["DATA_SOURCES"],
@@ -54,6 +60,7 @@ tables["ENDPOINTS"] = table.create(
 # Create our components
 components = {
     "incoming_data": tables["INCOMING_DATA"],
+    "glue_jobs": tables["GLUE_JOBS"],
     "data_sources": tables["DATA_SOURCES"],
     "feature_sets": tables["FEATURE_SETS"],
     "models": tables["MODELS"],

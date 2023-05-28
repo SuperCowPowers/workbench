@@ -11,6 +11,23 @@ class ArtifactsWebView(ArtifactsTextView):
         # Call SuperClass Initialization
         super().__init__()
 
+    def glue_jobs_summary(self) -> pd.DataFrame:
+        """Get summary data about the AWS Glue Jobs"""
+
+        # We get the dataframe from the ArtifactsTextView
+        glue_df = super().glue_jobs_summary()
+        glue_df["uuid"] = glue_df["Name"]
+
+        # Pull the AWS URLs and construct some hyperlinks
+        hyperlinked_names = []
+        for name, aws_url in zip(glue_df["Name"], glue_df["_aws_url"]):
+            hyperlinked_names.append(self.hyperlinks(name, "glue_jobs", aws_url))
+        glue_df["Name"] = hyperlinked_names
+
+        # Drop the AWS URL column and return the dataframe
+        glue_df.drop(columns=["_aws_url"], inplace=True)
+        return glue_df
+
     def data_sources_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks DataSources"""
 
@@ -64,6 +81,11 @@ class ArtifactsWebView(ArtifactsTextView):
         return endpoint_df
 
     def hyperlinks(self, name, detail_type, aws_url):
+        """Construct a hyperlink for the given name and detail_type"""
+        if detail_type == "glue_jobs":
+            return f"<a href='{aws_url}' target='_blank'>{name}</a>"
+
+        # Other types have both a detail page and a query page
         link = f"<a href='{detail_type}' target='_blank'>{name}</a>"
         if aws_url:
             link += f" [<a href='{aws_url}' target='_blank'>query</a>]"

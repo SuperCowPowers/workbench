@@ -9,7 +9,7 @@ def main_layout(components: dict) -> html.Div:
         children=[
             dbc.Row(
                 [
-                    html.H2("SageWorks: Artifacts"),
+                    html.H2("SageWorks Dashboard"),
                     html.Div(
                         "Last Updated: ",
                         id="last-updated",
@@ -23,6 +23,8 @@ def main_layout(components: dict) -> html.Div:
             ),
             dbc.Row(html.H3("Incoming Data"), style={"padding": "10px 0px 0px 0px"}),
             dbc.Row(components["incoming_data"]),
+            dbc.Row(html.H3("Glue Jobs"), style={"padding": "10px 0px 0px 0px"}),
+            dbc.Row(components["glue_jobs"]),
             dbc.Row(html.H3("Data Sources"), style={"padding": "10px 0px 0px 0px"}),
             dbc.Row(components["data_sources"]),
             dbc.Row(html.H3("Feature Sets"), style={"padding": "10px 0px 0px 0px"}),

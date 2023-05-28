@@ -13,7 +13,7 @@ import dash_bootstrap_components as dbc
 # app = Dash(title='SageWorks: Artifacts', external_stylesheets=[dbc.themes.BOOTSTRAP], use_pages=True)
 # app = Dash(title="SageWorks: Artifacts", use_pages=True)
 app = Dash(
-    title="SageWorks: Artifacts",
+    title="SageWorks Dashboard",
     external_stylesheets=[dbc.themes.DARKLY],
     use_pages=True,
 )

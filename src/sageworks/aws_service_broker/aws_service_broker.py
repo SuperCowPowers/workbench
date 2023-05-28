@@ -9,6 +9,7 @@ from threading import Thread
 from sageworks.utils.cache import Cache
 from sageworks.utils.redis_cache import RedisCache
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
+from sageworks.aws_service_broker.aws_service_connectors.glue_jobs import GlueJobs
 from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog
 from sageworks.aws_service_broker.aws_service_connectors.feature_store import FeatureStore
 from sageworks.aws_service_broker.aws_service_connectors.model_registry import ModelRegistry
@@ -25,6 +26,7 @@ class ServiceCategory(Enum):
     """Enumerated Types for SageWorks Meta Requests"""
 
     INCOMING_DATA_S3 = auto()
+    GLUE_JOBS = auto()
     DATA_SOURCES_S3 = auto()
     FEATURE_SETS_S3 = auto()
     DATA_CATALOG = auto()
@@ -74,6 +76,7 @@ class AWSServiceBroker:
         cls.incoming_data_s3 = S3Bucket(cls.incoming_data_bucket)
         cls.data_sources_s3 = S3Bucket(cls.data_sources_bucket)
         cls.feature_sets_s3 = S3Bucket(cls.feature_sets_bucket)
+        cls.glue_jobs = GlueJobs()
         cls.data_catalog = DataCatalog(database_scope)
         cls.feature_store = FeatureStore()
         cls.model_registry = ModelRegistry()
@@ -93,6 +96,7 @@ class AWSServiceBroker:
         # Note: Even though this seems confusing, it makes other code WAY simpler
         cls.connection_map = {
             ServiceCategory.INCOMING_DATA_S3: cls.incoming_data_s3,
+            ServiceCategory.GLUE_JOBS: cls.glue_jobs,
             ServiceCategory.DATA_SOURCES_S3: cls.data_sources_s3,
             ServiceCategory.FEATURE_SETS_S3: cls.feature_sets_s3,
             ServiceCategory.DATA_CATALOG: cls.data_catalog,

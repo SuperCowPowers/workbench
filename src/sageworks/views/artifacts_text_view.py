@@ -40,6 +40,7 @@ class ArtifactsTextView(View):
         # We're filling in Summary Data for all the AWS Services
         summary_data = {
             "INCOMING_DATA": self.incoming_data_summary(),
+            "GLUE_JOBS": self.glue_jobs_summary(),
             "DATA_SOURCES": self.data_sources_summary(),
             "FEATURE_SETS": self.feature_sets_summary(),
             "MODELS": self.models_summary(),
@@ -52,6 +53,7 @@ class ArtifactsTextView(View):
         """Colorize text for the terminal"""
         color_map = {
             "INCOMING_DATA": "cyan",
+            "GLUE_JOBS": "cyan",
             "DATA_SOURCES": "red",
             "FEATURE_SETS": "yellow",
             "MODELS": "green",
@@ -95,6 +97,36 @@ class ArtifactsTextView(View):
             return pd.DataFrame(data_summary)
         else:
             columns = ["Name", "Size(MB)", "Modified", "ContentType", "ServerSideEncryption", "Tags"]
+            return pd.DataFrame(columns=columns)
+
+    def glue_jobs_summary(self) -> pd.DataFrame:
+        """Get summary data about AWS Glue Jobs"""
+        glue_meta = self.aws_artifact_data[ServiceCategory.GLUE_JOBS]
+        glue_summary = []
+
+        # Get the information about each Glue Job
+        for name, info in glue_meta.items():  # Just the sageworks database
+            summary = {
+                "Name": info["Name"],
+                "GlueVersion": info["GlueVersion"],
+                "Workers": info["NumberOfWorkers"],
+                "WorkerType": info["WorkerType"],
+                "Modified": self.datetime_string(info.get("LastModifiedOn")),
+                "_aws_url": self.aws_url(info, "GlueJob"),  # Hidden Column
+            }
+            glue_summary.append(summary)
+
+        # Make sure we have data else return just the column names
+        if glue_summary:
+            return pd.DataFrame(glue_summary)
+        else:
+            columns = [
+                "Name",
+                "GlueVersion",
+                "Workers",
+                "WorkerType",
+                "Modified"
+            ]
             return pd.DataFrame(columns=columns)
 
     def data_sources_summary(self) -> pd.DataFrame:
@@ -276,10 +308,14 @@ class ArtifactsTextView(View):
         # Date + Hour Minute
         return datetime_obj.strftime("%Y-%m-%d %H:%M")
 
-    @staticmethod
-    def aws_url(artifact_info, artifact_type="DataSource"):
+    def aws_url(self, artifact_info, artifact_type="DataSource"):
         """Helper: Try to extract the AWS URL from the Artifact Info Object"""
-        if artifact_type == "DataSource":
+        if artifact_type == "GlueJob":
+            # Construct the AWS URL for the Glue Job
+            region = self.aws_account_clamp.region()
+            job_name = artifact_info["Name"]
+            return f"https://{region}.console.aws.amazon.com/gluestudio/home?region={region}#/editor/job/{job_name}/details"
+        elif artifact_type == "DataSource":
             details = artifact_info.get("Parameters", {}).get("sageworks_details", "{}")
             return json.loads(details).get("aws_url", "unknown")
         elif artifact_type == "FeatureSet":
