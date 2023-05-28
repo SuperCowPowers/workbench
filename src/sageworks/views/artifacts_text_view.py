@@ -97,7 +97,7 @@ class ArtifactsTextView(View):
         if data_summary:
             return pd.DataFrame(data_summary)
         else:
-            columns = ["Name", "Size(MB)", "Modified", "ContentType", "ServerSideEncryption", "Tags"]
+            columns = ["Name", "Size(MB)", "Modified", "ContentType", "ServerSideEncryption"]
             return pd.DataFrame(columns=columns)
 
     def glue_jobs_summary(self) -> pd.DataFrame:
