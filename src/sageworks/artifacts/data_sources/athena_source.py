@@ -152,8 +152,9 @@ class AthenaSource(DataSourceAbstract):
 
     def query(self, query: str) -> pd.DataFrame:
         """Query the AthenaSource"""
-        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db,
-                                      ctas_approach=False, boto3_session=self.boto_session)
+        df = wr.athena.read_sql_query(
+            sql=query, database=self.data_catalog_db, ctas_approach=False, boto3_session=self.boto_session
+        )
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
         return df
@@ -165,8 +166,9 @@ class AthenaSource(DataSourceAbstract):
     def athena_test_query(self):
         """Validate that Athena Queries are working"""
         query = f"select count(*) as count from {self.table_name}"
-        df = wr.athena.read_sql_query(sql=query, database=self.data_catalog_db,
-                                      ctas_approach=False, boto3_session=self.boto_session)
+        df = wr.athena.read_sql_query(
+            sql=query, database=self.data_catalog_db, ctas_approach=False, boto3_session=self.boto_session
+        )
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
