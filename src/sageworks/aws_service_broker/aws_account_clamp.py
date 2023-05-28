@@ -26,6 +26,9 @@ class AWSAccountClamp:
         role_name = config.get_config_value("SAGEWORKS_AWS", "SAGEWORKS_ROLE_NAME")
         self.role_name = role_name
 
+        # Also grab our main SageWorks S3 Bucket Name
+        self.sageworks_bucket_name = config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+
         # The default AWS Assume Role TTL is 1 hour, so we'll set our TTL to 50 minutes
         self.session_time_delta = timedelta(minutes=50)
 
