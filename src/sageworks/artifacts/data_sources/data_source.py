@@ -27,7 +27,7 @@ class DataSource:
         value_counts(): Returns the value counts for each string column in this DataSource
         sageworks_meta(): Returns the SageWorks Metadata for this DataSource
         sageworks_tags(): Returns the SageWorks Tags for this DataSource
-        all_meta(): Returns ALL AWS Metadata for this DataSource
+        aws_meta(): Returns ALL AWS Metadata for this DataSource
     """
 
     def __new__(cls, uuid, force_refresh: bool = False, data_source_type: str = "athena"):
@@ -79,9 +79,9 @@ if __name__ == "__main__":
     # Get Tags associated with this Artifact
     print(f"Tags: {my_data.sageworks_tags()}")
 
-    # Get ALL Metadata associated with this Artifact
+    # Get ALL the AWS Metadata associated with this Artifact
     print("\n\nALL Meta")
-    pprint(my_data.all_meta())
+    pprint(my_data.aws_meta())
 
     # Get a SAMPLE of the data
     print(f"Sample Data: {my_data.sample_df()}")

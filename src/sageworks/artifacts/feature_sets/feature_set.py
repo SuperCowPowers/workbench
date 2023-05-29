@@ -80,8 +80,8 @@ class FeatureSet(Artifact):
             return False
         return True
 
-    def all_meta(self) -> dict:
-        """Get ALL the metadata for this artifact"""
+    def aws_meta(self) -> dict:
+        """Get ALL the AWS metadata for this artifact"""
         return self.feature_meta
 
     def arn(self) -> str:

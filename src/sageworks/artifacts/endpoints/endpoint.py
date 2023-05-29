@@ -160,8 +160,8 @@ class Endpoint(Artifact):
         """Return the size of this data in MegaBytes"""
         return 0.0
 
-    def all_meta(self) -> dict:
-        """Get ALL the metadata for this artifact"""
+    def aws_meta(self) -> dict:
+        """Get ALL the AWS metadata for this artifact"""
         return self.endpoint_meta
 
     def arn(self) -> str:

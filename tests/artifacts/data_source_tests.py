@@ -33,9 +33,9 @@ def test():
     # Get Tags associated with this Artifact
     print(f"Tags: {my_data.sageworks_tags()}")
 
-    # Get ALL Metadata associated with this Artifact
+    # Get ALL the AWS Metadata associated with this Artifact
     print("\n\nALL Meta")
-    pprint(my_data.all_meta())
+    pprint(my_data.aws_meta())
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')

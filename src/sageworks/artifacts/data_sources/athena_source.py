@@ -79,7 +79,7 @@ class AthenaSource(DataSourceAbstract):
 
     def sageworks_meta(self):
         """Get the SageWorks specific metadata for this Artifact"""
-        params = self.all_meta().get("Parameters", {})
+        params = self.aws_meta().get("Parameters", {})
         return {key: value for key, value in params.items() if "sageworks" in key}
 
     def upsert_sageworks_meta(self, new_meta: dict):
@@ -117,7 +117,7 @@ class AthenaSource(DataSourceAbstract):
         size_in_mb = size_in_bytes / 1_000_000
         return size_in_mb
 
-    def all_meta(self) -> dict:
+    def aws_meta(self) -> dict:
         """Get the FULL AWS metadata for this artifact"""
         return self.catalog_table_meta
 
@@ -396,9 +396,9 @@ if __name__ == "__main__":
     print("\nValue Counts")
     pprint(value_count_info)
 
-    # Get ALL Metadata associated with this Artifact
+    # Get ALL the AWS Metadata associated with this Artifact
     print("\n\nALL Meta")
-    pprint(my_data.all_meta())
+    pprint(my_data.aws_meta())
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')
