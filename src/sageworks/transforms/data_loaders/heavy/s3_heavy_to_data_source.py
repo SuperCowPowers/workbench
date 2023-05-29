@@ -27,7 +27,7 @@ class S3HeavyToDataSource:
         self.input_uuid = input_uuid
         self.output_uuid = output_uuid
         self.output_meta = {"sageworks_input": self.input_uuid}
-        sageworks_bucket = "s3://scp-sageworks-artifacts"
+        sageworks_bucket = "s3://sandbox-sageworks-artifacts"
         self.data_source_s3_path = sageworks_bucket + "/data-sources"
 
         # Our Spark Context
@@ -198,7 +198,7 @@ if __name__ == "__main__":
     job.init(args["JOB_NAME"], args)
 
     # Test the Heavy Data Loader
-    input_path = "s3://scp-sageworks-artifacts/incoming-data/dns/"
+    input_path = "s3://sandbox-sageworks-artifacts/incoming-data/dns/"
     data_output_uuid = "heavy_dns"
     my_loader = S3HeavyToDataSource(glueContext, input_path, data_output_uuid)
 

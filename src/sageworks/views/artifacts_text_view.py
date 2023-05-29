@@ -97,7 +97,7 @@ class ArtifactsTextView(View):
         if data_summary:
             return pd.DataFrame(data_summary)
         else:
-            columns = ["Name", "Size(MB)", "Modified", "ContentType", "ServerSideEncryption"]
+            columns = ["Name", "Size(MB)", "Modified", "ContentType", "ServerSideEncryption", "Tags", "_aws_url"]
             return pd.DataFrame(columns=columns)
 
     def glue_jobs_summary(self) -> pd.DataFrame:
@@ -129,8 +129,9 @@ class ArtifactsTextView(View):
                 "Workers",
                 "WorkerType",
                 "Modified",
-                "Status",
                 "LastRun",
+                "Status",
+                "_aws_url",
             ]
             return pd.DataFrame(columns=columns)
 
@@ -175,6 +176,7 @@ class ArtifactsTextView(View):
                 "DataLake",
                 "Tags",
                 "Input",
+                "_aws_url",
             ]
             return pd.DataFrame(columns=columns)
 
@@ -217,6 +219,7 @@ class ArtifactsTextView(View):
                 "Created",
                 "Tags",
                 "Input",
+                "_aws_url",
             ]
             return pd.DataFrame(columns=columns)
 
