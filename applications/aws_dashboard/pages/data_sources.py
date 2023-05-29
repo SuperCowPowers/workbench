@@ -38,7 +38,7 @@ data_details = data_source_details.create("data_source_details", details)
 
 # Grab sample rows from the first data source
 sample_rows = data_source_broker.data_source_sample(0)
-column_types = details["column_details"]
+column_types = details["column_details"] if details is not None else None
 data_source_sample_rows = table.create(
     "data_source_sample_rows",
     sample_rows,

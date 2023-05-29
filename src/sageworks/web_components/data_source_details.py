@@ -28,6 +28,10 @@ def create_markdown(data_source_details: dict) -> str:
     </details>
     """
 
+    # Sanity Check for empty data
+    if not data_source_details:
+        return "No data source details found"
+
     # Loop through all the details and replace in the template
     for key, value in data_source_details.items():
         # Hack for dates
