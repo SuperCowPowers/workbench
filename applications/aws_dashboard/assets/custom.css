@@ -429,3 +429,12 @@ there.
 
 /* Larger than Desktop HD */
 @media (min-width: 1200px) {}
+
+.dash-tooltip .dash-table-tooltip {
+  position: relative;
+  background-color: #555 !important;
+  color: #fff in !important;
+  max-width: fit-content !important;
+  min-width: fit-content !important;
+  padding: 2px 10px;
+}

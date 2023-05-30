@@ -68,6 +68,7 @@ def create(
             "color": "rgb(200, 200, 200)",
             "border": "0px",
         },
+        tooltip_header=column_types,
         markdown_options={"html": True},
     )
     return table
