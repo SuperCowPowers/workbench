@@ -19,7 +19,11 @@ from sageworks.views.model_web_view import ModelWebView
 from .layout import models_layout
 from . import callbacks
 
-register_page(__name__, path="/models")
+register_page(
+    __name__, 
+    path="/models",
+    name="SageWorks - Models",
+)
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 

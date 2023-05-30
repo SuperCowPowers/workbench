@@ -10,7 +10,11 @@ from sageworks.web_components import table
 from .layout import main_layout
 from . import callbacks
 
-register_page(__name__, path="/")
+register_page(
+    __name__, 
+    path="/",
+    name="SageWorks",
+)
 
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)

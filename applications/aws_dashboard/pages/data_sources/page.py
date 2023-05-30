@@ -11,7 +11,11 @@ from sageworks.views.data_source_web_view import DataSourceWebView
 from .layout import data_sources_layout
 from . import callbacks
 
-register_page(__name__, path="/data_sources")
+register_page(
+    __name__, 
+    path="/data_sources",
+    name="SageWorks - Data Sources",
+)
 
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)

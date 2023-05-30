@@ -11,7 +11,11 @@ from sageworks.web_components import table
 from .layout import endpoints_layout
 from . import callbacks
 
-register_page(__name__, path="/endpoints")
+register_page(
+    __name__, 
+    path="/endpoints",
+    name="SageWorks - Endpoints",
+)
 
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)

@@ -12,7 +12,11 @@ from .layout import feature_sets_layout
 from . import callbacks
 
 
-register_page(__name__, path="/feature_sets", name="Feature Sets")
+register_page(
+    __name__, 
+    path="/feature_sets", 
+    name="SageWorks - Feature Sets"
+)
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 
