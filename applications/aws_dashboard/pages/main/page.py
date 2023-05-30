@@ -22,32 +22,38 @@ sageworks_artifacts = web_artifacts_summary.view_data()
 # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
 tables = dict()
 tables["INCOMING_DATA"] = table.create(
-    "INCOMING_DATA", sageworks_artifacts["INCOMING_DATA"], header_color="rgb(60, 60, 100)", markdown_columns=["Name"]
+    table_id="INCOMING_DATA", 
+    df=sageworks_artifacts["INCOMING_DATA"], 
+    header_color="rgb(60, 60, 100)", 
+    markdown_columns=["Name"]
 )
 tables["GLUE_JOBS"] = table.create(
-    "GLUE_JOBS", sageworks_artifacts["GLUE_JOBS"], header_color="rgb(60, 60, 100)", markdown_columns=["Name"]
+    table_id="GLUE_JOBS", 
+    df=sageworks_artifacts["GLUE_JOBS"], 
+    header_color="rgb(60, 60, 100)", 
+    markdown_columns=["Name"]
 )
 tables["DATA_SOURCES"] = table.create(
-    "DATA_SOURCES",
-    sageworks_artifacts["DATA_SOURCES"],
+    table_id="DATA_SOURCES",
+    df=sageworks_artifacts["DATA_SOURCES"],
     header_color="rgb(100, 60, 60)",
     markdown_columns=["Name"],
 )
 tables["FEATURE_SETS"] = table.create(
-    "FEATURE_SETS",
-    sageworks_artifacts["FEATURE_SETS"],
+    table_id="FEATURE_SETS",
+    df=sageworks_artifacts["FEATURE_SETS"],
     header_color="rgb(100, 100, 60)",
     markdown_columns=["Feature Group"],
 )
 tables["MODELS"] = table.create(
-    "MODELS",
-    sageworks_artifacts["MODELS"],
+    table_id="MODELS",
+    df=sageworks_artifacts["MODELS"],
     header_color="rgb(60, 100, 60)",
     markdown_columns=["Model Group"],
 )
 tables["ENDPOINTS"] = table.create(
-    "ENDPOINTS",
-    sageworks_artifacts["ENDPOINTS"],
+    table_id="ENDPOINTS",
+    df=sageworks_artifacts["ENDPOINTS"],
     header_color="rgb(100, 60, 100)",
     markdown_columns=["Name"],
 )
