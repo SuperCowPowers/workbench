@@ -8,11 +8,15 @@ from sageworks.web_components import violin_plot, table, feature_set_details
 from sageworks.views.feature_set_web_view import FeatureSetWebView
 
 # Local Imports
-from pages.layout.feature_sets_layout import feature_sets_layout
-import pages.callbacks.feature_sets_callbacks as callbacks
+from .layout import feature_sets_layout
+from . import callbacks
 
-register_page(__name__, path="/feature_sets", name="Feature Sets")
 
+register_page(
+    __name__, 
+    path="/feature_sets", 
+    name="SageWorks - Feature Sets"
+)
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 
@@ -52,10 +56,13 @@ violin = violin_plot.create("feature_set_violin_plot", smart_sample_rows)
 # Create our components
 components = {
     "feature_sets_table": feature_sets_table,
-    "feature_set_details": data_details,
     "feature_set_sample_rows": feature_set_sample_rows,
+    "feature_set_details": data_details,
     "violin_plot": violin,
 }
+
+# Set up our layout (Dash looks for a var called layout)
+layout = feature_sets_layout(**components)
 
 # Setup our callbacks/connections
 app = dash.get_app()
@@ -71,6 +78,3 @@ callbacks.table_row_select(app, "feature_sets_table")
 callbacks.update_feature_set_details(app, feature_set_broker)
 callbacks.update_feature_set_sample_rows(app, feature_set_broker)
 callbacks.update_violin_plots(app, feature_set_broker)
-
-# Set up our layout (Dash looks for a var called layout)
-layout = feature_sets_layout(components)

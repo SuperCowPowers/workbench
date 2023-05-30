@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from dash import register_page
 import dash
 from dash_bootstrap_templates import load_figure_template
@@ -16,10 +16,14 @@ from sageworks.web_components import (
 from sageworks.views.model_web_view import ModelWebView
 
 # Local Imports
-from pages.layout.models_layout import models_layout
-import pages.callbacks.models_callbacks as callbacks
+from .layout import models_layout
+from . import callbacks
 
-register_page(__name__, path="/models")
+register_page(
+    __name__, 
+    path="/models",
+    name="SageWorks - Models",
+)
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 
@@ -31,7 +35,7 @@ model_broker = ModelWebView()
 models_rows = model_broker.models_summary()
 
 # Read in our fake model data
-data_path = os.path.join(os.path.dirname(__file__), "data/toy_data.csv")
+data_path = str(Path(__file__).resolve().parent.parent / "data/toy_data.csv")
 fake_model_info = model_data.ModelData(data_path)
 
 # Create a table to display the models
@@ -59,6 +63,9 @@ components = {
     "feature_details": my_feature_details,
 }
 
+# Set up our layout (Dash looks for a var called layout)
+layout = models_layout(**components)
+
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.refresh_data_timer(app)
@@ -69,6 +76,3 @@ callbacks.table_row_select(app, "models_table")
 callbacks.update_figures(app, fake_model_info)
 callbacks.update_model_details(app, fake_model_info)
 callbacks.update_feature_details(app, fake_model_info)
-
-# Set up our layout (Dash looks for a var called layout)
-layout = models_layout(components)

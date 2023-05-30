@@ -8,10 +8,14 @@ from sageworks.views.artifacts_web_view import ArtifactsWebView
 from sageworks.web_components import table
 
 # Local Imports
-from pages.layout.endpoints_layout import endpoints_layout
-import pages.callbacks.endpoints_callbacks as callbacks
+from .layout import endpoints_layout
+from . import callbacks
 
-register_page(__name__, path="/endpoints")
+register_page(
+    __name__, 
+    path="/endpoints",
+    name="SageWorks - Endpoints",
+)
 
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
@@ -34,14 +38,14 @@ endpoint_traffic = line_chart.create()
 
 # Create our components
 components = {
-    "endpoints_details": endpoints_table,
+    "endpoints_table": endpoints_table,
     "endpoint_traffic": endpoint_traffic,
 }
+
+# Set up our layout (Dash looks for a var called layout)
+layout = endpoints_layout(**components)
 
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.update_last_updated(app)
 callbacks.update_endpoints_table(app, sageworks_artifacts)
-
-# Set up our layout (Dash looks for a var called layout)
-layout = endpoints_layout(components)
