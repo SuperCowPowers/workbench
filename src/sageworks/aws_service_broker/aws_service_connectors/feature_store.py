@@ -61,7 +61,7 @@ class FeatureStore(Connector):
     def athena_database_name(self, feature_group_name: str) -> str:
         """Get the Athena Database Name for a specific feature group"""
         try:
-            return self.feature_data[feature_group_name]["OfflineStoreConfig"]["DataCatalogConfig"]["Database"]
+            return self.feature_data[feature_group_name]["OfflineStoreConfig"]["DataCatalogConfig"]["Database"].lower()
         except KeyError:
             return "-"
 
