@@ -59,6 +59,9 @@ components = {
     "feature_details": my_feature_details,
 }
 
+# Set up our layout (Dash looks for a var called layout)
+layout = models_layout(**components)
+
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.refresh_data_timer(app)
@@ -69,6 +72,3 @@ callbacks.table_row_select(app, "models_table")
 callbacks.update_figures(app, fake_model_info)
 callbacks.update_model_details(app, fake_model_info)
 callbacks.update_feature_details(app, fake_model_info)
-
-# Set up our layout (Dash looks for a var called layout)
-layout = models_layout(components)

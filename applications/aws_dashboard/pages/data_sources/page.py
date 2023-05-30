@@ -59,6 +59,9 @@ components = {
     "violin_plot": violin,
 }
 
+# Set up our layout (Dash looks for a var called layout)
+layout = data_sources_layout(**components)
+
 # Setup our callbacks/connections
 app = dash.get_app()
 
@@ -73,6 +76,3 @@ callbacks.table_row_select(app, "data_sources_table")
 callbacks.update_data_source_details(app, data_source_broker)
 callbacks.update_data_source_sample_rows(app, data_source_broker)
 callbacks.update_violin_plots(app, data_source_broker)
-
-# Set up our layout (Dash looks for a var called layout)
-layout = data_sources_layout(components)

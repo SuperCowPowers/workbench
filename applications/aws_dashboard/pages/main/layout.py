@@ -1,9 +1,16 @@
 """Main Layout: Layout for the Main page in the Artifact Viewer"""
-from dash import html, dcc
+from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 
 
-def main_layout(components: dict) -> html.Div:
+def main_layout(
+    incoming_data: dash_table.DataTable,
+    glue_jobs: dash_table.DataTable,
+    data_sources: dash_table.DataTable,
+    feature_sets: dash_table.DataTable,
+    models: dash_table.DataTable,
+    endpoints: dash_table.DataTable,
+) -> html.Div:
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
         children=[
@@ -22,17 +29,17 @@ def main_layout(components: dict) -> html.Div:
                 ]
             ),
             dbc.Row(html.H3("Incoming Data"), style={"padding": "10px 0px 0px 0px"}),
-            dbc.Row(components["incoming_data"]),
+            dbc.Row(incoming_data),
             dbc.Row(html.H3("Glue Jobs"), style={"padding": "10px 0px 0px 0px"}),
-            dbc.Row(components["glue_jobs"]),
+            dbc.Row(glue_jobs),
             dbc.Row(html.H3("Data Sources"), style={"padding": "10px 0px 0px 0px"}),
-            dbc.Row(components["data_sources"]),
+            dbc.Row(data_sources),
             dbc.Row(html.H3("Feature Sets"), style={"padding": "10px 0px 0px 0px"}),
-            dbc.Row(components["feature_sets"]),
+            dbc.Row(feature_sets),
             dbc.Row(html.H3("Models"), style={"padding": "10px 0px 0px 0px"}),
-            dbc.Row(components["models"]),
+            dbc.Row(models),
             dbc.Row(html.H3("Endpoints"), style={"padding": "10px 0px 0px 0px"}),
-            dbc.Row(components["endpoints"]),
+            dbc.Row(endpoints),
             dcc.Interval(id="main-updater", interval=5000, n_intervals=0),
         ],
         style={"margin": "30px"},

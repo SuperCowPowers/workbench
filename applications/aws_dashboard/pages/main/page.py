@@ -62,10 +62,10 @@ components = {
     "endpoints": tables["ENDPOINTS"],
 }
 
+# Set up our layout (Dash looks for a var called layout)
+layout = main_layout(**components)
+
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.update_last_updated(app, web_artifacts_summary)
 callbacks.update_artifact_tables(app)
-
-# Set up our layout (Dash looks for a var called layout)
-layout = main_layout(components)

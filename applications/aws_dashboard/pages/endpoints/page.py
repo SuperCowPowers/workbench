@@ -34,14 +34,14 @@ endpoint_traffic = line_chart.create()
 
 # Create our components
 components = {
-    "endpoints_details": endpoints_table,
+    "endpoints_table": endpoints_table,
     "endpoint_traffic": endpoint_traffic,
 }
+
+# Set up our layout (Dash looks for a var called layout)
+layout = endpoints_layout(**components)
 
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.update_last_updated(app)
 callbacks.update_endpoints_table(app, sageworks_artifacts)
-
-# Set up our layout (Dash looks for a var called layout)
-layout = endpoints_layout(components)
