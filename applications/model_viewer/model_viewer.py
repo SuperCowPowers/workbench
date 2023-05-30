@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from dash import Dash
 import dash_bootstrap_components as dbc
 
@@ -31,7 +31,7 @@ def setup_model_details_view():
     # load_figure_template('darkly')
 
     # Read in our model data
-    data_path = os.path.join(os.path.dirname(__file__), "data/toy_data.csv")
+    data_path = str(Path(__file__).resolve().parent.parent / "data/toy_data.csv")
     model_info = model_data.ModelData(data_path)
 
     # Create our components

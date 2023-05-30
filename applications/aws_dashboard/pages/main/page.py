@@ -7,8 +7,8 @@ from sageworks.views.artifacts_web_view import ArtifactsWebView
 from sageworks.web_components import table
 
 # Local Imports
-from pages.layout.main_layout import main_layout
-import pages.callbacks.main_callbacks as callbacks
+from .layout import main_layout
+from . import callbacks
 
 register_page(__name__, path="/")
 

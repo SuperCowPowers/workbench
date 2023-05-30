@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from dash import register_page
 import dash
 from dash_bootstrap_templates import load_figure_template
@@ -16,8 +16,8 @@ from sageworks.web_components import (
 from sageworks.views.model_web_view import ModelWebView
 
 # Local Imports
-from pages.layout.models_layout import models_layout
-import pages.callbacks.models_callbacks as callbacks
+from .layout import models_layout
+from . import callbacks
 
 register_page(__name__, path="/models")
 
@@ -31,7 +31,7 @@ model_broker = ModelWebView()
 models_rows = model_broker.models_summary()
 
 # Read in our fake model data
-data_path = os.path.join(os.path.dirname(__file__), "data/toy_data.csv")
+data_path = str(Path(__file__).resolve().parent.parent / "data/toy_data.csv")
 fake_model_info = model_data.ModelData(data_path)
 
 # Create a table to display the models

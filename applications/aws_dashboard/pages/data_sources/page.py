@@ -8,8 +8,8 @@ from sageworks.web_components import violin_plot, table, data_source_details
 from sageworks.views.data_source_web_view import DataSourceWebView
 
 # Local Imports
-from pages.layout.data_sources_layout import data_sources_layout
-import pages.callbacks.data_sources_callbacks as callbacks
+from .layout import data_sources_layout
+from . import callbacks
 
 register_page(__name__, path="/data_sources")
 

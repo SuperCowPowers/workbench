@@ -8,11 +8,11 @@ from sageworks.web_components import violin_plot, table, feature_set_details
 from sageworks.views.feature_set_web_view import FeatureSetWebView
 
 # Local Imports
-from pages.layout.feature_sets_layout import feature_sets_layout
-import pages.callbacks.feature_sets_callbacks as callbacks
+from .layout import feature_sets_layout
+from . import callbacks
+
 
 register_page(__name__, path="/feature_sets", name="Feature Sets")
-
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 
