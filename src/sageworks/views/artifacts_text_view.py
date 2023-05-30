@@ -196,7 +196,7 @@ class ArtifactsTextView(View):
             summary = {
                 "Feature Group": group_info["FeatureGroupName"],
                 "Size(MB)": size,
-                "Catalog DB": group_info["OfflineStoreConfig"].get("DataCatalogConfig", {}).get("Database", "-"),
+                "Catalog DB": group_info["OfflineStoreConfig"].get("DataCatalogConfig", {}).get("Database", "-").lower(),
                 "Athena Table": group_info["OfflineStoreConfig"].get("DataCatalogConfig", {}).get("TableName", "-"),
                 "Online": str(group_info.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
                 "Created": self.datetime_string(group_info.get("CreationTime")),
