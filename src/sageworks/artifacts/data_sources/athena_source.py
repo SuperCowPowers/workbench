@@ -77,8 +77,13 @@ class AthenaSource(DataSourceAbstract):
         arn = f"arn:aws:glue:{region}:{account_id}:table/{self.data_catalog_db}/{self.table_name}"
         return arn
 
-    def sageworks_meta(self):
+    def sageworks_meta(self) -> dict:
         """Get the SageWorks specific metadata for this Artifact"""
+        # Sanity Check if we have invalid AWS Metadata
+        if self.aws_meta() is None:
+            self.log.critical(f"Unable to get AWS Metadata for {self.table_name}")
+            self.log.critical(f"Malformed Artifact! Delete this Artifact and recreate it!")
+            return {}
         params = self.aws_meta().get("Parameters", {})
         return {key: value for key, value in params.items() if "sageworks" in key}
 
@@ -382,23 +387,29 @@ if __name__ == "__main__":
     pprint(meta)
 
     # Get details for this Data Source
-    my_details = my_data.details(recompute=True)
+    my_details = my_data.details()
     print("\nDetails")
     pprint(my_details)
 
     # Get quartiles for numeric columns
-    quartile_info = my_data.quartiles(recompute=True)
+    quartile_info = my_data.quartiles()
     print("\nQuartiles")
     pprint(quartile_info)
 
     # Get value_counts for string columns
-    value_count_info = my_data.value_counts(recompute=True)
+    value_count_info = my_data.value_counts()
     print("\nValue Counts")
     pprint(value_count_info)
 
     # Get ALL the AWS Metadata associated with this Artifact
     print("\n\nALL Meta")
     pprint(my_data.aws_meta())
+
+    # Test an Data Source that doesn't exist
+    print("\n\nTesting a Data Source that does not exist...")
+    my_data = AthenaSource("does_not_exist")
+    assert not my_data.check()
+    my_data.sageworks_meta()
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')
