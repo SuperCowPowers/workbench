@@ -1,9 +1,16 @@
 """Layout for the models page"""
-from dash import dcc, html
+from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
 
 
-def models_layout(components: dict) -> html.Div:
+def models_layout(
+    models_table: dash_table.DataTable,
+    model_details: dcc.Markdown,
+    confusion_matrix: dcc.Graph,
+    scatter_plot: dcc.Graph,
+    feature_importance: dcc.Graph,
+    feature_details: dcc.Markdown,
+) -> html.Div:
     layout = html.Div(
         children=[
             dbc.Row(html.H2("SageWorks: Models (Alpha)")),
@@ -22,18 +29,18 @@ def models_layout(components: dict) -> html.Div:
                     # Model Table and Model Details
                     dbc.Col(
                         [
-                            dbc.Row(components["models_table"]),
+                            dbc.Row(models_table),
                             dbc.Row(
                                 html.H3("Model Details"),
                                 style={"padding": "50px 0px 0px 20px"},
                             ),
                             dbc.Row(
                                 [
-                                    dbc.Col(components["model_details"]),
-                                    dbc.Col(components["confusion_matrix"]),
+                                    dbc.Col(model_details),
+                                    dbc.Col(confusion_matrix),
                                 ]
                             ),
-                            dbc.Row(components["scatter_plot"]),
+                            dbc.Row(scatter_plot),
                         ],
                         width=8,
                     ),
@@ -41,7 +48,7 @@ def models_layout(components: dict) -> html.Div:
                     dbc.Col(
                         [
                             dbc.Row(html.H3("Feature Importance")),
-                            dbc.Row(components["feature_importance"]),
+                            dbc.Row(feature_importance),
                             dbc.Row(
                                 html.H3(
                                     "Feature Details",
@@ -49,7 +56,7 @@ def models_layout(components: dict) -> html.Div:
                                 )
                             ),
                             dbc.Row(
-                                components["feature_details"],
+                                feature_details,
                                 style={"padding": "0px 0px 0px 20px"},
                             ),
                         ],

@@ -8,10 +8,14 @@ from sageworks.web_components import violin_plot, table, data_source_details
 from sageworks.views.data_source_web_view import DataSourceWebView
 
 # Local Imports
-from pages.layout.data_sources_layout import data_sources_layout
-import pages.callbacks.data_sources_callbacks as callbacks
+from .layout import data_sources_layout
+from . import callbacks
 
-register_page(__name__, path="/data_sources")
+register_page(
+    __name__, 
+    path="/data_sources",
+    name="SageWorks - Data Sources",
+)
 
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
@@ -59,6 +63,9 @@ components = {
     "violin_plot": violin,
 }
 
+# Set up our layout (Dash looks for a var called layout)
+layout = data_sources_layout(**components)
+
 # Setup our callbacks/connections
 app = dash.get_app()
 
@@ -73,6 +80,3 @@ callbacks.table_row_select(app, "data_sources_table")
 callbacks.update_data_source_details(app, data_source_broker)
 callbacks.update_data_source_sample_rows(app, data_source_broker)
 callbacks.update_violin_plots(app, data_source_broker)
-
-# Set up our layout (Dash looks for a var called layout)
-layout = data_sources_layout(components)

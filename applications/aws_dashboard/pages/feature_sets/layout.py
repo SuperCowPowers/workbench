@@ -1,9 +1,14 @@
 """FeatureSets Layout: Layout for the FeatureSets page in the Artifact Viewer"""
-from dash import html, dcc
+from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 
 
-def feature_sets_layout(components: dict) -> html.Div:
+def feature_sets_layout(
+    feature_sets_table: dash_table.DataTable,
+    feature_set_sample_rows: dash_table.DataTable,
+    feature_set_details: dcc.Markdown,
+    violin_plot: dcc.Graph,
+) -> html.Div:
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
         children=[
@@ -23,7 +28,7 @@ def feature_sets_layout(components: dict) -> html.Div:
                 ]
             ),
             # List out all the Data Sources
-            dbc.Row(components["feature_sets_table"]),
+            dbc.Row(feature_sets_table),
             # Data Source Details, Sample Rows, and Violin Plots
             # Row [ Sample Rows ]
             # Row [ Column 1                      Column 2 ]
@@ -34,7 +39,7 @@ def feature_sets_layout(components: dict) -> html.Div:
                 style={"padding": "30px 0px 10px 0px"},
             ),
             dbc.Row(
-                components["feature_set_sample_rows"],
+                feature_set_sample_rows,
                 style={"padding": "0px 0px 30px 0px"},
             ),
             dbc.Row(
@@ -47,7 +52,7 @@ def feature_sets_layout(components: dict) -> html.Div:
                                 style={"padding": "0px 0px 10px 0px"},
                             ),
                             dbc.Row(
-                                components["feature_set_details"],
+                                feature_set_details,
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],
@@ -56,7 +61,7 @@ def feature_sets_layout(components: dict) -> html.Div:
                     # Column 2: Sample Rows and Violin Plots
                     dbc.Col(
                         [
-                            dbc.Row(components["violin_plot"]),
+                            dbc.Row(violin_plot),
                         ],
                         width=8,
                     ),
