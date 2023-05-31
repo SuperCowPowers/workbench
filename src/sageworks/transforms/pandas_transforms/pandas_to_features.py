@@ -178,6 +178,7 @@ class PandasToFeatures(Transform):
         # Now compute the Details, Quartiles, and SampleDF for the FeatureSet
         new_fs.details()
         new_fs.data_source.details()
+        new_fs.value_counts()
         new_fs.quartiles()
         new_fs.sample_df()
         new_fs.set_status("ready")
