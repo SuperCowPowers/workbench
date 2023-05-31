@@ -335,9 +335,12 @@ class AthenaSource(DataSourceAbstract):
         self.log.info(f"Deleting DataCatalog Table: {self.data_catalog_db}.{self.table_name}...")
         wr.catalog.delete_table_if_exists(self.data_catalog_db, self.table_name, boto3_session=self.boto_session)
 
-        # Delete S3 Storage Objects
-        self.log.info(f"Deleting S3 Storage Object: {self.s3_storage_location()}...")
-        wr.s3.delete_objects(self.s3_storage_location(), boto3_session=self.boto_session)
+        # Delete S3 Storage Objects (if they exist)
+        try:
+            self.log.info(f"Deleting S3 Storage Object: {self.s3_storage_location()}...")
+            wr.s3.delete_objects(self.s3_storage_location(), boto3_session=self.boto_session)
+        except TypeError:
+            self.log.warning("Malformed Artifact... good thing it's being deleted...")
 
 
 if __name__ == "__main__":

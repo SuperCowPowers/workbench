@@ -78,6 +78,12 @@ class FeatureSet(Artifact):
         if self.feature_meta is None:
             self.log.info(f"FeatureSet.check() {self.feature_set_name} not found in AWS Metadata!")
             return False
+        else:  # Also check our Data Source
+            if not self.data_source.check():
+                self.log.critical(f"Data Source check failed for {self.feature_set_name}")
+                self.log.critical("Delete this Feature Set and recreate it to fix this issue")
+                return False
+        # AOK
         return True
 
     def aws_meta(self) -> dict:
