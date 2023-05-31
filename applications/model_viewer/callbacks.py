@@ -4,7 +4,7 @@ from dash import Dash
 from dash.dependencies import Input, Output
 
 # SageWorks Imports
-from sageworks.web_components.model_data import ModelData
+from sageworks.web_components.mock_model_data import ModelData
 from sageworks.web_components import (
     feature_importance,
     confusion_matrix,

@@ -8,10 +8,10 @@ from dash_bootstrap_templates import load_figure_template
 
 from sageworks.web_components import confusion_matrix, table, scatter_plot
 from sageworks.web_components import (
-    feature_importance,
-    model_data,
-    model_details,
-    feature_details,
+    mock_feature_importance,
+    mock_model_data,
+    mock_model_details,
+    mock_feature_details,
 )
 from sageworks.views.model_web_view import ModelWebView
 
@@ -36,7 +36,7 @@ models_rows = model_broker.models_summary()
 
 # Read in our fake model data
 data_path = str(Path(__file__).resolve().parent.parent / "data/toy_data.csv")
-fake_model_info = model_data.ModelData(data_path)
+fake_model_info = mock_model_data.ModelData(data_path)
 
 # Create a table to display the models
 models_table = table.create(
@@ -49,11 +49,11 @@ models_table = table.create(
 
 # Create all the other components on this page
 model_df = fake_model_info.get_model_df()
-details = model_details.create(fake_model_info.get_model_details(0))
+details = mock_model_details.create(fake_model_info.get_model_details(0))
 c_matrix = confusion_matrix.create(fake_model_info.get_model_confusion_matrix(0))
 scatter = scatter_plot.create(model_df, variant=3)
-my_feature_importance = feature_importance.create(fake_model_info.get_model_feature_importance(0))
-my_feature_details = feature_details.create(fake_model_info.get_model_feature_importance(0))
+my_feature_importance = mock_feature_importance.create(fake_model_info.get_model_feature_importance(0))
+my_feature_details = mock_feature_details.create(fake_model_info.get_model_feature_importance(0))
 components = {
     "models_table": models_table,
     "model_details": details,

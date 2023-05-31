@@ -5,12 +5,12 @@ from dash.dependencies import Input, Output
 from datetime import datetime
 
 # SageWorks Imports
-from sageworks.web_components.model_data import ModelData
+from sageworks.web_components.mock_model_data import ModelData
 from sageworks.web_components import (
-    feature_importance,
+    mock_feature_importance,
     confusion_matrix,
-    model_details,
-    feature_details,
+    mock_model_details,
+    mock_feature_details,
 )
 from sageworks.views.model_web_view import ModelWebView
 
@@ -72,7 +72,7 @@ def update_figures(app: Dash, model_data: ModelData):
 
         # Generate a figure for the feature importance component
         feature_info = model_data.get_model_feature_importance(model_row_index)
-        feature_figure = feature_importance.create_figure(feature_info)
+        feature_figure = mock_feature_importance.create_figure(feature_info)
 
         # Generate a figure for the confusion matrix component
         c_matrix = model_data.get_model_confusion_matrix(model_row_index)
@@ -100,7 +100,7 @@ def update_model_details(app: Dash, model_data: ModelData):
 
         # Generate new Details (Markdown) for the selected model
         model_info = model_data.get_model_details(model_row_index)
-        model_markdown = model_details.create_markdown(model_info)
+        model_markdown = mock_model_details.create_markdown(model_info)
 
         # Return the details/markdown for this model
         return model_markdown
@@ -124,7 +124,7 @@ def update_feature_details(app: Dash, model_data: ModelData):
 
         # Generate new Details (Markdown) for the features for this model
         feature_info = model_data.get_model_feature_importance(model_row_index)
-        feature_markdown = feature_details.create_markdown(feature_info)
+        feature_markdown = mock_feature_details.create_markdown(feature_info)
 
         # Return the details/markdown for these features
         return feature_markdown
