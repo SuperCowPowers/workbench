@@ -82,7 +82,7 @@ class AthenaSource(DataSourceAbstract):
         # Sanity Check if we have invalid AWS Metadata
         if self.aws_meta() is None:
             self.log.critical(f"Unable to get AWS Metadata for {self.table_name}")
-            self.log.critical(f"Malformed Artifact! Delete this Artifact and recreate it!")
+            self.log.critical("Malformed Artifact! Delete this Artifact and recreate it!")
             return {}
         params = self.aws_meta().get("Parameters", {})
         return {key: value for key, value in params.items() if "sageworks" in key}

@@ -65,7 +65,7 @@ class FeaturesToModel(Transform):
             fp.write(xgb_script)
         return script_name
 
-    def transform_impl(self, target, description, feature_list=None, model_type="regression", delete_existing=True):
+    def transform_impl(self, target, description, feature_list=None, model_type="regression"):
         """Generic Features to Model: Note you should create a new class and inherit from
         this one to include specific logic for your Feature Set/Model
         Args:
@@ -73,7 +73,6 @@ class FeaturesToModel(Transform):
             description (str): Description of the model
             feature_list (list[str]): A list of columns for the features
             model_type (str): regression or classification
-            delete_existing (bool): Delete the existing model if it exists
         """
         # Set our model description
         self.model_description = description
@@ -133,11 +132,10 @@ class FeaturesToModel(Transform):
             [s3_training_path, s3_training_path.replace(".csv", ".csv.metadata")], boto3_session=self.boto_session
         )
 
-        # Do they want to delete any existing models?
-        if delete_existing:
-            self.log.info("Trying to delete existing model...")
-            delete_model = Model(self.output_uuid)
-            delete_model.delete()
+        # Delete the existing model (if it exists)
+        self.log.info("Trying to delete existing model...")
+        delete_model = Model(self.output_uuid)
+        delete_model.delete()
 
         # Create Model and officially Register
         self.log.info(f"Creating new model {self.output_uuid}...")

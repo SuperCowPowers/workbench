@@ -193,11 +193,12 @@ class ArtifactsTextView(View):
                 ServiceCategory.FEATURE_SETS_S3, group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"]
             )
             size = f"{size / 1_000_000:.2f}"
+            cat_config = group_info["OfflineStoreConfig"].get("DataCatalogConfig", {})
             summary = {
                 "Feature Group": group_info["FeatureGroupName"],
                 "Size(MB)": size,
-                "Catalog DB": group_info["OfflineStoreConfig"].get("DataCatalogConfig", {}).get("Database", "-").lower(),
-                "Athena Table": group_info["OfflineStoreConfig"].get("DataCatalogConfig", {}).get("TableName", "-"),
+                "Catalog DB": cat_config.get("Database", "-").lower(),
+                "Athena Table": cat_config.get("TableName", "-"),
                 "Online": str(group_info.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
                 "Created": self.datetime_string(group_info.get("CreationTime")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),

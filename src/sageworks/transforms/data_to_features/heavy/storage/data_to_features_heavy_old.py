@@ -18,7 +18,7 @@ class DataToFeaturesHeavy(Transform):
     Common Usage:
         to_features = DataToFeaturesHeavy(output_uuid)
         to_features.set_output_tags(["heavy", "whatever"])
-        to_features.transform(query, id_column, event_time_column=None, delete_existing=True)
+        to_features.transform(query, id_column, event_time_column=None)
     """
 
     def __init__(self, input_uuid: str, output_uuid: str):
@@ -45,20 +45,19 @@ class DataToFeaturesHeavy(Transform):
             df[column] = df[column].astype("float64")
         return df
 
-    def transform_impl(self, query, id_column: str, event_time_column: str = None, delete_existing: bool = True):
+    def transform_impl(self, query, id_column: str, event_time_column: str = None):
         """Convert the Data Source into a Feature Set, also storing the information
         about the data to the AWS Data Catalog sageworks database and create S3 Objects"""
 
         # Do we want to delete the existing FeatureSet?
-        if delete_existing:
-            try:
-                delete_fs = FeatureSet(self.output_uuid)
-                if delete_fs.check():
-                    delete_fs.delete()
-                    time.sleep(5)
-            except botocore.exceptions.ClientError as exc:
-                self.log.info(f"FeatureSet {self.output_uuid} doesn't exist...")
-                self.log.info(exc)
+        try:
+            delete_fs = FeatureSet(self.output_uuid)
+            if delete_fs.check():
+                delete_fs.delete()
+                time.sleep(5)
+        except botocore.exceptions.ClientError as exc:
+            self.log.info(f"FeatureSet {self.output_uuid} doesn't exist...")
+            self.log.info(exc)
 
         # Set the ID and Event Time Columns
         self.id_column = id_column

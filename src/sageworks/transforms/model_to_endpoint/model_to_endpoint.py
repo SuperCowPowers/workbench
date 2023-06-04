@@ -28,7 +28,7 @@ class ModelToEndpoint(Transform):
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 
-    def transform_impl(self, delete_existing: bool = True):
+    def transform_impl(self):
         """Compute a Feature Set based on RDKit Descriptors"""
 
         # Get the Model Package ARN for our input model
@@ -37,9 +37,8 @@ class ModelToEndpoint(Transform):
         # Create a Model Package
         model_package = ModelPackage(role=self.sageworks_role_arn, model_package_arn=model_package_arn)
 
-        # Check for delete
-        if delete_existing:
-            self.delete_endpoint()
+        # Delete endpoint (if it already exists)
+        self.delete_endpoint()
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
