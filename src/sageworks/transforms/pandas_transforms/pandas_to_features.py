@@ -35,11 +35,29 @@ class PandasToFeatures(Transform):
         self.output_df = None
         self.table_format = TableFormatEnum.ICEBERG
 
+        # Delete the existing FeatureSet if it exists
+        self.delete_existing()
+
+        # These will be set in the transform method
+        self.output_feature_set = None
+        self.expected_rows = 0
+
     def set_input(self, input_df: pd.DataFrame, id_column=None, event_time_column=None):
         """Set the Input DataFrame for this Transform"""
         self.id_column = id_column
         self.event_time_column = event_time_column
         self.output_df = input_df.copy()
+
+    def delete_existing(self):
+        # Delete the existing FeatureSet if it exists
+        try:
+            delete_fs = FeatureSet(self.output_uuid)
+            if delete_fs.check():
+                delete_fs.delete()
+                self.log.info(f"Deleted the {self.output_uuid} FeatureSet...")
+        except botocore.exceptions.ClientError as exc:
+            self.log.info(f"FeatureSet {self.output_uuid} doesn't exist...")
+            self.log.info(exc)
 
     def _ensure_id_column(self):
         """Internal: AWS Feature Store requires an Id field for all data store"""
@@ -102,11 +120,9 @@ class PandasToFeatures(Transform):
             df[column] = df[column].astype("float64")
         return df
 
-    def transform_impl(self, delete_existing=True):
-        """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
-        store the information about the data to the AWS Data Catalog sageworks database"""
-
-        # Ensure that the input dataframe has id and event_time fields
+    def pre_transform(self, **kwargs):
+        """Pre-Transform: Ensure that the input dataframe has id and event_time fields"""
+        self.log.info("Pre-Transform: Prep output_df (id/event_time, cat_converter, lowercase columns, training)...")
         self._ensure_id_column()
         self._ensure_event_time()
 
@@ -127,15 +143,9 @@ class PandasToFeatures(Transform):
         # Mark 80% of the data as training and 20% as validation/test
         self.output_df["training"] = np.random.binomial(size=len(self.output_df), n=1, p=0.8)
 
-        # Do we want to delete the existing FeatureSet?
-        if delete_existing:
-            try:
-                delete_fs = FeatureSet(self.output_uuid)
-                if delete_fs.check():
-                    delete_fs.delete()
-            except botocore.exceptions.ClientError as exc:
-                self.log.info(f"FeatureSet {self.output_uuid} doesn't exist...")
-                self.log.info(exc)
+    def transform_impl(self):
+        """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
+        store the information about the data to the AWS Data Catalog sageworks database"""
 
         # Create a Feature Group and load our Feature Definitions
         my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
@@ -147,7 +157,7 @@ class PandasToFeatures(Transform):
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
 
-        # Write out the DataFrame to Parquet/FeatureSet/Athena
+        # Create the Feature Group
         my_feature_group.create(
             s3_uri=s3_storage_path,
             record_identifier_name=self.id_column,
@@ -170,18 +180,26 @@ class PandasToFeatures(Transform):
             self.log.info(f"Failed Rows: {ingest_manager.failed_rows}")
 
         # Feature Group Ingestion takes a while, so we need to wait for it to finish
-        new_fs = FeatureSet(self.output_uuid, force_refresh=True)
-        new_fs.set_status("initializing")
-        expected_rows = len(self.output_df) - len(ingest_manager.failed_rows)
-        self.wait_for_rows(new_fs, expected_rows)
+        self.output_feature_set = FeatureSet(self.output_uuid, force_refresh=True)
+        self.output_feature_set.set_status("initializing")
+        self.expected_rows += len(self.output_df) - len(ingest_manager.failed_rows)
+
+    def post_transform(self, **kwargs):
+        """Post-Transform: Compute the Details, Quartiles, and SampleDF for the FeatureSet"""
+        self.log.info("Post-Transform: Computing Details, Quartiles, and SampleDF for the FeatureSet...")
+
+        # Wait for offline storage of the Feature Group to be ready
+        self.log.info("Waiting for Feature Group Offline storage to be ready...")
+        self.log.info("Note: This will often take 10-20 minutes...go have coffee or lunch :)")
+        self.wait_for_rows(self.expected_rows)
 
         # Now compute the Details, Quartiles, and SampleDF for the FeatureSet
-        new_fs.details()
-        new_fs.data_source.details()
-        new_fs.value_counts()
-        new_fs.quartiles()
-        new_fs.sample_df()
-        new_fs.set_status("ready")
+        self.output_feature_set.details()
+        self.output_feature_set.data_source.details()
+        self.output_feature_set.value_counts()
+        self.output_feature_set.quartiles()
+        self.output_feature_set.sample_df()
+        self.output_feature_set.set_status("ready")
 
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")
@@ -191,14 +209,14 @@ class PandasToFeatures(Transform):
             status = feature_group.describe().get("FeatureGroupStatus")
         self.log.info(f"FeatureSet {feature_group.name} successfully created")
 
-    def wait_for_rows(self, new_fs: FeatureSet, expected_rows: int):
+    def wait_for_rows(self, expected_rows: int):
         """Wait for AWS to actually finalize this Feature Group"""
-        rows = new_fs.num_rows()
+        rows = self.output_feature_set.num_rows()
         while rows < expected_rows:
-            self.log.info(f"Waiting for AWS finalization {self.output_uuid} (currently {rows} rows)...")
+            self.log.info(f"Waiting for AWS Feature Group {self.output_uuid} Offline Storage (currently {rows} rows)...")
             sleep_time = 5 if rows else 30
             time.sleep(sleep_time)
-            rows = new_fs.num_rows()
+            rows = self.output_feature_set.num_rows()
         self.log.info(f"Success: Reached Expected Rows ({rows} rows)...")
 
 
