@@ -39,6 +39,7 @@ class PandasToFeatures(Transform):
         self.delete_existing()
 
         # These will be set in the transform method
+        self.output_feature_group = None
         self.output_feature_set = None
         self.expected_rows = 0
 
@@ -120,9 +121,9 @@ class PandasToFeatures(Transform):
             df[column] = df[column].astype("float64")
         return df
 
-    def pre_transform(self, **kwargs):
-        """Pre-Transform: Ensure that the input dataframe has id and event_time fields"""
-        self.log.info("Pre-Transform: Prep output_df (id/event_time, cat_converter, lowercase columns, training)...")
+    def prep_dataframe(self):
+        """Prep the DataFrame for Feature Store Creation"""
+        self.log.info("Prep the output_df (id/event_time, cat_converter, lowercase columns, training)...")
         self._ensure_id_column()
         self._ensure_event_time()
 
@@ -143,9 +144,8 @@ class PandasToFeatures(Transform):
         # Mark 80% of the data as training and 20% as validation/test
         self.output_df["training"] = np.random.binomial(size=len(self.output_df), n=1, p=0.8)
 
-    def transform_impl(self):
-        """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
-        store the information about the data to the AWS Data Catalog sageworks database"""
+    def create_feature_group(self):
+        """Create a Feature Group, load our Feature Definitions, and wait for it to be ready"""
 
         # Create a Feature Group and load our Feature Definitions
         my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
@@ -170,23 +170,39 @@ class PandasToFeatures(Transform):
 
         # Ensure/wait for the feature group to be created
         self.ensure_feature_group_created(my_feature_group)
+        return my_feature_group
+
+    def pre_transform(self, **kwargs):
+        """Pre-Transform: Ensure that the input dataframe has id and event_time fields"""
+        self.prep_dataframe()
+
+        # Create the Feature Group
+        self.output_feature_group = self.create_feature_group()
+
+    def transform_impl(self):
+        """Transform Implementation: Ingest the data into the Feature Group"""
 
         # Now we actually push the data into the Feature Group
-        ingest_manager = my_feature_group.ingest(self.output_df, max_processes=4, wait=False)
+        ingest_manager = self.output_feature_group.ingest(self.output_df, max_processes=4, wait=False)
         ingest_manager.wait()
 
         # Report on any rows that failed to ingest
         if ingest_manager.failed_rows:
             self.log.info(f"Failed Rows: {ingest_manager.failed_rows}")
 
-        # Feature Group Ingestion takes a while, so we need to wait for it to finish
-        self.output_feature_set = FeatureSet(self.output_uuid, force_refresh=True)
-        self.output_feature_set.set_status("initializing")
+        # Keep track of the number of rows we expect to be ingested
         self.expected_rows += len(self.output_df) - len(ingest_manager.failed_rows)
+        self.log.info(f"Added rows: {len(self.output_df)}")
+        self.log.info(f"Failed rows: {len(ingest_manager.failed_rows)}")
+        self.log.info(f"Total rows to be ingested: {self.expected_rows}")
 
     def post_transform(self, **kwargs):
         """Post-Transform: Compute the Details, Quartiles, and SampleDF for the FeatureSet"""
         self.log.info("Post-Transform: Computing Details, Quartiles, and SampleDF for the FeatureSet...")
+
+        # Feature Group Ingestion takes a while, so we need to wait for it to finish
+        self.output_feature_set = FeatureSet(self.output_uuid, force_refresh=True)
+        self.output_feature_set.set_status("initializing")
 
         # Wait for offline storage of the Feature Group to be ready
         self.log.info("Waiting for Feature Group Offline storage to be ready...")
@@ -210,7 +226,7 @@ class PandasToFeatures(Transform):
         self.log.info(f"FeatureSet {feature_group.name} successfully created")
 
     def wait_for_rows(self, expected_rows: int):
-        """Wait for AWS to actually finalize this Feature Group"""
+        """Wait for AWS Feature Group to fully populate the Offline Storage"""
         rows = self.output_feature_set.num_rows()
         while rows < expected_rows:
             self.log.info(f"Waiting for AWS Feature Group {self.output_uuid} Offline Storage ({rows} rows)...")
