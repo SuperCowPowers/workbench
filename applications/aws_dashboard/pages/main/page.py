@@ -11,7 +11,7 @@ from .layout import main_layout
 from . import callbacks
 
 register_page(
-    __name__, 
+    __name__,
     path="/",
     name="SageWorks",
 )
@@ -26,16 +26,16 @@ sageworks_artifacts = web_artifacts_summary.view_data()
 # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
 tables = dict()
 tables["INCOMING_DATA"] = table.create(
-    table_id="INCOMING_DATA", 
-    df=sageworks_artifacts["INCOMING_DATA"], 
-    header_color="rgb(60, 60, 100)", 
-    markdown_columns=["Name"]
+    table_id="INCOMING_DATA",
+    df=sageworks_artifacts["INCOMING_DATA"],
+    header_color="rgb(60, 60, 100)",
+    markdown_columns=["Name"],
 )
 tables["GLUE_JOBS"] = table.create(
-    table_id="GLUE_JOBS", 
-    df=sageworks_artifacts["GLUE_JOBS"], 
-    header_color="rgb(60, 60, 100)", 
-    markdown_columns=["Name"]
+    table_id="GLUE_JOBS",
+    df=sageworks_artifacts["GLUE_JOBS"],
+    header_color="rgb(60, 60, 100)",
+    markdown_columns=["Name"],
 )
 tables["DATA_SOURCES"] = table.create(
     table_id="DATA_SOURCES",

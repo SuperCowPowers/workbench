@@ -20,7 +20,7 @@ from .layout import models_layout
 from . import callbacks
 
 register_page(
-    __name__, 
+    __name__,
     path="/models",
     name="SageWorks - Models",
 )

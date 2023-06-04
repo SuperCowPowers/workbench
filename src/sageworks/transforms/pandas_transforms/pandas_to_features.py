@@ -165,7 +165,7 @@ class PandasToFeatures(Transform):
             role_arn=self.sageworks_role_arn,
             enable_online_store=True,
             table_format=self.table_format,
-            tags=aws_tags
+            tags=aws_tags,
         )
 
         # Ensure/wait for the feature group to be created
@@ -213,7 +213,7 @@ class PandasToFeatures(Transform):
         """Wait for AWS to actually finalize this Feature Group"""
         rows = self.output_feature_set.num_rows()
         while rows < expected_rows:
-            self.log.info(f"Waiting for AWS Feature Group {self.output_uuid} Offline Storage (currently {rows} rows)...")
+            self.log.info(f"Waiting for AWS Feature Group {self.output_uuid} Offline Storage ({rows} rows)...")
             sleep_time = 5 if rows else 30
             time.sleep(sleep_time)
             rows = self.output_feature_set.num_rows()

@@ -12,7 +12,7 @@ from .layout import data_sources_layout
 from . import callbacks
 
 register_page(
-    __name__, 
+    __name__,
     path="/data_sources",
     name="SageWorks - Data Sources",
 )

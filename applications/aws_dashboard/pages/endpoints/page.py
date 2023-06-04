@@ -12,7 +12,7 @@ from .layout import endpoints_layout
 from . import callbacks
 
 register_page(
-    __name__, 
+    __name__,
     path="/endpoints",
     name="SageWorks - Endpoints",
 )
