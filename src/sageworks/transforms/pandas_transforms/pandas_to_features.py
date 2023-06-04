@@ -1,4 +1,4 @@
-"""PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)"""
+"""PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet"""
 from datetime import datetime, timezone
 import pandas as pd
 import numpy as np
@@ -14,7 +14,7 @@ from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 
 class PandasToFeatures(Transform):
-    """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet (Athena/FeatureStore)
+    """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet
 
     Common Usage:
         to_features = PandasToFeatures(output_uuid)
@@ -48,6 +48,9 @@ class PandasToFeatures(Transform):
         self.id_column = id_column
         self.event_time_column = event_time_column
         self.output_df = input_df.copy()
+
+        # Now Prepare the DataFrame for its journey into an AWS FeatureGroup
+        self.prep_dataframe()
 
     def delete_existing(self):
         # Delete the existing FeatureSet if it exists
@@ -113,6 +116,8 @@ class PandasToFeatures(Transform):
         datetime_type = ["datetime", "datetime64", "datetime64[ns]", "datetimetz"]
         for column in df.select_dtypes(include=datetime_type).columns:
             df[column] = df[column].astype("string")
+        for column in list(df.select_dtypes(include="object").columns):
+            df[column] = df[column].astype("string")
         for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
             df[column] = df[column].astype("int64")
         for column in list(df.select_dtypes(include="bool").columns):
@@ -123,7 +128,9 @@ class PandasToFeatures(Transform):
 
     def prep_dataframe(self):
         """Prep the DataFrame for Feature Store Creation"""
-        self.log.info("Prep the output_df (id/event_time, cat_converter, lowercase columns, training)...")
+        self.log.info("Prep the output_df (cat_convert, convert types, lowercase columns, add training column)...")
+
+        # Make sure we have the required id and event_time columns
         self._ensure_id_column()
         self._ensure_event_time()
 
@@ -173,10 +180,7 @@ class PandasToFeatures(Transform):
         return my_feature_group
 
     def pre_transform(self, **kwargs):
-        """Pre-Transform: Ensure that the input dataframe has id and event_time fields"""
-        self.prep_dataframe()
-
-        # Create the Feature Group
+        """Pre-Transform: Create the Feature Group"""
         self.output_feature_group = self.create_feature_group()
 
     def transform_impl(self):
@@ -247,11 +251,11 @@ if __name__ == "__main__":
     # Create some fake data
     my_datetime = datetime.now(timezone.utc)
     fake_data = [
-        {"id": 1, "name": "sue", "age": 41, "score": 7.8, "date": my_datetime},
-        {"id": 2, "name": "bob", "age": 34, "score": 6.4, "date": my_datetime},
-        {"id": 3, "name": "ted", "age": 69, "score": 8.2, "date": my_datetime},
-        {"id": 4, "name": "bill", "age": 24, "score": 5.3, "date": my_datetime},
-        {"id": 5, "name": "sally", "age": 52, "score": 9.5, "date": my_datetime},
+        {"id": 1, "name": "sue", "age": 41, "score": 7.8, "date": my_datetime, "cat": "a"},
+        {"id": 2, "name": "bob", "age": 34, "score": 6.4, "date": my_datetime, "cat": "b"},
+        {"id": 3, "name": "ted", "age": 69, "score": 8.2, "date": my_datetime, "cat": "c"},
+        {"id": 4, "name": "bill", "age": 24, "score": 5.3, "date": my_datetime, "cat": "a"},
+        {"id": 5, "name": "sally", "age": 52, "score": 9.5, "date": my_datetime, "cat": "b"},
     ]
     fake_df = pd.DataFrame(fake_data)
 
