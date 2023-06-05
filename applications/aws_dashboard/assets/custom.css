@@ -630,6 +630,7 @@ there.
 /* Larger than Desktop HD */
 @media (min-width: 1200px) {}
 
+/* Tooltip with column type */
 .dash-tooltip .dash-table-tooltip {
   position: relative;
   background-color: #555 !important;

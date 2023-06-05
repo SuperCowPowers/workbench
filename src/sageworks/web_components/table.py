@@ -79,5 +79,8 @@ def create(
         },
         tooltip_header=column_types,
         markdown_options={"html": True},
+        style_header_conditional=[
+            {"if": {"column_id": "remove"}, "display": "none"}
+        ]
     )
     return table
