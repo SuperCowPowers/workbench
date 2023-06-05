@@ -40,7 +40,7 @@ def main_layout(
             dbc.Row(models),
             dbc.Row(html.H3("Endpoints"), style={"padding": "10px 0px 0px 0px"}),
             dbc.Row(endpoints),
-            dcc.Interval(id="main-updater", interval=5000, n_intervals=0),
+            dcc.Interval(id="main-updater", interval=500000, n_intervals=0),
         ],
         style={"margin": "30px"},
     )

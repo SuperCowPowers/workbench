@@ -1,7 +1,7 @@
 """Callbacks/Connections in the Web User Interface"""
 from datetime import datetime
-from dash import Dash
-from dash.dependencies import Input, Output
+from dash import Dash, no_update
+from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.artifacts_web_view import ArtifactsWebView
@@ -49,9 +49,24 @@ def update_artifact_tables(app: Dash):
         models = all_data["MODELS"]
         return models.to_dict("records")
 
-    @app.callback(Output("ENDPOINTS", "data"), Input("main-updater", "n_intervals"))
-    def endpoints_update(n):
+    @app.callback(
+        Output("ENDPOINTS", "data"), 
+        Input("main-updater", "n_intervals"),
+        Input("ENDPOINTS", "active_cell"), 
+        State("ENDPOINTS", "data")
+    )
+    def endpoints_update(n, active_cell, data):
+        # if no data, return empty dict
         if all_data is None:
             return {}
+        # if clicked remove cell, remove row
+        if active_cell:
+            row = active_cell["row"]
+            col = active_cell["column_id"]
+            if col == "remove":
+                # TODO - need to actually remove Stack resources
+                del data[row]
+                return data
+        # otherwise, return all data
         endpoints = all_data["ENDPOINTS"]
         return endpoints.to_dict("records")

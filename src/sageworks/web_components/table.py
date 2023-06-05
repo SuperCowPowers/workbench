@@ -36,6 +36,15 @@ def create(
         else:
             column_setup.append({"name": c, "id": c, "presentation": presentation})
 
+    # Add the "remove" column to the column_setup list
+    column_setup.append({
+        "name": "remove", 
+        "id": "remove", 
+        "presentation": "markdown", 
+        "type": "text"
+    })
+    df["remove"] = 'remove'
+
     # Create the Dash Table
     table = dash_table.DataTable(
         id=table_id,
@@ -43,7 +52,7 @@ def create(
         columns=column_setup,
         sort_action="native",
         row_selectable=row_select,
-        cell_selectable=False,
+        cell_selectable=True,
         selected_rows=[0],
         fixed_rows={"headers": fixed_headers},
         style_table={"maxHeight": max_height, "overflowX": "auto", "overflowY": "auto"},
