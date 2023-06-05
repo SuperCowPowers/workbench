@@ -23,15 +23,20 @@ class PandasToFeatures(Transform):
         to_features.transform()
     """
 
-    def __init__(self, output_uuid: str):
-        """PandasToFeatures Initialization"""
-
+    def __init__(self, output_uuid: str, auto_categorical=True):
+        """PandasToFeatures Initialization
+        Args:
+            output_uuid (str): The UUID of the FeatureSet to create
+            auto_categorical (bool): Should we automatically create categorical columns?
+        """
         # Call superclass init
         super().__init__("DataFrame", output_uuid)
 
         # Set up all my instance attributes
         self.id_column = None
         self.event_time_column = None
+        self.auto_categorical = auto_categorical
+        self.categorical_dtypes = {}
         self.output_df = None
         self.table_format = TableFormatEnum.ICEBERG
 
@@ -74,10 +79,10 @@ class PandasToFeatures(Transform):
     def _ensure_event_time(self):
         """Internal: AWS Feature Store requires an event_time field for all data stored"""
         if self.event_time_column is None or self.event_time_column not in self.output_df.columns:
-            current_datetime = datetime.now(timezone.utc)
+            # current_datetime = datetime.now(timezone.utc)
             self.log.info("Generating an event_time column before FeatureSet Creation...")
             self.event_time_column = "event_time"
-            self.output_df[self.event_time_column] = pd.Series([current_datetime] * len(self.output_df))
+            self.output_df[self.event_time_column] = pd.Timestamp("now", tz="UTC")
 
         # The event_time_column is defined so lets make sure it the right type for Feature Store
         if pd.api.types.is_datetime64_any_dtype(self.output_df[self.event_time_column]):
@@ -94,7 +99,7 @@ class PandasToFeatures(Transform):
                 self.output_df[col] = self.output_df[col].astype(pd.StringDtype())
 
     # Helper Methods
-    def categorical_converter(self):
+    def auto_categorical_converter(self):
         """Convert object and string types to Categorical"""
         categorical_columns = []
         for feature, dtype in self.output_df.dtypes.items():
@@ -108,6 +113,15 @@ class PandasToFeatures(Transform):
                     categorical_columns.append(feature)
 
         # Now convert Categorical Types to One Hot Encoding
+        self.output_df = pd.get_dummies(self.output_df, columns=categorical_columns)
+
+    def manual_categorical_converter(self):
+        """Convert object and string types to Categorical"""
+        for column, cat_d_type in self.categorical_dtypes.items():
+            self.output_df[column] = self.output_df[column].astype(cat_d_type)
+
+        # Now convert Categorical Types to One Hot Encoding
+        categorical_columns = list(self.categorical_dtypes.keys())
         self.output_df = pd.get_dummies(self.output_df, columns=categorical_columns)
 
     @staticmethod
@@ -135,7 +149,10 @@ class PandasToFeatures(Transform):
         self._ensure_event_time()
 
         # Convert object and string types to Categorical
-        self.categorical_converter()
+        if self.auto_categorical:
+            self.auto_categorical_converter()
+        else:
+            self.manual_categorical_converter()
 
         # We need to convert some of our column types to the correct types
         # Feature Store only supports these data types:
