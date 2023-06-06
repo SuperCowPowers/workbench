@@ -1,5 +1,6 @@
 """S3Bucket: Class to retrieve object/file information from an AWS S3 Bucket"""
 import awswrangler as wr
+from botocore.exceptions import ClientError
 
 
 # SageWorks Imports
@@ -31,7 +32,15 @@ class S3Bucket(Connector):
         """Load/reload the files in the bucket"""
         # Grab all the files in this bucket
         self.log.info(f"Reading S3 Bucket: {self.bucket}...")
-        _aws_file_info = wr.s3.describe_objects(self.bucket, boto3_session=self.boto_session)
+        try:
+            _aws_file_info = wr.s3.describe_objects(self.bucket, boto3_session=self.boto_session)
+        except ClientError as error:
+            # If the exception is a ResourceNotFound, this is fine, otherwise raise all other exceptions
+            if error.response["Error"]["Code"] in ["ResourceNotFound", "NoSuchBucket"]:
+                self.log.warning(f"Describing objects in {self.bucket} gave ResourceNotFound")
+                return {}
+            else:
+                raise error
         self.s3_bucket_data = {full_path: info for full_path, info in _aws_file_info.items()}
 
     def aws_meta(self) -> dict:
@@ -78,5 +87,11 @@ if __name__ == "__main__":
     print(f"Bucket Size: {s3_bucket.bucket_size()}")
 
     # Get additional info for a specific file
-    my_file_info = s3_bucket.file_info("abalone.csv")
+    my_file_info = s3_bucket.file_info(file_name)
     pprint(my_file_info)
+
+    # Test the functionality for a bucket that doesn't exist
+    not_exist_bucket = "s3://non_existent_bucket"
+    s3_bucket = S3Bucket(not_exist_bucket)
+    s3_bucket.check()
+    s3_bucket.refresh()

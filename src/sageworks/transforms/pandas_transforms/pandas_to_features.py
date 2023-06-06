@@ -204,7 +204,7 @@ class PandasToFeatures(Transform):
         """Transform Implementation: Ingest the data into the Feature Group"""
 
         # Now we actually push the data into the Feature Group
-        ingest_manager = self.output_feature_group.ingest(self.output_df, max_processes=4, wait=False)
+        ingest_manager = self.output_feature_group.ingest(self.output_df, max_processes=32, wait=False)
         ingest_manager.wait()
 
         # Report on any rows that failed to ingest
