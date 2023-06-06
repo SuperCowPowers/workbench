@@ -25,7 +25,7 @@ sageworks_artifacts = web_artifacts_summary.view_data()
 
 for df in sageworks_artifacts:
     if df != "INCOMING_DATA" and df != "GLUE_JOBS":
-        sageworks_artifacts[df]["remove"] = "<img src='../assets/trash.png' style='display: block; margin: auto; width: 20px; height: 20px;'>"
+        sageworks_artifacts[df]["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
 
 # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
 tables = dict()

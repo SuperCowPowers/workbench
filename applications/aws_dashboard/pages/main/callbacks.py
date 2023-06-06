@@ -21,9 +21,9 @@ def update_last_updated(app: Dash, sageworks_artifacts: ArtifactsWebView):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 def remove_artifact(data, row, Artifact: Artifact):
-    artifact = Artifact(data[0]['uuid'])
+    artifact = Artifact(data[int(row)]['uuid'])
     artifact.delete()
-    del data[row]
+    del data[int(row)]
     return data
 
 def update_artifact_tables(app: Dash):
@@ -50,9 +50,10 @@ def update_artifact_tables(app: Dash):
         if active_cell and active_cell["column_id"]=="remove":
             from sageworks.artifacts.data_sources.data_source import DataSource
             row = active_cell["row"]
-            return remove_artifact(data, row, DataSource)
+            updated_data = remove_artifact(data, row, DataSource)
+            return updated_data
         data_sources = all_data["DATA_SOURCES"]
-        data_sources["remove"] = "<img src='../assets/trash.png' style='display: block; margin: auto; width: 20px; height: 20px;'>"
+        data_sources["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return data_sources.to_dict("records")
 
     @app.callback(
@@ -68,9 +69,10 @@ def update_artifact_tables(app: Dash):
         if active_cell and active_cell["column_id"]=="remove":
             from sageworks.artifacts.feature_sets.feature_set import FeatureSet
             row = active_cell["row"]
-            return remove_artifact(data, row, FeatureSet)
+            updated_data = remove_artifact(data, row, FeatureSet)
+            return updated_data
         feature_sets = all_data["FEATURE_SETS"]
-        feature_sets["remove"] = "<img src='../assets/trash.png' style='display: block; margin: auto; width: 20px; height: 20px;'>"
+        feature_sets["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return feature_sets.to_dict("records")
 
     @app.callback(
@@ -86,10 +88,11 @@ def update_artifact_tables(app: Dash):
         if active_cell and active_cell["column_id"]=="remove":
             from sageworks.artifacts.models.model import Model
             row = active_cell["row"]
-            return remove_artifact(data, row, Model)
+            updated_data = remove_artifact(data, row, Model)
+            return updated_data
         # otherwise, return all data
         models = all_data["MODELS"]
-        models["remove"] = "<img src='../assets/trash.png' style='display: block; margin: auto; width: 20px; height: 20px;'>"
+        models["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return models.to_dict("records")
 
     @app.callback(
@@ -106,9 +109,10 @@ def update_artifact_tables(app: Dash):
         if active_cell and active_cell["column_id"]=="remove":
             from sageworks.artifacts.endpoints.endpoint import Endpoint
             row = active_cell["row"]
-            return remove_artifact(data, row, Endpoint)
+            updated_data = remove_artifact(data, row, Endpoint)
+            return updated_data
         # otherwise, return all data
         endpoints = all_data["ENDPOINTS"]
-        endpoints["remove"] = "<img src='../assets/trash.png' style='display: block; margin: auto; width: 20px; height: 20px;'>"
+        endpoints["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return endpoints.to_dict("records")
     
