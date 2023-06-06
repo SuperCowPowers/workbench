@@ -21,8 +21,8 @@ def update_last_updated(app: Dash, sageworks_artifacts: ArtifactsWebView):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 def remove_artifact(data, row, Artifact: Artifact):
-    ep = Artifact(data[0]['uuid'])
-    ep.delete()
+    artifact = Artifact(data[0]['uuid'])
+    artifact.delete()
     del data[row]
     return data
 
@@ -52,6 +52,7 @@ def update_artifact_tables(app: Dash):
             row = active_cell["row"]
             return remove_artifact(data, row, DataSource)
         data_sources = all_data["DATA_SOURCES"]
+        data_sources["remove"] = "<img src='../assets/trash.png' style='display: block; margin: auto; width: 20px; height: 20px;'>"
         return data_sources.to_dict("records")
 
     @app.callback(
@@ -69,6 +70,7 @@ def update_artifact_tables(app: Dash):
             row = active_cell["row"]
             return remove_artifact(data, row, FeatureSet)
         feature_sets = all_data["FEATURE_SETS"]
+        feature_sets["remove"] = "<img src='../assets/trash.png' style='display: block; margin: auto; width: 20px; height: 20px;'>"
         return feature_sets.to_dict("records")
 
     @app.callback(
@@ -87,6 +89,7 @@ def update_artifact_tables(app: Dash):
             return remove_artifact(data, row, Model)
         # otherwise, return all data
         models = all_data["MODELS"]
+        models["remove"] = "<img src='../assets/trash.png' style='display: block; margin: auto; width: 20px; height: 20px;'>"
         return models.to_dict("records")
 
     @app.callback(
@@ -106,4 +109,6 @@ def update_artifact_tables(app: Dash):
             return remove_artifact(data, row, Endpoint)
         # otherwise, return all data
         endpoints = all_data["ENDPOINTS"]
+        endpoints["remove"] = "<img src='../assets/trash.png' style='display: block; margin: auto; width: 20px; height: 20px;'>"
         return endpoints.to_dict("records")
+    

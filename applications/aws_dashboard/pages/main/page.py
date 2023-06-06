@@ -23,43 +23,46 @@ register_page(
 web_artifacts_summary = ArtifactsWebView()
 sageworks_artifacts = web_artifacts_summary.view_data()
 
+for df in sageworks_artifacts:
+    sageworks_artifacts[df]["remove"] = "<img src='../assets/trash.png' style='display: block; margin: auto; width: 20px; height: 20px;'>"
+
 # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
 tables = dict()
 tables["INCOMING_DATA"] = table.create(
     table_id="INCOMING_DATA",
     df=sageworks_artifacts["INCOMING_DATA"],
     header_color="rgb(60, 60, 100)",
-    markdown_columns=["Name"],
+    markdown_columns=["Name", "remove"],
 )
 tables["GLUE_JOBS"] = table.create(
     table_id="GLUE_JOBS",
     df=sageworks_artifacts["GLUE_JOBS"],
     header_color="rgb(60, 60, 100)",
-    markdown_columns=["Name"],
+    markdown_columns=["Name", "remove"],
 )
 tables["DATA_SOURCES"] = table.create(
     table_id="DATA_SOURCES",
     df=sageworks_artifacts["DATA_SOURCES"],
     header_color="rgb(100, 60, 60)",
-    markdown_columns=["Name"],
+    markdown_columns=["Name", "remove"],
 )
 tables["FEATURE_SETS"] = table.create(
     table_id="FEATURE_SETS",
     df=sageworks_artifacts["FEATURE_SETS"],
     header_color="rgb(100, 100, 60)",
-    markdown_columns=["Feature Group"],
+    markdown_columns=["Feature Group", "remove"],
 )
 tables["MODELS"] = table.create(
     table_id="MODELS",
     df=sageworks_artifacts["MODELS"],
     header_color="rgb(60, 100, 60)",
-    markdown_columns=["Model Group"],
+    markdown_columns=["Model Group", "remove"],
 )
 tables["ENDPOINTS"] = table.create(
     table_id="ENDPOINTS",
     df=sageworks_artifacts["ENDPOINTS"],
     header_color="rgb(100, 60, 100)",
-    markdown_columns=["Name"],
+    markdown_columns=["Name", "remove"],
 )
 
 # Create our components

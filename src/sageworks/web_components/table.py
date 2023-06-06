@@ -18,10 +18,6 @@ def create(
     """Create a Table"""
 
     # To select rows we need to set up an ID for each row
-    df["remove"] = """<img src='../sageworks/applications/aws_dashboard/assets/trash.png' width='20px' height='20px'>"""
-    if not markdown_columns: markdown_columns = []
-    markdown_columns.append("remove")
-
     df["id"] = df.index
 
     # Only show these columns
@@ -39,13 +35,6 @@ def create(
             column_setup.append({"name": c, "id": c, "deletable": True, "selectable": True})
         else:
             column_setup.append({"name": c, "id": c, "presentation": presentation})
-
-    # # Add the "remove" column to the column_setup list
-    # column_setup.append({
-    #     "name": "remove", 
-    #     "id": "remove", 
-    #     "presentation": "markdown"
-    # })
 
     # Create the Dash Table
     table = dash_table.DataTable(
