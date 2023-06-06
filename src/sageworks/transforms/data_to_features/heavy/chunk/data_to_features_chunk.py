@@ -11,12 +11,12 @@ class DataToFeaturesChunk(Transform):
     """DataToFeaturesChunk: Class to Transform a DataSource into a FeatureSet using Chunking
 
     Common Usage:
-        to_features = DataToFeaturesChunk(input_uuid, output_uuid, 5000)
+        to_features = DataToFeaturesChunk(input_uuid, output_uuid, 50000)
         to_features.set_output_tags(["heavy", "whatever"])
         to_features.transform(query, id_column, event_time_column=None)
     """
 
-    def __init__(self, input_uuid: str, output_uuid: str, chunk_size: int = 5000):
+    def __init__(self, input_uuid: str, output_uuid: str, chunk_size: int = 50000):
         """DataToFeaturesChunk Initialization"""
 
         # Call superclass init
