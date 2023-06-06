@@ -24,7 +24,8 @@ web_artifacts_summary = ArtifactsWebView()
 sageworks_artifacts = web_artifacts_summary.view_data()
 
 for df in sageworks_artifacts:
-    sageworks_artifacts[df]["remove"] = "<img src='../assets/trash.png' style='display: block; margin: auto; width: 20px; height: 20px;'>"
+    if df != "INCOMING_DATA" and df != "GLUE_JOBS":
+        sageworks_artifacts[df]["remove"] = "<img src='../assets/trash.png' style='display: block; margin: auto; width: 20px; height: 20px;'>"
 
 # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
 tables = dict()
@@ -32,13 +33,13 @@ tables["INCOMING_DATA"] = table.create(
     table_id="INCOMING_DATA",
     df=sageworks_artifacts["INCOMING_DATA"],
     header_color="rgb(60, 60, 100)",
-    markdown_columns=["Name", "remove"],
+    markdown_columns=["Name"],
 )
 tables["GLUE_JOBS"] = table.create(
     table_id="GLUE_JOBS",
     df=sageworks_artifacts["GLUE_JOBS"],
     header_color="rgb(60, 60, 100)",
-    markdown_columns=["Name", "remove"],
+    markdown_columns=["Name"],
 )
 tables["DATA_SOURCES"] = table.create(
     table_id="DATA_SOURCES",
