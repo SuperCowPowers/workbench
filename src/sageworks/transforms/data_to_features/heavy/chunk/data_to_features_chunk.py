@@ -1,14 +1,10 @@
 """DataToFeaturesChunk: Class to Transform a DataSource into a FeatureSet using Chunking"""
-import time
-import botocore
 import awswrangler as wr
-from sagemaker.feature_store.feature_group import FeatureGroup
 
 # Local imports
 from sageworks.transforms.transform import Transform
 from sageworks.transforms.pandas_transforms.pandas_to_features_chunked import PandasToFeaturesChunked
 from sageworks.artifacts.data_sources.data_source import DataSource
-from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 
 class DataToFeaturesChunk(Transform):
@@ -57,9 +53,13 @@ class DataToFeaturesChunk(Transform):
         to_features.set_categorical_info(self.cat_column_info)
 
         # Read in the data from Athena in chunks
-        for chunk in wr.athena.read_sql_query(query, database=self.ds_database,
-                                              ctas_approach=False, chunksize=self.chunk_size,
-                                              boto3_session=self.boto_session):
+        for chunk in wr.athena.read_sql_query(
+            query,
+            database=self.ds_database,
+            ctas_approach=False,
+            chunksize=self.chunk_size,
+            boto3_session=self.boto_session,
+        ):
             # Hand off each chunk of data
             to_features.add_chunk(chunk)
 
