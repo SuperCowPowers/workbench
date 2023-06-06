@@ -13,8 +13,8 @@ class PandasToFeaturesChunked(Transform):
     Common Usage:
         to_features = PandasToFeaturesChunked(output_uuid, id_column="id"/None, event_time_column="date"/None)
         to_features.set_output_tags(["abalone", "public", "whatever"])
-        categorical_column_info = {"sex": ["M", "F", "I"]}
-        to_features.set_categorical_columns(categorical_column_info)
+        cat_column_info = {"sex": ["M", "F", "I"]}
+        to_features.set_categorical_info(cat_column_info)
         to_features.add_chunk(df)
         to_features.add_chunk(df)
         ...
@@ -33,15 +33,15 @@ class PandasToFeaturesChunked(Transform):
         self.first_chunk = None
         self.pandas_to_features = PandasToFeatures(output_uuid, auto_categorical=False)
 
-    def set_categorical_columns(self, categorical_column_info: dict[list[str]]):
+    def set_categorical_info(self, cat_column_info: dict[list[str]]):
         """Set the Categorical Columns
         Args:
-            categorical_column_info (dict[list[str]]): Dictionary of categorical columns and their possible values
+            cat_column_info (dict[list[str]]): Dictionary of categorical columns and their possible values
         """
 
         # Create the CategoricalDtypes
         cat_d_types = {}
-        for col, vals in categorical_column_info.items():
+        for col, vals in cat_column_info.items():
             cat_d_types[col] = CategoricalDtype(categories=vals)
 
         # Now set the CategoricalDtypes on our underlying PandasToFeatures
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     chunk_size = 1000
     chunks = [df[i : i + chunk_size] for i in range(0, df.shape[0], chunk_size)]
 
-    # Create out PandasToFeaturesChunked class
+    # Create our PandasToFeaturesChunked class
     to_features = PandasToFeaturesChunked("abalone_feature_set")
 
     # Manually set the Categorical Columns
