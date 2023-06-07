@@ -26,7 +26,7 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
     numeric_columns = list(df.select_dtypes("number").columns)
     numeric_columns = [col for col in numeric_columns if len(df[col].unique()) > 1]  # Only columns > 1 unique value
     numeric_columns = [col for col in numeric_columns if col not in ["id", "Id", "ID", "Id_"]]  # Remove id columns
-    numeric_columns = numeric_columns[:24]  # Max 24 plots
+    numeric_columns = numeric_columns[:48]  # Max 48 plots
 
     # Compute the number of rows and columns
     num_plots = len(numeric_columns)
