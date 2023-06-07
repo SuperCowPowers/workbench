@@ -249,7 +249,12 @@ class PandasToFeatures(Transform):
     def wait_for_rows(self, expected_rows: int):
         """Wait for AWS Feature Group to fully populate the Offline Storage"""
         rows = self.output_feature_set.num_rows()
-        while rows < expected_rows:
+
+        # For some reason we will sometimes not quite get all of the rows
+        # FIXME: Figure out some formal way to handle this
+        most_rows = expected_rows * 0.99
+
+        while rows < most_rows:
             self.log.info(f"Waiting for AWS Feature Group {self.output_uuid} Offline Storage ({rows} rows)...")
             sleep_time = 5 if rows else 30
             time.sleep(sleep_time)
