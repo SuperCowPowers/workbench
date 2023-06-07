@@ -30,19 +30,32 @@ class DataToFeaturesChunk(Transform):
         self.ds_database = "sageworks"
         self.cat_column_info = {}
 
-    def pre_transform(self, **kwargs):
-        """Figure out which fields are categorical"""
+    def set_categorical_info(self, cat_column_info: dict[list[str]]):
+        """Set the Categorical Columns Information
+        Args:
+            cat_column_info (dict[list[str]]): Dictionary of categorical columns and their possible values
+        """
+        self.cat_column_info = cat_column_info
 
-        self.log.info("Precomputing the categorical columns")
+    def auto_categorical(self):
+        """Automatically figure out which columns are categorical"""
+        self.log.info("Automatically computing the categorical columns")
 
         # DataSources will compute value_counts for each object/str column
         value_counts = self.input_data_source.value_counts()
         for column, value_info in value_counts.items():
             # How many unique values are there?
             unique = len(value_info.keys())
-            if 1 < unique < 10:
+            if 1 < unique < 20:
                 self.log.info(f"Column {column} is categorical (unique={unique})")
                 self.cat_column_info[column] = list(value_info.keys())
+
+    def pre_transform(self, **kwargs):
+        """Figure out which fields are categorical"""
+
+        # If the user didn't specify any categorical columns, try to figure them out
+        if not self.cat_column_info:
+            self.auto_categorical()
 
     def transform_impl(self, query, id_column: str, event_time_column: str = None):
         """Convert the Data Source into a Feature Set using Chunking"""
