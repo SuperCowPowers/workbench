@@ -143,9 +143,73 @@ def drop_outliers_sdev(input_df: pd.DataFrame, sigma: float = 2.0) -> pd.DataFra
     return output_df
 
 
+def displayable_df(input_df: pd.DataFrame) -> pd.DataFrame:
+    """Create a displayable dataframe from FeatureSet data
+    Args:
+        input_df (pd.DataFrame): Input DataFrame
+    Returns:
+        pd.DataFrame: DataFrame with displayable columns
+    """
+    exclude_columns = ["write_time", "api_invocation_time", "is_deleted", "training"]
+    df = input_df[input_df.columns.difference(exclude_columns)].copy()
+    dummy_cols = get_dummy_cols(df)
+
+    # Okay, so this is a bit of a hack, but we need to replace all but the last underscore
+    # run the from_dummies method, then change the column names back to the original
+    """
+    new_column_names = []
+    for col in dummy_cols:
+        count = col.count("_") - 1
+        new_column_names.append(col.replace("_", "-", count))
+    df.rename(columns=dict(zip(dummy_cols, new_column_names)), inplace=True)
+    un_dummy = pd.from_dummies(df[new_column_names], sep="_")
+    un_dummy.columns = un_dummy.columns.str.replace("-", "_")
+    return pd.concat([df.drop(new_column_names, axis=1), un_dummy], axis=1)
+    """
+    un_dummy = undummify(df[dummy_cols])
+    return pd.concat([df.drop(dummy_cols, axis=1), un_dummy], axis=1)
+
+
+def undummify(df, prefix_sep="_"):
+    cols2collapse = {
+        prefix_sep.join(item.split(prefix_sep)[:-1]): (prefix_sep in item) for item in df.columns
+    }
+    series_list = []
+    for col, needs_to_collapse in cols2collapse.items():
+        if needs_to_collapse:
+            undummified = (
+                df.filter(like=col)
+                .idxmax(axis=1)
+                .apply(lambda x: x.split(prefix_sep)[-1])
+                .rename(col)
+            )
+            series_list.append(undummified)
+        else:
+            series_list.append(df[col])
+    undummified_df = pd.concat(series_list, axis=1)
+    return undummified_df
+
+
+def get_dummy_cols(df: pd.DataFrame) -> list:
+    """Determines a list of dummy columns for the given DataFrame
+    Args:
+        df (pd.DataFrame): Input DataFrame
+    Returns:
+        list: List of dummy columns
+    """
+    dum_cols = list(df.select_dtypes(include=['int', 'bool']).columns)
+    underscore_cols = [col for col in df.columns if '_' in col and col in dum_cols]
+    dummy_cols = []
+    for col in underscore_cols:
+        if df[col].nunique() < 20:
+            dummy_cols.append(col)
+    return dummy_cols
+
+
 if __name__ == "__main__":
     """Exercise the Pandas Utility Methods"""
     from datetime import datetime
+    from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 35)
@@ -253,3 +317,21 @@ if __name__ == "__main__":
 
     norm_df = drop_outliers_sdev(clean_df)
     log.info(norm_df)
+
+    # Create a FeatureSet and compute it's displayable dataframe
+    fs = FeatureSet("test_feature_set")
+    df = fs.sample_df()
+    print(df.head())
+    display_df = displayable_df(df)
+    print(display_df.head(10))
+
+    # Try with a column that has a '_' in it
+    df.rename(columns={"name": "first_name"}, inplace=True)
+    display_df = displayable_df(df)
+    print(display_df.head(10))
+
+    # TEMP: Try is with our DNS data
+    fs = FeatureSet("dns_features_2")
+    dns_df = fs.query("SELECT * from dns_features_2_1686156623 limit 100")
+    display_df = displayable_df(dns_df)
+    print(display_df.head(10))
