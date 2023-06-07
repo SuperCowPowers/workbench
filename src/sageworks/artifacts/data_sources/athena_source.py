@@ -270,7 +270,7 @@ class AthenaSource(DataSourceAbstract):
                 query = (
                     f'SELECT "{column}", count(*) as count '
                     f"FROM {self.table_name} "
-                    f'GROUP BY "{column}" ORDER BY count DESC limit 10'
+                    f'GROUP BY "{column}" ORDER BY count DESC limit 20'
                 )
                 # Convert int64 to int so that we can serialize to JSON
                 result_df = self.query(query)
