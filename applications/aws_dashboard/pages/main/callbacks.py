@@ -29,117 +29,122 @@ def update_artifact_tables(app: Dash):
     def incoming_data_update(n):
         if all_data is None:
             return {}
+        trigger_input = callback_context.triggered_id
+        if trigger_input is None:
+            return no_update
         incoming_data = all_data["INCOMING_DATA"]
+        incoming_data["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return incoming_data.to_dict("records")
 
     @app.callback(
         Output("DATA_SOURCES", "data"),
-        Output("remove-artifact-store", "clear_data"),
         Input("main-updater", "n_intervals"),
         Input("remove-artifact-store", "data"),
         State("DATA_SOURCES", "data"),
+        prevent_initial_call=True
     )
     def data_sources_update(n, remove_artifact_store, data):
         if all_data is None:
             return {}
-        
         trigger_input = callback_context.triggered_id
-        if "remove-artifact-store" == trigger_input and type(remove_artifact_store) == dict and remove_artifact_store.get("table_name") == "DATA_SOURCES":
+        if trigger_input is None:
+            return no_update
+        if trigger_input == "remove-artifact-store" and type(remove_artifact_store) == dict and remove_artifact_store.get("table_name") == "DATA_SOURCES":
             if remove_artifact_store.get("action") == "yes":
                 from sageworks.artifacts.data_sources.data_source import DataSource
                 row = remove_artifact_store.get("table_row")
                 updated_data = remove_artifact(data, row, DataSource)
-                return updated_data, True
+                return updated_data
             elif remove_artifact_store.get("action") == "no":
-                return no_update, True
+                return no_update
             else:
-                return no_update, False
+                return no_update
             
         data_sources = all_data["DATA_SOURCES"]
         data_sources["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
-        return data_sources.to_dict("records"), False
+        return data_sources.to_dict("records")
 
     @app.callback(
         Output("FEATURE_SETS", "data"), 
-        Output("remove-artifact-store", "clear_data"),
         Input("main-updater", "n_intervals"),
         Input("remove-artifact-store", "data"),
         State("FEATURE_SETS", "data"),
+        prevent_initial_call=True
     )
     def feature_sets_update(n, remove_artifact_store, data):
         if all_data is None:
             return {}
-        
         trigger_input = callback_context.triggered_id
-        if "remove-artifact-store" == trigger_input and type(remove_artifact_store) == dict and remove_artifact_store.get("table_name") == "FEATURE_SETS":
+        if trigger_input is None:
+            return no_update
+        if trigger_input == "remove-artifact-store" and type(remove_artifact_store) == dict and remove_artifact_store.get("table_name") == "FEATURE_SETS":
             if remove_artifact_store.get("action") == "yes":
                 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
                 row = remove_artifact_store.get("table_row")
                 updated_data = remove_artifact(data, row, FeatureSet)
-                return updated_data, True
+                return updated_data
             elif remove_artifact_store.get("action") == "no":
-                return no_update, True
+                return no_update
             else:
-                return no_update, False
-        
+                return no_update
         feature_sets = all_data["FEATURE_SETS"]
         feature_sets["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
-        return feature_sets.to_dict("records"), False
+        return feature_sets.to_dict("records")
 
     @app.callback(
         Output("MODELS", "data"), 
-        Output("remove-artifact-store", "clear_data"),
         Input("main-updater", "n_intervals"),
         Input("remove-artifact-store", "data"),
-        State("MODELS", "data")
+        State("MODELS", "data"),
+        prevent_initial_call=True
     )
     def models_update(n, remove_artifact_store, data):
         if all_data is None:
             return {}
-        
         trigger_input = callback_context.triggered_id
-        if "remove-artifact-store" == trigger_input and type(remove_artifact_store) == dict and remove_artifact_store.get("table_name") == "MODELS":
+        if trigger_input is None:
+            return no_update
+        if trigger_input == "remove-artifact-store" and type(remove_artifact_store) == dict and remove_artifact_store.get("table_name") == "MODELS":
             if remove_artifact_store.get("action") == "yes":
                 from sageworks.artifacts.models.model import Model
                 row = remove_artifact_store.get("table_row")
                 updated_data = remove_artifact(data, row, Model)
-                return updated_data, True
+                return updated_data
             elif remove_artifact_store.get("action") == "no":
-                return no_update, True
+                return no_update
             else:
-                return no_update, False
-            
+                return no_update 
         models = all_data["MODELS"]
         models["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
-        return models.to_dict("records"), False
+        return models.to_dict("records")
 
     @app.callback(
         Output("ENDPOINTS", "data"), 
-        Output("remove-artifact-store", "clear_data"),
         Input("main-updater", "n_intervals"),
         Input("remove-artifact-store", "data"),
-        State("ENDPOINTS", "data")
+        State("ENDPOINTS", "data"),
+        prevent_initial_call=True
     )
     def endpoints_update(n, remove_artifact_store, data):
-        # if no data, return empty dict
         if all_data is None:
             return {}
-        
         trigger_input = callback_context.triggered_id
-        if "remove-artifact-store" == trigger_input and type(remove_artifact_store) == dict and remove_artifact_store.get("table_name") == "ENDPOINTS":
+        if trigger_input is None:
+            return no_update
+        if trigger_input == "remove-artifact-store" and type(remove_artifact_store) == dict and remove_artifact_store.get("table_name") == "ENDPOINTS":
             if remove_artifact_store.get("action") == "yes":
                 from sageworks.artifacts.endpoints.endpoint import Endpoint
                 row = remove_artifact_store.get("table_row")
                 updated_data = remove_artifact(data, row, Endpoint)
-                return updated_data, True
+                return updated_data
             elif remove_artifact_store.get("action") == "no":
-                return no_update, True
+                return no_update
             else:
-                return no_update, False
+                return no_update
         
         endpoints = all_data["ENDPOINTS"]
         endpoints["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
-        return endpoints.to_dict("records"), False
+        return endpoints.to_dict("records")
 
 
 def remove_artifact_callbacks(app: Dash):
@@ -162,23 +167,26 @@ def remove_artifact_callbacks(app: Dash):
     )
     def pick_right_modal(data_sources_active_cell, feature_sets_active_cell, models_active_cell, endpoints_active_cell, no_button_clicks, yes_button_clicks, is_open, modal_body, modal_trigger_state_store, remove_artifact_store):
         trigger_input = callback_context.triggered_id
-        tables_names = ["DATA_SOURCES", "FEATURE_SETS", "MODELS", "ENDPOINTS"]
+        if trigger_input is None:
+            return no_update, no_update, no_update, no_update, no_update
+        tables = {
+            "DATA_SOURCES": data_sources_active_cell, 
+            "FEATURE_SETS": feature_sets_active_cell,
+            "MODELS": models_active_cell,
+            "ENDPOINTS": endpoints_active_cell
+        }
         if trigger_input == "no-button":
             remove_artifact_store = {"action": "no", "table_name": modal_trigger_state_store.get("table_name"), "table_row": modal_trigger_state_store.get("table_row")}
             clear_active_cell = modal_trigger_state_store.get("table_name")
             return False, no_update, "", remove_artifact_store, clear_active_cell
-        if trigger_input == "yes-button" and modal_trigger_state_store.get("table_name") in tables_names:
+        if trigger_input == "yes-button" and modal_trigger_state_store.get("table_name") in tables:
             remove_artifact_store = {"action": "yes", "table_name": modal_trigger_state_store.get("table_name"), "table_row": modal_trigger_state_store.get("table_row")}
             clear_active_cell = modal_trigger_state_store.get("table_name")
             return False, no_update, "", remove_artifact_store, clear_active_cell
-        if "DATA_SOURCES" == trigger_input and (data_sources_active_cell != None or data_sources_active_cell != ""):
-            return modal_update("DATA_SOURCES", "data source", data_sources_active_cell)
-        if "FEATURE_SETS" == trigger_input and (feature_sets_active_cell != None or feature_sets_active_cell != ""): 
-            return modal_update("FEATURE_SETS", "feature set", feature_sets_active_cell)
-        if "MODELS" == trigger_input and (models_active_cell != None or models_active_cell != ""):
-            return modal_update("MODELS", "model", models_active_cell)
-        if "ENDPOINTS" == trigger_input and (endpoints_active_cell != None or endpoints_active_cell != ""):
-            return modal_update("ENDPOINTS", "endpoint", endpoints_active_cell)
+        if trigger_input in tables and isinstance(tables[trigger_input], dict) and tables[trigger_input].get("column_id") == "remove":
+            modal_body = f"Are you sure you want to remove this row from {trigger_input}?"
+            modal_trigger_state_store = {"table_name": trigger_input, "table_row": tables[trigger_input]["row"]}
+            return True, modal_body, modal_trigger_state_store, no_update, no_update
         return no_update, no_update, no_update, no_update, no_update
 
 
@@ -188,7 +196,8 @@ def clear_active_cell(app: Dash):
         Output("FEATURE_SETS", "active_cell"),
         Output("MODELS", "active_cell"),
         Output("ENDPOINTS", "active_cell"),
-        Input("clear-activate-cell-store", "data")
+        Input("clear-activate-cell-store", "data"),
+        prevent_initial_call=True
     )
     def _clear_active_cell(clear_activate_cell_store):
         if clear_activate_cell_store != "":
@@ -201,18 +210,11 @@ def clear_active_cell(app: Dash):
             if clear_activate_cell_store == "ENDPOINTS":
                 return no_update, no_update, no_update, ""
         return no_update, no_update, no_update, no_update
-    
 
-def modal_update(table_name, artifact_name, active_cell):
-    if active_cell["column_id"]=="remove":
-        modal_body = f"Are you sure you want to remove this {artifact_name}?"
-        modal_trigger_state_store = {"table_name": table_name, "table_row": active_cell["row"]}
-        return True, modal_body, modal_trigger_state_store, no_update, no_update
-    return no_update, no_update, no_update, no_update, no_update
 
 def remove_artifact(data, row, Artifact: Artifact):
-    artifact = Artifact(data[0][int(row)]['uuid'])
-    artifact.delete()
-    del data[0][int(row)]
+    artifact = Artifact(data[int(row)]['uuid'])
+    # artifact.delete()
+    del data[int(row)]
     return data
     
