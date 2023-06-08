@@ -201,7 +201,8 @@ def get_dummy_cols(df: pd.DataFrame) -> list:
     underscore_cols = [col for col in df.columns if '_' in col and col in dum_cols]
     dummy_cols = []
     for col in underscore_cols:
-        if df[col].nunique() < 20:
+        # Just columns with 0 and 1
+        if set(df[col].unique()).issubset([0, 1]):
             dummy_cols.append(col)
     return dummy_cols
 
@@ -332,6 +333,6 @@ if __name__ == "__main__":
 
     # TEMP: Try is with our DNS data
     fs = FeatureSet("dns_features_2")
-    dns_df = fs.query("SELECT * from dns_features_2_1686156623 limit 100")
+    dns_df = fs.query("SELECT * from dns_features_2_1686239028 limit 100")
     display_df = displayable_df(dns_df)
     print(display_df.head(10))
