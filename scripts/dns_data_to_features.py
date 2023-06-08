@@ -14,7 +14,8 @@ data_to_features = DataToFeaturesChunk(input_uuid, output_uuid)
 data_to_features.set_output_tags(["dns", "heavy"])
 
 # Construct the query of the fields that we want in our feature set
-fields = ["timestamp", "flow_id_long", "in_iface", "proto", "dns_type", "dns_rrtype", "dns_flags", "dns_rcode"]
+fields = ["timestamp", "flow_id_long", "in_iface", "proto", "dns_type", "dns_rrtype",
+          "dns_rrname", "dns_flags", "dns_rcode"]
 query = f"SELECT {', '.join(fields)} FROM heavy_dns limit 100000"
 
 # Now actually perform the DataSource to FeatureSet transform

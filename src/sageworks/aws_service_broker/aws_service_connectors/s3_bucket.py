@@ -40,7 +40,8 @@ class S3Bucket(Connector):
                 self.log.warning(f"Describing objects in {self.bucket} gave ResourceNotFound")
                 return {}
             else:
-                raise error
+                self.log.warning(f"Describing objects in {self.bucket} gave {error.response['Error']['Code']}")
+                return {}
         self.s3_bucket_data = {full_path: info for full_path, info in _aws_file_info.items()}
 
     def aws_meta(self) -> dict:
