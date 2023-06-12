@@ -15,18 +15,18 @@ def compute_rows_columns(num_plots):
     num_columns = round(num_plots / num_rows + 0.1)
     return num_rows, num_columns
 
-def calculate_height(num_rows):
+def calculate_height(num_rows: int):
     # Set the base height and minimum height
     base_height = 300
     min_height = 150
 
     if num_rows == 1:
         return base_height
-    # Calculate the logarithmic height based on the number of rows
-    height = base_height - (math.log(num_rows + 1) * 50)
-    height = max(height, min_height)  # Ensure the height doesn't go below the minimum height
+    # Calculate the logarithmic row height based on the number of rows
+    log_row_height = base_height - (math.log(num_rows + 1) * 50)
+    row_height =  max(log_row_height, min_height)  # Ensure the height doesn't go below the minimum height
 
-    return height
+    return num_rows*row_height
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
 def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
