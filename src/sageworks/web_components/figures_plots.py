@@ -28,11 +28,14 @@ def calculate_height(num_rows: int):
 
     if num_rows == 1:
         return base_height
-    # Calculate the logarithmic row height based on the number of rows
-    log_row_height = base_height - (math.log(num_rows + 1) * 50)
-    row_height =  max(log_row_height, min_height)  # Ensure the height doesn't go below the minimum height
 
-    return num_rows*row_height
+    return base_height + num_rows*170
+    
+    # # Calculate the logarithmic row height based on the number of rows    
+    # log_row_height = base_height - (math.log(num_rows + 1) * 50)
+    # row_height =  max(log_row_height, min_height)  # Ensure the height doesn't go below the minimum height
+
+    # return num_rows*row_height
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
 def create_figure(df: pd.DataFrame, figure_object, figure_args: dict, max_plots: int) -> plotly.graph_objs.Figure:
