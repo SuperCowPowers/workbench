@@ -153,7 +153,6 @@ def remove_artifact_callbacks(app: Dash):
         Output("modal-body", "children"),
         Output("modal-trigger-state-store", "data"),
         Output("remove-artifact-store", "data"),
-        Output("clear-activate-cell-store", "data"),
         Input("DATA_SOURCES", "active_cell"),
         Input("FEATURE_SETS", "active_cell"),
         Input("MODELS", "active_cell"),
@@ -168,7 +167,7 @@ def remove_artifact_callbacks(app: Dash):
     def pick_right_modal(data_sources_active_cell, feature_sets_active_cell, models_active_cell, endpoints_active_cell, no_button_clicks, yes_button_clicks, is_open, modal_body, modal_trigger_state_store, remove_artifact_store):
         trigger_input = callback_context.triggered_id
         if trigger_input is None:
-            return no_update, no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
         tables = {
             "DATA_SOURCES": data_sources_active_cell, 
             "FEATURE_SETS": feature_sets_active_cell,
@@ -177,44 +176,20 @@ def remove_artifact_callbacks(app: Dash):
         }
         if trigger_input == "no-button":
             remove_artifact_store = {"action": "no", "table_name": modal_trigger_state_store.get("table_name"), "table_row": modal_trigger_state_store.get("table_row")}
-            clear_active_cell = modal_trigger_state_store.get("table_name")
-            return False, no_update, "", remove_artifact_store, clear_active_cell
+            return False, no_update, "", remove_artifact_store
         if trigger_input == "yes-button" and modal_trigger_state_store.get("table_name") in tables:
             remove_artifact_store = {"action": "yes", "table_name": modal_trigger_state_store.get("table_name"), "table_row": modal_trigger_state_store.get("table_row")}
-            clear_active_cell = modal_trigger_state_store.get("table_name")
-            return False, no_update, "", remove_artifact_store, clear_active_cell
+            return False, no_update, "", remove_artifact_store
         if trigger_input in tables and isinstance(tables[trigger_input], dict) and tables[trigger_input].get("column_id") == "remove":
             modal_body = f"Are you sure you want to remove this row from {trigger_input}?"
             modal_trigger_state_store = {"table_name": trigger_input, "table_row": tables[trigger_input]["row"]}
-            return True, modal_body, modal_trigger_state_store, no_update, no_update
-        return no_update, no_update, no_update, no_update, no_update
-
-
-def clear_active_cell(app: Dash):
-    @app.callback(
-        Output("DATA_SOURCES", "active_cell"),
-        Output("FEATURE_SETS", "active_cell"),
-        Output("MODELS", "active_cell"),
-        Output("ENDPOINTS", "active_cell"),
-        Input("clear-activate-cell-store", "data"),
-        prevent_initial_call=True
-    )
-    def _clear_active_cell(clear_activate_cell_store):
-        if clear_activate_cell_store != "":
-            if clear_activate_cell_store == "DATA_SOURCES":
-                return "", no_update, no_update, no_update
-            if clear_activate_cell_store == "FEATURE_SETS":
-                return no_update, "", no_update, no_update
-            if clear_activate_cell_store == "MODELS":
-                return no_update, no_update, "", no_update
-            if clear_activate_cell_store == "ENDPOINTS":
-                return no_update, no_update, no_update, ""
+            return True, modal_body, modal_trigger_state_store, no_update
         return no_update, no_update, no_update, no_update
 
 
 def remove_artifact(data, row, Artifact: Artifact):
     artifact = Artifact(data[int(row)]['uuid'])
-    # artifact.delete()
+    artifact.delete()
     del data[int(row)]
     return data
     

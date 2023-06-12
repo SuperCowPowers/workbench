@@ -15,8 +15,7 @@ def main_layout(
     layout = html.Div(
         children=[
             dcc.Store(data="", id='remove-artifact-store', storage_type="session"), 
-            dcc.Store(data="", id='modal-trigger-state-store', storage_type="session"), 
-            dcc.Store(data="", id='clear-activate-cell-store', storage_type="session"), 
+            dcc.Store(data="", id='modal-trigger-state-store', storage_type="session"),
             dbc.Modal(
                 [
                     dbc.ModalHeader(dbc.ModalTitle("Atention")),
