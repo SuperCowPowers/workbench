@@ -162,27 +162,31 @@ def remove_artifact_callbacks(app: Dash):
         State("modal", "is_open"),
         State("modal-body", "children"),
         State("modal-trigger-state-store", "data"),
-        State("remove-artifact-store", "data"),
+        State("DATA_SOURCES", "data"),
+        State("FEATURE_SETS", "data"),
+        State("MODELS", "data"),
+        State("ENDPOINTS", "data")
     )
-    def pick_right_modal(data_sources_active_cell, feature_sets_active_cell, models_active_cell, endpoints_active_cell, no_button_clicks, yes_button_clicks, is_open, modal_body, modal_trigger_state_store, remove_artifact_store):
+    def show_modal_and_call_remove_callback(data_sources_active_cell, feature_sets_active_cell, models_active_cell, endpoints_active_cell, no_button_clicks, yes_button_clicks, is_open, modal_body, modal_trigger_state_store, data_source_data, feature_set_data, model_data, endpoint_data):
         trigger_input = callback_context.triggered_id
         if trigger_input is None:
             return no_update, no_update, no_update, no_update
         tables = {
-            "DATA_SOURCES": data_sources_active_cell, 
-            "FEATURE_SETS": feature_sets_active_cell,
-            "MODELS": models_active_cell,
-            "ENDPOINTS": endpoints_active_cell
+            "DATA_SOURCES": [data_sources_active_cell, data_source_data],
+            "FEATURE_SETS": [feature_sets_active_cell, feature_set_data],
+            "MODELS": [models_active_cell, model_data],
+            "ENDPOINTS": [endpoints_active_cell, endpoint_data]
         }
         if trigger_input == "no-button":
-            remove_artifact_store = {"action": "no", "table_name": modal_trigger_state_store.get("table_name"), "table_row": modal_trigger_state_store.get("table_row")}
-            return False, no_update, "", remove_artifact_store
+            return False, no_update, "", {"action": "no", "table_name": modal_trigger_state_store.get("table_name"), "table_row": modal_trigger_state_store.get("table_row")}
         if trigger_input == "yes-button" and modal_trigger_state_store.get("table_name") in tables:
-            remove_artifact_store = {"action": "yes", "table_name": modal_trigger_state_store.get("table_name"), "table_row": modal_trigger_state_store.get("table_row")}
-            return False, no_update, "", remove_artifact_store
-        if trigger_input in tables and isinstance(tables[trigger_input], dict) and tables[trigger_input].get("column_id") == "remove":
-            modal_body = f"Are you sure you want to remove this row from {trigger_input}?"
-            modal_trigger_state_store = {"table_name": trigger_input, "table_row": tables[trigger_input]["row"]}
+            return False, no_update, "", {"action": "yes", "table_name": modal_trigger_state_store.get("table_name"), "table_row": modal_trigger_state_store.get("table_row")}
+        if trigger_input in tables and isinstance(tables[trigger_input][0], dict) and tables[trigger_input][0].get("column_id") == "remove":
+            table_name = trigger_input.replace("_", " ").title()
+            table_row = tables[trigger_input][0]["row"]
+            artifact_uuid = tables[trigger_input][1][int(table_row)]["uuid"]
+            modal_body = f'Are you sure you want to remove "{artifact_uuid}" from {table_name}?'
+            modal_trigger_state_store = {"table_name": trigger_input, "table_row": table_row}
             return True, modal_body, modal_trigger_state_store, no_update
         return no_update, no_update, no_update, no_update
 
