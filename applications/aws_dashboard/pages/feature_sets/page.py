@@ -4,7 +4,7 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import violin_plot, table, feature_set_details
+from sageworks.web_components import violin_plot, table, feature_set_details, figures_plots
 from sageworks.views.feature_set_web_view import FeatureSetWebView
 
 # Local Imports
@@ -47,7 +47,12 @@ data_details = feature_set_details.create("feature_set_details", details)
 
 # Create a box plot of all the numeric columns in the sample rows
 smart_sample_rows = feature_set_broker.feature_set_smart_sample(0)
-violin = violin_plot.create("feature_set_violin_plot", smart_sample_rows)
+# violin = violin_plot.create("feature_set_violin_plot", smart_sample_rows)
+violin = figures_plots.create("feature_set_violin_plot",
+                                    smart_sample_rows, 
+                                    plot_type="violin",
+                                    figure_args={"box_visible": True, "meanline_visible": True, "showlegend": False, "points": "all"},
+                                    max_plots=48)
 
 # Create our components
 components = {
