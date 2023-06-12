@@ -40,7 +40,7 @@ def models_layout(
                                     dbc.Col(confusion_matrix),
                                 ]
                             ),
-                            dbc.Row(scatter_plot),
+                            dbc.Row(scatter_plot, style={"margin": "5px 0px 0px 0px"}),
                         ],
                         width=8,
                     ),
