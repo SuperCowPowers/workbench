@@ -6,7 +6,7 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import data_source_details, violin_plot
+from sageworks.web_components import data_source_details, figures_plots
 
 
 def refresh_data_timer(app: Dash):
@@ -112,4 +112,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
             return dash.no_update
         print("Calling DataSource Sample Rows Refresh...")
         smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
-        return violin_plot.create_figure(smart_sample_rows)
+        return figures_plots.create_figure(smart_sample_rows, 
+                                           plot_type="violin",
+                                           figure_args={"box_visible": True, "meanline_visible": True, "showlegend": False, "points": "all"},
+                                           max_plots=48)

@@ -6,7 +6,7 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.feature_set_web_view import FeatureSetWebView
-from sageworks.web_components import feature_set_details, violin_plot
+from sageworks.web_components import feature_set_details, figures_plots
 
 
 def refresh_data_timer(app: Dash):
@@ -112,4 +112,7 @@ def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
             return dash.no_update
         print("Calling FeatureSet Sample Rows Refresh...")
         smart_sample_rows = feature_set_web_view.feature_set_smart_sample(selected_rows[0])
-        return violin_plot.create_figure(smart_sample_rows)
+        return figures_plots.create_figure(smart_sample_rows,
+                                           plot_type="violin",
+                                           figure_args={"box_visible": True, "meanline_visible": True, "showlegend": False, "points": "all"},
+                                           max_plots=48)

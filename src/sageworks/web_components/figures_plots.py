@@ -29,8 +29,13 @@ def calculate_height(num_rows: int):
     return base_height + num_rows*170
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
-def create_figure(df: pd.DataFrame, figure_object, figure_args: dict, max_plots: int) -> plotly.graph_objs.Figure:
+def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots: int) -> plotly.graph_objs.Figure:
     """Create a set of Plots for the numeric columns in the dataframe"""
+
+    if plot_type not in list(PlotType.__members__.keys()):
+        raise ValueError("Invalid plot type")
+    
+    figure_object = PlotType[plot_type].value
 
     # Sanity check the dataframe
     if df is None or df.empty or list(df.columns) == ["uuid", "status"]:
@@ -58,10 +63,5 @@ def create_figure(df: pd.DataFrame, figure_object, figure_args: dict, max_plots:
 
 
 def create(component_id: str, df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots: int) -> dcc.Graph:
-    if plot_type not in list(PlotType.__members__.keys()):
-        raise ValueError("Invalid plot type")
-    
-    figure_object = PlotType[plot_type].value    
-
     # Generate a figure and wrap it in a Dash Graph Component
-    return dcc.Graph(id=component_id, figure=create_figure(df, figure_object, figure_args,max_plots))
+    return dcc.Graph(id=component_id, figure=create_figure(df, plot_type, figure_args, max_plots))

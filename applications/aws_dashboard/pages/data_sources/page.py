@@ -4,7 +4,7 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import figures_plots, violin_plot, table, data_source_details
+from sageworks.web_components import figures_plots, table, data_source_details
 from sageworks.views.data_source_web_view import DataSourceWebView
 
 # Local Imports
@@ -53,7 +53,6 @@ data_source_sample_rows = table.create(
 
 # Create a box plot of all the numeric columns in the sample rows
 smart_sample_rows = data_source_broker.data_source_smart_sample(0)
-# violin = violin_plot.create("data_source_violin_plot", smart_sample_rows)
 violin = figures_plots.create("data_source_violin_plot",
                                     smart_sample_rows, 
                                     plot_type="violin",
