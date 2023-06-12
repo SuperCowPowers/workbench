@@ -630,6 +630,7 @@ there.
 /* Larger than Desktop HD */
 @media (min-width: 1200px) {}
 
+/* Tooltip with column type */
 .dash-tooltip .dash-table-tooltip {
   position: relative;
   background-color: #555 !important;
@@ -638,4 +639,21 @@ there.
   min-width: fit-content !important;
   padding: 2px 10px;
   border-radius: 4px;
+}
+
+/* Visual effect for the trash can */
+#trash-icon {
+  display: block;
+  margin: auto;
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s;
+}
+
+#trash-icon:hover {
+  transform: scale(1.2);
+}
+
+#trash-icon:active {
+  transform: scale(0.9);
 }

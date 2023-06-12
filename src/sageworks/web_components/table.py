@@ -43,7 +43,7 @@ def create(
         columns=column_setup,
         sort_action="native",
         row_selectable=row_select,
-        cell_selectable=False,
+        cell_selectable=True,
         selected_rows=[0],
         fixed_rows={"headers": fixed_headers},
         style_table={"maxHeight": max_height, "overflowX": "auto", "overflowY": "auto"},
@@ -70,5 +70,8 @@ def create(
         },
         tooltip_header=column_types,
         markdown_options={"html": True},
+        style_header_conditional=[
+            {"if": {"column_id": "remove"}, "color": "transparent"}
+        ]
     )
     return table
