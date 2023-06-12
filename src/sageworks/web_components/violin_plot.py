@@ -2,6 +2,7 @@
 import plotly.graph_objs
 from dash import dcc
 import pandas as pd
+import math
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
@@ -14,6 +15,18 @@ def compute_rows_columns(num_plots):
     num_columns = round(num_plots / num_rows + 0.1)
     return num_rows, num_columns
 
+def calculate_height(num_rows):
+    # Set the base height and minimum height
+    base_height = 300
+    min_height = 150
+
+    if num_rows == 1:
+        return base_height
+    # Calculate the logarithmic height based on the number of rows
+    height = base_height - (math.log(num_rows + 1) * 50)
+    height = max(height, min_height)  # Ensure the height doesn't go below the minimum height
+
+    return height
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
 def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
@@ -40,6 +53,7 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
             col=i % num_columns + 1,
         )
     fig.update_layout(margin=dict(l=20, r=20, t=20, b=20))
+    fig.update_layout(height=(calculate_height(num_rows)))
     return fig
 
 
