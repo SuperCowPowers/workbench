@@ -72,6 +72,9 @@ def create(
         markdown_options={"html": True},
         style_header_conditional=[
             {"if": {"column_id": "remove"}, "color": "transparent"}
+        ],
+        style_cell_conditional=[
+            {"if": {"column_id": "remove"}, "width": "20px", "padding": "5px 0px 2px 0px", "overflow": "visible"}
         ]
     )
     return table
