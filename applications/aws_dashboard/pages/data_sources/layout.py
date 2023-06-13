@@ -49,7 +49,7 @@ def data_sources_layout(
                         [
                             dbc.Row(
                                 html.H3("Details", id="data_details_header"),
-                                style={"padding": "10px 0px 10px 0px"},
+                                style={"padding": "0px 0px 10px 0px"},
                             ),
                             dbc.Row(
                                 data_source_details,
@@ -57,7 +57,6 @@ def data_sources_layout(
                             ),
                         ],
                         width=4,
-                        style={"backgroundColor": "#303030"}
                     ),
                     # Column 2: Sample Rows and Violin Plots
                     dbc.Col(
