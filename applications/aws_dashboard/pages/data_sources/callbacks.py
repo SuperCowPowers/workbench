@@ -1,8 +1,9 @@
 """FeatureSets Callbacks: Callback within the DataSources Web User Interface"""
 from datetime import datetime
 import dash
-from dash import Dash
-from dash.dependencies import Input, Output
+from dash import Dash, no_update
+from dash.dependencies import Input, Output, State
+from time import sleep
 
 # SageWorks Imports
 from sageworks.views.data_source_web_view import DataSourceWebView
@@ -11,11 +12,18 @@ from sageworks.web_components import data_and_feature_details, vertical_distribu
 
 def refresh_data_timer(app: Dash):
     @app.callback(
-        Output("last-updated-data-sources", "children"),
+        Output("last-updated-data-sources", "children"), Output("data-sources-url", "search"), Output("data_sources_table", "derived_viewport_selected_row_ids"),
         Input("data-sources-updater", "n_intervals"),
+        State("data-sources-url", "search"),
     )
-    def time_updated(_n):
-        return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
+    def time_updated(_n, url_query):
+        time = datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
+        if _n == 0 and url_query != '':
+            sleep(0.7)
+            params = dict(p.split('=') for p in url_query.strip('?').split('&'))
+            row = int(params.get('row'))
+            return time, '', [row]
+        return time, no_update, no_update
 
 
 def update_data_sources_table(app: Dash, data_source_broker: DataSourceWebView):
@@ -32,12 +40,16 @@ def update_data_sources_table(app: Dash, data_source_broker: DataSourceWebView):
 def table_row_select(app: Dash, table_name: str):
     @app.callback(
         Output(table_name, "style_data_conditional"),
+        Output(table_name, "selected_rows"),
         Input(table_name, "derived_viewport_selected_row_ids"),
+        State(table_name, "selected_rows"),
     )
-    def style_selected_rows(selected_rows):
+    def style_selected_rows(selected_rows, visual_selected_row):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
+            return no_update, no_update
+        if selected_rows != visual_selected_row:
+            visual_selected_row = selected_rows
         row_style = [
             {
                 "if": {"filter_query": "{{id}} ={}".format(i)},
@@ -45,7 +57,7 @@ def table_row_select(app: Dash, table_name: str):
             }
             for i in selected_rows
         ]
-        return row_style
+        return row_style, visual_selected_row
 
 
 # Updates the data source details when a row is selected in the summary
@@ -116,3 +128,4 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
                                            plot_type="violin",
                                            figure_args={"box_visible": True, "meanline_visible": True, "showlegend": False, "points": "all"},
                                            max_plots=48)
+    
