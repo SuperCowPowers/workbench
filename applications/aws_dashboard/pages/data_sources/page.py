@@ -4,7 +4,7 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import figures_plots, table, data_source_details
+from sageworks.web_components import figures_plots, table, data_source_details, data_and_feature_details
 from sageworks.views.data_source_web_view import DataSourceWebView
 
 # Local Imports
@@ -38,7 +38,7 @@ data_sources_table = table.create(
 
 # Data Source Details
 details = data_source_broker.data_source_details(0)
-data_details = data_source_details.create("data_source_details", details)
+data_details = data_and_feature_details.create("data_source_details", details)
 
 # Grab sample rows from the first data source
 sample_rows = data_source_broker.data_source_sample(0)
