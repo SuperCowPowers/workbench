@@ -30,7 +30,19 @@ def calculate_height(num_rows: int):
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
 def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots: int) -> plotly.graph_objs.Figure:
-    """Create a set of Plots for the numeric columns in the dataframe"""
+    """Create a set of plots for the numeric columns in the dataframe.
+
+    Args:
+        df (pd.DataFrame): The dataframe containing the data.
+        plot_type (str): The type of plot to create. Valid values are 'violin' and 'box'.
+        figure_args (dict): A dictionary of arguments to pass to the plot object.
+            For violin plot arguments, refer to: https://plotly.com/python/reference/violin/
+            For box plot arguments, refer to: https://plotly.com/python/reference/box/
+        max_plots (int): The maximum number of plots to create.
+
+    Returns:
+        plotly.graph_objs.Figure: A Figure object containing the generated plots.
+    """
 
     if plot_type not in list(PlotType.__members__.keys()):
         raise ValueError("Invalid plot type")
@@ -63,5 +75,20 @@ def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots
 
 
 def create(component_id: str, df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots: int) -> dcc.Graph:
+    """Create a Graph Component for vertical distribution plots.
+
+    Args:
+        component_id (str): The ID of the UI component.
+        df (pd.DataFrame): A dataframe of data.
+        plot_type (str): The type of plot to create. Valid values are 'violin' and 'box'.
+        figure_args (dict): A dictionary of arguments to pass to the plot object.
+            For violin plot arguments, refer to: https://plotly.com/python/reference/violin/
+            For box plot arguments, refer to: https://plotly.com/python/reference/box/
+        max_plots (int): The maximum number of plots to create.
+
+    Returns:
+        dcc.Graph: A Dash Graph Component representing the vertical distribution plots.
+    """
+
     # Generate a figure and wrap it in a Dash Graph Component
     return dcc.Graph(id=component_id, figure=create_figure(df, plot_type, figure_args, max_plots))
