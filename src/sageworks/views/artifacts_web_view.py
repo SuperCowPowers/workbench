@@ -54,8 +54,8 @@ class ArtifactsWebView(ArtifactsTextView):
 
         # Pull the AWS URLs and construct some hyperlinks
         hyperlinked_names = []
-        for name, aws_url in zip(data_df["Name"], data_df["_aws_url"]):
-            hyperlinked_names.append(self.hyperlinks(name, "data_sources", aws_url))
+        for i, (name, aws_url) in enumerate(zip(data_df["Name"], data_df["_aws_url"])):
+            hyperlinked_names.append(self.hyperlinks(name, "data_sources", aws_url, i))
         data_df["Name"] = hyperlinked_names
 
         # Drop the AWS URL column and return the dataframe
@@ -97,13 +97,13 @@ class ArtifactsWebView(ArtifactsTextView):
         endpoint_df["Name"] = endpoint_df["Name"].map(lambda x: self.hyperlinks(x, "endpoints", ""))
         return endpoint_df
 
-    def hyperlinks(self, name, detail_type, aws_url):
+    def hyperlinks(self, name, detail_type, aws_url, row = None):
         """Construct a hyperlink for the given name and detail_type"""
         if detail_type == "glue_jobs":
             return f"<a href='{aws_url}' target='_blank'>{name}</a>"
 
         # Other types have both a detail page and a query page
-        link = f"<a href='{detail_type}' target='_blank'>{name}</a>"
+        link = f"<a href='{detail_type}/?row={row}' target='_blank'>{name}</a>"
         if aws_url:
             link += f" [<a href='{aws_url}' target='_blank'>query</a>]"
         return link
