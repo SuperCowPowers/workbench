@@ -12,6 +12,7 @@ def data_sources_layout(
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
         children=[
+            dcc.Location(id="data-sources-url", refresh=False),
             dbc.Row(
                 [
                     html.H2("SageWorks: DataSources (Alpha)"),
