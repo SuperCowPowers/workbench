@@ -4,7 +4,7 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import figures_plots, table, data_source_details, data_and_feature_details
+from sageworks.web_components import figures_plots, table, data_and_feature_details
 from sageworks.views.data_source_web_view import DataSourceWebView
 
 # Local Imports

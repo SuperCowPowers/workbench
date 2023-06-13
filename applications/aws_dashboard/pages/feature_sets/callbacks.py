@@ -6,7 +6,7 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.feature_set_web_view import FeatureSetWebView
-from sageworks.web_components import feature_set_details, figures_plots
+from sageworks.web_components import figures_plots, data_and_feature_details
 
 
 def refresh_data_timer(app: Dash):
@@ -60,7 +60,7 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
             return dash.no_update
         print("Calling FeatureSet Details...")
         feature_details = feature_set_web_view.feature_set_details(selected_rows[0])
-        feature_details_markdown = feature_set_details.create_markdown(feature_details)
+        feature_details_markdown = data_and_feature_details.create_markdown(feature_details)
 
         # Name of the data source for the Header
         feature_set_name = feature_set_web_view.feature_set_name(selected_rows[0])

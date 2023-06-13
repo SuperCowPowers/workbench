@@ -6,7 +6,7 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import data_source_details, figures_plots, data_and_feature_details
+from sageworks.web_components import figures_plots, data_and_feature_details
 
 
 def refresh_data_timer(app: Dash):
