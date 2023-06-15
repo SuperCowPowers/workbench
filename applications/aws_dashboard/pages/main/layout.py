@@ -18,7 +18,7 @@ def main_layout(
             dcc.Store(data="", id='modal-trigger-state-store', storage_type="session"),
             dbc.Modal(
                 [
-                    dbc.ModalHeader(dbc.ModalTitle("Atention")),
+                    dbc.ModalHeader(dbc.ModalTitle("Attention")),
                     dbc.ModalBody(id="modal-body"),
                     dbc.ModalFooter([
                         dbc.Button("No", id="no-button", n_clicks=0),
