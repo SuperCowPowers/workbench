@@ -45,9 +45,7 @@ def table_row_select(app: Dash, table_name: str):
     
     @app.callback(
         Output(table_name, "style_data_conditional"),
-        # Output(table_name, "derived_viewport_selected_row_ids"),
         Input(table_name, "selected_rows"),
-        # State(table_name, "derived_viewport_selected_row_ids"),
     )
     def style_selected_rows(selected_rows):
         print(f"Selected Rows: {selected_rows}")
