@@ -57,6 +57,12 @@ def table_row_select(app: Dash, table_name: str):
                 "backgroundColor": "rgb(80, 80, 80)",
             }
             for i in selected_rows
+        ] + [
+            {
+                "if": {"state": "selected"},
+                "backgroundColor": "rgb(60, 60, 60)",
+                "border": "rbg(113, 113, 113)"
+            }
         ]
         return row_style
 
