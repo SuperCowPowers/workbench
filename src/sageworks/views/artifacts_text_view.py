@@ -26,9 +26,9 @@ class ArtifactsTextView(View):
         """Can we connect to this view/service?"""
         return True  # I'm great, thx for asking
 
-    def refresh(self):
+    def refresh(self, force_refresh: bool = False) -> None:
         """Refresh data/metadata associated with this view"""
-        self.aws_artifact_data = self.aws_broker.get_all_metadata()
+        self.aws_artifact_data = self.aws_broker.get_all_metadata(force_refresh=force_refresh)
 
     def view_data(self) -> dict:
         """Get all the data that's useful for this view
