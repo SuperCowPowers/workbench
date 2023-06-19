@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import botocore.exceptions
 import pandas as pd
 import awswrangler as wr
+import numpy as np
 
 from sagemaker.feature_store.feature_group import FeatureGroup
 from sagemaker.feature_store.feature_store import FeatureStore
@@ -288,6 +289,20 @@ class FeatureSet(Artifact):
         """
         return self.data_source.sample_df(recompute)
 
+    def anomalies(self) -> pd.DataFrame:
+        """Get a set of anomalous data from the underlying DataSource
+        Returns:
+            pd.DataFrame: A sample of the data from the underlying DataSource
+        """
+
+        # FIXME: Mock this for now
+        anom_df = self.sample_df().copy()
+        anom_df["anomaly_score"] = np.random.rand(anom_df.shape[0])
+        anom_df["cluster"] = np.random.randint(0, 10, anom_df.shape[0])
+        anom_df["x"] = np.random.rand(anom_df.shape[0])
+        anom_df["y"] = np.random.rand(anom_df.shape[0])
+        return anom_df
+
     def value_counts(self, recompute: bool = False) -> dict:
         """Get the quartiles for the string columns of the underlying DataSource
         Args:
@@ -353,6 +368,10 @@ if __name__ == "__main__":
     quartile_info = my_features.quartiles()
     print("Quartiles")
     pprint(quartile_info)
+
+    # Get anomalies
+    anom_df = my_features.anomalies()
+    print(anom_df)
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print('Deleting SageWorks Feature Set...')
