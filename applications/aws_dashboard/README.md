@@ -1,13 +1,15 @@
-# Run the dashboard
+# Run the SageWorks Dashboard
 
 You can run the Dashboard on a local environment:
+
 ```bash 
 $ cd applications/aws_dashboard
 $ pip install -r requirements.txt
 $ python app.py
 ``` 
 
-Or you can run it on a Docker container:
+Or you can run it in a Docker container:
+
 ```bash
 $ cd applications/aws_dashboard
 $ docker build -t aws_dashboard .
