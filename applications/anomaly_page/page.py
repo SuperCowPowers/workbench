@@ -3,6 +3,7 @@ from dash import Dash, register_page
 import dash
 from dash_bootstrap_templates import load_figure_template
 import dash_bootstrap_components as dbc
+import plotly.express as px
 
 # SageWorks Imports
 from sageworks.web_components import table, data_and_feature_details, vertical_distribution_plots, scatter_plot
@@ -28,6 +29,7 @@ load_figure_template("darkly")
 
 # Grab sample rows from the first data source
 anomaly_rows = FeatureSet("abalone_feature_set").anomalies()
+anomaly_rows.sort_values(by=["cluster"], inplace=True)
 anomaly_datatable = table.create(
     "anomaly_datatable",
     anomaly_rows,
@@ -35,6 +37,19 @@ anomaly_datatable = table.create(
     max_height="400px",
     row_select="single"
 )
+
+clusters = anomaly_rows["cluster"].unique()
+color_map = px.colors.qualitative.Plotly
+clusters_color_map = {cluster: color_map[i] for i, cluster in enumerate(clusters)}
+
+anomaly_datatable.style_data_conditional = [
+    {
+        "if": {"filter_query": "{{cluster}} ={}".format(cluster)},
+        "backgroundColor": "{}".format(color),
+        "color": "black",
+        "border": "1px grey solid"
+    } for cluster, color in clusters_color_map.items()
+]
 
 # Create a box plot of all the numeric columns in the sample rows
 violin = vertical_distribution_plots.create("anomaly_violin_plot",

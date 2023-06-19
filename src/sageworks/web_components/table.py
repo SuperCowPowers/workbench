@@ -75,6 +75,7 @@ def create(
         ],
         style_cell_conditional=[
             {"if": {"column_id": "remove"}, "width": "20px", "padding": "5px 0px 2px 0px", "overflow": "visible"}
-        ]
+        ],
+        style_data_conditional=[{}],
     )
     return table
