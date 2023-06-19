@@ -370,8 +370,9 @@ if __name__ == "__main__":
     pprint(quartile_info)
 
     # Get anomalies
+    print("\nAnomalies:")
     anom_df = my_features.anomalies()
-    print(anom_df)
+    pprint(anom_df)
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print('Deleting SageWorks Feature Set...')
