@@ -16,7 +16,7 @@ import callbacks
 
 
 app = Dash(
-    title="SageWorks Anomaly",
+    title="SageWorks - DNS Anomaly Inspector",
     external_stylesheets=[dbc.themes.DARKLY],
 )
 

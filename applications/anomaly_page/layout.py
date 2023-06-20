@@ -14,7 +14,7 @@ def anomaly_layout(
         children=[
             dbc.Row(
                 [
-                    html.H2("SageWorks: Anomaly (Alpha)"),
+                    html.H2("SageWorks: DNS Anomaly Inspector"),
                     html.Div(
                         "Last Updated: ",
                         id="last-updated-anomaly-table",
