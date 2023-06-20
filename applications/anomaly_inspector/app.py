@@ -47,26 +47,25 @@ feature_set_anomalies_rows = table.create(
 )
 
 # Create a big list of colors based on the plotly colors sequences. 
-# Not using set() to avoid duplicates as the set() function will not preserve the order of the list
+# Not using set() as solution to avoid duplicates because the set() function will not preserve the order of the list
 plotly_colors_sequence_names = ["Plotly", "D3", "G10", "T10", "Alphabet", "Light24", "Set1", "Set2", "Prism", "Vivid"]
-colors_list = []
+color_list = []
 for sequence_name in plotly_colors_sequence_names:
     colors = getattr(px.colors.qualitative, sequence_name, None)
     if colors:
         for color in colors:
-            if color not in colors_list:
-                colors_list.append(color)
+            if color not in color_list:
+                color_list.append(color)
 
-# Define background colors for each row based on the cluster value
+# Define background color for each row based on the cluster value
 clusters = anomalous_rows["cluster"].unique()
-color_discrete_map = {str(cluster): str(colors_list[cluster]) for cluster in clusters}
 feature_set_anomalies_rows.style_data_conditional = [
     {
         "if": {"filter_query": "{{cluster}} ={}".format(cluster)},
-        "backgroundColor": "{}".format(color),
+        "backgroundColor": "{}".format(color_list[cluster]),
         "color": "black",
         "border": "1px grey solid"
-    } for cluster, color in color_discrete_map.items()
+    } for cluster in clusters
 ]
 
 # Data Source Details
@@ -81,6 +80,8 @@ violin = vertical_distribution_plots.create("feature_set_violin_plot",
                                     figure_args={"box_visible": True, "meanline_visible": True, "showlegend": False, "points": "all"},
                                     max_plots=48)
 
+# Map the cluster value to a color
+color_discrete_map = {str(cluster): str(color_list[i]) for i, cluster in enumerate(clusters)}
 # Create the anomaly cluster plot
 cluster_plot = scatter_plot.create("anomaly_scatter_plot", anomalous_rows, color_discrete_map)
 
@@ -105,8 +106,8 @@ callbacks.update_feature_sets_table(app, feature_set_broker)
 # Callbacks for when a data source is selected
 callbacks.table_row_select(app, "feature_sets_table")
 callbacks.update_feature_set_details(app, feature_set_broker)
-callbacks.update_feature_set_anomalies_rows(app, feature_set_broker, colors_list)
-callbacks.update_cluster_plot(app, feature_set_broker, color_discrete_map)
+callbacks.update_feature_set_anomalies_rows(app, feature_set_broker, color_list)
+callbacks.update_cluster_plot(app, feature_set_broker, color_list)
 callbacks.update_violin_plots(app, feature_set_broker)
 
 if __name__ == "__main__":

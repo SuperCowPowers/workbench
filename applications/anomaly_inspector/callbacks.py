@@ -71,7 +71,7 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
         return [header, feature_details_markdown]
 
 
-def update_feature_set_anomalies_rows(app: Dash, feature_set_web_view: FeatureSetWebView, colors_list: List):
+def update_feature_set_anomalies_rows(app: Dash, feature_set_web_view: FeatureSetWebView, color_list: List):
     @app.callback(
         [
             Output("feature_sample_rows_header", "children"),
@@ -89,6 +89,7 @@ def update_feature_set_anomalies_rows(app: Dash, feature_set_web_view: FeatureSe
             return dash.no_update
         print("Calling FeatureSet Sample Rows...")
         anomalous_rows = feature_set_web_view.feature_set_anomalies(selected_rows[0])
+        anomalous_rows.sort_values(by=["cluster"], inplace=True)
 
         # Name of the data source
         feature_set_name = feature_set_web_view.feature_set_name(selected_rows[0])
@@ -102,7 +103,7 @@ def update_feature_set_anomalies_rows(app: Dash, feature_set_web_view: FeatureSe
         style_data_conditional = [
             {
                 "if": {"filter_query": "{{cluster}} ={}".format(cluster)},
-                "backgroundColor": "{}".format(colors_list[cluster]),
+                "backgroundColor": "{}".format(color_list[cluster]),
                 "color": "black",
                 "border": "1px grey solid"
             } for cluster in clusters
@@ -112,7 +113,7 @@ def update_feature_set_anomalies_rows(app: Dash, feature_set_web_view: FeatureSe
         return [header, column_setup, anomalous_rows.to_dict("records"), style_data_conditional]
 
 
-def update_cluster_plot(app: Dash, feature_set_web_view: FeatureSetWebView, color_discrete_map: Dict = {}):
+def update_cluster_plot(app: Dash, feature_set_web_view: FeatureSetWebView, color_list: List):
     """Updates the Cluster Plot when a new feature set is selected"""
 
     @app.callback(
@@ -127,6 +128,8 @@ def update_cluster_plot(app: Dash, feature_set_web_view: FeatureSetWebView, colo
         print("Calling FeatureSet Sample Rows Refresh...")
         anomalous_rows = feature_set_web_view.feature_set_anomalies(selected_rows[0])
         anomalous_rows.sort_values(by=["cluster"], inplace=True)
+        clusters = anomalous_rows["cluster"].unique()
+        color_discrete_map = {str(cluster): str(color_list[i]) for i, cluster in enumerate(clusters)}
         return scatter_plot.create_figure(anomalous_rows, color_discrete_map)
 
 
