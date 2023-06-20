@@ -1,8 +1,9 @@
 """Callbacks for the FeatureSets Subpage Web User Interface"""
 from datetime import datetime
+from typing import Dict, List
 import dash
 from dash import Dash
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.feature_set_web_view import FeatureSetWebView
@@ -70,35 +71,48 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
         return [header, feature_details_markdown]
 
 
-def update_feature_set_anomalies_rows(app: Dash, feature_set_web_view: FeatureSetWebView):
+def update_feature_set_anomalies_rows(app: Dash, feature_set_web_view: FeatureSetWebView, colors_list: List):
     @app.callback(
         [
             Output("feature_sample_rows_header", "children"),
             Output("feature_set_anomalies_rows", "columns"),
             Output("feature_set_anomalies_rows", "data"),
+            Output("feature_set_anomalies_rows", "style_data_conditional"),
         ],
         Input("feature_sets_table", "derived_viewport_selected_row_ids"),
+        State("feature-sets-updater", "n_intervals"),
         prevent_initial_call=True,
     )
-    def sample_rows_update(selected_rows):
+    def sample_rows_update(selected_rows, _n):
         print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
+        if not selected_rows or selected_rows[0] is None or _n == 0:
             return dash.no_update
         print("Calling FeatureSet Sample Rows...")
-        sample_rows = feature_set_web_view.feature_set_anomalies(selected_rows[0])
+        anomalous_rows = feature_set_web_view.feature_set_anomalies(selected_rows[0])
 
         # Name of the data source
         feature_set_name = feature_set_web_view.feature_set_name(selected_rows[0])
         header = f"Anomalous Rows: {feature_set_name}"
 
         # The columns need to be in a special format for the DataTable
-        column_setup = [{"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns]
+        column_setup = [{"name": c, "id": c, "presentation": "input"} for c in anomalous_rows.columns]
+
+        # Set the color row based on the cluster value
+        clusters = anomalous_rows["cluster"].unique()
+        style_data_conditional = [
+            {
+                "if": {"filter_query": "{{cluster}} ={}".format(cluster)},
+                "backgroundColor": "{}".format(colors_list[cluster]),
+                "color": "black",
+                "border": "1px grey solid"
+            } for cluster in clusters
+        ]
 
         # Return the columns and the data
-        return [header, column_setup, sample_rows.to_dict("records")]
+        return [header, column_setup, anomalous_rows.to_dict("records"), style_data_conditional]
 
 
-def update_cluster_plot(app: Dash, feature_set_web_view: FeatureSetWebView):
+def update_cluster_plot(app: Dash, feature_set_web_view: FeatureSetWebView, color_discrete_map: Dict = {}):
     """Updates the Cluster Plot when a new feature set is selected"""
 
     @app.callback(
@@ -112,7 +126,8 @@ def update_cluster_plot(app: Dash, feature_set_web_view: FeatureSetWebView):
             return dash.no_update
         print("Calling FeatureSet Sample Rows Refresh...")
         anomalous_rows = feature_set_web_view.feature_set_anomalies(selected_rows[0])
-        return scatter_plot.create_figure(anomalous_rows)
+        anomalous_rows.sort_values(by=["cluster"], inplace=True)
+        return scatter_plot.create_figure(anomalous_rows, color_discrete_map)
 
 
 def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
