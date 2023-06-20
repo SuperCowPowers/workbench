@@ -1,61 +1,46 @@
 """A scatter plot component"""
+import plotly.graph_objs
 from dash import dcc
 import pandas as pd
 import plotly.express as px
+import numpy as np
 
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
-def create(df: pd.DataFrame = None, variant=1) -> dcc.Graph:
+def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
     """Create a Scatter Plot"""
-    gap_df = px.data.gapminder()
 
-    # TEMP
-    gap_df.rename(
-        {
-            "gdpPercap": "awesome",
-            "lifeExp": "stuff",
-            "continent": "Project",
-            "pop": "logS",
-        },
-        axis=1,
-        inplace=True,
-    )
-    gap_df.replace(
-        {
-            "Asia": "Project X",
-            "Europe": "Project Y",
-            "Africa": "Project Z",
-            "Americas": "Project A",
-            "Oceania": "Project B",
-        },
-        inplace=True,
-    )
+    # Fake data if it's not in the dataframe
+    if "cluster" not in df.columns:
+        df["cluster"] = np.random.randint(0, 10, df.shape[0])
+        df["x"] = np.random.rand(df.shape[0])
+        df["y"] = np.random.rand(df.shape[0])
 
+    # Create the Scatter Plot
     color_map = px.colors.qualitative.Plotly
-    if variant == 1:
-        pass
-    elif variant == 2:
-        gap_df["awesome"] = 50000 - gap_df["awesome"]
-    else:
-        gap_df.replace(
-            {
-                "Project X": "Training",
-                "Project Y": "Training",
-                "Project Z": "Training",
-                "Project A": "Testing",
-                "Project B": "Testing",
-            },
-            inplace=True,
-        )
     fig = px.scatter(
-        gap_df,
-        x="awesome",
-        y="stuff",
-        size="logS",
-        color="Project",
+        df,
+        x="x",
+        y="y",
+        size="y",
+        color="cluster",
         log_x=True,
-        size_max=60,
-        title="Cool Stuff",
+        size_max=16,
+        title="Anomaly Cluster Plot",
         color_discrete_sequence=color_map,
     )
-    return dcc.Graph(id="scatter_plot", figure=fig)
+    return fig
+
+
+def create(component_id: str, df: pd.DataFrame) -> dcc.Graph:
+    """Create a Graph Component for vertical distribution plots.
+
+    Args:
+        component_id (str): The ID of the UI component.
+        df (pd.DataFrame): A dataframe of data.
+    Returns:
+        dcc.Graph: A Dash Graph Component representing the vertical distribution plots.
+    """
+
+    # Generate a figure and wrap it in a Dash Graph Component
+    return dcc.Graph(id=component_id, figure=create_figure(df))

@@ -2,7 +2,6 @@
 import plotly.graph_objs
 from dash import dcc
 import pandas as pd
-import math
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from enum import Enum
@@ -13,6 +12,7 @@ class PlotType(Enum):
     violin = go.Violin  
     box = go.Box
 
+
 def compute_rows_columns(num_plots):
     """Errr... I think this works but happy to be improved"""
     max_columns = 8
@@ -21,12 +21,14 @@ def compute_rows_columns(num_plots):
     num_columns = round(num_plots / num_rows + 0.1)
     return num_rows, num_columns
 
+
 def calculate_height(num_rows: int):
     # Set the base height
     base_height = 300
     if num_rows == 1:
         return base_height
     return base_height + num_rows*170
+
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
 def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots: int) -> plotly.graph_objs.Figure:
