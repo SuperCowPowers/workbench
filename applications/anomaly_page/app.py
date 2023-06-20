@@ -41,10 +41,10 @@ feature_sets_table = table.create(
 anomaly_rows = FeatureSet("abalone_feature_set").anomalies()
 anomaly_rows.sort_values(by=["cluster"], inplace=True)
 anomaly_datatable = table.create(
-    "anomaly_datatable",
+    "anomaly_table",
     anomaly_rows,
     header_color="rgb(60, 60, 100)",
-    max_height="400px",
+    max_height="450px",
     row_select="single"
 )
 
@@ -85,8 +85,14 @@ app.layout = anomaly_layout(**components)
 # Refresh our data timer
 callbacks.refresh_data_timer(app)
 
-# Callbacks for when a data source is selected
-# callbacks.table_row_select(app, "feature_sets_table")
+#Update feature sets table
+callbacks.update_feature_sets_table(app, feature_set_broker)
+
+# Update the anomaly table
+
+callbacks.table_row_select(app, "feature_sets_table")
+
+callbacks.update_anomaly_table(app)
 
 # callbacks.update_violin_plots(app, feature_set_broker)
 

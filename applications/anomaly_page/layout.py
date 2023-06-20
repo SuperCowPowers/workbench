@@ -17,7 +17,7 @@ def anomaly_layout(
                     html.H2("SageWorks: DNS Anomaly Inspector"),
                     html.Div(
                         "Last Updated: ",
-                        id="last-updated-anomaly-table",
+                        id="last-updated-anomaly-page",
                         style={
                             "color": "rgb(140, 200, 140)",
                             "fontSize": 15,
@@ -31,11 +31,17 @@ def anomaly_layout(
             dbc.Row(
                 [
                     dbc.Col(
-                        [anomaly_table],
+                        [
+                            dbc.Row(
+                                html.H3("Anomalies", id="anomaly-table-header"),
+                                style={"padding": "10px 0px 5px 0px", "font-size": "15px"},
+                            ),
+                            anomaly_table
+                        ],
                         style={"padding": "20px 5px 10px 0px"},
                         width=6,
                     ),
-                    dbc.Col(scatter_plot, width=6, style={"padding": "30px 0px 10px 5px"},),
+                    dbc.Col(scatter_plot, width=6, style={"padding": "20px 0px 10px 5px"}),
                 ]
             ),
             dbc.Row(violin_plot),
