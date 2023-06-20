@@ -6,7 +6,7 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.feature_set_web_view import FeatureSetWebView
-from sageworks.web_components import data_and_feature_details, vertical_distribution_plots
+from sageworks.web_components import data_and_feature_details, vertical_distribution_plots, scatter_plot
 
 
 def refresh_data_timer(app: Dash):
@@ -98,8 +98,25 @@ def update_feature_set_anomalies_rows(app: Dash, feature_set_web_view: FeatureSe
         return [header, column_setup, sample_rows.to_dict("records")]
 
 
+def update_cluster_plot(app: Dash, feature_set_web_view: FeatureSetWebView):
+    """Updates the Cluster Plot when a new feature set is selected"""
+
+    @app.callback(
+        Output("anomaly_scatter_plot", "figure"),
+        Input("feature_sets_table", "derived_viewport_selected_row_ids"),
+        prevent_initial_call=True,
+    )
+    def generate_new_cluster_plot(selected_rows):
+        print(f"Selected Rows: {selected_rows}")
+        if not selected_rows or selected_rows[0] is None:
+            return dash.no_update
+        print("Calling FeatureSet Sample Rows Refresh...")
+        anomalous_rows = feature_set_web_view.feature_set_anomalies(selected_rows[0])
+        return scatter_plot.create_figure(anomalous_rows)
+
+
 def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
-    """Updates the Violin Plots when a new data source is selected"""
+    """Updates the Violin Plots when a new feature set is selected"""
 
     @app.callback(
         Output("feature_set_violin_plot", "figure"),

@@ -62,7 +62,7 @@ cluster_plot = scatter_plot.create("anomaly_scatter_plot", anomalous_rows)
 components = {
     "feature_sets_table": feature_sets_table,
     "feature_set_anomalies_rows": feature_set_anomalies_rows,
-    "cluster_plot": cluster_plot,
+    "anomaly_scatter_plot": cluster_plot,
     "feature_set_details": data_details,
     "violin_plot": violin,
 }
@@ -80,6 +80,7 @@ callbacks.update_feature_sets_table(app, feature_set_broker)
 callbacks.table_row_select(app, "feature_sets_table")
 callbacks.update_feature_set_details(app, feature_set_broker)
 callbacks.update_feature_set_anomalies_rows(app, feature_set_broker)
+callbacks.update_cluster_plot(app, feature_set_broker)
 callbacks.update_violin_plots(app, feature_set_broker)
 
 if __name__ == "__main__":

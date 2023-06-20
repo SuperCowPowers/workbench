@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 def feature_sets_layout(
     feature_sets_table: dash_table.DataTable,
     feature_set_anomalies_rows: dash_table.DataTable,
-    cluster_plot: dcc.Graph,
+    anomaly_scatter_plot: dcc.Graph,
     feature_set_details: dcc.Markdown,
     violin_plot: dcc.Graph,
 ) -> html.Div:
@@ -57,7 +57,7 @@ def feature_sets_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                cluster_plot,
+                                anomaly_scatter_plot,
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],
