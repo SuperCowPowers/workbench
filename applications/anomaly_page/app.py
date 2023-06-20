@@ -28,7 +28,7 @@ load_figure_template("darkly")
 feature_set_broker = FeatureSetWebView()
 feature_set_rows = feature_set_broker.feature_sets_summary()
 
-# Create a table to display the data sources
+# Create a table to display the feature sets
 feature_sets_table = table.create(
     "feature_sets_table",
     feature_set_rows,
@@ -37,34 +37,43 @@ feature_sets_table = table.create(
     markdown_columns=["Feature Group"],
 )
 
-# Grab sample rows from the first data source
-anomaly_rows = FeatureSet("abalone_feature_set").anomalies()
-anomaly_rows.sort_values(by=["cluster"], inplace=True)
+# Create a table to display the anomalies
+first_feature_set_uuid = feature_set_rows["uuid"][0]
+anomaly_df = FeatureSet(first_feature_set_uuid).anomalies()
+anomaly_df.sort_values(by=["cluster"], inplace=True)
 anomaly_datatable = table.create(
     "anomaly_table",
-    anomaly_rows,
+    anomaly_df,
     header_color="rgb(60, 60, 100)",
     max_height="450px",
     row_select="single"
 )
 
-clusters = anomaly_rows["cluster"].unique()
-color_map = px.colors.qualitative.Plotly
-clusters_color_map = {cluster: color_map[i] for i, cluster in enumerate(clusters)}
+# Create a big list of colors based on the plotly colors sequences. 
+# Not using set() to avoid duplicates as the set() function will not preserve the order of the list
+plotly_colors_sequence_names = ["Plotly", "D3", "G10", "T10", "Alphabet", "Light24", "Set1", "Set2", "Prism", "Vivid"]
+all_colors = []
+for sequence_name in plotly_colors_sequence_names:
+    colors = getattr(px.colors.qualitative, sequence_name, None)
+    if colors:
+        for color in colors:
+            if color not in all_colors:
+                all_colors.append(color)
 
+clusters = anomaly_df["cluster"].unique()
 anomaly_datatable.style_data_conditional = [
     {
         "if": {"filter_query": "{{cluster}} ={}".format(cluster)},
-        "backgroundColor": "{}".format(color),
+        "backgroundColor": "{}".format(all_colors[cluster]),
         "color": "black",
         "border": "1px grey solid"
-    } for cluster, color in clusters_color_map.items()
+    } for cluster in clusters
 ]
 
 # Create a box plot of all the numeric columns in the sample rows
 violin = vertical_distribution_plots.create(
     "anomaly_violin_plot",
-    anomaly_rows, 
+    anomaly_df, 
     plot_type="violin",
     figure_args={"box_visible": True, "meanline_visible": True, "showlegend": False, "points": "all"},
     max_plots=48
@@ -92,7 +101,7 @@ callbacks.update_feature_sets_table(app, feature_set_broker)
 
 callbacks.table_row_select(app, "feature_sets_table")
 
-callbacks.update_anomaly_table(app)
+callbacks.update_anomaly_table(app, all_colors)
 
 # callbacks.update_violin_plots(app, feature_set_broker)
 

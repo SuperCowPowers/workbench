@@ -3,6 +3,7 @@ from datetime import datetime
 import dash
 from dash import Dash, no_update
 from dash.dependencies import Input, Output, State
+from typing import List
 
 # SageWorks Imports
 from sageworks.views.feature_set_web_view import FeatureSetWebView
@@ -48,33 +49,40 @@ def table_row_select(app: Dash, table_name: str):
         return row_style
 
 
-def update_anomaly_table(app: Dash):
+def update_anomaly_table(app: Dash, colors_list: List):
     @app.callback(
         [
-            Output("anomaly-table-header", "children"),
-            Output("anomaly_table", "columns"),
             Output("anomaly_table", "data"),
+            Output("anomaly_table", "style_data_conditional"),
+            Output("anomaly-table-header", "children"),
         ],
         Input("feature_sets_table", "derived_viewport_selected_row_ids"),
         State("feature_sets_table", "data"),
-        # prevent_initial_call=True,
+        State("anomaly-updater", "n_intervals"),
+        prevent_initial_call=True,
     )
-    def sample_rows_update(selected_rows, feature_sets_data):
+    def sample_rows_update(selected_rows, feature_sets_data, _n):
         print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
+        if not selected_rows or selected_rows[0] is None or _n == 0:
             return no_update, no_update, no_update
        
         feature_set_uuid = feature_sets_data[selected_rows[0]]["uuid"]
-        anomaly_rows = FeatureSet(feature_set_uuid).anomalies()
-        anomaly_rows.sort_values(by=["cluster"], inplace=True)
+        anomaly_df = FeatureSet(feature_set_uuid).anomalies()
+        anomaly_df.sort_values(by=["cluster"], inplace=True)
+
+        clusters = anomaly_df["cluster"].unique()
+        style_data_conditional = [
+            {
+                "if": {"filter_query": "{{cluster}} ={}".format(cluster)},
+                "backgroundColor": "{}".format(colors_list[cluster]),
+                "color": "black",
+                "border": "1px grey solid"
+            } for cluster in clusters
+        ]
         
         header = f"Anomalies from: {feature_set_uuid}"
 
-        # # The columns need to be in a special format for the DataTable
-        # column_setup = [{"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns]
-
-        # Return the columns and the data
-        return header, no_update, anomaly_rows.to_dict("records")
+        return anomaly_df.to_dict("records"), style_data_conditional, header
 
 
 def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
