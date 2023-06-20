@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 
 
 def anomaly_layout(
+    feature_sets_table: dash_table.DataTable,
     anomaly_table: dash_table.DataTable,
     scatter_plot: dcc.Graph,
     violin_plot: dcc.Graph,
@@ -26,13 +27,11 @@ def anomaly_layout(
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                 ]
             ),
+            dbc.Row(feature_sets_table),
             dbc.Row(
                 [
                     dbc.Col(
-                        [
-                            html.H3("Anomaly", id="anomaly_table_header", style={"padding": "10px 0px 10px 0px"},),
-                            anomaly_table,
-                        ],
+                        [anomaly_table],
                         style={"padding": "20px 5px 10px 0px"},
                         width=6,
                     ),

@@ -11,8 +11,8 @@ from sageworks.views.feature_set_web_view import FeatureSetWebView
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 # Local Imports
-from .layout import anomaly_layout
-from . import callbacks
+from layout import anomaly_layout
+import callbacks
 
 
 app = Dash(
@@ -20,12 +20,22 @@ app = Dash(
     external_stylesheets=[dbc.themes.DARKLY],
 )
 
-register_page(__name__, path="/anomaly", name="SageWorks - anomaly")
-
 
 # Put the components into 'dark' mode
 load_figure_template("darkly")
 
+# Grab a view that gives us a summary of the FeatureSets in SageWorks
+feature_set_broker = FeatureSetWebView()
+feature_set_rows = feature_set_broker.feature_sets_summary()
+
+# Create a table to display the data sources
+feature_sets_table = table.create(
+    "feature_sets_table",
+    feature_set_rows,
+    header_color="rgb(100, 100, 60)",
+    row_select="single",
+    markdown_columns=["Feature Group"],
+)
 
 # Grab sample rows from the first data source
 anomaly_rows = FeatureSet("abalone_feature_set").anomalies()
@@ -52,16 +62,18 @@ anomaly_datatable.style_data_conditional = [
 ]
 
 # Create a box plot of all the numeric columns in the sample rows
-violin = vertical_distribution_plots.create("anomaly_violin_plot",
-                                    anomaly_rows, 
-                                    plot_type="violin",
-                                    figure_args={"box_visible": True, "meanline_visible": True, "showlegend": False, "points": "all"},
-                                    max_plots=48)
-
+violin = vertical_distribution_plots.create(
+    "anomaly_violin_plot",
+    anomaly_rows, 
+    plot_type="violin",
+    figure_args={"box_visible": True, "meanline_visible": True, "showlegend": False, "points": "all"},
+    max_plots=48
+)
 scatter = scatter_plot.create("anomaly_scatter_plot")
 
 # Create our components
 components = {
+    "feature_sets_table": feature_sets_table,
     "anomaly_table": anomaly_datatable,
     "scatter_plot": scatter,
     "violin_plot": violin,
