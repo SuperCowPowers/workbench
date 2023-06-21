@@ -7,16 +7,20 @@ from sageworks.transforms.data_to_features.heavy.chunk.data_to_features_chunk im
 
 # Create the DataToFeaturesChunk Class
 input_uuid = "heavy_dns"
-output_uuid = "dns_features_2"
+output_uuid = "dns_features_0"
 data_to_features = DataToFeaturesChunk(input_uuid, output_uuid)
 
 # Set the output tags
 data_to_features.set_output_tags(["dns", "heavy"])
 
 # Construct the query of the fields that we want in our feature set
-fields = ["timestamp", "flow_id_long", "in_iface", "proto", "dns_type", "dns_rrtype",
+id_field = "dns_id"
+event_time_field = "timestamp"
+fields = [id_field, event_time_field, "in_iface", "proto", "dns_type", "dns_rrtype",
           "dns_rrname", "dns_flags", "dns_rcode"]
 query = f"SELECT {', '.join(fields)} FROM heavy_dns limit 100000"
+print(query)
 
 # Now actually perform the DataSource to FeatureSet transform
-data_to_features.transform(query=query, id_column="flow_id_long", event_time_column="timestamp")
+data_to_features.transform(query=query, id_column=id_field, event_time_column=event_time_field)
+
