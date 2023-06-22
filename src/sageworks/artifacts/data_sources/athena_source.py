@@ -309,6 +309,13 @@ class AthenaSource(DataSourceAbstract):
             print(column, data_type)
             if data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
                 iqr = quartiles[column]["q3"] - quartiles[column]["q1"]
+
+                # Catch cases where IQR is 0
+                if iqr == 0:
+                    self.log.warning(f"IQR is 0 for column {column}, skipping...")
+                    continue
+
+                # Compute dataframes for the lower and upper bounds
                 lower_bound = quartiles[column]["q1"] - (iqr * scale)
                 upper_bound = quartiles[column]["q3"] + (iqr * scale)
                 lower_df, upper_df = self._outlier_dfs(column, lower_bound, upper_bound)
