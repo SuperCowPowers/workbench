@@ -3,11 +3,11 @@ from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 
 
-def feature_sets_layout(
-    feature_sets_table: dash_table.DataTable,
-    feature_set_anomalies_rows: dash_table.DataTable,
+def data_sources_layout(
+    data_sources_table: dash_table.DataTable,
+    data_source_anomalies_rows: dash_table.DataTable,
     anomaly_scatter_plot: dcc.Graph,
-    feature_set_details: dcc.Markdown,
+    data_source_details: dcc.Markdown,
     violin_plot: dcc.Graph,
 ) -> html.Div:
     # Just put all the tables in as Rows for Now (do something fancy later)
@@ -18,7 +18,7 @@ def feature_sets_layout(
                     html.H2("SageWorks: Anomaly Inspector (Alpha)"),
                     html.Div(
                         "Last Updated: ",
-                        id="last-updated-feature-sets",
+                        id="last-updated-data-sources",
                         style={
                             "color": "rgb(140, 200, 140)",
                             "fontSize": 15,
@@ -29,7 +29,7 @@ def feature_sets_layout(
                 ]
             ),
             # List out all the Data Sources
-            dbc.Row(feature_sets_table),
+            dbc.Row(data_sources_table),
             # Data Source Details, Anomalous Rows, Scatter Plot, and Violin Plots
             # Row [ Column 1                      Column 2 ]
             #       (Row(Anomalous Rows))         Row(Cluster/Scatter Plot)
@@ -37,7 +37,7 @@ def feature_sets_layout(
             #       (Row(Data Source Details))    Row(Violin Plots)
             #
             dbc.Row(
-                html.H3("Sampled Rows", id="feature_sample_rows_header"),
+                html.H3("Anomalous Rows", id="data_source_anomalies_rows_header"),
                 style={"padding": "30px 0px 10px 0px"},
             ),
             dbc.Row(
@@ -46,7 +46,7 @@ def feature_sets_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                feature_set_anomalies_rows,
+                                data_source_anomalies_rows,
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],
@@ -71,11 +71,11 @@ def feature_sets_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                html.H3("Details", id="feature_details_header"),
+                                html.H3("Details", id="data_source_details_header"),
                                 style={"padding": "0px 0px 10px 0px"},
                             ),
                             dbc.Row(
-                                feature_set_details,
+                                data_source_details,
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],
@@ -89,7 +89,7 @@ def feature_sets_layout(
                         width=8,
                     ),
                     # Just the auto updater
-                    dcc.Interval(id="feature-sets-updater", interval=5000, n_intervals=0),
+                    dcc.Interval(id="data-sources-updater", interval=5000, n_intervals=0),
                 ]
             ),
         ],

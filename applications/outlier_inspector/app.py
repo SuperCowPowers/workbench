@@ -5,10 +5,10 @@ import dash_bootstrap_components as dbc
 
 # SageWorks Imports
 from sageworks.web_components import table, data_and_feature_details, vertical_distribution_plots, scatter_plot
-from sageworks.views.feature_set_web_view import FeatureSetWebView
+from sageworks.views.data_source_web_view import DataSourceWebView
 
 # Local Imports
-from layout import feature_sets_layout
+from layout import data_sources_layout
 import callbacks
 
 app = Dash(
@@ -22,34 +22,36 @@ app = Dash(
 load_figure_template("darkly")
 
 # Grab a view that gives us a summary of the FeatureSets in SageWorks
-feature_set_broker = FeatureSetWebView()
-feature_set_rows = feature_set_broker.feature_sets_summary()
+data_source_broker = DataSourceWebView()
+data_source_rows = data_source_broker.data_sources_summary()
 
 # Create a table to display the data sources
-feature_sets_table = table.create(
-    "feature_sets_table",
-    feature_set_rows,
-    header_color="rgb(100, 100, 60)",
+data_sources_table = table.create(
+    "data_sources_table",
+    data_source_rows,
+    header_color="rgb(100, 60, 60)",
     row_select="single",
-    markdown_columns=["Feature Group"],
+    markdown_columns=["Name"],
 )
 
-# Grab sample rows from the first data source
-anomalous_rows = feature_set_broker.feature_set_anomalies(0)
-feature_set_anomalies_rows = table.create(
-    "feature_set_anomalies_rows",
+# Data Source Details
+details = data_source_broker.data_source_details(0)
+data_details = data_and_feature_details.create("data_source_details", details)
+
+# Grab anomalous rows from the first data source
+anomalous_rows = data_source_broker.data_source_anomalies(0)
+column_types = details["column_details"] if details is not None else None
+data_source_anomalies_rows = table.create(
+    "data_source_anomalies_rows",
     anomalous_rows,
+    column_types=column_types,
     header_color="rgb(60, 60, 100)",
     max_height="400px",
 )
 
-# Data Source Details
-details = feature_set_broker.feature_set_details(0)
-data_details = data_and_feature_details.create("feature_set_details", details)
-
 # Create a box plot of all the numeric columns in the sample rows
-smart_sample_rows = feature_set_broker.feature_set_smart_sample(0)
-violin = vertical_distribution_plots.create("feature_set_violin_plot",
+smart_sample_rows = data_source_broker.data_source_smart_sample(0)
+violin = vertical_distribution_plots.create("data_source_violin_plot",
                                     smart_sample_rows,
                                     plot_type="violin",
                                     figure_args={"box_visible": True, "meanline_visible": True, "showlegend": False, "points": "all"},
@@ -60,28 +62,28 @@ cluster_plot = scatter_plot.create("anomaly_scatter_plot", anomalous_rows)
 
 # Create our components
 components = {
-    "feature_sets_table": feature_sets_table,
-    "feature_set_anomalies_rows": feature_set_anomalies_rows,
+    "data_sources_table": data_sources_table,
+    "data_source_anomalies_rows": data_source_anomalies_rows,
     "anomaly_scatter_plot": cluster_plot,
-    "feature_set_details": data_details,
+    "data_source_details": data_details,
     "violin_plot": violin,
 }
 
 # Set up our layout (Dash looks for a var called layout)
-app.layout = feature_sets_layout(**components)
+app.layout = data_sources_layout(**components)
 
 # Refresh our data timer
 callbacks.refresh_data_timer(app)
 
 # Periodic update to the data sources summary table
-callbacks.update_feature_sets_table(app, feature_set_broker)
+callbacks.update_data_sources_table(app, data_source_broker)
 
 # Callbacks for when a data source is selected
-callbacks.table_row_select(app, "feature_sets_table")
-callbacks.update_feature_set_details(app, feature_set_broker)
-callbacks.update_feature_set_anomalies_rows(app, feature_set_broker)
-callbacks.update_cluster_plot(app, feature_set_broker)
-callbacks.update_violin_plots(app, feature_set_broker)
+callbacks.table_row_select(app, "data_sources_table")
+callbacks.update_data_source_details(app, data_source_broker)
+callbacks.update_data_source_anomaly_rows(app, data_source_broker)
+callbacks.update_cluster_plot(app, data_source_broker)
+callbacks.update_violin_plots(app, data_source_broker)
 
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
