@@ -247,6 +247,41 @@ class AthenaSource(DataSourceAbstract):
         # Return the quartile data
         return quartile_dict
 
+    def _outlier_dfs(self, column: str, lower_bound: float, upper_bound: float) -> pd.DataFrame:
+        """Internal method to compute outliers for a numeric column
+        Returns:
+            pd.DataFrame, pd.DataFrame: A DataFrame for lower outliers and a DataFrame for upper outliers
+        """
+
+        # Get lower outlier bound
+        query = f'SELECT * from {self.table_name} where {column} < {lower_bound}'
+        lower_df = self.query(query)
+
+        # Check for outlier 'overflow'
+        if lower_df.shape[0] > 10:
+            self.log.warning(f"Found {lower_df.shape[0]} outliers for column {column}, down sampling...")
+            lower_df = lower_df.sort_values(column, ascending=True).head(10)
+
+        # Check for no results
+        if lower_df.shape[0] == 0:
+            lower_df = None
+
+        # Get upper outlier bound
+        query = f'SELECT * from {self.table_name} where {column} > {upper_bound}'
+        upper_df = self.query(query)
+
+        # Check for outlier 'overflow'
+        if upper_df.shape[0] > 10:
+            self.log.warning(f"Found {upper_df.shape[0]} outliers for column {column}, down sampling...")
+            upper_df = upper_df.sort_values(column, ascending=False).head(10)
+
+        # Check for no results
+        if upper_df.shape[0] == 0:
+            upper_df = None
+
+        # Return the lower and upper outlier DataFrames
+        return lower_df, upper_df
+
     def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
@@ -266,8 +301,9 @@ class AthenaSource(DataSourceAbstract):
         # Grab the quartiles for this DataSource
         quartiles = self.quartiles()
 
-        # For every column in the table that is numeric get the outliers based on IQR*1.5
+        # For every column in the table that is numeric get the outliers
         self.log.info("Computing outliers for all numeric columns (this may take a while)...")
+        cluster = 0
         outlier_df_list = []
         for column, data_type in zip(self.column_names(), self.column_types()):
             print(column, data_type)
@@ -275,16 +311,15 @@ class AthenaSource(DataSourceAbstract):
                 iqr = quartiles[column]["q3"] - quartiles[column]["q1"]
                 lower_bound = quartiles[column]["q1"] - (iqr * scale)
                 upper_bound = quartiles[column]["q3"] + (iqr * scale)
-                query = f'SELECT * from {self.table_name} where {column} < {lower_bound} or {column} > {upper_bound}'
-                result_df = self.query(query)
+                lower_df, upper_df = self._outlier_dfs(column, lower_bound, upper_bound)
 
-                # Check for outlier 'overflow'
-                if result_df.shape[0] > 100:
-                    self.log.warning(f"Found {result_df.shape[0]} outliers for column {column}, down sampling...")
-                    result_df = result_df.sample(100)
-
-                # Add the dataframe to the list
-                outlier_df_list.append(result_df)
+                # If we have outliers, add them to the list
+                for df in [lower_df, upper_df]:
+                    if df is not None:
+                        # Add the cluster identifier
+                        df["cluster"] = cluster
+                        cluster += 1
+                        outlier_df_list.append(df)
 
         # Combine all the outlier DataFrames, and drop duplicates
         outlier_df = pd.concat(outlier_df_list).drop_duplicates()
@@ -293,7 +328,10 @@ class AthenaSource(DataSourceAbstract):
         try:
             outlier_df = outlier_df.sample(100)
         except ValueError:
-            self.log.warning(f"Could not sample 100 rows for column {column}, using all outliers")
+            self.log.warning(f"Could not sample 100 rows, using all outliers")
+
+        # Sort the outlier_df by cluster
+        outlier_df = outlier_df.sort_values("cluster")
 
         # Store the sample_df in our SageWorks metadata
         rows_json = outlier_df.to_json(orient="records", lines=True)

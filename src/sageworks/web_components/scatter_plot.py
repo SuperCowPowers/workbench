@@ -13,7 +13,9 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
     # Fake data if it's not in the dataframe
     if "cluster" not in df.columns:
         df["cluster"] = np.random.randint(0, 10, df.shape[0])
+    if "x" not in df.columns:
         df["x"] = np.random.rand(df.shape[0])
+    if "y" not in df.columns:
         df["y"] = np.random.rand(df.shape[0])
 
     # Create the Scatter Plot
