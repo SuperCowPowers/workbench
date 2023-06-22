@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     # Manually set the Categorical Columns
     categorical_column_info = {"sex": ["M", "F", "I"]}
-    to_features.set_categorical_columns(categorical_column_info)
+    to_features.set_categorical_info(categorical_column_info)
 
     # Now loop through the chunks and add them to the FeatureSet
     for chunk in chunks:

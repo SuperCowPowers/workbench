@@ -14,7 +14,7 @@ data_to_features = DataToFeaturesChunk(input_uuid, output_uuid)
 data_to_features.set_output_tags(["dns", "heavy"])
 
 # Construct the query of the fields that we want in our feature set
-id_field = "dns_id"
+id_field = "flow_id"
 event_time_field = "timestamp"
 fields = [id_field, event_time_field, "in_iface", "proto", "dns_type", "dns_rrtype",
           "dns_rrname", "dns_flags", "dns_rcode"]
