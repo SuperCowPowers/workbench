@@ -39,11 +39,11 @@ class FeatureSetWebView(ArtifactsWebView):
             return pd.DataFrame({"uuid": [uuid], "status": [f"{status}"]})
 
     def feature_set_anomalies(self, feature_set_index: int) -> pd.DataFrame:
-        """Get a sample dataframe for the given FeatureSet Index"""
+        """Get a dataframe of anomalies for the given FeatureSet Index"""
         uuid = self.feature_set_name(feature_set_index)
         fs = FeatureSet(uuid)
         if fs.check() and fs.get_status() == "ready":
-            return fs.anomalies()
+            return fs.outliers()
         else:
             status = fs.get_status() if fs.check() else "not found"
             return pd.DataFrame({"uuid": [uuid], "status": [f"{status}"]})

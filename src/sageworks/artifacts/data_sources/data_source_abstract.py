@@ -64,6 +64,21 @@ class DataSourceAbstract(Artifact):
         """
         pass
 
+    @abstractmethod
+    def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
+        """Return a DataFrame of outliers from this DataSource
+        Args:
+            scale(float): The scale to use for the IQR (default: 1.7)
+            recompute(bool): Recompute the outliers (default: False)
+        Returns:
+            pd.DataFrame: A DataFrame of outliers from this DataSource
+        Notes:
+            Uses the IQR * 1.7 (~= 3 Sigma) method to compute outliers
+            The scale parameter can be adjusted to change the IQR multiplier
+        """
+        pass
+
+    @abstractmethod
     def value_counts(self, recompute: bool = False) -> dict[dict]:
         """Compute 'value_counts' for all the string columns in a DataSource
         Args:

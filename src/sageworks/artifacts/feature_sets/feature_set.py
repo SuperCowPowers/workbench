@@ -289,10 +289,30 @@ class FeatureSet(Artifact):
         """
         return self.data_source.sample_df(recompute)
 
+    def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
+        """Compute outliers for all the numeric columns in a DataSource
+        Args:
+            scale(float): The scale to use for the IQR (default: 1.7)
+            recompute(bool): Recompute the outliers (default: False)
+        Returns:
+            pd.DataFrame: A DataFrame of outliers from this DataSource
+        Notes:
+            Uses the IQR * 1.7 (~= 3 Sigma) method to compute outliers
+            The scale parameter can be adjusted to change the IQR multiplier
+        """
+        outlier_df = self.data_source.outliers(scale, recompute)
+
+        # FIXME: Mock this for now
+        outlier_df["anomaly_score"] = np.random.rand(outlier_df.shape[0])
+        outlier_df["cluster"] = np.random.randint(0, 10, outlier_df.shape[0])
+        outlier_df["x"] = np.random.rand(outlier_df.shape[0])
+        outlier_df["y"] = np.random.rand(outlier_df.shape[0])
+        return outlier_df
+
     def anomalies(self) -> pd.DataFrame:
         """Get a set of anomalous data from the underlying DataSource
         Returns:
-            pd.DataFrame: A sample of the data from the underlying DataSource
+            pd.DataFrame: A dataframe of anomalies from the underlying DataSource
         """
 
         # FIXME: Mock this for now

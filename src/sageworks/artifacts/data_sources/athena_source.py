@@ -247,6 +247,61 @@ class AthenaSource(DataSourceAbstract):
         # Return the quartile data
         return quartile_dict
 
+    def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
+        """Compute outliers for all the numeric columns in a DataSource
+        Args:
+            scale(float): The scale to use for the IQR (default: 1.7)
+            recompute(bool): Recompute the outliers (default: False)
+        Returns:
+            pd.DataFrame: A DataFrame of outliers from this DataSource
+        Notes:
+            Uses the IQR * 1.7 (~= 3 Sigma) method to compute outliers
+            The scale parameter can be adjusted to change the IQR multiplier
+        """
+
+        # First check if we have already computed the outliers
+        if self.sageworks_meta().get("sageworks_outliers") and not recompute:
+            return pd.read_json(self.sageworks_meta()["sageworks_outliers"], orient="records", lines=True)
+
+        # Grab the quartiles for this DataSource
+        quartiles = self.quartiles()
+
+        # For every column in the table that is numeric get the outliers based on IQR*1.5
+        self.log.info("Computing outliers for all numeric columns (this may take a while)...")
+        outlier_df_list = []
+        for column, data_type in zip(self.column_names(), self.column_types()):
+            print(column, data_type)
+            if data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
+                iqr = quartiles[column]["q3"] - quartiles[column]["q1"]
+                lower_bound = quartiles[column]["q1"] - (iqr * scale)
+                upper_bound = quartiles[column]["q3"] + (iqr * scale)
+                query = f'SELECT * from {self.table_name} where {column} < {lower_bound} or {column} > {upper_bound}'
+                result_df = self.query(query)
+
+                # Check for outlier 'overflow'
+                if result_df.shape[0] > 100:
+                    self.log.warning(f"Found {result_df.shape[0]} outliers for column {column}, down sampling...")
+                    result_df = result_df.sample(100)
+
+                # Add the dataframe to the list
+                outlier_df_list.append(result_df)
+
+        # Combine all the outlier DataFrames, and drop duplicates
+        outlier_df = pd.concat(outlier_df_list).drop_duplicates()
+
+        # Now sample down to 100 rows
+        try:
+            outlier_df = outlier_df.sample(100)
+        except ValueError:
+            self.log.warning(f"Could not sample 100 rows for column {column}, using all outliers")
+
+        # Store the sample_df in our SageWorks metadata
+        rows_json = outlier_df.to_json(orient="records", lines=True)
+        self.upsert_sageworks_meta({"sageworks_outliers": rows_json})
+
+        # Return the quartile data
+        return outlier_df
+
     def value_counts(self, recompute: bool = False) -> dict[dict]:
         """Compute 'value_counts' for all the string columns in a DataSource
         Args:
@@ -403,6 +458,11 @@ if __name__ == "__main__":
     value_count_info = my_data.value_counts()
     print("\nValue Counts")
     pprint(value_count_info)
+
+    # Get outliers for numeric columns
+    my_outlier_df = my_data.outliers()
+    print("\nOutliers")
+    print(my_outlier_df)
 
     # Get ALL the AWS Metadata associated with this Artifact
     print("\n\nALL Meta")
