@@ -19,7 +19,8 @@ def column_setup(df: pd.DataFrame,
     # Only show these columns
     if not show_columns:
         show_columns = df.columns.to_list()
-        show_columns.remove("id")
+        if "id" in show_columns:
+            show_columns.remove("id")
         if "uuid" in show_columns:
             show_columns.remove("uuid")
 
@@ -56,7 +57,8 @@ def create(
     # Only show these columns
     if not show_columns:
         show_columns = df.columns.to_list()
-        show_columns.remove("id")
+        if "id" in show_columns:
+            show_columns.remove("id")
         if "uuid" in show_columns:
             show_columns.remove("uuid")
 
