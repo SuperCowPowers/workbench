@@ -6,7 +6,7 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import data_and_feature_details, vertical_distribution_plots, scatter_plot
+from sageworks.web_components import table, data_and_feature_details, vertical_distribution_plots, scatter_plot
 
 
 def refresh_data_timer(app: Dash):
@@ -92,10 +92,10 @@ def update_data_source_anomaly_rows(app: Dash, data_source_web_view: DataSourceW
         header = f"Anomalous Rows: {data_source_name}"
 
         # The columns need to be in a special format for the DataTable
-        column_setup = [{"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns]
+        column_setup_list = table.column_setup(sample_rows)
 
         # Return the columns and the data
-        return [header, column_setup, sample_rows.to_dict("records")]
+        return [header, column_setup_list, sample_rows.to_dict("records")]
 
 
 def update_cluster_plot(app: Dash, data_source_web_view: DataSourceWebView):
