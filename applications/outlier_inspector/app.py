@@ -11,6 +11,8 @@ from sageworks.views.data_source_web_view import DataSourceWebView
 from layout import data_sources_layout
 import callbacks
 
+
+# Create our Dash app
 app = Dash(
     title="SageWorks: Anomaly Inspector",
     external_stylesheets=[dbc.themes.DARKLY],

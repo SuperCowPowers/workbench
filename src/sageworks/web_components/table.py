@@ -1,6 +1,40 @@
 """A table component"""
 from dash import dash_table
+from dash.dash_table.Format import Format
 import pandas as pd
+
+
+# Helper Functions
+def column_setup(df: pd.DataFrame,
+                 show_columns: list[str] = None,
+                 markdown_columns: list[str] = None) -> list:
+    """Internal: Get the column information for the given DataFrame
+    Args:
+        df: The DataFrame to get the column information
+        show_columns: The columns to show
+        markdown_columns: The columns to show as markdown
+    Returns:
+        list: The column information as a list of dicts
+        """
+    # Only show these columns
+    if not show_columns:
+        show_columns = df.columns.to_list()
+        show_columns.remove("id")
+        if "uuid" in show_columns:
+            show_columns.remove("uuid")
+
+    # Column Setup with name, id, and presentation type
+    column_setup_list = []
+    for c in show_columns:
+        presentation = "markdown" if markdown_columns and c in markdown_columns else "input"
+        # Check for a numeric column
+        if df[c].dtype in ["float64", "float32"]:
+            print(f"Column {c} is numeric")
+            column_setup_list.append({"name": c, "id": c, "type": "numeric",
+                                      "format": Format(group=",", precision=3, scheme="f")})
+        else:
+            column_setup_list.append({"name": c, "id": c, "presentation": presentation})
+    return column_setup_list
 
 
 def create(
@@ -12,7 +46,6 @@ def create(
     row_select=False,
     markdown_columns: list[str] = None,
     max_height: str = "200px",
-    columns_editable: bool = False,
     fixed_headers: bool = False,
 ) -> dash_table:
     """Create a Table"""
@@ -28,19 +61,13 @@ def create(
             show_columns.remove("uuid")
 
     # Column Setup with name, id, and presentation type
-    column_setup = []
-    for c in show_columns:
-        presentation = "markdown" if markdown_columns and c in markdown_columns else "input"
-        if columns_editable:
-            column_setup.append({"name": c, "id": c, "deletable": True, "selectable": True})
-        else:
-            column_setup.append({"name": c, "id": c, "presentation": presentation})
+    column_setup_list = column_setup(df, show_columns, markdown_columns)
 
     # Create the Dash Table
     table = dash_table.DataTable(
         id=table_id,
         data=df.to_dict("records"),
-        columns=column_setup,
+        columns=column_setup_list,
         sort_action="native",
         row_selectable=row_select,
         cell_selectable=True,

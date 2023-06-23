@@ -329,7 +329,12 @@ class AthenaSource(DataSourceAbstract):
                         outlier_df_list.append(df)
 
         # Combine all the outlier DataFrames, and drop duplicates
-        outlier_df = pd.concat(outlier_df_list).drop_duplicates()
+        if outlier_df_list:
+            outlier_df = pd.concat(outlier_df_list).drop_duplicates()
+        else:
+            self.log.warning("No outliers found for this DataSource, returning samples")
+            outlier_df = self.sample_df()
+            outlier_df["cluster"] = -1
 
         # Now sample down to 100 rows
         try:
