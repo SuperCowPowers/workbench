@@ -3,6 +3,7 @@ import pandas as pd
 import awswrangler as wr
 from datetime import datetime
 import json
+from sklearn.manifold import TSNE
 
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
@@ -282,11 +283,12 @@ class AthenaSource(DataSourceAbstract):
         # Return the lower and upper outlier DataFrames
         return lower_df, upper_df
 
-    def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
+    def outliers(self, scale: float = 1.7, recompute: bool = False, project: bool = True) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             scale(float): The scale to use for the IQR (default: 1.7)
             recompute(bool): Recompute the outliers (default: False)
+            project(bool): Project the outliers onto an x,y plane (default: True)
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
         Notes:
@@ -305,6 +307,7 @@ class AthenaSource(DataSourceAbstract):
         self.log.info("Computing outliers for all numeric columns (this may take a while)...")
         cluster = 0
         outlier_df_list = []
+        outlier_features = []
         for column, data_type in zip(self.column_names(), self.column_types()):
             print(column, data_type)
             if data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
@@ -327,30 +330,44 @@ class AthenaSource(DataSourceAbstract):
                         df["cluster"] = cluster
                         cluster += 1
                         outlier_df_list.append(df)
+                        outlier_features.append(column)
 
-        # Combine all the outlier DataFrames, and drop duplicates
+        # Combine all the outlier DataFrames, drop duplicates, and limit to 100 rows
         if outlier_df_list:
-            outlier_df = pd.concat(outlier_df_list).drop_duplicates()
+            outlier_df = pd.concat(outlier_df_list).drop_duplicates().head(100)
         else:
-            self.log.warning("No outliers found for this DataSource, returning samples")
-            outlier_df = self.sample_df()
-            outlier_df["cluster"] = -1
+            self.log.warning("No outliers found for this DataSource, returning empty DataFrame")
+            outlier_df = pd.DataFrame(columns=self.column_names())
 
-        # Now sample down to 100 rows
-        try:
-            outlier_df = outlier_df.sample(100)
-        except ValueError:
-            self.log.warning(f"Could not sample 100 rows, using all outliers")
+        # Project the outliers onto an x,y plane
+        if project:
+            self.log.info("Projecting outliers onto an x,y plane...")
+            outlier_features.append("cluster")
+            self.log.info(f"Outlier features: {outlier_features}")
+            perplexity = min(50, len(outlier_df)-1)
+            self.log.info(f"Perplexity: {perplexity}")
+            projection = TSNE(perplexity=perplexity).fit_transform(outlier_df[outlier_features])
 
-        # Sort the outlier_df by cluster
-        outlier_df = outlier_df.sort_values("cluster")
+            # Put the projection results back into the outlier_df
+            outlier_df['x'] = projection[:, 0]  # Projection X Column
+            outlier_df['y'] = projection[:, 1]  # Projection Y Column
 
         # Store the sample_df in our SageWorks metadata
         rows_json = outlier_df.to_json(orient="records", lines=True)
         self.upsert_sageworks_meta({"sageworks_outliers": rows_json})
 
-        # Return the quartile data
+        # Return the outlier dataframe
         return outlier_df
+
+    def outliers_plus_samples(self) -> pd.DataFrame:
+        """Give back both outliers AND 100 samples from the DataSource
+        Returns:
+            pd.DataFrame: A DataFrame of outliers + samples from this DataSource
+        """
+        outlier_df = self.outliers()
+        sample_df = self.sample_df()
+        sample_df["cluster"] = -1
+        return pd.concat([outlier_df, sample_df], ignore_index=True).drop_duplicates()
 
     def value_counts(self, recompute: bool = False) -> dict[dict]:
         """Compute 'value_counts' for all the string columns in a DataSource

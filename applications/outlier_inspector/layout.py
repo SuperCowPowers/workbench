@@ -50,7 +50,7 @@ def data_sources_layout(
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],
-                        width=8,
+                        width=6,
                     ),
 
                     # Column 2: Cluster/Scatter Plot
@@ -61,7 +61,7 @@ def data_sources_layout(
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],
-                        width=4,
+                        width=6,
                     )
                 ]
             ),

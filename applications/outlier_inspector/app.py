@@ -48,6 +48,7 @@ data_source_anomalies_rows = table.create(
     anomalous_rows,
     column_types=column_types,
     header_color="rgb(60, 60, 100)",
+    row_select="single",
     max_height="400px",
 )
 
@@ -60,7 +61,7 @@ violin = vertical_distribution_plots.create("data_source_violin_plot",
                                     max_plots=48)
 
 # Create the anomaly cluster plot
-cluster_plot = scatter_plot.create("anomaly_scatter_plot", anomalous_rows)
+cluster_plot = scatter_plot.create("anomaly_scatter_plot", "Outlier Groups", anomalous_rows)
 
 # Create our components
 components = {

@@ -8,7 +8,12 @@ import numpy as np
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
 def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
-    """Create a Scatter Plot"""
+    """Create a Scatter Plot
+    Args:
+        df (pd.DataFrame): The dataframe containing the data.
+    Returns:
+        plotly.graph_objs.Figure: A Figure object containing the generated plots.
+    """
 
     # Fake data if it's not in the dataframe
     if "cluster" not in df.columns:
@@ -18,28 +23,38 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
     if "y" not in df.columns:
         df["y"] = np.random.rand(df.shape[0])
 
+    # Since we're using discrete colors, we need to convert the cluster column to a string
+    df["cluster"] = df["cluster"].astype(str)
+
     # Create the Scatter Plot
     color_map = px.colors.qualitative.Plotly
     fig = px.scatter(
         df,
         x="x",
         y="y",
-        size="y",
+        opacity=0.75,
         color="cluster",
-        log_x=True,
-        size_max=16,
-        title="Anomaly Cluster Plot",
+        title="Outlier Groups",
         color_discrete_sequence=color_map,
     )
+    fig.update_layout(title_y=0.97, title_x=0.1, title_xanchor="center", title_yanchor="top")
+    fig.update_traces(marker=dict(size=14,
+                                  line=dict(width=1,
+                                            color='Black')),
+                      selector=dict(mode='markers'))
+    fig.update_layout(xaxis_visible=False, xaxis_showticklabels=False)
+    fig.update_layout(yaxis_visible=False, yaxis_showticklabels=False)
+    fig.update_layout(margin=dict(l=10, r=10, t=30, b=10), height=400)
     return fig
 
 
-def create(component_id: str, df: pd.DataFrame) -> dcc.Graph:
+def create(component_id: str, title: str, df: pd.DataFrame) -> dcc.Graph:
     """Create a Graph Component for vertical distribution plots.
 
     Args:
-        component_id (str): The ID of the UI component.
-        df (pd.DataFrame): A dataframe of data.
+        component_id (str): The ID of the UI component
+        title (str): The title for the plot
+        df (pd.DataFrame): A dataframe of data
     Returns:
         dcc.Graph: A Dash Graph Component representing the vertical distribution plots.
     """
