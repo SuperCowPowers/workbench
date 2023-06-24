@@ -52,7 +52,6 @@ def data_sources_layout(
                         ],
                         width=6,
                     ),
-
                     # Column 2: Cluster/Scatter Plot
                     dbc.Col(
                         [
@@ -62,7 +61,7 @@ def data_sources_layout(
                             ),
                         ],
                         width=6,
-                    )
+                    ),
                 ]
             ),
             dbc.Row(
@@ -89,7 +88,9 @@ def data_sources_layout(
                         width=8,
                     ),
                     # Just the auto updater
-                    dcc.Interval(id="data-sources-updater", interval=5000, n_intervals=0),
+                    dcc.Interval(
+                        id="data-sources-updater", interval=5000, n_intervals=0
+                    ),
                 ]
             ),
         ],

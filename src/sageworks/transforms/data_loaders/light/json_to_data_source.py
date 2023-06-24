@@ -54,7 +54,11 @@ if __name__ == "__main__":
     from pathlib import Path
 
     # Get the path to the dataset in the repository data directory
-    data_path = str(Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.json")
+    data_path = str(
+        Path(sys.modules["sageworks"].__file__).parent.parent.parent
+        / "data"
+        / "test_data.json"
+    )
 
     # Create my Data Loader
     my_loader = JSONToDataSource(data_path, "test_data_json")

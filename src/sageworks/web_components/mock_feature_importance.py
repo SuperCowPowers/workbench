@@ -22,4 +22,6 @@ def create_figure(feature_importance: dict, orientation="h") -> dcc.Graph:
 
 def create(feature_importance: dict, orientation="h") -> dcc.Graph:
     """Create a Feature Importance Chart"""
-    return dcc.Graph(id="feature_importance", figure=create_figure(feature_importance, orientation))
+    return dcc.Graph(
+        id="feature_importance", figure=create_figure(feature_importance, orientation)
+    )

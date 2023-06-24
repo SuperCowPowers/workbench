@@ -37,30 +37,29 @@ def cli_create_config(bucket_name, file_path):
     if len(bucket_name) > 63:
         bucket_name = bucket_name[0:63]
     if not file_path or not Path(file_path).is_file():
-        file_path = str(Path().home() / ".config" / "sageworks" / "sageworks_config.ini")
+        file_path = str(
+            Path().home() / ".config" / "sageworks" / "sageworks_config.ini"
+        )
     config = configparser.ConfigParser()
-    config["SAGEWORKS_AWS"] = {"S3_BUCKET_NAME": bucket_name, "SAGEWORKS_ROLE_NAME": "SageWorks-ExecutionRole"}
+    config["SAGEWORKS_AWS"] = {
+        "S3_BUCKET_NAME": bucket_name,
+        "SAGEWORKS_ROLE_NAME": "SageWorks-ExecutionRole",
+    }
     config["SAGEWORKS_REDIS"] = {"HOST": "localhost", "PORT": "6379", "PASSWORD": ""}
     with open(file_path, "w") as f:
         config.write(f)
-    console.print(f"SageWorks config file successfully created at {file_path}\n", style="bold green")
+    console.print(
+        f"SageWorks config file successfully created at {file_path}\n",
+        style="bold green",
+    )
 
 
-###############################################################################
-# PARENT GROUP
-###############################################################################
-
-# Ref: https://patorjk.com/software/taag/
-# Font: standard
-msg = """
-========================================================
-  ____                 __        __         _        
- / ___|  __ _  __ _  __\ \      / /__  _ __| | _____ 
- \___ \ / _` |/ _` |/ _ \ \ /\ / / _ \| '__| |/ / __|
-  ___) | (_| | (_| |  __/\ V  V / (_) | |  |   <\__ \\
- |____/ \__,_|\__, |\___| \_/\_/ \___/|_|  |_|\_\___/
-              |___/                                  
-========================================================"""
+msg = r"""
+   ____             _      __         __
+  / __/__ ____ ____| | /| / /__  ____/ /__ ___
+ _\ \/ _ `/ _ `/ -_) |/ |/ / _ \/ __/  '_/(_-<
+/___/\_,_/\_, /\__/|__/|__/\___/_/ /_/\_\/___/
+         /___/   """
 
 
 @click.group()

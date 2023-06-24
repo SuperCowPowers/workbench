@@ -48,7 +48,9 @@ class SageWorksSQS:
 
         # Delete received message from queue
         if delete:
-            self.sqs.delete_message(QueueUrl=self.queue_url, ReceiptHandle=receipt_handle)
+            self.sqs.delete_message(
+                QueueUrl=self.queue_url, ReceiptHandle=receipt_handle
+            )
 
         # Return the message body
         return message_body

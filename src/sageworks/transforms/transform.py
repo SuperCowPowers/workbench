@@ -60,7 +60,9 @@ class Transform(ABC):
         # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings
         sageworks_config = SageWorksConfig()
         self.data_catalog_db = "sageworks"
-        sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+        sageworks_bucket = sageworks_config.get_config_value(
+            "SAGEWORKS_AWS", "S3_BUCKET_NAME"
+        )
         self.data_source_s3_path = "s3://" + sageworks_bucket + "/data-sources"
         self.feature_sets_s3_path = "s3://" + sageworks_bucket + "/feature-sets"
 
@@ -166,4 +168,6 @@ class Transform(ABC):
 
     def ensure_aws_catalog_db(self, catalog_db: str):
         """Ensure that the AWS Catalog Database exists"""
-        wr.catalog.create_database(catalog_db, exist_ok=True, boto3_session=self.boto_session)
+        wr.catalog.create_database(
+            catalog_db, exist_ok=True, boto3_session=self.boto_session
+        )

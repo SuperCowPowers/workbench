@@ -32,7 +32,10 @@ def column_dtypes(df):
 
 
 def examples(df, non_numeric_columns):
-    first_n = [df[c].unique()[:5].tolist() if c in non_numeric_columns else ["-"] for c in df.columns]
+    first_n = [
+        df[c].unique()[:5].tolist() if c in non_numeric_columns else ["-"]
+        for c in df.columns
+    ]
     first_n = [", ".join([str(x) for x in _list]) for _list in first_n]
     s = pd.Series(first_n, df.columns)
     s.name = "examples"
@@ -60,7 +63,9 @@ def numeric_stats(df):
     return df.describe().round(2).T.drop("count", axis=1)
 
 
-def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float = 20) -> pd.DataFrame:
+def drop_nans(
+    input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float = 20
+) -> pd.DataFrame:
     """Dropping NaNs in rows and columns. Obviously lots of ways to do this, so picked some reasonable defaults,
     we can certainly change this later with a more formal set of operations and arguments"""
 
@@ -72,7 +77,11 @@ def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float 
 
     # Drop Columns that have a large percent of NaNs in them
     column_nan_percent = get_percent_nan(output_df)
-    drop_columns = [name for name, percent in column_nan_percent.items() if percent > nan_drop_percent]
+    drop_columns = [
+        name
+        for name, percent in column_nan_percent.items()
+        if percent > nan_drop_percent
+    ]
     output_df = output_df.drop(drop_columns, axis=1)
 
     # Report on Dropped Columns
@@ -83,7 +92,9 @@ def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float 
     # Drop Rows that have NaNs in them
     output_df.dropna(axis=0, how=how, inplace=True)
     if len(output_df) != orig_num_rows:
-        log.info(f"Dropping {orig_num_rows - len(output_df)} rows that have a NaN in them")
+        log.info(
+            f"Dropping {orig_num_rows - len(output_df)} rows that have a NaN in them"
+        )
         output_df.reset_index(drop=True, inplace=True)
 
     return output_df
@@ -120,7 +131,9 @@ def drop_outliers_iqr(input_df: pd.DataFrame, scale: float = 1.5) -> pd.DataFram
     q1 = numeric_df.quantile(0.25, numeric_only=True)
     q3 = numeric_df.quantile(0.75, numeric_only=True)
     iqr_scale = (q3 - q1) * scale
-    output_df = input_df[~((numeric_df < (q1 - iqr_scale)) | (numeric_df > (q3 + iqr_scale))).any(axis=1)]
+    output_df = input_df[
+        ~((numeric_df < (q1 - iqr_scale)) | (numeric_df > (q3 + iqr_scale))).any(axis=1)
+    ]
     if input_df.shape[0] != output_df.shape[0]:
         log.info(f"Dropped {input_df.shape[0] - output_df.shape[0]} outlier rows")
     return output_df
@@ -137,7 +150,9 @@ def drop_outliers_sdev(input_df: pd.DataFrame, sigma: float = 2.0) -> pd.DataFra
     # Just the numeric columns
     numeric_df = input_df.select_dtypes(include="number")
 
-    output_df = input_df[numeric_df.apply(lambda x: np.abs(x - x.mean()) / x.std() < sigma).all(axis=1)]
+    output_df = input_df[
+        numeric_df.apply(lambda x: np.abs(x - x.mean()) / x.std() < sigma).all(axis=1)
+    ]
     if input_df.shape[0] != output_df.shape[0]:
         log.info(f"Dropped {input_df.shape[0] - output_df.shape[0]} outlier rows")
     return output_df
@@ -172,7 +187,8 @@ def displayable_df(input_df: pd.DataFrame) -> pd.DataFrame:
 
 def undummify(df, prefix_sep="_"):
     cols2collapse = {
-        prefix_sep.join(item.split(prefix_sep)[:-1]): (prefix_sep in item) for item in df.columns
+        prefix_sep.join(item.split(prefix_sep)[:-1]): (prefix_sep in item)
+        for item in df.columns
     }
     series_list = []
     for col, needs_to_collapse in cols2collapse.items():
@@ -197,8 +213,8 @@ def get_dummy_cols(df: pd.DataFrame) -> list:
     Returns:
         list: List of dummy columns
     """
-    dum_cols = list(df.select_dtypes(include=['int', 'bool']).columns)
-    underscore_cols = [col for col in df.columns if '_' in col and col in dum_cols]
+    dum_cols = list(df.select_dtypes(include=["int", "bool"]).columns)
+    underscore_cols = [col for col in df.columns if "_" in col and col in dum_cols]
     dummy_cols = []
     for col in underscore_cols:
         # Just columns with 0 and 1

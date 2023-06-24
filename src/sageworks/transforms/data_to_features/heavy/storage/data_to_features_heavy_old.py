@@ -92,7 +92,9 @@ class DataToFeaturesHeavy(Transform):
 
         # Create a Feature Group and load our Feature Definitions
         self.log.info(f"Creating FeatureGroup: {self.output_uuid}")
-        my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
+        my_feature_group = FeatureGroup(
+            name=self.output_uuid, sagemaker_session=self.sm_session
+        )
         my_feature_group.load_feature_definitions(data_frame=sample_df)
 
         # Get the metadata/tags to push into AWS
@@ -100,7 +102,9 @@ class DataToFeaturesHeavy(Transform):
 
         # Data Catalog Config
         my_config = DataCatalogConfig(
-            table_name=self.output_uuid, catalog="AwsDataCatalog", database=self.output_database
+            table_name=self.output_uuid,
+            catalog="AwsDataCatalog",
+            database=self.output_database,
         )
 
         # Write out the DataFrame to Parquet/FeatureSet/Athena
@@ -148,6 +152,17 @@ if __name__ == "__main__":
     data_to_features_heavy.set_output_tags(["test", "heavy"])
 
     # Store this dataframe as a SageWorks Feature Set
-    fields = ["timestamp", "flow_id", "in_iface", "proto", "dns_type", "dns_rrtype", "dns_flags", "dns_rcode"]
+    fields = [
+        "timestamp",
+        "flow_id",
+        "in_iface",
+        "proto",
+        "dns_type",
+        "dns_rrtype",
+        "dns_flags",
+        "dns_rcode",
+    ]
     query = f"SELECT {', '.join(fields)} FROM heavy_dns"
-    data_to_features_heavy.transform(query=query, id_column="flow_id", event_time_column="timestamp")
+    data_to_features_heavy.transform(
+        query=query, id_column="flow_id", event_time_column="timestamp"
+    )

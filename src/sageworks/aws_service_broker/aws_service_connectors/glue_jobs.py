@@ -66,7 +66,10 @@ class GlueJobs(Connector):
         if job_runs["JobRuns"]:
             # Get the most recent run and return the state and start time
             last_run = job_runs["JobRuns"][0]
-            return {"status": last_run["JobRunState"], "last_run": last_run["StartedOn"]}
+            return {
+                "status": last_run["JobRunState"],
+                "last_run": last_run["StartedOn"],
+            }
         else:
             return {"status": "-", "last_run": "-"}
 

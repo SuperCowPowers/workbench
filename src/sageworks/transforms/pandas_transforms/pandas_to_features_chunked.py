@@ -54,12 +54,16 @@ class PandasToFeaturesChunked(Transform):
         if self.first_chunk is None:
             self.log.info(f"Adding first chunk {chunk_df.shape}...")
             self.first_chunk = chunk_df
-            self.pandas_to_features.set_input(chunk_df, self.id_column, self.event_time_column)
+            self.pandas_to_features.set_input(
+                chunk_df, self.id_column, self.event_time_column
+            )
             self.pandas_to_features.pre_transform()
             self.pandas_to_features.transform_impl()
         else:
             self.log.info(f"Adding chunk {chunk_df.shape}...")
-            self.pandas_to_features.set_input(chunk_df, self.id_column, self.event_time_column)
+            self.pandas_to_features.set_input(
+                chunk_df, self.id_column, self.event_time_column
+            )
             self.pandas_to_features.transform_impl()
 
     def finalize(self):
@@ -68,7 +72,9 @@ class PandasToFeaturesChunked(Transform):
 
     def transform_impl(self):
         """Required implementation of the Transform interface"""
-        self.log.warning("PandasToFeaturesChunked.transform_impl() called.  This is a no-op.")
+        self.log.warning(
+            "PandasToFeaturesChunked.transform_impl() called.  This is a no-op."
+        )
 
 
 if __name__ == "__main__":

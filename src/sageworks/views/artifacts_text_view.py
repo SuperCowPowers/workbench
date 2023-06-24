@@ -28,7 +28,9 @@ class ArtifactsTextView(View):
 
     def refresh(self, force_refresh: bool = False) -> None:
         """Refresh data/metadata associated with this view"""
-        self.aws_artifact_data = self.aws_broker.get_all_metadata(force_refresh=force_refresh)
+        self.aws_artifact_data = self.aws_broker.get_all_metadata(
+            force_refresh=force_refresh
+        )
 
     def view_data(self) -> dict:
         """Get all the data that's useful for this view
@@ -97,7 +99,15 @@ class ArtifactsTextView(View):
         if data_summary:
             return pd.DataFrame(data_summary)
         else:
-            columns = ["Name", "Size(MB)", "Modified", "ContentType", "ServerSideEncryption", "Tags", "_aws_url"]
+            columns = [
+                "Name",
+                "Size(MB)",
+                "Modified",
+                "ContentType",
+                "ServerSideEncryption",
+                "Tags",
+                "_aws_url",
+            ]
             return pd.DataFrame(columns=columns)
 
     def glue_jobs_summary(self) -> pd.DataFrame:
@@ -142,10 +152,13 @@ class ArtifactsTextView(View):
 
         # Get the SageWorks DataSources
         if "sageworks" in data_catalog:
-            for name, info in data_catalog["sageworks"].items():  # Just the sageworks database
+            for name, info in data_catalog[
+                "sageworks"
+            ].items():  # Just the sageworks database
                 # Get the size of the S3 Storage Object(s)
                 size = self.aws_broker.get_s3_object_sizes(
-                    ServiceCategory.DATA_SOURCES_S3, info["StorageDescriptor"]["Location"]
+                    ServiceCategory.DATA_SOURCES_S3,
+                    info["StorageDescriptor"]["Location"],
                 )
                 size = f"{size/1_000_000:.2f}"
                 summary = {
@@ -190,7 +203,8 @@ class ArtifactsTextView(View):
 
             # Get the size of the S3 Storage Object(s)
             size = self.aws_broker.get_s3_object_sizes(
-                ServiceCategory.FEATURE_SETS_S3, group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"]
+                ServiceCategory.FEATURE_SETS_S3,
+                group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"],
             )
             size = f"{size / 1_000_000:.2f}"
             cat_config = group_info["OfflineStoreConfig"].get("DataCatalogConfig", {})
@@ -199,7 +213,11 @@ class ArtifactsTextView(View):
                 "Size(MB)": size,
                 "Catalog DB": cat_config.get("Database", "-").lower(),
                 "Athena Table": cat_config.get("TableName", "-"),
-                "Online": str(group_info.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
+                "Online": str(
+                    group_info.get("OnlineStoreConfig", {}).get(
+                        "EnableOnlineStore", "False"
+                    )
+                ),
                 "Created": self.datetime_string(group_info.get("CreationTime")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
@@ -279,8 +297,16 @@ class ArtifactsTextView(View):
                 "Name": endpoint_info["EndpointName"],
                 "Status": endpoint_info["EndpointStatus"],
                 "Created": self.datetime_string(endpoint_info.get("CreationTime")),
-                "DataCapture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
-                "Sampling(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
+                "DataCapture": str(
+                    endpoint_info.get("DataCaptureConfig", {}).get(
+                        "EnableCapture", "False"
+                    )
+                ),
+                "Sampling(%)": str(
+                    endpoint_info.get("DataCaptureConfig", {}).get(
+                        "CurrentSamplingPercentage", "-"
+                    )
+                ),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
             }

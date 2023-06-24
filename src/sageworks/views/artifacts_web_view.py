@@ -71,8 +71,12 @@ class ArtifactsWebView(ArtifactsTextView):
 
         # Pull the AWS URLs and construct some hyperlinks
         hyperlinked_names = []
-        for group_name, aws_url in zip(feature_df["Feature Group"], feature_df["_aws_url"]):
-            hyperlinked_names.append(self.hyperlinks(group_name, "feature_sets", aws_url))
+        for group_name, aws_url in zip(
+            feature_df["Feature Group"], feature_df["_aws_url"]
+        ):
+            hyperlinked_names.append(
+                self.hyperlinks(group_name, "feature_sets", aws_url)
+            )
         feature_df["Feature Group"] = hyperlinked_names
 
         # Drop the AWS URL column and return the dataframe
@@ -85,7 +89,9 @@ class ArtifactsWebView(ArtifactsTextView):
         # We get the dataframe from the ArtifactsTextView and hyperlink the Model Group column
         model_df = super().models_summary()
         model_df["uuid"] = model_df["Model Group"]
-        model_df["Model Group"] = model_df["Model Group"].map(lambda x: self.hyperlinks(x, "models", ""))
+        model_df["Model Group"] = model_df["Model Group"].map(
+            lambda x: self.hyperlinks(x, "models", "")
+        )
         return model_df
 
     def endpoints_summary(self) -> pd.DataFrame:
@@ -94,7 +100,9 @@ class ArtifactsWebView(ArtifactsTextView):
         # We get the dataframe from the ArtifactsTextView and hyperlink the Name column
         endpoint_df = super().endpoints_summary()
         endpoint_df["uuid"] = endpoint_df["Name"]
-        endpoint_df["Name"] = endpoint_df["Name"].map(lambda x: self.hyperlinks(x, "endpoints", ""))
+        endpoint_df["Name"] = endpoint_df["Name"].map(
+            lambda x: self.hyperlinks(x, "endpoints", "")
+        )
         return endpoint_df
 
     def hyperlinks(self, name, detail_type, aws_url):

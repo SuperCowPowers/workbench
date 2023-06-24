@@ -31,7 +31,9 @@ class DataToFeaturesLight(Transform):
         """Pull the input DataSource into our Input Pandas DataFrame"""
 
         # Grab the Input (Data Source)
-        self.input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
+        self.input_df = DataToPandas(
+            self.input_uuid
+        ).get_output()  # Shorthand for transform, get_output
 
     def transform_impl(self, query: str = None, column_select: list = None, **kwargs):
         """Optional Query to filter the input DataFrame, then publish to the output location
@@ -42,14 +44,22 @@ class DataToFeaturesLight(Transform):
             Query is a Pandas Expression, e.g. 'col1<2.5 & col2=="x"'
             Column Select is a list of column names, e.g. ['col3', 'col4']
         """
-        self.output_df = self.input_df.query(query).reset_index(drop=True) if query else self.input_df
-        self.output_df = self.output_df[column_select] if column_select else self.output_df
+        self.output_df = (
+            self.input_df.query(query).reset_index(drop=True)
+            if query
+            else self.input_df
+        )
+        self.output_df = (
+            self.output_df[column_select] if column_select else self.output_df
+        )
 
     def post_transform(self, id_column=None, event_time_column=None, **kwargs):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set"""
         # Now publish to the output location
         output_features = PandasToFeatures(self.output_uuid)
-        output_features.set_input(self.output_df, id_column=id_column, event_time_column=event_time_column)
+        output_features.set_input(
+            self.output_df, id_column=id_column, event_time_column=event_time_column
+        )
         output_features.set_output_tags(self.output_tags)
         output_features.add_output_meta(self.output_meta)
         output_features.transform()

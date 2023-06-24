@@ -14,16 +14,17 @@ def main_layout(
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
         children=[
-            dcc.Store(data="", id='remove-artifact-store', storage_type="session"), 
-            dcc.Store(data="", id='modal-trigger-state-store', storage_type="session"),
+            dcc.Store(data="", id="remove-artifact-store", storage_type="session"),
+            dcc.Store(data="", id="modal-trigger-state-store", storage_type="session"),
             dbc.Modal(
                 [
                     dbc.ModalHeader(dbc.ModalTitle("Attention")),
                     dbc.ModalBody(id="modal-body"),
-                    dbc.ModalFooter([
-                        dbc.Button("No", id="no-button", n_clicks=0),
-                        dbc.Button("Yes", id="yes-button", n_clicks=0),
-                    ]            
+                    dbc.ModalFooter(
+                        [
+                            dbc.Button("No", id="no-button", n_clicks=0),
+                            dbc.Button("Yes", id="yes-button", n_clicks=0),
+                        ]
                     ),
                 ],
                 id="modal",

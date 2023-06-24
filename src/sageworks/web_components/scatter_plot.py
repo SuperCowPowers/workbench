@@ -37,11 +37,13 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
         title="Outlier Groups",
         color_discrete_sequence=color_map,
     )
-    fig.update_layout(title_y=0.97, title_x=0.1, title_xanchor="center", title_yanchor="top")
-    fig.update_traces(marker=dict(size=14,
-                                  line=dict(width=1,
-                                            color='Black')),
-                      selector=dict(mode='markers'))
+    fig.update_layout(
+        title_y=0.97, title_x=0.1, title_xanchor="center", title_yanchor="top"
+    )
+    fig.update_traces(
+        marker=dict(size=14, line=dict(width=1, color="Black")),
+        selector=dict(mode="markers"),
+    )
     fig.update_layout(xaxis_visible=False, xaxis_showticklabels=False)
     fig.update_layout(yaxis_visible=False, yaxis_showticklabels=False)
     fig.update_layout(margin=dict(l=10, r=10, t=30, b=10), height=400)

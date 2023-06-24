@@ -23,7 +23,9 @@ def generate_data():
         "id": "".join(random.choices(string.ascii_letters + string.digits, k=8)),
         "name": "".join(random.choices(string.ascii_letters, k=10)),
         "age": random.randint(18, 65),
-        "address": "".join(random.choices(string.ascii_letters + string.digits + ", .", k=20)),
+        "address": "".join(
+            random.choices(string.ascii_letters + string.digits + ", .", k=20)
+        ),
         "date": datetime_to_iso8601(datetime.now(timezone.utc)),
     }
 

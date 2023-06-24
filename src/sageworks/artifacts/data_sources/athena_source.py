@@ -40,14 +40,18 @@ class AthenaSource(DataSourceAbstract):
         self.catalog_table_meta = self._refresh_broker(force_refresh)
 
         # All done
-        self.log.debug(f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}")
+        self.log.debug(
+            f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}"
+        )
 
     def _refresh_broker(self, force_refresh=False):
         """Internal: Refresh our internal catalog metadata
         Args:
             force_refresh (bool): Force a refresh of the metadata
         """
-        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=force_refresh)
+        _catalog_meta = self.aws_broker.get_metadata(
+            ServiceCategory.DATA_CATALOG, force_refresh=force_refresh
+        )
         return _catalog_meta[self.data_catalog_db].get(self.table_name)
 
     def check(self) -> bool:
@@ -55,7 +59,9 @@ class AthenaSource(DataSourceAbstract):
 
         # We're we able to pull AWS Metadata for this table_name?"""
         if self.catalog_table_meta is None:
-            self.log.info(f"AthenaSource.check() {self.table_name} not found in SageWorks Metadata...")
+            self.log.info(
+                f"AthenaSource.check() {self.table_name} not found in SageWorks Metadata..."
+            )
             return False
         return True
 
@@ -83,7 +89,9 @@ class AthenaSource(DataSourceAbstract):
         # Sanity Check if we have invalid AWS Metadata
         if self.aws_meta() is None:
             self.log.critical(f"Unable to get AWS Metadata for {self.table_name}")
-            self.log.critical("Malformed Artifact! Delete this Artifact and recreate it!")
+            self.log.critical(
+                "Malformed Artifact! Delete this Artifact and recreate it!"
+            )
             return {}
         params = self.aws_meta().get("Parameters", {})
         return {key: value for key, value in params.items() if "sageworks" in key}
@@ -119,7 +127,11 @@ class AthenaSource(DataSourceAbstract):
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
-        size_in_bytes = sum(wr.s3.size_objects(self.s3_storage_location(), boto3_session=self.boto_session).values())
+        size_in_bytes = sum(
+            wr.s3.size_objects(
+                self.s3_storage_location(), boto3_session=self.boto_session
+            ).values()
+        )
         size_in_mb = size_in_bytes / 1_000_000
         return size_in_mb
 
@@ -141,7 +153,9 @@ class AthenaSource(DataSourceAbstract):
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
-        count_df = self.query(f'select count(*) AS count from "{self.data_catalog_db}"."{self.table_name}"')
+        count_df = self.query(
+            f'select count(*) AS count from "{self.data_catalog_db}"."{self.table_name}"'
+        )
         return count_df["count"][0]
 
     def num_columns(self) -> int:
@@ -150,16 +164,25 @@ class AthenaSource(DataSourceAbstract):
 
     def column_names(self) -> list[str]:
         """Return the column names for this Athena Table"""
-        return [item["Name"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
+        return [
+            item["Name"]
+            for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]
+        ]
 
     def column_types(self) -> list[str]:
         """Return the column types of the internal AthenaSource"""
-        return [item["Type"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
+        return [
+            item["Type"]
+            for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]
+        ]
 
     def query(self, query: str) -> pd.DataFrame:
         """Query the AthenaSource"""
         df = wr.athena.read_sql_query(
-            sql=query, database=self.data_catalog_db, ctas_approach=False, boto3_session=self.boto_session
+            sql=query,
+            database=self.data_catalog_db,
+            ctas_approach=False,
+            boto3_session=self.boto_session,
         )
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
@@ -173,7 +196,10 @@ class AthenaSource(DataSourceAbstract):
         """Validate that Athena Queries are working"""
         query = f"select count(*) as count from {self.table_name}"
         df = wr.athena.read_sql_query(
-            sql=query, database=self.data_catalog_db, ctas_approach=False, boto3_session=self.boto_session
+            sql=query,
+            database=self.data_catalog_db,
+            ctas_approach=False,
+            boto3_session=self.boto_session,
         )
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
@@ -188,7 +214,11 @@ class AthenaSource(DataSourceAbstract):
 
         # First check if we have already computed the sample dataframe
         if self.sageworks_meta().get("sageworks_sample_rows") and not recompute:
-            return pd.read_json(self.sageworks_meta()["sageworks_sample_rows"], orient="records", lines=True)
+            return pd.read_json(
+                self.sageworks_meta()["sageworks_sample_rows"],
+                orient="records",
+                lines=True,
+            )
 
         # Note: Hardcoded to 100 rows so that metadata storage is consistent
         sample_rows = 100
@@ -197,8 +227,12 @@ class AthenaSource(DataSourceAbstract):
             # Bernoulli Sampling has reasonable variance, so we're going to +1 the
             # sample percentage and then simply clamp it to 100 rows
             percentage = round(sample_rows * 100.0 / num_rows) + 1
-            self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {sample_rows}...")
-            query = f"SELECT * FROM {self.table_name} TABLESAMPLE BERNOULLI({percentage})"
+            self.log.warning(
+                f"DataSource has {num_rows} rows.. sampling down to {sample_rows}..."
+            )
+            query = (
+                f"SELECT * FROM {self.table_name} TABLESAMPLE BERNOULLI({percentage})"
+            )
         else:
             query = f"SELECT * FROM {self.table_name}"
         sample_df = self.query(query).head(sample_rows)
@@ -225,7 +259,9 @@ class AthenaSource(DataSourceAbstract):
             return json.loads(self.sageworks_meta()["sageworks_quartiles"])
 
         # For every column in the table that is numeric, get the quartiles
-        self.log.info("Computing Quartiles for all numeric columns (this may take a while)...")
+        self.log.info(
+            "Computing Quartiles for all numeric columns (this may take a while)..."
+        )
         quartile_data = []
         for column, data_type in zip(self.column_names(), self.column_types()):
             print(column, data_type)
@@ -240,7 +276,9 @@ class AthenaSource(DataSourceAbstract):
                 result_df = self.query(query)
                 result_df["column_name"] = column
                 quartile_data.append(result_df)
-        quartile_dict = pd.concat(quartile_data).set_index("column_name").to_dict(orient="index")
+        quartile_dict = (
+            pd.concat(quartile_data).set_index("column_name").to_dict(orient="index")
+        )
 
         # Push the quartile data into our DataSource Metadata
         self.upsert_sageworks_meta({"sageworks_quartiles": quartile_dict})
@@ -248,19 +286,23 @@ class AthenaSource(DataSourceAbstract):
         # Return the quartile data
         return quartile_dict
 
-    def _outlier_dfs(self, column: str, lower_bound: float, upper_bound: float) -> pd.DataFrame:
+    def _outlier_dfs(
+        self, column: str, lower_bound: float, upper_bound: float
+    ) -> pd.DataFrame:
         """Internal method to compute outliers for a numeric column
         Returns:
             pd.DataFrame, pd.DataFrame: A DataFrame for lower outliers and a DataFrame for upper outliers
         """
 
         # Get lower outlier bound
-        query = f'SELECT * from {self.table_name} where {column} < {lower_bound}'
+        query = f"SELECT * from {self.table_name} where {column} < {lower_bound}"
         lower_df = self.query(query)
 
         # Check for outlier 'overflow'
         if lower_df.shape[0] > 10:
-            self.log.warning(f"Found {lower_df.shape[0]} outliers for column {column}, down sampling...")
+            self.log.warning(
+                f"Found {lower_df.shape[0]} outliers for column {column}, down sampling..."
+            )
             lower_df = lower_df.sort_values(column, ascending=True).head(10)
 
         # Check for no results
@@ -268,12 +310,14 @@ class AthenaSource(DataSourceAbstract):
             lower_df = None
 
         # Get upper outlier bound
-        query = f'SELECT * from {self.table_name} where {column} > {upper_bound}'
+        query = f"SELECT * from {self.table_name} where {column} > {upper_bound}"
         upper_df = self.query(query)
 
         # Check for outlier 'overflow'
         if upper_df.shape[0] > 10:
-            self.log.warning(f"Found {upper_df.shape[0]} outliers for column {column}, down sampling...")
+            self.log.warning(
+                f"Found {upper_df.shape[0]} outliers for column {column}, down sampling..."
+            )
             upper_df = upper_df.sort_values(column, ascending=False).head(10)
 
         # Check for no results
@@ -283,7 +327,9 @@ class AthenaSource(DataSourceAbstract):
         # Return the lower and upper outlier DataFrames
         return lower_df, upper_df
 
-    def outliers(self, scale: float = 1.7, recompute: bool = False, project: bool = True) -> pd.DataFrame:
+    def outliers(
+        self, scale: float = 1.7, recompute: bool = False, project: bool = True
+    ) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             scale(float): The scale to use for the IQR (default: 1.7)
@@ -298,13 +344,19 @@ class AthenaSource(DataSourceAbstract):
 
         # First check if we have already computed the outliers
         if self.sageworks_meta().get("sageworks_outliers") and not recompute:
-            return pd.read_json(self.sageworks_meta()["sageworks_outliers"], orient="records", lines=True)
+            return pd.read_json(
+                self.sageworks_meta()["sageworks_outliers"],
+                orient="records",
+                lines=True,
+            )
 
         # Grab the quartiles for this DataSource
         quartiles = self.quartiles()
 
         # For every column in the table that is numeric get the outliers
-        self.log.info("Computing outliers for all numeric columns (this may take a while)...")
+        self.log.info(
+            "Computing outliers for all numeric columns (this may take a while)..."
+        )
         cluster = 0
         outlier_df_list = []
         outlier_features = []
@@ -336,7 +388,9 @@ class AthenaSource(DataSourceAbstract):
         if outlier_df_list:
             outlier_df = pd.concat(outlier_df_list).drop_duplicates().head(100)
         else:
-            self.log.warning("No outliers found for this DataSource, returning empty DataFrame")
+            self.log.warning(
+                "No outliers found for this DataSource, returning empty DataFrame"
+            )
             outlier_df = pd.DataFrame(columns=self.column_names())
 
         # Project the outliers onto an x,y plane
@@ -344,13 +398,15 @@ class AthenaSource(DataSourceAbstract):
             self.log.info("Projecting outliers onto an x,y plane...")
             outlier_features.append("cluster")
             self.log.info(f"Outlier features: {outlier_features}")
-            perplexity = min(50, len(outlier_df)-1)
+            perplexity = min(50, len(outlier_df) - 1)
             self.log.info(f"Perplexity: {perplexity}")
-            projection = TSNE(perplexity=perplexity).fit_transform(outlier_df[outlier_features])
+            projection = TSNE(perplexity=perplexity).fit_transform(
+                outlier_df[outlier_features]
+            )
 
             # Put the projection results back into the outlier_df
-            outlier_df['x'] = projection[:, 0]  # Projection X Column
-            outlier_df['y'] = projection[:, 1]  # Projection Y Column
+            outlier_df["x"] = projection[:, 0]  # Projection X Column
+            outlier_df["y"] = projection[:, 1]  # Projection Y Column
 
         # Store the sample_df in our SageWorks metadata
         rows_json = outlier_df.to_json(orient="records", lines=True)
@@ -402,7 +458,9 @@ class AthenaSource(DataSourceAbstract):
                 result_df.fillna("NaN", inplace=True)
 
                 # Convert the result_df into a dictionary
-                value_count_dict[column] = dict(zip(result_df[column], result_df["count"]))
+                value_count_dict[column] = dict(
+                    zip(result_df[column], result_df["count"])
+                )
 
         # Push the value_count data into our DataSource Metadata
         self.upsert_sageworks_meta({"sageworks_value_counts": value_count_dict})
@@ -435,7 +493,9 @@ class AthenaSource(DataSourceAbstract):
             sql=query, database=self.data_catalog_db, boto3_session=self.boto_session
         )
         base_url = "https://console.aws.amazon.com/athena/home"
-        details["aws_url"] = f"{base_url}?region={self.aws_region}#query/history/{query_exec_id}"
+        details[
+            "aws_url"
+        ] = f"{base_url}?region={self.aws_region}#query/history/{query_exec_id}"
 
         # Convert any datetime fields to ISO-8601 strings
         details = convert_all_to_iso8601(details)
@@ -451,16 +511,26 @@ class AthenaSource(DataSourceAbstract):
 
         # Make sure the Feature Group exists
         if not self.check():
-            self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.table_name}")
+            self.log.warning(
+                f"Trying to delete a AthenaSource that doesn't exist: {self.table_name}"
+            )
 
         # Delete Data Catalog Table
-        self.log.info(f"Deleting DataCatalog Table: {self.data_catalog_db}.{self.table_name}...")
-        wr.catalog.delete_table_if_exists(self.data_catalog_db, self.table_name, boto3_session=self.boto_session)
+        self.log.info(
+            f"Deleting DataCatalog Table: {self.data_catalog_db}.{self.table_name}..."
+        )
+        wr.catalog.delete_table_if_exists(
+            self.data_catalog_db, self.table_name, boto3_session=self.boto_session
+        )
 
         # Delete S3 Storage Objects (if they exist)
         try:
-            self.log.info(f"Deleting S3 Storage Object: {self.s3_storage_location()}...")
-            wr.s3.delete_objects(self.s3_storage_location(), boto3_session=self.boto_session)
+            self.log.info(
+                f"Deleting S3 Storage Object: {self.s3_storage_location()}..."
+            )
+            wr.s3.delete_objects(
+                self.s3_storage_location(), boto3_session=self.boto_session
+            )
         except TypeError:
             self.log.warning("Malformed Artifact... good thing it's being deleted...")
 

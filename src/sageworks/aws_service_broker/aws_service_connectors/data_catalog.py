@@ -20,7 +20,9 @@ class DataCatalog(Connector):
         super().__init__()
 
         # Set up our database scope
-        self.database_scope = database_scope if isinstance(database_scope, list) else [database_scope]
+        self.database_scope = (
+            database_scope if isinstance(database_scope, list) else [database_scope]
+        )
         self.scoped_database_list = self.get_scoped_database_list()
 
         # Set up our internal data storage
@@ -41,10 +43,14 @@ class DataCatalog(Connector):
         # For each database in our scoped list, load the tables
         for database in self.scoped_database_list:
             print(f"Reading Data Catalog Database: {database}...")
-            table_list = wr.catalog.get_tables(database=database, boto3_session=self.boto_session)
+            table_list = wr.catalog.get_tables(
+                database=database, boto3_session=self.boto_session
+            )
 
             # Convert to a data structure with direct lookup
-            self.data_catalog_metadata[database] = {table["Name"]: table for table in table_list}
+            self.data_catalog_metadata[database] = {
+                table["Name"]: table for table in table_list
+            }
 
     def aws_meta(self) -> dict:
         """Return ALL the AWS metadata for this AWS Service"""
@@ -52,7 +58,10 @@ class DataCatalog(Connector):
 
     def get_scoped_database_list(self):
         """Return a list of databases within the defined scope for this class"""
-        all_databases = [db["Name"] for db in wr.catalog.get_databases(boto3_session=self.boto_session)]
+        all_databases = [
+            db["Name"]
+            for db in wr.catalog.get_databases(boto3_session=self.boto_session)
+        ]
         if self.database_scope == ["all"]:
             return all_databases
 

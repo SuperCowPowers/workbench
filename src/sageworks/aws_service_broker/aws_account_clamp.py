@@ -1,7 +1,11 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
 import sys
 import boto3
-from botocore.exceptions import ClientError, UnauthorizedSSOTokenError, TokenRetrievalError
+from botocore.exceptions import (
+    ClientError,
+    UnauthorizedSSOTokenError,
+    TokenRetrievalError,
+)
 from botocore.credentials import RefreshableCredentials
 from botocore.session import get_session
 from sagemaker.session import Session as SageSession
@@ -27,7 +31,9 @@ class AWSAccountClamp:
         self.role_name = role_name
 
         # Let's fill in some of the AWS Session details
-        self.sageworks_bucket_name = config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+        self.sageworks_bucket_name = config.get_config_value(
+            "SAGEWORKS_AWS", "S3_BUCKET_NAME"
+        )
         self.account_id = boto3.client("sts").get_caller_identity()["Account"]
         self.region = boto3.session.Session().region_name
 
@@ -46,9 +52,13 @@ class AWSAccountClamp:
             self.log.info(f"Region: {self.region}")
             return True
         except (ClientError, UnauthorizedSSOTokenError) as exc:
-            self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+            self.log.critical(
+                "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+            )
             self.log.critical(exc)
-            sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
+            sys.exit(
+                1
+            )  # FIXME: Longer term we probably want to raise exc and have caller catch it
 
     def check_app_config(self, boto_session: boto3.Session) -> bool:
         """Check if the AWS AppConfig Service is enabled"""
@@ -59,7 +69,9 @@ class AWSAccountClamp:
             appconfig.list_applications()
             return True
         except (ClientError, UnauthorizedSSOTokenError) as exc:
-            self.log.critical("AWS AppConfig Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+            self.log.critical(
+                "AWS AppConfig Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+            )
             self.log.critical(exc)
             sys.exit(1)
 
@@ -77,9 +89,13 @@ class AWSAccountClamp:
             if self.role_name in sts.get_caller_identity()["Arn"]:
                 return True
         except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError) as exc:
-            self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+            self.log.critical(
+                "SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+            )
             self.log.critical(exc)
-            sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
+            sys.exit(
+                1
+            )  # FIXME: Longer term we probably want to raise exc and have caller catch it
 
     def sageworks_execution_role_arn(self):
         """Get the SageWorks Execution Role"""
@@ -90,17 +106,25 @@ class AWSAccountClamp:
         except iam.exceptions.NoSuchEntityException as exc:
             self.log.critical(f"Could Not Find Role {self.role_name}")
             self.log.critical(exc)
-            sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
+            sys.exit(
+                1
+            )  # FIXME: Longer term we probably want to raise exc and have caller catch it
         except UnauthorizedSSOTokenError as exc:
-            self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+            self.log.critical(
+                "SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+            )
             self.log.critical(exc)
-            sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
+            sys.exit(
+                1
+            )  # FIXME: Longer term we probably want to raise exc and have caller catch it
 
     def _session_credentials(self):
         """Internal: Set up our AWS Session credentials for automatic refresh"""
 
         # Assume the SageWorks Execution Role and then pull the credentials
-        self.log.debug("Assuming the SageWorks Execution Role and Refreshing Credentials...")
+        self.log.debug(
+            "Assuming the SageWorks Execution Role and Refreshing Credentials..."
+        )
         sts = boto3.Session().client("sts")
         response = sts.assume_role(
             RoleArn=self.sageworks_execution_role_arn(),
@@ -112,7 +136,9 @@ class AWSAccountClamp:
             "token": response.get("SessionToken"),
             "expiry_time": response.get("Expiration").isoformat(),
         }
-        self.log.debug(f"Credentials Refreshed: Expires at {credentials['expiry_time']}")
+        self.log.debug(
+            f"Credentials Refreshed: Expires at {credentials['expiry_time']}"
+        )
         return credentials
 
     def boto_session(self):

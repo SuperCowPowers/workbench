@@ -6,7 +6,7 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import data_and_feature_details, vertical_distribution_plots
+from sageworks.web_components import data_and_feature_details, distribution_plots
 
 
 def refresh_data_timer(app: Dash):
@@ -19,7 +19,10 @@ def refresh_data_timer(app: Dash):
 
 
 def update_data_sources_table(app: Dash, data_source_broker: DataSourceWebView):
-    @app.callback(Output("data_sources_table", "data"), Input("data-sources-updater", "n_intervals"))
+    @app.callback(
+        Output("data_sources_table", "data"),
+        Input("data-sources-updater", "n_intervals"),
+    )
     def data_sources_update(_n):
         """Return the table data as a dictionary"""
         data_source_broker.refresh()
@@ -51,7 +54,10 @@ def table_row_select(app: Dash, table_name: str):
 # Updates the data source details when a row is selected in the summary
 def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebView):
     @app.callback(
-        [Output("data_details_header", "children"), Output("data_source_details", "children")],
+        [
+            Output("data_details_header", "children"),
+            Output("data_source_details", "children"),
+        ],
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
     )
     def generate_new_markdown(selected_rows):
@@ -92,7 +98,9 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
         header = f"Sampled Rows: {data_source_name}"
 
         # The columns need to be in a special format for the DataTable
-        column_setup = [{"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns]
+        column_setup = [
+            {"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns
+        ]
 
         # Return the columns and the data
         return [header, column_setup, sample_rows.to_dict("records")]
@@ -111,8 +119,17 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling DataSource Sample Rows Refresh...")
-        smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
-        return vertical_distribution_plots.create_figure(smart_sample_rows, 
-                                           plot_type="violin",
-                                           figure_args={"box_visible": True, "meanline_visible": True, "showlegend": False, "points": "all"},
-                                           max_plots=48)
+        smart_sample_rows = data_source_web_view.data_source_smart_sample(
+            selected_rows[0]
+        )
+        return distribution_plots.create_figure(
+            smart_sample_rows,
+            plot_type="violin",
+            figure_args={
+                "box_visible": True,
+                "meanline_visible": True,
+                "showlegend": False,
+                "points": "all",
+            },
+            max_plots=48,
+        )

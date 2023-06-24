@@ -11,8 +11,12 @@ from sageworks.utils.redis_cache import RedisCache
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_broker.aws_service_connectors.glue_jobs import GlueJobs
 from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog
-from sageworks.aws_service_broker.aws_service_connectors.feature_store import FeatureStore
-from sageworks.aws_service_broker.aws_service_connectors.model_registry import ModelRegistry
+from sageworks.aws_service_broker.aws_service_connectors.feature_store import (
+    FeatureStore,
+)
+from sageworks.aws_service_broker.aws_service_connectors.model_registry import (
+    ModelRegistry,
+)
 from sageworks.aws_service_broker.aws_service_connectors.endpoints import Endpoints
 from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
@@ -60,7 +64,9 @@ class AWSServiceBroker:
 
         # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings
         sageworks_config = SageWorksConfig()
-        sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+        sageworks_bucket = sageworks_config.get_config_value(
+            "SAGEWORKS_AWS", "S3_BUCKET_NAME"
+        )
         cls.incoming_data_bucket = "s3://" + sageworks_bucket + "/incoming-data/"
         cls.data_sources_bucket = "s3://" + sageworks_bucket + "/data-sources/"
         cls.feature_sets_bucket = "s3://" + sageworks_bucket + "/feature-sets/"
@@ -144,7 +150,9 @@ class AWSServiceBroker:
 
         # Is the AWS data stale?
         if cls.fresh_cache.get(category) is None:
-            cls.log.info(f"Async: Metadata for {category} is stale, launching refresh thread...")
+            cls.log.info(
+                f"Async: Metadata for {category} is stale, launching refresh thread..."
+            )
             cls.fresh_cache.set(category, True)
             thread = Thread(target=cls.refresh_aws_data, args=(category,))
             cls.open_threads.append(thread)
@@ -163,8 +171,13 @@ class AWSServiceBroker:
         Returns:
             dict: The Metadata for ALL the Service Categories
         """
-        cls.log.warning("Getting ALL AWS Metadata: You should call get_metadata() with specific categories")
-        return {_category: cls.get_metadata(_category, force_refresh) for _category in ServiceCategory}
+        cls.log.warning(
+            "Getting ALL AWS Metadata: You should call get_metadata() with specific categories"
+        )
+        return {
+            _category: cls.get_metadata(_category, force_refresh)
+            for _category in ServiceCategory
+        }
 
     @classmethod
     def wait_for_refreshes(cls) -> None:
@@ -199,7 +212,9 @@ if __name__ == "__main__":
 
     # Collect args from the command line
     parser = argparse.ArgumentParser()
-    parser.add_argument("--database", type=str, default="sageworks", help="AWS Data Catalog Database")
+    parser.add_argument(
+        "--database", type=str, default="sageworks", help="AWS Data Catalog Database"
+    )
     args, commands = parser.parse_known_args()
 
     # Check for unknown args
@@ -224,13 +239,17 @@ if __name__ == "__main__":
     # pprint(aws_broker.get_all_metadata(force_refresh=True))
 
     # Get S3 object sizes
-    incoming_data_size = aws_broker.get_s3_object_sizes(ServiceCategory.INCOMING_DATA_S3)
+    incoming_data_size = aws_broker.get_s3_object_sizes(
+        ServiceCategory.INCOMING_DATA_S3
+    )
     print(f"Incoming Data Size: {incoming_data_size} Bytes")
 
     data_sources_size = aws_broker.get_s3_object_sizes(ServiceCategory.DATA_SOURCES_S3)
     print(f"Data Sources Size: {data_sources_size} Bytes")
 
-    abalone_size = aws_broker.get_s3_object_sizes(ServiceCategory.DATA_SOURCES_S3, prefix="abalone_data")
+    abalone_size = aws_broker.get_s3_object_sizes(
+        ServiceCategory.DATA_SOURCES_S3, prefix="abalone_data"
+    )
     print(f"Abalone Size: {abalone_size} Bytes")
 
     # Wait for any open threads to finish

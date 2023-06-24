@@ -5,9 +5,9 @@ import pandas as pd
 
 
 # Helper Functions
-def column_setup(df: pd.DataFrame,
-                 show_columns: list[str] = None,
-                 markdown_columns: list[str] = None) -> list:
+def column_setup(
+    df: pd.DataFrame, show_columns: list[str] = None, markdown_columns: list[str] = None
+) -> list:
     """Internal: Get the column information for the given DataFrame
     Args:
         df: The DataFrame to get the column information
@@ -15,7 +15,7 @@ def column_setup(df: pd.DataFrame,
         markdown_columns: The columns to show as markdown
     Returns:
         list: The column information as a list of dicts
-        """
+    """
     # Only show these columns
     if not show_columns:
         show_columns = df.columns.to_list()
@@ -31,12 +31,20 @@ def column_setup(df: pd.DataFrame,
     # Column Setup with name, id, and presentation type
     column_setup_list = []
     for c in show_columns:
-        presentation = "markdown" if markdown_columns and c in markdown_columns else "input"
+        presentation = (
+            "markdown" if markdown_columns and c in markdown_columns else "input"
+        )
         # Check for a numeric column
         if df[c].dtype in ["float64", "float32"]:
             print(f"Column {c} is numeric")
-            column_setup_list.append({"name": c, "id": c, "type": "numeric",
-                                      "format": Format(group=",", precision=3, scheme="f")})
+            column_setup_list.append(
+                {
+                    "name": c,
+                    "id": c,
+                    "type": "numeric",
+                    "format": Format(group=",", precision=3, scheme="f"),
+                }
+            )
         else:
             column_setup_list.append({"name": c, "id": c, "presentation": presentation})
     return column_setup_list
@@ -99,7 +107,12 @@ def create(
             {"if": {"column_id": "remove"}, "color": "transparent"}
         ],
         style_cell_conditional=[
-            {"if": {"column_id": "remove"}, "width": "20px", "padding": "5px 0px 2px 0px", "overflow": "visible"}
+            {
+                "if": {"column_id": "remove"},
+                "width": "20px",
+                "padding": "5px 0px 2px 0px",
+                "overflow": "visible",
+            }
         ],
         style_data_conditional=[
             {
@@ -107,6 +120,6 @@ def create(
                 "backgroundColor": "inherit !important",
                 "border": "inherit !important",
             }
-        ]
+        ],
     )
     return table

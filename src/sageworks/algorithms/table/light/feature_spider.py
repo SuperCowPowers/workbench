@@ -64,10 +64,14 @@ class FeatureSpider:
 
         # Now a big loop over all these values to compute the confidence scores
         confidence_scores = []
-        for pred, knn_pred, str_val_list, str_dist_list in zip(model_preds, knn_preds, target_values, distances):
+        for pred, knn_pred, str_val_list, str_dist_list in zip(
+            model_preds, knn_preds, target_values, distances
+        ):
             # Each of these is a string of a list (yes a bit cheesy)
             vals = [float(val) for val in str_val_list.split(", ")]
-            _ = [float(dis) for dis in str_dist_list.split(", ")]  # dist current not used
+            _ = [
+                float(dis) for dis in str_dist_list.split(", ")
+            ]  # dist current not used
 
             # Compute stddev of the target values
             knn_stddev = np.std(vals)
@@ -104,8 +108,12 @@ class FeatureSpider:
         target_values = self.knn._y[neigh_ind]
 
         # Note: We're assuming that the Neighbor Index is the same order/cardinality as the dataframe
-        results_df["knn_target_values"] = [", ".join([str(val) for val in values]) for values in target_values]
-        results_df["knn_distances"] = [", ".join([str(dis) for dis in distances]) for distances in neigh_dist]
+        results_df["knn_target_values"] = [
+            ", ".join([str(val) for val in values]) for values in target_values
+        ]
+        results_df["knn_distances"] = [
+            ", ".join([str(dis) for dis in distances]) for distances in neigh_dist
+        ]
 
         return results_df
 
@@ -121,10 +129,12 @@ class FeatureSpider:
         # Neighbor ID and feature lookups
         neigh_dist, neigh_ind = self.knn.kneighbors(x_scaled)
         results_df["knn_ids"] = [
-            ", ".join(self.df.iloc[index][self.id_column] for index in indexes) for indexes in neigh_ind
+            ", ".join(self.df.iloc[index][self.id_column] for index in indexes)
+            for indexes in neigh_ind
         ]
         results_df["knn_features"] = [
-            ", ".join(self.df.iloc[index][self.id_column] for index in indexes) for indexes in neigh_ind
+            ", ".join(self.df.iloc[index][self.id_column] for index in indexes)
+            for indexes in neigh_ind
         ]
         return results_df
 
@@ -132,7 +142,9 @@ class FeatureSpider:
         """Convenience method that calls high_gradients with a distance of 0"""
         return self.high_gradients(0.0, target_diff, verbose)
 
-    def high_gradients(self, within_distance: float, target_diff: float, verbose: bool = True) -> list:
+    def high_gradients(
+        self, within_distance: float, target_diff: float, verbose: bool = True
+    ) -> list:
         """This basically loops over all the X features in the KNN model
         - Grab the neighbors distances and indices
         - For neighbors `within_distance`* grab target values
@@ -143,8 +155,12 @@ class FeatureSpider:
         global_htg_set = set()
         for my_index, obs in enumerate(self.knn._fit_X):
             neigh_distances, neigh_indexes = self.knn.kneighbors([obs])
-            neigh_distances = neigh_distances[0]  # Returns a list within a list so grab the inner list
-            neigh_indexes = neigh_indexes[0]  # Returns a list within a list so grab the inner list
+            neigh_distances = neigh_distances[
+                0
+            ]  # Returns a list within a list so grab the inner list
+            neigh_indexes = neigh_indexes[
+                0
+            ]  # Returns a list within a list so grab the inner list
             target_values = self.knn._y[neigh_indexes]
 
             # Grab the info for this observation
@@ -155,7 +171,9 @@ class FeatureSpider:
             # Loop through the neighbors
             # Note: by definition this observation will be in the neighbors so account for that
             my_htg_set = set()
-            for n_index, dist, target in zip(neigh_indexes, neigh_distances, target_values):
+            for n_index, dist, target in zip(
+                neigh_indexes, neigh_distances, target_values
+            ):
                 # Skip myself
                 if n_index == my_index:
                     continue
@@ -178,7 +196,9 @@ class FeatureSpider:
                 for htg_neighbor, dist, _diff, target in my_htg_set:
                     neighbor_id = self.df.iloc[htg_neighbor][self.id_column]
                     neighbor_features = self.df.iloc[htg_neighbor][self.id_column]
-                    print(f"\t{neighbor_id}({target:.2f}):{neighbor_features} TargetD:{_diff:.2f} FeatureD:{dist}")
+                    print(
+                        f"\t{neighbor_id}({target:.2f}):{neighbor_features} TargetD:{_diff:.2f} FeatureD:{dist}"
+                    )
 
         # Return the global list of indexes that are part of high target gradient (HTG) pairs
         return list(global_htg_set)
@@ -212,7 +232,9 @@ def test():
     data_df = pd.DataFrame(data)
 
     # Create the class and run the taggers
-    f_spider = FeatureSpider(data_df, ["feat1", "feat2", "feat3"], id_column="ID", target="price")
+    f_spider = FeatureSpider(
+        data_df, ["feat1", "feat2", "feat3"], id_column="ID", target="price"
+    )
     preds = f_spider.predict(data_df)
     print(preds)
     coincident = f_spider.coincident(2)

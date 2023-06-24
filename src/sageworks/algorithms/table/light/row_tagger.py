@@ -32,7 +32,9 @@ class RowTagger:
         self.validate_input_data()
 
         # We need the feature spider for the more advanced tags
-        self.f_spider = feature_spider.FeatureSpider(self.df, features, id_column=self.id_column, target=target)
+        self.f_spider = feature_spider.FeatureSpider(
+            self.df, features, id_column=self.id_column, target=target
+        )
 
         # Add a 'tags' column (if it doesn't already exist)
         if "tags" not in self.df.columns:
@@ -71,7 +73,9 @@ class RowTagger:
 
     def coincident(self):
         """Find observations with the SAME features that have different target values"""
-        coincident_indexes = self.f_spider.coincident(self.min_target_diff, verbose=False)
+        coincident_indexes = self.f_spider.coincident(
+            self.min_target_diff, verbose=False
+        )
 
         # We get back index offsets (not labels) so we need to use iloc
         for index in coincident_indexes:
@@ -80,7 +84,9 @@ class RowTagger:
     def high_gradients(self):
         """Find observations close in feature space with a high difference in target values
         High Target Gradient (HTG)"""
-        htg_indexes = self.f_spider.high_gradients(self.min_dist, self.min_target_diff, verbose=False)
+        htg_indexes = self.f_spider.high_gradients(
+            self.min_dist, self.min_target_diff, verbose=False
+        )
 
         # We get back index offsets (not labels) so we need to use iloc
         for index in htg_indexes:

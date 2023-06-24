@@ -33,16 +33,24 @@ class S3Bucket(Connector):
         # Grab all the files in this bucket
         self.log.info(f"Reading S3 Bucket: {self.bucket}...")
         try:
-            _aws_file_info = wr.s3.describe_objects(self.bucket, boto3_session=self.boto_session)
+            _aws_file_info = wr.s3.describe_objects(
+                self.bucket, boto3_session=self.boto_session
+            )
         except ClientError as error:
             # If the exception is a ResourceNotFound, this is fine, otherwise raise all other exceptions
             if error.response["Error"]["Code"] in ["ResourceNotFound", "NoSuchBucket"]:
-                self.log.warning(f"Describing objects in {self.bucket} gave ResourceNotFound")
+                self.log.warning(
+                    f"Describing objects in {self.bucket} gave ResourceNotFound"
+                )
                 return {}
             else:
-                self.log.warning(f"Describing objects in {self.bucket} gave {error.response['Error']['Code']}")
+                self.log.warning(
+                    f"Describing objects in {self.bucket} gave {error.response['Error']['Code']}"
+                )
                 return {}
-        self.s3_bucket_data = {full_path: info for full_path, info in _aws_file_info.items()}
+        self.s3_bucket_data = {
+            full_path: info for full_path, info in _aws_file_info.items()
+        }
 
     def aws_meta(self) -> dict:
         """Return ALL the AWS metadata for the AWS S3 Service"""
@@ -71,7 +79,9 @@ if __name__ == "__main__":
 
     # Grab out incoming data bucket for something to test with
     sageworks_config = SageWorksConfig()
-    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+    sageworks_bucket = sageworks_config.get_config_value(
+        "SAGEWORKS_AWS", "S3_BUCKET_NAME"
+    )
     incoming_data_bucket = "s3://" + sageworks_bucket + "/incoming-data/"
 
     # Create the class and check the functionality

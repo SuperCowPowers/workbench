@@ -14,7 +14,9 @@ def create_figure(matrix: list[list[float]]):
     z_text = [[str(y) for y in x] for x in z]
 
     # set up figure
-    fig = ff.create_annotated_heatmap(z, x=x, y=y, annotation_text=z_text, zmin=0, zmax=1)  # colorscale='Viridis')
+    fig = ff.create_annotated_heatmap(
+        z, x=x, y=y, annotation_text=z_text, zmin=0, zmax=1
+    )  # colorscale='Viridis')
 
     # add title
     fig.update_layout(

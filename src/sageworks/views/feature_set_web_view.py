@@ -92,7 +92,9 @@ class FeatureSetWebView(ArtifactsWebView):
 
     def feature_set_name(self, feature_set_index: int) -> (str, None):
         """Helper method for getting the data source name for the given FeatureSet Index"""
-        if not self.feature_sets_df.empty and feature_set_index < len(self.feature_sets_df):
+        if not self.feature_sets_df.empty and feature_set_index < len(
+            self.feature_sets_df
+        ):
             data_uuid = self.feature_sets_df.iloc[feature_set_index]["uuid"]
             return data_uuid
         else:

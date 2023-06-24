@@ -52,8 +52,12 @@ model_df = fake_model_info.get_model_df()
 details = mock_model_details.create(fake_model_info.get_model_details(0))
 c_matrix = confusion_matrix.create(fake_model_info.get_model_confusion_matrix(0))
 scatter = scatter_plot.create("model performance", model_df)
-my_feature_importance = mock_feature_importance.create(fake_model_info.get_model_feature_importance(0))
-my_feature_details = mock_feature_details.create(fake_model_info.get_model_feature_importance(0))
+my_feature_importance = mock_feature_importance.create(
+    fake_model_info.get_model_feature_importance(0)
+)
+my_feature_details = mock_feature_details.create(
+    fake_model_info.get_model_feature_importance(0)
+)
 components = {
     "models_table": models_table,
     "model_details": details,

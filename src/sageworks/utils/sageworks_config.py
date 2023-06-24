@@ -45,14 +45,18 @@ class SageWorksConfig:
                 self.log.warning(f"Config Not Found: {env_config_file} does not exist")
 
         # Check the User's home directory for a config file
-        home_config_file = Path.home() / ".config" / "sageworks" / "sageworks_config.ini"
+        home_config_file = (
+            Path.home() / ".config" / "sageworks" / "sageworks_config.ini"
+        )
         if os.path.exists(home_config_file):
             return home_config_file
         else:
             self.log.warning(f"Config Not Found: {home_config_file} does not exist")
 
         # Last resort, check the git repository for a config file
-        repo_config_file = self.get_repository_config_path() / "config" / "sageworks_config.ini"
+        repo_config_file = (
+            self.get_repository_config_path() / "config" / "sageworks_config.ini"
+        )
         if os.path.exists(repo_config_file):
             self.log.info("Using Repository Config... you probably want to fix this")
             self.log.info(f"Repository Config: {repo_config_file}")

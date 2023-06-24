@@ -31,7 +31,9 @@ def create_markdown(model_info: dict):
 
     # Replace all the template fields
     markdown = markdown_template.replace("{{model_name}}", model_info["model_name"])
-    markdown = markdown.replace("{{date_created}}", str(model_info["date_created"])[:10])
+    markdown = markdown.replace(
+        "{{date_created}}", str(model_info["date_created"])[:10]
+    )
     markdown = markdown.replace("{{training_data}}", model_info["training_data"])
     markdown = markdown.replace("{{feature_set}}", model_info["feature_set"])
     markdown = markdown.replace("{{model_type}}", model_type)

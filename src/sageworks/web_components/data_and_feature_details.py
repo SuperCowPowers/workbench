@@ -45,12 +45,14 @@ def create_markdown(artifact_details: dict) -> str:
         bullet_list = ""
         for value, count in value_counts.items():
             bullet_list += f"<li>{value}: {count}</li>"
-        details_markdown += details_template.replace("<<column_name>>", column_name).replace(
-            "<<bullet_list>>", bullet_list
-        )
+        details_markdown += details_template.replace(
+            "<<column_name>>", column_name
+        ).replace("<<bullet_list>>", bullet_list)
 
     # Now actually replace the column details in the markdown
-    markdown_template = markdown_template.replace("<<column_details_markdown>>", details_markdown)
+    markdown_template = markdown_template.replace(
+        "<<column_details_markdown>>", details_markdown
+    )
     return markdown_template
 
 
@@ -64,4 +66,8 @@ def create(component_id: str, artifact_details: dict) -> dcc.Markdown:
     """
 
     # Generate a figure and wrap it in a Dash Graph Component
-    return dcc.Markdown(id=component_id, children=create_markdown(artifact_details), dangerously_allow_html=True)
+    return dcc.Markdown(
+        id=component_id,
+        children=create_markdown(artifact_details),
+        dangerously_allow_html=True,
+    )

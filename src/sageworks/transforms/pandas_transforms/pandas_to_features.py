@@ -78,19 +78,30 @@ class PandasToFeatures(Transform):
 
     def _ensure_event_time(self):
         """Internal: AWS Feature Store requires an event_time field for all data stored"""
-        if self.event_time_column is None or self.event_time_column not in self.output_df.columns:
+        if (
+            self.event_time_column is None
+            or self.event_time_column not in self.output_df.columns
+        ):
             # current_datetime = datetime.now(timezone.utc)
-            self.log.info("Generating an event_time column before FeatureSet Creation...")
+            self.log.info(
+                "Generating an event_time column before FeatureSet Creation..."
+            )
             self.event_time_column = "event_time"
             self.output_df[self.event_time_column] = pd.Timestamp("now", tz="UTC")
 
         # The event_time_column is defined so lets make sure it the right type for Feature Store
         if pd.api.types.is_datetime64_any_dtype(self.output_df[self.event_time_column]):
-            self.log.info(f"Converting {self.event_time_column} to ISOFormat Date String before FeatureSet Creation...")
+            self.log.info(
+                f"Converting {self.event_time_column} to ISOFormat Date String before FeatureSet Creation..."
+            )
 
             # Convert the datetime DType to ISO-8601 string
-            self.output_df[self.event_time_column] = self.output_df[self.event_time_column].map(datetime_to_iso8601)
-            self.output_df[self.event_time_column] = self.output_df[self.event_time_column].astype(pd.StringDtype())
+            self.output_df[self.event_time_column] = self.output_df[
+                self.event_time_column
+            ].map(datetime_to_iso8601)
+            self.output_df[self.event_time_column] = self.output_df[
+                self.event_time_column
+            ].astype(pd.StringDtype())
 
     def _convert_objs_to_string(self):
         """Internal: AWS Feature Store doesn't know how to store object dtypes, so convert to String"""
@@ -104,7 +115,10 @@ class PandasToFeatures(Transform):
         categorical_columns = []
         for feature, dtype in self.output_df.dtypes.items():
             print(feature, dtype)
-            if dtype in ["object", "string"] and feature not in [self.event_time_column, self.id_column]:
+            if dtype in ["object", "string"] and feature not in [
+                self.event_time_column,
+                self.id_column,
+            ]:
                 unique_values = self.output_df[feature].nunique()
                 print(f"Unique Values = {unique_values}")
                 if unique_values < 5:
@@ -142,7 +156,9 @@ class PandasToFeatures(Transform):
 
     def prep_dataframe(self):
         """Prep the DataFrame for Feature Store Creation"""
-        self.log.info("Prep the output_df (cat_convert, convert types, lowercase columns, add training column)...")
+        self.log.info(
+            "Prep the output_df (cat_convert, convert types, lowercase columns, add training column)..."
+        )
 
         # Make sure we have the required id and event_time columns
         self._ensure_id_column()
@@ -166,13 +182,17 @@ class PandasToFeatures(Transform):
         self.output_df.columns = self.output_df.columns.str.lower()
 
         # Mark 80% of the data as training and 20% as validation/test
-        self.output_df["training"] = np.random.binomial(size=len(self.output_df), n=1, p=0.8)
+        self.output_df["training"] = np.random.binomial(
+            size=len(self.output_df), n=1, p=0.8
+        )
 
     def create_feature_group(self):
         """Create a Feature Group, load our Feature Definitions, and wait for it to be ready"""
 
         # Create a Feature Group and load our Feature Definitions
-        my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
+        my_feature_group = FeatureGroup(
+            name=self.output_uuid, sagemaker_session=self.sm_session
+        )
         my_feature_group.load_feature_definitions(data_frame=self.output_df)
 
         # Create the Output S3 Storage Path for this Feature Set
@@ -204,7 +224,9 @@ class PandasToFeatures(Transform):
         """Transform Implementation: Ingest the data into the Feature Group"""
 
         # Now we actually push the data into the Feature Group
-        ingest_manager = self.output_feature_group.ingest(self.output_df, max_processes=16, wait=False)
+        ingest_manager = self.output_feature_group.ingest(
+            self.output_df, max_processes=16, wait=False
+        )
         ingest_manager.wait()
 
         # Report on any rows that failed to ingest
@@ -219,7 +241,9 @@ class PandasToFeatures(Transform):
 
     def post_transform(self, **kwargs):
         """Post-Transform: Compute the Details, Quartiles, and SampleDF for the FeatureSet"""
-        self.log.info("Post-Transform: Computing Details, Quartiles, and SampleDF for the FeatureSet...")
+        self.log.info(
+            "Post-Transform: Computing Details, Quartiles, and SampleDF for the FeatureSet..."
+        )
 
         # Feature Group Ingestion takes a while, so we need to wait for it to finish
         self.output_feature_set = FeatureSet(self.output_uuid, force_refresh=True)
@@ -227,7 +251,9 @@ class PandasToFeatures(Transform):
 
         # Wait for offline storage of the Feature Group to be ready
         self.log.info("Waiting for Feature Group Offline storage to be ready...")
-        self.log.info("Note: This will often take 10-20 minutes...go have coffee or lunch :)")
+        self.log.info(
+            "Note: This will often take 10-20 minutes...go have coffee or lunch :)"
+        )
         self.wait_for_rows(self.expected_rows)
 
         # Now compute the Details, Quartiles, and SampleDF for the FeatureSet
@@ -255,7 +281,9 @@ class PandasToFeatures(Transform):
         most_rows = expected_rows * 0.99
 
         while rows < most_rows:
-            self.log.info(f"Waiting for AWS Feature Group {self.output_uuid} Offline Storage ({rows} rows)...")
+            self.log.info(
+                f"Waiting for AWS Feature Group {self.output_uuid} Offline Storage ({rows} rows)..."
+            )
             sleep_time = 5 if rows else 30
             time.sleep(sleep_time)
             rows = self.output_feature_set.num_rows()
@@ -273,11 +301,46 @@ if __name__ == "__main__":
     # Create some fake data
     my_datetime = datetime.now(timezone.utc)
     fake_data = [
-        {"id": 1, "name": "sue", "age": 41, "score": 7.8, "date": my_datetime, "cat": "a"},
-        {"id": 2, "name": "bob", "age": 34, "score": 6.4, "date": my_datetime, "cat": "b"},
-        {"id": 3, "name": "ted", "age": 69, "score": 8.2, "date": my_datetime, "cat": "c"},
-        {"id": 4, "name": "bill", "age": 24, "score": 5.3, "date": my_datetime, "cat": "a"},
-        {"id": 5, "name": "sally", "age": 52, "score": 9.5, "date": my_datetime, "cat": "b"},
+        {
+            "id": 1,
+            "name": "sue",
+            "age": 41,
+            "score": 7.8,
+            "date": my_datetime,
+            "cat": "a",
+        },
+        {
+            "id": 2,
+            "name": "bob",
+            "age": 34,
+            "score": 6.4,
+            "date": my_datetime,
+            "cat": "b",
+        },
+        {
+            "id": 3,
+            "name": "ted",
+            "age": 69,
+            "score": 8.2,
+            "date": my_datetime,
+            "cat": "c",
+        },
+        {
+            "id": 4,
+            "name": "bill",
+            "age": 24,
+            "score": 5.3,
+            "date": my_datetime,
+            "cat": "a",
+        },
+        {
+            "id": 5,
+            "name": "sally",
+            "age": 52,
+            "score": 9.5,
+            "date": my_datetime,
+            "cat": "b",
+        },
     ]
     fake_df = pd.DataFrame(fake_data)
 

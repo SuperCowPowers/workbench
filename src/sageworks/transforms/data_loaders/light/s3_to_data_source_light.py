@@ -35,7 +35,9 @@ class S3ToDataSourceLight(Transform):
 
     def input_size_mb(self) -> int:
         """Get the size of the input S3 object in MBytes"""
-        size_in_bytes = wr.s3.size_objects(self.input_uuid, boto3_session=self.boto_session)[self.input_uuid]
+        size_in_bytes = wr.s3.size_objects(
+            self.input_uuid, boto3_session=self.boto_session
+        )[self.input_uuid]
         size_in_mb = round(size_in_bytes / 1_000_000)
         return size_in_mb
 
@@ -61,14 +63,20 @@ class S3ToDataSourceLight(Transform):
         # Sanity Check for S3 Object size
         object_megabytes = self.input_size_mb()
         if object_megabytes > 100:
-            self.log.error(f"S3 Object too big ({object_megabytes} MBytes): Use the S3ToDataSourceHeavy class!")
+            self.log.error(
+                f"S3 Object too big ({object_megabytes} MBytes): Use the S3ToDataSourceHeavy class!"
+            )
             return
 
         # Read in the S3 CSV as a Pandas DataFrame
         if self.datatype == "csv":
-            df = wr.s3.read_csv(self.input_uuid, low_memory=False, boto3_session=self.boto_session)
+            df = wr.s3.read_csv(
+                self.input_uuid, low_memory=False, boto3_session=self.boto_session
+            )
         else:
-            df = wr.s3.read_json(self.input_uuid, lines=True, boto3_session=self.boto_session)
+            df = wr.s3.read_json(
+                self.input_uuid, lines=True, boto3_session=self.boto_session
+            )
 
         # Convert object columns before sending to SageWorks Data Source
         df = self.convert_object_columns(df)
@@ -87,7 +95,9 @@ if __name__ == "__main__":
 
     # Create my Data Loader
     sageworks_config = SageWorksConfig()
-    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+    sageworks_bucket = sageworks_config.get_config_value(
+        "SAGEWORKS_AWS", "S3_BUCKET_NAME"
+    )
     input_path = "s3://" + sageworks_bucket + "/incoming-data/aqsol_public_data.csv"
     output_uuid = "aqsol_data"
     my_loader = S3ToDataSourceLight(input_path, output_uuid)

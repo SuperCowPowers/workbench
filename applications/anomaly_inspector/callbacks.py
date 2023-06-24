@@ -6,7 +6,11 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.feature_set_web_view import FeatureSetWebView
-from sageworks.web_components import data_and_feature_details, vertical_distribution_plots, scatter_plot
+from sageworks.web_components import (
+    data_and_feature_details,
+    distribution_plots,
+    scatter_plot,
+)
 
 
 def refresh_data_timer(app: Dash):
@@ -19,7 +23,10 @@ def refresh_data_timer(app: Dash):
 
 
 def update_feature_sets_table(app: Dash, feature_set_broker: FeatureSetWebView):
-    @app.callback(Output("feature_sets_table", "data"), Input("feature-sets-updater", "n_intervals"))
+    @app.callback(
+        Output("feature_sets_table", "data"),
+        Input("feature-sets-updater", "n_intervals"),
+    )
     def feature_sets_update(_n):
         """Return the table data as a dictionary"""
         feature_set_broker.refresh()
@@ -51,7 +58,10 @@ def table_row_select(app: Dash, table_name: str):
 # Updates the data source details when a row is selected in the summary
 def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebView):
     @app.callback(
-        [Output("feature_details_header", "children"), Output("feature_set_details", "children")],
+        [
+            Output("feature_details_header", "children"),
+            Output("feature_set_details", "children"),
+        ],
         Input("feature_sets_table", "derived_viewport_selected_row_ids"),
     )
     def generate_new_markdown(selected_rows):
@@ -60,7 +70,9 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
             return dash.no_update
         print("Calling FeatureSet Details...")
         feature_details = feature_set_web_view.feature_set_details(selected_rows[0])
-        feature_details_markdown = data_and_feature_details.create_markdown(feature_details)
+        feature_details_markdown = data_and_feature_details.create_markdown(
+            feature_details
+        )
 
         # Name of the data source for the Header
         feature_set_name = feature_set_web_view.feature_set_name(selected_rows[0])
@@ -70,7 +82,9 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
         return [header, feature_details_markdown]
 
 
-def update_feature_set_anomalies_rows(app: Dash, feature_set_web_view: FeatureSetWebView):
+def update_feature_set_anomalies_rows(
+    app: Dash, feature_set_web_view: FeatureSetWebView
+):
     @app.callback(
         [
             Output("feature_sample_rows_header", "children"),
@@ -92,7 +106,9 @@ def update_feature_set_anomalies_rows(app: Dash, feature_set_web_view: FeatureSe
         header = f"Anomalous Rows: {feature_set_name}"
 
         # The columns need to be in a special format for the DataTable
-        column_setup = [{"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns]
+        column_setup = [
+            {"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns
+        ]
 
         # Return the columns and the data
         return [header, column_setup, sample_rows.to_dict("records")]
@@ -128,8 +144,17 @@ def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling FeatureSet Sample Rows Refresh...")
-        smart_sample_rows = feature_set_web_view.feature_set_smart_sample(selected_rows[0])
-        return vertical_distribution_plots.create_figure(smart_sample_rows,
-                                           plot_type="violin",
-                                           figure_args={"box_visible": True, "meanline_visible": True, "showlegend": False, "points": "all"},
-                                           max_plots=48)
+        smart_sample_rows = feature_set_web_view.feature_set_smart_sample(
+            selected_rows[0]
+        )
+        return distribution_plots.create_figure(
+            smart_sample_rows,
+            plot_type="violin",
+            figure_args={
+                "box_visible": True,
+                "meanline_visible": True,
+                "showlegend": False,
+                "points": "all",
+            },
+            max_plots=48,
+        )

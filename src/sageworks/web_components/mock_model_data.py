@@ -26,7 +26,9 @@ class ModelData:
     def get_model_feature_importance(self, row_index):
         """Get the model feature importance for this model (via row_index)"""
         if not isinstance(row_index, int):
-            raise RuntimeError(f"row_index must be an integer not {type(row_index)}: {row_index}")
+            raise RuntimeError(
+                f"row_index must be an integer not {type(row_index)}: {row_index}"
+            )
 
         row = self._data.iloc[row_index]
         return json.loads(row["feature_importance"])
