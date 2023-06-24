@@ -23,6 +23,10 @@ def column_setup(df: pd.DataFrame,
             show_columns.remove("id")
         if "uuid" in show_columns:
             show_columns.remove("uuid")
+        if "x" in show_columns:
+            show_columns.remove("x")
+        if "y" in show_columns:
+            show_columns.remove("y")
 
     # Column Setup with name, id, and presentation type
     column_setup_list = []
@@ -53,14 +57,6 @@ def create(
 
     # To select rows we need to set up an ID for each row
     df["id"] = df.index
-
-    # Only show these columns
-    if not show_columns:
-        show_columns = df.columns.to_list()
-        if "id" in show_columns:
-            show_columns.remove("id")
-        if "uuid" in show_columns:
-            show_columns.remove("uuid")
 
     # Column Setup with name, id, and presentation type
     column_setup_list = column_setup(df, show_columns, markdown_columns)
