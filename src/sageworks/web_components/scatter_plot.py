@@ -7,10 +7,11 @@ import numpy as np
 
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
-def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
+def create_figure(df: pd.DataFrame, title: str = "Outlier Groups") -> plotly.graph_objs.Figure:
     """Create a Scatter Plot
     Args:
         df (pd.DataFrame): The dataframe containing the data.
+        title (str): The title for the plot
     Returns:
         plotly.graph_objs.Figure: A Figure object containing the generated plots.
     """
@@ -34,7 +35,7 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
         y="y",
         opacity=0.75,
         color="cluster",
-        title="Outlier Groups",
+        title=title,
         color_discrete_sequence=color_map,
     )
     fig.update_layout(
@@ -50,16 +51,16 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
     return fig
 
 
-def create(component_id: str, title: str, df: pd.DataFrame) -> dcc.Graph:
+def create(component_id: str, df: pd.DataFrame, title: str = "Outlier Groups") -> dcc.Graph:
     """Create a Graph Component for vertical distribution plots.
 
     Args:
         component_id (str): The ID of the UI component
-        title (str): The title for the plot
         df (pd.DataFrame): A dataframe of data
+        title (str): The title for the plot
     Returns:
         dcc.Graph: A Dash Graph Component representing the vertical distribution plots.
     """
 
     # Generate a figure and wrap it in a Dash Graph Component
-    return dcc.Graph(id=component_id, figure=create_figure(df))
+    return dcc.Graph(id=component_id, figure=create_figure(df, title=title))

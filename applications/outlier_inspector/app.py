@@ -73,9 +73,7 @@ violin = distribution_plots.create(
 )
 
 # Create the anomaly cluster plot
-cluster_plot = scatter_plot.create(
-    "anomaly_scatter_plot", "Outlier Groups", anomalous_rows
-)
+cluster_plot = scatter_plot.create("anomaly_scatter_plot", anomalous_rows, "Outlier Groups")
 
 # Create our components
 components = {
