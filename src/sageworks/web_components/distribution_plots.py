@@ -32,9 +32,7 @@ def calculate_height(num_rows: int):
 
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
-def create_figure(
-    df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots: int
-) -> plotly.graph_objs.Figure:
+def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots: int) -> plotly.graph_objs.Figure:
     """Create a set of plots for the numeric columns in the dataframe.
 
     Args:
@@ -59,12 +57,8 @@ def create_figure(
         return go.Figure()
 
     numeric_columns = list(df.select_dtypes("number").columns)
-    numeric_columns = [
-        col for col in numeric_columns if len(df[col].unique()) > 1
-    ]  # Only columns > 1 unique value
-    numeric_columns = [
-        col for col in numeric_columns if col not in ["id", "Id", "ID", "Id_"]
-    ]  # Remove id columns
+    numeric_columns = [col for col in numeric_columns if len(df[col].unique()) > 1]  # Only columns > 1 unique value
+    numeric_columns = [col for col in numeric_columns if col not in ["id", "Id", "ID", "Id_"]]  # Remove id columns
     numeric_columns = numeric_columns[:max_plots]  # Max plots
 
     # Compute the number of rows and columns
@@ -106,6 +100,4 @@ def create(
     """
 
     # Generate a figure and wrap it in a Dash Graph Component
-    return dcc.Graph(
-        id=component_id, figure=create_figure(df, plot_type, figure_args, max_plots)
-    )
+    return dcc.Graph(id=component_id, figure=create_figure(df, plot_type, figure_args, max_plots))

@@ -40,9 +40,7 @@ class Endpoint(Artifact):
 
         # Grab an AWS Metadata Broker object and pull information for Endpoints
         self.endpoint_name = endpoint_uuid
-        self.endpoint_meta = self.aws_broker.get_metadata(
-            ServiceCategory.ENDPOINTS
-        ).get(self.endpoint_name)
+        self.endpoint_meta = self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS).get(self.endpoint_name)
         self.endpoint_return_columns = None
         self.exit_on_error = exit_on_error
 
@@ -52,9 +50,7 @@ class Endpoint(Artifact):
     def check(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.endpoint_meta is None:
-            self.log.info(
-                f"Endpoint.check() {self.endpoint_name} not found in AWS Metadata!"
-            )
+            self.log.info(f"Endpoint.check() {self.endpoint_name} not found in AWS Metadata!")
             return False
         return True
 
@@ -81,9 +77,7 @@ class Endpoint(Artifact):
             print("Processing...")
 
             # Compute partial DataFrames, add them to a list, and concatenate at the end
-            partial_df = self._endpoint_error_handling(
-                predictor, feature_df[index : index + 500]
-            )
+            partial_df = self._endpoint_error_handling(predictor, feature_df[index : index + 500])
             df_list.append(partial_df)
 
         # Concatenate the dataframes
@@ -128,9 +122,7 @@ class Endpoint(Artifact):
         except botocore.exceptions.ClientError as err:
             if err.response["Error"]["Code"] == "ModelError":  # Model Error
                 # Report the error
-                self.log.critical(
-                    f"Endpoint prediction error: {err.response.get('Message')}"
-                )
+                self.log.critical(f"Endpoint prediction error: {err.response.get('Message')}")
                 if self.exit_on_error:
                     sys.exit(1)
 
@@ -141,20 +133,14 @@ class Endpoint(Artifact):
                         raise err
 
                     # Construct an Error DataFrame (one row of NaNs in the return columns)
-                    results_df = self._error_df(
-                        feature_df, self.endpoint_return_columns
-                    )
+                    results_df = self._error_df(feature_df, self.endpoint_return_columns)
                     return results_df
 
                 # Recurse on binary splits of the dataframe
                 num_rows = len(feature_df)
                 split = int(num_rows / 2)
-                first_half = self._endpoint_error_handling(
-                    predictor, feature_df[0:split]
-                )
-                second_half = self._endpoint_error_handling(
-                    predictor, feature_df[split:num_rows]
-                )
+                first_half = self._endpoint_error_handling(predictor, feature_df[0:split])
+                second_half = self._endpoint_error_handling(predictor, feature_df[split:num_rows])
                 return pd.concat([first_half, second_half], ignore_index=True)
 
             else:
@@ -164,9 +150,7 @@ class Endpoint(Artifact):
     def _error_df(self, df, all_columns):
         """Internal: Method to construct an Error DataFrame (a Pandas DataFrame with one row of NaNs)"""
         # Create a new dataframe with all NaNs
-        error_df = pd.DataFrame(
-            dict(zip(all_columns, [[np.NaN]] * len(self.endpoint_return_columns)))
-        )
+        error_df = pd.DataFrame(dict(zip(all_columns, [[np.NaN]] * len(self.endpoint_return_columns))))
         # Now set the original values for the incoming dataframe
         for column in df.columns:
             error_df[column] = df[column].values
@@ -206,12 +190,8 @@ class Endpoint(Artifact):
 
         # Compute the metrics
         metrics = {
-            "MAE": mean_absolute_error(
-                prediction_df[target], prediction_df["prediction"]
-            ),
-            "RMSE": sqrt(
-                mean_squared_error(prediction_df[target], prediction_df["prediction"])
-            ),
+            "MAE": mean_absolute_error(prediction_df[target], prediction_df["prediction"]),
+            "RMSE": sqrt(mean_squared_error(prediction_df[target], prediction_df["prediction"])),
             "R2": r2_score(prediction_df[target], prediction_df["prediction"]),
         }
 

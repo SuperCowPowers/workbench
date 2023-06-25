@@ -6,9 +6,7 @@ import pandas as pd
 
 
 # Helper Functions
-def column_setup(
-    df: pd.DataFrame, show_columns: list[str] = None, markdown_columns: list[str] = None
-) -> list:
+def column_setup(df: pd.DataFrame, show_columns: list[str] = None, markdown_columns: list[str] = None) -> list:
     """Internal: Get the column information for the given DataFrame
     Args:
         df: The DataFrame to get the column information
@@ -32,9 +30,7 @@ def column_setup(
     # Column Setup with name, id, and presentation type
     column_setup_list = []
     for c in show_columns:
-        presentation = (
-            "markdown" if markdown_columns and c in markdown_columns else "input"
-        )
+        presentation = "markdown" if markdown_columns and c in markdown_columns else "input"
         # Check for a numeric column
         if df[c].dtype in ["float64", "float32"]:
             print(f"Column {c} is numeric")
@@ -97,11 +93,10 @@ def style_data_conditional(color_column: str = None) -> list:
         color_map = color_map_setup(hex_color_map)
         style_cells += [
             {
-                "if": {
-                    "filter_query": f"{{cluster}} = {lookup}"
-                },
-                "backgroundColor": f"{color_map[lookup % len_color_map]}"
-            } for lookup in range(len_color_map)
+                "if": {"filter_query": f"{{cluster}} = {lookup}"},
+                "backgroundColor": f"{color_map[lookup % len_color_map]}",
+            }
+            for lookup in range(len_color_map)
         ]
 
     return style_cells
@@ -164,9 +159,7 @@ def create(
         },
         tooltip_header=column_types,
         markdown_options={"html": True},
-        style_header_conditional=[
-            {"if": {"column_id": "remove"}, "color": "transparent"}
-        ],
+        style_header_conditional=[{"if": {"column_id": "remove"}, "color": "transparent"}],
         style_cell_conditional=[
             {"if": {"column_id": "remove"}, "width": "10px", "padding": "0px 0px 0px 0px"},
         ],

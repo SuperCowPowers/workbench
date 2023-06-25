@@ -30,9 +30,7 @@ class DataSource:
         aws_meta(): Returns ALL AWS Metadata for this DataSource
     """
 
-    def __new__(
-        cls, uuid, force_refresh: bool = False, data_source_type: str = "athena"
-    ):
+    def __new__(cls, uuid, force_refresh: bool = False, data_source_type: str = "athena"):
         """DataSource: A Factory for DataSources (Athena, RDS, etc)
         Args:
             uuid: The UUID of the DataSource
@@ -44,9 +42,7 @@ class DataSource:
         if data_source_type == "athena":
             return AthenaSource(uuid, force_refresh=force_refresh)
         else:
-            raise NotImplementedError(
-                f"DataSource type {data_source_type} not implemented"
-            )
+            raise NotImplementedError(f"DataSource type {data_source_type} not implemented")
 
 
 if __name__ == "__main__":

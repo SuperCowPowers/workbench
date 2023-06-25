@@ -25,9 +25,7 @@ def refresh_data_timer(app: Dash):
 
 
 def update_models_table(app: Dash, model_broker: ModelWebView):
-    @app.callback(
-        Output("models_table", "data"), Input("models-updater", "n_intervals")
-    )
+    @app.callback(Output("models_table", "data"), Input("models-updater", "n_intervals"))
     def feature_sets_update(_n):
         """Return the table data as a dictionary"""
         model_broker.refresh()

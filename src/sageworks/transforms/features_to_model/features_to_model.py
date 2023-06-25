@@ -35,9 +35,7 @@ class FeaturesToModel(Transform):
         self.model_script_dir = None
         self.model_description = None
 
-    def generate_model_script(
-        self, target: str, feature_list: list[str], model_type: str
-    ) -> str:
+    def generate_model_script(self, target: str, feature_list: list[str], model_type: str) -> str:
         """Fill in the model template with specific target and feature_list
         Args:
             target (str): Column name of the target variable
@@ -67,9 +65,7 @@ class FeaturesToModel(Transform):
             fp.write(xgb_script)
         return script_name
 
-    def transform_impl(
-        self, target, description, feature_list=None, model_type="regression"
-    ):
+    def transform_impl(self, target, description, feature_list=None, model_type="regression"):
         """Generic Features to Model: Note you should create a new class and inherit from
         this one to include specific logic for your Feature Set/Model
         Args:
@@ -94,9 +90,7 @@ class FeaturesToModel(Transform):
             # - Don't include the target columns
             # - Don't include any columns that are of type string or timestamp
             # - The rest of the columns are assumed to be features
-            self.log.warning(
-                "Guessing at the feature list, HIGHLY SUGGESTED to specify an explicit feature list!"
-            )
+            self.log.warning("Guessing at the feature list, HIGHLY SUGGESTED to specify an explicit feature list!")
             all_columns = feature_set.column_names()
             filter_list = [
                 "id",
@@ -113,11 +107,7 @@ class FeaturesToModel(Transform):
             # Note: AWS Feature Store has 4 column types (string, integral, fractional, and timestamp)
             # Note2: The 'bigint' type = integral and 'double' type = fractional
             column_details = feature_set.column_details()
-            feature_list = [
-                c
-                for c in feature_list
-                if column_details[c] not in ["string", "timestamp"]
-            ]
+            feature_list = [c for c in feature_list if column_details[c] not in ["string", "timestamp"]]
             self.log.info(f"Guessed feature list: {feature_list}")
 
         # Generate our model script

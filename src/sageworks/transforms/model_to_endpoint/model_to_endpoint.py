@@ -35,9 +35,7 @@ class ModelToEndpoint(Transform):
         model_package_arn = Model(self.input_uuid).model_arn()
 
         # Create a Model Package
-        model_package = ModelPackage(
-            role=self.sageworks_role_arn, model_package_arn=model_package_arn
-        )
+        model_package = ModelPackage(role=self.sageworks_role_arn, model_package_arn=model_package_arn)
 
         # Delete endpoint (if it already exists)
         self.delete_endpoint()

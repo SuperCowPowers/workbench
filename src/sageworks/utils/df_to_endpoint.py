@@ -116,9 +116,7 @@ def endpoint_to_dataframe_tests():
 
     # Invoke an Endpoint
     endpoint_name = "smiles-to-rdkit-mordred"
-    endpoint = Predictor(
-        endpoint_name, serializer=CSVSerializer(), deserializer=CSVDeserializer()
-    )
+    endpoint = Predictor(endpoint_name, serializer=CSVSerializer(), deserializer=CSVDeserializer())
 
     # Use the DataFrame helper method
     print(f"Calling Endpoint: {endpoint_name}...")

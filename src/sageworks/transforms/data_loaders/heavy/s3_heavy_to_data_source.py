@@ -33,9 +33,7 @@ class S3HeavyToDataSource:
         # Our Spark Context
         self.glue_context = glue_context
 
-    def column_conversions(
-        self, dyf: DynamicFrame, time_columns: list = []
-    ) -> DynamicFrame:
+    def column_conversions(self, dyf: DynamicFrame, time_columns: list = []) -> DynamicFrame:
         """Convert columns in the DynamicFrame to the correct data types
         Args:
             dyf (DynamicFrame): The DynamicFrame to convert
@@ -53,11 +51,7 @@ class S3HeavyToDataSource:
         output_dyf = DynamicFrame.fromDF(spark_df, self.glue_context, "output_dyf")
 
         # Now resolve any 'choice' columns
-        specs = [
-            (field.name, "cast:long")
-            for field in dyf.schema().fields
-            if field.dataType.typeName() == "choice"
-        ]
+        specs = [(field.name, "cast:long") for field in dyf.schema().fields if field.dataType.typeName() == "choice"]
         print(specs)
         if specs:
             output_dyf = output_dyf.resolveChoice(specs=specs)
@@ -156,10 +150,7 @@ class S3HeavyToDataSource:
             spark_type = col.dataType.typeName()
             return athena_type_map.get(spark_type, spark_type)
 
-        column_name_types = [
-            {"Name": col.name, "Type": to_athena_type(col)}
-            for col in output_dyf.schema().fields
-        ]
+        column_name_types = [{"Name": col.name, "Type": to_athena_type(col)} for col in output_dyf.schema().fields]
         table_input = {
             "Name": self.output_uuid,
             "Description": description,

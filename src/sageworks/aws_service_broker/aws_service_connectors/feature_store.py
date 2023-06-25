@@ -29,14 +29,10 @@ class FeatureStore(Connector):
         # Grab all the Feature Groups in the AWS Feature Store
         print("Reading Feature Store Database...")
         _feature_groups = self.sm_client.list_feature_groups()["FeatureGroupSummaries"]
-        _fg_names = [
-            feature_group["FeatureGroupName"] for feature_group in _feature_groups
-        ]
+        _fg_names = [feature_group["FeatureGroupName"] for feature_group in _feature_groups]
 
         # Get the details for each Feature Group and convert to a data structure with direct lookup
-        self.feature_data = {
-            name: self._feature_group_details(name) for name in _fg_names
-        }
+        self.feature_data = {name: self._feature_group_details(name) for name in _fg_names}
 
         # Additional details under the sageworks_meta section for each Feature Group
         for fg_name in _fg_names:
@@ -65,34 +61,26 @@ class FeatureStore(Connector):
     def athena_database_name(self, feature_group_name: str) -> str:
         """Get the Athena Database Name for a specific feature group"""
         try:
-            return self.feature_data[feature_group_name]["OfflineStoreConfig"][
-                "DataCatalogConfig"
-            ]["Database"].lower()
+            return self.feature_data[feature_group_name]["OfflineStoreConfig"]["DataCatalogConfig"]["Database"].lower()
         except KeyError:
             return "-"
 
     def athena_table_name(self, feature_group_name: str) -> str:
         """Get the Athena Table Name for a specific feature group"""
         try:
-            return self.feature_data[feature_group_name]["OfflineStoreConfig"][
-                "DataCatalogConfig"
-            ]["TableName"]
+            return self.feature_data[feature_group_name]["OfflineStoreConfig"]["DataCatalogConfig"]["TableName"]
         except KeyError:
             return "-"
 
     def s3_storage(self, feature_group_name: str) -> str:
         """Get the S3 Location for a specific feature group"""
-        return self.feature_data[feature_group_name]["OfflineStoreConfig"][
-            "S3StorageConfig"
-        ]["ResolvedOutputS3Uri"]
+        return self.feature_data[feature_group_name]["OfflineStoreConfig"]["S3StorageConfig"]["ResolvedOutputS3Uri"]
 
     def _feature_group_details(self, feature_group_name: str) -> dict:
         """Internal: Do not call this method directly, use feature_group_details() instead"""
 
         # Grab the Feature Group details from the AWS Feature Store
-        details = self.sm_client.describe_feature_group(
-            FeatureGroupName=feature_group_name
-        )
+        details = self.sm_client.describe_feature_group(FeatureGroupName=feature_group_name)
         return details
 
     def snapshot_query(self, feature_group_name: str) -> str:

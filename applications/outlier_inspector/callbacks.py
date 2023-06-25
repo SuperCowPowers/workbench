@@ -71,9 +71,7 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
             return dash.no_update
         print("Calling DataSource Details...")
         data_source_details = data_source_web_view.data_source_details(selected_rows[0])
-        data_source_details_markdown = data_and_feature_details.create_markdown(
-            data_source_details
-        )
+        data_source_details_markdown = data_and_feature_details.create_markdown(data_source_details)
 
         # Name of the data source for the Header
         data_source_name = data_source_web_view.data_source_name(selected_rows[0])
@@ -139,9 +137,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
-        smart_sample_rows = data_source_web_view.data_source_smart_sample(
-            selected_rows[0]
-        )
+        smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
         return distribution_plots.create_figure(
             smart_sample_rows,
             plot_type="violin",

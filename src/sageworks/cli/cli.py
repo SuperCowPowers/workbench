@@ -37,9 +37,7 @@ def cli_create_config(bucket_name, file_path):
     if len(bucket_name) > 63:
         bucket_name = bucket_name[0:63]
     if not file_path or not Path(file_path).is_file():
-        file_path = str(
-            Path().home() / ".config" / "sageworks" / "sageworks_config.ini"
-        )
+        file_path = str(Path().home() / ".config" / "sageworks" / "sageworks_config.ini")
     config = configparser.ConfigParser()
     config["SAGEWORKS_AWS"] = {
         "S3_BUCKET_NAME": bucket_name,

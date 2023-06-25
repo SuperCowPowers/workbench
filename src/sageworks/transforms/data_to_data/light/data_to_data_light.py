@@ -31,9 +31,7 @@ class DataToDataLight(Transform):
         """Pull the input DataSource into our Input Pandas DataFrame"""
 
         # Grab the Input (Data Source)
-        self.input_df = DataToPandas(
-            self.input_uuid
-        ).get_output()  # Shorthand for transform, get_output
+        self.input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
 
     def transform_impl(self, **kwargs):
         """Base Class is simply an identity transform"""

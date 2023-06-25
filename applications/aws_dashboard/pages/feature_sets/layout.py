@@ -66,9 +66,7 @@ def feature_sets_layout(
                         width=8,
                     ),
                     # Just the auto updater
-                    dcc.Interval(
-                        id="feature-sets-updater", interval=5000, n_intervals=0
-                    ),
+                    dcc.Interval(id="feature-sets-updater", interval=5000, n_intervals=0),
                 ]
             ),
         ],

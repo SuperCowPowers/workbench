@@ -33,6 +33,4 @@ query = f"SELECT {', '.join(fields)} FROM heavy_dns limit 100000"
 print(query)
 
 # Now actually perform the DataSource to FeatureSet transform
-data_to_features.transform(
-    query=query, id_column=id_field, event_time_column=event_time_field
-)
+data_to_features.transform(query=query, id_column=id_field, event_time_column=event_time_field)

@@ -88,9 +88,7 @@ def data_sources_layout(
                         width=8,
                     ),
                     # Just the auto updater
-                    dcc.Interval(
-                        id="data-sources-updater", interval=5000, n_intervals=0
-                    ),
+                    dcc.Interval(id="data-sources-updater", interval=5000, n_intervals=0),
                 ]
             ),
         ],

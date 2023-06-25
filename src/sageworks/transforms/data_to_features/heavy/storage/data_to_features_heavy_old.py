@@ -92,9 +92,7 @@ class DataToFeaturesHeavy(Transform):
 
         # Create a Feature Group and load our Feature Definitions
         self.log.info(f"Creating FeatureGroup: {self.output_uuid}")
-        my_feature_group = FeatureGroup(
-            name=self.output_uuid, sagemaker_session=self.sm_session
-        )
+        my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
         my_feature_group.load_feature_definitions(data_frame=sample_df)
 
         # Get the metadata/tags to push into AWS
@@ -163,6 +161,4 @@ if __name__ == "__main__":
         "dns_rcode",
     ]
     query = f"SELECT {', '.join(fields)} FROM heavy_dns"
-    data_to_features_heavy.transform(
-        query=query, id_column="flow_id", event_time_column="timestamp"
-    )
+    data_to_features_heavy.transform(query=query, id_column="flow_id", event_time_column="timestamp")

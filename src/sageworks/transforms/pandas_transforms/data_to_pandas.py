@@ -42,12 +42,8 @@ class DataToPandas(Transform):
         # If the data source has more rows than max_rows, do a sample query
         if num_rows > max_rows:
             percentage = round(max_rows * 100.0 / num_rows)
-            self.log.warning(
-                f"DataSource has {num_rows} rows.. sampling down to {max_rows}..."
-            )
-            query = (
-                f"SELECT * FROM {self.input_uuid} TABLESAMPLE BERNOULLI({percentage})"
-            )
+            self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {max_rows}...")
+            query = f"SELECT * FROM {self.input_uuid} TABLESAMPLE BERNOULLI({percentage})"
         else:
             query = f"SELECT * FROM {self.input_uuid}"
 

@@ -20,9 +20,7 @@ class CleanData(DataToDataLight):
         # Call superclass init
         super().__init__(input_data_uuid, output_data_uuid)
 
-    def transform_impl(
-        self, drop_na="any", drop_duplicates=True, drop_outliers=True, **kwargs
-    ):
+    def transform_impl(self, drop_na="any", drop_duplicates=True, drop_outliers=True, **kwargs):
         """Simple Clean Data, will improve later"""
 
         """

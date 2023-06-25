@@ -65,11 +65,7 @@ if __name__ == "__main__":
     from pathlib import Path
 
     # Get the path to the dataset in the repository data directory
-    data_path = str(
-        Path(sys.modules["sageworks"].__file__).parent.parent.parent
-        / "data"
-        / "test_data.csv"
-    )
+    data_path = str(Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv")
 
     # Create my Data Loader
     my_loader = CSVToDataSource(data_path, "test_data")

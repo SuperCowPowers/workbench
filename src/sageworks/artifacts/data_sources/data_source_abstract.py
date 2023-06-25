@@ -35,9 +35,7 @@ class DataSourceAbstract(Artifact):
 
     def column_details(self) -> dict:
         """Return the column details for this Data Source"""
-        return {
-            name: type_ for name, type_ in zip(self.column_names(), self.column_types())
-        }
+        return {name: type_ for name, type_ in zip(self.column_names(), self.column_types())}
 
     @abstractmethod
     def query(self, query: str) -> pd.DataFrame:

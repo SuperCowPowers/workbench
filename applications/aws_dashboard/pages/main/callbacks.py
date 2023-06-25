@@ -12,9 +12,7 @@ all_data = None
 
 
 def update_last_updated(app: Dash, sageworks_artifacts: ArtifactsWebView):
-    @app.callback(
-        Output("last-updated", "children"), Input("main-updater", "n_intervals")
-    )
+    @app.callback(Output("last-updated", "children"), Input("main-updater", "n_intervals"))
     def time_updated(n):
         global all_data
         print("Calling ALL Artifact Refresh...")
@@ -224,10 +222,7 @@ def remove_artifact_callbacks(app: Dash):
                     "table_row": modal_trigger_state_store.get("table_row"),
                 },
             )
-        if (
-            trigger_input == "yes-button"
-            and modal_trigger_state_store.get("table_name") in tables
-        ):
+        if trigger_input == "yes-button" and modal_trigger_state_store.get("table_name") in tables:
             return (
                 False,
                 no_update,
@@ -246,9 +241,7 @@ def remove_artifact_callbacks(app: Dash):
             table_name = trigger_input.replace("_", " ").title()
             table_row = tables[trigger_input][0]["row"]
             artifact_uuid = tables[trigger_input][1][int(table_row)]["uuid"]
-            modal_body = (
-                f'Are you sure you want to remove "{artifact_uuid}" from {table_name}?'
-            )
+            modal_body = f'Are you sure you want to remove "{artifact_uuid}" from {table_name}?'
             modal_trigger_state_store = {
                 "table_name": trigger_input,
                 "table_row": table_row,

@@ -45,9 +45,7 @@ class FeatureSet(Artifact):
 
         # Sanity check and then set up our FeatureSet attributes
         if self.feature_meta is None:
-            self.log.info(
-                f"Could not find feature set {self.feature_set_name} within current visibility scope"
-            )
+            self.log.info(f"Could not find feature set {self.feature_set_name} within current visibility scope")
             self.data_source = None
             return
         else:
@@ -55,16 +53,12 @@ class FeatureSet(Artifact):
             self.event_time = self.feature_meta["EventTimeFeatureName"]
 
             # Pull Athena and S3 Storage information from metadata
-            self.athena_database = self.feature_meta["sageworks_meta"].get(
-                "athena_database"
-            )
+            self.athena_database = self.feature_meta["sageworks_meta"].get("athena_database")
             self.athena_table = self.feature_meta["sageworks_meta"].get("athena_table")
             self.s3_storage = self.feature_meta["sageworks_meta"].get("s3_storage")
 
             # Create our internal DataSource (hardcoded to Athena for now)
-            self.data_source = AthenaSource(
-                self.athena_table, self.athena_database, force_refresh=force_refresh
-            )
+            self.data_source = AthenaSource(self.athena_table, self.athena_database, force_refresh=force_refresh)
 
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
@@ -77,26 +71,18 @@ class FeatureSet(Artifact):
         Args:
             force_refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
         """
-        _catalog_meta = self.aws_broker.get_metadata(
-            ServiceCategory.FEATURE_STORE, force_refresh=force_refresh
-        )
+        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=force_refresh)
         return _catalog_meta.get(self.feature_set_name)
 
     def check(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.feature_meta is None:
-            self.log.info(
-                f"FeatureSet.check() {self.feature_set_name} not found in AWS Metadata!"
-            )
+            self.log.info(f"FeatureSet.check() {self.feature_set_name} not found in AWS Metadata!")
             return False
         else:  # Also check our Data Source
             if not self.data_source.check():
-                self.log.critical(
-                    f"Data Source check failed for {self.feature_set_name}"
-                )
-                self.log.critical(
-                    "Delete this Feature Set and recreate it to fix this issue"
-                )
+                self.log.critical(f"Data Source check failed for {self.feature_set_name}")
+                self.log.critical("Delete this Feature Set and recreate it to fix this issue")
                 return False
         # AOK
         return True
@@ -123,10 +109,7 @@ class FeatureSet(Artifact):
 
     def column_details(self) -> dict:
         """Return the column details of the Feature Set"""
-        return {
-            item["FeatureName"]: item["FeatureType"]
-            for item in self.feature_meta["FeatureDefinitions"]
-        }
+        return {item["FeatureName"]: item["FeatureType"] for item in self.feature_meta["FeatureDefinitions"]}
 
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""
@@ -164,9 +147,7 @@ class FeatureSet(Artifact):
         """
         return self.feature_store
 
-    def create_s3_training_data(
-        self, training_split=80, test_split=20, val_split=0
-    ) -> str:
+    def create_s3_training_data(self, training_split=80, test_split=20, val_split=0) -> str:
         """Create some Training Data (S3 CSV) from a Feature Set using standard options. If you want
         additional options/features use the get_feature_store() method and see AWS docs for all
         the details: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
@@ -180,28 +161,20 @@ class FeatureSet(Artifact):
 
         # Set up the S3 Query results path
         date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
-        s3_output_path = (
-            self.feature_sets_s3_path
-            + f"/{self.feature_set_name}/datasets/all_{date_time}"
-        )
+        s3_output_path = self.feature_sets_s3_path + f"/{self.feature_set_name}/datasets/all_{date_time}"
 
         # Get the snapshot query
         query = self.snapshot_query()
 
         # Make the query
-        athena_query = FeatureGroup(
-            name=self.feature_set_name, sagemaker_session=self.sm_session
-        ).athena_query()
+        athena_query = FeatureGroup(name=self.feature_set_name, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
         self.log.info("Waiting for Athena Query...")
         athena_query.wait()
         query_execution = athena_query.get_query_execution()
 
         # Get the full path to the S3 files with the results
-        full_s3_path = (
-            s3_output_path
-            + f"/{query_execution['QueryExecution']['QueryExecutionId']}.csv"
-        )
+        full_s3_path = s3_output_path + f"/{query_execution['QueryExecution']['QueryExecutionId']}.csv"
         return full_s3_path
 
     def snapshot_query(self):
@@ -233,9 +206,7 @@ class FeatureSet(Artifact):
             meta = self.sageworks_meta()
 
             # Hack for AWS URL
-            meta["aws_url"] = (
-                meta["aws_url"].replace("__question__", "?").replace("__pound__", "#")
-            )
+            meta["aws_url"] = meta["aws_url"].replace("__question__", "?").replace("__pound__", "#")
             return meta
 
         # Create a dictionary of details
@@ -258,9 +229,7 @@ class FeatureSet(Artifact):
         details["storage_uuid"] = self.data_source.uuid
 
         # SageMaker Tags have a bunch of constraints so we need to do some replacements
-        details["aws_url"] = (
-            self.aws_url().replace("?", "__question__").replace("#", "__pound__")
-        )
+        details["aws_url"] = self.aws_url().replace("?", "__question__").replace("#", "__pound__")
 
         # Convert any datetime fields to ISO-8601 strings
         details = convert_all_to_iso8601(details)
@@ -275,9 +244,7 @@ class FeatureSet(Artifact):
         """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
 
         # Delete the Feature Group and ensure that it gets deleted
-        remove_fg = FeatureGroup(
-            name=self.feature_set_name, sagemaker_session=self.sm_session
-        )
+        remove_fg = FeatureGroup(name=self.feature_set_name, sagemaker_session=self.sm_session)
         remove_fg.delete()
         self.ensure_feature_group_deleted(remove_fg)
 

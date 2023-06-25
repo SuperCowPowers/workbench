@@ -88,9 +88,7 @@ class DataSourceWebView(ArtifactsWebView):
 
     def data_source_name(self, data_source_index: int) -> (str, None):
         """Helper method for getting the data source name for the given DataSource Index"""
-        if not self.data_sources_df.empty and data_source_index < len(
-            self.data_sources_df
-        ):
+        if not self.data_sources_df.empty and data_source_index < len(self.data_sources_df):
             data_uuid = self.data_sources_df.iloc[data_source_index]["uuid"]
             return data_uuid
         else:

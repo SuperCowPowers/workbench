@@ -45,12 +45,8 @@ def setup_model_details_view():
     details = model_details.create(model_info.get_model_details(0))
     c_matrix = confusion_matrix.create(model_info.get_model_confusion_matrix(0))
     scatter = scatter_plot.create("model_scatter", model_df)
-    my_feature_importance = feature_importance.create(
-        model_info.get_model_feature_importance(0)
-    )
-    my_feature_details = feature_details.create(
-        model_info.get_model_feature_importance(0)
-    )
+    my_feature_importance = feature_importance.create(model_info.get_model_feature_importance(0))
+    my_feature_details = feature_details.create(model_info.get_model_feature_importance(0))
     components = {
         "model_table": model_table,
         "model_details": details,

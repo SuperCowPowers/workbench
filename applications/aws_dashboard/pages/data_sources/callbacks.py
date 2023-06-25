@@ -98,9 +98,7 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
         header = f"Sampled Rows: {data_source_name}"
 
         # The columns need to be in a special format for the DataTable
-        column_setup = [
-            {"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns
-        ]
+        column_setup = [{"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns]
 
         # Return the columns and the data
         return [header, column_setup, sample_rows.to_dict("records")]
@@ -119,9 +117,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling DataSource Sample Rows Refresh...")
-        smart_sample_rows = data_source_web_view.data_source_smart_sample(
-            selected_rows[0]
-        )
+        smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
         return distribution_plots.create_figure(
             smart_sample_rows,
             plot_type="violin",

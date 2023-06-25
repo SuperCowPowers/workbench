@@ -63,9 +63,7 @@ class DataToFeaturesChunk(Transform):
         """Convert the Data Source into a Feature Set using Chunking"""
 
         # Create our PandasToFeaturesChunked class
-        to_features = PandasToFeaturesChunked(
-            self.output_uuid, id_column, event_time_column
-        )
+        to_features = PandasToFeaturesChunked(self.output_uuid, id_column, event_time_column)
         to_features.set_output_tags(self.output_tags)
         to_features.set_categorical_info(self.cat_column_info)
 
@@ -103,6 +101,4 @@ if __name__ == "__main__":
         "dns_rcode",
     ]
     query = f"SELECT {', '.join(fields)} FROM heavy_dns limit 1000"
-    data_to_features.transform(
-        query=query, id_column="flow_id", event_time_column="timestamp"
-    )
+    data_to_features.transform(query=query, id_column="flow_id", event_time_column="timestamp")

@@ -62,9 +62,7 @@ class RedisCache:
     def check(cls):
         return cls.redis_db is not None
 
-    def __init__(
-        self, expire=None, prefix="", postfix=""
-    ):  # No expiration, standard 0 db, no postfix on keys
+    def __init__(self, expire=None, prefix="", postfix=""):  # No expiration, standard 0 db, no postfix on keys
         """RedisCache Initialization"""
 
         # Setup instance variables
@@ -72,9 +70,7 @@ class RedisCache:
         self.base_prefix = "sageworks:"  # Prefix all keys with the SageWorks namespace
         self.prefix = prefix if not prefix or prefix.endswith(":") else prefix + ":"
         self.prefix = self.base_prefix + self.prefix
-        self.postfix = (
-            postfix if not postfix or postfix.startswith(":") else ":" + postfix
-        )
+        self.postfix = postfix if not postfix or postfix.startswith(":") else ":" + postfix
 
     def set(self, key, value):
         """Add an item to the redis_cache, all items are JSON serialized
@@ -92,11 +88,7 @@ class RedisCache:
             the value of the item or None if the item isn't in the redis_cache
         """
         raw_value = self._get(key)
-        return (
-            json.loads(raw_value, object_pairs_hook=self.deserialize_datetime)
-            if raw_value
-            else None
-        )
+        return json.loads(raw_value, object_pairs_hook=self.deserialize_datetime) if raw_value else None
 
     def _set(self, key, value):
         """Internal Method: Add an item to the redis_cache"""

@@ -27,13 +27,9 @@ class Model(Artifact):
 
         # Grab an AWS Metadata Broker object and pull information for Models
         self.model_name = model_uuid
-        self.model_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS).get(
-            self.model_name
-        )
+        self.model_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS).get(self.model_name)
         if self.model_meta is None:
-            self.log.warning(
-                f"Could not find model {self.model_name} within current visibility scope"
-            )
+            self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
         else:
             self.latest_model = self.model_meta[0]
             self.description = self.latest_model["ModelPackageDescription"]
@@ -98,9 +94,7 @@ class Model(Artifact):
         # First delete the Model Packages within the Model Group
         for model in self.model_meta:
             self.log.info(f"Deleting Model Package {model['ModelPackageArn']}...")
-            self.sm_client.delete_model_package(
-                ModelPackageName=model["ModelPackageArn"]
-            )
+            self.sm_client.delete_model_package(ModelPackageName=model["ModelPackageArn"])
 
         # Now delete the Model Package Group
         self.log.info(f"Deleting Model Group {self.model_name}...")

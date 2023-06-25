@@ -28,9 +28,7 @@ class ArtifactsTextView(View):
 
     def refresh(self, force_refresh: bool = False) -> None:
         """Refresh data/metadata associated with this view"""
-        self.aws_artifact_data = self.aws_broker.get_all_metadata(
-            force_refresh=force_refresh
-        )
+        self.aws_artifact_data = self.aws_broker.get_all_metadata(force_refresh=force_refresh)
 
     def view_data(self) -> dict:
         """Get all the data that's useful for this view
@@ -152,9 +150,7 @@ class ArtifactsTextView(View):
 
         # Get the SageWorks DataSources
         if "sageworks" in data_catalog:
-            for name, info in data_catalog[
-                "sageworks"
-            ].items():  # Just the sageworks database
+            for name, info in data_catalog["sageworks"].items():  # Just the sageworks database
                 # Get the size of the S3 Storage Object(s)
                 size = self.aws_broker.get_s3_object_sizes(
                     ServiceCategory.DATA_SOURCES_S3,
@@ -213,11 +209,7 @@ class ArtifactsTextView(View):
                 "Size(MB)": size,
                 "Catalog DB": cat_config.get("Database", "-").lower(),
                 "Athena Table": cat_config.get("TableName", "-"),
-                "Online": str(
-                    group_info.get("OnlineStoreConfig", {}).get(
-                        "EnableOnlineStore", "False"
-                    )
-                ),
+                "Online": str(group_info.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
                 "Created": self.datetime_string(group_info.get("CreationTime")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
@@ -297,16 +289,8 @@ class ArtifactsTextView(View):
                 "Name": endpoint_info["EndpointName"],
                 "Status": endpoint_info["EndpointStatus"],
                 "Created": self.datetime_string(endpoint_info.get("CreationTime")),
-                "DataCapture": str(
-                    endpoint_info.get("DataCaptureConfig", {}).get(
-                        "EnableCapture", "False"
-                    )
-                ),
-                "Sampling(%)": str(
-                    endpoint_info.get("DataCaptureConfig", {}).get(
-                        "CurrentSamplingPercentage", "-"
-                    )
-                ),
+                "DataCapture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
+                "Sampling(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
             }

@@ -66,9 +66,7 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
             return dash.no_update
         print("Calling FeatureSet Details...")
         feature_details = feature_set_web_view.feature_set_details(selected_rows[0])
-        feature_details_markdown = data_and_feature_details.create_markdown(
-            feature_details
-        )
+        feature_details_markdown = data_and_feature_details.create_markdown(feature_details)
 
         # Name of the data source for the Header
         feature_set_name = feature_set_web_view.feature_set_name(selected_rows[0])
@@ -100,9 +98,7 @@ def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWe
         header = f"Sampled Rows: {feature_set_name}"
 
         # The columns need to be in a special format for the DataTable
-        column_setup = [
-            {"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns
-        ]
+        column_setup = [{"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns]
 
         # Return the columns and the data
         return [header, column_setup, sample_rows.to_dict("records")]
@@ -121,9 +117,7 @@ def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling FeatureSet Sample Rows Refresh...")
-        smart_sample_rows = feature_set_web_view.feature_set_smart_sample(
-            selected_rows[0]
-        )
+        smart_sample_rows = feature_set_web_view.feature_set_smart_sample(selected_rows[0])
         return distribution_plots.create_figure(
             smart_sample_rows,
             plot_type="violin",
