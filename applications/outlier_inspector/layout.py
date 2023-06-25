@@ -5,8 +5,8 @@ import dash_bootstrap_components as dbc
 
 def data_sources_layout(
     data_sources_table: dash_table.DataTable,
-    data_source_anomalies_rows: dash_table.DataTable,
-    anomaly_scatter_plot: dcc.Graph,
+    data_source_outlier_rows: dash_table.DataTable,
+    outlier_scatter_plot: dcc.Graph,
     data_source_details: dcc.Markdown,
     violin_plot: dcc.Graph,
 ) -> html.Div:
@@ -37,7 +37,7 @@ def data_sources_layout(
             #       (Row(Data Source Details))    Row(Violin Plots)
             #
             dbc.Row(
-                html.H3("Anomalous Rows", id="data_source_anomalies_rows_header"),
+                html.H3("Anomalous Rows", id="data_source_outlier_rows_header"),
                 style={"padding": "30px 0px 10px 0px"},
             ),
             dbc.Row(
@@ -46,7 +46,7 @@ def data_sources_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                data_source_anomalies_rows,
+                                data_source_outlier_rows,
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],
@@ -56,7 +56,7 @@ def data_sources_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                anomaly_scatter_plot,
+                                outlier_scatter_plot,
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],

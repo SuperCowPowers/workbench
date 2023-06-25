@@ -19,7 +19,7 @@ import callbacks
 
 # Create our Dash app
 app = Dash(
-    title="SageWorks: Anomaly Inspector",
+    title="SageWorks: Outlier Inspector",
     external_stylesheets=[dbc.themes.DARKLY],
 )
 
@@ -45,12 +45,12 @@ data_sources_table = table.create(
 details = data_source_broker.data_source_details(0)
 data_details = data_and_feature_details.create("data_source_details", details)
 
-# Grab anomalous rows from the first data source
-anomalous_rows = data_source_broker.data_source_anomalies(0)
+# Grab outlier rows from the first data source
+outlier_rows = data_source_broker.data_source_outliers(0)
 column_types = details["column_details"] if details is not None else None
-data_source_anomalies_rows = table.create(
-    "data_source_anomalies_rows",
-    anomalous_rows,
+data_source_outlier_rows = table.create(
+    "data_source_outlier_rows",
+    outlier_rows,
     column_types=column_types,
     header_color="rgb(60, 60, 100)",
     row_select="single",
@@ -73,18 +73,18 @@ violin = distribution_plots.create(
 )
 
 # Create the anomaly cluster plot
-cluster_plot = scatter_plot.create("anomaly_scatter_plot", anomalous_rows, "Outlier Groups")
+cluster_plot = scatter_plot.create("outlier_scatter_plot", outlier_rows, "Outlier Groups")
 
 # Create our components
 components = {
     "data_sources_table": data_sources_table,
-    "data_source_anomalies_rows": data_source_anomalies_rows,
-    "anomaly_scatter_plot": cluster_plot,
+    "data_source_outlier_rows": data_source_outlier_rows,
+    "outlier_scatter_plot": cluster_plot,
     "data_source_details": data_details,
     "violin_plot": violin,
 }
 
-# Set up our layout (Dash looks for a var called layout)
+# Set up our application layout
 app.layout = data_sources_layout(**components)
 
 # Refresh our data timer
@@ -96,7 +96,7 @@ callbacks.update_data_sources_table(app, data_source_broker)
 # Callbacks for when a data source is selected
 callbacks.table_row_select(app, "data_sources_table")
 callbacks.update_data_source_details(app, data_source_broker)
-callbacks.update_data_source_anomaly_rows(app, data_source_broker)
+callbacks.update_data_source_outlier_rows(app, data_source_broker)
 callbacks.update_cluster_plot(app, data_source_broker)
 callbacks.update_violin_plots(app, data_source_broker)
 

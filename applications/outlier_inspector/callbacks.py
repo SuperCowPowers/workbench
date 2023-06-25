@@ -83,12 +83,12 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
         return [header, data_source_details_markdown]
 
 
-def update_data_source_anomaly_rows(app: Dash, data_source_web_view: DataSourceWebView):
+def update_data_source_outlier_rows(app: Dash, data_source_web_view: DataSourceWebView):
     @app.callback(
         [
-            Output("data_source_anomalies_rows_header", "children"),
-            Output("data_source_anomalies_rows", "columns"),
-            Output("data_source_anomalies_rows", "data"),
+            Output("data_source_outlier_rows_header", "children"),
+            Output("data_source_outlier_rows", "columns"),
+            Output("data_source_outlier_rows", "data"),
         ],
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
@@ -98,7 +98,7 @@ def update_data_source_anomaly_rows(app: Dash, data_source_web_view: DataSourceW
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling DataSource Sample Rows...")
-        sample_rows = data_source_web_view.data_source_anomalies(selected_rows[0])
+        sample_rows = data_source_web_view.data_source_outliers(selected_rows[0])
 
         # Name of the data source
         data_source_name = data_source_web_view.data_source_name(selected_rows[0])
@@ -115,7 +115,7 @@ def update_cluster_plot(app: Dash, data_source_web_view: DataSourceWebView):
     """Updates the Cluster Plot when a new feature set is selected"""
 
     @app.callback(
-        Output("anomaly_scatter_plot", "figure"),
+        Output("outlier_scatter_plot", "figure"),
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
@@ -123,8 +123,8 @@ def update_cluster_plot(app: Dash, data_source_web_view: DataSourceWebView):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
-        anomalous_rows = data_source_web_view.data_source_anomalies(selected_rows[0])
-        return scatter_plot.create_figure(anomalous_rows)
+        outlier_rows = data_source_web_view.data_source_outliers(selected_rows[0])
+        return scatter_plot.create_figure(outlier_rows)
 
 
 def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
