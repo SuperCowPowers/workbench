@@ -1,6 +1,7 @@
 """A table component"""
 from dash import dash_table
 from dash.dash_table.Format import Format
+import plotly.express as px
 import pandas as pd
 
 
@@ -50,6 +51,62 @@ def column_setup(
     return column_setup_list
 
 
+def hex_to_rgb(hex_color: str) -> str:
+    """Internal: Convert a hex color to rgb
+    Args:
+        hex_color: The hex color to convert
+    Returns:
+        str: The rgb color
+    """
+    hex_color = hex_color.lstrip("#")
+    rgb = f"rgba({int(hex_color[:2], 16)}, {int(hex_color[2:4], 16)}, {int(hex_color[4:], 16)}, 0.25)"
+    return rgb
+
+
+def color_map_setup(color_map: list) -> list:
+    """Internal: Add alpha to the given color map
+    Args:
+        color_map: The color map to add alpha to
+    Returns:
+        list: The color map with alpha added
+    """
+    return [hex_to_rgb(color_map[i]) for i in range(len(color_map))]
+
+
+def style_data_conditional(color_column: str = None) -> list:
+    """Internal: Style the cells based on the color column
+    Args:
+        color_column: The column to use for the cell color
+    Returns:
+        list: The cell style information as a list of dicts
+    """
+
+    # This just make a selected cell 'transparent' so it doesn't look selected
+    style_cells = [
+        {
+            "if": {"state": "selected"},
+            "backgroundColor": "inherit !important",
+            "border": "inherit !important",
+        }
+    ]
+
+    # If they want to color the cells based on a column value (like cluster)
+    if color_column is not None:
+        hex_color_map = px.colors.qualitative.Plotly
+        len_color_map = len(hex_color_map)
+        color_map = color_map_setup(hex_color_map)
+        style_cells += [
+            {
+                "if": {
+                    "filter_query": f"{{cluster}} = {lookup}"
+                },
+                "backgroundColor": f"{color_map[lookup % len_color_map]}"
+            } for lookup in range(len_color_map)
+        ]
+
+    return style_cells
+
+
 def create(
     table_id: str,
     df: pd.DataFrame,
@@ -60,6 +117,7 @@ def create(
     markdown_columns: list[str] = None,
     max_height: str = "200px",
     fixed_headers: bool = False,
+    color_column: str = None,
 ) -> dash_table:
     """Create a Table"""
 
@@ -68,6 +126,9 @@ def create(
 
     # Column Setup with name, id, and presentation type
     column_setup_list = column_setup(df, show_columns, markdown_columns)
+
+    # Construct our style_cell_conditionals
+    style_cells = style_data_conditional(color_column)
 
     # Create the Dash Table
     table = dash_table.DataTable(
@@ -107,19 +168,8 @@ def create(
             {"if": {"column_id": "remove"}, "color": "transparent"}
         ],
         style_cell_conditional=[
-            {
-                "if": {"column_id": "remove"},
-                "width": "20px",
-                "padding": "5px 0px 2px 0px",
-                "overflow": "visible",
-            }
+            {"if": {"column_id": "remove"}, "width": "10px", "padding": "0px 0px 0px 0px"},
         ],
-        style_data_conditional=[
-            {
-                "if": {"state": "selected"},
-                "backgroundColor": "inherit !important",
-                "border": "inherit !important",
-            }
-        ],
+        style_data_conditional=style_cells,
     )
     return table

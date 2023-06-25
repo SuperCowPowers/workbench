@@ -102,7 +102,7 @@ def update_data_source_outlier_rows(app: Dash, data_source_web_view: DataSourceW
 
         # Name of the data source
         data_source_name = data_source_web_view.data_source_name(selected_rows[0])
-        header = f"Anomalous Rows: {data_source_name}"
+        header = f"Outlier Rows: {data_source_name}"
 
         # The columns need to be in a special format for the DataTable
         column_setup_list = table.column_setup(sample_rows)

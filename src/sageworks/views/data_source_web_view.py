@@ -37,8 +37,8 @@ class DataSourceWebView(ArtifactsWebView):
         else:
             return pd.DataFrame()
 
-    def data_source_anomalies(self, data_source_index: int) -> pd.DataFrame:
-        """Get a dataframe of anomalies for the given DataSource Index"""
+    def data_source_outliers(self, data_source_index: int) -> pd.DataFrame:
+        """Get a dataframe of outliers for the given DataSource Index"""
         data_uuid = self.data_source_name(data_source_index)
         if data_uuid is not None:
             ds = DataSource(data_uuid)

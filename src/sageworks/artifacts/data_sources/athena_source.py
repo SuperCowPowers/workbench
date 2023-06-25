@@ -1,5 +1,6 @@
 """AthenaSource: SageWorks Data Source accessible through Athena"""
 import pandas as pd
+import numpy as np
 import awswrangler as wr
 from datetime import datetime
 import json
@@ -391,14 +392,14 @@ class AthenaSource(DataSourceAbstract):
             self.log.warning(
                 "No outliers found for this DataSource, returning empty DataFrame"
             )
-            outlier_df = pd.DataFrame(columns=self.column_names())
+            outlier_df = pd.DataFrame(columns=self.column_names()+["cluster"])
 
         # Project the outliers onto an x,y plane
-        if project:
+        if project and outlier_df.shape[0] > 0:
             self.log.info("Projecting outliers onto an x,y plane...")
             outlier_features.append("cluster")
             self.log.info(f"Outlier features: {outlier_features}")
-            perplexity = min(50, len(outlier_df) - 1)
+            perplexity = min(40, len(outlier_df) - 1)
             self.log.info(f"Perplexity: {perplexity}")
             projection = TSNE(perplexity=perplexity).fit_transform(
                 outlier_df[outlier_features]
@@ -407,6 +408,10 @@ class AthenaSource(DataSourceAbstract):
             # Put the projection results back into the outlier_df
             outlier_df["x"] = projection[:, 0]  # Projection X Column
             outlier_df["y"] = projection[:, 1]  # Projection Y Column
+
+            # Adding Jitter to the projection
+            outlier_df["x"] += np.random.normal(0, .05, len(outlier_df))
+            outlier_df["y"] += np.random.normal(0, .05, len(outlier_df))
 
         # Store the sample_df in our SageWorks metadata
         rows_json = outlier_df.to_json(orient="records", lines=True)

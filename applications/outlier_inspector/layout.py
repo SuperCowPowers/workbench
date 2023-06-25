@@ -15,7 +15,7 @@ def data_sources_layout(
         children=[
             dbc.Row(
                 [
-                    html.H2("SageWorks: Anomaly Inspector (Alpha)"),
+                    html.H2("SageWorks: Outlier Inspector (Alpha)"),
                     html.Div(
                         "Last Updated: ",
                         id="last-updated-data-sources",
@@ -30,19 +30,19 @@ def data_sources_layout(
             ),
             # List out all the Data Sources
             dbc.Row(data_sources_table),
-            # Data Source Details, Anomalous Rows, Scatter Plot, and Violin Plots
+            # Data Source Details, Outlier Rows, Scatter Plot, and Violin Plots
             # Row [ Column 1                      Column 2 ]
-            #       (Row(Anomalous Rows))         Row(Cluster/Scatter Plot)
+            #       (Row(Outlier Rows))           Row(Cluster/Scatter Plot)
             # Row [ Column 1                      Column 2 ]
             #       (Row(Data Source Details))    Row(Violin Plots)
             #
             dbc.Row(
-                html.H3("Anomalous Rows", id="data_source_outlier_rows_header"),
+                html.H3("Outlier Rows", id="data_source_outlier_rows_header"),
                 style={"padding": "30px 0px 10px 0px"},
             ),
             dbc.Row(
                 [
-                    # Column 1: Anomalous Rows
+                    # Column 1: Outlier Rows
                     dbc.Col(
                         [
                             dbc.Row(

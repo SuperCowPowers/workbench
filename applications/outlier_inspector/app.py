@@ -55,6 +55,7 @@ data_source_outlier_rows = table.create(
     header_color="rgb(60, 60, 100)",
     row_select="single",
     max_height="400px",
+    color_column="cluster",
 )
 
 # Create a box plot of all the numeric columns in the sample rows
@@ -72,7 +73,7 @@ violin = distribution_plots.create(
     max_plots=48,
 )
 
-# Create the anomaly cluster plot
+# Create the outlier cluster plot
 cluster_plot = scatter_plot.create("outlier_scatter_plot", outlier_rows, "Outlier Groups")
 
 # Create our components
