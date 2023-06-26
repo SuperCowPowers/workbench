@@ -511,6 +511,10 @@ table {
   border-collapse: collapse;
 }
 
+tr:hover {
+  background-color: #444444 !important;
+}
+
 tr {
   border: 1px solid #666666;
 }
