@@ -516,7 +516,7 @@ tr:hover {
 }
 
 tr {
-  border: 1px solid #666666;
+  border: 1px solid #444444;
 }
 
 th:not(.CalendarDay),

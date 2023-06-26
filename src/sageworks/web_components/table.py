@@ -142,7 +142,7 @@ def create(
         markdown_options={"html": True},
         style_header_conditional=[{"if": {"column_id": "del"}, "color": "transparent"}],
         style_cell_conditional=[
-            {"if": {"column_id": "del"}, "padding": "5px 0px 0px 0px"},
+            {"if": {"column_id": "del"}, "padding": "7px 0px 0px 0px"},
         ],
         style_data_conditional=style_cells,
     )
