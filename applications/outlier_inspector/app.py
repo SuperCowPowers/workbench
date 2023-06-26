@@ -52,7 +52,7 @@ data_source_outlier_rows = table.create(
     "data_source_outlier_rows",
     outlier_rows,
     column_types=column_types,
-    header_color="rgb(60, 60, 100)",
+    header_color="rgb(80, 80, 80)",
     row_select="single",
     max_height="400px",
     color_column="cluster",

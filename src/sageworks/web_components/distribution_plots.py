@@ -8,8 +8,7 @@ from enum import Enum
 
 
 class PlotType(Enum):
-    """The type of plot"""
-
+    """Enumeration for the plot type"""
     violin = go.Violin
     box = go.Box
 
@@ -28,7 +27,7 @@ def calculate_height(num_rows: int):
     base_height = 300
     if num_rows == 1:
         return base_height
-    return base_height + num_rows * 170
+    return base_height + num_rows * 80
 
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
@@ -64,8 +63,7 @@ def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots
     # Compute the number of rows and columns
     num_plots = len(numeric_columns)
     num_rows, num_columns = compute_rows_columns(num_plots)
-    # print(f"Creating {num_plots} violin plots in {num_rows} rows and {num_columns} columns")
-    fig = make_subplots(rows=num_rows, cols=num_columns)
+    fig = make_subplots(rows=num_rows, cols=num_columns, vertical_spacing=0.07)
     for i, col in enumerate(numeric_columns):
         fig.add_trace(
             figure_object(y=df[col], name=col, **figure_args),

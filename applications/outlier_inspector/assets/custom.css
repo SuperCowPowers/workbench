@@ -515,6 +515,10 @@ tr {
   border: 1px solid #666666;
 }
 
+tr:hover {
+  background-color: #444444 !important;
+}
+
 th:not(.CalendarDay),
 td:not(.CalendarDay) {
   padding: 12px 15px;

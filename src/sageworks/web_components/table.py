@@ -4,6 +4,9 @@ from dash.dash_table.Format import Format
 import plotly.express as px
 import pandas as pd
 
+# Local imports
+from sageworks.web_components.color_maps import color_map_add_alpha
+
 
 # Helper Functions
 def column_setup(df: pd.DataFrame, show_columns: list[str] = None, markdown_columns: list[str] = None) -> list:
@@ -33,7 +36,6 @@ def column_setup(df: pd.DataFrame, show_columns: list[str] = None, markdown_colu
         presentation = "markdown" if markdown_columns and c in markdown_columns else "input"
         # Check for a numeric column
         if df[c].dtype in ["float64", "float32"]:
-            print(f"Column {c} is numeric")
             column_setup_list.append(
                 {
                     "name": c,
@@ -45,28 +47,6 @@ def column_setup(df: pd.DataFrame, show_columns: list[str] = None, markdown_colu
         else:
             column_setup_list.append({"name": c, "id": c, "presentation": presentation})
     return column_setup_list
-
-
-def hex_to_rgb(hex_color: str) -> str:
-    """Internal: Convert a hex color to rgb
-    Args:
-        hex_color: The hex color to convert
-    Returns:
-        str: The rgb color
-    """
-    hex_color = hex_color.lstrip("#")
-    rgb = f"rgba({int(hex_color[:2], 16)}, {int(hex_color[2:4], 16)}, {int(hex_color[4:], 16)}, 0.25)"
-    return rgb
-
-
-def color_map_setup(color_map: list) -> list:
-    """Internal: Add alpha to the given color map
-    Args:
-        color_map: The color map to add alpha to
-    Returns:
-        list: The color map with alpha added
-    """
-    return [hex_to_rgb(color_map[i]) for i in range(len(color_map))]
 
 
 def style_data_conditional(color_column: str = None) -> list:
@@ -90,10 +70,10 @@ def style_data_conditional(color_column: str = None) -> list:
     if color_column is not None:
         hex_color_map = px.colors.qualitative.Plotly
         len_color_map = len(hex_color_map)
-        color_map = color_map_setup(hex_color_map)
+        color_map = color_map_add_alpha(hex_color_map, 0.25)
         style_cells += [
             {
-                "if": {"filter_query": f"{{cluster}} = {lookup}"},
+                "if": {"filter_query": f"{{{color_column}}} = {lookup}"},
                 "backgroundColor": f"{color_map[lookup % len_color_map]}",
             }
             for lookup in range(len_color_map)
@@ -153,7 +133,8 @@ def create(
         },
         style_data={
             "fontSize": 14,
-            "backgroundColor": "rgb(60, 60, 60)",
+            "backgroundColor": "rgba(60, 60, 60, 0.5)",
+            "hoverColor": "rgba(60, 60, 60, 0.5)",
             "color": "rgb(200, 200, 200)",
             "border": "0px",
         },

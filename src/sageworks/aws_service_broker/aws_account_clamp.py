@@ -30,6 +30,13 @@ class AWSAccountClamp:
         role_name = config.get_config_value("SAGEWORKS_AWS", "SAGEWORKS_ROLE_NAME")
         self.role_name = role_name
 
+        # Quick check on SSO Token
+        try:
+            boto3.client("sts").get_caller_identity()
+        except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
+            self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+            sys.exit(1)
+
         # Let's fill in some of the AWS Session details
         self.sageworks_bucket_name = config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
         self.account_id = boto3.client("sts").get_caller_identity()["Account"]
