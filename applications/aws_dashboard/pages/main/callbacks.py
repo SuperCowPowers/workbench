@@ -33,7 +33,7 @@ def update_artifact_tables(app: Dash):
         if trigger_input is None:
             return no_update
         incoming_data = all_data["INCOMING_DATA"]
-        incoming_data["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
+        incoming_data["del"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return incoming_data.to_dict("records")
 
     @app.callback(
@@ -66,7 +66,7 @@ def update_artifact_tables(app: Dash):
                 return no_update
 
         data_sources = all_data["DATA_SOURCES"]
-        data_sources["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
+        data_sources["del"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return data_sources.to_dict("records")
 
     @app.callback(
@@ -98,7 +98,7 @@ def update_artifact_tables(app: Dash):
             else:
                 return no_update
         feature_sets = all_data["FEATURE_SETS"]
-        feature_sets["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
+        feature_sets["del"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return feature_sets.to_dict("records")
 
     @app.callback(
@@ -130,7 +130,7 @@ def update_artifact_tables(app: Dash):
             else:
                 return no_update
         models = all_data["MODELS"]
-        models["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
+        models["del"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return models.to_dict("records")
 
     @app.callback(
@@ -163,7 +163,7 @@ def update_artifact_tables(app: Dash):
                 return no_update
 
         endpoints = all_data["ENDPOINTS"]
-        endpoints["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
+        endpoints["del"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return endpoints.to_dict("records")
 
 
@@ -236,7 +236,7 @@ def remove_artifact_callbacks(app: Dash):
         if (
             trigger_input in tables
             and isinstance(tables[trigger_input][0], dict)
-            and tables[trigger_input][0].get("column_id") == "remove"
+            and tables[trigger_input][0].get("column_id") == "del"
         ):
             table_name = trigger_input.replace("_", " ").title()
             table_row = tables[trigger_input][0]["row"]

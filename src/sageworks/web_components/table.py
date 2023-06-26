@@ -140,9 +140,9 @@ def create(
         },
         tooltip_header=column_types,
         markdown_options={"html": True},
-        style_header_conditional=[{"if": {"column_id": "remove"}, "color": "transparent"}],
+        style_header_conditional=[{"if": {"column_id": "del"}, "color": "transparent"}],
         style_cell_conditional=[
-            {"if": {"column_id": "remove"}, "width": "10px", "padding": "0px 0px 0px 0px"},
+            {"if": {"column_id": "del"}, "padding": "5px 0px 0px 0px"},
         ],
         style_data_conditional=style_cells,
     )

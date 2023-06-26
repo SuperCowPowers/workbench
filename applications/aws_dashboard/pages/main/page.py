@@ -25,7 +25,7 @@ sageworks_artifacts = web_artifacts_summary.view_data()
 
 for df in sageworks_artifacts:
     if df != "INCOMING_DATA" and df != "GLUE_JOBS":
-        sageworks_artifacts[df]["remove"] = "<img src='../assets/trash.png' id='trash-icon'>"
+        sageworks_artifacts[df]["del"] = "<img src='../assets/trash.png' id='trash-icon'>"
 
 # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
 tables = dict()
@@ -45,25 +45,25 @@ tables["DATA_SOURCES"] = table.create(
     table_id="DATA_SOURCES",
     df=sageworks_artifacts["DATA_SOURCES"],
     header_color="rgb(100, 60, 60)",
-    markdown_columns=["Name", "remove"],
+    markdown_columns=["Name", "del"],
 )
 tables["FEATURE_SETS"] = table.create(
     table_id="FEATURE_SETS",
     df=sageworks_artifacts["FEATURE_SETS"],
     header_color="rgb(100, 100, 60)",
-    markdown_columns=["Feature Group", "remove"],
+    markdown_columns=["Feature Group", "del"],
 )
 tables["MODELS"] = table.create(
     table_id="MODELS",
     df=sageworks_artifacts["MODELS"],
     header_color="rgb(60, 100, 60)",
-    markdown_columns=["Model Group", "remove"],
+    markdown_columns=["Model Group", "del"],
 )
 tables["ENDPOINTS"] = table.create(
     table_id="ENDPOINTS",
     df=sageworks_artifacts["ENDPOINTS"],
     header_color="rgb(100, 60, 100)",
-    markdown_columns=["Name", "remove"],
+    markdown_columns=["Name", "del"],
 )
 
 # Create our components
