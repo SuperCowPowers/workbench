@@ -18,17 +18,13 @@ def column_setup(df: pd.DataFrame, show_columns: list[str] = None, markdown_colu
     Returns:
         list: The column information as a list of dicts
     """
+
+    # HARDCODE: Not sure how to get around hard coding these columns
+    dont_show = ["id", "uuid", "write_time", "api_invocation_time", "is_deleted", "x", "y"]
+
     # Only show these columns
     if not show_columns:
-        show_columns = df.columns.to_list()
-        if "id" in show_columns:
-            show_columns.remove("id")
-        if "uuid" in show_columns:
-            show_columns.remove("uuid")
-        if "x" in show_columns:
-            show_columns.remove("x")
-        if "y" in show_columns:
-            show_columns.remove("y")
+        show_columns = [c for c in df.columns.to_list() if c not in dont_show]
 
     # Column Setup with name, id, and presentation type
     column_setup_list = []

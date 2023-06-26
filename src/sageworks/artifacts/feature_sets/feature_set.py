@@ -382,8 +382,8 @@ if __name__ == "__main__":
     print("Quartiles")
     pprint(quartile_info)
 
-    # Get anomalies
-    anom_df = my_features.anomalies()
+    # Get outliers for all the columns
+    anom_df = my_features.outliers()
     print(anom_df)
 
     # Now delete the AWS artifacts associated with this Feature Set

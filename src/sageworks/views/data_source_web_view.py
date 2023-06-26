@@ -57,9 +57,12 @@ class DataSourceWebView(ArtifactsWebView):
     def data_source_smart_sample(self, data_source_index: int) -> pd.DataFrame:
         """Get a SMART sample dataframe for the given DataSource Index
         Note:
-            SMART here means a sample data + quartiles for each column"""
+            SMART here means a sample data + quartiles + outliers for each column"""
         # Sample DataFrame
         sample_rows = self.data_source_sample(data_source_index)
+
+        # Outliers DataFrame
+        outlier_rows = self.data_source_outliers(data_source_index)
 
         # Quartiles Data
         quartiles_data = self.data_source_quartiles(data_source_index)
@@ -73,7 +76,7 @@ class DataSourceWebView(ArtifactsWebView):
         quartiles_df = pd.DataFrame(quartiles_dict_list)
 
         # Combine the sample rows with the quartiles data
-        return pd.concat([sample_rows, quartiles_df]).reset_index(drop=True)
+        return pd.concat([sample_rows, outlier_rows, quartiles_df]).reset_index(drop=True).drop_duplicates()
 
     def data_source_details(self, data_source_index: int) -> (dict, None):
         """Get all of the details for the given DataSource Index"""

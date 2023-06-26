@@ -57,7 +57,10 @@ def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots
 
     numeric_columns = list(df.select_dtypes("number").columns)
     numeric_columns = [col for col in numeric_columns if len(df[col].unique()) > 1]  # Only columns > 1 unique value
-    numeric_columns = [col for col in numeric_columns if col not in ["id", "Id", "ID", "Id_"]]  # Remove id columns
+
+    # HARDCODE: Not sure how to get around hard coding these columns
+    not_show = ["id", "Id", "ID", "uuid", "write_time", "api_invocation_time", "is_deleted", "x", "y", "cluster"]
+    numeric_columns = [col for col in numeric_columns if col not in not_show]
     numeric_columns = numeric_columns[:max_plots]  # Max plots
 
     # Compute the number of rows and columns

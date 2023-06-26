@@ -98,6 +98,7 @@ class Transform(ABC):
             ds.details()
             ds.sample_df()
             ds.quartiles()
+            ds.outliers()
             ds.value_counts()
 
         elif self.output_type == TransformOutput.FEATURE_SET:
@@ -109,6 +110,7 @@ class Transform(ABC):
             fs.details()
             fs.sample_df()
             fs.quartiles()
+            fs.outliers()
             fs.value_counts()
 
     def set_output_tags(self, tags: list | str):

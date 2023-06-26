@@ -6,7 +6,7 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.feature_set_web_view import FeatureSetWebView
-from sageworks.web_components import data_and_feature_details, distribution_plots
+from sageworks.web_components import data_and_feature_details, distribution_plots, table
 
 
 def refresh_data_timer(app: Dash):
@@ -24,7 +24,7 @@ def update_feature_sets_table(app: Dash, feature_set_broker: FeatureSetWebView):
         Input("feature-sets-updater", "n_intervals"),
     )
     def feature_sets_update(_n):
-        """Return the table data as a dictionary"""
+        """Return the table data for the FeatureSets Table"""
         feature_set_broker.refresh()
         feature_set_rows = feature_set_broker.feature_sets_summary()
         feature_set_rows["id"] = feature_set_rows.index
@@ -98,7 +98,7 @@ def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWe
         header = f"Sampled Rows: {feature_set_name}"
 
         # The columns need to be in a special format for the DataTable
-        column_setup = [{"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns]
+        column_setup = table.column_setup(sample_rows)
 
         # Return the columns and the data
         return [header, column_setup, sample_rows.to_dict("records")]

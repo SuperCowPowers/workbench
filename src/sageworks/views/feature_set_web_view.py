@@ -38,8 +38,8 @@ class FeatureSetWebView(ArtifactsWebView):
             status = fs.get_status() if fs.check() else "not found"
             return pd.DataFrame({"uuid": [uuid], "status": [f"{status}"]})
 
-    def feature_set_anomalies(self, feature_set_index: int) -> pd.DataFrame:
-        """Get a dataframe of anomalies for the given FeatureSet Index"""
+    def feature_set_outliers(self, feature_set_index: int) -> pd.DataFrame:
+        """Get a dataframe of outliers for the given FeatureSet Index"""
         uuid = self.feature_set_name(feature_set_index)
         fs = FeatureSet(uuid)
         if fs.check() and fs.get_status() == "ready":
@@ -61,9 +61,12 @@ class FeatureSetWebView(ArtifactsWebView):
     def feature_set_smart_sample(self, feature_set_index: int) -> pd.DataFrame:
         """Get a SMART sample dataframe for the given FeatureSet Index
         Note:
-            SMART here means a sample data + quartiles for each column"""
+            SMART here means a sample data + outliers + quartiles for each column"""
         # Sample DataFrame
         sample_rows = self.feature_set_sample(feature_set_index)
+
+        # Outliers DataFrame
+        outlier_rows = self.feature_set_outliers(feature_set_index)
 
         # Quartiles Data
         quartiles_data = self.feature_set_quartiles(feature_set_index)
@@ -77,7 +80,7 @@ class FeatureSetWebView(ArtifactsWebView):
         quartiles_df = pd.DataFrame(quartiles_dict_list)
 
         # Combine the sample rows with the quartiles data
-        return pd.concat([sample_rows, quartiles_df]).reset_index(drop=True)
+        return pd.concat([sample_rows, outlier_rows, quartiles_df]).reset_index(drop=True).drop_duplicates()
 
     def feature_set_details(self, feature_set_index: int) -> (dict, None):
         """Get all the details for the given FeatureSet Index"""

@@ -233,12 +233,13 @@ class PandasToFeatures(Transform):
         self.log.info("Note: This will often take 10-20 minutes...go have coffee or lunch :)")
         self.wait_for_rows(self.expected_rows)
 
-        # Now compute the Details, Quartiles, and SampleDF for the FeatureSet
+        # Now compute the Details, Quartiles, Samples, and Outliers for the FeatureSet
         self.output_feature_set.details()
         self.output_feature_set.data_source.details()
         self.output_feature_set.value_counts()
         self.output_feature_set.quartiles()
         self.output_feature_set.sample_df()
+        self.output_feature_set.outliers()
         self.output_feature_set.set_status("ready")
 
     def ensure_feature_group_created(self, feature_group):
