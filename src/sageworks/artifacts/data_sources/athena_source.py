@@ -305,7 +305,7 @@ class AthenaSource(DataSourceAbstract):
         # Adding Jitter to the projection
         x_scale = df["x"].max() - df["x"].min()
         y_scale = df["y"].max() - df["y"].min()
-        scale = sqrt(x_scale ** 2 + y_scale ** 2) * 0.025
+        scale = sqrt(x_scale**2 + y_scale**2) * 0.025
         df["x"] += np.random.normal(-scale, +scale, len(df))
         df["y"] += np.random.normal(-scale, +scale, len(df))
 

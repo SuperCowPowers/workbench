@@ -9,6 +9,7 @@ from enum import Enum
 
 class PlotType(Enum):
     """Enumeration for the plot type"""
+
     violin = go.Violin
     box = go.Box
 
