@@ -204,7 +204,7 @@ class AthenaSource(DataSourceAbstract):
 
         # Note: Hardcoded to 100 rows so that metadata storage is consistent
         sample_rows = 100
-        num_rows = self.num_rows()
+        num_rows = self.details()["num_rows"]
         if num_rows > sample_rows:
             # Bernoulli Sampling has reasonable variance, so we're going to +1 the
             # sample percentage and then simply clamp it to 100 rows
@@ -267,26 +267,16 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # Get lower outlier bound
-        query = f"SELECT * from {self.table_name} where {column} < {lower_bound}"
+        query = f"SELECT * from {self.table_name} where {column} < {lower_bound} order by {column} limit 10"
         lower_df = self.query(query)
-
-        # Check for outlier 'overflow'
-        if lower_df.shape[0] > 10:
-            self.log.warning(f"Found {lower_df.shape[0]} outliers for column {column}, down sampling...")
-            lower_df = lower_df.sort_values(column, ascending=True).head(10)
 
         # Check for no results
         if lower_df.shape[0] == 0:
             lower_df = None
 
         # Get upper outlier bound
-        query = f"SELECT * from {self.table_name} where {column} > {upper_bound}"
+        query = f"SELECT * from {self.table_name} where {column} > {upper_bound} order by {column} desc limit 10"
         upper_df = self.query(query)
-
-        # Check for outlier 'overflow'
-        if upper_df.shape[0] > 10:
-            self.log.warning(f"Found {upper_df.shape[0]} outliers for column {column}, down sampling...")
-            upper_df = upper_df.sort_values(column, ascending=False).head(10)
 
         # Check for no results
         if upper_df.shape[0] == 0:
@@ -295,7 +285,8 @@ class AthenaSource(DataSourceAbstract):
         # Return the lower and upper outlier DataFrames
         return lower_df, upper_df
 
-    def resolve_coincident_points(self, df: pd.DataFrame):
+    @staticmethod
+    def resolve_coincident_points(df: pd.DataFrame):
         """Resolve coincident points in a DataFrame
         Args:
             df(pd.DataFrame): The DataFrame to resolve coincident points in
@@ -303,11 +294,11 @@ class AthenaSource(DataSourceAbstract):
             pd.DataFrame: The DataFrame with resolved coincident points
         """
         # Adding Jitter to the projection
-        x_scale = df["x"].max() - df["x"].min()
-        y_scale = df["y"].max() - df["y"].min()
-        scale = sqrt(x_scale**2 + y_scale**2) * 0.025
-        df["x"] += np.random.normal(-scale, +scale, len(df))
-        df["y"] += np.random.normal(-scale, +scale, len(df))
+        x_scale = (df["x"].max() - df["x"].min()) * 0.05
+        y_scale = (df["y"].max() - df["y"].min()) * 0.05
+        df["x"] += np.random.normal(-x_scale, +x_scale, len(df))
+        df["y"] += np.random.normal(-y_scale, +y_scale, len(df))
+        return df
 
     def outliers(self, scale: float = 1.7, recompute: bool = False, project: bool = True) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
@@ -334,13 +325,34 @@ class AthenaSource(DataSourceAbstract):
         quartiles = self.quartiles()
 
         # For every column in the table that is numeric get the outliers
-        self.log.info("Computing outliers for all numeric columns (this may take a while)...")
+        self.log.info("Computing outliers for all columns (this may take a while)...")
         cluster = 0
         outlier_df_list = []
         outlier_features = []
+        outlier_count = self.details()["num_rows"] * 0.01  # 1% of the total rows
+        value_count_info = self.value_counts()
         for column, data_type in zip(self.column_names(), self.column_types()):
             print(column, data_type)
-            if data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
+            # String columns will use the value counts to compute outliers
+            if data_type == "string":
+
+                # Skip columns with too many unique values
+                if len(value_count_info[column]) >= 20:
+                    self.log.warning(f"Skipping column {column} too many unique values")
+                    continue
+                for value, count in value_count_info[column].items():
+                    if count < outlier_count:
+                        self.log.info(f"Found outlier feature {value} for column {column}")
+                        query = f"SELECT * from {self.table_name} where {column} = '{value}' limit 5"
+                        print(query)
+                        df = self.query(query)
+                        df["cluster"] = cluster
+                        df["feature"] = cluster
+                        cluster += 1
+                        outlier_df_list.append(df)
+                        outlier_features.append("feature")
+
+            elif data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
                 iqr = quartiles[column]["q3"] - quartiles[column]["q1"]
 
                 # Catch cases where IQR is 0
@@ -573,7 +585,7 @@ if __name__ == "__main__":
     pprint(value_count_info)
 
     # Get outliers for numeric columns
-    my_outlier_df = my_data.outliers()
+    my_outlier_df = my_data.outliers(recompute=True)
     print("\nOutliers")
     print(my_outlier_df)
 

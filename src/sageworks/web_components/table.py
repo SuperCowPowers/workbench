@@ -72,7 +72,7 @@ def style_data_conditional(color_column: str = None) -> list:
                 "if": {"filter_query": f"{{{color_column}}} = {lookup}"},
                 "backgroundColor": f"{color_map[lookup % len_color_map]}",
             }
-            for lookup in range(len_color_map)
+            for lookup in range(40)
         ]
 
     return style_cells
