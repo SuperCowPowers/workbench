@@ -4,7 +4,6 @@ import numpy as np
 import awswrangler as wr
 from datetime import datetime
 import json
-from math import sqrt
 from sklearn.manifold import TSNE
 
 # SageWorks Imports
