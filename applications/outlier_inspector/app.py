@@ -104,5 +104,5 @@ callbacks.update_violin_plots(app, data_source_broker)
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
     # Note: This 'main' is purely for running/testing locally
-    # app.run_server(host="0.0.0.0", port=8080, debug=True)
-    app.run_server(host="0.0.0.0", port=8080, debug=True)
+    # app.run_server(host="0.0.0.0", port=8081, debug=True)
+    app.run_server(host="0.0.0.0", port=8081)

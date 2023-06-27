@@ -4,6 +4,7 @@ import numpy as np
 import awswrangler as wr
 from datetime import datetime
 import json
+from math import sqrt
 from sklearn.manifold import TSNE
 
 # SageWorks Imports
@@ -294,6 +295,20 @@ class AthenaSource(DataSourceAbstract):
         # Return the lower and upper outlier DataFrames
         return lower_df, upper_df
 
+    def resolve_coincident_points(self, df: pd.DataFrame):
+        """Resolve coincident points in a DataFrame
+        Args:
+            df(pd.DataFrame): The DataFrame to resolve coincident points in
+        Returns:
+            pd.DataFrame: The DataFrame with resolved coincident points
+        """
+        # Adding Jitter to the projection
+        x_scale = df["x"].max() - df["x"].min()
+        y_scale = df["y"].max() - df["y"].min()
+        scale = sqrt(x_scale ** 2 + y_scale ** 2) * 0.025
+        df["x"] += np.random.normal(-scale, +scale, len(df))
+        df["y"] += np.random.normal(-scale, +scale, len(df))
+
     def outliers(self, scale: float = 1.7, recompute: bool = False, project: bool = True) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
@@ -367,9 +382,8 @@ class AthenaSource(DataSourceAbstract):
             outlier_df["x"] = projection[:, 0]  # Projection X Column
             outlier_df["y"] = projection[:, 1]  # Projection Y Column
 
-            # Adding Jitter to the projection
-            outlier_df["x"] += np.random.normal(0, 0.05, len(outlier_df))
-            outlier_df["y"] += np.random.normal(0, 0.05, len(outlier_df))
+            # Resolve coincident points
+            outlier_df = self.resolve_coincident_points(outlier_df)
 
         # Store the sample_df in our SageWorks metadata
         rows_json = outlier_df.to_json(orient="records", lines=True)
@@ -407,14 +421,27 @@ class AthenaSource(DataSourceAbstract):
         value_count_dict = dict()
         for column, data_type in zip(self.column_names(), self.column_types()):
             print(column, data_type)
-            if data_type in ["string"]:
+            if data_type == "string":
+                # Top value counts for this column
                 query = (
                     f'SELECT "{column}", count(*) as count '
                     f"FROM {self.table_name} "
-                    f'GROUP BY "{column}" ORDER BY count DESC limit 20'
+                    f'GROUP BY "{column}" ORDER BY count DESC limit 10'
                 )
+                top_df = self.query(query)
+
+                # Bottom value counts for this column
+                query = (
+                    f'SELECT "{column}", count(*) as count '
+                    f"FROM {self.table_name} "
+                    f'GROUP BY "{column}" ORDER BY count ASC limit 10'
+                )
+                bottom_df = self.query(query).iloc[::-1]  # Reverse the DataFrame
+
+                # Add the top and bottom value counts together
+                result_df = pd.concat([top_df, bottom_df], ignore_index=True).drop_duplicates()
+
                 # Convert int64 to int so that we can serialize to JSON
-                result_df = self.query(query)
                 result_df["count"] = result_df["count"].astype(int)
 
                 # Convert any NA values to 'NaN' so that we can serialize to JSON
