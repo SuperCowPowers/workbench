@@ -266,7 +266,7 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # Get lower outlier bound
-        query = f"SELECT * from {self.table_name} where {column} < {lower_bound} order by {column} limit 10"
+        query = f"SELECT * from {self.table_name} where {column} < {lower_bound} order by {column} limit 5"
         lower_df = self.query(query)
 
         # Check for no results
@@ -274,7 +274,7 @@ class AthenaSource(DataSourceAbstract):
             lower_df = None
 
         # Get upper outlier bound
-        query = f"SELECT * from {self.table_name} where {column} > {upper_bound} order by {column} desc limit 10"
+        query = f"SELECT * from {self.table_name} where {column} > {upper_bound} order by {column} desc limit 5"
         upper_df = self.query(query)
 
         # Check for no results
@@ -328,7 +328,7 @@ class AthenaSource(DataSourceAbstract):
         cluster = 0
         outlier_df_list = []
         outlier_features = []
-        outlier_count = self.details()["num_rows"] * 0.01  # 1% of the total rows
+        outlier_count = self.details()["num_rows"] * 0.001  # 0.1% of the total rows
         value_count_info = self.value_counts()
         for column, data_type in zip(self.column_names(), self.column_types()):
             print(column, data_type)
@@ -356,7 +356,7 @@ class AthenaSource(DataSourceAbstract):
 
                 # Catch cases where IQR is 0
                 if iqr == 0:
-                    self.log.warning(f"IQR is 0 for column {column}, skipping...")
+                    self.log.info(f"IQR is 0 for column {column}, skipping...")
                     continue
 
                 # Compute dataframes for the lower and upper bounds
@@ -559,9 +559,9 @@ if __name__ == "__main__":
     print(f"Tags: {my_data.sageworks_tags()}")
 
     # Get a sample of the data
-    df = my_data.sample_df()
-    print(f"Sample Data: {df.shape}")
-    print(df)
+    my_df = my_data.sample_df()
+    print(f"Sample Data: {my_df.shape}")
+    print(my_df)
 
     # Get the SageWorks Metadata for this Data Source
     meta = my_data.sageworks_meta()

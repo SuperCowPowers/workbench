@@ -67,7 +67,7 @@ class ArtifactsTextView(View):
         for name, df in self.view_data().items():
             print(self.header_text(name))
             if df.empty:
-                print("\tNo ArtifactsTextView Found")
+                print("\tNo Artifacts Found")
             else:
                 # Remove any columns that start with _
                 df = df.loc[:, ~df.columns.str.startswith("_")]
