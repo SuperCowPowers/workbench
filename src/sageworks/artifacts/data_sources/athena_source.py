@@ -334,7 +334,6 @@ class AthenaSource(DataSourceAbstract):
             print(column, data_type)
             # String columns will use the value counts to compute outliers
             if data_type == "string":
-
                 # Skip columns with too many unique values
                 if len(value_count_info[column]) >= 20:
                     self.log.warning(f"Skipping column {column} too many unique values")
