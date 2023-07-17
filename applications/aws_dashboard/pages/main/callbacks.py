@@ -11,12 +11,12 @@ from sageworks.artifacts.artifact import Artifact
 all_data = None
 
 
-def update_last_updated(app: Dash, sageworks_artifacts: ArtifactsWebView):
+def update_last_updated(app: Dash, sageworks_artifacts: ArtifactsWebView, force_refresh=False):
     @app.callback(Output("last-updated", "children"), Input("main-updater", "n_intervals"))
     def time_updated(n):
         global all_data
         print("Calling ALL Artifact Refresh...")
-        sageworks_artifacts.refresh()
+        sageworks_artifacts.refresh(force_refresh=force_refresh)
         all_data = sageworks_artifacts.view_data()
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
@@ -254,4 +254,8 @@ def remove_artifact(data, row, Artifact: Artifact):
     artifact = Artifact(data[int(row)]["uuid"])
     artifact.delete()
     del data[int(row)]
+
+    # Now we need to do a force_refresh on the SageWorks Artifacts
+    # FIXME: TODO
+    # update_last_updated(app: Dash, sageworks_artifacts: ArtifactsWebView, force_refresh = False):
     return data
