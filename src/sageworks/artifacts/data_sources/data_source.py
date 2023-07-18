@@ -40,7 +40,14 @@ class DataSource:
             object: A concrete DataSource class (AthenaSource, RDSSource)
         """
         if data_source_type == "athena":
-            return AthenaSource(uuid, force_refresh=force_refresh)
+
+            # We're going to check both regular DataSources and DataSources
+            # that are storage locations for FeatureSets
+            ds = AthenaSource(uuid, force_refresh=force_refresh)
+            if ds.check():
+                return ds
+            else:
+                return AthenaSource(uuid, "sagemaker_featurestore", force_refresh=force_refresh)
         else:
             raise NotImplementedError(f"DataSource type {data_source_type} not implemented")
 

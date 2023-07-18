@@ -203,11 +203,15 @@ class FeatureSet(Artifact):
         # First check if we have already computed the details
         if self.sageworks_meta().get("details_computed") and not recompute:
             # Get the SageWorks Metadata
-            meta = self.sageworks_meta()
+            details = self.sageworks_meta()
 
             # Hack for AWS URL
-            meta["aws_url"] = meta["aws_url"].replace("__question__", "?").replace("__pound__", "#")
-            return meta
+            details["aws_url"] = details["aws_url"].replace("__question__", "?").replace("__pound__", "#")
+
+            # Now we need to get the details from the underlying DataSource
+            details["storage_details"] = self.data_source.details()
+
+            return details
 
         # Create a dictionary of details
         details = dict()
@@ -228,7 +232,8 @@ class FeatureSet(Artifact):
         details["storage_type"] = "athena"  # TODO: Add RDS support
         details["storage_uuid"] = self.data_source.uuid
 
-        # SageMaker Tags have a bunch of constraints so we need to do some replacements
+        # These details will be stored in AWS (as tags). AWS tags have
+        # a bunch of constraints so we need to do some replacements
         details["aws_url"] = self.aws_url().replace("?", "__question__").replace("#", "__pound__")
 
         # Convert any datetime fields to ISO-8601 strings
