@@ -328,7 +328,8 @@ class AthenaSource(DataSourceAbstract):
         cluster = 0
         outlier_df_list = []
         outlier_features = []
-        outlier_count = self.details()["num_rows"] * 0.001  # 0.1% of the total rows
+        num_rows = self.details()["num_rows"]
+        outlier_count = num_rows * 0.001  # 0.1% of the total rows
         value_count_info = self.value_counts()
         for column, data_type in zip(self.column_names(), self.column_types()):
             print(column, data_type)
@@ -338,6 +339,10 @@ class AthenaSource(DataSourceAbstract):
                 if len(value_count_info[column]) >= 20:
                     self.log.warning(f"Skipping column {column} too many unique values")
                     continue
+                # Skip columns with a bunch of small values
+                if not any(value > num_rows/20 for value in value_count_info[column].values()):
+                    self.log.warning(f"Skipping column {column} too many small values")
+                    continue
                 for value, count in value_count_info[column].items():
                     if count < outlier_count:
                         self.log.info(f"Found outlier feature {value} for column {column}")
@@ -345,10 +350,8 @@ class AthenaSource(DataSourceAbstract):
                         print(query)
                         df = self.query(query)
                         df["cluster"] = cluster
-                        df["feature"] = cluster
                         cluster += 1
                         outlier_df_list.append(df)
-                        outlier_features.append("feature")
 
             elif data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
                 iqr = quartiles[column]["q3"] - quartiles[column]["q1"]
