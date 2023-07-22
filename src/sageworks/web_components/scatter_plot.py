@@ -7,7 +7,7 @@ import numpy as np
 
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)
-def create_figure(df: pd.DataFrame, title: str = "Outlier Groups") -> plotly.graph_objs.Figure:
+def create_figure(df: pd.DataFrame, title: str = "Compound Clusters") -> plotly.graph_objs.Figure:
     """Create a Scatter Plot
     Args:
         df (pd.DataFrame): The dataframe containing the data.
@@ -49,7 +49,7 @@ def create_figure(df: pd.DataFrame, title: str = "Outlier Groups") -> plotly.gra
     return fig
 
 
-def create(component_id: str, df: pd.DataFrame, title: str = "Outlier Groups") -> dcc.Graph:
+def create(component_id: str, df: pd.DataFrame, title: str = "Compound Clusters") -> dcc.Graph:
     """Create a Graph Component for vertical distribution plots.
 
     Args:
