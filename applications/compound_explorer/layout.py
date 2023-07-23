@@ -3,7 +3,6 @@ from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 
 # FIXME
-import rdkit
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.Draw.rdMolDraw2D import SetDarkMode
@@ -127,6 +126,7 @@ def data_sources_layout(
                             ),
                         ],
                         width=3,
+                        id="compound_diagram",
                     ),
                 ],
             ),

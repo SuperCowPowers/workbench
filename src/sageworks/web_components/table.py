@@ -92,8 +92,8 @@ def create(
 ) -> dash_table:
     """Create a Table"""
 
-    # To select rows we need to set up an ID for each row
-    df["id"] = df.index
+    # To select rows we need to set up an (0->N) ID for each row
+    df["id"] = range(len(df))
 
     # Column Setup with name, id, and presentation type
     column_setup_list = column_setup(df, show_columns, markdown_columns)

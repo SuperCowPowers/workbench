@@ -97,12 +97,13 @@ callbacks.update_data_sources_table(app, data_source_broker)
 # Callbacks for when a data source is selected
 callbacks.table_row_select(app, "data_sources_table")
 callbacks.update_data_source_details(app, data_source_broker)
-callbacks.update_compound_rows(app, data_source_broker)
 callbacks.update_cluster_plot(app, data_source_broker)
 callbacks.update_violin_plots(app, data_source_broker)
+callbacks.update_compound_rows(app, data_source_broker)
+callbacks.update_compound_diagram(app)
 
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
     # Note: This 'main' is purely for running/testing locally
-    # app.run_server(host="0.0.0.0", port=8081, debug=True)
-    app.run_server(host="0.0.0.0", port=8081)
+    app.run_server(host="0.0.0.0", port=8081, debug=True)
+    # app.run_server(host="0.0.0.0", port=8081)
