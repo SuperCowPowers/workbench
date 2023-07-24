@@ -125,8 +125,8 @@ def update_compound_rows(app: Dash, data_source_web_view: DataSourceWebView):
 def update_compound_diagram(app: Dash):
     @app.callback(
         Output("compound_diagram", "children"),
-        Input("compound_rows", "derived_viewport_selected_row_ids"),
-        State("compound_rows", "data"),
+        Input("compound_rows", "derived_viewport_selected_rows"),
+        State("compound_rows", "derived_viewport_data"),
         prevent_initial_call=True,
     )
     def diagram_update(selected_rows, compound_data):
@@ -144,9 +144,6 @@ def update_compound_diagram(app: Dash):
         if m is None:
             print("**** Molecule is None ****")
             return dash.no_update
-        # dos = Draw.MolDrawOptions()
-        # SetDarkMode(dos)
-        # dos.setBackgroundColour((0, 0, 0, 0))
 
         # New 'Children' for the Compound Diagram
         children = [
