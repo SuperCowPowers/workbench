@@ -340,7 +340,7 @@ class AthenaSource(DataSourceAbstract):
                     self.log.warning(f"Skipping column {column} too many unique values")
                     continue
                 # Skip columns with a bunch of small values
-                if not any(value > num_rows/20 for value in value_count_info[column].values()):
+                if not any(value > num_rows / 20 for value in value_count_info[column].values()):
                     self.log.warning(f"Skipping column {column} too many small values")
                     continue
                 for value, count in value_count_info[column].items():

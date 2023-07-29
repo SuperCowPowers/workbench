@@ -37,7 +37,6 @@ class DataSourceEDA:
 
 if __name__ == "__main__":
     """Exercise the DataSourceEDA Class"""
-    # from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
     # Set some pandas options
     pd.set_option("display.max_columns", None)
