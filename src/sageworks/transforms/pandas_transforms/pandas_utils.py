@@ -31,8 +31,16 @@ def column_dtypes(df):
     return s
 
 
-def examples(df, non_numeric_columns):
+def old_examples(df, non_numeric_columns):
     first_n = [df[c].unique()[:5].tolist() if c in non_numeric_columns else ["-"] for c in df.columns]
+    first_n = [", ".join([str(x) for x in _list]) for _list in first_n]
+    s = pd.Series(first_n, df.columns)
+    s.name = "examples"
+    return s
+
+
+def examples(df):
+    first_n = [df[c].unique()[:5].tolist() for c in df.columns]
     first_n = [", ".join([str(x) for x in _list]) for _list in first_n]
     s = pd.Series(first_n, df.columns)
     s.name = "examples"
@@ -48,8 +56,8 @@ def info(df):
     s3 = unique(df)
 
     # Remove all the numeric columns from the original dataframe
-    non_numeric_columns = df.select_dtypes(exclude="number").columns.tolist()
-    s4 = examples(df, non_numeric_columns)
+    # non_numeric_columns = df.select_dtypes(exclude="number").columns.tolist()
+    s4 = examples(df)
 
     # Concatenate the series together
     return pd.concat([s0, s1, s2, s3, s4], axis=1)
@@ -130,7 +138,7 @@ def drop_outliers_sdev(input_df: pd.DataFrame, sigma: float = 2.0) -> pd.DataFra
     """Drop outliers from a dataframe
     Args:
         input_df (pd.DataFrame): Input DataFrame
-        scale (float, optional): Scale to use for Standard Deviation. Defaults to 3.0.
+        sigma (float, optional): Scale to use for Standard Deviation. Defaults to 2.0.
     Returns:
         pd.DataFrame: DataFrame with outliers dropped
     """
@@ -144,7 +152,7 @@ def drop_outliers_sdev(input_df: pd.DataFrame, sigma: float = 2.0) -> pd.DataFra
 
 
 def displayable_df(input_df: pd.DataFrame) -> pd.DataFrame:
-    """Create a displayable dataframe from FeatureSet data
+    """Experimental: Create a displayable dataframe from FeatureSet data
     Args:
         input_df (pd.DataFrame): Input DataFrame
     Returns:
@@ -156,21 +164,12 @@ def displayable_df(input_df: pd.DataFrame) -> pd.DataFrame:
 
     # Okay, so this is a bit of a hack, but we need to replace all but the last underscore
     # run the from_dummies method, then change the column names back to the original
-    """
-    new_column_names = []
-    for col in dummy_cols:
-        count = col.count("_") - 1
-        new_column_names.append(col.replace("_", "-", count))
-    df.rename(columns=dict(zip(dummy_cols, new_column_names)), inplace=True)
-    un_dummy = pd.from_dummies(df[new_column_names], sep="_")
-    un_dummy.columns = un_dummy.columns.str.replace("-", "_")
-    return pd.concat([df.drop(new_column_names, axis=1), un_dummy], axis=1)
-    """
     un_dummy = undummify(df[dummy_cols])
     return pd.concat([df.drop(dummy_cols, axis=1), un_dummy], axis=1)
 
 
 def undummify(df, prefix_sep="_"):
+    """Experimental: Undummify a dataframe"""
     cols2collapse = {prefix_sep.join(item.split(prefix_sep)[:-1]): (prefix_sep in item) for item in df.columns}
     series_list = []
     for col, needs_to_collapse in cols2collapse.items():
@@ -311,21 +310,3 @@ if __name__ == "__main__":
 
     norm_df = drop_outliers_sdev(clean_df)
     log.info(norm_df)
-
-    # Create a FeatureSet and compute it's displayable dataframe
-    fs = FeatureSet("test_feature_set")
-    df = fs.sample_df()
-    print(df.head())
-    display_df = displayable_df(df)
-    print(display_df.head(10))
-
-    # Try with a column that has a '_' in it
-    df.rename(columns={"name": "first_name"}, inplace=True)
-    display_df = displayable_df(df)
-    print(display_df.head(10))
-
-    # TEMP: Try is with our DNS data
-    fs = FeatureSet("dns_features_2")
-    dns_df = fs.query("SELECT * from dns_features_2_1686239028 limit 100")
-    display_df = displayable_df(dns_df)
-    print(display_df.head(10))

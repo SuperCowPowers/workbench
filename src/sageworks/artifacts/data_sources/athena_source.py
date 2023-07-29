@@ -299,12 +299,12 @@ class AthenaSource(DataSourceAbstract):
         df["y"] += np.random.normal(-y_scale, +y_scale, len(df))
         return df
 
-    def outliers(self, scale: float = 1.7, recompute: bool = False, project: bool = True) -> pd.DataFrame:
+    def outliers(self, scale: float = 1.7, recompute: bool = False, project: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             scale(float): The scale to use for the IQR (default: 1.7)
             recompute(bool): Recompute the outliers (default: False)
-            project(bool): Project the outliers onto an x,y plane (default: True)
+            project(bool): Project the outliers onto an x,y plane (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
         Notes:
