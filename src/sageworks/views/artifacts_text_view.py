@@ -6,6 +6,10 @@ from termcolor import colored
 # SageWorks Imports
 from sageworks.views.view import View
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
+from sageworks.artifacts.data_sources.data_source import DataSource
+from sageworks.artifacts.feature_sets.feature_set import FeatureSet
+from sageworks.artifacts.models.model import Model
+from sageworks.artifacts.endpoints.endpoint import Endpoint
 
 
 class ArtifactsTextView(View):
@@ -114,7 +118,7 @@ class ArtifactsTextView(View):
         glue_summary = []
 
         # Get the information about each Glue Job
-        for name, info in glue_meta.items():  # Just the sageworks database
+        for name, info in glue_meta.items():
             summary = {
                 "Name": info["Name"],
                 "GlueVersion": info["GlueVersion"],
@@ -351,6 +355,25 @@ class ArtifactsTextView(View):
             # Hack for constraints on the SageMaker Feature Group Tags
             return aws_url.replace("__question__", "?").replace("__pound__", "#")
 
+    @staticmethod
+    def delete_artifact(artifact_uuid: str):
+        """Delete a SageWorks Artifact
+        Args:
+            artifact_uuid (str): The UUID of the SageWorks Artifact to delete
+        """
+        # Note: This logic can certainly be improved, right now
+        # we are simply searching for the artifact_uuid in each
+        # of the artifact types and deleting it if found.
+        # This is not ideal because it is possible to have
+        # multiple artifacts with the same UUID.
+        for artifact_class in [Endpoint, Model, FeatureSet, DataSource]:
+            print(f"Checking {artifact_class.__name__} {artifact_uuid}...")
+            artifact = artifact_class(artifact_uuid)
+            if artifact.check():
+                print(f"Deleting {artifact_class.__name__} {artifact_uuid}...")
+                artifact.delete()
+                return
+
 
 if __name__ == "__main__":
     import time
@@ -363,6 +386,9 @@ if __name__ == "__main__":
 
     # Give a text summary of all the Artifacts in the AWS Account
     artifacts.summary()
+
+    # Create and then delete a specific artifact
+    artifacts.delete_artifact("test_data")
 
     # Give any broker threads time to finish
     time.sleep(1)
