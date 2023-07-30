@@ -1,5 +1,4 @@
 """FeatureSpider: A Spider for data/feature investigation and QA"""
-# License: Apache 2.0 ©SuperCowPowers LLC
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import KNeighborsRegressor
@@ -10,6 +9,13 @@ from sklearn.preprocessing import StandardScaler
 # Feature Spider Class
 class FeatureSpider:
     def __init__(self, df: pd.DataFrame, features: list, id_column: str, target: str):
+        """FeatureSpider: A Spider for data/feature investigation and QA
+        Args:
+             df: Pandas DataFrame
+             features: List of feature column names
+             id_column: Name of the ID column
+             target: Name of the target column
+        """
         # Check for expected columns (used later)
         for column in [id_column, target] + features:
             if column not in df.columns:
@@ -192,18 +198,7 @@ def test():
 
     # Make some fake data
     data = {
-        "ID": [
-            "id_0",
-            "id_0",
-            "id_2",
-            "id_3",
-            "id_4",
-            "id_5",
-            "id_6",
-            "id_7",
-            "id_8",
-            "id_9",
-        ],
+        "ID": ["id_0", "id_0", "id_2", "id_3", "id_4", "id_5", "id_6", "id_7", "id_8", "id_9"],
         "feat1": [1.0, 1.0, 1.1, 3.0, 4.0, 1.0, 1.0, 1.1, 3.0, 4.0],
         "feat2": [1.0, 1.0, 1.1, 3.0, 4.0, 1.0, 1.0, 1.1, 3.0, 4.0],
         "feat3": [0.1, 0.1, 0.2, 1.6, 2.5, 0.1, 0.1, 0.2, 1.6, 2.5],

@@ -4,7 +4,6 @@ import numpy as np
 import awswrangler as wr
 from datetime import datetime
 import json
-from sklearn.manifold import TSNE
 
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
@@ -284,21 +283,6 @@ class AthenaSource(DataSourceAbstract):
         # Return the lower and upper outlier DataFrames
         return lower_df, upper_df
 
-    @staticmethod
-    def resolve_coincident_points(df: pd.DataFrame):
-        """Resolve coincident points in a DataFrame
-        Args:
-            df(pd.DataFrame): The DataFrame to resolve coincident points in
-        Returns:
-            pd.DataFrame: The DataFrame with resolved coincident points
-        """
-        # Adding Jitter to the projection
-        x_scale = (df["x"].max() - df["x"].min()) * 0.05
-        y_scale = (df["y"].max() - df["y"].min()) * 0.05
-        df["x"] += np.random.normal(-x_scale, +x_scale, len(df))
-        df["y"] += np.random.normal(-y_scale, +y_scale, len(df))
-        return df
-
     def outliers(self, scale: float = 1.7, recompute: bool = False, project: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
@@ -381,22 +365,6 @@ class AthenaSource(DataSourceAbstract):
         else:
             self.log.warning("No outliers found for this DataSource, returning empty DataFrame")
             outlier_df = pd.DataFrame(columns=self.column_names() + ["cluster"])
-
-        # Project the outliers onto an x,y plane
-        if project and outlier_df.shape[0] > 0:
-            self.log.info("Projecting outliers onto an x,y plane...")
-            outlier_features.append("cluster")
-            self.log.info(f"Outlier features: {outlier_features}")
-            perplexity = min(40, len(outlier_df) - 1)
-            self.log.info(f"Perplexity: {perplexity}")
-            projection = TSNE(perplexity=perplexity).fit_transform(outlier_df[outlier_features])
-
-            # Put the projection results back into the outlier_df
-            outlier_df["x"] = projection[:, 0]  # Projection X Column
-            outlier_df["y"] = projection[:, 1]  # Projection Y Column
-
-            # Resolve coincident points
-            outlier_df = self.resolve_coincident_points(outlier_df)
 
         # Store the sample_df in our SageWorks metadata
         rows_json = outlier_df.to_json(orient="records", lines=True)

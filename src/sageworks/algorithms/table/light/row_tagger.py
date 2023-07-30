@@ -1,5 +1,4 @@
 """RowTagger: Generalized Row Tagger (domain specific logic should be captured in a subclass"""
-# License: Apache 2.0 ©SuperCowPowers LLC
 import pandas as pd
 
 # SageWorks Imports
