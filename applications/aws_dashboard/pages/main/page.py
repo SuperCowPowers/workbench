@@ -20,12 +20,13 @@ register_page(
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks
-web_artifacts_summary = ArtifactsWebView()
-sageworks_artifacts = web_artifacts_summary.view_data()
+web_view = ArtifactsWebView()
+sageworks_artifacts = web_view.view_data()
 
-for df in sageworks_artifacts:
-    if df != "INCOMING_DATA" and df != "GLUE_JOBS":
-        sageworks_artifacts[df]["del"] = "<img src='../assets/trash.png' id='trash-icon'>"
+# Add a 'delete' column for all the artifacts listings except for the INCOMING_DATA and GLUE_JOBS
+for category in sageworks_artifacts:
+    if category not in ["INCOMING_DATA", "GLUE_JOBS"]:
+        sageworks_artifacts[category]["del"] = "<img src='../assets/trash.png' id='trash-icon'>"
 
 # Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
 tables = dict()
@@ -81,6 +82,6 @@ layout = main_layout(**components)
 
 # Setup our callbacks/connections
 app = dash.get_app()
-callbacks.update_last_updated(app, web_artifacts_summary)
+callbacks.update_last_updated(app, web_view)
 callbacks.update_artifact_tables(app)
-callbacks.remove_artifact_callbacks(app)
+callbacks.delete_artifact_callbacks(app, web_view)
