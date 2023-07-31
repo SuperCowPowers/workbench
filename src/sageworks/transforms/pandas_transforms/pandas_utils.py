@@ -202,7 +202,6 @@ def get_dummy_cols(df: pd.DataFrame) -> list:
 if __name__ == "__main__":
     """Exercise the Pandas Utility Methods"""
     import sys
-    from datetime import datetime
     from pathlib import Path
 
     # Setup Pandas output options
