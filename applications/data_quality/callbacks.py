@@ -91,12 +91,12 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
         return [header, data_source_details_markdown]
 
 
-def update_compound_rows(app: Dash, data_source_web_view: DataSourceWebView):
+def update_sample_rows(app: Dash, data_source_web_view: DataSourceWebView):
     @app.callback(
         [
             Output("data_source_rows_header", "children"),
-            Output("compound_rows", "columns"),
-            Output("compound_rows", "data"),
+            Output("sample_rows", "columns"),
+            Output("sample_rows", "data"),
         ],
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
@@ -125,8 +125,8 @@ def update_compound_rows(app: Dash, data_source_web_view: DataSourceWebView):
 def update_compound_diagram(app: Dash):
     @app.callback(
         Output("compound_diagram", "children"),
-        Input("compound_rows", "derived_viewport_selected_rows"),
-        State("compound_rows", "derived_viewport_data"),
+        Input("sample_rows", "derived_viewport_selected_rows"),
+        State("sample_rows", "derived_viewport_data"),
         prevent_initial_call=True,
     )
     def diagram_update(selected_rows, compound_data):

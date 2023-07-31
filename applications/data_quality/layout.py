@@ -15,7 +15,7 @@ dos.setBackgroundColour((0, 0, 0, 0))
 
 def data_sources_layout(
     data_sources_table: dash_table.DataTable,
-    compound_rows: dash_table.DataTable,
+    sample_rows: dash_table.DataTable,
     compound_scatter_plot: dcc.Graph,
     data_source_details: dcc.Markdown,
     violin_plot: dcc.Graph,
@@ -103,7 +103,7 @@ def data_sources_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                compound_rows,
+                                sample_rows,
                                 style={"padding": "0px 0px 0px 0px"},
                             ),
                         ],

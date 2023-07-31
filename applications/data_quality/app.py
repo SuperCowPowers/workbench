@@ -1,4 +1,4 @@
-"""DataSources:  A SageWorks Web Interface to view, interact, and manage Data Sources"""
+"""Data Quality:  A SageWorks Web Interface to display and interact with Data Quality metrics"""
 from dash import Dash
 from dash_bootstrap_templates import load_figure_template
 import dash_bootstrap_components as dbc
@@ -28,7 +28,7 @@ app = Dash(
 # Put the components into 'dark' mode
 load_figure_template("darkly")
 
-# Grab a view that gives us a summary of the FeatureSets in SageWorks
+# Grab a view that gives us a summary of the DataSources in SageWorks
 data_source_broker = DataSourceWebView()
 data_source_rows = data_source_broker.data_sources_summary()
 
@@ -48,8 +48,8 @@ data_details = compound_details.create("data_source_details", details)
 # Grab outlier rows from the first data source
 outlier_rows = data_source_broker.data_source_outliers(0)
 column_types = details["column_details"] if details is not None else None
-compound_rows = table.create(
-    "compound_rows",
+sample_rows = table.create(
+    "sample_rows",
     outlier_rows,
     column_types=column_types,
     header_color="rgb(80, 80, 80)",
@@ -79,7 +79,7 @@ cluster_plot = scatter_plot.create("compound_scatter_plot", outlier_rows, "Compo
 # Create our components
 components = {
     "data_sources_table": data_sources_table,
-    "compound_rows": compound_rows,
+    "sample_rows": sample_rows,
     "compound_scatter_plot": cluster_plot,
     "data_source_details": data_details,
     "violin_plot": violin,
@@ -99,7 +99,7 @@ callbacks.table_row_select(app, "data_sources_table")
 callbacks.update_data_source_details(app, data_source_broker)
 callbacks.update_cluster_plot(app, data_source_broker)
 callbacks.update_violin_plots(app, data_source_broker)
-callbacks.update_compound_rows(app, data_source_broker)
+callbacks.update_sample_rows(app, data_source_broker)
 callbacks.update_compound_diagram(app)
 
 if __name__ == "__main__":

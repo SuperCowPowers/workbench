@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 # SageWorks Imports
 from sageworks.web_components import (
     table,
-    data_and_feature_details,
+    data_details_markdown,
     distribution_plots,
     scatter_plot,
 )
@@ -43,7 +43,7 @@ data_sources_table = table.create(
 
 # Data Source Details
 details = data_source_broker.data_source_details(0)
-data_details = data_and_feature_details.create("data_source_details", details)
+data_details = data_details_markdown.create("data_source_details", details)
 
 # Grab outlier rows from the first data source
 outlier_rows = data_source_broker.data_source_outliers(0)

@@ -8,7 +8,7 @@ from dash.dependencies import Input, Output
 from sageworks.views.data_source_web_view import DataSourceWebView
 from sageworks.web_components import (
     table,
-    data_and_feature_details,
+    data_details_markdown,
     distribution_plots,
     scatter_plot,
 )
@@ -71,7 +71,7 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
             return dash.no_update
         print("Calling DataSource Details...")
         data_source_details = data_source_web_view.data_source_details(selected_rows[0])
-        data_source_details_markdown = data_and_feature_details.create_markdown(data_source_details)
+        data_source_details_markdown = data_details_markdown.create_markdown(data_source_details)
 
         # Name of the data source for the Header
         data_source_name = data_source_web_view.data_source_name(selected_rows[0])
