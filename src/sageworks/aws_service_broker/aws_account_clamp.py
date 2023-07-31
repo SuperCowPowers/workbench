@@ -34,8 +34,9 @@ class AWSAccountClamp:
         try:
             boto3.client("sts").get_caller_identity()
         except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
-            self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
-            sys.exit(1)
+            msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+            self.log.critical(msg)
+            raise RuntimeError(msg)
 
         # Let's fill in some of the AWS Session details
         self.sageworks_bucket_name = config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
@@ -57,9 +58,9 @@ class AWSAccountClamp:
             self.log.info(f"Region: {self.region}")
             return True
         except (ClientError, UnauthorizedSSOTokenError) as exc:
-            self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
-            self.log.critical(exc)
-            sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
+            msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+            self.log.critical(msg)
+            raise RuntimeError(msg)
 
     def check_app_config(self, boto_session: boto3.Session) -> bool:
         """Check if the AWS AppConfig Service is enabled"""
@@ -70,9 +71,9 @@ class AWSAccountClamp:
             appconfig.list_applications()
             return True
         except (ClientError, UnauthorizedSSOTokenError) as exc:
-            self.log.critical("AWS AppConfig Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
-            self.log.critical(exc)
-            sys.exit(1)
+            msg = "AWS AppConfig Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+            self.log.critical(msg)
+            raise RuntimeError(msg)
 
     def check_s3_access(self, boto_session: boto3.Session) -> bool:
         s3 = boto_session.client("s3")
@@ -88,9 +89,9 @@ class AWSAccountClamp:
             if self.role_name in sts.get_caller_identity()["Arn"]:
                 return True
         except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError) as exc:
-            self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
-            self.log.critical(exc)
-            sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
+            msg = "SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+            self.log.critical(msg)
+            raise RuntimeError(msg)
 
     def sageworks_execution_role_arn(self):
         """Get the SageWorks Execution Role"""
@@ -99,13 +100,13 @@ class AWSAccountClamp:
             role_arn = iam.get_role(RoleName=self.role_name)["Role"]["Arn"]
             return role_arn
         except iam.exceptions.NoSuchEntityException as exc:
-            self.log.critical(f"Could Not Find Role {self.role_name}")
-            self.log.critical(exc)
-            sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
+            msg = f"Could Not Find Role {self.role_name}"
+            self.log.critical(msg)
+            raise RuntimeError(msg)
         except UnauthorizedSSOTokenError as exc:
-            self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
-            self.log.critical(exc)
-            sys.exit(1)  # FIXME: Longer term we probably want to raise exc and have caller catch it
+            msg = "SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+            self.log.critical(msg)
+            raise RuntimeError(msg)
 
     def _session_credentials(self):
         """Internal: Set up our AWS Session credentials for automatic refresh"""
