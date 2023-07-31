@@ -40,7 +40,6 @@ class DataSource:
             object: A concrete DataSource class (AthenaSource, RDSSource)
         """
         if data_source_type == "athena":
-
             # We're going to check both regular DataSources and DataSources
             # that are storage locations for FeatureSets
             ds = AthenaSource(uuid, force_refresh=force_refresh)

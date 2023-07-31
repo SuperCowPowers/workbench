@@ -201,107 +201,42 @@ def get_dummy_cols(df: pd.DataFrame) -> list:
 
 if __name__ == "__main__":
     """Exercise the Pandas Utility Methods"""
+    import sys
     from datetime import datetime
-    from sageworks.artifacts.feature_sets.feature_set import FeatureSet
+    from pathlib import Path
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 35)
     pd.set_option("display.max_columns", 15)
     pd.set_option("display.width", 1000)
 
-    # Create some fake data
-    fake_data = [
-        {
-            "id": 1,
-            "name": "sue",
-            "age": pd.NA,
-            "score": 7.8,
-            "date": datetime.now(),
-            "hobby": pd.NA,
-        },
-        {
-            "id": 2,
-            "name": "bob",
-            "age": 34,
-            "score": pd.NA,
-            "date": datetime.now(),
-            "hobby": pd.NA,
-        },
-        {
-            "id": 3,
-            "name": "ted",
-            "age": 69,
-            "score": 8.2,
-            "date": datetime.now(),
-            "hobby": "robots",
-        },
-        {
-            "id": 4,
-            "name": "bill",
-            "age": pd.NA,
-            "score": 7.3,
-            "date": datetime.now(),
-            "hobby": pd.NA,
-        },
-        {
-            "id": 5,
-            "name": "biff",
-            "age": 52,
-            "score": 7.4,
-            "date": datetime.now(),
-            "hobby": "robots",
-        },
-        {
-            "id": 6,
-            "name": "sally",
-            "age": 52,
-            "score": 19.5,
-            "date": datetime.now(),
-            "hobby": "games",
-        },
-        {
-            "id": 7,
-            "name": "sammy",
-            "age": 52,
-            "score": 8.5,
-            "date": datetime.now(),
-            "hobby": "games",
-        },
-        {
-            "id": 8,
-            "name": "jimmy",
-            "age": 54,
-            "score": 7.5,
-            "date": datetime.now(),
-            "hobby": "games",
-        },
-        {
-            "id": 9,
-            "name": "timmy",
-            "age": 53,
-            "score": 7.8,
-            "date": datetime.now(),
-            "hobby": "games",
-        },
-    ]
-    fake_df = pd.DataFrame(fake_data)
-    fake_df["name"] = fake_df["name"].astype(pd.StringDtype())
-    fake_df["age"] = fake_df["age"].astype(pd.Int64Dtype())
-    fake_df["score"] = fake_df["score"].astype(pd.Float64Dtype())
-    fake_df["hobby"] = fake_df["hobby"].astype(pd.StringDtype())
+    # Load some test data
+    data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
+    test_df = pd.read_csv(data_path, parse_dates=["date"])
+
+    # To support NaNs we'll need to convert to the nullable types
+    test_df["age"] = test_df["age"].astype(pd.Int64Dtype())
+    test_df["food"] = test_df["food"].astype(pd.StringDtype())
+
+    # Replace parts of the data with NaNs to flex the tests
+    test_df.loc[0, "food"] = pd.NA
+    test_df.loc[1, "score"] = pd.NA
+    test_df.loc[1, "food"] = pd.NA
+    test_df.loc[3, "age"] = pd.NA
+    test_df.loc[3, "food"] = pd.NA
 
     # Get the info about this dataframe
-    info_df = info(fake_df)
+    info_df = info(test_df)
 
     # Show the info dataframe
     print(info_df)
 
     # Get min/max/mean/median/std for numeric columns
-    stats_df = numeric_stats(fake_df)
+    stats_df = numeric_stats(test_df)
     print(stats_df)
 
     # Clean the DataFrame
-    clean_df = drop_nans(fake_df)
+    clean_df = drop_nans(test_df)
     log.info(clean_df)
 
     # Drop Outliers

@@ -6,7 +6,8 @@ import dash_bootstrap_components as dbc
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.Draw.rdMolDraw2D import SetDarkMode
-m = Chem.MolFromSmiles('O=C1Nc2cccc3cccc1c23')
+
+m = Chem.MolFromSmiles("O=C1Nc2cccc3cccc1c23")
 dos = Draw.MolDrawOptions()
 SetDarkMode(dos)
 dos.setBackgroundColour((0, 0, 0, 0))
@@ -37,7 +38,6 @@ def data_sources_layout(
                         },
                     ),
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
-
                     # Just the auto updater (this isn't visible)
                     dcc.Interval(id="data-sources-updater", interval=5000, n_intervals=0),
                 ]
@@ -75,9 +75,7 @@ def data_sources_layout(
                     dbc.Col(
                         [
                             # Cluster/Scatter Plot
-                            dbc.Row(
-                                compound_scatter_plot
-                            ),
+                            dbc.Row(compound_scatter_plot),
                         ],
                         width=4,
                     ),
@@ -90,7 +88,7 @@ def data_sources_layout(
                             ),
                         ],
                         width=8,
-                    )
+                    ),
                 ]
             ),
             dbc.Row(
@@ -117,7 +115,10 @@ def data_sources_layout(
                                 style={"padding": "0px 0px 0px 0px"},
                             ),
                             dbc.Row(
-                                html.Img(src=Draw.MolToImage(m, options=dos, size=(300, 300)), style={'height': '300', 'width': '300'}),
+                                html.Img(
+                                    src=Draw.MolToImage(m, options=dos, size=(300, 300)),
+                                    style={"height": "300", "width": "300"},
+                                ),
                                 style={"padding": "0px 0px 0px 0px"},
                             ),
                             dbc.Row(

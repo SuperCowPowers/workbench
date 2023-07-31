@@ -1,5 +1,4 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
-import sys
 import boto3
 from botocore.exceptions import (
     ClientError,
@@ -57,7 +56,7 @@ class AWSAccountClamp:
             self.log.info(f"ARN: {identity['Arn']}")
             self.log.info(f"Region: {self.region}")
             return True
-        except (ClientError, UnauthorizedSSOTokenError) as exc:
+        except (ClientError, UnauthorizedSSOTokenError):
             msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
             self.log.critical(msg)
             raise RuntimeError(msg)
@@ -70,7 +69,7 @@ class AWSAccountClamp:
         try:
             appconfig.list_applications()
             return True
-        except (ClientError, UnauthorizedSSOTokenError) as exc:
+        except (ClientError, UnauthorizedSSOTokenError):
             msg = "AWS AppConfig Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
             self.log.critical(msg)
             raise RuntimeError(msg)
@@ -88,7 +87,7 @@ class AWSAccountClamp:
         try:
             if self.role_name in sts.get_caller_identity()["Arn"]:
                 return True
-        except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError) as exc:
+        except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
             msg = "SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
             self.log.critical(msg)
             raise RuntimeError(msg)
@@ -99,11 +98,11 @@ class AWSAccountClamp:
         try:
             role_arn = iam.get_role(RoleName=self.role_name)["Role"]["Arn"]
             return role_arn
-        except iam.exceptions.NoSuchEntityException as exc:
+        except iam.exceptions.NoSuchEntityException:
             msg = f"Could Not Find Role {self.role_name}"
             self.log.critical(msg)
             raise RuntimeError(msg)
-        except UnauthorizedSSOTokenError as exc:
+        except UnauthorizedSSOTokenError:
             msg = "SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
             self.log.critical(msg)
             raise RuntimeError(msg)

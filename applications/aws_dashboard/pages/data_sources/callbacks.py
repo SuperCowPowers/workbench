@@ -66,14 +66,14 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
             return dash.no_update
         print("Calling DataSource Details...")
         data_details = data_source_web_view.data_source_details(selected_rows[0])
-        data_details_markdown = data_details_markdown.create_markdown(data_details)
+        details_markdown = data_details_markdown.create_markdown(data_details)
 
         # Name of the data source for the Header
         data_source_name = data_source_web_view.data_source_name(selected_rows[0])
         header = f"Details: {data_source_name}"
 
         # Return the details/markdown for these data details
-        return [header, data_details_markdown]
+        return [header, details_markdown]
 
 
 def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWebView):

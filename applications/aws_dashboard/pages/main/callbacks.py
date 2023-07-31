@@ -1,11 +1,10 @@
 """Callbacks/Connections in the Web User Interface"""
 from datetime import datetime
-from dash import Dash, no_update, callback_context
+from dash import Dash, no_update
 from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.artifacts_web_view import ArtifactsWebView
-from sageworks.artifacts.artifact import Artifact
 
 # Cheese Sauce
 all_data = None
@@ -66,20 +65,15 @@ def update_artifact_tables(app: Dash):
 
 
 def delete_artifact_callbacks(app: Dash, web_view: ArtifactsWebView):
-
-    @app.callback(
-        Output("modal", "is_open"),
-        Input("DATA_SOURCES", "active_cell"),
-        State("DATA_SOURCES", "data")
-    )
+    @app.callback(Output("modal", "is_open"), Input("DATA_SOURCES", "active_cell"), State("DATA_SOURCES", "data"))
     def delete_data_source(active_cell, table_data):
         global all_data
-        if active_cell is None or active_cell['column_id'] != 'del':
-            print('Delete Cell not pressed...')
+        if active_cell is None or active_cell["column_id"] != "del":
+            print("Delete Cell not pressed...")
             return no_update
 
         # Get the UUID of the artifact to remove
-        uuid = table_data[active_cell['row']].get('uuid')
+        uuid = table_data[active_cell["row"]].get("uuid")
         if uuid:
             print(f"Deleting artifact with UUID: {uuid}...")
             web_view.delete_artifact(uuid)

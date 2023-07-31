@@ -1,6 +1,5 @@
 """AthenaSource: SageWorks Data Source accessible through Athena"""
 import pandas as pd
-import numpy as np
 import awswrangler as wr
 from datetime import datetime
 import json

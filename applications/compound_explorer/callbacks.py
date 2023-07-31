@@ -18,7 +18,8 @@ from sageworks.web_components import (
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.Draw.rdMolDraw2D import SetDarkMode
-first_m = Chem.MolFromSmiles('O=C1Nc2cccc3cccc1c23')
+
+first_m = Chem.MolFromSmiles("O=C1Nc2cccc3cccc1c23")
 dos = Draw.MolDrawOptions()
 SetDarkMode(dos)
 dos.setBackgroundColour((0, 0, 0, 0))
@@ -152,13 +153,13 @@ def update_compound_diagram(app: Dash):
                 style={"padding": "0px 0px 0px 0px"},
             ),
             dbc.Row(
-                html.Img(src=Draw.MolToImage(m, options=dos, size=(300, 300)), style={'height': '300', 'width': '300'}),
+                html.Img(src=Draw.MolToImage(m, options=dos, size=(300, 300)), style={"height": "300", "width": "300"}),
                 style={"padding": "0px 0px 0px 0px"},
             ),
             dbc.Row(
                 html.H5(f"Molecular Weight: {mol_weight}"),
                 style={"padding": "0px 0px 0px 0px"},
-            )
+            ),
         ]
 
         # Return the children of the Compound Diagram
