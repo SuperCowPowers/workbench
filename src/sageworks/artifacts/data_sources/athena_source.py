@@ -8,6 +8,7 @@ import json
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.iso_8601 import convert_all_to_iso8601
+from sageworks.algorithms.sql.quartiles import quartiles
 from sageworks.algorithms.sql.outliers import outliers
 
 
@@ -234,23 +235,8 @@ class AthenaSource(DataSourceAbstract):
         if self.sageworks_meta().get("sageworks_quartiles") and not recompute:
             return json.loads(self.sageworks_meta()["sageworks_quartiles"])
 
-        # For every column in the table that is numeric, get the quartiles
-        self.log.info("Computing Quartiles for all numeric columns (this may take a while)...")
-        quartile_data = []
-        for column, data_type in zip(self.column_names(), self.column_types()):
-            print(column, data_type)
-            if data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
-                query = (
-                    f'SELECT MIN("{column}") AS min, '
-                    f'approx_percentile("{column}", 0.25) AS q1, '
-                    f'approx_percentile("{column}", 0.5) AS median, '
-                    f'approx_percentile("{column}", 0.75) AS q3, '
-                    f'MAX("{column}") AS max FROM {self.table_name}'
-                )
-                result_df = self.query(query)
-                result_df["column_name"] = column
-                quartile_data.append(result_df)
-        quartile_dict = pd.concat(quartile_data).set_index("column_name").to_dict(orient="index")
+        # Call the SQL function to compute quartiles
+        quartile_dict = quartiles(self)
 
         # Push the quartile data into our DataSource Metadata
         self.upsert_sageworks_meta({"sageworks_quartiles": quartile_dict})
@@ -459,7 +445,7 @@ if __name__ == "__main__":
     pprint(my_details)
 
     # Get quartiles for numeric columns
-    quartile_info = my_data.quartiles()
+    quartile_info = my_data.quartiles(recompute=True)
     print("\nQuartiles")
     pprint(quartile_info)
 
