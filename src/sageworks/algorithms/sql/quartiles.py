@@ -45,6 +45,7 @@ def quartiles(data_source: DataSourceAbstract) -> dict[dict]:
 
 if __name__ == "__main__":
     """Exercise the SQL Quartiles Functionality"""
+    from pprint import pprint
     from sageworks.artifacts.data_sources.data_source import DataSource
 
     # Setup Pandas output options
@@ -64,4 +65,4 @@ if __name__ == "__main__":
     # Get quartiles for numeric columns
     my_quartiles = quartiles(my_data)
     print("\nQuartiles")
-    print(my_quartiles)
+    pprint(my_quartiles)

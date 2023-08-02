@@ -8,8 +8,7 @@ import json
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.iso_8601 import convert_all_to_iso8601
-from sageworks.algorithms.sql.quartiles import quartiles
-from sageworks.algorithms.sql.outliers import outliers
+from sageworks.algorithms.sql import sample_rows, value_counts, quartiles, outliers
 
 
 class AthenaSource(DataSourceAbstract):
@@ -201,18 +200,8 @@ class AthenaSource(DataSourceAbstract):
                 lines=True,
             )
 
-        # Note: Hardcoded to 100 rows so that metadata storage is consistent
-        sample_rows = 100
-        num_rows = self.details()["num_rows"]
-        if num_rows > sample_rows:
-            # Bernoulli Sampling has reasonable variance, so we're going to +1 the
-            # sample percentage and then simply clamp it to 100 rows
-            percentage = round(sample_rows * 100.0 / num_rows) + 1
-            self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {sample_rows}...")
-            query = f"SELECT * FROM {self.table_name} TABLESAMPLE BERNOULLI({percentage})"
-        else:
-            query = f"SELECT * FROM {self.table_name}"
-        sample_df = self.query(query).head(sample_rows)
+        # Call the SQL function to pull a sample of the rows
+        sample_df = sample_rows.sample_rows(self)
 
         # Store the sample_df in our SageWorks metadata
         rows_json = sample_df.to_json(orient="records", lines=True)
@@ -236,7 +225,7 @@ class AthenaSource(DataSourceAbstract):
             return json.loads(self.sageworks_meta()["sageworks_quartiles"])
 
         # Call the SQL function to compute quartiles
-        quartile_dict = quartiles(self)
+        quartile_dict = quartiles.quartiles(self)
 
         # Push the quartile data into our DataSource Metadata
         self.upsert_sageworks_meta({"sageworks_quartiles": quartile_dict})
@@ -265,7 +254,7 @@ class AthenaSource(DataSourceAbstract):
             )
 
         # Call the SQL function to compute outliers
-        outlier_df = outliers(self)
+        outlier_df = outliers.outliers(self)
 
         # Store the outlier_df in our SageWorks metadata
         rows_json = outlier_df.to_json(orient="records", lines=True)
@@ -298,39 +287,8 @@ class AthenaSource(DataSourceAbstract):
         if self.sageworks_meta().get("sageworks_value_counts") and not recompute:
             return json.loads(self.sageworks_meta()["sageworks_value_counts"])
 
-        # For every column in the table that is string, compute the value_counts
-        self.log.info("Computing 'value_counts' for all string columns...")
-        value_count_dict = dict()
-        for column, data_type in zip(self.column_names(), self.column_types()):
-            print(column, data_type)
-            if data_type == "string":
-                # Top value counts for this column
-                query = (
-                    f'SELECT "{column}", count(*) as count '
-                    f"FROM {self.table_name} "
-                    f'GROUP BY "{column}" ORDER BY count DESC limit 10'
-                )
-                top_df = self.query(query)
-
-                # Bottom value counts for this column
-                query = (
-                    f'SELECT "{column}", count(*) as count '
-                    f"FROM {self.table_name} "
-                    f'GROUP BY "{column}" ORDER BY count ASC limit 10'
-                )
-                bottom_df = self.query(query).iloc[::-1]  # Reverse the DataFrame
-
-                # Add the top and bottom value counts together
-                result_df = pd.concat([top_df, bottom_df], ignore_index=True).drop_duplicates()
-
-                # Convert int64 to int so that we can serialize to JSON
-                result_df["count"] = result_df["count"].astype(int)
-
-                # Convert any NA values to 'NaN' so that we can serialize to JSON
-                result_df.fillna("NaN", inplace=True)
-
-                # Convert the result_df into a dictionary
-                value_count_dict[column] = dict(zip(result_df[column], result_df["count"]))
+        # Call the SQL function to compute value_counts
+        value_count_dict = value_counts.value_counts(self)
 
         # Push the value_count data into our DataSource Metadata
         self.upsert_sageworks_meta({"sageworks_value_counts": value_count_dict})
@@ -445,17 +403,17 @@ if __name__ == "__main__":
     pprint(my_details)
 
     # Get quartiles for numeric columns
-    quartile_info = my_data.quartiles(recompute=True)
+    quartile_info = my_data.quartiles()
     print("\nQuartiles")
     pprint(quartile_info)
 
     # Get value_counts for string columns
-    value_count_info = my_data.value_counts()
+    value_count_info = my_data.value_counts(recompute=True)
     print("\nValue Counts")
     pprint(value_count_info)
 
     # Get outliers for numeric columns
-    my_outlier_df = my_data.outliers(recompute=True)
+    my_outlier_df = my_data.outliers()
     print("\nOutliers")
     print(my_outlier_df)
 
