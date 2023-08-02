@@ -11,10 +11,13 @@ logging_setup()
 log = logging.getLogger(__name__)
 
 
-def _outlier_dfs(
-    data_source: DataSourceAbstract, column: str, lower_bound: float, upper_bound: float
-) -> (pd.DataFrame, pd.DataFrame):
+def _outlier_dfs(data_source: DataSourceAbstract, column: str, lower_bound: float, upper_bound: float):
     """Internal method to compute outliers for a numeric column
+    Args:
+        data_source(DataSource): The DataSource that we're computing outliers on
+        column(str): The column to compute outliers on
+        lower_bound(float): The lower bound for outliers
+        upper_bound(float): The upper bound for outliers
     Returns:
         (pd.DataFrame, pd.DataFrame): A DataFrame for lower outliers and a DataFrame for upper outliers
     """
