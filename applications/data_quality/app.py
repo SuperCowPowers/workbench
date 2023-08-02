@@ -55,7 +55,7 @@ sample_rows = table.create(
     header_color="rgb(80, 80, 80)",
     row_select="single",
     max_height="400px",
-    color_column="cluster",
+    color_column="outlier_group",
 )
 
 # Create a box plot of all the numeric columns in the sample rows

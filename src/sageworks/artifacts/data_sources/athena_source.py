@@ -8,6 +8,7 @@ import json
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.iso_8601 import convert_all_to_iso8601
+from sageworks.algorithms.sql.outliers import outliers
 
 
 class AthenaSource(DataSourceAbstract):
@@ -257,37 +258,11 @@ class AthenaSource(DataSourceAbstract):
         # Return the quartile data
         return quartile_dict
 
-    def _outlier_dfs(self, column: str, lower_bound: float, upper_bound: float) -> pd.DataFrame:
-        """Internal method to compute outliers for a numeric column
-        Returns:
-            pd.DataFrame, pd.DataFrame: A DataFrame for lower outliers and a DataFrame for upper outliers
-        """
-
-        # Get lower outlier bound
-        query = f"SELECT * from {self.table_name} where {column} < {lower_bound} order by {column} limit 5"
-        lower_df = self.query(query)
-
-        # Check for no results
-        if lower_df.shape[0] == 0:
-            lower_df = None
-
-        # Get upper outlier bound
-        query = f"SELECT * from {self.table_name} where {column} > {upper_bound} order by {column} desc limit 5"
-        upper_df = self.query(query)
-
-        # Check for no results
-        if upper_df.shape[0] == 0:
-            upper_df = None
-
-        # Return the lower and upper outlier DataFrames
-        return lower_df, upper_df
-
-    def outliers(self, scale: float = 1.7, recompute: bool = False, project: bool = False) -> pd.DataFrame:
+    def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             scale(float): The scale to use for the IQR (default: 1.7)
             recompute(bool): Recompute the outliers (default: False)
-            project(bool): Project the outliers onto an x,y plane (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
         Notes:
@@ -303,69 +278,10 @@ class AthenaSource(DataSourceAbstract):
                 lines=True,
             )
 
-        # Grab the quartiles for this DataSource
-        quartiles = self.quartiles()
+        # Call the SQL function to compute outliers
+        outlier_df = outliers(self)
 
-        # For every column in the table that is numeric get the outliers
-        self.log.info("Computing outliers for all columns (this may take a while)...")
-        cluster = 0
-        outlier_df_list = []
-        outlier_features = []
-        num_rows = self.details()["num_rows"]
-        outlier_count = num_rows * 0.001  # 0.1% of the total rows
-        value_count_info = self.value_counts()
-        for column, data_type in zip(self.column_names(), self.column_types()):
-            print(column, data_type)
-            # String columns will use the value counts to compute outliers
-            if data_type == "string":
-                # Skip columns with too many unique values
-                if len(value_count_info[column]) >= 20:
-                    self.log.warning(f"Skipping column {column} too many unique values")
-                    continue
-                # Skip columns with a bunch of small values
-                if not any(value > num_rows / 20 for value in value_count_info[column].values()):
-                    self.log.warning(f"Skipping column {column} too many small values")
-                    continue
-                for value, count in value_count_info[column].items():
-                    if count < outlier_count:
-                        self.log.info(f"Found outlier feature {value} for column {column}")
-                        query = f"SELECT * from {self.table_name} where {column} = '{value}' limit 5"
-                        print(query)
-                        df = self.query(query)
-                        df["cluster"] = cluster
-                        cluster += 1
-                        outlier_df_list.append(df)
-
-            elif data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
-                iqr = quartiles[column]["q3"] - quartiles[column]["q1"]
-
-                # Catch cases where IQR is 0
-                if iqr == 0:
-                    self.log.info(f"IQR is 0 for column {column}, skipping...")
-                    continue
-
-                # Compute dataframes for the lower and upper bounds
-                lower_bound = quartiles[column]["q1"] - (iqr * scale)
-                upper_bound = quartiles[column]["q3"] + (iqr * scale)
-                lower_df, upper_df = self._outlier_dfs(column, lower_bound, upper_bound)
-
-                # If we have outliers, add them to the list
-                for df in [lower_df, upper_df]:
-                    if df is not None:
-                        # Add the cluster identifier
-                        df["cluster"] = cluster
-                        cluster += 1
-                        outlier_df_list.append(df)
-                        outlier_features.append(column)
-
-        # Combine all the outlier DataFrames, drop duplicates, and limit to 100 rows
-        if outlier_df_list:
-            outlier_df = pd.concat(outlier_df_list).drop_duplicates().head(100)
-        else:
-            self.log.warning("No outliers found for this DataSource, returning empty DataFrame")
-            outlier_df = pd.DataFrame(columns=self.column_names() + ["cluster"])
-
-        # Store the sample_df in our SageWorks metadata
+        # Store the outlier_df in our SageWorks metadata
         rows_json = outlier_df.to_json(orient="records", lines=True)
         self.upsert_sageworks_meta({"sageworks_outliers": rows_json})
 
@@ -379,7 +295,7 @@ class AthenaSource(DataSourceAbstract):
         """
         outlier_df = self.outliers()
         sample_df = self.sample_df()
-        sample_df["cluster"] = -1
+        sample_df["outlier_group"] = -1
         return pd.concat([outlier_df, sample_df], ignore_index=True).drop_duplicates()
 
     def value_counts(self, recompute: bool = False) -> dict[dict]:
