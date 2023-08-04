@@ -16,7 +16,7 @@ def quartiles(data_source: DataSourceAbstract) -> dict[dict]:
     Args:
         data_source(DataSource): The DataSource that we're computing quartiles on
     Returns:
-        dict(dict): A dictionary of quartiles for each column in the form
+        dict(dict): A dictionary of quartiles for each column in this format
              {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},
               'col2': ...}
     """

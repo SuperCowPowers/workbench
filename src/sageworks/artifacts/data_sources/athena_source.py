@@ -8,7 +8,7 @@ import json
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.iso_8601 import convert_all_to_iso8601
-from sageworks.algorithms.sql import sample_rows, value_counts, quartiles, outliers
+from sageworks.algorithms.sql import sample_rows, value_counts, quartiles, outliers, column_stats
 
 
 class AthenaSource(DataSourceAbstract):
@@ -233,6 +233,31 @@ class AthenaSource(DataSourceAbstract):
         # Return the quartile data
         return quartile_dict
 
+    def column_stats(self, recompute: bool = False) -> dict[dict]:
+        """Compute Column Stats for all the columns in a DataSource
+        Args:
+            recompute(bool): Recompute the column stats (default: False)
+        Returns:
+            dict(dict): A dictionary of stats for each column this format
+            NB: String columns will NOT have num_zeros and quartiles
+             {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
+              'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'quartiles': {...}},
+              ...}
+        """
+
+        # First check if we have already computed the column stats
+        if self.sageworks_meta().get("sageworks_column_stats") and not recompute:
+            return json.loads(self.sageworks_meta()["sageworks_column_stats"])
+
+        # Call the SQL function to compute column stats
+        columns_stats_dict = column_stats.column_stats(self)
+
+        # Push the column stats data into our DataSource Metadata
+        self.upsert_sageworks_meta({"sageworks_column_stats": columns_stats_dict})
+
+        # Return the column stats data
+        return columns_stats_dict
+
     def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
@@ -380,6 +405,7 @@ if __name__ == "__main__":
     # Column Names and Types
     print(f"Column Names: {my_data.column_names()}")
     print(f"Column Types: {my_data.column_types()}")
+    print(f"Column Details: {my_data.column_details()}")
 
     # Get the input for this Artifact
     print(f"Input: {my_data.get_input()}")
