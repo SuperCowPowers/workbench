@@ -1,7 +1,7 @@
 """Utility/helper methods for Pandas dataframe operations"""
 import pandas as pd
 import numpy as np
-
+import json
 import logging
 
 # SageWorks Imports
@@ -199,6 +199,18 @@ def get_dummy_cols(df: pd.DataFrame) -> list:
     return dummy_cols
 
 
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(NumpyEncoder, self).default(obj)
+
+
 if __name__ == "__main__":
     """Exercise the Pandas Utility Methods"""
     import sys
@@ -244,3 +256,9 @@ if __name__ == "__main__":
 
     norm_df = drop_outliers_sdev(clean_df)
     log.info(norm_df)
+
+    # Test Numpy Encoder
+    data = {"int": np.int64(6), "float": np.float64(6.5), "array": np.array([1, 2, 3])}
+    json_data = json.dumps(data, cls=NumpyEncoder)
+
+    print(json_data)

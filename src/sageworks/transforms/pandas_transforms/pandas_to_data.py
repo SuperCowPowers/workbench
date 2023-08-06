@@ -18,11 +18,11 @@ class PandasToData(Transform):
         df_to_data.transform()
     """
 
-    def __init__(self, output_uuid: str, output_file_format: str = "parquet"):
+    def __init__(self, output_uuid: str, output_format: str = "parquet"):
         """PandasToData Initialization
         Args:
             output_uuid (str): The UUID of the DataSource to create
-            output_file_format (str): The file format to store the S3 object data in
+            output_format (str): The file format to store the S3 object data in (default: "parquet")
         """
 
         # Call superclass init
@@ -34,9 +34,9 @@ class PandasToData(Transform):
         self.output_df = None
 
         # Give a message that Parquet is best in most cases
-        if output_file_format != "parquet":
+        if output_format != "parquet":
             self.log.warning("Parquet format works the best in most cases please consider using it")
-        self.output_file_format = output_file_format
+        self.output_format = output_format
 
     def set_input(self, input_df: pd.DataFrame):
         """Set the DataFrame Input for this Transform"""
@@ -91,7 +91,7 @@ class PandasToData(Transform):
         # Write out the DataFrame to AWS Data Catalog in either Parquet or JSONL format
         description = f"SageWorks data source: {self.output_uuid}"
         glue_table_settings = {"description": description, "parameters": sageworks_meta}
-        if self.output_file_format == "parquet":
+        if self.output_format == "parquet":
             wr.s3.to_parquet(
                 self.output_df,
                 path=s3_storage_path,
@@ -107,7 +107,7 @@ class PandasToData(Transform):
 
         # Note: In general Parquet works will for most uses cases. We recommend using Parquet
         #       You can use JSON_EXTRACT on Parquet string field, and it works great.
-        elif self.output_file_format == "jsonl":
+        elif self.output_format == "jsonl":
             self.log.warning("We recommend using Parquet format for most use cases")
             self.log.warning("If you have a use case that requires JSONL please contact SageWorks support")
             self.log.warning("We'd like to understand what functionality JSONL is providing that isn't already")
@@ -128,7 +128,7 @@ class PandasToData(Transform):
                 glue_table_settings=glue_table_settings,
             )
         else:
-            raise ValueError(f"Unsupported file format: {self.output_file_format}")
+            raise ValueError(f"Unsupported file format: {self.output_format}")
 
 
 if __name__ == "__main__":

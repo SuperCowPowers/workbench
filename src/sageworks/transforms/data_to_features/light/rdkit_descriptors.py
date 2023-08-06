@@ -6,7 +6,7 @@ import pandas as pd
 from sageworks.transforms.data_to_features.light.data_to_features_light import (
     DataToFeaturesLight,
 )
-from sageworks.transforms.pandas_transforms import pandas_utils
+from sageworks.utils import pandas_utils
 
 # Third Party Imports
 try:

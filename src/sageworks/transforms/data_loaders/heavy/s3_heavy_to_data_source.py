@@ -78,9 +78,14 @@ class S3HeavyToDataSource:
             dyf = dyf.rename_field(f"`{c_old}`", c_new)
         return dyf
 
-    def transform(self, input_type: str = "json", timestamp_columns: list = None):
+    def transform(self, input_type: str = "json", timestamp_columns: list = None, output_format: str = "parquet"):
         """Convert the CSV or JSON data into Parquet Format in the SageWorks S3 Bucket, and
-        store the information about the data to the AWS Data Catalog sageworks database"""
+        store the information about the data to the AWS Data Catalog sageworks database
+        Args:
+            input_type (str): The type of input files, either 'csv' or 'json'
+            timestamp_columns (list): A list of column names to convert to timestamp
+            output_format (str): The format of the output files, either 'parquet' or 'orc'
+        """
 
         # Add some tags here
         tags = ["heavy"]
@@ -132,7 +137,7 @@ class S3HeavyToDataSource:
                 "path": s3_storage_path
                 # "partitionKeys": ["year", "month", "day"],
             },
-            format="orc",
+            format=output_format,
         )
 
         # Set up our SageWorks metadata (description, tags, etc)
@@ -151,6 +156,17 @@ class S3HeavyToDataSource:
             return athena_type_map.get(spark_type, spark_type)
 
         column_name_types = [{"Name": col.name, "Type": to_athena_type(col)} for col in output_dyf.schema().fields]
+
+        # Our parameters for the Glue Data Catalog are different for Parquet and ORC
+        if output_format == "parquet":
+            glue_input_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+            glue_output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+            serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+        else:
+            glue_input_format = "org.apache.hadoop.hive.ql.io.orc.OrcInputFormat"
+            glue_output_format = "org.apache.hadoop.hive.ql.io.orc.OrcInputFormat"
+            serialization_library = "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
+
         table_input = {
             "Name": self.output_uuid,
             "Description": description,
@@ -159,11 +175,11 @@ class S3HeavyToDataSource:
             "StorageDescriptor": {
                 "Columns": column_name_types,
                 "Location": s3_storage_path,
-                "InputFormat": "org.apache.hadoop.mapred.TextInputFormat",
+                "InputFormat": glue_input_format,
+                "OutputFormat": glue_output_format,
                 "Compressed": True,
                 "SerdeInfo": {
-                    # "SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
-                    "SerializationLibrary": "org.apache.hadoop.hive.ql.io.orc.OrcSerde",
+                    "SerializationLibrary": serialization_library,
                 },
             },
         }

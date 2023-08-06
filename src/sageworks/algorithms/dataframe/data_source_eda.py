@@ -4,7 +4,7 @@ import logging
 
 # Local Imports
 from sageworks.transforms.pandas_transforms.data_to_pandas import DataToPandas
-from sageworks.transforms.pandas_transforms import pandas_utils
+from sageworks.utils import pandas_utils
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging

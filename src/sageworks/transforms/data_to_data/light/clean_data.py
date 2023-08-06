@@ -2,7 +2,7 @@
 
 # Local imports
 from sageworks.transforms.data_to_data.light.data_to_data_light import DataToDataLight
-from sageworks.transforms.pandas_transforms import pandas_utils
+from sageworks.utils import pandas_utils
 
 
 class CleanData(DataToDataLight):
