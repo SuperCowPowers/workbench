@@ -9,6 +9,7 @@ from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbst
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.iso_8601 import convert_all_to_iso8601
 from sageworks.algorithms.sql import sample_rows, value_counts, quartiles, outliers, column_stats
+from sageworks.utils.pandas_utils import NumpyEncoder
 
 
 class AthenaSource(DataSourceAbstract):
@@ -104,7 +105,7 @@ class AthenaSource(DataSourceAbstract):
         # Now convert any non-string values to JSON strings
         for key, value in new_meta.items():
             if not isinstance(value, str):
-                new_meta[key] = json.dumps(value)
+                new_meta[key] = json.dumps(value, cls=NumpyEncoder)
 
         # Update our existing metadata with the new metadata
         meta.update(new_meta)

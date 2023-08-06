@@ -28,7 +28,7 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
     data_source.log.info("Computing Column Statistics for all columns...")
 
     # Get the column names and types from the DataSource
-    columns_stats = {name: {'dtype': dtype} for name, dtype in data_source.column_details().items()}
+    columns_stats = {name: {"dtype": dtype} for name, dtype in data_source.column_details().items()}
 
     # Now add quartiles to the column stats
     quartiles = data_source.quartiles()
@@ -47,7 +47,6 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
     data_source.log.info("Computing Unique values and num zero for numeric columns (this may take a while)...")
     numeric = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
     for column, data_type in data_source.column_details().items():
-
         # Compute number of unique values
         num_unique_query = f'SELECT COUNT(DISTINCT "{column}") AS unique_values FROM {data_source.table_name}'
         num_unique = data_source.query(num_unique_query).iloc[0]["unique_values"]
