@@ -33,7 +33,22 @@ class S3HeavyToDataSource:
         # Our Spark Context
         self.glue_context = glue_context
 
-    def column_conversions(self, dyf: DynamicFrame, time_columns: list = []) -> DynamicFrame:
+    @staticmethod
+    def resolve_choice_fields(dyf):
+        # Get schema fields
+        schema_fields = dyf.schema().fields
+
+        # Collect choice fields
+        choice_fields = [(field.name, "cast:long") for field in schema_fields if field.dataType.typeName() == "choice"]
+        print(f"Choice Fields: {choice_fields}")
+
+        # If there are choice fields, resolve them
+        if choice_fields:
+            dyf = dyf.resolveChoice(specs=choice_fields)
+
+        return dyf
+
+    def timestamp_conversions(self, dyf: DynamicFrame, time_columns: list = []) -> DynamicFrame:
         """Convert columns in the DynamicFrame to the correct data types
         Args:
             dyf (DynamicFrame): The DynamicFrame to convert
@@ -47,15 +62,8 @@ class S3HeavyToDataSource:
         for column in time_columns:
             spark_df = spark_df.withColumn(column, to_timestamp(col(column)))
 
-        # Convert the Spark DataFrame back to a Glue DynamicFrame
-        output_dyf = DynamicFrame.fromDF(spark_df, self.glue_context, "output_dyf")
-
-        # Now resolve any 'choice' columns
-        specs = [(field.name, "cast:long") for field in dyf.schema().fields if field.dataType.typeName() == "choice"]
-        print(specs)
-        if specs:
-            output_dyf = output_dyf.resolveChoice(specs=specs)
-        return output_dyf
+        # Convert the Spark DataFrame back to a Glue DynamicFrame and return
+        return DynamicFrame.fromDF(spark_df, self.glue_context, "output_dyf")
 
     @staticmethod
     def remove_periods_from_column_names(dyf: DynamicFrame) -> DynamicFrame:
@@ -107,24 +115,29 @@ class S3HeavyToDataSource:
         )
         self.log.info("Incoming DataFrame...")
         input_dyf.show(5)
+        input_dyf.printSchema()
 
+        # Resolve Choice fields
+        resolved_dyf = self.resolve_choice_fields(input_dyf)
+
+        # The next couple of lines of code is for unnested any nested JSON
         # Create a Dynamic Frame Collection (dfc)
-        dfc = Relationalize.apply(input_dyf, name="root")
+        dfc = Relationalize.apply(resolved_dyf, name="root")
 
         # Aggregate the collection into a single dynamic frame
-        all_data = dfc.select("root")
+        output_dyf = dfc.select("root")
 
-        print("Before Column Conversions")
-        all_data.printSchema()
+        print("Before TimeStamp Conversions")
+        output_dyf.printSchema()
+
+        # Convert any timestamp columns
+        output_dyf = self.timestamp_conversions(output_dyf, timestamp_columns)
 
         # Relationalize will put periods in the column names. This will cause
         # problems later when we try to create a FeatureSet from this DataSource
-        output_dyf = self.remove_periods_from_column_names(all_data)
+        output_dyf = self.remove_periods_from_column_names(output_dyf)
 
-        # Convert the columns types from Spark types to Athena/Parquet types
-        output_dyf = self.column_conversions(output_dyf, timestamp_columns)
-
-        print("After Column Conversions")
+        print("After TimeStamp Conversions and Removing Periods from column names")
         output_dyf.printSchema()
 
         # Write Parquet files to S3
