@@ -5,6 +5,8 @@ import pandas as pd
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from enum import Enum
+import math
+
 
 
 class PlotType(Enum):
@@ -14,13 +16,24 @@ class PlotType(Enum):
     box = go.Box
 
 
-def compute_rows_columns(num_plots):
-    """Errr... I think this works but happy to be improved"""
-    max_columns = 8
-    overflow = 1 if num_plots % max_columns != 0 else 0
-    num_rows = num_plots // max_columns + overflow
-    num_columns = round(num_plots / num_rows + 0.1)
-    return num_rows, num_columns
+def compute_subplot_layout(n):
+    """
+    Compute a 'nice' layout for a given number of subplots.
+    Layout: maximum of 8 columns aiming for a rectangular grid and adding rows as needed
+    Args:
+        n (int): The total number of subplots.
+    Returns:
+        tuple: A tuple (rows, cols) representing the layout.
+    """
+
+    # Start with a single row
+    rows = 1
+    while True:
+        cols = math.ceil(n / rows)
+        if cols <= 8:
+            return int(rows), int(cols)
+        else:
+            rows += 1
 
 
 def calculate_height(num_rows: int):
@@ -78,7 +91,7 @@ def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots
 
     # Compute the number of rows and columns
     num_plots = len(numeric_columns)
-    num_rows, num_columns = compute_rows_columns(num_plots)
+    num_rows, num_columns = compute_subplot_layout(num_plots)
     fig = make_subplots(rows=num_rows, cols=num_columns, vertical_spacing=0.07)
     for i, col in enumerate(numeric_columns):
         fig.add_trace(
