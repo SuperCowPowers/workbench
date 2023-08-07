@@ -63,24 +63,21 @@ def outliers(data_source: DataSourceAbstract, scale: float = 1.7) -> pd.DataFram
     outlier_df_list = []
     outlier_features = []
     num_rows = data_source.details()["num_rows"]
-    outlier_string_count = max(5, num_rows * 0.001)  # 0.1% of the total rows
+    outlier_min_count = max(3, num_rows * 0.005)  # 0.5% of the total rows
+    max_unique_values = 40  # 40 is the max number of value counts that are stored in AWS
     value_count_info = data_source.value_counts()
     for column, data_type in zip(data_source.column_names(), data_source.column_types()):
         print(column, data_type)
         # String columns will use the value counts to compute outliers
         if data_type == "string":
             # Skip columns with too many unique values
-            if len(value_count_info[column]) >= 20:
+            if len(value_count_info[column]) >= max_unique_values:
                 log.warning(f"Skipping column {column} too many unique values")
                 continue
-            # Skip columns with a bunch of small values
-            if not any(value > num_rows / 20 for value in value_count_info[column].values()):
-                log.warning(f"Skipping column {column} too many small values")
-                continue
             for value, count in value_count_info[column].items():
-                if count < outlier_string_count:
+                if count < outlier_min_count:
                     log.info(f"Found outlier feature {value} for column {column}")
-                    query = f"SELECT * from {data_source.table_name} where {column} = '{value}' limit 5"
+                    query = f"SELECT * from {data_source.table_name} where {column} = '{value}' limit 3"
                     print(query)
                     df = data_source.query(query)
                     df["outlier_group"] = outlier_group
@@ -112,9 +109,9 @@ def outliers(data_source: DataSourceAbstract, scale: float = 1.7) -> pd.DataFram
                     outlier_df_list.append(df)
                     outlier_features.append(column)
 
-    # Combine all the outlier DataFrames and limit to 100 rows
+    # Combine all the outlier DataFrames
     if outlier_df_list:
-        outlier_df = pd.concat(outlier_df_list).head(100)
+        outlier_df = pd.concat(outlier_df_list)
     else:
         log.warning("No outliers found for this DataSource, returning empty DataFrame")
         outlier_df = pd.DataFrame(columns=data_source.column_names() + ["outlier_group"])

@@ -31,7 +31,7 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
             query = (
                 f'SELECT "{column}", count(*) as count '
                 f"FROM {data_source.table_name} "
-                f'GROUP BY "{column}" ORDER BY count DESC limit 10'
+                f'GROUP BY "{column}" ORDER BY count DESC limit 20'
             )
             top_df = data_source.query(query)
 
@@ -39,7 +39,7 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
             query = (
                 f'SELECT "{column}", count(*) as count '
                 f"FROM {data_source.table_name} "
-                f'GROUP BY "{column}" ORDER BY count ASC limit 10'
+                f'GROUP BY "{column}" ORDER BY count ASC limit 20'
             )
             bottom_df = data_source.query(query).iloc[::-1]  # Reverse the DataFrame
 
