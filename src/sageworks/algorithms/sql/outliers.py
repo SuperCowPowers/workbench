@@ -63,7 +63,7 @@ def outliers(data_source: DataSourceAbstract, scale: float = 1.7) -> pd.DataFram
     outlier_df_list = []
     outlier_features = []
     num_rows = data_source.details()["num_rows"]
-    outlier_min_count = max(3, num_rows * 0.005)  # 0.5% of the total rows
+    outlier_min_count = max(3, num_rows * 0.001)  # 0.1% of the total rows
     max_unique_values = 40  # 40 is the max number of value counts that are stored in AWS
     value_count_info = data_source.value_counts()
     for column, data_type in zip(data_source.column_names(), data_source.column_types()):
