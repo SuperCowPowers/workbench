@@ -8,10 +8,8 @@ from enum import Enum
 import math
 
 
-
 class PlotType(Enum):
     """Enumeration for the plot type"""
-
     violin = go.Violin
     box = go.Box
 
