@@ -1,6 +1,5 @@
 """SQL based Column Statistics: Compute Column Statistics for a DataSource using SQL"""
 import logging
-import operator
 import pandas as pd
 
 # SageWorks Imports

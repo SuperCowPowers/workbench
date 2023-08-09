@@ -22,10 +22,8 @@ def column_info_html(column_name, column_info: dict) -> str:
         min = column_info["quartiles"]["min"]
         max = column_info["quartiles"]["max"]
         if column_info["dtype"] in float_types:
-            # html_template += f"""  <span class="lightgreen">{min:.2f}</span> → <span class="lightred">{max:.2f}</span>"""
             html_template += f""" {min:.2f} → {max:.2f}&nbsp;&nbsp;&nbsp;&nbsp;"""
         else:
-            # html_template += f"""  <span class="lightgreen">{min}</span> → <span class="lightred">{max}</span>"""
             html_template += f""" {min} → {max}&nbsp;&nbsp;&nbsp;&nbsp;"""
         if column_info["num_zeros"] > 0:
             html_template += """ <span class="lightorange"> Zero: <<num_zeros>></span>"""
