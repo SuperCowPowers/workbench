@@ -279,8 +279,9 @@ class AthenaSource(DataSourceAbstract):
                 lines=True,
             )
 
-        # Call the SQL function to compute outliers
-        outlier_df = outliers.outliers(self)
+        # Compute outliers using the SQL Outliers class
+        sql_outliers = outliers.Outliers()
+        outlier_df = sql_outliers.compute_outliers(self)
 
         # Store the outlier_df in our SageWorks metadata
         rows_json = outlier_df.to_json(orient="records", lines=True)
