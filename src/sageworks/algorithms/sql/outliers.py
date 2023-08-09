@@ -71,9 +71,10 @@ class Outliers:
         # For every column in the data_source that is numeric get the outliers
         log.info("Computing outliers for numeric columns (this may take a while)...")
         outlier_df_list = []
+        numeric = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
         for column, data_type in zip(data_source.column_names(), data_source.column_types()):
             print(column, data_type)
-            if data_type in ["double", "float", "bigint", "int", "smallint", "tinyint"]:
+            if data_type in numeric:
                 iqr = quartiles[column]["q3"] - quartiles[column]["q1"]
 
                 # Catch cases where IQR is 0

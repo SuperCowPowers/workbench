@@ -2,6 +2,52 @@
 from dash import dcc
 
 
+def column_info_html(column_name, column_info: dict) -> str:
+    """Create an HTML string for a column's information
+    Args:
+        column_name (str): The name of the column
+        column_info (dict): A dictionary of column information
+    Returns:
+        str: An HTML string
+    """
+
+    # First part of the HTML template is the same for all columns
+    html_template = """<b><<name>></b> <span class="lightblue">(<<dtype>>)</span>:"""
+
+    # Add min, max, and number of zeros for numeric columns
+    numeric_types = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
+    float_types = ["float", "double", "decimal"]
+    if column_info["dtype"] in numeric_types:
+        # Just hardcode the min and max for now
+        min = column_info["quartiles"]["min"]
+        max = column_info["quartiles"]["max"]
+        if column_info["dtype"] in float_types:
+            # html_template += f"""  <span class="lightgreen">{min:.2f}</span> → <span class="lightred">{max:.2f}</span>"""
+            html_template += f""" {min:.2f} → {max:.2f}&nbsp;&nbsp;&nbsp;&nbsp;"""
+        else:
+            # html_template += f"""  <span class="lightgreen">{min}</span> → <span class="lightred">{max}</span>"""
+            html_template += f""" {min} → {max}&nbsp;&nbsp;&nbsp;&nbsp;"""
+        if column_info["num_zeros"] > 0:
+            html_template += """ <span class="lightorange"> Zero: <<num_zeros>></span>"""
+
+    # Non-numeric columns get the number of unique values
+    else:
+        html_template += """  Unique: <<unique>>   """
+
+    # Do we have any nulls in this column?
+    if column_info["nulls"] > 0:
+        html_template += """ <span class="lightred">Null: <<nulls>></span>"""
+
+    # Replace the column name
+    html_template = html_template.replace("<<name>>", column_name)
+
+    # Loop through all the details and replace in the template
+    for key, value in column_info.items():
+        html_template = html_template.replace(f"<<{key}>>", str(value))
+
+    return html_template
+
+
 def create_markdown(artifact_details: dict) -> str:
     """Create the Markdown for the details/information about the DataSource or the FeatureSet
     Args:
@@ -11,17 +57,24 @@ def create_markdown(artifact_details: dict) -> str:
     """
 
     markdown_template = """
-    **Rows:** <<num_rows>>  **Columns:** <<num_columns>>
-    <br>**Created/Modified:** <<created>> / <<modified>>
+    **Rows:** <<num_rows>>
+    <br>**Columns:** <<num_columns>>
+    <br>**Created/Mod:** <<created>> / <<modified>>
     <br>**Tags:** <<sageworks_tags>>
     <br>**S3:** <<s3_storage_location>>
 
+    #### Numeric Columns
+    <ul>
+    <<numeric_column_details>>
+    </ul>
+
     #### String Columns
-    <<column_details_markdown>>
+    <<string_column_details>>
     """
-    details_template = """
+
+    expanding_list = """
     <details>
-        <summary><b><<column_name>></b></summary>
+        <summary><<column_info>></summary>
         <ul>
         <<bullet_list>>
         </ul>
@@ -39,18 +92,43 @@ def create_markdown(artifact_details: dict) -> str:
             value = value.replace(".000Z", "").replace("T", " ")
         markdown_template = markdown_template.replace(f"<<{key}>>", str(value))
 
-    # Loop through the column details and create collapsible sections
-    details_markdown = ""
-    for column_name, value_counts in artifact_details["value_counts"].items():
+    # Fill in numeric column details
+    column_stats = artifact_details.get("column_stats", {})
+    numeric_column_details = ""
+    numeric_types = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
+    for column_name, column_info in column_stats.items():
+        if column_info["dtype"] in numeric_types:
+            column_html = column_info_html(column_name, column_info)
+            numeric_column_details += f"<li>{column_html}</li>"
+
+    print(numeric_column_details)
+    markdown_template = markdown_template.replace("<<numeric_column_details>>", numeric_column_details)
+
+    # For string columns create collapsible sections that show value counts
+    string_column_details = ""
+    for column_name, column_info in column_stats.items():
+        # Skipping any columns that are dtype string
+        if column_info["dtype"] != "string" or "value_counts" not in column_info:
+            continue
+
+        # Create the column info
+        column_html = column_info_html(column_name, column_info)
+        column_details = expanding_list.replace("<<column_info>>", column_html)
+
+        # Populate the bullet list (if we have value counts)
         bullet_list = ""
-        for value, count in value_counts.items():
+        for value, count in column_info["value_counts"].items():
             bullet_list += f"<li>{value}: {count}</li>"
-        details_markdown += details_template.replace("<<column_name>>", column_name).replace(
-            "<<bullet_list>>", bullet_list
-        )
+
+        # Add the bullet list to the column details
+        column_details = column_details.replace("<<bullet_list>>", bullet_list)
+
+        # Add the column details to the markdown
+        string_column_details += column_details
 
     # Now actually replace the column details in the markdown
-    markdown_template = markdown_template.replace("<<column_details_markdown>>", details_markdown)
+    print(string_column_details)
+    markdown_template = markdown_template.replace("<<string_column_details>>", string_column_details)
     return markdown_template
 
 

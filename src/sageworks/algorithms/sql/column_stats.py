@@ -38,15 +38,15 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
     # Now add value_counts to the column stats
     value_counts = data_source.value_counts()
     for column, count_info in value_counts.items():
-        # Sort the value_counts by count
-        sorted_count_info = sorted(count_info.items(), key=operator.itemgetter(1), reverse=True)
-        columns_stats[column]["value_counts"] = sorted_count_info
+        columns_stats[column]["value_counts"] = count_info
 
     # For every column in the table get unique values and Nulls/NaNs
     # Also for numeric columns get the number of zero values
     data_source.log.info("Computing Unique values and num zero for numeric columns (this may take a while)...")
     numeric = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
     for column, data_type in data_source.column_details().items():
+        log.info(f"Computing columns_stats for column: {column}...")
+
         # Compute number of unique values
         num_unique_query = f'SELECT COUNT(DISTINCT "{column}") AS unique_values FROM {data_source.table_name}'
         num_unique = data_source.query(num_unique_query).iloc[0]["unique_values"]
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("heavy_dns")
+    my_data = DataSource("abalone_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.check()

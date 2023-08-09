@@ -79,12 +79,12 @@ class DataSourceWebView(ArtifactsWebView):
         return pd.concat([sample_rows, outlier_rows, quartiles_df]).reset_index(drop=True).drop_duplicates()
 
     def data_source_details(self, data_source_index: int) -> (dict, None):
-        """Get all of the details for the given DataSource Index"""
+        """Get all the details for the given DataSource Index"""
         data_uuid = self.data_source_name(data_source_index)
         if data_uuid is not None:
             ds = DataSource(data_uuid)
             details_data = ds.details()
-            details_data["value_counts"] = ds.value_counts()
+            details_data["column_stats"] = ds.column_stats()
             return details_data
         else:
             return None
