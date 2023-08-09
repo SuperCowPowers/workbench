@@ -301,6 +301,26 @@ p {
   margin-top: 0;
 }
 
+/* Text Colors */
+.lightred {
+  color: rgb(200, 140, 140);
+}
+.lightblue {
+  color: rgb(150, 160, 240);
+}
+.lightgreen {
+  color: rgb(160, 200, 160);
+}
+.lightgrey {
+  color: rgb(160, 160, 160);
+}
+.lightorange {
+  color: rgb(200, 180, 100);
+}
+
+b, strong {
+  color: rgb(160, 200, 160);
+}
 
 /* Links
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
@@ -479,6 +499,7 @@ label>.label-body {
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 ul {
   list-style: circle inside;
+  padding-left: 0;
 }
 
 ol {
