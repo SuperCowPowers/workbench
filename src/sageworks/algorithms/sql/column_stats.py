@@ -28,43 +28,43 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
     data_source.log.info("Computing Column Statistics for all columns...")
 
     # Get the column names and types from the DataSource
-    columns_stats = {name: {"dtype": dtype} for name, dtype in data_source.column_details().items()}
+    column_data = {name: {"dtype": dtype} for name, dtype in data_source.column_details().items()}
 
     # Now add quartiles to the column stats
     quartiles = data_source.quartiles()
     for column, quartile_info in quartiles.items():
-        columns_stats[column]["quartiles"] = quartile_info
+        column_data[column]["quartiles"] = quartile_info
 
     # Now add value_counts to the column stats
     value_counts = data_source.value_counts()
     for column, count_info in value_counts.items():
-        columns_stats[column]["value_counts"] = count_info
+        column_data[column]["value_counts"] = count_info
 
     # For every column in the table get unique values and Nulls/NaNs
     # Also for numeric columns get the number of zero values
     data_source.log.info("Computing Unique values and num zero for numeric columns (this may take a while)...")
     numeric = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
     for column, data_type in data_source.column_details().items():
-        log.info(f"Computing columns_stats for column: {column}...")
+        log.info(f"Computing column_stats for column: {column}...")
 
         # Compute number of unique values
         num_unique_query = f'SELECT COUNT(DISTINCT "{column}") AS unique_values FROM {data_source.table_name}'
         num_unique = data_source.query(num_unique_query).iloc[0]["unique_values"]
-        columns_stats[column]["unique"] = num_unique
+        column_data[column]["unique"] = num_unique
 
         # Compute number of nulls
         num_nulls_query = f'SELECT COUNT(*) AS num_nulls FROM {data_source.table_name} WHERE "{column}" IS NULL'
         num_nulls = data_source.query(num_nulls_query).iloc[0]["num_nulls"]
-        columns_stats[column]["nulls"] = num_nulls
+        column_data[column]["nulls"] = num_nulls
 
         # If numeric, compute number of zeros
         if data_type in numeric:
             query = f'SELECT COUNT(*) AS num_zeros FROM {data_source.table_name} WHERE "{column}" = 0'
             num_zeros = data_source.query(query).iloc[0]["num_zeros"]
-            columns_stats[column]["num_zeros"] = num_zeros
+            column_data[column]["num_zeros"] = num_zeros
 
     # Return the quartile data
-    return columns_stats
+    return column_data
 
 
 if __name__ == "__main__":
