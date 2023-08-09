@@ -88,7 +88,7 @@ class Transform(ABC):
         """Perform any Post-Transform operations"""
         self.log.info("Post-Transform...")
 
-        # For DataSource and FeatureSet we'll compute sample rows, quartiles, and value counts
+        # For DataSource and FeatureSet we'll compute sample rows, quartiles, value counts, outliers, and column stats
         if self.output_type == TransformOutput.DATA_SOURCE:
             self.log.info("Computing Details, Sample Rows, and Quartiles...")
             while not DataSource(self.output_uuid).check():
@@ -98,8 +98,12 @@ class Transform(ABC):
             ds.details()
             ds.sample_df()
             ds.quartiles()
-            ds.outliers()
             ds.value_counts()
+
+            # We do a refresh here to make sure we have the latest data before computing outliers
+            ds = DataSource(self.output_uuid, force_refresh=True)
+            ds.outliers()
+            ds.column_stats()
 
         elif self.output_type == TransformOutput.FEATURE_SET:
             self.log.info("Computing Details, Sample Rows, and Quartiles...")
