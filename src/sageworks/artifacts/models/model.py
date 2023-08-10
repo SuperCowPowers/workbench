@@ -37,10 +37,10 @@ class Model(Artifact):
         # All done
         self.log.info(f"Model Initialized: {self.model_name}")
 
-    def check(self) -> bool:
+    def exists(self) -> bool:
         """Does the model metadata exist in the AWS Metadata?"""
         if self.model_meta is None:
-            self.log.info(f"Model.check() {self.model_name} not found in AWS Metadata!")
+            self.log.info(f"Model.exists() {self.model_name} not found in AWS Metadata!")
             return False
         return True
 
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     # Call the various methods
 
     # Let's do a check/validation of the Model
-    print(f"Model Check: {my_model.check()}")
+    print(f"Model Check: {my_model.exists()}")
 
     # Get the ARN of the Model Group
     print(f"Model Group ARN: {my_model.group_arn()}")

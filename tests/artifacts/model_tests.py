@@ -13,7 +13,7 @@ def test():
     # Call the various methods
 
     # Let's do a check/validation of the Model
-    print(f"Model Check: {my_model.check()}")
+    print(f"Model Check: {my_model.exists()}")
 
     # Get the ARN of the Model Group
     print(f"Model Group ARN: {my_model.group_arn()}")

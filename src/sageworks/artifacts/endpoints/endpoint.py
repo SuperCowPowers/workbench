@@ -47,10 +47,10 @@ class Endpoint(Artifact):
         # All done
         self.log.info(f"Endpoint Initialized: {self.endpoint_name}")
 
-    def check(self) -> bool:
+    def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.endpoint_meta is None:
-            self.log.info(f"Endpoint.check() {self.endpoint_name} not found in AWS Metadata!")
+            self.log.info(f"Endpoint.exists() {self.endpoint_name} not found in AWS Metadata!")
             return False
         return True
 
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     # Call the various methods
 
     # Let's do a check/validation of the Endpoint
-    assert my_endpoint.check()
+    assert my_endpoint.exists()
 
     # Creation/Modification Times
     print(my_endpoint.created())

@@ -181,7 +181,7 @@ if __name__ == "__main__":
     my_data = DataSource("abalone_data")
 
     # Verify that the Athena Data Source exists
-    assert my_data.check()
+    assert my_data.exists()
 
     # Create the class and Compute outliers
     my_outliers = Outliers()

@@ -74,13 +74,13 @@ class FeatureSet(Artifact):
         _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=force_refresh)
         return _catalog_meta.get(self.feature_set_name)
 
-    def check(self) -> bool:
+    def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.feature_meta is None:
-            self.log.info(f"FeatureSet.check() {self.feature_set_name} not found in AWS Metadata!")
+            self.log.info(f"FeatureSet.exists() {self.feature_set_name} not found in AWS Metadata!")
             return False
         else:  # Also check our Data Source
-            if not self.data_source.check():
+            if not self.data_source.exists():
                 self.log.critical(f"Data Source check failed for {self.feature_set_name}")
                 self.log.critical("Delete this Feature Set and recreate it to fix this issue")
                 return False
@@ -349,7 +349,7 @@ if __name__ == "__main__":
     print(f"AWS URL: {my_features.aws_url()}")
 
     # Let's do a check/validation of the feature set
-    print(f"Feature Set Check: {my_features.check()}")
+    print(f"Feature Set Check: {my_features.exists()}")
 
     # How many rows and columns?
     num_rows = my_features.num_rows()

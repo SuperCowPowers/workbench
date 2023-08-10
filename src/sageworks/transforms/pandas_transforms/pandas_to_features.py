@@ -61,7 +61,7 @@ class PandasToFeatures(Transform):
         # Delete the existing FeatureSet if it exists
         try:
             delete_fs = FeatureSet(self.output_uuid)
-            if delete_fs.check():
+            if delete_fs.exists():
                 delete_fs.delete()
                 self.log.info(f"Deleted the {self.output_uuid} FeatureSet...")
         except botocore.exceptions.ClientError as exc:

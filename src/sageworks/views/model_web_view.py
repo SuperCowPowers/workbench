@@ -32,7 +32,7 @@ class ModelWebView(ArtifactsWebView):
         """Get all the details for the given Model Index"""
         uuid = self.model_name(model_index)
         model = Model(uuid)
-        if model.check():
+        if model.exists():
             return model.details()
         else:
             return None

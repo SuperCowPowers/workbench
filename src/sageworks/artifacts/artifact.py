@@ -45,7 +45,7 @@ class Artifact(ABC):
         self.log = logging.getLogger(__name__)
 
     @abstractmethod
-    def check(self) -> bool:
+    def exists(self) -> bool:
         """Does the Artifact exist? Can we connect to it?"""
         pass
 

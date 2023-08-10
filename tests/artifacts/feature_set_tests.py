@@ -14,7 +14,7 @@ def test():
     # Call the various methods
 
     # Let's do a check/validation of the feature set
-    print(f"Feature Set Check: {my_features.check()}")
+    print(f"Feature Set Check: {my_features.exists()}")
 
     # How many rows and columns?
     num_rows = my_features.num_rows()

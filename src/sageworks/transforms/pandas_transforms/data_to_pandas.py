@@ -32,7 +32,7 @@ class DataToPandas(Transform):
 
         # Grab the Input (Data Source)
         input_data = AthenaSource(self.input_uuid)
-        if not input_data.check():
+        if not input_data.exists():
             self.log.critical(f"Data Check on {self.input_uuid} failed!")
             return
 

@@ -14,7 +14,7 @@ def test():
     # Call the various methods
 
     # Let's do a check/validation of the Endpoint
-    assert my_endpoint.check()
+    assert my_endpoint.exists()
 
     # Creation/Modification Times
     print(my_endpoint.created())

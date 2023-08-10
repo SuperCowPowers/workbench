@@ -52,7 +52,7 @@ class DataToFeaturesHeavy(Transform):
         # Do we want to delete the existing FeatureSet?
         try:
             delete_fs = FeatureSet(self.output_uuid)
-            if delete_fs.check():
+            if delete_fs.exists():
                 delete_fs.delete()
                 time.sleep(5)
         except botocore.exceptions.ClientError as exc:

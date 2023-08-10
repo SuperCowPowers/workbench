@@ -73,7 +73,7 @@ if __name__ == "__main__":
     my_data = DataSource("test_data")
 
     # Verify that the Athena Data Source exists
-    assert my_data.check()
+    assert my_data.exists()
 
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")

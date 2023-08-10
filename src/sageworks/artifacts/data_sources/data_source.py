@@ -43,7 +43,7 @@ class DataSource:
             # We're going to check both regular DataSources and DataSources
             # that are storage locations for FeatureSets
             ds = AthenaSource(uuid, force_refresh=force_refresh)
-            if ds.check():
+            if ds.exists():
                 return ds
             else:
                 return AthenaSource(uuid, "sagemaker_featurestore", force_refresh=force_refresh)
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     my_data = DataSource("abalone_data")
 
     # Verify that the Athena DataSource exists
-    assert my_data.check()
+    assert my_data.exists()
 
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")

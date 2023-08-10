@@ -51,12 +51,12 @@ class AthenaSource(DataSourceAbstract):
         _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=force_refresh)
         return _catalog_meta[self.data_catalog_db].get(self.table_name)
 
-    def check(self) -> bool:
+    def exists(self) -> bool:
         """Validation Checks for this Data Source"""
 
         # We're we able to pull AWS Metadata for this table_name?"""
         if self.catalog_table_meta is None:
-            self.log.info(f"AthenaSource.check() {self.table_name} not found in SageWorks Metadata...")
+            self.log.info(f"AthenaSource.exists() {self.table_name} not found in SageWorks Metadata...")
             return False
         return True
 
@@ -363,7 +363,7 @@ class AthenaSource(DataSourceAbstract):
         """Delete the AWS Data Catalog Table and S3 Storage Objects"""
 
         # Make sure the Feature Group exists
-        if not self.check():
+        if not self.exists():
             self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.table_name}")
 
         # Delete Data Catalog Table
@@ -386,7 +386,7 @@ if __name__ == "__main__":
     my_data = AthenaSource("abalone_data")
 
     # Verify that the Athena Data Source exists
-    assert my_data.check()
+    assert my_data.exists()
 
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")
@@ -452,7 +452,7 @@ if __name__ == "__main__":
     # Test an Data Source that doesn't exist
     print("\n\nTesting a Data Source that does not exist...")
     my_data = AthenaSource("does_not_exist")
-    assert not my_data.check()
+    assert not my_data.exists()
     my_data.sageworks_meta()
 
     # Now delete the AWS artifacts associated with this DataSource

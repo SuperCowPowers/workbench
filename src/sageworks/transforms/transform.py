@@ -91,7 +91,7 @@ class Transform(ABC):
         # For DataSource and FeatureSet we'll compute sample rows, quartiles, value counts, outliers, and column stats
         if self.output_type == TransformOutput.DATA_SOURCE:
             self.log.info("Computing Details, Sample Rows, and Quartiles...")
-            while not DataSource(self.output_uuid).check():
+            while not DataSource(self.output_uuid).exists():
                 self.log.info("Waiting for DataSource to be created...")
                 sleep(1)
             ds = DataSource(self.output_uuid, force_refresh=True)
@@ -107,7 +107,7 @@ class Transform(ABC):
 
         elif self.output_type == TransformOutput.FEATURE_SET:
             self.log.info("Computing Details, Sample Rows, and Quartiles...")
-            while not FeatureSet(self.output_uuid).check():
+            while not FeatureSet(self.output_uuid).exists():
                 self.log.info("Waiting for FeatureSet to be created...")
                 sleep(1)
             fs = FeatureSet(self.output_uuid, force_refresh=True)

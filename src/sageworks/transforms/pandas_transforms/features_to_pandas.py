@@ -32,7 +32,7 @@ class FeaturesToPandas(Transform):
 
         # Grab the Input (Feature Set)
         input_data = FeatureSet(self.input_uuid)
-        if not input_data.check():
+        if not input_data.exists():
             self.log.critical(f"Feature Set Check on {self.input_uuid} failed!")
             return
 

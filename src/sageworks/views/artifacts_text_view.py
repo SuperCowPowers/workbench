@@ -369,7 +369,7 @@ class ArtifactsTextView(View):
         for artifact_class in [Endpoint, Model, FeatureSet, DataSource]:
             print(f"Checking {artifact_class.__name__} {artifact_uuid}...")
             artifact = artifact_class(artifact_uuid)
-            if artifact.check():
+            if artifact.exists():
                 print(f"Deleting {artifact_class.__name__} {artifact_uuid}...")
                 artifact.delete()
                 return
