@@ -99,7 +99,7 @@ def create_markdown(artifact_details: dict) -> str:
             column_html = column_info_html(column_name, column_info)
             numeric_column_details += f"<li>{column_html}</li>"
 
-    print(numeric_column_details)
+    # Now actually replace the column details in the markdown
     markdown_template = markdown_template.replace("<<numeric_column_details>>", numeric_column_details)
 
     # For string columns create collapsible sections that show value counts
@@ -125,7 +125,6 @@ def create_markdown(artifact_details: dict) -> str:
         string_column_details += column_details
 
     # Now actually replace the column details in the markdown
-    print(string_column_details)
     markdown_template = markdown_template.replace("<<string_column_details>>", string_column_details)
     return markdown_template
 
