@@ -342,9 +342,9 @@ class FeatureSet(Artifact):
         existing_meta = self.data_source.sageworks_meta()
         data_source_ready = set(existing_meta.keys()).issuperset(expected_meta)
         if feature_set_ready and data_source_ready:
-            self.log.info("FeatureSet is ready!")
+            self.log.info(f"FeatureSet {self.uuid} is ready!")
             if status != "ready":
-                self.log.warning(f"FeatureSet is ready but status is {status}")
+                self.log.warning(f"FeatureSet {self.uuid} is ready but status is {status}, overwriting to 'ready'")
                 self.set_status("ready")
             return True
         else:

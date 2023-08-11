@@ -92,7 +92,7 @@ class Model(Artifact):
 
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Model is ready"""
-        self.log.info("Model.make_ready() is a NOOP for now...")
+        self.details()
         return True
 
     def delete(self):

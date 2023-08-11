@@ -54,9 +54,8 @@ class Artifact(ABC):
             list[str]: List of expected metadata keys
         """
 
-        # By default, we expect ALL artifacts to have their details precomputed
         # If an artifact has additional expected metadata override this method
-        return ["sageworks_details"]
+        return ["sageworks_status"]
 
     @abstractmethod
     def refresh_meta(self):
@@ -66,17 +65,15 @@ class Artifact(ABC):
     def ready(self) -> bool:
         """Is the Artifact ready? Is initial setup complete and expected metadata populated?"""
 
-        # Artifact's have a status flag so let's check that
-        status = self.get_status()
-
         # Check for the expected metadata
         expected_meta = self.expected_meta()
         existing_meta = self.sageworks_meta()
         ready = set(existing_meta.keys()).issuperset(expected_meta)
         if ready:
-            self.log.info("Artifact is ready!")
+            self.log.info(f"Artifact {self.uuid} expected metadata found")
+            status = self.get_status()  # Sanity Check the Artifact Status
             if status != "ready":
-                self.log.warning(f"Artifact is ready but status is {status}")
+                self.log.warning(f"Artifact {self.uuid} is ready but status is {status}")
                 self.set_status("ready")
             return True
         else:
