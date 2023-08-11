@@ -498,8 +498,11 @@ label>.label-body {
 /* Lists
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 ul {
-  list-style: circle inside;
-  padding-left: 0;
+  list-style: square inside;
+}
+
+.no-indent-bullets {
+   list-style: square;
 }
 
 ol {

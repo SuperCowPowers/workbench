@@ -24,7 +24,7 @@ def column_info_html(column_name, column_info: dict) -> str:
         if column_info["dtype"] in float_types:
             html_template += f""" {min:.2f} → {max:.2f}&nbsp;&nbsp;&nbsp;&nbsp;"""
         else:
-            html_template += f""" {min} → {max}&nbsp;&nbsp;&nbsp;&nbsp;"""
+            html_template += f""" {int(min)} → {int(max)}&nbsp;&nbsp;&nbsp;&nbsp;"""
         if column_info["num_zeros"] > 0:
             html_template += """ <span class="lightorange"> Zero: <<num_zeros>></span>"""
 
@@ -62,7 +62,7 @@ def create_markdown(artifact_details: dict) -> str:
     <br>**S3:** <<s3_storage_location>>
 
     #### Numeric Columns
-    <ul>
+    <ul class="no-indent-bullets">
     <<numeric_column_details>>
     </ul>
 
