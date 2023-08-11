@@ -32,10 +32,7 @@ class ModelWebView(ArtifactsWebView):
         """Get all the details for the given Model Index"""
         uuid = self.model_name(model_index)
         model = Model(uuid)
-        if model.exists():
-            return model.details()
-        else:
-            return None
+        return model.details()
 
     def model_name(self, model_index: int) -> (str, None):
         """Helper method for getting the data source name for the given Model Index"""

@@ -142,7 +142,17 @@ class FeaturesToModel(Transform):
         self.log.info(f"Creating new model {self.output_uuid}...")
         self.create_and_register_model()
 
-        # Now add our SageWorks meta data
+    def post_transform(self, **kwargs):
+        """Post-Transform: Calling make_ready() on the Model"""
+        self.log.info("Post-Transform: Calling make_ready() on the Model...")
+
+        # Okay, lets get our output model and set it to initializing
+        output_model = Model(self.output_uuid, force_refresh=True)
+        output_model.set_status("initializing")
+
+        # Call the Model make_ready method and set status to ready
+        output_model.make_ready()
+        output_model.set_status("ready")
 
     def create_and_register_model(self):
         """Create and Register the Model"""

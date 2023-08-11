@@ -9,7 +9,7 @@ from sagemaker.feature_store.inputs import TableFormatEnum
 
 # Local imports
 from sageworks.utils.iso_8601 import datetime_to_iso8601
-from sageworks.transforms.transform import Transform
+from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 
@@ -33,6 +33,8 @@ class PandasToFeatures(Transform):
         super().__init__("DataFrame", output_uuid)
 
         # Set up all my instance attributes
+        self.input_type = TransformInput.PANDAS_DF
+        self.output_type = TransformOutput.FEATURE_SET
         self.id_column = None
         self.event_time_column = None
         self.auto_categorical = auto_categorical
@@ -221,8 +223,8 @@ class PandasToFeatures(Transform):
         self.log.info(f"Total rows to be ingested: {self.expected_rows}")
 
     def post_transform(self, **kwargs):
-        """Post-Transform: Compute the Details, Quartiles, and SampleDF for the FeatureSet"""
-        self.log.info("Post-Transform: Computing Details, Quartiles, and SampleDF for the FeatureSet...")
+        """Post-Transform: Populating Offline Storage and make_ready()"""
+        self.log.info("Post-Transform: Populating Offline Storage and make_ready()...")
 
         # Feature Group Ingestion takes a while, so we need to wait for it to finish
         self.output_feature_set = FeatureSet(self.output_uuid, force_refresh=True)
@@ -233,13 +235,9 @@ class PandasToFeatures(Transform):
         self.log.info("Note: This will often take 10-20 minutes...go have coffee or lunch :)")
         self.wait_for_rows(self.expected_rows)
 
-        # Now compute the Details, Quartiles, Samples, and Outliers for the FeatureSet
-        self.output_feature_set.details()
-        self.output_feature_set.data_source.details()
-        self.output_feature_set.value_counts()
-        self.output_feature_set.quartiles()
-        self.output_feature_set.sample_df()
-        self.output_feature_set.outliers()
+        # Call the FeatureSet make_ready method to compute a bunch of EDA stuff
+        self.output_feature_set = FeatureSet(self.output_uuid, force_refresh=True)
+        self.output_feature_set.make_ready()
         self.output_feature_set.set_status("ready")
 
     def ensure_feature_group_created(self, feature_group):
@@ -254,11 +252,7 @@ class PandasToFeatures(Transform):
         """Wait for AWS Feature Group to fully populate the Offline Storage"""
         rows = self.output_feature_set.num_rows()
 
-        # For some reason we will sometimes not quite get all of the rows
-        # FIXME: Figure out some formal way to handle this
-        most_rows = expected_rows * 0.99
-
-        while rows < most_rows:
+        while rows < expected_rows:
             self.log.info(f"Waiting for AWS Feature Group {self.output_uuid} Offline Storage ({rows} rows)...")
             sleep_time = 5 if rows else 30
             time.sleep(sleep_time)
@@ -268,61 +262,20 @@ class PandasToFeatures(Transform):
 
 if __name__ == "__main__":
     """Exercise the PandasToFeatures Class"""
+    from sageworks.artifacts.data_sources.data_source import DataSource
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 15)
     pd.set_option("display.max_columns", 15)
     pd.set_option("display.width", 1000)
 
-    # Create some fake data
-    my_datetime = datetime.now(timezone.utc)
-    fake_data = [
-        {
-            "id": 1,
-            "name": "sue",
-            "age": 41,
-            "score": 7.8,
-            "date": my_datetime,
-            "cat": "a",
-        },
-        {
-            "id": 2,
-            "name": "bob",
-            "age": 34,
-            "score": 6.4,
-            "date": my_datetime,
-            "cat": "b",
-        },
-        {
-            "id": 3,
-            "name": "ted",
-            "age": 69,
-            "score": 8.2,
-            "date": my_datetime,
-            "cat": "c",
-        },
-        {
-            "id": 4,
-            "name": "bill",
-            "age": 24,
-            "score": 5.3,
-            "date": my_datetime,
-            "cat": "a",
-        },
-        {
-            "id": 5,
-            "name": "sally",
-            "age": 52,
-            "score": 9.5,
-            "date": my_datetime,
-            "cat": "b",
-        },
-    ]
-    fake_df = pd.DataFrame(fake_data)
+    # Crab the test_data DataSource
+    ds = DataSource("test_data")
+    data_df = ds.sample_df()
 
     # Create my DF to Feature Set Transform
     df_to_features = PandasToFeatures("test_feature_set")
-    df_to_features.set_input(fake_df, id_column="id", event_time_column="date")
+    df_to_features.set_input(data_df, id_column="id", event_time_column="date")
     df_to_features.set_output_tags(["test", "small"])
 
     # Store this dataframe as a SageWorks Feature Set

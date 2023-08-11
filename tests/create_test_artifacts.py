@@ -19,14 +19,24 @@ from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 from sageworks.artifacts.models.model import Model
 from sageworks.artifacts.endpoints.endpoint import Endpoint
 from sageworks.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
-from sageworks.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
+from sageworks.transforms.data_to_features.light.data_to_features_light import (
+    DataToFeaturesLight,
+)
 from sageworks.transforms.features_to_model.features_to_model import FeaturesToModel
 from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 
 if __name__ == "__main__":
     # Get the path to the dataset in the repository data directory
-    test_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
-    abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
+    test_data_path = (
+        Path(sys.modules["sageworks"].__file__).parent.parent.parent
+        / "data"
+        / "test_data.csv"
+    )
+    abalone_data_path = (
+        Path(sys.modules["sageworks"].__file__).parent.parent.parent
+        / "data"
+        / "abalone.csv"
+    )
 
     # Create the test_data DataSource
     if not DataSource("test_data").exists():
@@ -55,19 +65,21 @@ if __name__ == "__main__":
         data_to_features = DataToFeaturesLight("abalone_data", "abalone_feature_set")
         data_to_features.set_output_tags(["abalone", "public"])
         data_to_features.transform()
-        print("AWS takes a LONG time to populate their Feature Store/Groups. Run this script again in 10 minutes...")
-        sys.exit(0)
 
     # Create the abalone_regression Model
     if not Model("abalone-regression").exists():
         features_to_model = FeaturesToModel("abalone_feature_set", "abalone-regression")
         features_to_model.set_output_tags(["abalone", "regression"])
-        features_to_model.transform(target="class_number_of_rings", description="Abalone Regression Model")
+        features_to_model.transform(
+            target="class_number_of_rings", description="Abalone Regression Model"
+        )
         print("Waiting for the Model to be created...")
         time.sleep(10)
 
     # Create the abalone_regression Endpoint
     if not Endpoint("abalone-regression-end").exists():
-        model_to_endpoint = ModelToEndpoint("abalone-regression", "abalone-regression-end")
+        model_to_endpoint = ModelToEndpoint(
+            "abalone-regression", "abalone-regression-end"
+        )
         model_to_endpoint.set_output_tags(["abalone", "regression"])
         model_to_endpoint.transform()

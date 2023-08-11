@@ -84,38 +84,10 @@ class Transform(ABC):
         """Perform any Pre-Transform operations"""
         self.log.debug("Pre-Transform...")
 
+    @abstractmethod
     def post_transform(self, **kwargs):
-        """Perform any Post-Transform operations"""
-        self.log.info("Post-Transform...")
-
-        # For DataSource and FeatureSet we'll compute sample rows, quartiles, value counts, outliers, and column stats
-        if self.output_type == TransformOutput.DATA_SOURCE:
-            self.log.info("Computing Details, Sample Rows, and Quartiles...")
-            while not DataSource(self.output_uuid).exists():
-                self.log.info("Waiting for DataSource to be created...")
-                sleep(1)
-            ds = DataSource(self.output_uuid, force_refresh=True)
-            ds.details()
-            ds.sample_df()
-            ds.quartiles()
-            ds.value_counts()
-
-            # We do a refresh here to make sure we have the latest data before computing outliers
-            ds = DataSource(self.output_uuid, force_refresh=True)
-            ds.outliers()
-            ds.column_stats()
-
-        elif self.output_type == TransformOutput.FEATURE_SET:
-            self.log.info("Computing Details, Sample Rows, and Quartiles...")
-            while not FeatureSet(self.output_uuid).exists():
-                self.log.info("Waiting for FeatureSet to be created...")
-                sleep(1)
-            fs = FeatureSet(self.output_uuid, force_refresh=True)
-            fs.details()
-            fs.sample_df()
-            fs.quartiles()
-            fs.outliers()
-            fs.value_counts()
+        """Post-Transform ensures that the output Artifact is ready for use"""
+        pass
 
     def set_output_tags(self, tags: list | str):
         """Set the tags that will be associated with the output object

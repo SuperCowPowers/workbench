@@ -27,25 +27,22 @@ class FeatureSet(Artifact):
         my_features.details()
     """
 
-    def __init__(self, feature_uuid, force_refresh: bool = False):
+    def __init__(self, feature_set_uuid: str, force_refresh: bool = False):
         """FeatureSet Initialization
-
         Args:
-            feature_uuid (str): Name of Feature Set in SageWorks Metadata.
-            force_refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+            feature_set_uuid (str): Name of Feature Set in SageWorks Metadata
+            force_refresh (bool): Force a refresh of the Feature Set metadata (default: False)
         """
         # Call superclass init
-        super().__init__(feature_uuid)
+        super().__init__(feature_set_uuid)
 
-        # Grab an AWS Metadata Broker object and pull information for Feature Sets
-        self.feature_set_name = feature_uuid
-
-        # Refresh our feature and data source metadata
-        self.feature_meta = self._refresh_broker(force_refresh)
+        # Setup our AWS Broker catalog metadata
+        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=force_refresh)
+        self.feature_meta = _catalog_meta.get(self.uuid)
 
         # Sanity check and then set up our FeatureSet attributes
         if self.feature_meta is None:
-            self.log.info(f"Could not find feature set {self.feature_set_name} within current visibility scope")
+            self.log.info(f"Could not find feature set {self.uuid} within current visibility scope")
             self.data_source = None
             return
         else:
@@ -58,30 +55,27 @@ class FeatureSet(Artifact):
             self.s3_storage = self.feature_meta["sageworks_meta"].get("s3_storage")
 
             # Create our internal DataSource (hardcoded to Athena for now)
-            self.data_source = AthenaSource(self.athena_table, self.athena_database, force_refresh=force_refresh)
+            self.data_source = AthenaSource(self.athena_table, self.athena_database)
 
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
 
         # All done
-        self.log.info(f"FeatureSet Initialized: {self.feature_set_name}")
+        self.log.info(f"FeatureSet Initialized: {self.uuid}")
 
-    def _refresh_broker(self, force_refresh: bool = False):
-        """Internal: Refresh our internal AWS Feature Store metadata
-        Args:
-            force_refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
-        """
-        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=force_refresh)
-        return _catalog_meta.get(self.feature_set_name)
+    def refresh_meta(self):
+        """Internal: Refresh our internal AWS Feature Store metadata"""
+        self.log.warning("Calling refresh_meta() on the underlying DataSource")
+        self.data_source.refresh_meta()
 
     def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.feature_meta is None:
-            self.log.info(f"FeatureSet.exists() {self.feature_set_name} not found in AWS Metadata!")
+            self.log.info(f"FeatureSet.exists() {self.uuid} not found in AWS Metadata!")
             return False
         else:  # Also check our Data Source
             if not self.data_source.exists():
-                self.log.critical(f"Data Source check failed for {self.feature_set_name}")
+                self.log.critical(f"Data Source check failed for {self.uuid}")
                 self.log.critical("Delete this Feature Set and recreate it to fix this issue")
                 return False
         # AOK
@@ -161,13 +155,13 @@ class FeatureSet(Artifact):
 
         # Set up the S3 Query results path
         date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
-        s3_output_path = self.feature_sets_s3_path + f"/{self.feature_set_name}/datasets/all_{date_time}"
+        s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
 
         # Get the snapshot query
         query = self.snapshot_query()
 
         # Make the query
-        athena_query = FeatureGroup(name=self.feature_set_name, sagemaker_session=self.sm_session).athena_query()
+        athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
         self.log.info("Waiting for Athena Query...")
         athena_query.wait()
@@ -249,7 +243,7 @@ class FeatureSet(Artifact):
         """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
 
         # Delete the Feature Group and ensure that it gets deleted
-        remove_fg = FeatureGroup(name=self.feature_set_name, sagemaker_session=self.sm_session)
+        remove_fg = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session)
         remove_fg.delete()
         self.ensure_feature_group_deleted(remove_fg)
 
@@ -257,7 +251,7 @@ class FeatureSet(Artifact):
         self.data_source.delete()
 
         # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
-        s3_delete_path = self.feature_sets_s3_path + f"/{self.feature_set_name}"
+        s3_delete_path = self.feature_sets_s3_path + f"/{self.uuid}"
         self.log.info(f"Deleting S3 Storage Objects {s3_delete_path}")
         wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
 
@@ -329,6 +323,42 @@ class FeatureSet(Artifact):
             dict: A dictionary of value counts for the string columns
         """
         return self.data_source.value_counts(recompute)
+
+    def ready(self) -> bool:
+        """Is the FeatureSet ready? Is initial setup complete and expected metadata populated?
+           Note: Since FeatureSet is a composite of DataSource and FeatureGroup, we need to
+              check both to see if the FeatureSet is ready."""
+
+        # Artifact's have a status flag so let's check that
+        status = self.get_status()
+
+        # Check the expected metadata for the FeatureSet
+        expected_meta = self.expected_meta()
+        existing_meta = self.sageworks_meta()
+        feature_set_ready = set(existing_meta.keys()).issuperset(expected_meta)
+
+        # Check the expected metadata for the DataSource
+        expected_meta = self.data_source.expected_meta()
+        existing_meta = self.data_source.sageworks_meta()
+        data_source_ready = set(existing_meta.keys()).issuperset(expected_meta)
+        if feature_set_ready and data_source_ready:
+            self.log.info("FeatureSet is ready!")
+            if status != "ready":
+                self.log.warning(f"FeatureSet is ready but status is {status}")
+                self.set_status("ready")
+            return True
+        else:
+            self.log.info("FeatureSet is not ready!")
+            return False
+
+    def make_ready(self) -> bool:
+        """This is a BLOCKING method that will wait until the FeatureSet is ready"""
+
+        # Make sure the FeatureSet Details are computed
+        self.details()
+
+        # Call our underlying DataSource make_ready method
+        return self.data_source.make_ready()
 
 
 if __name__ == "__main__":

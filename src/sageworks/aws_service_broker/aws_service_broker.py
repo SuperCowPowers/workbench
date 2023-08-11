@@ -122,7 +122,7 @@ class AWSServiceBroker:
         cls.fresh_cache.set(category, True)
 
     @classmethod
-    def get_metadata(cls, category: ServiceCategory, force_refresh=False) -> dict:
+    def get_metadata(cls, category: ServiceCategory, force_refresh: bool = False) -> dict:
         """Pull Metadata for the given Service Category
 
         Args:

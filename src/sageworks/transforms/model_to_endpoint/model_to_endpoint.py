@@ -6,7 +6,7 @@ from sagemaker.deserializers import CSVDeserializer
 
 # Local Imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.artifacts.models.model import Model
+from sageworks.artifacts.models.model import Endpoint
 
 
 class ModelToEndpoint(Transform):
@@ -52,6 +52,18 @@ class ModelToEndpoint(Transform):
             deserializer=CSVDeserializer(),
             tags=aws_tags,
         )
+
+    def post_transform(self, **kwargs):
+        """Post-Transform: Calling make_ready() on the Model"""
+        self.log.info("Post-Transform: Calling make_ready() on the Endpoint...")
+
+        # Okay, lets get our output model and set it to initializing
+        output_endpoint = Endpoint(self.output_uuid, force_refresh=True)
+        output_endpoint.set_status("initializing")
+
+        # Call the Model make_ready method and set status to ready
+        output_endpoint.make_ready()
+        output_endpoint.set_status("ready")
 
     def delete_endpoint(self):
         """Delete an existing Endpoint and it's Configuration"""

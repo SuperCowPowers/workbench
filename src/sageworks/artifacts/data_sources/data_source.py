@@ -30,12 +30,12 @@ class DataSource:
         aws_meta(): Returns ALL AWS Metadata for this DataSource
     """
 
-    def __new__(cls, uuid, force_refresh: bool = False, data_source_type: str = "athena"):
+    def __new__(cls, uuid, data_source_type: str = "athena", force_refresh: bool = False):
         """DataSource: A Factory for DataSources (Athena, RDS, etc)
         Args:
             uuid: The UUID of the DataSource
-            force_refresh(bool): Force a refresh of the DataSource (default: False)
             data_source_type: The type of DataSource (athena, rds, etc)
+            force_refresh: Force a refresh of the AWS Broker (default: False)
         Returns:
             object: A concrete DataSource class (AthenaSource, RDSSource)
         """
@@ -91,6 +91,3 @@ if __name__ == "__main__":
 
     # Get a SAMPLE of the data
     print(f"Sample Data: {my_data.sample_df()}")
-
-    # Force a refresh of the DataSource
-    my_data = DataSource("abalone_data", force_refresh=True)

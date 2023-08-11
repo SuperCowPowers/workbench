@@ -16,18 +16,19 @@ class Model(Artifact):
         my_model.details()
     """
 
-    def __init__(self, model_uuid):
+    def __init__(self, model_uuid: str, force_refresh: bool = False):
         """Model Initialization
-
         Args:
             model_uuid (str): Name of Model in SageWorks.
+            force_refresh (bool, optional): Force a refresh of the AWS Broker. Defaults to False.
         """
         # Call SuperClass Initialization
         super().__init__(model_uuid)
 
         # Grab an AWS Metadata Broker object and pull information for Models
         self.model_name = model_uuid
-        self.model_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS).get(self.model_name)
+        aws_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS, force_refresh=force_refresh)
+        self.model_meta = aws_meta.get(self.model_name)
         if self.model_meta is None:
             self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
         else:
@@ -37,10 +38,16 @@ class Model(Artifact):
         # All done
         self.log.info(f"Model Initialized: {self.model_name}")
 
+    def refresh_meta(self):
+        """Refresh the Artifact's metadata"""
+        self.model_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS, force_refresh=True).get(self.model_name)
+        self.latest_model = self.model_meta[0]
+        self.description = self.latest_model["ModelPackageDescription"]
+
     def exists(self) -> bool:
         """Does the model metadata exist in the AWS Metadata?"""
         if self.model_meta is None:
-            self.log.info(f"Model.exists() {self.model_name} not found in AWS Metadata!")
+            self.log.info(f"Model {self.model_name} not found in AWS Metadata!")
             return False
         return True
 
@@ -82,6 +89,11 @@ class Model(Artifact):
         details["model_package_group_arn"] = self.group_arn()
         details["model_package_arn"] = self.model_arn()
         return details
+
+    def make_ready(self) -> bool:
+        """This is a BLOCKING method that will wait until the Model is ready"""
+        self.log.info("Model.make_ready() is a NOOP for now...")
+        return True
 
     def delete(self):
         """Delete the Model Packages and the Model Group"""

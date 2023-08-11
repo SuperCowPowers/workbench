@@ -22,13 +22,12 @@ class AthenaSource(DataSourceAbstract):
         df = my_data.query(f"select * from {data_uuid} limit 5")
     """
 
-    def __init__(self, data_uuid, database="sageworks", force_refresh=False):
+    def __init__(self, data_uuid, database="sageworks", force_refresh: bool = False):
         """AthenaSource Initialization
-
         Args:
             data_uuid (str): Name of Athena Table
-            database (str): Athena Database Name
-            force_refresh (bool): Force a refresh of the metadata
+            database (str): Athena Database Name (default: sageworks)
+            force_refresh (bool): Force refresh of AWS Metadata (default: False)
         """
 
         # Call superclass init
@@ -37,39 +36,26 @@ class AthenaSource(DataSourceAbstract):
         self.data_catalog_db = database
         self.table_name = data_uuid
 
-        # Refresh our internal catalog metadata
-        self.catalog_table_meta = self._refresh_broker(force_refresh)
+        # Setup our AWS Broker catalog metadata
+        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=force_refresh)
+        self.catalog_table_meta = _catalog_meta[self.data_catalog_db].get(self.uuid)
 
         # All done
         self.log.debug(f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}")
 
-    def _refresh_broker(self, force_refresh=False):
-        """Internal: Refresh our internal catalog metadata
-        Args:
-            force_refresh (bool): Force a refresh of the metadata
-        """
-        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=force_refresh)
-        return _catalog_meta[self.data_catalog_db].get(self.table_name)
+    def refresh_meta(self):
+        """Refresh our internal AWS Broker catalog metadata"""
+        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=True)
+        self.catalog_table_meta = _catalog_meta[self.data_catalog_db].get(self.table_name)
 
     def exists(self) -> bool:
         """Validation Checks for this Data Source"""
 
         # We're we able to pull AWS Metadata for this table_name?"""
         if self.catalog_table_meta is None:
-            self.log.info(f"AthenaSource.exists() {self.table_name} not found in SageWorks Metadata...")
+            self.log.info(f"AthenaSource {self.table_name} not found in SageWorks Metadata...")
             return False
         return True
-
-    def deep_check(self) -> bool:
-        """These are more comprehensive checks for this Data Source (may take a LONG TIME)"""
-
-        # Can we run an Athena Test Query
-        try:
-            self.athena_test_query()
-            return True
-        except Exception as exc:
-            self.log.critical(f"Athena Test Query Failed: {exc}")
-            return False
 
     def arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for this artifact"""

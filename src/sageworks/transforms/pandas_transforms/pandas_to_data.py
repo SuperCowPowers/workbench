@@ -6,6 +6,7 @@ from pandas.errors import ParserError
 # Local imports
 from sageworks.utils.iso_8601 import datetime_to_iso8601
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
+from sageworks.artifacts.data_sources.data_source import DataSource
 
 
 class PandasToData(Transform):
@@ -130,6 +131,18 @@ class PandasToData(Transform):
         else:
             raise ValueError(f"Unsupported file format: {self.output_format}")
 
+    def post_transform(self, **kwargs):
+        """Post-Transform: Calling make_ready() on the DataSource"""
+        self.log.info("Post-Transform: Calling make_ready() on the DataSource...")
+
+        # Okay, lets wait just a bit for the
+        output_data_source = DataSource(self.output_uuid, force_refresh=True)
+        output_data_source.set_status("initializing")
+
+        # Call the FeatureSet make_ready method to compute a bunch of EDA stuff
+        output_data_source.make_ready()
+        output_data_source.set_status("ready")
+
 
 if __name__ == "__main__":
     """Exercise the PandasToData Class"""
@@ -137,7 +150,6 @@ if __name__ == "__main__":
     from pathlib import Path
 
     # Load some small test data
-    # Local/relative path to CSV file (FIXME?)
     data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
     test_df = pd.read_csv(data_path)
 

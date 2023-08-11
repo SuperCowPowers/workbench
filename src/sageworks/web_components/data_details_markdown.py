@@ -30,7 +30,7 @@ def column_info_html(column_name, column_info: dict) -> str:
 
     # Non-numeric columns get the number of unique values
     else:
-        html_template += """  Unique: <<unique>>   """
+        html_template += """ Unique: <<unique>> """
 
     # Do we have any nulls in this column?
     if column_info["nulls"] > 0:

@@ -20,7 +20,6 @@ class Artifact(ABC):
     Artifacts simply reflect and aggregate one or more AWS Services"""
 
     # Class attributes
-    log = logging.getLogger(__name__)
 
     # Set up our Boto3 and SageMaker Session and SageMaker Client
     aws_account_clamp = AWSAccountClamp()
@@ -39,7 +38,7 @@ class Artifact(ABC):
     data_source_s3_path = "s3://" + sageworks_bucket + "/data-sources"
     feature_sets_s3_path = "s3://" + sageworks_bucket + "/feature-sets"
 
-    def __init__(self, uuid):
+    def __init__(self, uuid: str):
         """Artifact Initialization"""
         self.uuid = uuid
         self.log = logging.getLogger(__name__)
@@ -47,6 +46,46 @@ class Artifact(ABC):
     @abstractmethod
     def exists(self) -> bool:
         """Does the Artifact exist? Can we connect to it?"""
+        pass
+
+    def expected_meta(self) -> list[str]:
+        """Metadata we expect to see for this Artifact when it's ready
+        Returns:
+            list[str]: List of expected metadata keys
+        """
+
+        # By default, we expect ALL artifacts to have their details precomputed
+        # If an artifact has additional expected metadata override this method
+        return ["sageworks_details"]
+
+    @abstractmethod
+    def refresh_meta(self):
+        """Refresh the Artifact's metadata"""
+        pass
+
+    def ready(self) -> bool:
+        """Is the Artifact ready? Is initial setup complete and expected metadata populated?"""
+
+        # Artifact's have a status flag so let's check that
+        status = self.get_status()
+
+        # Check for the expected metadata
+        expected_meta = self.expected_meta()
+        existing_meta = self.sageworks_meta()
+        ready = set(existing_meta.keys()).issuperset(expected_meta)
+        if ready:
+            self.log.info("Artifact is ready!")
+            if status != "ready":
+                self.log.warning(f"Artifact is ready but status is {status}")
+                self.set_status("ready")
+            return True
+        else:
+            self.log.info("Artifact is not ready!")
+            return False
+
+    @abstractmethod
+    def make_ready(self) -> bool:
+        """Is the Artifact ready? Are the initial setup steps complete?"""
         pass
 
     @abstractmethod

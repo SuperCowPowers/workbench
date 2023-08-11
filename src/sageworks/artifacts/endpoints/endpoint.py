@@ -47,10 +47,15 @@ class Endpoint(Artifact):
         # All done
         self.log.info(f"Endpoint Initialized: {self.endpoint_name}")
 
+    def refresh_meta(self):
+        """Refresh the Artifact's metadata"""
+        self.endpoint_meta = self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS,
+                                                          force_refresh=True).get(self.endpoint_name)
+
     def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.endpoint_meta is None:
-            self.log.info(f"Endpoint.exists() {self.endpoint_name} not found in AWS Metadata!")
+            self.log.info(f"Endpoint {self.endpoint_name} not found in AWS Metadata!")
             return False
         return True
 
@@ -185,7 +190,13 @@ class Endpoint(Artifact):
         details = self.summary()
         return details
 
-    def performance_metrics(self, target: str, prediction_df: pd.DataFrame) -> dict:
+    def make_ready(self) -> bool:
+        """This is a BLOCKING method that will wait until the Endpoint is ready"""
+        self.details()
+        return True
+
+    @staticmethod
+    def performance_metrics(target: str, prediction_df: pd.DataFrame) -> dict:
         """Compute the performance metrics for this Endpoint"""
 
         # Compute the metrics
@@ -244,11 +255,11 @@ if __name__ == "__main__":
     print(feature_df)
 
     # Okay now run inference against our Features DataFrame
-    prediction_df = my_endpoint.predict(feature_df)
-    print(prediction_df)
+    my_prediction_df = my_endpoint.predict(feature_df)
+    print(my_prediction_df)
 
     # Compute performance metrics for out test predictions
     target_column = "class_number_of_rings"
-    metrics = my_endpoint.performance_metrics(target_column, prediction_df)
+    metrics = my_endpoint.performance_metrics(target_column, my_prediction_df)
     for metric, value in metrics.items():
         print(f"{metric}: {value:0.3f}")
