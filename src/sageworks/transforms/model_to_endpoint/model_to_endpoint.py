@@ -6,7 +6,8 @@ from sagemaker.deserializers import CSVDeserializer
 
 # Local Imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.artifacts.models.model import Endpoint
+from sageworks.artifacts.models.model import Model
+from sageworks.artifacts.endpoints.endpoint import Endpoint
 
 
 class ModelToEndpoint(Transform):

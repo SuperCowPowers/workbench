@@ -5,14 +5,11 @@ from enum import Enum, auto
 from typing import final
 import logging
 import awswrangler as wr
-from time import sleep
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
-from sageworks.artifacts.data_sources.data_source import DataSource
-from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 # Setup Logging
 logging_setup()

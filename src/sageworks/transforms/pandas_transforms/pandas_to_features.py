@@ -1,5 +1,4 @@
 """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet"""
-from datetime import datetime, timezone
 import pandas as pd
 import numpy as np
 import time
