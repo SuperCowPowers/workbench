@@ -116,8 +116,14 @@ class DataSourceAbstract(Artifact):
         """DataSources have quite a bit of expected Metadata for EDA displays"""
 
         # For DataSources, we expect to see the following metadata
-        expected_meta = ["sageworks_details", "sageworks_sample_rows", "sageworks_quartiles",
-                         "sageworks_value_counts", "sageworks_outliers", "sageworks_column_stats"]
+        expected_meta = [
+            "sageworks_details",
+            "sageworks_sample_rows",
+            "sageworks_quartiles",
+            "sageworks_value_counts",
+            "sageworks_outliers",
+            "sageworks_column_stats",
+        ]
         return expected_meta
 
     def make_ready(self) -> bool:

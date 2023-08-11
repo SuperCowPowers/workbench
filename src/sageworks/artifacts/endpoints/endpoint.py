@@ -49,8 +49,9 @@ class Endpoint(Artifact):
 
     def refresh_meta(self):
         """Refresh the Artifact's metadata"""
-        self.endpoint_meta = self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS,
-                                                          force_refresh=True).get(self.endpoint_name)
+        self.endpoint_meta = self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS, force_refresh=True).get(
+            self.endpoint_name
+        )
 
     def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""

@@ -27,16 +27,8 @@ from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndp
 
 if __name__ == "__main__":
     # Get the path to the dataset in the repository data directory
-    test_data_path = (
-        Path(sys.modules["sageworks"].__file__).parent.parent.parent
-        / "data"
-        / "test_data.csv"
-    )
-    abalone_data_path = (
-        Path(sys.modules["sageworks"].__file__).parent.parent.parent
-        / "data"
-        / "abalone.csv"
-    )
+    test_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
+    abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
 
     # DELETE the test_data DataSource
     ds = DataSource("test_data")

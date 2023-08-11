@@ -326,8 +326,8 @@ class FeatureSet(Artifact):
 
     def ready(self) -> bool:
         """Is the FeatureSet ready? Is initial setup complete and expected metadata populated?
-           Note: Since FeatureSet is a composite of DataSource and FeatureGroup, we need to
-              check both to see if the FeatureSet is ready."""
+        Note: Since FeatureSet is a composite of DataSource and FeatureGroup, we need to
+           check both to see if the FeatureSet is ready."""
 
         # Artifact's have a status flag so let's check that
         status = self.get_status()
