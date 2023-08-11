@@ -59,6 +59,11 @@ class FeaturesToPandas(Transform):
         self.transform_run = True
         self.output_df = input_data.query(query)
 
+    def post_transform(self, **kwargs):
+        """Post-Transform: Any checks on the Pandas DataFrame that need to be done"""
+        self.log.info("Post-Transform: Checking Pandas DataFrame...")
+        self.log.info(f"DataFrame Shape: {self.output_df.shape}")
+
     def get_output(self) -> pd.DataFrame:
         """Get the DataFrame Output from this Transform"""
         if not self.transform_run:

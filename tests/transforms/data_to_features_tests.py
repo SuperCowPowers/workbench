@@ -1,4 +1,5 @@
 """Tests for the Data to Data (light) Transforms"""
+import pytest
 
 # Local imports
 from sageworks.transforms.data_to_features.light.data_to_features_light import (
@@ -7,6 +8,7 @@ from sageworks.transforms.data_to_features.light.data_to_features_light import (
 
 
 # Simple test of the DataToFeaturesLight functionality
+@pytest.mark.slow
 def test():
     """Tests for the Data to Features (light) Transforms"""
 
