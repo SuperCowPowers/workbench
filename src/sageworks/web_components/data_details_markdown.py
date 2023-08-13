@@ -4,8 +4,14 @@ from dash import dcc
 
 def _construct_full_type(column_info: dict) -> dict:
     """Internal method for showing the FeatureSet Types if they exist"""
+    shorten_map = {
+        "Integral": "I",
+        "Fractional": "F",
+        "String": "S",
+    }
     if "fs_dtype" in column_info:
-        column_info["full_type"] = f"{column_info['fs_dtype']}/{column_info['dtype']}"
+        display_fs_type = shorten_map.get(column_info['fs_dtype'], "???")
+        column_info["full_type"] = f"{display_fs_type}: {column_info['dtype']}"
     else:
         column_info["full_type"] = column_info["dtype"]
     return column_info
