@@ -2,6 +2,15 @@
 from dash import dcc
 
 
+def _construct_full_type(column_info: dict) -> dict:
+    """Internal method for showing the FeatureSet Types if they exist"""
+    if "fs_dtype" in column_info:
+        column_info["full_type"] = f"{column_info['fs_dtype']}/{column_info['dtype']}"
+    else:
+        column_info["full_type"] = column_info["dtype"]
+    return column_info
+
+
 def column_info_html(column_name, column_info: dict) -> str:
     """Create an HTML string for a column's information
     Args:
@@ -12,7 +21,7 @@ def column_info_html(column_name, column_info: dict) -> str:
     """
 
     # First part of the HTML template is the same for all columns
-    html_template = """<b><<name>></b> <span class="lightblue">(<<dtype>>)</span>:"""
+    html_template = """<b><<name>></b> <span class="lightblue">(<<full_type>>)</span>:"""
 
     # Add min, max, and number of zeros for numeric columns
     numeric_types = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
@@ -25,7 +34,9 @@ def column_info_html(column_name, column_info: dict) -> str:
             html_template += f""" {min:.2f} → {max:.2f}&nbsp;&nbsp;&nbsp;&nbsp;"""
         else:
             html_template += f""" {int(min)} → {int(max)}&nbsp;&nbsp;&nbsp;&nbsp;"""
-        if column_info["num_zeros"] > 0:
+        if column_info["unique"] == 2:
+            html_template += """ <span class="lightgreen"> Binary</span>"""
+        elif column_info["num_zeros"] > 0:
             html_template += """ <span class="lightorange"> Zero: <<num_zeros>></span>"""
 
     # Non-numeric columns get the number of unique values
@@ -38,6 +49,9 @@ def column_info_html(column_name, column_info: dict) -> str:
 
     # Replace the column name
     html_template = html_template.replace("<<name>>", column_name)
+
+    # Construct the full type
+    column_info = _construct_full_type(column_info)
 
     # Loop through all the details and replace in the template
     for key, value in column_info.items():
@@ -105,7 +119,7 @@ def create_markdown(artifact_details: dict) -> str:
     # For string columns create collapsible sections that show value counts
     string_column_details = ""
     for column_name, column_info in column_stats.items():
-        # Skipping any columns that are dtype string
+        # Skipping any columns that aren't dtype string
         if column_info["dtype"] != "string" or "value_counts" not in column_info:
             continue
 

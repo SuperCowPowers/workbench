@@ -237,13 +237,13 @@ class AthenaSource(DataSourceAbstract):
             return json.loads(self.sageworks_meta()["sageworks_column_stats"])
 
         # Call the SQL function to compute column stats
-        columns_stats_dict = column_stats.column_stats(self)
+        column_stats_dict = column_stats.column_stats(self)
 
         # Push the column stats data into our DataSource Metadata
-        self.upsert_sageworks_meta({"sageworks_column_stats": columns_stats_dict})
+        self.upsert_sageworks_meta({"sageworks_column_stats": column_stats_dict})
 
         # Return the column stats data
-        return columns_stats_dict
+        return column_stats_dict
 
     def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource

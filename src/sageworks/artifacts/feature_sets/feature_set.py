@@ -324,6 +324,28 @@ class FeatureSet(Artifact):
         """
         return self.data_source.value_counts(recompute)
 
+    def column_stats(self, recompute: bool = False) -> dict[dict]:
+        """Compute Column Stats for all the columns in the FeatureSets underlying DataSource
+        Args:
+            recompute(bool): Recompute the column stats (default: False)
+        Returns:
+            dict(dict): A dictionary of stats for each column this format
+            NB: String columns will NOT have num_zeros and quartiles
+             {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
+              'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'quartiles': {...}},
+              ...}
+        """
+
+        # Grab the column stats from our DataSource
+        ds_column_stats = self.data_source.column_stats(recompute)
+
+        # Map the types from our DataSource to the FeatureSet types
+        fs_type_mapper = self.column_details()
+        for col, details in ds_column_stats.items():
+            details["fs_dtype"] = fs_type_mapper.get(col, 'unknown')
+
+        return ds_column_stats
+
     def ready(self) -> bool:
         """Is the FeatureSet ready? Is initial setup complete and expected metadata populated?
         Note: Since FeatureSet is a composite of DataSource and FeatureGroup, we need to

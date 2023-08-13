@@ -88,7 +88,7 @@ class FeatureSetWebView(ArtifactsWebView):
         fs = FeatureSet(uuid)
         if fs.get_status() == "ready":
             details_data = fs.data_source.details()
-            details_data["value_counts"] = fs.value_counts()
+            details_data["column_stats"] = fs.column_stats()
             return details_data
         else:
             return None
