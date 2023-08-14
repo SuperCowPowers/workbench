@@ -8,7 +8,7 @@ import json
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.iso_8601 import convert_all_to_iso8601
-from sageworks.algorithms.sql import sample_rows, value_counts, quartiles, outliers, column_stats
+from sageworks.algorithms.sql import sample_rows, value_counts, quartiles, outliers, column_stats, correlations
 from sageworks.utils.pandas_utils import NumpyEncoder
 
 
@@ -220,15 +220,39 @@ class AthenaSource(DataSourceAbstract):
         # Return the quartile data
         return quartile_dict
 
+    def correlations(self, recompute: bool = False) -> dict[dict]:
+        """Compute Correlations for all the numeric columns in a DataSource
+        Args:
+            recompute(bool): Recompute the column stats (default: False)
+        Returns:
+            dict(dict): A dictionary of correlations for each column in this format
+                 {'col1': {'col2': 0.5, 'col3': 0.9, 'col4': 0.4, ...},
+                  'col2': {'col1': 0.5, 'col3': 0.8, 'col4': 0.3, ...}}
+        """
+
+        # First check if we have already computed the correlations
+        if self.sageworks_meta().get("sageworks_correlations") and not recompute:
+            return json.loads(self.sageworks_meta()["sageworks_correlations"])
+
+        # Call the SQL function to compute correlations
+        correlations_dict = correlations.correlations(self)
+
+        # Push the quartile data into our DataSource Metadata
+        self.upsert_sageworks_meta({"sageworks_correlations": correlations_dict})
+
+        # Return the quartile data
+        return correlations_dict
+
     def column_stats(self, recompute: bool = False) -> dict[dict]:
         """Compute Column Stats for all the columns in a DataSource
         Args:
             recompute(bool): Recompute the column stats (default: False)
         Returns:
             dict(dict): A dictionary of stats for each column this format
-            NB: String columns will NOT have num_zeros and quartiles
+            NB: String columns will NOT have num_zeros, quartiles or correlation data
              {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
-              'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'quartiles': {...}},
+              'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100,
+                       'quartiles': {...}, 'correlations': {...}},
               ...}
         """
 
@@ -422,7 +446,7 @@ if __name__ == "__main__":
     pprint(quartile_info)
 
     # Get value_counts for string columns
-    value_count_info = my_data.value_counts(recompute=True)
+    value_count_info = my_data.value_counts()
     print("\nValue Counts")
     pprint(value_count_info)
 
@@ -430,6 +454,11 @@ if __name__ == "__main__":
     my_outlier_df = my_data.outliers()
     print("\nOutliers")
     print(my_outlier_df)
+
+    # Get correlations for numeric columns
+    my_correlation_df = my_data.correlations()
+    print("\nCorrelations")
+    print(my_correlation_df)
 
     # Get ALL the AWS Metadata associated with this Artifact
     print("\n\nALL Meta")

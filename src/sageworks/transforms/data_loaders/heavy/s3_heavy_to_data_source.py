@@ -120,7 +120,7 @@ class S3HeavyToDataSource:
         # Resolve Choice fields
         resolved_dyf = self.resolve_choice_fields(input_dyf)
 
-        # The next couple of lines of code is for unnested any nested JSON
+        # The next couple of lines of code is for un-nesting any nested JSON
         # Create a Dynamic Frame Collection (dfc)
         dfc = Relationalize.apply(resolved_dyf, name="root")
 

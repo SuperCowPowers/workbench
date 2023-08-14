@@ -121,8 +121,9 @@ class DataSourceAbstract(Artifact):
             "sageworks_sample_rows",
             "sageworks_quartiles",
             "sageworks_value_counts",
+            "sageworks_correlations",
             "sageworks_outliers",
-            "sageworks_column_stats",
+            "sageworks_column_stats"
         ]
         return expected_meta
 
@@ -132,6 +133,7 @@ class DataSourceAbstract(Artifact):
         self.sample_df()
         self.quartiles()
         self.value_counts()
+        self.correlations()
         self.refresh_meta()  # Refresh the meta since outliers needs quartiles and value_counts
         self.outliers()
         self.column_stats()

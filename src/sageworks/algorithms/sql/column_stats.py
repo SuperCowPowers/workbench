@@ -39,6 +39,11 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
     for column, count_info in value_counts.items():
         column_data[column]["value_counts"] = count_info
 
+    # Now add correlations to the column stats
+    correlations = data_source.correlations()
+    for column, correlation_info in correlations.items():
+        column_data[column]["correlations"] = correlation_info
+
     # For every column in the table get unique values and Nulls/NaNs
     # Also for numeric columns get the number of zero values
     data_source.log.info("Computing Unique values and num zero for numeric columns (this may take a while)...")

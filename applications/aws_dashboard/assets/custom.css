@@ -505,6 +505,15 @@ ul {
    list-style: square;
 }
 
+.no-bullet {
+    list-style-type: none;
+}
+
+.no-bullet details > ul {
+    margin-top: 0; /* Removes the default top margin */
+    padding-top: 0; /* Removes the default top padding */
+}
+
 ol {
   list-style: decimal inside;
 }

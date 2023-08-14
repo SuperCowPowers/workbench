@@ -117,13 +117,22 @@ def create_markdown(artifact_details: dict) -> str:
             column_html = column_info_html(column_name, column_info)
             column_details = expanding_list.replace("<<column_info>>", column_html)
 
-            # Populate the bullet list (quartiles, unique, and correlations)
+            # Populate the bullet list (quartiles and unique)
             bullet_list = ""
             for q, value in column_info["quartiles"].items():
                 bullet_list += f"<li>{q}: {value:.3f}</li>"
             bullet_list += f"<li>Unique: {column_info['unique']}</li>"
+
+            # Add correlations if they exist
             if column_info.get("correlations"):
-                bullet_list += f"<li>Corr: {column_info['correlations']}</li>"
+                corr_title = """<span class="lightgreen"><b>Correlated Columns</b></span>"""
+                corr_details = expanding_list.replace("<<column_info>>", corr_title)
+                corr_details = f"""<li class="no-bullet">{corr_details}</li>"""
+                corr_list = ""
+                for col, corr in column_info["correlations"].items():
+                    corr_list += f"<li>{col}: {corr:.3f}</li>"
+                corr_details = corr_details.replace("<<bullet_list>>", corr_list)
+                bullet_list += corr_details
 
             # Add the bullet list to the column details
             column_details = column_details.replace("<<bullet_list>>", bullet_list)
