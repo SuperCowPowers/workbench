@@ -82,9 +82,7 @@ def create_markdown(artifact_details: dict) -> str:
     <br>**S3:** <<s3_storage_location>>
 
     #### Numeric Columns
-    <ul class="no-indent-bullets">
     <<numeric_column_details>>
-    </ul>
 
     #### String Columns
     <<string_column_details>>
@@ -117,7 +115,21 @@ def create_markdown(artifact_details: dict) -> str:
     for column_name, column_info in column_stats.items():
         if column_info["dtype"] in numeric_types:
             column_html = column_info_html(column_name, column_info)
-            numeric_column_details += f"<li>{column_html}</li>"
+            column_details = expanding_list.replace("<<column_info>>", column_html)
+
+            # Populate the bullet list (quartiles, unique, and correlations)
+            bullet_list = ""
+            for q, value in column_info["quartiles"].items():
+                bullet_list += f"<li>{q}: {value:.3f}</li>"
+            bullet_list += f"<li>Unique: {column_info['unique']}</li>"
+            if column_info.get("correlations"):
+                bullet_list += f"<li>Corr: {column_info['correlations']}</li>"
+
+            # Add the bullet list to the column details
+            column_details = column_details.replace("<<bullet_list>>", bullet_list)
+
+            # Add the column details to the markdown
+            numeric_column_details += column_details
 
     # Now actually replace the column details in the markdown
     markdown_template = markdown_template.replace("<<numeric_column_details>>", numeric_column_details)
