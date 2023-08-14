@@ -324,6 +324,15 @@ class FeatureSet(Artifact):
         """
         return self.data_source.value_counts(recompute)
 
+    def correlations(self, recompute: bool = False) -> dict:
+        """Get the correlations for the numeric columns of the underlying DataSource
+        Args:
+            recompute (bool): Recompute the value counts (default=False)
+        Returns:
+            dict: A dictionary of correlations for the numeric columns
+        """
+        return self.data_source.correlations(recompute)
+
     def column_stats(self, recompute: bool = False) -> dict[dict]:
         """Compute Column Stats for all the columns in the FeatureSets underlying DataSource
         Args:
