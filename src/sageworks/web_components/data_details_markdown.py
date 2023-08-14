@@ -10,7 +10,7 @@ def _construct_full_type(column_info: dict) -> dict:
         "String": "S",
     }
     if "fs_dtype" in column_info:
-        display_fs_type = shorten_map.get(column_info['fs_dtype'], "???")
+        display_fs_type = shorten_map.get(column_info["fs_dtype"], "???")
         column_info["full_type"] = f"{display_fs_type}: {column_info['dtype']}"
     else:
         column_info["full_type"] = column_info["dtype"]

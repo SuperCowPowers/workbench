@@ -123,7 +123,7 @@ class DataSourceAbstract(Artifact):
             "sageworks_value_counts",
             "sageworks_correlations",
             "sageworks_outliers",
-            "sageworks_column_stats"
+            "sageworks_column_stats",
         ]
         return expected_meta
 

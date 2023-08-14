@@ -342,7 +342,7 @@ class FeatureSet(Artifact):
         # Map the types from our DataSource to the FeatureSet types
         fs_type_mapper = self.column_details()
         for col, details in ds_column_stats.items():
-            details["fs_dtype"] = fs_type_mapper.get(col, 'unknown')
+            details["fs_dtype"] = fs_type_mapper.get(col, "unknown")
 
         return ds_column_stats
 
