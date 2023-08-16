@@ -13,39 +13,39 @@ log = logging.getLogger(__name__)
 
 def count_distinct_query(columns: list[str], table_name: str):
     """Build a query to compute the count of distinct values for the given columns
-       Args:
-           columns(list(str)): The columns to compute distinct counts on
-           table_name(str): The database table
-       Returns:
-           str: The query to compute the distinct values count for the given columns
+    Args:
+        columns(list(str)): The columns to compute distinct counts on
+        table_name(str): The database table
+    Returns:
+        str: The query to compute the distinct values count for the given columns
     """
-    distinct_counts = [f'COUNT(DISTINCT {column}) AS {column}' for column in columns]
+    distinct_counts = [f"COUNT(DISTINCT {column}) AS {column}" for column in columns]
     sql_query = f'SELECT  {", ".join(distinct_counts)} FROM {table_name};'
     return sql_query
 
 
 def count_nulls_query(columns: list[str], table_name: str) -> str:
     """Build a query to compute the counts of null values for the given columns
-       Args:
-           columns(list[str]): The columns to compute null counts on
-           table_name(str): The database table
-       Returns:
-           str: The query to compute the null values counts for the given columns
+    Args:
+        columns(list[str]): The columns to compute null counts on
+        table_name(str): The database table
+    Returns:
+        str: The query to compute the null values counts for the given columns
     """
-    null_counts = [f'COUNT(CASE WHEN {column} IS NULL THEN 1 END) AS {column}' for column in columns]
+    null_counts = [f"COUNT(CASE WHEN {column} IS NULL THEN 1 END) AS {column}" for column in columns]
     sql_query = f'SELECT  {", ".join(null_counts)} FROM {table_name};'
     return sql_query
 
 
 def count_zeros_query(columns: list[str], table_name: str) -> str:
     """Build a query to compute the counts of zero values for the given columns
-       Args:
-           columns(list[str]): The columns to compute zero counts on
-           table_name(str): The database table
-       Returns:
-           str: The query to compute the zero values counts for the given columns
+    Args:
+        columns(list[str]): The columns to compute zero counts on
+        table_name(str): The database table
+    Returns:
+        str: The query to compute the zero values counts for the given columns
     """
-    zero_counts = [f'COUNT(CASE WHEN {column} = 0 THEN 1 END) AS zero_values_{column}' for column in columns]
+    zero_counts = [f"COUNT(CASE WHEN {column} = 0 THEN 1 END) AS zero_values_{column}" for column in columns]
     sql_query = f'SELECT  {", ".join(zero_counts)} FROM {table_name};'
     return sql_query
 
