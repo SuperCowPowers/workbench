@@ -26,15 +26,12 @@ def data_sources_layout(
                         },
                     ),
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
-
                     # Just the auto updater
                     dcc.Interval(id="data-sources-updater", interval=5000, n_intervals=0),
                 ]
             ),
-
             # A table that lists out all the Data Sources
             dbc.Row(data_sources_table),
-
             # Sample Rows for the selected Data Source
             dbc.Row(
                 html.H3("Sampled Rows", id="sample_rows_header"),
@@ -44,7 +41,6 @@ def data_sources_layout(
                 data_source_sample_rows,
                 style={"padding": "0px 0px 30px 0px"},
             ),
-
             # Column1: Data Source Details, Column2: Violin Plots, Correlation Matrix
             dbc.Row(
                 [
@@ -64,12 +60,9 @@ def data_sources_layout(
                     ),
                     # Column 2: Violin Plots, Correlation Matrix
                     dbc.Col(
-                        [
-                            dbc.Row(violin_plot),
-                            dbc.Row(correlation_matrix)
-                        ],
+                        [dbc.Row(violin_plot), dbc.Row(correlation_matrix)],
                         width=8,
-                    )
+                    ),
                 ]
             ),
         ],

@@ -2,12 +2,7 @@
 import plotly.graph_objs
 from dash import dcc
 import pandas as pd
-import plotly.graph_objects as go
 import plotly.express as px
-from enum import Enum
-import math
-
-fake_data = px.data.medals_wide(indexed=True)
 
 
 # For heatmaps see (https://plotly.com/python/heatmaps/)
@@ -21,13 +16,15 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
     """
 
     # A nice color scale for the heatmap
-    color_scale = [[0, 'rgb(64,64,128)'],
-                   [0.15, 'rgb(48, 120, 120)'],
-                   [0.4, 'rgb(32, 32, 32)'],
-                   [0.5, 'rgb(32, 32, 32)'],
-                   [0.6, 'rgb(32, 32, 32)'],
-                   [0.85, 'rgb(120, 120, 48)'],
-                   [1.0, 'rgb(128, 64, 64)']]
+    color_scale = [
+        [0, "rgb(64,64,128)"],
+        [0.15, "rgb(48, 120, 120)"],
+        [0.4, "rgb(32, 32, 32)"],
+        [0.5, "rgb(32, 32, 32)"],
+        [0.6, "rgb(32, 32, 32)"],
+        [0.85, "rgb(120, 120, 48)"],
+        [1.0, "rgb(128, 64, 64)"],
+    ]
 
     # Create the imshow plot with custom settings
     fig = px.imshow(df, color_continuous_scale=color_scale, range_color=[-1, 1], text_auto=".2f")
