@@ -53,8 +53,18 @@ class Outliers:
             log.warning("No outliers found for this DataSource, returning empty DataFrame")
             all_outliers = pd.DataFrame(columns=data_source.column_names() + ["outlier_group"])
 
-        # Drop duplicates and return the outliers
-        return all_outliers.drop_duplicates()
+        # Drop duplicates
+        all_outliers = all_outliers.drop_duplicates()
+
+        # Make sure the dataframe isn't too big, if it's too big sample it down
+        if len(all_outliers) > 100:
+            log.warning(f"Outliers DataFrame is too large {len(all_outliers)}, sampling down to 100 rows")
+            all_outliers = all_outliers.sample(100)
+
+        # Sort by outlier_group and reset the index
+        all_outliers = all_outliers.sort_values("outlier_group").reset_index(drop=True)
+
+        return all_outliers
 
     def _numeric_outliers(self, data_source: DataSourceAbstract, scale: float) -> pd.DataFrame:
         """Internal method to compute outliers for all numeric columns
@@ -178,13 +188,13 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("abalone_data")
+    my_data = DataSource("aqsol_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
 
     # Create the class and Compute outliers
     my_outliers = Outliers()
-    my_outlier_df = my_outliers.compute_outliers(my_data, include_strings=True)
+    my_outlier_df = my_outliers.compute_outliers(my_data, include_strings=False)
     print("\nOutliers")
     print(my_outlier_df)

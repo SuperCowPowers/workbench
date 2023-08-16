@@ -5,6 +5,7 @@ import pandas as pd
 # Local imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
+from sageworks.artifacts.data_sources.data_source import DataSource
 
 
 class JSONToDataSource(Transform):
@@ -46,6 +47,18 @@ class JSONToDataSource(Transform):
 
         # Report the transformation results
         self.log.info(f"{json_file} -->  DataSource: {self.output_uuid} Complete!")
+
+    def post_transform(self, **kwargs):
+        """Post-Transform: Calling make_ready() on the DataSource"""
+        self.log.info("Post-Transform: Calling make_ready() on the DataSource...")
+
+        # Okay, lets wait just a bit for the
+        output_data_source = DataSource(self.output_uuid, force_refresh=True)
+        output_data_source.set_status("initializing")
+
+        # Call the FeatureSet make_ready method to compute a bunch of EDA stuff
+        output_data_source.make_ready()
+        output_data_source.set_status("ready")
 
 
 if __name__ == "__main__":

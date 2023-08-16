@@ -19,7 +19,7 @@ def count_distinct_query(columns: list[str], table_name: str):
     Returns:
         str: The query to compute the distinct values count for the given columns
     """
-    distinct_counts = [f"COUNT(DISTINCT {column}) AS {column}" for column in columns]
+    distinct_counts = [f'COUNT(DISTINCT "{column}") AS count_{column}' for column in columns]
     sql_query = f'SELECT  {", ".join(distinct_counts)} FROM {table_name};'
     return sql_query
 
@@ -32,7 +32,7 @@ def count_nulls_query(columns: list[str], table_name: str) -> str:
     Returns:
         str: The query to compute the null values counts for the given columns
     """
-    null_counts = [f"COUNT(CASE WHEN {column} IS NULL THEN 1 END) AS {column}" for column in columns]
+    null_counts = [f'COUNT(CASE WHEN "{column}" IS NULL THEN 1 END) AS count_{column}' for column in columns]
     sql_query = f'SELECT  {", ".join(null_counts)} FROM {table_name};'
     return sql_query
 
@@ -45,7 +45,7 @@ def count_zeros_query(columns: list[str], table_name: str) -> str:
     Returns:
         str: The query to compute the zero values counts for the given columns
     """
-    zero_counts = [f"COUNT(CASE WHEN {column} = 0 THEN 1 END) AS {column}" for column in columns]
+    zero_counts = [f'COUNT(CASE WHEN "{column}" = 0 THEN 1 END) AS count_{column}' for column in columns]
     sql_query = f'SELECT  {", ".join(zero_counts)} FROM {table_name};'
     return sql_query
 
@@ -106,10 +106,10 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
 
     # Okay now we take the results of the queries and add them to the column_data
     for column in all_columns:
-        column_data[column]["unique"] = distinct_counts.iloc[0][column]
-        column_data[column]["nulls"] = null_counts.iloc[0][column]
+        column_data[column]["unique"] = distinct_counts.iloc[0][f"count_{column}"]
+        column_data[column]["nulls"] = null_counts.iloc[0][f"count_{column}"]
         if column in numeric:
-            column_data[column]["num_zeros"] = zero_counts.iloc[0][column]
+            column_data[column]["num_zeros"] = zero_counts.iloc[0][f"count_{column}"]
 
     # Return the column stats data
     return column_data
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("abalone_data")
+    my_data = DataSource("aqsol_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
