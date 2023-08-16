@@ -11,6 +11,45 @@ logging_setup()
 log = logging.getLogger(__name__)
 
 
+def count_distinct_query(columns: list[str], table_name: str):
+    """Build a query to compute the count of distinct values for the given columns
+       Args:
+           columns(list(str)): The columns to compute distinct counts on
+           table_name(str): The database table
+       Returns:
+           str: The query to compute the distinct values count for the given columns
+    """
+    distinct_counts = [f'COUNT(DISTINCT {column}) AS {column}' for column in columns]
+    sql_query = f'SELECT  {", ".join(distinct_counts)} FROM {table_name};'
+    return sql_query
+
+
+def count_nulls_query(columns: list[str], table_name: str) -> str:
+    """Build a query to compute the counts of null values for the given columns
+       Args:
+           columns(list[str]): The columns to compute null counts on
+           table_name(str): The database table
+       Returns:
+           str: The query to compute the null values counts for the given columns
+    """
+    null_counts = [f'COUNT(CASE WHEN {column} IS NULL THEN 1 END) AS {column}' for column in columns]
+    sql_query = f'SELECT  {", ".join(null_counts)} FROM {table_name};'
+    return sql_query
+
+
+def count_zeros_query(columns: list[str], table_name: str) -> str:
+    """Build a query to compute the counts of zero values for the given columns
+       Args:
+           columns(list[str]): The columns to compute zero counts on
+           table_name(str): The database table
+       Returns:
+           str: The query to compute the zero values counts for the given columns
+    """
+    zero_counts = [f'COUNT(CASE WHEN {column} = 0 THEN 1 END) AS zero_values_{column}' for column in columns]
+    sql_query = f'SELECT  {", ".join(zero_counts)} FROM {table_name};'
+    return sql_query
+
+
 def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
     """SQL based Column Statistics: Compute Column Statistics for a DataSource using SQL
     Args:
@@ -22,9 +61,11 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
               'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'quartiles': {...}},
               ...}
     """
-
-    # The DataSource class will have column names and types
     data_source.log.info("Computing Column Statistics for all columns...")
+
+    #
+    # This first section is just aggregating data that we've already computed
+    #
 
     # Get the column names and types from the DataSource
     column_data = {name: {"dtype": dtype} for name, dtype in data_source.column_details().items()}
@@ -44,30 +85,33 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
     for column, correlation_info in correlations.items():
         column_data[column]["correlations"] = correlation_info
 
-    # For every column in the table get unique values and Nulls/NaNs
-    # Also for numeric columns get the number of zero values
-    data_source.log.info("Computing Unique values and num zero for numeric columns (this may take a while)...")
-    numeric = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
-    for column, data_type in data_source.column_details().items():
-        log.info(f"Computing column_stats for column: {column}...")
+    #
+    # This second section is computing uniques, nulls/nans, and num_zeros
+    #
 
-        # Compute number of unique values
-        num_unique_query = f'SELECT COUNT(DISTINCT "{column}") AS unique_values FROM {data_source.table_name}'
-        num_unique = data_source.query(num_unique_query).iloc[0]["unique_values"]
-        column_data[column]["unique"] = num_unique
+    # Figure out which columns are numeric
+    num_type = ["double", "float", "int", "bigint", "smallint", "tinyint"]
+    details = data_source.column_details()
+    numeric = [column for column, data_type in details.items() if data_type in num_type]
+    non_numeric = [column for column, data_type in details.items() if data_type not in num_type]
+    all_columns = numeric + non_numeric
 
-        # Compute number of nulls
-        num_nulls_query = f'SELECT COUNT(*) AS num_nulls FROM {data_source.table_name} WHERE "{column}" IS NULL'
-        num_nulls = data_source.query(num_nulls_query).iloc[0]["num_nulls"]
-        column_data[column]["nulls"] = num_nulls
+    # Now call the queries to compute the counts of distinct, nulls, and zeros
+    data_source.log.info("Computing Unique values...")
+    distinct_counts = data_source.query(count_distinct_query(all_columns, data_source.table_name))
+    data_source.log.info("Computing Null values...")
+    null_counts = data_source.query(count_nulls_query(all_columns, data_source.table_name))
+    data_source.log.info("Computing Zero values...")
+    zero_counts = data_source.query(count_zeros_query(numeric, data_source.table_name))
 
-        # If numeric, compute number of zeros
-        if data_type in numeric:
-            query = f'SELECT COUNT(*) AS num_zeros FROM {data_source.table_name} WHERE "{column}" = 0'
-            num_zeros = data_source.query(query).iloc[0]["num_zeros"]
-            column_data[column]["num_zeros"] = num_zeros
+    # Okay now we take the results of the queries and add them to the column_data
+    for column in all_columns:
+        column_data[column]["unique"] = distinct_counts.iloc[0][column]
+        column_data[column]["nulls"] = null_counts.iloc[0][column]
+        if column in numeric:
+            column_data[column]["num_zeros"] = zero_counts.iloc[0][f"zero_values_{column}"]
 
-    # Return the quartile data
+    # Return the column stats data
     return column_data
 
 
