@@ -38,7 +38,7 @@ def create_figure(df: pd.DataFrame, title: str = "Compound Clusters") -> plotly.
         title=title,
         color_discrete_sequence=color_map,
     )
-    fig.update_layout(title_y=0.97, title_x=0.1, title_xanchor="center", title_yanchor="top")
+    fig.update_layout(title_y=0.97, title_x=0.3, title_xanchor="center", title_yanchor="top")
     fig.update_traces(
         marker=dict(size=14, line=dict(width=1, color="Black")),
         selector=dict(mode="markers"),

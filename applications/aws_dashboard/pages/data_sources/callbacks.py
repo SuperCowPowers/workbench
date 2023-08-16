@@ -6,7 +6,7 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import data_details_markdown, distribution_plots, heatmap
+from sageworks.web_components import data_details_markdown, distribution_plots, heatmap, scatter_plot
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 
 
@@ -151,3 +151,20 @@ def update_correlation_matrix(app: Dash, data_source_web_view: DataSourceWebView
         # Convert the data details to a pandas dataframe
         corr_df = corr_df_from_artifact_info(artifact_info)
         return heatmap.create_figure(corr_df)
+
+
+# Updates the outlier plot when a new DataSource is selected
+def update_outlier_plot(app: Dash, data_source_web_view: DataSourceWebView):
+    """Updates the Outlier Plot when a new data source is selected"""
+
+    @app.callback(
+        Output("outlier_plot", "figure"),
+        Input("data_sources_table", "derived_viewport_selected_row_ids"),
+        prevent_initial_call=True,
+    )
+    def generate_new_outlier_plot(selected_rows):
+        print(f"Selected Rows: {selected_rows}")
+        if not selected_rows or selected_rows[0] is None:
+            return dash.no_update
+        outlier_rows = data_source_web_view.data_source_outliers(selected_rows[0])
+        return scatter_plot.create_figure(outlier_rows)

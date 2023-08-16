@@ -4,7 +4,7 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap
+from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap, scatter_plot
 from sageworks.views.data_source_web_view import DataSourceWebView
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 
@@ -71,6 +71,10 @@ violin = distribution_plots.create(
 corr_df = corr_df_from_artifact_info(details)
 corr_matrix = heatmap.create("corr_matrix", corr_df)
 
+# Grab outlier rows and create a scatter plot
+outlier_rows = data_source_broker.data_source_outliers(0)
+outlier_plot = scatter_plot.create("outlier_scatter_plot", outlier_rows, "Clusters")
+
 
 # Create our components
 components = {
@@ -79,6 +83,7 @@ components = {
     "data_source_sample_rows": data_source_sample_rows,
     "violin_plot": violin,
     "correlation_matrix": corr_matrix,
+    "outlier_plot": outlier_plot,
 }
 
 # Set up our layout (Dash looks for a var called layout)
@@ -99,3 +104,4 @@ callbacks.update_data_source_details(app, data_source_broker)
 callbacks.update_data_source_sample_rows(app, data_source_broker)
 callbacks.update_violin_plots(app, data_source_broker)
 callbacks.update_correlation_matrix(app, data_source_broker)
+callbacks.update_outlier_plot(app, data_source_broker)
