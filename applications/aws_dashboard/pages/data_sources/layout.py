@@ -8,13 +8,14 @@ def data_sources_layout(
     data_source_details: dcc.Markdown,
     data_source_sample_rows: dash_table.DataTable,
     violin_plot: dcc.Graph,
+    correlation_matrix: dcc.Graph,
 ) -> html.Div:
-    # Just put all the tables in as Rows for Now (do something fancy later)
+    # The layout for the DataSources page
     layout = html.Div(
         children=[
             dbc.Row(
                 [
-                    html.H2("SageWorks: DataSources (Alpha)"),
+                    html.H2("SageWorks: DataSources"),
                     html.Div(
                         "Last Updated: ",
                         id="last-updated-data-sources",
@@ -25,15 +26,16 @@ def data_sources_layout(
                         },
                     ),
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
+
+                    # Just the auto updater
+                    dcc.Interval(id="data-sources-updater", interval=5000, n_intervals=0),
                 ]
             ),
-            # List out all the Data Sources
+
+            # A table that lists out all the Data Sources
             dbc.Row(data_sources_table),
-            # Data Source Details, Sample Rows, and Violin Plots
-            # Row [ Sample Rows ]
-            # Row [ Column 1                      Column 2 ]
-            #       (Row(Data Source Details))    Row(Violin Plots)
-            #
+
+            # Sample Rows for the selected Data Source
             dbc.Row(
                 html.H3("Sampled Rows", id="sample_rows_header"),
                 style={"padding": "30px 0px 10px 0px"},
@@ -42,6 +44,8 @@ def data_sources_layout(
                 data_source_sample_rows,
                 style={"padding": "0px 0px 30px 0px"},
             ),
+
+            # Column1: Data Source Details, Column2: Violin Plots, Correlation Matrix
             dbc.Row(
                 [
                     # Column 1: Data Source Details
@@ -58,15 +62,14 @@ def data_sources_layout(
                         ],
                         width=4,
                     ),
-                    # Column 2: Sample Rows and Violin Plots
+                    # Column 2: Violin Plots, Correlation Matrix
                     dbc.Col(
                         [
                             dbc.Row(violin_plot),
+                            dbc.Row(correlation_matrix)
                         ],
                         width=8,
-                    ),
-                    # Just the auto updater
-                    dcc.Interval(id="data-sources-updater", interval=5000, n_intervals=0),
+                    )
                 ]
             ),
         ],

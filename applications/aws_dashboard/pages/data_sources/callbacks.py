@@ -6,7 +6,8 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import data_details_markdown, distribution_plots
+from sageworks.web_components import data_details_markdown, distribution_plots, heatmap
+from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 
 
 def refresh_data_timer(app: Dash):
@@ -51,7 +52,7 @@ def table_row_select(app: Dash, table_name: str):
         return row_style
 
 
-# Updates the data source details when a row is selected in the summary
+# Updates the data source details when a new DataSource is selected
 def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebView):
     @app.callback(
         [
@@ -116,7 +117,8 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
-        print("Calling DataSource Sample Rows Refresh...")
+
+        # Get the data source smart sample rows and create the violin plot
         smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
         return distribution_plots.create_figure(
             smart_sample_rows,
@@ -129,3 +131,23 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
             },
             max_plots=48,
         )
+
+
+# Updates the correlation matrix when a new DataSource is selected
+def update_correlation_matrix(app: Dash, data_source_web_view: DataSourceWebView):
+    @app.callback(
+        Output("corr_matrix", "figure"),
+        Input("data_sources_table", "derived_viewport_selected_row_ids"),
+        prevent_initial_call=True,
+    )
+    def generate_new_corr_matrix(selected_rows):
+        print(f"Selected Rows: {selected_rows}")
+        if not selected_rows or selected_rows[0] is None:
+            return dash.no_update
+
+        # Get the data source smart sample rows and create the correlation matrix
+        artifact_info = data_source_web_view.data_source_details(selected_rows[0])
+
+        # Convert the data details to a pandas dataframe
+        corr_df = corr_df_from_artifact_info(artifact_info)
+        return heatmap.create_figure(corr_df)

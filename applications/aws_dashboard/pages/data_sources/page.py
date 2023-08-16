@@ -4,8 +4,9 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import table, data_details_markdown, distribution_plots
+from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap
 from sageworks.views.data_source_web_view import DataSourceWebView
+from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 
 # Local Imports
 from .layout import data_sources_layout
@@ -38,20 +39,20 @@ data_sources_table = table.create(
 
 # Data Source Details
 details = data_source_broker.data_source_details(0)
+
+# Create a markdown component to display the column details
 data_details = data_details_markdown.create("data_source_details", details)
 
 # Grab sample rows from the first data source
 sample_rows = data_source_broker.data_source_sample(0)
-column_types = details["column_details"] if details is not None else None
 data_source_sample_rows = table.create(
     "data_source_sample_rows",
     sample_rows,
-    column_types=column_types,
     header_color="rgb(60, 60, 100)",
     max_height="200px",
 )
 
-# Create a box plot of all the numeric columns in the sample rows
+# Create a violin plot of all the numeric columns in the Data Source
 smart_sample_rows = data_source_broker.data_source_smart_sample(0)
 violin = distribution_plots.create(
     "data_source_violin_plot",
@@ -66,12 +67,18 @@ violin = distribution_plots.create(
     max_plots=48,
 )
 
+# Create a correlation matrix of all the numeric columns in the Data Source
+corr_df = corr_df_from_artifact_info(details)
+corr_matrix = heatmap.create("corr_matrix", corr_df)
+
+
 # Create our components
 components = {
     "data_sources_table": data_sources_table,
     "data_source_details": data_details,
     "data_source_sample_rows": data_source_sample_rows,
     "violin_plot": violin,
+    "correlation_matrix": corr_matrix,
 }
 
 # Set up our layout (Dash looks for a var called layout)
@@ -91,3 +98,4 @@ callbacks.table_row_select(app, "data_sources_table")
 callbacks.update_data_source_details(app, data_source_broker)
 callbacks.update_data_source_sample_rows(app, data_source_broker)
 callbacks.update_violin_plots(app, data_source_broker)
+callbacks.update_correlation_matrix(app, data_source_broker)
