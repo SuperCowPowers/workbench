@@ -11,8 +11,7 @@ all_data = None
 
 
 def update_last_updated(app: Dash, web_view: ArtifactsWebView, force_refresh=False):
-    @app.callback(Output("last-updated", "children"),
-                  Input("main-updater", "n_intervals"))
+    @app.callback(Output("last-updated", "children"), Input("main-updater", "n_intervals"))
     def time_updated(n):
         global all_data
         print("Calling ALL Artifact Refresh...")
@@ -36,7 +35,8 @@ def update_artifact_tables(app: Dash):
     @app.callback(
         Output("DATA_SOURCES", "data"),
         Input("main-updater", "n_intervals"),
-        prevent_initial_call=True,)
+        prevent_initial_call=True,
+    )
     def data_sources_update(n):
         if all_data is None:
             return [{}]  # Return an empty row
@@ -44,10 +44,7 @@ def update_artifact_tables(app: Dash):
         data_sources["del"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return data_sources.to_dict("records")
 
-    @app.callback(
-        Output("FEATURE_SETS", "data"),
-        Input("main-updater", "n_intervals"),
-        prevent_initial_call=True)
+    @app.callback(Output("FEATURE_SETS", "data"), Input("main-updater", "n_intervals"), prevent_initial_call=True)
     def feature_sets_update(n):
         if all_data is None:
             return [{}]  # Return an empty row
@@ -55,10 +52,7 @@ def update_artifact_tables(app: Dash):
         feature_sets["del"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return feature_sets.to_dict("records")
 
-    @app.callback(
-        Output("MODELS", "data"),
-        Input("main-updater", "n_intervals"),
-        prevent_initial_call=True)
+    @app.callback(Output("MODELS", "data"), Input("main-updater", "n_intervals"), prevent_initial_call=True)
     def models_update(n):
         if all_data is None:
             return [{}]  # Return an empty row
@@ -66,10 +60,7 @@ def update_artifact_tables(app: Dash):
         models["del"] = "<img src='../assets/trash.png' id='trash-icon'>"
         return models.to_dict("records")
 
-    @app.callback(
-        Output("ENDPOINTS", "data"),
-        Input("main-updater", "n_intervals"),
-        prevent_initial_call=True)
+    @app.callback(Output("ENDPOINTS", "data"), Input("main-updater", "n_intervals"), prevent_initial_call=True)
     def endpoints_update(n):
         if all_data is None:
             return [{}]  # Return an empty row
