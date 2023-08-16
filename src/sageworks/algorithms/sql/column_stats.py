@@ -45,7 +45,7 @@ def count_zeros_query(columns: list[str], table_name: str) -> str:
     Returns:
         str: The query to compute the zero values counts for the given columns
     """
-    zero_counts = [f"COUNT(CASE WHEN {column} = 0 THEN 1 END) AS zero_values_{column}" for column in columns]
+    zero_counts = [f"COUNT(CASE WHEN {column} = 0 THEN 1 END) AS {column}" for column in columns]
     sql_query = f'SELECT  {", ".join(zero_counts)} FROM {table_name};'
     return sql_query
 
@@ -109,7 +109,7 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
         column_data[column]["unique"] = distinct_counts.iloc[0][column]
         column_data[column]["nulls"] = null_counts.iloc[0][column]
         if column in numeric:
-            column_data[column]["num_zeros"] = zero_counts.iloc[0][f"zero_values_{column}"]
+            column_data[column]["num_zeros"] = zero_counts.iloc[0][column]
 
     # Return the column stats data
     return column_data
