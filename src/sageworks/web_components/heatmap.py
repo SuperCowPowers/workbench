@@ -27,11 +27,19 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
     ]
 
     # Create the imshow plot with custom settings
-    fig = px.imshow(df, color_continuous_scale=color_scale, range_color=[-1, 1], text_auto=".2f")
+    fig = px.imshow(df, color_continuous_scale=color_scale, range_color=[-1, 1])
     fig.update_layout(
-        margin={"t": 30, "b": 0, "r": 0, "l": 0, "pad": 0},
+        margin={"t": 30, "b": 10, "r": 10, "l": 10, "pad": 0},
         autosize=True,
     )
+
+    # Now we're going to customize the annotations and filter out low values
+    for i, row in enumerate(df.index):
+        for j, col in enumerate(df.columns):
+            value = df.loc[row, col]
+            if abs(value) > 0.2:
+                fig.add_annotation(x=j, y=i, text=f'{value:.2f}', showarrow=False)
+
     return fig
 
 
