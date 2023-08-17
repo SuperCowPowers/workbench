@@ -65,7 +65,7 @@ def data_sources_layout(
                             dbc.Row(violin_plot),
                             dbc.Row(
                                 [dbc.Col(correlation_matrix, width=7), dbc.Col(outlier_plot, width=5)],
-                                style={"padding": "0px 0px 00px 0px"},
+                                style={"padding": "0px 0px 0px 0px"},
                             ),
                         ],
                         width=8,

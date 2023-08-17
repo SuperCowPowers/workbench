@@ -30,8 +30,9 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
     fig = px.imshow(df, color_continuous_scale=color_scale, range_color=[-1, 1])
     fig.update_layout(
         margin={"t": 30, "b": 10, "r": 10, "l": 10, "pad": 0},
-        autosize=True,
+        autosize=True
     )
+    fig.update_xaxes(tickangle=30)
 
     # Now we're going to customize the annotations and filter out low values
     for i, row in enumerate(df.index):

@@ -211,7 +211,7 @@ class NumpyEncoder(json.JSONEncoder):
             return super(NumpyEncoder, self).default(obj)
 
 
-def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.1) -> pd.DataFrame:
+def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.2) -> pd.DataFrame:
     """Create a Pandas DataFrame in the form given by df.corr() from the artifact info
     Args:
         artifact_info (dict): A dictionary containing the artifact details.
@@ -229,8 +229,12 @@ def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.1) -> p
     # The diagonal will be NaN, so fill it with 0
     corr_df.fillna(0, inplace=True)
 
+    # Now filter out any correlations below the threshold
+    corr_df = corr_df.loc[:, (corr_df.abs().max() > threshold)]
+    corr_df = corr_df[(corr_df.abs().max(axis=1) > threshold)]
+
     # If the correlation matrix is bigger than 8x8 then we need to filter it down
-    while corr_df.shape[0] > 8 and threshold <= 0.5:
+    while corr_df.shape[0] > 8 and threshold <= 0.6:
         # Now filter out any correlations below the threshold
         corr_df = corr_df.loc[:, (corr_df.abs().max() > threshold)]
         corr_df = corr_df[(corr_df.abs().max(axis=1) > threshold)]
