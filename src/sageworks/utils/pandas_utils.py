@@ -244,6 +244,31 @@ def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.2) -> p
     return corr_df
 
 
+def athena_to_pandas_types(column_athena_types: dict, df: pd.DataFrame) -> pd.DataFrame:
+    """Converts a dataframe into the proper Pandas types
+    Args:
+        column_athena_types (dict): A dictionary of Athena types for each column
+        df (pd.DataFrame): The DataFrame we want to convert types for
+    Returns:
+        pd.DataFrame: The DataFrame with the proper types
+    """
+
+    # Convert the Athena types to Pandas types with this mapper
+    athena_to_pandas_mapper = {
+        'tinyint': 'Int8', 'smallint': 'Int16', 'int': 'Int32', 'integer': 'Int32', 'bigint': 'Int64', 'boolean': 'boolean',
+        'float': 'float32', 'double': 'float64', 'real': 'float64', 'decimal': 'float64', 'numeric': 'float64',
+        'char': 'string', 'varchar': 'string', 'string': 'string', 'date': 'datetime64[ns]', 'timestamp': 'datetime64[ns]',
+        'binary': 'object',  'array': 'object', 'map': 'object', 'struct': 'object', 'uniontype': 'object'
+    }
+
+    # Map the Athena types to Pandas types
+    pandas_column_types = {col: athena_to_pandas_mapper[athena_type] for col, athena_type in column_athena_types.items()}
+
+    # Convert the DataFrame columns to the mapped Pandas types
+    df = df.astype(pandas_column_types)
+    return df
+
+
 if __name__ == "__main__":
     """Exercise the Pandas Utility Methods"""
     import sys

@@ -5,6 +5,7 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.utils.sageworks_logging import logging_setup
+from sageworks.utils.pandas_utils import athena_to_pandas_types
 
 # Setup Logging
 logging_setup()
@@ -63,6 +64,9 @@ class Outliers:
 
         # Sort by outlier_group and reset the index
         all_outliers = all_outliers.sort_values("outlier_group").reset_index(drop=True)
+
+        # Make sure all the types get correctly converted from SQL to Pandas
+        all_outliers = athena_to_pandas_types(all_outliers)
 
         return all_outliers
 

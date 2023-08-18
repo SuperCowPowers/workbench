@@ -5,6 +5,7 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.utils.sageworks_logging import logging_setup
+from sageworks.utils.pandas_utils import athena_to_pandas_types
 
 # Setup Logging
 logging_setup()
@@ -31,6 +32,9 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
     else:
         query = f"SELECT * FROM {data_source.table_name}"
     sample_df = data_source.query(query).head(sample_rows)
+
+    # Make sure all the types get correctly converted from SQL to Pandas
+    sample_df = athena_to_pandas_types(sample_df)
 
     # Return the sample_df
     return sample_df
