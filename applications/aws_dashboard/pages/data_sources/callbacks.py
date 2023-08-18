@@ -128,10 +128,56 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
                 "meanline_visible": True,
                 "showlegend": False,
                 "points": "all",
+                "spanmode": "hard"
             },
             max_plots=48,
         )
 
+def violin_plot_selection(app: Dash, data_source_web_view: DataSourceWebView):
+    """A selection has occurred on the Violin Plots"""
+
+    @app.callback(
+        Output('data_source_violin_plot', 'figure'),
+        Input('data_source_violin_plot', 'selectedData')
+    )
+    def update_figure(selected_data):
+        # You might need to customize this part to extract the correct indices for your specific plot
+        selected_indices = [point['pointIndex'] for point in selected_data['points']]
+
+        # Create a new figure that's a copy of the original
+        new_fig = fig.copy()
+
+        # Modify the figure to change the appearance of the selected points
+        # The exact way to do this will depend on how the figure is set up
+        for i in selected_indices:
+            new_fig.data[0]['marker']['color'][i] = 'red'
+
+        return new_fig
+
+    @app.callback(
+        Output("data_source_violin_plot", "figure"),
+        Input("data_sources_table", "derived_viewport_selected_row_ids"),
+        prevent_initial_call=True,
+    )
+    def generate_new_violin_plot(selected_rows):
+        print(f"Selected Rows: {selected_rows}")
+        if not selected_rows or selected_rows[0] is None:
+            return dash.no_update
+
+        # Get the data source smart sample rows and create the violin plot
+        smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
+        return distribution_plots.create_figure(
+            smart_sample_rows,
+            plot_type="violin",
+            figure_args={
+                "box_visible": True,
+                "meanline_visible": True,
+                "showlegend": False,
+                "points": "all",
+                "spanmode": "hard"
+            },
+            max_plots=48,
+        )
 
 # Updates the correlation matrix when a new DataSource is selected
 def update_correlation_matrix(app: Dash, data_source_web_view: DataSourceWebView):

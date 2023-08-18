@@ -98,8 +98,10 @@ def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots
             row=i // num_columns + 1,
             col=i % num_columns + 1,
         )
-    fig.update_layout(margin=dict(l=20, r=20, t=20, b=20))
-    fig.update_layout(height=(calculate_height(num_rows)))
+    fig.update_layout(margin=dict(l=20, r=20, t=20, b=20),
+                      height=(calculate_height(num_rows)),
+                      dragmode='select',
+                      newselection=dict(line=dict(color='grey', width=1, dash='dot')))
     return fig
 
 

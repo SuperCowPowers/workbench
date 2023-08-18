@@ -27,18 +27,20 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
     ]
 
     # Create the imshow plot with custom settings
+    height = max(400, len(df.index) * 50)
     fig = px.imshow(df, color_continuous_scale=color_scale, range_color=[-1, 1])
     fig.update_layout(
         margin={"t": 30, "b": 10, "r": 10, "l": 10, "pad": 0},
-        autosize=True
+        height=height
     )
     fig.update_xaxes(tickangle=30)
 
     # Now we're going to customize the annotations and filter out low values
+    label_threshold = 0.3
     for i, row in enumerate(df.index):
         for j, col in enumerate(df.columns):
             value = df.loc[row, col]
-            if abs(value) > 0.2:
+            if abs(value) > label_threshold:
                 fig.add_annotation(x=j, y=i, text=f'{value:.2f}', showarrow=False)
 
     return fig
