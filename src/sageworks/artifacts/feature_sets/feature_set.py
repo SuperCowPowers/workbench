@@ -279,14 +279,14 @@ class FeatureSet(Artifact):
         """
         return self.data_source.quartiles(recompute)
 
-    def sample_df(self, recompute: bool = False) -> pd.DataFrame:
+    def sample(self, recompute: bool = False) -> pd.DataFrame:
         """Get a sample of the data from the underlying DataSource
         Args:
             recompute (bool): Recompute the sample (default=False)
         Returns:
             pd.DataFrame: A sample of the data from the underlying DataSource
         """
-        return self.data_source.sample_df(recompute)
+        return self.data_source.sample(recompute)
 
     def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
@@ -308,7 +308,7 @@ class FeatureSet(Artifact):
         """
 
         # FIXME: Mock this for now
-        anom_df = self.sample_df().copy()
+        anom_df = self.sample().copy()
         anom_df["anomaly_score"] = np.random.rand(anom_df.shape[0])
         anom_df["cluster"] = np.random.randint(0, 10, anom_df.shape[0])
         anom_df["x"] = np.random.rand(anom_df.shape[0])
@@ -439,7 +439,7 @@ if __name__ == "__main__":
     pprint(storage.details())
 
     # Get a sample of the data
-    df = my_features.sample_df()
+    df = my_features.sample()
     print(f"Sample Data: {df.shape}")
     print(df)
 

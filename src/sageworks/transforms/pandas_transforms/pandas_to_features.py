@@ -270,7 +270,7 @@ if __name__ == "__main__":
 
     # Crab the test_data DataSource
     ds = DataSource("test_data")
-    data_df = ds.sample_df()
+    data_df = ds.sample()
 
     # Create my DF to Feature Set Transform
     df_to_features = PandasToFeatures("test_feature_set")

@@ -171,7 +171,7 @@ class AthenaSource(DataSourceAbstract):
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
-    def sample_df(self, recompute: bool = False) -> pd.DataFrame:
+    def sample(self, recompute: bool = False) -> pd.DataFrame:
         """Pull a sample of rows from the DataSource
         Args:
             recompute(bool): Recompute the sample (default: False)
@@ -306,7 +306,7 @@ class AthenaSource(DataSourceAbstract):
             pd.DataFrame: A DataFrame of outliers + samples from this DataSource
         """
         outlier_df = self.outliers()
-        sample_df = self.sample_df()
+        sample_df = self.sample()
         sample_df["outlier_group"] = -1
         return pd.concat([outlier_df, sample_df], ignore_index=True).drop_duplicates()
 
@@ -426,7 +426,7 @@ if __name__ == "__main__":
     print(f"Tags: {my_data.sageworks_tags()}")
 
     # Get a sample of the data
-    my_df = my_data.sample_df()
+    my_df = my_data.sample()
     print(f"Sample Data: {my_df.shape}")
     print(my_df)
 

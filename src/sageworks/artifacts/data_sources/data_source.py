@@ -20,7 +20,7 @@ class DataSource:
         column_types(): Return the column types
         column_details(): Return the column details
         query(query: str): Returns a pd.DataFrame with the query results
-        sample_df(): Returns a SAMPLED pd.DataFrame from this DataSource
+        sample(): Returns a SAMPLED pd.DataFrame from this DataSource
         summary(): Returns a summary of this DataSource
         details(): Returns additional details about this DataSource
         quartiles(): Returns the quartiles for each numeric column in this DataSource
@@ -90,4 +90,4 @@ if __name__ == "__main__":
     pprint(my_data.aws_meta())
 
     # Get a SAMPLE of the data
-    print(f"Sample Data: {my_data.sample_df()}")
+    print(f"Sample Data: {my_data.sample()}")

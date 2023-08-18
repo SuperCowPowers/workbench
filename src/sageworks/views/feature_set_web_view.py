@@ -33,7 +33,7 @@ class FeatureSetWebView(ArtifactsWebView):
         uuid = self.feature_set_name(feature_set_index)
         fs = FeatureSet(uuid)
         if fs.get_status() == "ready":
-            return fs.sample_df()
+            return fs.sample()
         else:
             status = fs.get_status()
             return pd.DataFrame({"uuid": [uuid], "status": [f"{status}"]})

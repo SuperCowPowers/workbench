@@ -43,7 +43,7 @@ class DataSourceAbstract(Artifact):
         pass
 
     @abstractmethod
-    def sample_df(self, recompute: bool = False) -> pd.DataFrame:
+    def sample(self, recompute: bool = False) -> pd.DataFrame:
         """Return a sample DataFrame from this DataSource
         Args:
             recompute(bool): Recompute the sample (default: False)
@@ -75,6 +75,14 @@ class DataSourceAbstract(Artifact):
         Notes:
             Uses the IQR * 1.7 (~= 3 Sigma) method to compute outliers
             The scale parameter can be adjusted to change the IQR multiplier
+        """
+        pass
+
+    @abstractmethod
+    def smart_sample(self) -> pd.DataFrame:
+        """Get a SMART sample dataframe from this DataSource
+        Returns:
+            pd.DataFrame: A combined DataFrame of sample data + quartiles + outliers
         """
         pass
 
@@ -130,7 +138,7 @@ class DataSourceAbstract(Artifact):
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Artifact is ready"""
         self.details()
-        self.sample_df()
+        self.sample()
         self.quartiles()
         self.value_counts()
         self.correlations()

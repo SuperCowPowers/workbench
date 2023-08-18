@@ -33,7 +33,7 @@ class DataSourceWebView(ArtifactsWebView):
         data_uuid = self.data_source_name(data_source_index)
         if data_uuid is not None:
             ds = DataSource(data_uuid)
-            return ds.sample_df()
+            return ds.sample()
         else:
             return pd.DataFrame()
 
