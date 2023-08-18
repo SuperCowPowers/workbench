@@ -220,6 +220,50 @@ class AthenaSource(DataSourceAbstract):
         # Return the quartile data
         return quartile_dict
 
+    def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
+        """Compute outliers for all the numeric columns in a DataSource
+        Args:
+            scale(float): The scale to use for the IQR (default: 1.7)
+            recompute(bool): Recompute the outliers (default: False)
+        Returns:
+            pd.DataFrame: A DataFrame of outliers from this DataSource
+        Notes:
+            Uses the IQR * 1.7 (~= 3 Sigma) method to compute outliers
+            The scale parameter can be adjusted to change the IQR multiplier
+        """
+
+        # First check if we have already computed the outliers
+        if self.sageworks_meta().get("sageworks_outliers") and not recompute:
+            return pd.read_json(
+                self.sageworks_meta()["sageworks_outliers"],
+                orient="records",
+                lines=True,
+            )
+
+        # Compute outliers using the SQL Outliers class
+        sql_outliers = outliers.Outliers()
+        outlier_df = sql_outliers.compute_outliers(self)
+
+        # Store the outlier_df in our SageWorks metadata
+        rows_json = outlier_df.to_json(orient="records", lines=True)
+        self.upsert_sageworks_meta({"sageworks_outliers": rows_json})
+
+        # Return the outlier dataframe
+        return outlier_df
+
+    def smart_sample(self) -> pd.DataFrame:
+        """Get a smart sample dataframe for this DataSource
+        Note:
+            smart = sample data + outliers for the DataSource"""
+        # Sample DataFrame
+        sample_rows = self.sample()
+
+        # Outliers DataFrame
+        outlier_rows = self.outliers()
+
+        # Combine the sample rows with the quartiles data
+        return pd.concat([sample_rows, outlier_rows]).reset_index(drop=True).drop_duplicates()
+
     def correlations(self, recompute: bool = False) -> dict[dict]:
         """Compute Correlations for all the numeric columns in a DataSource
         Args:
@@ -268,47 +312,6 @@ class AthenaSource(DataSourceAbstract):
 
         # Return the column stats data
         return column_stats_dict
-
-    def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
-        """Compute outliers for all the numeric columns in a DataSource
-        Args:
-            scale(float): The scale to use for the IQR (default: 1.7)
-            recompute(bool): Recompute the outliers (default: False)
-        Returns:
-            pd.DataFrame: A DataFrame of outliers from this DataSource
-        Notes:
-            Uses the IQR * 1.7 (~= 3 Sigma) method to compute outliers
-            The scale parameter can be adjusted to change the IQR multiplier
-        """
-
-        # First check if we have already computed the outliers
-        if self.sageworks_meta().get("sageworks_outliers") and not recompute:
-            return pd.read_json(
-                self.sageworks_meta()["sageworks_outliers"],
-                orient="records",
-                lines=True,
-            )
-
-        # Compute outliers using the SQL Outliers class
-        sql_outliers = outliers.Outliers()
-        outlier_df = sql_outliers.compute_outliers(self)
-
-        # Store the outlier_df in our SageWorks metadata
-        rows_json = outlier_df.to_json(orient="records", lines=True)
-        self.upsert_sageworks_meta({"sageworks_outliers": rows_json})
-
-        # Return the outlier dataframe
-        return outlier_df
-
-    def outliers_plus_samples(self) -> pd.DataFrame:
-        """Give back both outliers AND 100 samples from the DataSource
-        Returns:
-            pd.DataFrame: A DataFrame of outliers + samples from this DataSource
-        """
-        outlier_df = self.outliers()
-        sample_df = self.sample()
-        sample_df["outlier_group"] = -1
-        return pd.concat([outlier_df, sample_df], ignore_index=True).drop_duplicates()
 
     def value_counts(self, recompute: bool = False) -> dict[dict]:
         """Compute 'value_counts' for all the string columns in a DataSource
@@ -440,6 +443,16 @@ if __name__ == "__main__":
     print("\nDetails")
     pprint(my_details)
 
+    # Get outliers for numeric columns
+    my_outlier_df = my_data.outliers()
+    print("\nOutliers")
+    print(my_outlier_df)
+
+    # Get a smart sample for numeric columns
+    smart_sample = my_data.smart_sample()
+    print("\nSmart Sample")
+    print(smart_sample)
+
     # Get quartiles for numeric columns
     quartile_info = my_data.quartiles()
     print("\nQuartiles")
@@ -449,11 +462,6 @@ if __name__ == "__main__":
     value_count_info = my_data.value_counts()
     print("\nValue Counts")
     pprint(value_count_info)
-
-    # Get outliers for numeric columns
-    my_outlier_df = my_data.outliers()
-    print("\nOutliers")
-    print(my_outlier_df)
 
     # Get correlations for numeric columns
     my_correlation_df = my_data.correlations()

@@ -5,7 +5,6 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.utils.sageworks_logging import logging_setup
-from sageworks.utils.pandas_utils import athena_to_pandas_types
 
 # Setup Logging
 logging_setup()
@@ -33,9 +32,6 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
         query = f"SELECT * FROM {data_source.table_name}"
     sample_df = data_source.query(query).head(sample_rows)
 
-    # Make sure all the types get correctly converted from SQL to Pandas
-    sample_df = athena_to_pandas_types(sample_df)
-
     # Return the sample_df
     return sample_df
 
@@ -50,7 +46,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("abalone_data")
+    my_data = DataSource("flows_10795")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
