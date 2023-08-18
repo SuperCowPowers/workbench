@@ -69,7 +69,7 @@ def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots
         return go.Figure()
 
     numeric_columns = list(df.select_dtypes("number").columns)
-    numeric_columns = [col for col in numeric_columns if len(df[col].unique()) > 1]  # Only columns > 1 unique value
+    numeric_columns = [col for col in numeric_columns if df[col].nunique() > 1]  # Only columns > 1 unique value
 
     # HARDCODE: Not sure how to get around hard coding these columns
     not_show = [
