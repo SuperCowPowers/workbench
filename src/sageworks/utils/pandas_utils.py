@@ -244,11 +244,11 @@ def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.2) -> p
     return corr_df
 
 
-def athena_to_pandas_types(column_athena_types: dict, df: pd.DataFrame) -> pd.DataFrame:
+def athena_to_pandas_types(df: pd.DataFrame, column_athena_types: dict) -> pd.DataFrame:
     """Converts a dataframe into the proper Pandas types
     Args:
-        column_athena_types (dict): A dictionary of Athena types for each column
         df (pd.DataFrame): The DataFrame we want to convert types for
+        column_athena_types (dict): A dictionary of Athena types for each column
     Returns:
         pd.DataFrame: The DataFrame with the proper types
     """

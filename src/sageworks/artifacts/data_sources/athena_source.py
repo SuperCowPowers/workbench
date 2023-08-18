@@ -9,7 +9,7 @@ from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbst
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.iso_8601 import convert_all_to_iso8601
 from sageworks.algorithms.sql import sample_rows, value_counts, quartiles, outliers, column_stats, correlations
-from sageworks.utils.pandas_utils import NumpyEncoder
+from sageworks.utils.pandas_utils import NumpyEncoder, athena_to_pandas_types
 
 
 class AthenaSource(DataSourceAbstract):
@@ -181,11 +181,16 @@ class AthenaSource(DataSourceAbstract):
 
         # First check if we have already computed the sample dataframe
         if self.sageworks_meta().get("sageworks_sample_rows") and not recompute:
-            return pd.read_json(
+
+            # Grab the sample_df from our SageWorks metadata
+            sample_df = pd.read_json(
                 self.sageworks_meta()["sageworks_sample_rows"],
                 orient="records",
                 lines=True,
             )
+            # Convert all the columns types to the correct types and return
+            sample_df = athena_to_pandas_types(sample_df, self.column_details())
+            return sample_df
 
         # Call the SQL function to pull a sample of the rows
         sample_df = sample_rows.sample_rows(self)
@@ -234,11 +239,14 @@ class AthenaSource(DataSourceAbstract):
 
         # First check if we have already computed the outliers
         if self.sageworks_meta().get("sageworks_outliers") and not recompute:
-            return pd.read_json(
+            outlier_df = pd.read_json(
                 self.sageworks_meta()["sageworks_outliers"],
                 orient="records",
                 lines=True,
             )
+            # Convert all the columns types to the correct types and return
+            outlier_df = athena_to_pandas_types(outlier_df, self.column_details())
+            return outlier_df
 
         # Compute outliers using the SQL Outliers class
         sql_outliers = outliers.Outliers()
@@ -257,6 +265,7 @@ class AthenaSource(DataSourceAbstract):
             smart = sample data + outliers for the DataSource"""
         # Sample DataFrame
         sample_rows = self.sample()
+        sample_rows["outlier_group"] = -1
 
         # Outliers DataFrame
         outlier_rows = self.outliers()
