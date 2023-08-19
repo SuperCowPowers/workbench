@@ -301,6 +301,13 @@ class FeatureSet(Artifact):
         """
         return self.data_source.outliers(scale, recompute)
 
+    def smart_sample(self) -> pd.DataFrame:
+        """Get a SMART sample dataframe from this FeatureSet
+        Returns:
+            pd.DataFrame: A combined DataFrame of sample data + outliers
+        """
+        return self.data_source.smart_sample()
+
     def anomalies(self) -> pd.DataFrame:
         """Get a set of anomalous data from the underlying DataSource
         Returns:

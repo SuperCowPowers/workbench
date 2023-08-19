@@ -82,7 +82,7 @@ class DataSourceAbstract(Artifact):
     def smart_sample(self) -> pd.DataFrame:
         """Get a SMART sample dataframe from this DataSource
         Returns:
-            pd.DataFrame: A combined DataFrame of sample data + quartiles + outliers
+            pd.DataFrame: A combined DataFrame of sample data + outliers
         """
         pass
 

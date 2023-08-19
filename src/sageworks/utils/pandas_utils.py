@@ -253,6 +253,10 @@ def athena_to_pandas_types(df: pd.DataFrame, column_athena_types: dict) -> pd.Da
         pd.DataFrame: The DataFrame with the proper types
     """
 
+    # Sanity check
+    if df.empty:
+        return df
+
     # Convert the Athena types to Pandas types with this mapper
     athena_to_pandas_mapper = {
         'tinyint': 'Int8', 'smallint': 'Int16', 'int': 'Int32', 'integer': 'Int32', 'bigint': 'Int64', 'boolean': 'boolean',

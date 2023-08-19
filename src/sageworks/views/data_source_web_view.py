@@ -46,6 +46,15 @@ class DataSourceWebView(ArtifactsWebView):
         else:
             return pd.DataFrame()
 
+    def data_source_smart_sample(self, data_source_index: int) -> pd.DataFrame:
+        """Get a smart-sample dataframe (sample + outliers) for the given DataSource Index"""
+        data_uuid = self.data_source_name(data_source_index)
+        if data_uuid is not None:
+            ds = DataSource(data_uuid)
+            return ds.smart_sample()
+        else:
+            return pd.DataFrame()
+
     def data_source_quartiles(self, data_source_index: int) -> (dict, None):
         """Get all columns quartiles for the given DataSource Index"""
         data_uuid = self.data_source_name(data_source_index)
@@ -53,30 +62,6 @@ class DataSourceWebView(ArtifactsWebView):
             return DataSource(data_uuid).quartiles()
         else:
             return None
-
-    def data_source_smart_sample(self, data_source_index: int) -> pd.DataFrame:
-        """Get a SMART sample dataframe for the given DataSource Index
-        Note:
-            SMART here means a sample data + quartiles + outliers for each column"""
-        # Sample DataFrame
-        sample_rows = self.data_source_sample(data_source_index)
-
-        # Outliers DataFrame
-        outlier_rows = self.data_source_outliers(data_source_index)
-
-        # Quartiles Data
-        quartiles_data = self.data_source_quartiles(data_source_index)
-        if quartiles_data is None:
-            return sample_rows
-
-        # Convert the Quartiles Data into a DataFrame
-        quartiles_dict_list = dict()
-        for col_name, quartiles in quartiles_data.items():
-            quartiles_dict_list[col_name] = quartiles.values()
-        quartiles_df = pd.DataFrame(quartiles_dict_list)
-
-        # Combine the sample rows with the quartiles data
-        return pd.concat([sample_rows, outlier_rows, quartiles_df]).reset_index(drop=True).drop_duplicates()
 
     def data_source_details(self, data_source_index: int) -> (dict, None):
         """Get all the details for the given DataSource Index"""

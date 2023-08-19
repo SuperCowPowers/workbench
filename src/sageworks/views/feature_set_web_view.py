@@ -61,7 +61,7 @@ class FeatureSetWebView(ArtifactsWebView):
     def feature_set_smart_sample(self, feature_set_index: int) -> pd.DataFrame:
         """Get a SMART sample dataframe for the given FeatureSet Index
         Note:
-            SMART here means a sample data + outliers + quartiles for each column"""
+            SMART here means a sample data + outliers for each column"""
         # Sample DataFrame
         sample_rows = self.feature_set_sample(feature_set_index)
 
