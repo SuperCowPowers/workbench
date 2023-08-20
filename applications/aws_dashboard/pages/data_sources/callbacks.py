@@ -4,17 +4,22 @@ import dash
 from dash import Dash
 from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
+import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import data_details_markdown, distribution_plots, heatmap, scatter_plot
+from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap, scatter_plot
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
+
+# Cheese Sauce (FIXME: TDB)
+smart_sample_rows = None
 
 
 def refresh_data_timer(app: Dash):
     @app.callback(
         Output("last-updated-data-sources", "children"),
         Input("data-sources-updater", "n_intervals"),
+        prevent_initial_call=True,
     )
     def time_updated(_n):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
@@ -24,6 +29,7 @@ def update_data_sources_table(app: Dash, data_source_broker: DataSourceWebView):
     @app.callback(
         Output("data_sources_table", "data"),
         Input("data-sources-updater", "n_intervals"),
+        prevent_initial_call=True,
     )
     def data_sources_update(_n):
         """Return the table data as a dictionary"""
@@ -38,6 +44,7 @@ def table_row_select(app: Dash, table_name: str):
     @app.callback(
         Output(table_name, "style_data_conditional"),
         Input(table_name, "derived_viewport_selected_row_ids"),
+        prevent_initial_call=True,
     )
     def style_selected_rows(selected_rows):
         print(f"Selected Rows: {selected_rows}")
@@ -61,6 +68,7 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
             Output("data_source_details", "children"),
         ],
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
+        prevent_initial_call=True,
     )
     def generate_new_markdown(selected_rows):
         print(f"Selected Rows: {selected_rows}")
@@ -83,27 +91,28 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
         [
             Output("sample_rows_header", "children"),
             Output("data_source_sample_rows", "columns"),
-            Output("data_source_sample_rows", "data"),
+            Output("data_source_sample_rows", "data", allow_duplicate=True),
         ],
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
     def sample_rows_update(selected_rows):
+        global smart_sample_rows
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling DataSource Sample Rows...")
-        sample_rows = data_source_web_view.data_source_sample(selected_rows[0])
+        smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
 
         # Name of the data source
         data_source_name = data_source_web_view.data_source_name(selected_rows[0])
-        header = f"Sampled Rows: {data_source_name}"
+        header = f"Sample/Outlier Rows: {data_source_name}"
 
         # The columns need to be in a special format for the DataTable
-        column_setup = [{"name": c, "id": c, "presentation": "input"} for c in sample_rows.columns]
+        column_setup_list = table.column_setup(smart_sample_rows)
 
         # Return the columns and the data
-        return [header, column_setup, sample_rows.to_dict("records")]
+        return [header, column_setup_list, smart_sample_rows.to_dict("records")]
 
 
 def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
@@ -112,8 +121,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
     @app.callback(
         Output("data_source_violin_plot", "figure", allow_duplicate=True),
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-        allow_duplicate=True
+        prevent_initial_call=True
     )
     def generate_new_violin_plot(selected_rows):
         print(f"Selected Rows: {selected_rows}")
@@ -121,7 +129,6 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
             return dash.no_update
 
         # Get the data source smart sample rows and create the violin plot
-        smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
         return distribution_plots.create_figure(
             smart_sample_rows,
             plot_type="violin",
@@ -136,9 +143,9 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
         )
 
 
-def violin_plot_selection(app: Dash, data_source_web_view: DataSourceWebView):
+def violin_plot_selection(app: Dash):
     """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
-       regenerate the figure and update the Outlier Rows (TBD)"""
+       regenerate the figure"""
     @app.callback(
         Output('data_source_violin_plot', 'figure', allow_duplicate=True),
         Input('data_source_violin_plot', 'selectedData'),
@@ -147,12 +154,11 @@ def violin_plot_selection(app: Dash, data_source_web_view: DataSourceWebView):
     )
     def update_figure(selected_data, current_figure):
 
-        # If we don't have any selected data our selection is empty
-        if selected_data is None:
-            return dash.no_update
-
         # Get the selected indices
-        selected_indices = [point['pointIndex'] for point in selected_data['points']]
+        if selected_data is None:
+            selected_indices = []
+        else:
+            selected_indices = [point['pointIndex'] for point in selected_data['points']]
         print("Selected Indices")
         print(selected_indices)
 
@@ -165,6 +171,33 @@ def violin_plot_selection(app: Dash, data_source_web_view: DataSourceWebView):
         # Update the selected points
         new_figure.update_traces(selectedpoints=selected_indices, selector=dict(type='violin'))
         return new_figure
+
+
+def reorder_sample_rows(app: Dash):
+    """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
+       regenerate the figure"""
+    @app.callback(
+        Output("data_source_sample_rows", "data", allow_duplicate=True),
+        Input('data_source_violin_plot', 'selectedData'),
+        prevent_initial_call=True,
+    )
+    def reorder_table(selected_data):
+        # Convert the current table data back to a DataFrame
+
+        # Get the selected indices from your plot selection
+        if selected_data is None:
+            return smart_sample_rows.to_dict('records')
+        selected_indices = [point['pointIndex'] for point in selected_data['points']]
+
+        # Separate the selected rows and the rest of the rows
+        selected_rows = smart_sample_rows.iloc[selected_indices]
+        rest_of_rows = smart_sample_rows.drop(selected_indices)
+
+        # Concatenate them to put the selected rows at the top
+        new_df = pd.concat([selected_rows, rest_of_rows], ignore_index=True)
+
+        # Return the new DataFrame as a dictionary
+        return new_df.to_dict('records')
 
 
 # Updates the correlation matrix when a new DataSource is selected

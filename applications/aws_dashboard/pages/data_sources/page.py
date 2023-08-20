@@ -44,12 +44,13 @@ details = data_source_broker.data_source_details(0)
 data_details = data_details_markdown.create("data_source_details", details)
 
 # Grab sample rows from the first data source
-sample_rows = data_source_broker.data_source_sample(0)
+sample_rows = data_source_broker.data_source_smart_sample(0)
 data_source_sample_rows = table.create(
     "data_source_sample_rows",
     sample_rows,
     header_color="rgb(60, 60, 100)",
     max_height="200px",
+    color_column="outlier_group",
 )
 
 # Create a violin plot of all the numeric columns in the Data Source
@@ -105,5 +106,5 @@ callbacks.update_data_source_details(app, data_source_broker)
 callbacks.update_data_source_sample_rows(app, data_source_broker)
 callbacks.update_violin_plots(app, data_source_broker)
 callbacks.update_correlation_matrix(app, data_source_broker)
-# callbacks.update_outlier_plot(app, data_source_broker)
-callbacks.violin_plot_selection(app, data_source_broker)
+callbacks.violin_plot_selection(app)
+callbacks.reorder_sample_rows(app)
