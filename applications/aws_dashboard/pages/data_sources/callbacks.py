@@ -2,7 +2,8 @@
 from datetime import datetime
 import dash
 from dash import Dash
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
+import plotly.graph_objects as go
 
 # SageWorks Imports
 from sageworks.views.data_source_web_view import DataSourceWebView
@@ -109,9 +110,10 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
     """Updates the Violin Plots when a new data source is selected"""
 
     @app.callback(
-        Output("data_source_violin_plot", "figure"),
+        Output("data_source_violin_plot", "figure", allow_duplicate=True),
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
+        allow_duplicate=True
     )
     def generate_new_violin_plot(selected_rows):
         print(f"Selected Rows: {selected_rows}")
@@ -132,52 +134,38 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
             },
             max_plots=48,
         )
+
 
 def violin_plot_selection(app: Dash, data_source_web_view: DataSourceWebView):
-    """A selection has occurred on the Violin Plots"""
-
+    """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
+       regenerate the figure and update the Outlier Rows (TBD)"""
     @app.callback(
-        Output('data_source_violin_plot', 'figure'),
-        Input('data_source_violin_plot', 'selectedData')
-    )
-    def update_figure(selected_data):
-        # You might need to customize this part to extract the correct indices for your specific plot
-        selected_indices = [point['pointIndex'] for point in selected_data['points']]
-
-        # Create a new figure that's a copy of the original
-        new_fig = fig.copy()
-
-        # Modify the figure to change the appearance of the selected points
-        # The exact way to do this will depend on how the figure is set up
-        for i in selected_indices:
-            new_fig.data[0]['marker']['color'][i] = 'red'
-
-        return new_fig
-
-    @app.callback(
-        Output("data_source_violin_plot", "figure"),
-        Input("data_sources_table", "derived_viewport_selected_row_ids"),
+        Output('data_source_violin_plot', 'figure', allow_duplicate=True),
+        Input('data_source_violin_plot', 'selectedData'),
+        State('data_source_violin_plot', 'figure'),
         prevent_initial_call=True,
     )
-    def generate_new_violin_plot(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
+    def update_figure(selected_data, current_figure):
+
+        # If we don't have any selected data our selection is empty
+        if selected_data is None:
             return dash.no_update
 
-        # Get the data source smart sample rows and create the violin plot
-        smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
-        return distribution_plots.create_figure(
-            smart_sample_rows,
-            plot_type="violin",
-            figure_args={
-                "box_visible": True,
-                "meanline_visible": True,
-                "showlegend": False,
-                "points": "all",
-                "spanmode": "hard"
-            },
-            max_plots=48,
-        )
+        # Get the selected indices
+        selected_indices = [point['pointIndex'] for point in selected_data['points']]
+        print("Selected Indices")
+        print(selected_indices)
+
+        # Create a new figure that's a copy of the original with selected data highlighted
+        try:
+            new_figure = go.Figure(current_figure)
+        except:
+            return current_figure
+
+        # Update the selected points
+        new_figure.update_traces(selectedpoints=selected_indices, selector=dict(type='violin'))
+        return new_figure
+
 
 # Updates the correlation matrix when a new DataSource is selected
 def update_correlation_matrix(app: Dash, data_source_web_view: DataSourceWebView):

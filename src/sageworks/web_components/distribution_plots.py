@@ -102,6 +102,7 @@ def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots
                       height=(calculate_height(num_rows)),
                       dragmode='select',
                       newselection=dict(line=dict(color='grey', width=1, dash='dot')))
+    fig.update_traces(selected_marker_color="white", selector=dict(type='violin'))
     return fig
 
 
