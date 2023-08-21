@@ -40,7 +40,7 @@ def column_info_html(column_name, column_info: dict) -> str:
             html_template += f""" {min:.2f} → {max:.2f}&nbsp;&nbsp;&nbsp;&nbsp;"""
         else:
             html_template += f""" {int(min)} → {int(max)}&nbsp;&nbsp;&nbsp;&nbsp;"""
-        if column_info["unique"] == 2:
+        if column_info["unique"] == 2 and min == 0 and max == 1:
             html_template += """ <span class="lightgreen"> Binary</span>"""
         elif column_info["num_zeros"] > 0:
             html_template += """ <span class="lightorange"> Zero: <<num_zeros>></span>"""

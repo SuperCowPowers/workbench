@@ -89,8 +89,7 @@ class Outliers:
 
                 # Catch cases where IQR is 0
                 if iqr == 0:
-                    log.info(f"IQR is 0 for column {column}, skipping...")
-                    continue
+                    log.info(f"IQR is 0 for column {column}, but we'll give it a go...")
 
                 # Compute dataframes for the lower and upper bounds
                 lower_bound = quartiles[column]["q1"] - (iqr * scale)
