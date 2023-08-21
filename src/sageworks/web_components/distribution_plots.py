@@ -98,12 +98,14 @@ def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots
             row=i // num_columns + 1,
             col=i % num_columns + 1,
         )
-    fig.update_layout(margin=dict(l=20, r=20, t=20, b=20),
-                      height=(calculate_height(num_rows)),
-                      dragmode='select',
-                      newselection=dict(line=dict(color='grey', width=1, dash='dot')))
-    fig.update_traces(selected_marker_color="white", selector=dict(type='violin'))
-    fig.update_traces(unselected_marker=dict(opacity=0.5), selector=dict(type='violin'))
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=20, b=20),
+        height=(calculate_height(num_rows)),
+        dragmode="select",
+        newselection=dict(line=dict(color="grey", width=1, dash="dot")),
+    )
+    fig.update_traces(selected_marker_color="white", selector=dict(type="violin"))
+    fig.update_traces(unselected_marker=dict(opacity=0.5), selector=dict(type="violin"))
     # fig.update_traces(box_line_color="grey", selector=dict(type='violin'))
     return fig
 

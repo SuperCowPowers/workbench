@@ -121,7 +121,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
     @app.callback(
         Output("data_source_violin_plot", "figure", allow_duplicate=True),
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def generate_new_violin_plot(selected_rows):
         print(f"Selected Rows: {selected_rows}")
@@ -139,7 +139,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
                 "meanline_visible": True,
                 "showlegend": False,
                 "points": "all",
-                "spanmode": "hard"
+                "spanmode": "hard",
             },
             max_plots=48,
         )
@@ -147,20 +147,20 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
 
 def violin_plot_selection(app: Dash):
     """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
-       regenerate the figure"""
+    regenerate the figure"""
+
     @app.callback(
-        Output('data_source_violin_plot', 'figure', allow_duplicate=True),
-        Input('data_source_violin_plot', 'selectedData'),
-        State('data_source_violin_plot', 'figure'),
+        Output("data_source_violin_plot", "figure", allow_duplicate=True),
+        Input("data_source_violin_plot", "selectedData"),
+        State("data_source_violin_plot", "figure"),
         prevent_initial_call=True,
     )
     def update_figure(selected_data, current_figure):
-
         # Get the selected indices
         if selected_data is None:
             selected_indices = []
         else:
-            selected_indices = [point['pointIndex'] for point in selected_data['points']]
+            selected_indices = [point["pointIndex"] for point in selected_data["points"]]
         print("Selected Indices")
         print(selected_indices)
 
@@ -171,16 +171,17 @@ def violin_plot_selection(app: Dash):
             return current_figure
 
         # Update the selected points
-        new_figure.update_traces(selectedpoints=selected_indices, selector=dict(type='violin'))
+        new_figure.update_traces(selectedpoints=selected_indices, selector=dict(type="violin"))
         return new_figure
 
 
 def reorder_sample_rows(app: Dash):
     """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
-       regenerate the figure"""
+    regenerate the figure"""
+
     @app.callback(
         Output("data_source_sample_rows", "data", allow_duplicate=True),
-        Input('data_source_violin_plot', 'selectedData'),
+        Input("data_source_violin_plot", "selectedData"),
         prevent_initial_call=True,
     )
     def reorder_table(selected_data):
@@ -188,8 +189,8 @@ def reorder_sample_rows(app: Dash):
 
         # Get the selected indices from your plot selection
         if selected_data is None:
-            return smart_sample_rows.to_dict('records')
-        selected_indices = [point['pointIndex'] for point in selected_data['points']]
+            return smart_sample_rows.to_dict("records")
+        selected_indices = [point["pointIndex"] for point in selected_data["points"]]
 
         # Separate the selected rows and the rest of the rows
         selected_rows = smart_sample_rows.iloc[selected_indices]
@@ -199,7 +200,7 @@ def reorder_sample_rows(app: Dash):
         new_df = pd.concat([selected_rows, rest_of_rows], ignore_index=True)
 
         # Return the new DataFrame as a dictionary
-        return new_df.to_dict('records')
+        return new_df.to_dict("records")
 
 
 # Updates the correlation matrix when a new DataSource is selected

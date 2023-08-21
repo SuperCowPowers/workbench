@@ -259,14 +259,33 @@ def athena_to_pandas_types(df: pd.DataFrame, column_athena_types: dict) -> pd.Da
 
     # Convert the Athena types to Pandas types with this mapper
     athena_to_pandas_mapper = {
-        'tinyint': 'Int8', 'smallint': 'Int16', 'int': 'Int32', 'integer': 'Int32', 'bigint': 'Int64', 'boolean': 'boolean',
-        'float': 'float32', 'double': 'float64', 'real': 'float64', 'decimal': 'float64', 'numeric': 'float64',
-        'char': 'string', 'varchar': 'string', 'string': 'string', 'date': 'datetime64[ns]', 'timestamp': 'datetime64[ns]',
-        'binary': 'object',  'array': 'object', 'map': 'object', 'struct': 'object', 'uniontype': 'object'
+        "tinyint": "Int8",
+        "smallint": "Int16",
+        "int": "Int32",
+        "integer": "Int32",
+        "bigint": "Int64",
+        "boolean": "boolean",
+        "float": "float32",
+        "double": "float64",
+        "real": "float64",
+        "decimal": "float64",
+        "numeric": "float64",
+        "char": "string",
+        "varchar": "string",
+        "string": "string",
+        "date": "datetime64[ns]",
+        "timestamp": "datetime64[ns]",
+        "binary": "object",
+        "array": "object",
+        "map": "object",
+        "struct": "object",
+        "uniontype": "object",
     }
 
     # Map the Athena types to Pandas types
-    pandas_column_types = {col: athena_to_pandas_mapper[athena_type] for col, athena_type in column_athena_types.items()}
+    pandas_column_types = {
+        col: athena_to_pandas_mapper[athena_type] for col, athena_type in column_athena_types.items()
+    }
 
     # Convert the DataFrame columns to the mapped Pandas types
     df = df.astype(pandas_column_types)

@@ -181,7 +181,6 @@ class AthenaSource(DataSourceAbstract):
 
         # First check if we have already computed the sample dataframe
         if self.sageworks_meta().get("sageworks_sample_rows") and not recompute:
-
             # Grab the sample_df from our SageWorks metadata
             sample_df = pd.read_json(
                 self.sageworks_meta()["sageworks_sample_rows"],

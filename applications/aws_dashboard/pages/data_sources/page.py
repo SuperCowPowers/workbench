@@ -64,7 +64,7 @@ violin = distribution_plots.create(
         "meanline_visible": True,
         "showlegend": False,
         "points": "all",
-        "spanmode": "hard"
+        "spanmode": "hard",
     },
     max_plots=48,
 )
