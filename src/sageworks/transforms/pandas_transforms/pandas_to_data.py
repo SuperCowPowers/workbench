@@ -148,22 +148,22 @@ if __name__ == "__main__":
     """Exercise the PandasToData Class"""
     import sys
     from pathlib import Path
+    from sageworks.utils.test_data_generator import TestDataGenerator
 
-    # Load some small test data
-    data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
-    test_df = pd.read_csv(data_path)
+    # Generate some test data
+    test_data = TestDataGenerator()
+    df = test_data.person_data()
 
     # Create my DF to Data Source Transform
-    my_data_name = "test_data"
-    df_to_data = PandasToData(my_data_name)
-    df_to_data.set_input(test_df)
+    test_uuid = "test_data"
+    df_to_data = PandasToData(test_uuid)
+    df_to_data.set_input(df)
     df_to_data.set_output_tags(["test", "small"])
-
-    # Store this data into a SageWorks DataSource
     df_to_data.transform()
-    print(f"{my_data_name} stored as a SageWorks DataSource")
+    print(f"{test_uuid} stored as a SageWorks DataSource")
 
     # Create my DF to with JSONL format
+    """
     data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.json"
     test_df = pd.read_json(data_path, orient="records", lines=True)
     output_uuid = "test_data_json"
@@ -174,3 +174,4 @@ if __name__ == "__main__":
     # Store this data into a SageWorks DataSource
     df_to_data.transform()
     print(f"{output_uuid} stored as a SageWorks DataSource")
+    """

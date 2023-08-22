@@ -11,7 +11,6 @@ from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
 logging_setup()
-log = logging.getLogger(__name__)
 
 
 class SageWorksConfig:

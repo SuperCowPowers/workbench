@@ -19,7 +19,7 @@ class Outliers:
         self.outlier_group = 0
 
     def compute_outliers(
-        self, data_source: DataSourceAbstract, scale: float = 1.7, include_strings: bool = False
+        self, data_source: DataSourceAbstract, scale: float = 1.25, include_strings: bool = False
     ) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
@@ -29,7 +29,7 @@ class Outliers:
         Returns:
             pd.DataFrame: A DataFrame of outliers for this DataSource
         Notes:
-            Uses the IQR * 1.7 (~= 3 Sigma) method to compute outliers
+            Uses the IQR * 1.25 (~= 2 Sigma) (use 1.7 for ~= 3 Sigma)
             The scale parameter can be adjusted to change the IQR multiplier
         """
 
@@ -158,7 +158,7 @@ class Outliers:
         """
 
         # Get lower outlier bound
-        query = f"SELECT * from {data_source.table_name} where {column} < {lower_bound} order by {column} limit 10"
+        query = f"SELECT * from {data_source.table_name} where {column} < {lower_bound} order by {column} limit 20"
         lower_df = data_source.query(query)
 
         # Check for no results
@@ -166,7 +166,7 @@ class Outliers:
             lower_df = None
 
         # Get upper outlier bound
-        query = f"SELECT * from {data_source.table_name} where {column} > {upper_bound} order by {column} desc limit 10"
+        query = f"SELECT * from {data_source.table_name} where {column} > {upper_bound} order by {column} desc limit 20"
         upper_df = data_source.query(query)
 
         # Check for no results

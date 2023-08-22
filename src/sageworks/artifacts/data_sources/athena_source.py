@@ -224,7 +224,7 @@ class AthenaSource(DataSourceAbstract):
         # Return the quartile data
         return quartile_dict
 
-    def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
+    def outliers(self, scale: float = 1.25, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             scale(float): The scale to use for the IQR (default: 1.7)
@@ -232,7 +232,7 @@ class AthenaSource(DataSourceAbstract):
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
         Notes:
-            Uses the IQR * 1.7 (~= 3 Sigma) method to compute outliers
+            Uses the IQR * 1.25 (~= 2 Sigma) (use 1.7 for ~= 3 Sigma)
             The scale parameter can be adjusted to change the IQR multiplier
         """
 
@@ -249,7 +249,7 @@ class AthenaSource(DataSourceAbstract):
 
         # Compute outliers using the SQL Outliers class
         sql_outliers = outliers.Outliers()
-        outlier_df = sql_outliers.compute_outliers(self)
+        outlier_df = sql_outliers.compute_outliers(self, scale=scale)
 
         # Store the outlier_df in our SageWorks metadata
         rows_json = outlier_df.to_json(orient="records", lines=True)

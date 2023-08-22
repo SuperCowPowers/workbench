@@ -18,23 +18,29 @@ from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 from sageworks.artifacts.models.model import Model
 from sageworks.artifacts.endpoints.endpoint import Endpoint
+
+from sageworks.utils.test_data_generator import TestDataGenerator
+from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
 from sageworks.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
-from sageworks.transforms.data_to_features.light.data_to_features_light import (
-    DataToFeaturesLight,
-)
+from sageworks.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
 from sageworks.transforms.features_to_model.features_to_model import FeaturesToModel
 from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 
 if __name__ == "__main__":
     # Get the path to the dataset in the repository data directory
-    test_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
     abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
 
     # Create the test_data DataSource
     if not DataSource("test_data").exists():
-        my_loader = CSVToDataSource(test_data_path, "test_data")
-        my_loader.set_output_tags("test:small")
-        my_loader.transform()
+        # Create a small test data set
+        test_data = TestDataGenerator()
+        df = test_data.person_data()
+
+        # Create my DF to Data Source Transform
+        df_to_data = PandasToData("test_data")
+        df_to_data.set_input(df)
+        df_to_data.set_output_tags(["test", "small"])
+        df_to_data.transform()
         print("Waiting for the test_data to be created...")
         time.sleep(5)
 

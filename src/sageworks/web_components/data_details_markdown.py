@@ -105,7 +105,10 @@ def create_markdown(artifact_details: dict) -> str:
     for key, value in artifact_details.items():
         # Hack for dates
         if ".000Z" in str(value):
-            value = value.replace(".000Z", "").replace("T", " ")
+            try:
+                value = value.replace(".000Z", "").replace("T", " ")
+            except AttributeError:
+                pass
         markdown_template = markdown_template.replace(f"<<{key}>>", str(value))
 
     # Fill in numeric column details
