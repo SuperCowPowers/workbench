@@ -224,10 +224,11 @@ class AthenaSource(DataSourceAbstract):
         # Return the descriptive stats
         return stat_dict
 
-    def outliers(self, scale: float = 1.25, recompute: bool = False) -> pd.DataFrame:
+    def outliers(self, scale: float = 1.25, use_stddev=False, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             scale(float): The scale to use for the IQR (default: 1.7)
+            use_stddev(bool): Use Standard Deviation instead of IQR (default: False)
             recompute(bool): Recompute the outliers (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
@@ -249,7 +250,7 @@ class AthenaSource(DataSourceAbstract):
 
         # Compute outliers using the SQL Outliers class
         sql_outliers = outliers.Outliers()
-        outlier_df = sql_outliers.compute_outliers(self, scale=scale)
+        outlier_df = sql_outliers.compute_outliers(self, scale=scale, use_stddev=use_stddev)
 
         # Store the outlier_df in our SageWorks metadata
         rows_json = outlier_df.to_json(orient="records", lines=True)

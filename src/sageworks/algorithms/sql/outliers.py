@@ -19,12 +19,13 @@ class Outliers:
         self.outlier_group = 0
 
     def compute_outliers(
-        self, data_source: DataSourceAbstract, scale: float = 1.25, include_strings: bool = False
+        self, data_source: DataSourceAbstract, scale: float = 1.25, use_stddev: bool = False, include_strings: bool = False
     ) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             data_source(DataSource): The DataSource that we're computing outliers on
-            scale(float): The scale to use for the IQR outlier calculation (default: 1.7)
+            scale(float): The scale to use for either the IQR or stddev outlier calculation (default: 1.25)
+            use_stddev(bool): Option to use the standard deviation for the outlier calculation (default: False)
             include_strings(bool): Option to include string columns in the outlier calculation (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers for this DataSource
@@ -34,7 +35,7 @@ class Outliers:
         """
 
         # Compute the numeric outliers
-        numeric_outliers_df = self._numeric_outliers(data_source, scale)
+        numeric_outliers_df = self._numeric_outliers(data_source, scale, use_stddev)
 
         # Compute the string outliers
         if include_strings:
@@ -67,11 +68,12 @@ class Outliers:
 
         return all_outliers
 
-    def _numeric_outliers(self, data_source: DataSourceAbstract, scale: float) -> pd.DataFrame:
+    def _numeric_outliers(self, data_source: DataSourceAbstract, scale: float, use_stddev=False) -> pd.DataFrame:
         """Internal method to compute outliers for all numeric columns
         Args:
             data_source(DataSource): The DataSource that we're computing outliers on
             scale(float): The scale to use for the IQR outlier calculation
+            use_stddev(bool): Option to use the standard deviation for the outlier calculation (default: False)
         Returns:
             pd.DataFrame: A DataFrame of all the outliers combined
         """
@@ -86,16 +88,25 @@ class Outliers:
         for column, data_type in zip(data_source.column_names(), data_source.column_types()):
             print(column, data_type)
             if data_type in numeric:
-                iqr = descriptive_stats[column]["q3"] - descriptive_stats[column]["q1"]
+                if use_stddev:
+                    # Compute dataframes for the lower and upper bounds
+                    mean = descriptive_stats[column]["mean"]
+                    stddev = descriptive_stats[column]["stddev"]
+                    lower_bound = mean - (stddev * scale)
+                    upper_bound = mean + (stddev * scale)
+                    lower_df, upper_df = self._outlier_dfs(data_source, column, lower_bound, upper_bound)
+                else:
+                    # Compute the IQR for this column
+                    iqr = descriptive_stats[column]["q3"] - descriptive_stats[column]["q1"]
 
-                # Catch cases where IQR is 0
-                if iqr == 0:
-                    log.info(f"IQR is 0 for column {column}, but we'll give it a go...")
+                    # Catch cases where IQR is 0
+                    if iqr == 0:
+                        log.info(f"IQR is 0 for column {column}, but we'll give it a go...")
 
-                # Compute dataframes for the lower and upper bounds
-                lower_bound = descriptive_stats[column]["q1"] - (iqr * scale)
-                upper_bound = descriptive_stats[column]["q3"] + (iqr * scale)
-                lower_df, upper_df = self._outlier_dfs(data_source, column, lower_bound, upper_bound)
+                    # Compute dataframes for the lower and upper bounds
+                    lower_bound = descriptive_stats[column]["q1"] - (iqr * scale)
+                    upper_bound = descriptive_stats[column]["q3"] + (iqr * scale)
+                    lower_df, upper_df = self._outlier_dfs(data_source, column, lower_bound, upper_bound)
 
                 # If we have outliers, add them to the list
                 for df in [lower_df, upper_df]:
@@ -188,13 +199,17 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("aqsol_data")
+    my_data = DataSource("test_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
 
     # Create the class and Compute outliers
     my_outliers = Outliers()
-    my_outlier_df = my_outliers.compute_outliers(my_data, include_strings=False)
+    my_outlier_df = my_outliers.compute_outliers(my_data)
     print("\nOutliers")
+    print(my_outlier_df)
+
+    my_outlier_df = my_outliers.compute_outliers(my_data, use_stddev=True, scale=2.5)
+    print("\nOutliers (using stddev)")
     print(my_outlier_df)
