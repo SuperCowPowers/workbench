@@ -1,6 +1,7 @@
 """SQL based Quartiles: Compute Quartiles for all the numeric columns in a DataSource using SQL"""
 import logging
 import pandas as pd
+from collections import defaultdict
 
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
@@ -9,6 +10,30 @@ from sageworks.utils.sageworks_logging import logging_setup
 # Setup Logging
 logging_setup()
 log = logging.getLogger(__name__)
+
+
+def quartiles_query(columns: list[str], table_name: str) -> str:
+    """Build a query to compute the quartiles for all columns in a table
+    Args:
+        columns(list(str)): The columns to compute quartiles on
+        table_name(str): The table to compute quartiles on
+    Returns:
+        str: The SQL query to compute quartiles
+    """
+    query = f"SELECT <<column_quartiles>> FROM {table_name}"
+    column_quartiles = ""
+    for c in columns:
+        column_quartiles += (
+            f'min("{c}") AS {c}__min, '
+            f'approx_percentile("{c}", 0.25) AS {c}__q1, '
+            f'approx_percentile("{c}", 0.5) AS {c}__median, '
+            f'approx_percentile("{c}", 0.75) AS {c}__q3, '
+            f'max("{c}") AS {c}__max, '
+        )
+    query = query.replace("<<column_quartiles>>", column_quartiles[:-2])
+
+    # Return the query
+    return query
 
 
 def quartiles(data_source: DataSourceAbstract) -> dict[dict]:
@@ -21,26 +46,30 @@ def quartiles(data_source: DataSourceAbstract) -> dict[dict]:
               'col2': ...}
     """
 
-    # For every column in the table that is numeric, get the quartiles
-    data_source.log.info("Computing Quartiles for all numeric columns (this may take a while)...")
-    quartile_data = []
-    for column, data_type in zip(data_source.column_names(), data_source.column_types()):
-        print(column, data_type)
-        if data_type in ["bigint", "double", "int", "smallint", "tinyint"]:
-            query = (
-                f'SELECT MIN("{column}") AS min, '
-                f'approx_percentile("{column}", 0.25) AS q1, '
-                f'approx_percentile("{column}", 0.5) AS median, '
-                f'approx_percentile("{column}", 0.75) AS q3, '
-                f'MAX("{column}") AS max FROM {data_source.table_name}'
-            )
-            result_df = data_source.query(query)
-            result_df["column_name"] = column
-            quartile_data.append(result_df)
-    quartile_dict = pd.concat(quartile_data).set_index("column_name").to_dict(orient="index")
+    # Figure out which columns are numeric
+    num_type = ["double", "float", "int", "bigint", "smallint", "tinyint"]
+    details = data_source.column_details()
+    numeric = [column for column, data_type in details.items() if data_type in num_type]
 
-    # Return the quartile data
-    return quartile_dict
+    # Build the query
+    query = quartiles_query(numeric, data_source.table_name)
+
+    # Run the query
+    result_df = data_source.query(query)
+
+    # Process the results
+    # Note: The result_df is a DataFrame with a single row and a column for each quartile metric
+    quartile_dict = result_df.to_dict(orient="index")[0]
+
+    # Convert the dictionary to a nested dictionary
+    # Note: The keys are in the format col1__col2
+    nested_quartiles = defaultdict(dict)
+    for key, value in quartile_dict.items():
+        col1, col2 = key.split("__")
+        nested_quartiles[col1][col2] = value
+
+    # Return the nested dictionary
+    return dict(nested_quartiles)
 
 
 if __name__ == "__main__":

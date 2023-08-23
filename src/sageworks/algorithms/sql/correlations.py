@@ -18,7 +18,7 @@ def correlation_query(columns: list[str], table_name: str) -> str:
         columns(list(str)): The columns to compute correlations on
         table_name(str): The table to compute correlations on
     Returns:
-        str: The query to compute correlations
+        str: The SQL query to compute correlations
     """
     query = f"SELECT <<cross_correlations>> FROM {table_name}"
     cross_correlations = ""
