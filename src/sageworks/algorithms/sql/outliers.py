@@ -75,8 +75,8 @@ class Outliers:
             pd.DataFrame: A DataFrame of all the outliers combined
         """
 
-        # Grab the quartiles for this DataSource
-        quartiles = data_source.quartiles()
+        # Grab the descriptive stats for this DataSource
+        descriptive_stats = data_source.descriptive_stats()
 
         # For every column in the data_source that is numeric get the outliers
         log.info("Computing outliers for numeric columns (this may take a while)...")
@@ -85,15 +85,15 @@ class Outliers:
         for column, data_type in zip(data_source.column_names(), data_source.column_types()):
             print(column, data_type)
             if data_type in numeric:
-                iqr = quartiles[column]["q3"] - quartiles[column]["q1"]
+                iqr = descriptive_stats[column]["q3"] - descriptive_stats[column]["q1"]
 
                 # Catch cases where IQR is 0
                 if iqr == 0:
                     log.info(f"IQR is 0 for column {column}, but we'll give it a go...")
 
                 # Compute dataframes for the lower and upper bounds
-                lower_bound = quartiles[column]["q1"] - (iqr * scale)
-                upper_bound = quartiles[column]["q3"] + (iqr * scale)
+                lower_bound = descriptive_stats[column]["q1"] - (iqr * scale)
+                upper_bound = descriptive_stats[column]["q3"] + (iqr * scale)
                 lower_df, upper_df = self._outlier_dfs(data_source, column, lower_bound, upper_bound)
 
                 # If we have outliers, add them to the list

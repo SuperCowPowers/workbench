@@ -1,4 +1,4 @@
-"""SQL based Quartiles: Compute Quartiles for all the numeric columns in a DataSource using SQL"""
+"""SQL based Sample Rows: Compute Sample rows for a DataSource using SQL"""
 import logging
 import pandas as pd
 
@@ -37,7 +37,7 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    """Exercise the SQL Quartiles Functionality"""
+    """Exercise the SQL Sample Rows Functionality"""
     from sageworks.artifacts.data_sources.data_source import DataSource
 
     # Setup Pandas output options

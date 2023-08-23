@@ -55,11 +55,11 @@ class DataSourceWebView(ArtifactsWebView):
         else:
             return pd.DataFrame()
 
-    def data_source_quartiles(self, data_source_index: int) -> (dict, None):
-        """Get all columns quartiles for the given DataSource Index"""
+    def data_source_descriptive_stats(self, data_source_index: int) -> (dict, None):
+        """Get all columns descriptive stats for the given DataSource Index"""
         data_uuid = self.data_source_name(data_source_index)
         if data_uuid is not None:
-            return DataSource(data_uuid).quartiles()
+            return DataSource(data_uuid).descriptive_stats()
         else:
             return None
 

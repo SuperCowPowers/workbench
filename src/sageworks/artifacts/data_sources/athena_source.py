@@ -8,7 +8,7 @@ import json
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.iso_8601 import convert_all_to_iso8601
-from sageworks.algorithms.sql import sample_rows, value_counts, quartiles, outliers, column_stats, correlations
+from sageworks.algorithms.sql import sample_rows, value_counts, descriptive_stats, outliers, column_stats, correlations
 from sageworks.utils.pandas_utils import NumpyEncoder, athena_to_pandas_types
 
 
@@ -102,6 +102,40 @@ class AthenaSource(DataSourceAbstract):
             database=self.data_catalog_db,
             table=self.table_name,
             boto3_session=self.boto_session,
+        )
+
+    def delete_sageworks_meta(self, meta_key: str):
+        """Delete a specific piece of metadata for this Artifact
+        Args:
+            meta_key (dict): The key of the metadata to delete
+        """
+        self.log.critical(f"Refusing to delete {meta_key} from {self.table_name} metadata")
+        self.log.critical("In general this is a bad idea. Delete this Artifact and recreate it!")
+        return
+
+        # Grab our existing metadata
+        meta = self.sageworks_meta()
+
+        # Sanity Check if the metadata key exists
+        if meta_key not in meta:
+            self.log.info(f"Metadata Key {meta_key} not found in {self.table_name} metadata")
+            return
+
+        # Delete the specific metadata key
+        self.log.warning(f"Deleting {meta_key} from {self.table_name} metadata")
+        meta.pop(meta_key)
+        self.log.warning(f"New Metadata Keys: {meta.keys()}")
+
+        # Create a boto3 Glue client
+        client = self.boto_session.client('glue')
+
+        # Update the table with the modified parameters using boto3
+        client.update_table(
+            DatabaseName=self.data_catalog_db,
+            TableInput={
+                'Name': self.table_name,
+                'Parameters': meta
+            }
         )
 
     def size(self) -> float:
@@ -201,28 +235,28 @@ class AthenaSource(DataSourceAbstract):
         # Return the sample_df
         return sample_df
 
-    def quartiles(self, recompute: bool = False) -> dict[dict]:
-        """Compute Quartiles for all the numeric columns in a DataSource
+    def descriptive_stats(self, recompute: bool = False) -> dict[dict]:
+        """Compute Descriptive Stats for all the numeric columns in a DataSource
         Args:
-            recompute(bool): Recompute the quartiles (default: False)
+            recompute(bool): Recompute the descriptive stats (default: False)
         Returns:
-            dict(dict): A dictionary of quartiles for each column in the form
+            dict(dict): A dictionary of descriptive stats for each column in the form
                  {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},
                   'col2': ...}
         """
 
-        # First check if we have already computed the quartiles
-        if self.sageworks_meta().get("sageworks_quartiles") and not recompute:
-            return json.loads(self.sageworks_meta()["sageworks_quartiles"])
+        # First check if we have already computed the descriptive stats
+        if self.sageworks_meta().get("sageworks_descriptive_stats") and not recompute:
+            return json.loads(self.sageworks_meta()["sageworks_descriptive_stats"])
 
-        # Call the SQL function to compute quartiles
-        quartile_dict = quartiles.quartiles(self)
+        # Call the SQL function to compute descriptive stats
+        stat_dict = descriptive_stats.descriptive_stats(self)
 
-        # Push the quartile data into our DataSource Metadata
-        self.upsert_sageworks_meta({"sageworks_quartiles": quartile_dict})
+        # Push the descriptive stat data into our DataSource Metadata
+        self.upsert_sageworks_meta({"sageworks_descriptive_stats": stat_dict})
 
-        # Return the quartile data
-        return quartile_dict
+        # Return the descriptive stats
+        return stat_dict
 
     def outliers(self, scale: float = 1.25, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
@@ -269,7 +303,7 @@ class AthenaSource(DataSourceAbstract):
         # Outliers DataFrame
         outlier_rows = self.outliers()
 
-        # Combine the sample rows with the quartiles data
+        # Combine the sample rows with the outlier rows
         return pd.concat([sample_rows, outlier_rows]).reset_index(drop=True).drop_duplicates()
 
     def correlations(self, recompute: bool = False) -> dict[dict]:
@@ -289,10 +323,10 @@ class AthenaSource(DataSourceAbstract):
         # Call the SQL function to compute correlations
         correlations_dict = correlations.correlations(self)
 
-        # Push the quartile data into our DataSource Metadata
+        # Push the correlation data into our DataSource Metadata
         self.upsert_sageworks_meta({"sageworks_correlations": correlations_dict})
 
-        # Return the quartile data
+        # Return the correlation data
         return correlations_dict
 
     def column_stats(self, recompute: bool = False) -> dict[dict]:
@@ -301,10 +335,10 @@ class AthenaSource(DataSourceAbstract):
             recompute(bool): Recompute the column stats (default: False)
         Returns:
             dict(dict): A dictionary of stats for each column this format
-            NB: String columns will NOT have num_zeros, quartiles or correlation data
+            NB: String columns will NOT have num_zeros, descriptive_stats or correlation data
              {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
               'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100,
-                       'quartiles': {...}, 'correlations': {...}},
+                       'descriptive_stats': {...}, 'correlations': {...}},
               ...}
         """
 
@@ -331,7 +365,7 @@ class AthenaSource(DataSourceAbstract):
                   'col2': ...}
         """
 
-        # First check if we have already computed the quartiles
+        # First check if we have already computed the value counts
         if self.sageworks_meta().get("sageworks_value_counts") and not recompute:
             return json.loads(self.sageworks_meta()["sageworks_value_counts"])
 
@@ -461,10 +495,10 @@ if __name__ == "__main__":
     print("\nSmart Sample")
     print(smart_sample)
 
-    # Get quartiles for numeric columns
-    quartile_info = my_data.quartiles()
-    print("\nQuartiles")
-    pprint(quartile_info)
+    # Get descriptive stats for numeric columns
+    stat_info = my_data.descriptive_stats()
+    print("\nDescriptive Stats")
+    pprint(stat_info)
 
     # Get value_counts for string columns
     value_count_info = my_data.value_counts()

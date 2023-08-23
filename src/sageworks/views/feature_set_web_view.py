@@ -48,13 +48,13 @@ class FeatureSetWebView(ArtifactsWebView):
             status = fs.get_status()
             return pd.DataFrame({"uuid": [uuid], "status": [f"{status}"]})
 
-    def feature_set_quartiles(self, feature_set_index: int) -> (dict, None):
-        """Get all columns quartiles for the given FeatureSet Index"""
+    def feature_set_descriptive_stats(self, feature_set_index: int) -> (dict, None):
+        """Get all columns descriptive stats for the given FeatureSet Index"""
         data_uuid = self.feature_set_name(feature_set_index)
         uuid = self.feature_set_name(feature_set_index)
         fs = FeatureSet(uuid)
         if fs.get_status() == "ready":
-            return FeatureSet(data_uuid).quartiles()
+            return FeatureSet(data_uuid).descriptive_stats()
         else:
             return None
 
@@ -68,19 +68,8 @@ class FeatureSetWebView(ArtifactsWebView):
         # Outliers DataFrame
         outlier_rows = self.feature_set_outliers(feature_set_index)
 
-        # Quartiles Data
-        quartiles_data = self.feature_set_quartiles(feature_set_index)
-        if quartiles_data is None:
-            return sample_rows
-
-        # Convert the Quartiles Data into a DataFrame
-        quartiles_dict_list = dict()
-        for col_name, quartiles in quartiles_data.items():
-            quartiles_dict_list[col_name] = quartiles.values()
-        quartiles_df = pd.DataFrame(quartiles_dict_list)
-
-        # Combine the sample rows with the quartiles data
-        return pd.concat([sample_rows, outlier_rows, quartiles_df]).reset_index(drop=True).drop_duplicates()
+        # Combine the sample rows with the outlier rows
+        return pd.concat([sample_rows, outlier_rows]).reset_index(drop=True).drop_duplicates()
 
     def feature_set_details(self, feature_set_index: int) -> (dict, None):
         """Get all the details for the given FeatureSet Index"""

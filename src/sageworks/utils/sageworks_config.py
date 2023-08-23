@@ -80,7 +80,7 @@ class SageWorksConfig:
         try:
             return self.sageworks_config[section][key]
         except KeyError:
-            log.critical("Could not find config key: {:s}:{:s}".format(section, key))
+            self.log.critical("Could not find config key: {:s}:{:s}".format(section, key))
             return None
 
 

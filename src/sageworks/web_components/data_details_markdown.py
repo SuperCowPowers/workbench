@@ -34,8 +34,8 @@ def column_info_html(column_name, column_info: dict) -> str:
     float_types = ["float", "double", "decimal"]
     if column_info["dtype"] in numeric_types:
         # Just hardcode the min and max for now
-        min = column_info["quartiles"]["min"]
-        max = column_info["quartiles"]["max"]
+        min = column_info["descriptive_stats"]["min"]
+        max = column_info["descriptive_stats"]["max"]
         if column_info["dtype"] in float_types:
             html_template += f""" {min:.2f} → {max:.2f}&nbsp;&nbsp;&nbsp;&nbsp;"""
         else:
@@ -120,9 +120,9 @@ def create_markdown(artifact_details: dict) -> str:
             column_html = column_info_html(column_name, column_info)
             column_details = expanding_list.replace("<<column_info>>", column_html)
 
-            # Populate the bullet list (quartiles and unique)
+            # Populate the bullet list (descriptive_stats and unique)
             bullet_list = ""
-            for q, value in column_info["quartiles"].items():
+            for q, value in column_info["descriptive_stats"].items():
                 bullet_list += f"<li>{q}: {value:.3f}</li>"
             bullet_list += f"<li>Unique: {column_info['unique']}</li>"
 

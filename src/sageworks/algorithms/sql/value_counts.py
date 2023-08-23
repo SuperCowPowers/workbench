@@ -1,4 +1,4 @@
-"""SQL based Quartiles: Compute Quartiles for all the numeric columns in a DataSource using SQL"""
+"""SQL based Value Counts: Compute Value Counts for all columns in a DataSource using SQL"""
 import logging
 import pandas as pd
 
@@ -60,7 +60,7 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
 
 
 if __name__ == "__main__":
-    """Exercise the SQL Quartiles Functionality"""
+    """Exercise the SQL Value Counts Functionality"""
     from pprint import pprint
     from sageworks.artifacts.data_sources.data_source import DataSource
 

@@ -56,9 +56,9 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
         data_source(DataSource): The DataSource that we're computing column stats on
     Returns:
         dict(dict): A dictionary of stats for each column this format
-        NB: String columns will have value_counts but NOT have num_zeros and quartiles
+        NB: String columns will have value_counts but NOT have num_zeros and descriptive stats
              {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12, 'value_counts': {...}},
-              'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'quartiles': {...}},
+              'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'descriptive_stats': {...}},
               ...}
     """
     data_source.log.info("Computing Column Statistics for all columns...")
@@ -70,10 +70,10 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
     # Get the column names and types from the DataSource
     column_data = {name: {"dtype": dtype} for name, dtype in data_source.column_details().items()}
 
-    # Now add quartiles to the column stats
-    quartiles = data_source.quartiles()
-    for column, quartile_info in quartiles.items():
-        column_data[column]["quartiles"] = quartile_info
+    # Now add descriptive stats to the column stats
+    descriptive_stats = data_source.descriptive_stats()
+    for column, stat_info in descriptive_stats.items():
+        column_data[column]["descriptive_stats"] = stat_info
 
     # Now add value_counts to the column stats
     value_counts = data_source.value_counts()
@@ -116,7 +116,7 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
 
 
 if __name__ == "__main__":
-    """Exercise the SQL Quartiles Functionality"""
+    """Exercise the SQL Column Details Functionality"""
     from pprint import pprint
     from sageworks.artifacts.data_sources.data_source import DataSource
 

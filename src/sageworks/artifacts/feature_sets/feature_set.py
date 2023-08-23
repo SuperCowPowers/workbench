@@ -270,14 +270,14 @@ class FeatureSet(Artifact):
             time.sleep(1)
         self.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
-    def quartiles(self, recompute: bool = False) -> dict:
-        """Get the quartiles for the numeric columns of the underlying DataSource
+    def descriptive_stats(self, recompute: bool = False) -> dict:
+        """Get the descriptive stats for the numeric columns of the underlying DataSource
         Args:
-            recompute (bool): Recompute the quartiles (default=False)
+            recompute (bool): Recompute the descriptive stats (default=False)
         Returns:
-            dict: A dictionary of quartiles for the numeric columns
+            dict: A dictionary of descriptive stats for the numeric columns
         """
-        return self.data_source.quartiles(recompute)
+        return self.data_source.descriptive_stats(recompute)
 
     def sample(self, recompute: bool = False) -> pd.DataFrame:
         """Get a sample of the data from the underlying DataSource
@@ -323,7 +323,7 @@ class FeatureSet(Artifact):
         return anom_df
 
     def value_counts(self, recompute: bool = False) -> dict:
-        """Get the quartiles for the string columns of the underlying DataSource
+        """Get the value counts for the string columns of the underlying DataSource
         Args:
             recompute (bool): Recompute the value counts (default=False)
         Returns:
@@ -346,9 +346,9 @@ class FeatureSet(Artifact):
             recompute(bool): Recompute the column stats (default: False)
         Returns:
             dict(dict): A dictionary of stats for each column this format
-            NB: String columns will NOT have num_zeros and quartiles
+            NB: String columns will NOT have num_zeros and descriptive_stats
              {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
-              'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'quartiles': {...}},
+              'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'descriptive_stats': {...}},
               ...}
         """
 
@@ -450,10 +450,10 @@ if __name__ == "__main__":
     print(f"Sample Data: {df.shape}")
     print(df)
 
-    # Get quartiles for all the columns
-    quartile_info = my_features.quartiles()
-    print("Quartiles")
-    pprint(quartile_info)
+    # Get descriptive stats for all the columns
+    stat_info = my_features.descriptive_stats()
+    print("Descriptive Stats")
+    pprint(stat_info)
 
     # Get outliers for all the columns
     anom_df = my_features.outliers()

@@ -146,8 +146,6 @@ class PandasToData(Transform):
 
 if __name__ == "__main__":
     """Exercise the PandasToData Class"""
-    import sys
-    from pathlib import Path
     from sageworks.utils.test_data_generator import TestDataGenerator
 
     # Generate some test data

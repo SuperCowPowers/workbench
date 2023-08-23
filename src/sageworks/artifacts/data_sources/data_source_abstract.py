@@ -53,12 +53,12 @@ class DataSourceAbstract(Artifact):
         pass
 
     @abstractmethod
-    def quartiles(self, recompute: bool = False) -> dict[dict]:
-        """Compute Quartiles for all the numeric columns in a DataSource
+    def descriptive_stats(self, recompute: bool = False) -> dict[dict]:
+        """Compute Descriptive Stats for all the numeric columns in a DataSource
         Args:
-            recompute(bool): Recompute the quartiles (default: False)
+            recompute(bool): Recompute the descriptive stats (default: False)
         Returns:
-            dict(dict): A dictionary of quartiles for each column in the form
+            dict(dict): A dictionary of descriptive stats for each column in the form
                  {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},
                   'col2': ...}
         """
@@ -105,9 +105,9 @@ class DataSourceAbstract(Artifact):
             recompute(bool): Recompute the column stats (default: False)
         Returns:
             dict(dict): A dictionary of stats for each column this format
-            NB: String columns will NOT have num_zeros and quartiles
+            NB: String columns will NOT have num_zeros and descriptive stats
              {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
-              'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'quartiles': {...}},
+              'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'descriptive_stats': {...}},
               ...}
         """
         pass
@@ -127,7 +127,7 @@ class DataSourceAbstract(Artifact):
         expected_meta = [
             "sageworks_details",
             "sageworks_sample_rows",
-            "sageworks_quartiles",
+            "sageworks_descriptive_stats",
             "sageworks_value_counts",
             "sageworks_correlations",
             "sageworks_outliers",
@@ -139,10 +139,10 @@ class DataSourceAbstract(Artifact):
         """This is a BLOCKING method that will wait until the Artifact is ready"""
         self.details()
         self.sample()
-        self.quartiles()
+        self.descriptive_stats()
         self.value_counts()
         self.correlations()
-        self.refresh_meta()  # Refresh the meta since outliers needs quartiles and value_counts
+        self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts
         self.outliers()
         self.column_stats()
 
