@@ -69,7 +69,12 @@ class FeatureSetWebView(ArtifactsWebView):
         outlier_rows = self.feature_set_outliers(feature_set_index)
 
         # Combine the sample rows with the outlier rows
-        return pd.concat([sample_rows, outlier_rows]).reset_index(drop=True).drop_duplicates()
+        all_rows = pd.concat([sample_rows, outlier_rows]).reset_index(drop=True)
+
+        # Drop duplicates
+        all_except_outlier_group = [col for col in all_rows.columns if col != "outlier_group"]
+        all_rows = all_rows.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
+        return all_rows
 
     def feature_set_details(self, feature_set_index: int) -> (dict, None):
         """Get all the details for the given FeatureSet Index"""

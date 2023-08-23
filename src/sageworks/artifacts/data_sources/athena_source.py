@@ -104,40 +104,6 @@ class AthenaSource(DataSourceAbstract):
             boto3_session=self.boto_session,
         )
 
-    def delete_sageworks_meta(self, meta_key: str):
-        """Delete a specific piece of metadata for this Artifact
-        Args:
-            meta_key (dict): The key of the metadata to delete
-        """
-        self.log.critical(f"Refusing to delete {meta_key} from {self.table_name} metadata")
-        self.log.critical("In general this is a bad idea. Delete this Artifact and recreate it!")
-        return
-
-        # Grab our existing metadata
-        meta = self.sageworks_meta()
-
-        # Sanity Check if the metadata key exists
-        if meta_key not in meta:
-            self.log.info(f"Metadata Key {meta_key} not found in {self.table_name} metadata")
-            return
-
-        # Delete the specific metadata key
-        self.log.warning(f"Deleting {meta_key} from {self.table_name} metadata")
-        meta.pop(meta_key)
-        self.log.warning(f"New Metadata Keys: {meta.keys()}")
-
-        # Create a boto3 Glue client
-        client = self.boto_session.client('glue')
-
-        # Update the table with the modified parameters using boto3
-        client.update_table(
-            DatabaseName=self.data_catalog_db,
-            TableInput={
-                'Name': self.table_name,
-                'Parameters': meta
-            }
-        )
-
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
         size_in_bytes = sum(wr.s3.size_objects(self.s3_storage_location(), boto3_session=self.boto_session).values())
@@ -304,7 +270,12 @@ class AthenaSource(DataSourceAbstract):
         outlier_rows = self.outliers()
 
         # Combine the sample rows with the outlier rows
-        return pd.concat([sample_rows, outlier_rows]).reset_index(drop=True).drop_duplicates()
+        all_rows = pd.concat([sample_rows, outlier_rows]).reset_index(drop=True)
+
+        # Drop duplicates
+        all_except_outlier_group = [col for col in all_rows.columns if col != "outlier_group"]
+        all_rows = all_rows.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
+        return all_rows
 
     def correlations(self, recompute: bool = False) -> dict[dict]:
         """Compute Correlations for all the numeric columns in a DataSource

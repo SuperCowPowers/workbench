@@ -54,7 +54,8 @@ class Outliers:
             all_outliers = pd.DataFrame(columns=data_source.column_names() + ["outlier_group"])
 
         # Drop duplicates
-        all_outliers = all_outliers.drop_duplicates()
+        all_except_outlier_group = [col for col in all_outliers.columns if col != "outlier_group"]
+        all_outliers = all_outliers.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
 
         # Make sure the dataframe isn't too big, if it's too big sample it down
         if len(all_outliers) > 100:
@@ -158,7 +159,7 @@ class Outliers:
         """
 
         # Get lower outlier bound
-        query = f"SELECT * from {data_source.table_name} where {column} < {lower_bound} order by {column} limit 20"
+        query = f"SELECT * from {data_source.table_name} where {column} < {lower_bound} order by {column} limit 10"
         lower_df = data_source.query(query)
 
         # Check for no results
@@ -166,7 +167,7 @@ class Outliers:
             lower_df = None
 
         # Get upper outlier bound
-        query = f"SELECT * from {data_source.table_name} where {column} > {upper_bound} order by {column} desc limit 20"
+        query = f"SELECT * from {data_source.table_name} where {column} > {upper_bound} order by {column} desc limit 10"
         upper_df = data_source.query(query)
 
         # Check for no results
