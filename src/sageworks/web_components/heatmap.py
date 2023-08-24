@@ -2,7 +2,7 @@
 import plotly.graph_objs
 from dash import dcc
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 
 
 # For heatmaps see (https://plotly.com/python/heatmaps/)
@@ -28,8 +28,13 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
 
     # Create the imshow plot with custom settings
     height = max(400, len(df.index) * 50)
-    fig = px.imshow(df, color_continuous_scale=color_scale, range_color=[-1, 1])
-    fig.update_layout(margin={"t": 30, "b": 10, "r": 10, "l": 10, "pad": 0}, height=height)
+    fig = go.Figure(data=go.Heatmap(z=df, x=df.columns, y=df.index,
+                                    colorscale=color_scale, zmin=-1, zmax=1))
+    fig.update_layout(
+        margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 0},
+        height=height,
+        dragmode="select"
+    )
     fig.update_xaxes(tickangle=30)
 
     # Now we're going to customize the annotations and filter out low values
