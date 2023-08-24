@@ -71,11 +71,11 @@ violin = distribution_plots.create(
 
 # Create a correlation matrix of all the numeric columns in the Data Source
 corr_df = corr_df_from_artifact_info(details)
-corr_matrix = heatmap.create("corr_matrix", corr_df)
+corr_matrix = heatmap.create("correlation_matrix", corr_df)
 
 # Grab outlier rows and create a scatter plot
 outlier_rows = data_source_broker.data_source_outliers(0)
-outlier_plot = scatter_plot.create("outlier_scatter_plot", outlier_rows, "Clusters")
+outlier_plot = scatter_plot.create("outlier_plot", outlier_rows, "Clusters")
 
 
 # Create our components
@@ -106,5 +106,8 @@ callbacks.update_data_source_details(app, data_source_broker)
 callbacks.update_data_source_sample_rows(app, data_source_broker)
 callbacks.update_violin_plots(app, data_source_broker)
 callbacks.update_correlation_matrix(app, data_source_broker)
+
+# Callbacks for selections
 callbacks.violin_plot_selection(app)
 callbacks.reorder_sample_rows(app)
+callbacks.correlation_matrix_selection(app)

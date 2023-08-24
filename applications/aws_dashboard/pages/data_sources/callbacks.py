@@ -145,68 +145,10 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
         )
 
 
-def violin_plot_selection(app: Dash):
-    """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
-    regenerate the figure"""
-
-    @app.callback(
-        Output("data_source_violin_plot", "figure", allow_duplicate=True),
-        Input("data_source_violin_plot", "selectedData"),
-        State("data_source_violin_plot", "figure"),
-        prevent_initial_call=True,
-    )
-    def update_figure(selected_data, current_figure):
-        # Get the selected indices
-        if selected_data is None:
-            selected_indices = []
-        else:
-            selected_indices = [point["pointIndex"] for point in selected_data["points"]]
-        print("Selected Indices")
-        print(selected_indices)
-
-        # Create a new figure that's a copy of the original with selected data highlighted
-        try:
-            new_figure = go.Figure(current_figure)
-        except:
-            return current_figure
-
-        # Update the selected points
-        new_figure.update_traces(selectedpoints=selected_indices, selector=dict(type="violin"))
-        return new_figure
-
-
-def reorder_sample_rows(app: Dash):
-    """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
-    regenerate the figure"""
-
-    @app.callback(
-        Output("data_source_sample_rows", "data", allow_duplicate=True),
-        Input("data_source_violin_plot", "selectedData"),
-        prevent_initial_call=True,
-    )
-    def reorder_table(selected_data):
-        # Convert the current table data back to a DataFrame
-
-        # Get the selected indices from your plot selection
-        if selected_data is None:
-            return smart_sample_rows.to_dict("records")
-        selected_indices = [point["pointIndex"] for point in selected_data["points"]]
-
-        # Separate the selected rows and the rest of the rows
-        selected_rows = smart_sample_rows.iloc[selected_indices]
-        rest_of_rows = smart_sample_rows.drop(selected_indices)
-
-        # Concatenate them to put the selected rows at the top
-        new_df = pd.concat([selected_rows, rest_of_rows], ignore_index=True)
-
-        # Return the new DataFrame as a dictionary
-        return new_df.to_dict("records")
-
-
 # Updates the correlation matrix when a new DataSource is selected
 def update_correlation_matrix(app: Dash, data_source_web_view: DataSourceWebView):
     @app.callback(
-        Output("corr_matrix", "figure"),
+        Output("correlation_matrix", "figure", allow_duplicate=True),
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
@@ -238,3 +180,117 @@ def update_outlier_plot(app: Dash, data_source_web_view: DataSourceWebView):
             return dash.no_update
         outlier_rows = data_source_web_view.data_source_outliers(selected_rows[0])
         return scatter_plot.create_figure(outlier_rows)
+
+#
+# The following callbacks are for selections
+#
+
+
+def violin_plot_selection(app: Dash):
+    """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
+    and send the updated figure to the client"""
+
+    @app.callback(
+        Output("data_source_violin_plot", "figure", allow_duplicate=True),
+        Input("data_source_violin_plot", "selectedData"),
+        State("data_source_violin_plot", "figure"),
+        prevent_initial_call=True,
+    )
+    def update_figure(selected_data, current_figure):
+        # Get the selected indices
+        if selected_data is None:
+            selected_indices = []
+        else:
+            selected_indices = [point["pointIndex"] for point in selected_data["points"]]
+        print("Selected Indices")
+        print(selected_indices)
+
+        # Create a figure object so that we can use nice methods like update_traces
+        figure = go.Figure(current_figure)
+
+        # Update the selected points
+        figure.update_traces(selectedpoints=selected_indices, selector=dict(type="violin"))
+        return figure
+
+
+def get_selection_indices(click_data, row_data):
+    """Get the selection indices from the columns clicked on in the correlation matrix"""
+
+    # First lets get the column names and the correlation
+    first_column = click_data["points"][0]["y"]
+    second_column = click_data["points"][0]["x"]
+    correlation = click_data["points"][0]["z"]
+    print(f"First Column: {first_column}")
+    print(f"Second Column: {second_column}")
+    print(f"Correlation: {correlation}")
+
+    # Now convert the row data to a DataFrame
+    df = pd.DataFrame(row_data)
+
+    # Now grab the indexes for the top 10 value from the first column
+    selection_indices = set(df[first_column].nlargest(10).index.tolist())
+
+    # If the correlation is positive, then grab the top 10 values from the
+    # second column otherwise grab the bottom 10 values
+    if correlation > 0:
+        selection_indices = selection_indices.union(set(df[second_column].nlargest(10).index.tolist()))
+    elif correlation == 0:
+        selection_indices = []
+    else:
+        selection_indices = selection_indices.union(set(df[second_column].nsmallest(10).index.tolist()))
+
+    # Return the selected indices
+    return list(selection_indices)
+
+
+def correlation_matrix_selection(app: Dash):
+    """A selection has occurred on the Correlation Matrix so highlight the selected box, and also update
+       the selections in the violin plot"""
+
+    @app.callback(
+        Output("data_source_violin_plot", "figure"),
+        Input('correlation_matrix', 'clickData'),
+        State("data_source_violin_plot", "figure"),
+        State("data_source_sample_rows", "data"),
+        prevent_initial_call=True,
+    )
+    def update_figure(click_data, violin_figure, sample_rows):
+
+        # Create a figure object so that we can use nice methods like update_traces
+        violin_figure = go.Figure(violin_figure)
+
+        # Update the selected points in the violin figure
+        if click_data:
+            selected_indices = get_selection_indices(click_data, sample_rows)
+        else:
+            selected_indices = []
+        violin_figure.update_traces(selectedpoints=selected_indices, selector=dict(type="violin"))
+        return violin_figure
+
+
+def reorder_sample_rows(app: Dash):
+    """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
+    regenerate the figure"""
+
+    @app.callback(
+        Output("data_source_sample_rows", "data", allow_duplicate=True),
+        Input("data_source_violin_plot", "selectedData"),
+        prevent_initial_call=True,
+    )
+    def reorder_table(selected_data):
+        # Convert the current table data back to a DataFrame
+
+        # Get the selected indices from your plot selection
+        if selected_data is None:
+            return smart_sample_rows.to_dict("records")
+        selected_indices = [point["pointIndex"] for point in selected_data["points"]]
+
+        # Separate the selected rows and the rest of the rows
+        selected_rows = smart_sample_rows.iloc[selected_indices]
+        rest_of_rows = smart_sample_rows.drop(selected_indices)
+
+        # Concatenate them to put the selected rows at the top
+        new_df = pd.concat([selected_rows, rest_of_rows], ignore_index=True)
+
+        # Return the new DataFrame as a dictionary
+        return new_df.to_dict("records")
