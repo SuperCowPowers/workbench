@@ -181,6 +181,7 @@ def update_outlier_plot(app: Dash, data_source_web_view: DataSourceWebView):
         outlier_rows = data_source_web_view.data_source_outliers(selected_rows[0])
         return scatter_plot.create_figure(outlier_rows)
 
+
 #
 # The following callbacks are for selections
 #
@@ -250,7 +251,7 @@ def select_row_column(figure, click_data):
     print(f"Second Column Index: {second_column_index}")
 
     # Clear any existing shapes (highlights)
-    figure['layout']['shapes'] = ()
+    figure["layout"]["shapes"] = ()
 
     # Add a rectangle shape to outline the cell
     figure.add_shape(
@@ -267,21 +268,17 @@ def select_row_column(figure, click_data):
 
 def correlation_matrix_selection(app: Dash):
     """A selection has occurred on the Correlation Matrix so highlight the selected box, and also update
-       the selections in the violin plot"""
+    the selections in the violin plot"""
 
     @app.callback(
-        [
-            Output("correlation_matrix", "figure", allow_duplicate=True),
-            Output("data_source_violin_plot", "figure")
-        ],
-        Input('correlation_matrix', 'clickData'),
-        State('correlation_matrix', 'figure'),
+        [Output("correlation_matrix", "figure", allow_duplicate=True), Output("data_source_violin_plot", "figure")],
+        Input("correlation_matrix", "clickData"),
+        State("correlation_matrix", "figure"),
         State("data_source_violin_plot", "figure"),
         State("data_source_sample_rows", "data"),
         prevent_initial_call=True,
     )
     def update_figure(click_data, corr_figure, violin_figure, sample_rows):
-
         # Convert the sample rows to a DataFrame
         sample_rows = pd.DataFrame(sample_rows)
 

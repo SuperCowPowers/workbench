@@ -49,7 +49,6 @@ class TestDataGenerator:
         Returns:
             pd.DataFrame: DataFrame of Person Data
         """
-        columns = "id, name, age, height, weight, income, iq_score, food, date".split(", ")
         df = pd.DataFrame()
         df["id"] = range(1, rows + 1)
         df["name"] = ["Person " + str(i) for i in range(1, rows + 1)]
@@ -92,24 +91,25 @@ class TestDataGenerator:
     @staticmethod
     def pearson_correlation(x: pd.Series, y: pd.Series) -> float:
         """Calculate Pearson's correlation coefficient between two series.
-            Args:
-                x(pd.Series): First series.
-                y(pd.Series): Second series.
-            Returns:
-                float: Pearson's correlation coefficient.
+        Args:
+            x(pd.Series): First series.
+            y(pd.Series): Second series.
+        Returns:
+            float: Pearson's correlation coefficient.
         """
         return np.corrcoef(x, y)[0, 1]
 
     @staticmethod
     def generate_correlated_series(series: pd.Series, target_corr: float, min_val: float, max_val: float) -> pd.Series:
-        """Generates a new Pandas Series that has a Pearson's correlation close to the desired value with the original Series.
-            Args:
-                series(pd.Series): Original Pandas Series.
-                target_corr(float): Target correlation value (between -1 and 1).
-                min_val(float): Minimum value for the new Series.
-                max_val(float): Maximum value for the new Series.
-            Returns:
-                pd.Series: New Pandas Series correlated with the original Series.
+        """Generates a new Pandas Series that has a Pearson's correlation close to the desired
+           value with the original Series.
+        Args:
+            series(pd.Series): Original Pandas Series.
+            target_corr(float): Target correlation value (between -1 and 1).
+            min_val(float): Minimum value for the new Series.
+            max_val(float): Maximum value for the new Series.
+        Returns:
+            pd.Series: New Pandas Series correlated with the original Series.
         """
 
         # Fudging with the target correlation to make it work better
@@ -124,7 +124,7 @@ class TestDataGenerator:
         # Rescale the correlated series to be within the min-max range
         min_orig = np.min(correlated_series)
         max_orig = np.max(correlated_series)
-        scaled_series = min_val + (correlated_series-min_orig) * (max_val-min_val) / (max_orig-min_orig)
+        scaled_series = min_val + (correlated_series - min_orig) * (max_val - min_val) / (max_orig - min_orig)
 
         return pd.Series(scaled_series)
 

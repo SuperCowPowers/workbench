@@ -19,7 +19,11 @@ class Outliers:
         self.outlier_group = 0
 
     def compute_outliers(
-        self, data_source: DataSourceAbstract, scale: float = 1.25, use_stddev: bool = False, include_strings: bool = False
+        self,
+        data_source: DataSourceAbstract,
+        scale: float = 1.25,
+        use_stddev: bool = False,
+        include_strings: bool = False,
     ) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
