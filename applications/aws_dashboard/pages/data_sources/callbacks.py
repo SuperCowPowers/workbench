@@ -213,19 +213,16 @@ def violin_plot_selection(app: Dash):
         return figure
 
 
-def get_selection_indices(click_data, row_data):
+def get_selection_indices(click_data, df: pd.DataFrame):
     """Get the selection indices from the columns clicked on in the correlation matrix"""
 
     # First lets get the column names and the correlation
-    first_column = click_data["points"][0]["y"]
-    second_column = click_data["points"][0]["x"]
+    first_column = click_data["points"][0]["y"].split(":")[0]
+    second_column = click_data["points"][0]["x"].split(":")[0]
     correlation = click_data["points"][0]["z"]
     print(f"First Column: {first_column}")
     print(f"Second Column: {second_column}")
     print(f"Correlation: {correlation}")
-
-    # Now convert the row data to a DataFrame
-    df = pd.DataFrame(row_data)
 
     # Now grab the indexes for the top 10 value from the first column
     selection_indices = set(df[first_column].nlargest(10).index.tolist())
@@ -243,29 +240,65 @@ def get_selection_indices(click_data, row_data):
     return list(selection_indices)
 
 
+def select_row_column(figure, click_data):
+    """Select a row and column in the correlation matrix based on click data and the dataframe"""
+
+    # Get the columns index from the click_data
+    first_column_index = int(click_data["points"][0]["x"].split(":")[1])
+    second_column_index = int(click_data["points"][0]["y"].split(":")[1])
+    print(f"First Column Index: {first_column_index}")
+    print(f"Second Column Index: {second_column_index}")
+
+    # Clear any existing shapes (highlights)
+    figure['layout']['shapes'] = ()
+
+    # Add a rectangle shape to outline the cell
+    figure.add_shape(
+        type="rect",
+        xref="x",
+        yref="y",
+        x0=first_column_index - 0.5,
+        y0=second_column_index - 0.5,
+        x1=first_column_index + 0.5,
+        y1=second_column_index + 0.5,
+        line=dict(color="White"),
+    )
+
+
 def correlation_matrix_selection(app: Dash):
     """A selection has occurred on the Correlation Matrix so highlight the selected box, and also update
        the selections in the violin plot"""
 
     @app.callback(
-        Output("data_source_violin_plot", "figure"),
+        [
+            Output("correlation_matrix", "figure", allow_duplicate=True),
+            Output("data_source_violin_plot", "figure")
+        ],
         Input('correlation_matrix', 'clickData'),
+        State('correlation_matrix', 'figure'),
         State("data_source_violin_plot", "figure"),
         State("data_source_sample_rows", "data"),
         prevent_initial_call=True,
     )
-    def update_figure(click_data, violin_figure, sample_rows):
+    def update_figure(click_data, corr_figure, violin_figure, sample_rows):
 
-        # Create a figure object so that we can use nice methods like update_traces
-        violin_figure = go.Figure(violin_figure)
+        # Convert the sample rows to a DataFrame
+        sample_rows = pd.DataFrame(sample_rows)
+
+        # Create a selection box in the correlation matrix
+        corr_figure = go.Figure(corr_figure)
+
+        # Add a rectangle shape to outline the cell
+        select_row_column(corr_figure, click_data)
 
         # Update the selected points in the violin figure
         if click_data:
             selected_indices = get_selection_indices(click_data, sample_rows)
         else:
             selected_indices = []
+        violin_figure = go.Figure(violin_figure)
         violin_figure.update_traces(selectedpoints=selected_indices, selector=dict(type="violin"))
-        return violin_figure
+        return [corr_figure, violin_figure]
 
 
 def reorder_sample_rows(app: Dash):

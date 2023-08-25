@@ -67,11 +67,21 @@ class TestDataGenerator:
         df["salary"] = self.generate_correlated_series(df["height"], 0.8, 80000, 200000)
 
         # IQ Scores range from 100 to 150 and are negatively correlated with height :)
-        df["iq_score"] = self.generate_correlated_series(df["height"], -0.8, 100, 150)
+        df["iq_score"] = self.generate_correlated_series(df["height"], -0.5, 100, 150)
 
         # Food is randomly selected from a list
         food_list = "pizza, tacos, burgers, sushi, steak, chicken, pasta, salad, soup, sandwich".split(", ")
         df["food"] = np.random.choice(food_list, rows)
+
+        # Political Affiliation is randomly selected from a list and correlated with IQ
+        political_list = ["Democrat", "Republican"]
+
+        # Correlate the political affiliation with IQ
+        df["party"] = self.generate_correlated_series(df["iq_score"], 0.5, 0, 1)
+        df["party"] = df["party"].apply(lambda x: political_list[round(x)])
+
+        # Randomly apply some NaNs to the Party column
+        df["party"] = df["party"].apply(lambda x: np.nan if np.random.random() < 0.1 else x)
 
         # Date is a random date between 1/1/2022 and 12/31/2022
         df["date"] = pd.date_range(start="1/1/2022", end="12/31/2022", periods=rows)
