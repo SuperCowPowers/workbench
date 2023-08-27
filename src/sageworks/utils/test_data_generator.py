@@ -68,22 +68,31 @@ class TestDataGenerator:
         # IQ Scores range from 100 to 150 and are negatively correlated with height :)
         df["iq_score"] = self.generate_correlated_series(df["height"], -0.5, 100, 150)
 
-        # Food is randomly selected from a list
-        food_list = "pizza, tacos, burgers, sushi, steak, chicken, pasta, salad, soup, sandwich".split(", ")
-        df["food"] = np.random.choice(food_list, rows)
+        # Food will be correlated with salary
+        food_list = "pizza, tacos, steak, sushi".split(", ")
+        df["food"] = self.generate_correlated_series(df["iq_score"], 0.8, 0, 3)
 
-        # Political Affiliation is randomly selected from a list and correlated with IQ
-        political_list = ["Democrat", "Republican"]
+        # Round to nearest integer
+        df["food"] = df["food"].round().astype(int).clip(0, len(food_list) - 1)
 
-        # Correlate the political affiliation with IQ
-        df["party"] = self.generate_correlated_series(df["iq_score"], 0.5, 0, 1)
-        df["party"] = df["party"].apply(lambda x: political_list[round(x)])
+        # Convert integers to food strings
+        df["food"] = df["food"].apply(lambda x: food_list[x])
 
-        # Randomly apply some NaNs to the Party column
-        df["party"] = df["party"].apply(lambda x: np.nan if np.random.random() < 0.1 else x)
+        # Randomly apply some NaNs to the Food column
+        df["food"] = df["food"].apply(lambda x: np.nan if np.random.random() < 0.1 else x)
 
         # Date is a random date between 1/1/2022 and 12/31/2022
         df["date"] = pd.date_range(start="1/1/2022", end="12/31/2022", periods=rows)
+
+        # Get less bloated types for the columns
+        df = df.astype({
+            'id': 'int32',
+            'age': 'int32',
+            'height': 'float32',
+            'weight': 'float32',
+            'salary': 'float32',
+            'iq_score': 'float32'
+        })
 
         # Return the DataFrame
         return df
