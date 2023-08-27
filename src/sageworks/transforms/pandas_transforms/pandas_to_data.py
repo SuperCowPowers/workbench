@@ -141,7 +141,6 @@ class PandasToData(Transform):
 
         # Call the FeatureSet make_ready method to compute a bunch of EDA stuff
         output_data_source.make_ready()
-        output_data_source.set_status("ready")
 
 
 if __name__ == "__main__":

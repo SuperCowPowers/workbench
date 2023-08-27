@@ -151,6 +151,7 @@ class DataSourceAbstract(Artifact):
         ready = self.ready()
         if ready:
             self.set_status("ready")
+            self.refresh_meta()
             return True
         else:
             self.log.critical(f"DataSource {self.uuid} is not ready")

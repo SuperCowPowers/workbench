@@ -93,6 +93,8 @@ class Model(Artifact):
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Model is ready"""
         self.details()
+        self.set_status("ready")
+        self.refresh_meta()
         return True
 
     def delete(self):

@@ -64,7 +64,6 @@ class ModelToEndpoint(Transform):
 
         # Call the Model make_ready method and set status to ready
         output_endpoint.make_ready()
-        output_endpoint.set_status("ready")
 
     def delete_endpoint(self):
         """Delete an existing Endpoint and it's Configuration"""

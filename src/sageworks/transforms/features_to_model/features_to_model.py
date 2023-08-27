@@ -152,7 +152,6 @@ class FeaturesToModel(Transform):
 
         # Call the Model make_ready method and set status to ready
         output_model.make_ready()
-        output_model.set_status("ready")
 
     def create_and_register_model(self):
         """Create and Register the Model"""

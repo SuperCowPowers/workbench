@@ -237,7 +237,6 @@ class PandasToFeatures(Transform):
         # Call the FeatureSet make_ready method to compute a bunch of EDA stuff
         self.output_feature_set = FeatureSet(self.output_uuid, force_refresh=True)
         self.output_feature_set.make_ready()
-        self.output_feature_set.set_status("ready")
 
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")

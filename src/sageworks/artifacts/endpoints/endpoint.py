@@ -194,6 +194,8 @@ class Endpoint(Artifact):
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Endpoint is ready"""
         self.details()
+        self.set_status("ready")
+        self.refresh_meta()
         return True
 
     @staticmethod
