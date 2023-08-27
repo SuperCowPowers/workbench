@@ -59,18 +59,18 @@ class TestDataGenerator:
         # Height will be normally distributed with mean 68 and std 4
         df["height"] = np.random.normal(68, 4, rows)
 
-        # Weight is roughly correlated with height
-        df["weight"] = self.generate_correlated_series(df["height"], 0.6, 100, 300)
+        # Weight is loosely correlated with height
+        df["weight"] = self.generate_correlated_series(df["height"], 0.2, 100, 300)
 
         # Salary ranges from 80k to 200k and is correlated with height
-        df["salary"] = self.generate_correlated_series(df["height"], 0.8, 80000, 200000)
+        df["salary"] = self.generate_correlated_series(df["height"], 0.7, 80000, 200000)
 
-        # IQ Scores range from 100 to 150 and are negatively correlated with height :)
-        df["iq_score"] = self.generate_correlated_series(df["height"], -0.5, 100, 150)
+        # IQ Scores range from 100 to 150 and are negatively correlated with salary :)
+        df["iq_score"] = self.generate_correlated_series(df["salary"], -0.6, 100, 150)
 
         # Food will be correlated with salary
         food_list = "pizza, tacos, steak, sushi".split(", ")
-        df["food"] = self.generate_correlated_series(df["iq_score"], 0.8, 0, 3)
+        df["food"] = self.generate_correlated_series(df["salary"], 0.8, -0.5, 3.5)
 
         # Round to nearest integer
         df["food"] = df["food"].round().astype(int).clip(0, len(food_list) - 1)
