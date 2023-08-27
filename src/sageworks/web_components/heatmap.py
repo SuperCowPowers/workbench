@@ -26,18 +26,22 @@ def create_figure(df: pd.DataFrame) -> plotly.graph_objs.Figure:
         [1.0, "rgb(128, 64, 64)"],
     ]
 
+    # Okay so the heatmap has inverse y-axis ordering so we need to flip the dataframe
+    df = df.iloc[::-1]
+
     # Okay so there are numerous issues with getting back the index of the clicked on point
     # so we're going to store the indexes of the columns (this is SO stupid)
-    labels = [f"{c}:{i}" for i, c in enumerate(df.columns)]
+    x_labels = [f"{c}:{i}" for i, c in enumerate(df.columns)]
+    y_labels = [f"{c}:{i}" for i, c in enumerate(df.index)]
 
     # Create the heatmap plot with custom settings
     height = max(400, len(df.index) * 50)
-    fig = go.Figure(data=go.Heatmap(z=df, x=labels, y=labels, name="", colorscale=color_scale, zmin=-1, zmax=1))
+    fig = go.Figure(data=go.Heatmap(z=df, x=x_labels, y=y_labels, name="", colorscale=color_scale, zmin=-1, zmax=1))
     fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 0}, height=height)
 
     # Now remap the x and y axis labels (so they don't show the index)
-    fig.update_xaxes(tickvals=labels, ticktext=df.columns, tickangle=30)
-    fig.update_yaxes(tickvals=labels, ticktext=df.columns)
+    fig.update_xaxes(tickvals=x_labels, ticktext=df.columns, tickangle=30)
+    fig.update_yaxes(tickvals=y_labels, ticktext=df.index)
 
     # Now we're going to customize the annotations and filter out low values
     label_threshold = 0.3
