@@ -43,20 +43,23 @@ class PandasToData(Transform):
         """Set the DataFrame Input for this Transform"""
         self.output_df = input_df.copy()
 
-    def convert_object_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+    def convert_object_to_string(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Try to automatically convert object columns to string columns"""
+        for c in df.columns[df.dtypes == "object"]:  # Look at the object columns
+            try:
+                df[c] = df[c].astype('string')
+                df[c] = df[c].str.replace("'", '"')  # This is for nested JSON
+            except (ParserError, ValueError, TypeError):
+                self.log.info(f"Column {c} could not be converted to string...")
+        return df
+
+    def convert_object_to_datetime(self, df: pd.DataFrame) -> pd.DataFrame:
         """Try to automatically convert object columns to datetime or string columns"""
         for c in df.columns[df.dtypes == "object"]:  # Look at the object columns
             try:
                 df[c] = pd.to_datetime(df[c])
             except (ParserError, ValueError, TypeError):
                 self.log.debug(f"Column {c} could not be converted to datetime...")
-
-                # Now try to convert object to string
-                try:
-                    df[c] = df[c].astype(str)
-                    df[c] = df[c].str.replace("'", '"')  # This is for nested JSON
-                except (ParserError, ValueError, TypeError):
-                    self.log.info(f"Column {c} could not be converted to string...")
         return df
 
     @staticmethod
@@ -83,11 +86,17 @@ class PandasToData(Transform):
         # Create the Output Parquet file S3 Storage Path
         s3_storage_path = f"{self.data_source_s3_path}/{self.output_uuid}"
 
-        # Convert Object Columns to Datetime or String
-        self.output_df = self.convert_object_columns(self.output_df)
+        # Convert Object Columns to String
+        self.output_df = self.convert_object_to_string(self.output_df)
+
+        # Note: Both of these conversions may not be necessary, so we're leaving them commented out
+        """
+        # Convert Object Columns to Datetime
+        self.output_df = self.convert_object_to_datetime(self.output_df)
 
         # Now convert datetime columns to ISO-8601 string
-        self.output_df = self.convert_datetime_columns(self.output_df)
+        # self.output_df = self.convert_datetime_columns(self.output_df)
+        """
 
         # Write out the DataFrame to AWS Data Catalog in either Parquet or JSONL format
         description = f"SageWorks data source: {self.output_uuid}"
@@ -151,7 +160,7 @@ if __name__ == "__main__":
     test_data = TestDataGenerator()
     df = test_data.person_data()
 
-    # Create my DF to Data Source Transform
+    # Create my Pandas to DataSource Transform
     test_uuid = "test_data"
     df_to_data = PandasToData(test_uuid)
     df_to_data.set_input(df)
@@ -159,7 +168,7 @@ if __name__ == "__main__":
     df_to_data.transform()
     print(f"{test_uuid} stored as a SageWorks DataSource")
 
-    # Create my DF to with JSONL format
+    # Create my Pandas to DataSource using a JSONL format
     """
     data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.json"
     test_df = pd.read_json(data_path, orient="records", lines=True)
