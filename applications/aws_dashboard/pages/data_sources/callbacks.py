@@ -19,7 +19,6 @@ def refresh_data_timer(app: Dash):
     @app.callback(
         Output("last-updated-data-sources", "children"),
         Input("data-sources-updater", "n_intervals"),
-        prevent_initial_call=True,
     )
     def time_updated(_n):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
@@ -271,7 +270,10 @@ def correlation_matrix_selection(app: Dash):
     the selections in the violin plot"""
 
     @app.callback(
-        [Output("correlation_matrix", "figure", allow_duplicate=True), Output("data_source_violin_plot", "figure")],
+        [
+            Output("correlation_matrix", "figure", allow_duplicate=True),
+            Output("data_source_violin_plot", "figure", allow_duplicate=True),
+        ],
         Input("correlation_matrix", "clickData"),
         State("correlation_matrix", "figure"),
         State("data_source_violin_plot", "figure"),

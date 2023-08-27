@@ -18,7 +18,6 @@ register_page(
     name="SageWorks - Data Sources",
 )
 
-
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 
 # Put the components into 'dark' mode
@@ -37,21 +36,19 @@ data_sources_table = table.create(
     markdown_columns=["Name"],
 )
 
-# Data Source Details
-details = data_source_broker.data_source_details(0)
-
-# Create a markdown component to display the column details
-data_details = data_details_markdown.create("data_source_details", details)
-
 # Grab sample rows from the first data source
 sample_rows = data_source_broker.data_source_smart_sample(0)
 data_source_sample_rows = table.create(
     "data_source_sample_rows",
     sample_rows,
     header_color="rgb(60, 60, 100)",
-    max_height="200px",
+    max_height="300px",
     color_column="outlier_group",
 )
+
+# Data Source Details
+details = data_source_broker.data_source_details(0)
+data_details = data_details_markdown.create("data_source_details", details)
 
 # Create a violin plot of all the numeric columns in the Data Source
 smart_sample_rows = data_source_broker.data_source_smart_sample(0)

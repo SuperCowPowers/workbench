@@ -8,13 +8,15 @@ def feature_sets_layout(
     feature_set_sample_rows: dash_table.DataTable,
     feature_set_details: dcc.Markdown,
     violin_plot: dcc.Graph,
+    correlation_matrix: dcc.Graph,
+    outlier_plot: dcc.Graph,
 ) -> html.Div:
-    # Just put all the tables in as Rows for Now (do something fancy later)
+    # The layout for the FeatureSets page
     layout = html.Div(
         children=[
             dbc.Row(
                 [
-                    html.H2("SageWorks: FeatureSets (Alpha)"),
+                    html.H2("SageWorks: FeatureSets"),
                     html.Div(
                         "Last Updated: ",
                         id="last-updated-feature-sets",
@@ -25,15 +27,13 @@ def feature_sets_layout(
                         },
                     ),
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
+                    # Just the auto updater
+                    dcc.Interval(id="feature-sets-updater", interval=5000, n_intervals=0),
                 ]
             ),
-            # List out all the Data Sources
+            # A table that lists out all the Data Sources
             dbc.Row(feature_sets_table),
-            # Data Source Details, Sample Rows, and Violin Plots
-            # Row [ Sample Rows ]
-            # Row [ Column 1                      Column 2 ]
-            #       (Row(Data Source Details))    Row(Violin Plots)
-            #
+            # Sample Rows for the selected Feature Set
             dbc.Row(
                 html.H3("Sampled Rows", id="feature_sample_rows_header"),
                 style={"padding": "30px 0px 10px 0px"},
@@ -42,6 +42,7 @@ def feature_sets_layout(
                 feature_set_sample_rows,
                 style={"padding": "0px 0px 30px 0px"},
             ),
+            # Column1: Data Source Details, Column2: Violin Plots, Correlation Matrix
             dbc.Row(
                 [
                     # Column 1: Data Source Details
@@ -58,15 +59,17 @@ def feature_sets_layout(
                         ],
                         width=4,
                     ),
-                    # Column 2: Sample Rows and Violin Plots
+                    # Column 2: Violin Plots (Correlation Matrix + Outliers)
                     dbc.Col(
                         [
                             dbc.Row(violin_plot),
+                            dbc.Row(
+                                [dbc.Col(correlation_matrix, width=12)],
+                                style={"padding": "0px 0px 0px 0px"},
+                            ),
                         ],
                         width=8,
                     ),
-                    # Just the auto updater
-                    dcc.Interval(id="feature-sets-updater", interval=5000, n_intervals=0),
                 ]
             ),
         ],

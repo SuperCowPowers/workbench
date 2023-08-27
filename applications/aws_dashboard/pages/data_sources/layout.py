@@ -5,8 +5,8 @@ import dash_bootstrap_components as dbc
 
 def data_sources_layout(
     data_sources_table: dash_table.DataTable,
-    data_source_details: dcc.Markdown,
     data_source_sample_rows: dash_table.DataTable,
+    data_source_details: dcc.Markdown,
     violin_plot: dcc.Graph,
     correlation_matrix: dcc.Graph,
     outlier_plot: dcc.Graph,
