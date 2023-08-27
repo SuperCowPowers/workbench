@@ -211,7 +211,7 @@ class NumpyEncoder(json.JSONEncoder):
             return super(NumpyEncoder, self).default(obj)
 
 
-def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.2) -> pd.DataFrame:
+def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.3) -> pd.DataFrame:
     """Create a Pandas DataFrame in the form given by df.corr() from the artifact info
     Args:
         artifact_info (dict): A dictionary containing the artifact details.
@@ -224,7 +224,6 @@ def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.2) -> p
     column_stats = artifact_info["column_stats"]
     corr_dict = {key: info["correlations"] for key, info in column_stats.items() if "correlations" in info}
     corr_df = pd.DataFrame(corr_dict)
-    corr_df = corr_df[corr_df.index]  # This is a dataframe of the correlation matrix
 
     # The diagonal will be NaN, so fill it with 0
     corr_df.fillna(0, inplace=True)
@@ -241,6 +240,7 @@ def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.2) -> p
         threshold += 0.1
 
     # Return the correlation dataframe in the form of df.corr()
+    corr_df = corr_df[corr_df.index]
     return corr_df
 
 
@@ -294,28 +294,16 @@ def athena_to_pandas_types(df: pd.DataFrame, column_athena_types: dict) -> pd.Da
 
 if __name__ == "__main__":
     """Exercise the Pandas Utility Methods"""
-    import sys
-    from pathlib import Path
+    from sageworks.utils.test_data_generator import TestDataGenerator
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 35)
     pd.set_option("display.max_columns", 15)
     pd.set_option("display.width", 1000)
 
-    # Load some test data
-    data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
-    test_df = pd.read_csv(data_path, parse_dates=["date"])
-
-    # To support NaNs we'll need to convert to the nullable types
-    test_df["age"] = test_df["age"].astype(pd.Int64Dtype())
-    test_df["food"] = test_df["food"].astype(pd.StringDtype())
-
-    # Replace parts of the data with NaNs to flex the tests
-    test_df.loc[0, "food"] = pd.NA
-    test_df.loc[1, "score"] = pd.NA
-    test_df.loc[1, "food"] = pd.NA
-    test_df.loc[3, "age"] = pd.NA
-    test_df.loc[3, "food"] = pd.NA
+    # Generate some test data
+    test_data = TestDataGenerator()
+    test_df = test_data.person_data()
 
     # Get the info about this dataframe
     info_df = info(test_df)
@@ -341,5 +329,7 @@ if __name__ == "__main__":
     # Test Numpy Encoder
     data = {"int": np.int64(6), "float": np.float64(6.5), "array": np.array([1, 2, 3])}
     json_data = json.dumps(data, cls=NumpyEncoder)
-
     print(json_data)
+
+    # Correlation Matrix
+
