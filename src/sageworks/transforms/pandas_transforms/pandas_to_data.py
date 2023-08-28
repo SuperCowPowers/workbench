@@ -47,7 +47,7 @@ class PandasToData(Transform):
         """Try to automatically convert object columns to string columns"""
         for c in df.columns[df.dtypes == "object"]:  # Look at the object columns
             try:
-                df[c] = df[c].astype('string')
+                df[c] = df[c].astype("string")
                 df[c] = df[c].str.replace("'", '"')  # This is for nested JSON
             except (ParserError, ValueError, TypeError):
                 self.log.info(f"Column {c} could not be converted to string...")

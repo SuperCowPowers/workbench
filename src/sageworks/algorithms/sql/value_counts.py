@@ -47,11 +47,11 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
             result_df = pd.concat([top_df, bottom_df], ignore_index=True).drop_duplicates()
 
             # Convert Int64 (nullable) to int32 so that we can serialize to JSON
-            result_df["count"] = result_df["count"].astype('int32')
+            result_df["count"] = result_df["count"].astype("int32")
 
             # If the column is boolean, convert the values to True/False strings (for JSON)
             if result_df[column].dtype == "boolean":
-                result_df[column] = result_df[column].astype('string')
+                result_df[column] = result_df[column].astype("string")
 
             # Convert any NA values to 'NaN' so that we can serialize to JSON
             result_df.fillna("NaN", inplace=True)

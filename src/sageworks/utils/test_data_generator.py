@@ -22,9 +22,7 @@ class TestDataGenerator:
         """TestDataGenerator Initialization"""
         self.log = logging.getLogger(__file__)
 
-    def ml_data(
-        self, features: int = 10, rows: int = 100, target_type: str = "regression"
-    ):
+    def ml_data(self, features: int = 10, rows: int = 100, target_type: str = "regression"):
         """Generate a Pandas DataFrame with random data
         Args:
             features: number of columns (default: 10)
@@ -32,13 +30,9 @@ class TestDataGenerator:
             target_type: type of target regression or classification (default: regression)
         """
         if target_type == "regression":
-            X, y = make_regression(
-                n_samples=rows, n_features=features, n_informative=features - 2
-            )
+            X, y = make_regression(n_samples=rows, n_features=features, n_informative=features - 2)
         elif target_type == "classification":
-            X, y = make_classification(
-                n_samples=rows, n_features=features, n_informative=features - 2
-            )
+            X, y = make_classification(n_samples=rows, n_features=features, n_informative=features - 2)
         else:
             self.log.critical(f"Unknown target_type: {target_type}")
             raise ValueError(f"Unknown target_type: {target_type}")
@@ -85,14 +79,10 @@ class TestDataGenerator:
         df["food"] = df["food"].apply(lambda x: food_list[x])
 
         # Randomly apply some NaNs to the Food column
-        df["food"] = df["food"].apply(
-            lambda x: np.nan if np.random.random() < 0.1 else x
-        )
+        df["food"] = df["food"].apply(lambda x: np.nan if np.random.random() < 0.1 else x)
 
         # Boolean column for liking dogs (correlated to IQ)
-        df["likes_dogs"] = self.generate_correlated_series(
-            df["iq_score"], 0.75, -0.5, 1.5
-        )
+        df["likes_dogs"] = self.generate_correlated_series(df["iq_score"], 0.75, -0.5, 1.5)
         df["likes_dogs"] = df["likes_dogs"].round().astype(int).clip(0, 1)
         df["likes_dogs"] = df["likes_dogs"].apply(lambda x: True if x == 1 else False)
 
@@ -127,9 +117,7 @@ class TestDataGenerator:
         return np.corrcoef(x, y)[0, 1]
 
     @staticmethod
-    def generate_correlated_series(
-        series: pd.Series, target_corr: float, min_val: float, max_val: float
-    ) -> pd.Series:
+    def generate_correlated_series(series: pd.Series, target_corr: float, min_val: float, max_val: float) -> pd.Series:
         """Generates a new Pandas Series that has a Pearson's correlation close to the desired
            value with the original Series.
         Args:
@@ -145,9 +133,7 @@ class TestDataGenerator:
         target_corr = target_corr * 0.8
 
         # Random noise with normal distribution, with mean and std of series
-        random_noise = np.random.normal(
-            loc=np.mean(series), scale=np.std(series), size=series.size
-        )
+        random_noise = np.random.normal(loc=np.mean(series), scale=np.std(series), size=series.size)
 
         # Create an array with a target correlation to the series
         correlated_series = target_corr * series + (1 - abs(target_corr)) * random_noise
@@ -155,9 +141,7 @@ class TestDataGenerator:
         # Rescale the correlated series to be within the min-max range
         min_orig = np.min(correlated_series)
         max_orig = np.max(correlated_series)
-        scaled_series = min_val + (correlated_series - min_orig) * (
-            max_val - min_val
-        ) / (max_orig - min_orig)
+        scaled_series = min_val + (correlated_series - min_orig) * (max_val - min_val) / (max_orig - min_orig)
 
         return pd.Series(scaled_series)
 
