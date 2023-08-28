@@ -26,7 +26,7 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
     value_count_dict = dict()
     for column, data_type in zip(data_source.column_names(), data_source.column_types()):
         print(column, data_type)
-        if data_type == "string":
+        if data_type in ["string", "boolean"]:
             # Top value counts for this column
             query = (
                 f'SELECT "{column}", count(*) as count '
@@ -46,11 +46,19 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
             # Add the top and bottom value counts together
             result_df = pd.concat([top_df, bottom_df], ignore_index=True).drop_duplicates()
 
-            # Convert int64 to int so that we can serialize to JSON
-            result_df["count"] = result_df["count"].astype(int)
+            # Convert Int64 (nullable) to int32 so that we can serialize to JSON
+            result_df["count"] = result_df["count"].astype('int32')
+
+            # If the column is boolean, convert the values to True/False strings (for JSON)
+            if result_df[column].dtype == "boolean":
+                result_df[column] = result_df[column].astype('string')
 
             # Convert any NA values to 'NaN' so that we can serialize to JSON
             result_df.fillna("NaN", inplace=True)
+
+            # If all of our counts equal 1 we can drop most of them
+            if result_df["count"].sum() == result_df.shape[0]:
+                result_df = result_df.iloc[:5]
 
             # Convert the result_df into a dictionary
             value_count_dict[column] = dict(zip(result_df[column], result_df["count"]))

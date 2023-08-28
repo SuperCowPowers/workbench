@@ -103,7 +103,10 @@ class FeatureSet(Artifact):
 
     def column_details(self) -> dict:
         """Return the column details of the Feature Set"""
-        return {item["FeatureName"]: item["FeatureType"] for item in self.feature_meta["FeatureDefinitions"]}
+        details = {item["FeatureName"]: item["FeatureType"] for item in self.feature_meta["FeatureDefinitions"]}
+        internal = {"write_time": "Timestamp", "api_invocation_time": "Timestamp", "is_deleted": "Boolean"}
+        details.update(internal)
+        return details
 
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""
@@ -396,7 +399,12 @@ class FeatureSet(Artifact):
         self.details()
 
         # Call our underlying DataSource make_ready method
-        return self.data_source.make_ready()
+        if not self.data_source.make_ready():
+            return False
+
+        # Set ourselves to ready
+        self.set_status("ready")
+        self.refresh_meta()
 
 
 if __name__ == "__main__":

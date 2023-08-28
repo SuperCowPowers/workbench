@@ -22,7 +22,9 @@ class TestDataGenerator:
         """TestDataGenerator Initialization"""
         self.log = logging.getLogger(__file__)
 
-    def ml_data(self, features: int = 10, rows: int = 100, target_type: str = "regression"):
+    def ml_data(
+        self, features: int = 10, rows: int = 100, target_type: str = "regression"
+    ):
         """Generate a Pandas DataFrame with random data
         Args:
             features: number of columns (default: 10)
@@ -30,9 +32,13 @@ class TestDataGenerator:
             target_type: type of target regression or classification (default: regression)
         """
         if target_type == "regression":
-            X, y = make_regression(n_samples=rows, n_features=features, n_informative=features - 2)
+            X, y = make_regression(
+                n_samples=rows, n_features=features, n_informative=features - 2
+            )
         elif target_type == "classification":
-            X, y = make_classification(n_samples=rows, n_features=features, n_informative=features - 2)
+            X, y = make_classification(
+                n_samples=rows, n_features=features, n_informative=features - 2
+            )
         else:
             self.log.critical(f"Unknown target_type: {target_type}")
             raise ValueError(f"Unknown target_type: {target_type}")
@@ -53,9 +59,6 @@ class TestDataGenerator:
         df["id"] = range(1, rows + 1)
         df["name"] = ["Person " + str(i) for i in range(1, rows + 1)]
 
-        # Now we're going to generate some random data with correlations
-        df["age"] = np.random.randint(18, 65, rows)
-
         # Height will be normally distributed with mean 68 and std 4
         df["height"] = np.random.normal(68, 4, rows)
 
@@ -65,12 +68,15 @@ class TestDataGenerator:
         # Salary ranges from 80k to 200k and is correlated with height
         df["salary"] = self.generate_correlated_series(df["height"], 0.7, 80000, 200000)
 
+        # Age is loosely correlated with salary
+        df["age"] = self.generate_correlated_series(df["salary"], 0.5, 20, 80)
+
         # IQ Scores range from 100 to 150 and are negatively correlated with salary :)
         df["iq_score"] = self.generate_correlated_series(df["salary"], -0.6, 100, 150)
 
         # Food will be correlated with salary
         food_list = "pizza, tacos, steak, sushi".split(", ")
-        df["food"] = self.generate_correlated_series(df["salary"], 0.8, -0.5, 3.5)
+        df["food"] = self.generate_correlated_series(df["salary"], 0.8, -1.5, 4.4)
 
         # Round to nearest integer
         df["food"] = df["food"].round().astype(int).clip(0, len(food_list) - 1)
@@ -79,20 +85,32 @@ class TestDataGenerator:
         df["food"] = df["food"].apply(lambda x: food_list[x])
 
         # Randomly apply some NaNs to the Food column
-        df["food"] = df["food"].apply(lambda x: np.nan if np.random.random() < 0.1 else x)
+        df["food"] = df["food"].apply(
+            lambda x: np.nan if np.random.random() < 0.1 else x
+        )
+
+        # Boolean column for liking dogs (correlated to IQ)
+        df["likes_dogs"] = self.generate_correlated_series(
+            df["iq_score"], 0.75, -0.5, 1.5
+        )
+        df["likes_dogs"] = df["likes_dogs"].round().astype(int).clip(0, 1)
+        df["likes_dogs"] = df["likes_dogs"].apply(lambda x: True if x == 1 else False)
 
         # Date is a random date between 1/1/2022 and 12/31/2022
         df["date"] = pd.date_range(start="1/1/2022", end="12/31/2022", periods=rows)
 
         # Get less bloated types for the columns
-        df = df.astype({
-            'id': 'int32',
-            'age': 'int32',
-            'height': 'float32',
-            'weight': 'float32',
-            'salary': 'float32',
-            'iq_score': 'float32'
-        })
+        df = df.astype(
+            {
+                "id": "int32",
+                "age": "int32",
+                "height": "float32",
+                "weight": "float32",
+                "salary": "float32",
+                "iq_score": "float32",
+                "likes_dogs": "boolean",
+            }
+        )
 
         # Return the DataFrame
         return df
@@ -109,7 +127,9 @@ class TestDataGenerator:
         return np.corrcoef(x, y)[0, 1]
 
     @staticmethod
-    def generate_correlated_series(series: pd.Series, target_corr: float, min_val: float, max_val: float) -> pd.Series:
+    def generate_correlated_series(
+        series: pd.Series, target_corr: float, min_val: float, max_val: float
+    ) -> pd.Series:
         """Generates a new Pandas Series that has a Pearson's correlation close to the desired
            value with the original Series.
         Args:
@@ -125,7 +145,9 @@ class TestDataGenerator:
         target_corr = target_corr * 0.8
 
         # Random noise with normal distribution, with mean and std of series
-        random_noise = np.random.normal(loc=np.mean(series), scale=np.std(series), size=series.size)
+        random_noise = np.random.normal(
+            loc=np.mean(series), scale=np.std(series), size=series.size
+        )
 
         # Create an array with a target correlation to the series
         correlated_series = target_corr * series + (1 - abs(target_corr)) * random_noise
@@ -133,7 +155,9 @@ class TestDataGenerator:
         # Rescale the correlated series to be within the min-max range
         min_orig = np.min(correlated_series)
         max_orig = np.max(correlated_series)
-        scaled_series = min_val + (correlated_series - min_orig) * (max_val - min_val) / (max_orig - min_orig)
+        scaled_series = min_val + (correlated_series - min_orig) * (
+            max_val - min_val
+        ) / (max_orig - min_orig)
 
         return pd.Series(scaled_series)
 

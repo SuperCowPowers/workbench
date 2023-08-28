@@ -201,10 +201,14 @@ def get_dummy_cols(df: pd.DataFrame) -> list:
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, np.integer):
+        if isinstance(obj, dict):
+            return {key: self.default(value) for key, value in obj.items()}
+        elif isinstance(obj, np.integer):
             return int(obj)
         elif isinstance(obj, np.floating):
             return float(obj)
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
         else:
@@ -219,6 +223,10 @@ def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.3) -> p
     Returns:
         pd.DataFrame: A Pandas DataFrame containing the correlation matrix
     """
+
+    # Sanity check
+    if not artifact_info:
+        return pd.DataFrame()
 
     # Process the data so that we can make a Dataframe of the correlation data
     column_stats = artifact_info["column_stats"]
@@ -240,6 +248,7 @@ def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.3) -> p
         threshold += 0.1
 
     # Return the correlation dataframe in the form of df.corr()
+    corr_df.sort_index(inplace=True)
     corr_df = corr_df[corr_df.index]
     return corr_df
 

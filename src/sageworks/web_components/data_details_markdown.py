@@ -1,5 +1,6 @@
 """A Component for details/information about DataSources"""
 from dash import dcc
+import itertools
 
 
 def _construct_full_type(column_info: dict) -> dict:
@@ -8,6 +9,8 @@ def _construct_full_type(column_info: dict) -> dict:
         "Integral": "I",
         "Fractional": "F",
         "String": "S",
+        "Timestamp": "TS",
+        "Boolean": "B"
     }
     if "fs_dtype" in column_info:
         display_fs_type = shorten_map.get(column_info["fs_dtype"], "???")
@@ -84,7 +87,7 @@ def create_markdown(artifact_details: dict) -> str:
     #### Numeric Columns
     <<numeric_column_details>>
 
-    #### String Columns
+    #### Non-Numeric Columns
     <<string_column_details>>
     """
 
@@ -149,8 +152,8 @@ def create_markdown(artifact_details: dict) -> str:
     # For string columns create collapsible sections that show value counts
     string_column_details = ""
     for column_name, column_info in column_stats.items():
-        # Skipping any columns that aren't dtype string
-        if column_info["dtype"] != "string" or "value_counts" not in column_info:
+        # Skipping any columns that are numeric
+        if column_info["dtype"] in numeric_types:
             continue
 
         # Create the column info
@@ -158,9 +161,12 @@ def create_markdown(artifact_details: dict) -> str:
         column_details = expanding_list.replace("<<column_info>>", column_html)
 
         # Populate the bullet list (if we have value counts)
-        bullet_list = ""
-        for value, count in column_info["value_counts"].items():
-            bullet_list += f"<li>{value}: {count}</li>"
+        if "value_counts" not in column_info:
+            bullet_list = "<li>No Value Counts</li>"
+        else:
+            bullet_list = ""
+            for value, count in column_info["value_counts"].items():
+                bullet_list += f"<li>{value}: {count}</li>"
 
         # Add the bullet list to the column details
         column_details = column_details.replace("<<bullet_list>>", bullet_list)
