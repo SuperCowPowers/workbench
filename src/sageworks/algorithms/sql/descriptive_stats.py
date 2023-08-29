@@ -24,13 +24,13 @@ def descriptive_stats_query(columns: list[str], table_name: str) -> str:
     column_descriptive_stats = ""
     for c in columns:
         column_descriptive_stats += (
-            f'min("{c}") AS {c}__min, '
-            f'approx_percentile("{c}", 0.25) AS {c}__q1, '
-            f'approx_percentile("{c}", 0.5) AS {c}__median, '
-            f'approx_percentile("{c}", 0.75) AS {c}__q3, '
-            f'max("{c}") AS {c}__max, '
-            f'avg("{c}") AS {c}__mean, '
-            f'stddev("{c}") AS {c}__stddev, '
+            f'min("{c}") AS "{c}__min", '
+            f'approx_percentile("{c}", 0.25) AS "{c}__q1", '
+            f'approx_percentile("{c}", 0.5) AS "{c}__median", '
+            f'approx_percentile("{c}", 0.75) AS "{c}__q3", '
+            f'max("{c}") AS "{c}__max", '
+            f'avg("{c}") AS "{c}__mean", '
+            f'stddev("{c}") AS "{c}__stddev", '
         )
     query = query.replace("<<column_descriptive_stats>>", column_descriptive_stats[:-2])
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("abalone_data")
+    my_data = DataSource("ssh_features_1693265450")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()

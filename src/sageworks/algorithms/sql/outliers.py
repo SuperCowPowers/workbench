@@ -37,12 +37,14 @@ class Outliers:
             Uses the IQR * 1.25 (~= 2 Sigma) (use 1.7 for ~= 3 Sigma)
             The scale parameter can be adjusted to change the IQR multiplier
         """
+        data_source.log.info("Computing Outliers for numeric columns...")
 
         # Compute the numeric outliers
         numeric_outliers_df = self._numeric_outliers(data_source, scale, use_stddev)
 
         # Compute the string outliers
         if include_strings:
+            data_source.log.info("Computing Outliers for string columns...")
             string_outliers_df = self._string_outliers(data_source)
         else:
             string_outliers_df = None
@@ -174,7 +176,7 @@ class Outliers:
         """
 
         # Get lower outlier bound
-        query = f"SELECT * from {data_source.table_name} where {column} < {lower_bound} order by {column} limit 10"
+        query = f'SELECT * from {data_source.table_name} where "{column}" < {lower_bound} order by "{column}" limit 10'
         lower_df = data_source.query(query)
 
         # Check for no results
@@ -182,7 +184,7 @@ class Outliers:
             lower_df = None
 
         # Get upper outlier bound
-        query = f"SELECT * from {data_source.table_name} where {column} > {upper_bound} order by {column} desc limit 10"
+        query = f'SELECT * from {data_source.table_name} where "{column}" > {upper_bound} order by "{column}" desc limit 10'
         upper_df = data_source.query(query)
 
         # Check for no results

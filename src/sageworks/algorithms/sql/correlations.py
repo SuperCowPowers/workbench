@@ -25,7 +25,7 @@ def correlation_query(columns: list[str], table_name: str) -> str:
     for c in columns:
         for d in columns:
             if c != d:
-                cross_correlations += f"corr({c}, {d}) AS {c}__{d}, "
+                cross_correlations += f'corr("{c}", "{d}") AS "{c}__{d}", '
     query = query.replace("<<cross_correlations>>", cross_correlations[:-2])
 
     # Return the query
@@ -41,6 +41,7 @@ def correlations(data_source: DataSourceAbstract) -> dict[dict]:
              {'col1': {'col2': 0.5, 'col3': 0.9, 'col4': 0.4, ...},
               'col2': {'col1': 0.5, 'col3': 0.8, 'col4': 0.3, ...}}
     """
+    data_source.log.info("Computing Correlations for numeric columns...")
 
     # Figure out which columns are numeric
     num_type = ["double", "float", "int", "bigint", "smallint", "tinyint"]
