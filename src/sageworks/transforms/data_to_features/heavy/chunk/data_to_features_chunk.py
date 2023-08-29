@@ -69,6 +69,7 @@ class DataToFeaturesChunk(Transform):
         self.chunked_to_features = PandasToFeaturesChunked(self.output_uuid, id_column, event_time_column)
         self.chunked_to_features.set_output_tags(self.output_tags)
         self.chunked_to_features.set_categorical_info(self.cat_column_info)
+        self.chunked_to_features.pre_transform()
 
         # Read in the data from Athena in chunks
         for chunk in wr.athena.read_sql_query(
