@@ -184,7 +184,9 @@ class Outliers:
             lower_df = None
 
         # Get upper outlier bound
-        query = f'SELECT * from {data_source.table_name} where "{column}" > {upper_bound} order by "{column}" desc limit 10'
+        query = (
+            f'SELECT * from {data_source.table_name} where "{column}" > {upper_bound} order by "{column}" desc limit 10'
+        )
         upper_df = data_source.query(query)
 
         # Check for no results

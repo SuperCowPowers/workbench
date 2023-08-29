@@ -117,8 +117,8 @@ class PandasToFeatures(Transform):
             return name
 
         # Start building the new name from the end
-        parts = name.split('_')[::-1]
-        new_name = ''
+        parts = name.split("_")[::-1]
+        new_name = ""
         for part in parts:
             if len(new_name) + len(part) + 1 <= max_length:  # +1 for the underscore
                 new_name = f"{part}_{new_name}" if new_name else part
@@ -134,9 +134,9 @@ class PandasToFeatures(Transform):
 
     def sanitize_column_name(self, name):
         # Remove all invalid characters
-        sanitized = re.sub('[^a-zA-Z0-9-_]', '_', name)
-        sanitized = re.sub('_+', '_', sanitized)
-        sanitized = sanitized.strip('_')
+        sanitized = re.sub("[^a-zA-Z0-9-_]", "_", name)
+        sanitized = re.sub("_+", "_", sanitized)
+        sanitized = sanitized.strip("_")
 
         # Log the change if the name was altered
         if sanitized != name:
