@@ -24,13 +24,13 @@ def descriptive_stats_query(columns: list[str], table_name: str) -> str:
     column_descriptive_stats = ""
     for c in columns:
         column_descriptive_stats += (
-            f'min("{c}") AS "{c}__min", '
-            f'approx_percentile("{c}", 0.25) AS "{c}__q1", '
-            f'approx_percentile("{c}", 0.5) AS "{c}__median", '
-            f'approx_percentile("{c}", 0.75) AS "{c}__q3", '
-            f'max("{c}") AS "{c}__max", '
-            f'avg("{c}") AS "{c}__mean", '
-            f'stddev("{c}") AS "{c}__stddev", '
+            f'min("{c}") AS "{c}___min", '
+            f'approx_percentile("{c}", 0.25) AS "{c}___q1", '
+            f'approx_percentile("{c}", 0.5) AS "{c}___median", '
+            f'approx_percentile("{c}", 0.75) AS "{c}___q3", '
+            f'max("{c}") AS "{c}___max", '
+            f'avg("{c}") AS "{c}___mean", '
+            f'stddev("{c}") AS "{c}___stddev", '
         )
     query = query.replace("<<column_descriptive_stats>>", column_descriptive_stats[:-2])
 
@@ -67,7 +67,7 @@ def descriptive_stats(data_source: DataSourceAbstract) -> dict[dict]:
     # Note: The keys are in the format col1__col2
     nested_descriptive_stats = defaultdict(dict)
     for key, value in stats_dict.items():
-        col1, col2 = key.split("__")
+        col1, col2 = key.split("___")
         nested_descriptive_stats[col1][col2] = value
 
     # Return the nested dictionary
