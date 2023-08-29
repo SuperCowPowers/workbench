@@ -280,7 +280,13 @@ class PandasToFeatures(Transform):
         # Report on any rows that failed to ingest
         if ingest_manager.failed_rows:
             self.log.warning(f"Number of Failed Rows: {len(ingest_manager.failed_rows)}")
-            failed_data = self.output_df.iloc[ingest_manager.failed_rows]
+
+            # FIXME: This may or may not give us the correct rows
+            # If any index is greater then the number of rows, then the index needs
+            # to be converted to a relative index in our current output_df
+            df_rows = len(self.output_df)
+            relative_indexes = [idx - df_rows if idx >= df_rows else idx for idx in ingest_manager.failed_rows]
+            failed_data = self.output_df.iloc[relative_indexes]
             for idx, row in failed_data.iterrows():
                 self.log.warning(f"Failed Row {idx}: {row.to_dict()}")
 
