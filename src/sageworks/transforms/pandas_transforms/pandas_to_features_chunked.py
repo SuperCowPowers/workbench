@@ -5,6 +5,7 @@ from pandas.api.types import CategoricalDtype
 # Local imports
 from sageworks.transforms.transform import Transform
 from sageworks.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
+from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 
 class PandasToFeaturesChunked(Transform):
@@ -62,13 +63,19 @@ class PandasToFeaturesChunked(Transform):
             self.pandas_to_features.set_input(chunk_df, self.id_column, self.event_time_column)
             self.pandas_to_features.transform_impl()
 
-    def finalize(self):
-        """Finalize the FeatureSet"""
-        self.pandas_to_features.post_transform()
+    def pre_transform(self, **kwargs):
+        """Pre-Transform: Create the Feature Group with Chunked Data"""
+
+        # Loading data into a Feature Group takes a while, so set status to loading
+        FeatureSet(self.output_uuid).set_status("loading")
 
     def transform_impl(self):
         """Required implementation of the Transform interface"""
         self.log.warning("PandasToFeaturesChunked.transform_impl() called.  This is a no-op.")
+
+    def post_transform(self, **kwargs):
+        """Post-Transform: Any Post Transform Steps"""
+        self.pandas_to_features.post_transform()
 
 
 if __name__ == "__main__":

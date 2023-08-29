@@ -3,9 +3,7 @@ import awswrangler as wr
 
 # Local imports
 from sageworks.transforms.transform import Transform
-from sageworks.transforms.pandas_transforms.pandas_to_features_chunked import (
-    PandasToFeaturesChunked,
-)
+from sageworks.transforms.pandas_transforms.pandas_to_features_chunked import PandasToFeaturesChunked
 from sageworks.artifacts.data_sources.data_source import DataSource
 
 
@@ -13,9 +11,9 @@ class DataToFeaturesChunk(Transform):
     """DataToFeaturesChunk: Class to Transform a DataSource into a FeatureSet using Chunking
 
     Common Usage:
-        to_features = DataToFeaturesChunk(input_uuid, output_uuid, 50000)
-        to_features.set_output_tags(["heavy", "whatever"])
-        to_features.transform(query, id_column, event_time_column=None)
+        data_to_features = DataToFeaturesChunk(input_uuid, output_uuid, 50000)
+        data_to_features.set_output_tags(["heavy", "whatever"])
+        data_to_features.transform(query, id_column, event_time_column=None)
     """
 
     def __init__(self, input_uuid: str, output_uuid: str, chunk_size: int = 50000):
@@ -31,6 +29,7 @@ class DataToFeaturesChunk(Transform):
         self.input_data_source = DataSource(input_uuid)
         self.ds_database = "sageworks"
         self.cat_column_info = {}
+        self.chunked_to_features = None
 
     def set_categorical_info(self, cat_column_info: dict[list[str]]):
         """Set the Categorical Columns Information
@@ -46,9 +45,13 @@ class DataToFeaturesChunk(Transform):
         # DataSources will compute value_counts for each object/str column
         value_counts = self.input_data_source.value_counts()
         for column, value_info in value_counts.items():
+            # Hack to avoid IP columns
+            if column.endswith("ip"):
+                self.log.info(f"Skipping column {column}...")
+                continue
             # How many unique values are there?
             unique = len(value_info.keys())
-            if 1 < unique < 20:
+            if 1 < unique < 6:
                 self.log.info(f"Column {column} is categorical (unique={unique})")
                 self.cat_column_info[column] = list(value_info.keys())
 
@@ -63,9 +66,9 @@ class DataToFeaturesChunk(Transform):
         """Convert the Data Source into a Feature Set using Chunking"""
 
         # Create our PandasToFeaturesChunked class
-        to_features = PandasToFeaturesChunked(self.output_uuid, id_column, event_time_column)
-        to_features.set_output_tags(self.output_tags)
-        to_features.set_categorical_info(self.cat_column_info)
+        self.chunked_to_features = PandasToFeaturesChunked(self.output_uuid, id_column, event_time_column)
+        self.chunked_to_features.set_output_tags(self.output_tags)
+        self.chunked_to_features.set_categorical_info(self.cat_column_info)
 
         # Read in the data from Athena in chunks
         for chunk in wr.athena.read_sql_query(
@@ -76,20 +79,25 @@ class DataToFeaturesChunk(Transform):
             boto3_session=self.boto_session,
         ):
             # Hand off each chunk of data
-            to_features.add_chunk(chunk)
+            self.chunked_to_features.add_chunk(chunk)
 
-        # Finalize the FeatureSet
-        to_features.finalize()
+    def post_transform(self, **kwargs):
+        """Post-Transform: Any Post Transform Steps"""
+        self.log.info("Post-Transform: Completing FeatureSet Offline Storage...")
+        self.chunked_to_features.post_transform()
 
 
 if __name__ == "__main__":
     """Exercise the DataToFeaturesChunk Class"""
 
     # Create my DF to Feature Set Transform
-    data_to_features = DataToFeaturesChunk("heavy_dns", "dns_features_test", 100)
-    data_to_features.set_output_tags(["test", "heavy"])
+    data_to_features = DataToFeaturesChunk("http_10795", "http_features")
+    data_to_features.set_output_tags(["http", "nomic"])
 
     # Store this dataframe as a SageWorks Feature Set
+
+    # Old Stuff
+    """
     fields = [
         "timestamp",
         "flow_id",
@@ -101,4 +109,6 @@ if __name__ == "__main__":
         "dns_rcode",
     ]
     query = f"SELECT {', '.join(fields)} FROM heavy_dns limit 1000"
+    """
+    query = "SELECT * FROM http_10795"
     data_to_features.transform(query=query, id_column="flow_id", event_time_column="timestamp")
