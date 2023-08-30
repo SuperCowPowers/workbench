@@ -3,6 +3,8 @@ import pandas as pd
 import awswrangler as wr
 from datetime import datetime
 import json
+import botocore
+from pprint import pprint
 
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
@@ -97,12 +99,21 @@ class AthenaSource(DataSourceAbstract):
         meta.update(new_meta)
 
         # Store our updated metadata
-        wr.catalog.upsert_table_parameters(
-            parameters=meta,
-            database=self.data_catalog_db,
-            table=self.table_name,
-            boto3_session=self.boto_session,
-        )
+        try:
+            wr.catalog.upsert_table_parameters(
+                parameters=meta,
+                database=self.data_catalog_db,
+                table=self.table_name,
+                boto3_session=self.boto_session,
+            )
+        except botocore.exceptions.ClientError as e:
+            error_code = e.response['Error']['Code']
+            if error_code == 'InvalidInputException':
+                self.log.error(f"Unable to upsert metadata for {self.table_name}")
+                self.log.error("Probably because the metadata is too large")
+                pprint(new_meta)
+            else:
+                raise e
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""

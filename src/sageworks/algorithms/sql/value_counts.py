@@ -5,6 +5,7 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.utils.sageworks_logging import logging_setup
+from sageworks.utils.pandas_utils import shorten_values
 
 # Setup Logging
 logging_setup()
@@ -59,6 +60,9 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
             # If all of our counts equal 1 we can drop most of them
             if result_df["count"].sum() == result_df.shape[0]:
                 result_df = result_df.iloc[:5]
+
+            # Shorten any long string values
+            result_df = shorten_values(result_df)
 
             # Convert the result_df into a dictionary
             value_count_dict[column] = dict(zip(result_df[column], result_df["count"]))

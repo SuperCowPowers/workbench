@@ -5,6 +5,7 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.utils.sageworks_logging import logging_setup
+from sageworks.utils.pandas_utils import shorten_values
 
 # Setup Logging
 logging_setup()
@@ -23,14 +24,14 @@ class Outliers:
         data_source: DataSourceAbstract,
         scale: float = 1.25,
         use_stddev: bool = False,
-        include_strings: bool = False,
+        include_strings: bool = True,
     ) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             data_source(DataSource): The DataSource that we're computing outliers on
             scale(float): The scale to use for either the IQR or stddev outlier calculation (default: 1.25)
             use_stddev(bool): Option to use the standard deviation for the outlier calculation (default: False)
-            include_strings(bool): Option to include string columns in the outlier calculation (default: False)
+            include_strings(bool): Option to include string columns in the outlier calculation (default: True)
         Returns:
             pd.DataFrame: A DataFrame of outliers for this DataSource
         Notes:
@@ -71,6 +72,9 @@ class Outliers:
 
         # Sort by outlier_group and reset the index
         all_outliers = all_outliers.sort_values("outlier_group").reset_index(drop=True)
+
+        # Shorten any long string values
+        all_outliers = shorten_values(all_outliers)
 
         return all_outliers
 

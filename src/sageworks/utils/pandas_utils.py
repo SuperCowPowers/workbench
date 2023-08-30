@@ -151,6 +151,15 @@ def drop_outliers_sdev(input_df: pd.DataFrame, sigma: float = 2.0) -> pd.DataFra
     return output_df
 
 
+def shorten_values(df: pd.DataFrame, max_length: int = 100) -> pd.DataFrame:
+    def truncate_element(element):
+        if isinstance(element, str) and len(element) > max_length:
+            return element[:max_length] + '...'  # Add ellipsis to indicate truncation
+        return element
+
+    return df.applymap(truncate_element)
+
+
 def displayable_df(input_df: pd.DataFrame) -> pd.DataFrame:
     """Experimental: Create a displayable dataframe from FeatureSet data
     Args:
