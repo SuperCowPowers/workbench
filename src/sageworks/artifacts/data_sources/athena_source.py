@@ -274,15 +274,16 @@ class AthenaSource(DataSourceAbstract):
         """Get a smart sample dataframe for this DataSource
         Note:
             smart = sample data + outliers for the DataSource"""
-        # Sample DataFrame
-        sample_rows = self.sample()
-        sample_rows["outlier_group"] = -1
 
         # Outliers DataFrame
         outlier_rows = self.outliers()
 
+        # Sample DataFrame
+        sample_rows = self.sample()
+        sample_rows["outlier_group"] = "sample"
+
         # Combine the sample rows with the outlier rows
-        all_rows = pd.concat([sample_rows, outlier_rows]).reset_index(drop=True)
+        all_rows = pd.concat([outlier_rows, sample_rows]).reset_index(drop=True)
 
         # Drop duplicates
         all_except_outlier_group = [col for col in all_rows.columns if col != "outlier_group"]
@@ -344,7 +345,7 @@ class AthenaSource(DataSourceAbstract):
             recompute(bool): Recompute the value counts (default: False)
         Returns:
             dict(dict): A dictionary of value counts for each column in the form
-                 {'col1': {'value_1': X, 'value_2': Y, 'value_3': Z,...},
+                 {'col1': {'value_1': 42, 'value_2': 16, 'value_3': 9,...},
                   'col2': ...}
         """
 
