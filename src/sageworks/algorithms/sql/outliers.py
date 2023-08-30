@@ -17,7 +17,7 @@ class Outliers:
 
     def __init__(self):
         """SQLOutliers Initialization"""
-        self.outlier_group = 0
+        self.outlier_group = "unknown"
 
     def compute_outliers(
         self,
@@ -39,6 +39,10 @@ class Outliers:
             The scale parameter can be adjusted to change the IQR multiplier
         """
         data_source.log.info("Computing Outliers for numeric columns...")
+
+        # Note: If use_stddev is True, then the scale parameter needs to be adjusted
+        if use_stddev and scale == 1.25:  # If the default scale is used, adjust it
+            scale = 2.5
 
         # Compute the numeric outliers
         numeric_outliers_df = self._numeric_outliers(data_source, scale, use_stddev)
@@ -119,15 +123,16 @@ class Outliers:
                     lower_df, upper_df = self._outlier_dfs(data_source, column, lower_bound, upper_bound)
 
                 # If we have outliers, add them to the list
-                for df in [lower_df, upper_df]:
-                    if df is not None:
-                        # Add the outlier_group identifier
-                        df["outlier_group"] = self.outlier_group
-                        self.outlier_group += 1
-
-                        # Append the outlier DataFrame to the list
-                        log.info(f"Found {len(df)} outliers for column {column}")
-                        outlier_df_list.append(df)
+                if lower_df is not None:
+                    # Append the outlier DataFrame to the list
+                    log.info(f"Found {len(lower_df)} low outliers for column {column}")
+                    lower_df["outlier_group"] = f"{column}_low"
+                    outlier_df_list.append(lower_df)
+                if upper_df is not None:
+                    # Append the outlier DataFrame to the list
+                    log.info(f"Found {len(upper_df)} high outliers for column {column}")
+                    upper_df["outlier_group"] = f"{column}_high"
+                    outlier_df_list.append(upper_df)
 
         # Return the combined DataFrame
         return pd.concat(outlier_df_list) if outlier_df_list else None
@@ -144,24 +149,25 @@ class Outliers:
         outlier_df_list = []
         num_rows = data_source.details()["num_rows"]
         outlier_min_count = max(3, num_rows * 0.001)  # 0.1% of the total rows
-        max_unique_values = 40  # 40 is the max number of value counts that are stored in AWS
         value_count_info = data_source.value_counts()
         for column, data_type in zip(data_source.column_names(), data_source.column_types()):
             print(column, data_type)
             # String columns will use the value counts to compute outliers
             if data_type == "string":
-                # Skip columns with too many unique values
-                if len(value_count_info[column]) >= max_unique_values:
-                    log.warning(f"Skipping column {column} too many unique values")
+
+                # Skip columns where all values are unique (all counts are 1)
+                if all(value == 1 for value in value_count_info[column].values()):
+                    log.info(f"All values are unique for column {column}, skipping...")
                     continue
+
+                # Now loop through the value counts and find any rare values
                 for value, count in value_count_info[column].items():
                     if count < outlier_min_count:
                         log.info(f"Found outlier feature {value} for column {column}")
                         query = f"SELECT * from {data_source.table_name} where {column} = '{value}' limit 3"
                         print(query)
                         df = data_source.query(query)
-                        df["outlier_group"] = self.outlier_group
-                        self.outlier_group += 1
+                        df["outlier_group"] = f"{column}_rare"
                         outlier_df_list.append(df)
 
         # Return the combined DataFrame
@@ -222,6 +228,6 @@ if __name__ == "__main__":
     print("\nOutliers")
     print(my_outlier_df)
 
-    my_outlier_df = my_outliers.compute_outliers(my_data, use_stddev=True, scale=2.5)
+    my_outlier_df = my_outliers.compute_outliers(my_data, use_stddev=True)
     print("\nOutliers (using stddev)")
     print(my_outlier_df)
