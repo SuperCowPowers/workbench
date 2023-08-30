@@ -2,7 +2,8 @@
 import numpy as np
 import pandas as pd
 import logging
-from sklearn.manifold import TSNE
+from sklearn.manifold import TSNE, MDS
+from sklearn.decomposition import PCA
 
 # SageWorks Imports
 from sageworks.utils.sageworks_logging import logging_setup
@@ -18,14 +19,21 @@ class DimensionalityReduction:
         self.projection_model = None
         self.features = None
 
-    def fit_transform(self, df: pd.DataFrame, features: list) -> pd.DataFrame:
+    def fit_transform(self, df: pd.DataFrame, projection: str = 'PCA', features: list = None) -> pd.DataFrame:
         """Fit and Transform the DataFrame
         Args:
             df: Pandas DataFrame
-            features: List of feature column names
+            projection: The projection model to use (default: 'PCA')
+            features: List of feature column names (default: None)
         Returns:
             Pandas DataFrame with new columns x and y
         """
+
+        # If no features are given, indentify all numeric columns
+        if features is None:
+            features = [x for x in df.select_dtypes(include=np.number).columns.tolist() if x not in ["id", "group_count"]]
+            self.log.info("No features given, auto identifying numeric columns...")
+            self.log.info(f"{features}")
 
         # Sanity checks
         if not all(column in df.columns for column in features):
@@ -41,11 +49,19 @@ class DimensionalityReduction:
         # Project the multidimensional features onto an x,y plane
         self.log.info("Projecting features onto an x,y plane...")
 
-        # Perplexity is a hyperparameter that controls the number of neighbors used to compute the manifold
-        # The number of neighbors should be less than the number of samples
-        perplexity = min(40, len(df) - 1)
-        self.log.info(f"Perplexity: {perplexity}")
-        self.projection_model = TSNE(perplexity=perplexity)
+        # Perform the projection
+        if projection == 'TSNE':
+            # Perplexity is a hyperparameter that controls the number of neighbors used to compute the manifold
+            # The number of neighbors should be less than the number of samples
+            perplexity = min(40, len(df) - 1)
+            self.log.info(f"Perplexity: {perplexity}")
+            self.projection_model = TSNE(perplexity=perplexity)
+        elif projection == 'MDS':
+            self.projection_model = MDS(n_components=2, random_state=0)
+        elif projection == 'PCA':
+            self.projection_model = PCA(n_components=2)
+
+        # Fit the projection model
         self.features = features
         projection = self.projection_model.fit_transform(df[self.features])
 
