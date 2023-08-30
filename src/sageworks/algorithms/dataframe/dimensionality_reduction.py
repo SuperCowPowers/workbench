@@ -4,6 +4,7 @@ import pandas as pd
 import logging
 from sklearn.manifold import TSNE, MDS
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 
 # SageWorks Imports
 from sageworks.utils.sageworks_logging import logging_setup
@@ -19,11 +20,11 @@ class DimensionalityReduction:
         self.projection_model = None
         self.features = None
 
-    def fit_transform(self, df: pd.DataFrame, projection: str = "PCA", features: list = None) -> pd.DataFrame:
+    def fit_transform(self, df: pd.DataFrame, projection: str = "TSNE", features: list = None) -> pd.DataFrame:
         """Fit and Transform the DataFrame
         Args:
             df: Pandas DataFrame
-            projection: The projection model to use (default: 'PCA')
+            projection: The projection model to use (TSNE, MDS or PCA, default: PCA)
             features: List of feature column names (default: None)
         Returns:
             Pandas DataFrame with new columns x and y
@@ -32,21 +33,34 @@ class DimensionalityReduction:
         # If no features are given, indentify all numeric columns
         if features is None:
             features = [
-                x for x in df.select_dtypes(include=np.number).columns.tolist() if x not in ["id", "group_count"]
+                x for x in df.select_dtypes(include='number').columns.tolist() if not x.endswith("id")
             ]
+            # Also drop group_count if it exists
+            features = [x for x in features if x != "group_count"]
             self.log.info("No features given, auto identifying numeric columns...")
             self.log.info(f"{features}")
+        self.features = features
 
         # Sanity checks
-        if not all(column in df.columns for column in features):
+        if not all(column in df.columns for column in self.features):
             self.log.critical("Some features are missing in the DataFrame")
             return df
-        if len(features) < 2:
+        if len(self.features) < 2:
             self.log.critical("At least two features are required")
             return df
         if df.empty:
             self.log.critical("DataFrame is empty")
             return df
+
+        # Most projection models will fail if there are any NaNs in the data
+        # So we'll fill NaNs with the mean value for that column
+        for col in df[self.features].columns:
+            df[col].fillna(df[col].mean(), inplace=True)
+
+        # Normalize the features
+        scaler = StandardScaler()
+        normalized_data = scaler.fit_transform(df[self.features])
+        df[self.features] = normalized_data
 
         # Project the multidimensional features onto an x,y plane
         self.log.info("Projecting features onto an x,y plane...")
@@ -64,7 +78,7 @@ class DimensionalityReduction:
             self.projection_model = PCA(n_components=2)
 
         # Fit the projection model
-        self.features = features
+        # Hack PCA + TSNE to work together
         projection = self.projection_model.fit_transform(df[self.features])
 
         # Put the projection results back into the given DataFrame

@@ -24,14 +24,14 @@ class Outliers:
         data_source: DataSourceAbstract,
         scale: float = 1.25,
         use_stddev: bool = False,
-        include_strings: bool = True,
+        include_strings: bool = False,
     ) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             data_source(DataSource): The DataSource that we're computing outliers on
             scale(float): The scale to use for either the IQR or stddev outlier calculation (default: 1.25)
             use_stddev(bool): Option to use the standard deviation for the outlier calculation (default: False)
-            include_strings(bool): Option to include string columns in the outlier calculation (default: True)
+            include_strings(bool): Option to include string columns in the outlier calculation (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers for this DataSource
         Notes:
@@ -154,6 +154,11 @@ class Outliers:
             print(column, data_type)
             # String columns will use the value counts to compute outliers
             if data_type == "string":
+
+                # Skip columns that end with _id or _ip
+                if column.endswith("_id") or column.endswith("_ip"):
+                    log.info(f"Skipping column {column}")
+                    continue
                 # Skip columns where all values are unique (all counts are 1)
                 if all(value == 1 for value in value_count_info[column].values()):
                     log.info(f"All values are unique for column {column}, skipping...")

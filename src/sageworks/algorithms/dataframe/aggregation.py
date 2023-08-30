@@ -22,7 +22,7 @@ def aggregate(df: pd.DataFrame, group_column: str, features: list = None) -> pd.
 
     # If no features are given, indentify all numeric columns
     if features is None:
-        features = [x for x in df.select_dtypes(include=np.number).columns.tolist() if x != "id"]
+        features = [x for x in df.select_dtypes(include='number').columns.tolist() if not x.endswith("id")]
         log.info("No features given, auto identifying numeric columns...")
         log.info(f"{features}")
 
