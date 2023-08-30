@@ -4,7 +4,7 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap, scatter_plot
+from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap, outlier_plot
 from sageworks.views.data_source_web_view import DataSourceWebView
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 
@@ -37,21 +37,23 @@ data_sources_table = table.create(
 )
 
 # Grab sample rows from the first data source
-sample_rows = data_source_broker.data_source_smart_sample(0)
+smart_sample_rows = data_source_broker.data_source_smart_sample(0)
 data_source_sample_rows = table.create(
     "data_source_sample_rows",
-    sample_rows,
+    smart_sample_rows,
     header_color="rgb(60, 60, 100)",
     max_height="300px",
     color_column="outlier_group",
 )
+
+# Outlier Plot
+outlier_plot = outlier_plot.create("outlier_plot", smart_sample_rows, "Outlier Groups")
 
 # Data Source Details
 details = data_source_broker.data_source_details(0)
 data_details = data_details_markdown.create("data_source_details", details)
 
 # Create a violin plot of all the numeric columns in the Data Source
-smart_sample_rows = data_source_broker.data_source_smart_sample(0)
 violin = distribution_plots.create(
     "data_source_violin_plot",
     smart_sample_rows,
@@ -70,19 +72,14 @@ violin = distribution_plots.create(
 corr_df = corr_df_from_artifact_info(details)
 corr_matrix = heatmap.create("correlation_matrix", corr_df)
 
-# Grab outlier rows and create a scatter plot
-outlier_rows = data_source_broker.data_source_outliers(0)
-outlier_plot = scatter_plot.create("outlier_plot", outlier_rows, "Clusters")
-
-
 # Create our components
 components = {
     "data_sources_table": data_sources_table,
     "data_source_details": data_details,
+    "outlier_plot": outlier_plot,
     "data_source_sample_rows": data_source_sample_rows,
     "violin_plot": violin,
-    "correlation_matrix": corr_matrix,
-    "outlier_plot": outlier_plot,
+    "correlation_matrix": corr_matrix
 }
 
 # Set up our layout (Dash looks for a var called layout)

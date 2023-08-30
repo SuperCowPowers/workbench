@@ -43,12 +43,17 @@ def create_figure(df: pd.DataFrame, title: str = "Outlier Groups") -> plotly.gra
         log.info("Outlier Plot: Coordinates found...")
         coord_df = df
 
-    # Scale the group_count column so that it's between 15 and 200
-    min_size = 10
+    # Scale the group_count column so that it's between 5 and 100
+    min_size = 5
     max_size = 100
     coord_df["group_count"] = np.interp(
         coord_df["group_count"], (coord_df["group_count"].min(), coord_df["group_count"].max()), (min_size, max_size)
     )
+
+    # Sample column needs to be first
+    coord_df['is_sample'] = coord_df['outlier_group'] == 'sample'
+    coord_df.sort_values('is_sample', ascending=False, inplace=True)
+    coord_df.drop('is_sample', axis=1, inplace=True)
 
     # Create the Outlier Plot
     color_map = px.colors.qualitative.Plotly

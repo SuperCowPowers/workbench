@@ -33,15 +33,32 @@ def data_sources_layout(
             ),
             # A table that lists out all the Data Sources
             dbc.Row(data_sources_table),
-            # Sample Rows for the selected Data Source
+
+            # Sample/Outlier Rows for the selected Data Source AND Outlier Plot
             dbc.Row(
-                html.H3("Sampled Rows", id="sample_rows_header"),
-                style={"padding": "30px 0px 10px 0px"},
+                [
+                    dbc.Col(
+                        [
+                            dbc.Row(
+                                html.H3("Sampled Rows", id="sample_rows_header"),
+                                style={"padding": "30px 0px 10px 0px"},
+                            ),
+                            dbc.Row(
+                                data_source_sample_rows,
+                                style={"padding": "0px 0px 30px 0px"},
+                            )
+                        ],
+                        width=8
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.Row(outlier_plot, style={"padding": "0px 0px 30px 0px"})
+                        ],
+                        width=4
+                    )
+                ]
             ),
-            dbc.Row(
-                data_source_sample_rows,
-                style={"padding": "0px 0px 30px 0px"},
-            ),
+
             # Column1: Data Source Details, Column2: Violin Plots, Correlation Matrix
             dbc.Row(
                 [

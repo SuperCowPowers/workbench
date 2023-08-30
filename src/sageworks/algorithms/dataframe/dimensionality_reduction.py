@@ -71,6 +71,9 @@ class DimensionalityReduction:
         df["x"] = projection[:, 0]  # Projection X Column
         df["y"] = projection[:, 1]  # Projection Y Column
 
+        # Jitter the data to resolve coincident points
+        # df = self.resolve_coincident_points(df)
+
         # Return the DataFrame with the new columns
         return df
 
@@ -83,8 +86,8 @@ class DimensionalityReduction:
             pd.DataFrame: The DataFrame with resolved coincident points
         """
         # Adding Jitter to the projection
-        x_scale = (df["x"].max() - df["x"].min()) * 0.05
-        y_scale = (df["y"].max() - df["y"].min()) * 0.05
+        x_scale = (df["x"].max() - df["x"].min()) * 0.1
+        y_scale = (df["y"].max() - df["y"].min()) * 0.1
         df["x"] += np.random.normal(-x_scale, +x_scale, len(df))
         df["y"] += np.random.normal(-y_scale, +y_scale, len(df))
         return df
