@@ -19,7 +19,7 @@ class DimensionalityReduction:
         self.projection_model = None
         self.features = None
 
-    def fit_transform(self, df: pd.DataFrame, projection: str = 'PCA', features: list = None) -> pd.DataFrame:
+    def fit_transform(self, df: pd.DataFrame, projection: str = "PCA", features: list = None) -> pd.DataFrame:
         """Fit and Transform the DataFrame
         Args:
             df: Pandas DataFrame
@@ -31,7 +31,9 @@ class DimensionalityReduction:
 
         # If no features are given, indentify all numeric columns
         if features is None:
-            features = [x for x in df.select_dtypes(include=np.number).columns.tolist() if x not in ["id", "group_count"]]
+            features = [
+                x for x in df.select_dtypes(include=np.number).columns.tolist() if x not in ["id", "group_count"]
+            ]
             self.log.info("No features given, auto identifying numeric columns...")
             self.log.info(f"{features}")
 
@@ -50,15 +52,15 @@ class DimensionalityReduction:
         self.log.info("Projecting features onto an x,y plane...")
 
         # Perform the projection
-        if projection == 'TSNE':
+        if projection == "TSNE":
             # Perplexity is a hyperparameter that controls the number of neighbors used to compute the manifold
             # The number of neighbors should be less than the number of samples
             perplexity = min(40, len(df) - 1)
             self.log.info(f"Perplexity: {perplexity}")
             self.projection_model = TSNE(perplexity=perplexity)
-        elif projection == 'MDS':
+        elif projection == "MDS":
             self.projection_model = MDS(n_components=2, random_state=0)
-        elif projection == 'PCA':
+        elif projection == "PCA":
             self.projection_model = PCA(n_components=2)
 
         # Fit the projection model

@@ -10,7 +10,7 @@ logging_setup()
 log = logging.getLogger(__name__)
 
 
-def aggregate(df: pd.DataFrame, group_column: str, features: list=None) -> pd.DataFrame:
+def aggregate(df: pd.DataFrame, group_column: str, features: list = None) -> pd.DataFrame:
     """Aggregate Row of a DataFrame
     Args:
         df: Pandas DataFrame
@@ -39,11 +39,11 @@ def aggregate(df: pd.DataFrame, group_column: str, features: list=None) -> pd.Da
 
     # Subset the DataFrame to only the features and group column
     df = df[features + [group_column]].copy()
-    df['group_count'] = 1
+    df["group_count"] = 1
 
     # Define the aggregation methods for each column
-    agg_methods = {feature: 'mean' for feature in features}
-    agg_methods['group_count'] = 'size'
+    agg_methods = {feature: "mean" for feature in features}
+    agg_methods["group_count"] = "size"
 
     # Group by the group column and perform the aggregation
     df = df.groupby(group_column).agg(agg_methods).reset_index()
@@ -65,10 +65,20 @@ def test():
         "feat2": [1.0, 1.0, 1.1, 3.0, 4.0, 1.0, 1.0, 1.1, 3.0, 4.0],
         "feat3": [0.1, 0.1, 0.2, 1.6, 2.5, 0.1, 0.1, 0.2, 1.6, 2.5],
         "price": [31, 60, 62, 40, 20, 31, 61, 60, 40, 20],
-        "outlier_group": ["sample", "a_low", "sample", "b_high", "sample", "c_high", "sample", "d_low", "sample", "e_high"]
+        "outlier_group": [
+            "sample",
+            "a_low",
+            "sample",
+            "b_high",
+            "sample",
+            "c_high",
+            "sample",
+            "d_low",
+            "sample",
+            "e_high",
+        ],
     }
     data_df = pd.DataFrame(data)
-    features = ["feat1", "feat2", "feat3", "price"]
 
     # Aggregate the DataFrame
     new_df = aggregate(data_df, group_column="outlier_group")

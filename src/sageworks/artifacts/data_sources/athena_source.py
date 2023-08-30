@@ -107,8 +107,8 @@ class AthenaSource(DataSourceAbstract):
                 boto3_session=self.boto_session,
             )
         except botocore.exceptions.ClientError as e:
-            error_code = e.response['Error']['Code']
-            if error_code == 'InvalidInputException':
+            error_code = e.response["Error"]["Code"]
+            if error_code == "InvalidInputException":
                 self.log.error(f"Unable to upsert metadata for {self.table_name}")
                 self.log.error("Probably because the metadata is too large")
                 pprint(new_meta)
@@ -419,7 +419,6 @@ class AthenaSource(DataSourceAbstract):
 
 if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
-    from pprint import pprint
 
     # Retrieve a Data Source
     my_data = AthenaSource("abalone_data")

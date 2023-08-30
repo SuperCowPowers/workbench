@@ -46,10 +46,8 @@ def create_figure(df: pd.DataFrame, title: str = "Outlier Groups") -> plotly.gra
     # Scale the group_count column so that it's between 15 and 200
     min_size = 10
     max_size = 100
-    coord_df['group_count'] = np.interp(
-        coord_df['group_count'],
-        (coord_df['group_count'].min(), coord_df['group_count'].max()),
-        (min_size, max_size)
+    coord_df["group_count"] = np.interp(
+        coord_df["group_count"], (coord_df["group_count"].min(), coord_df["group_count"].max()), (min_size, max_size)
     )
 
     # Create the Outlier Plot
@@ -68,8 +66,8 @@ def create_figure(df: pd.DataFrame, title: str = "Outlier Groups") -> plotly.gra
 
     # Make sure the 'sample' group is always grey
     for trace in fig.data:
-        if 'sample' in trace.name:
-            trace.marker.color = 'darkgrey'
+        if "sample" in trace.name:
+            trace.marker.color = "darkgrey"
 
     # Various Plotly Layout Updates
     fig.update_layout(title_y=0.97, title_x=0.3, title_xanchor="center", title_yanchor="top")

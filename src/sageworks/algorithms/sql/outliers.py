@@ -154,7 +154,6 @@ class Outliers:
             print(column, data_type)
             # String columns will use the value counts to compute outliers
             if data_type == "string":
-
                 # Skip columns where all values are unique (all counts are 1)
                 if all(value == 1 for value in value_count_info[column].values()):
                     log.info(f"All values are unique for column {column}, skipping...")
