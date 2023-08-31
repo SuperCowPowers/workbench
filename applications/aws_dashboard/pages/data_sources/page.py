@@ -4,7 +4,7 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap, outlier_plot
+from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap
 from sageworks.views.data_source_web_view import DataSourceWebView
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 
@@ -46,9 +46,6 @@ data_source_sample_rows = table.create(
     color_column="outlier_group",
 )
 
-# Outlier Plot
-outlier_plot = outlier_plot.create("outlier_plot", smart_sample_rows, "Outlier Groups")
-
 # Data Source Details
 details = data_source_broker.data_source_details(0)
 data_details = data_details_markdown.create("data_source_details", details)
@@ -76,7 +73,6 @@ corr_matrix = heatmap.create("correlation_matrix", corr_df)
 components = {
     "data_sources_table": data_sources_table,
     "data_source_details": data_details,
-    "outlier_plot": outlier_plot,
     "data_source_sample_rows": data_source_sample_rows,
     "violin_plot": violin,
     "correlation_matrix": corr_matrix

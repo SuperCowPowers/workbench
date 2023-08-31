@@ -8,8 +8,7 @@ def data_sources_layout(
     data_source_sample_rows: dash_table.DataTable,
     data_source_details: dcc.Markdown,
     violin_plot: dcc.Graph,
-    correlation_matrix: dcc.Graph,
-    outlier_plot: dcc.Graph,
+    correlation_matrix: dcc.Graph
 ) -> html.Div:
     # The layout for the DataSources page
     layout = html.Div(
@@ -47,15 +46,8 @@ def data_sources_layout(
                                 data_source_sample_rows,
                                 style={"padding": "0px 0px 30px 0px"},
                             )
-                        ],
-                        width=8
+                        ]
                     ),
-                    dbc.Col(
-                        [
-                            dbc.Row(outlier_plot, style={"padding": "0px 0px 30px 0px"})
-                        ],
-                        width=4
-                    )
                 ]
             ),
 

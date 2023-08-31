@@ -20,7 +20,7 @@ def column_setup(df: pd.DataFrame, show_columns: list[str] = None, markdown_colu
     """
 
     # HARDCODE: Not sure how to get around hard coding these columns
-    dont_show = ["id", "uuid", "write_time", "api_invocation_time", "is_deleted", "x", "y", "outlier_group"]
+    dont_show = ["id", "uuid", "write_time", "api_invocation_time", "is_deleted", "x", "y"]
 
     # Only show these columns
     if not show_columns:
@@ -45,15 +45,16 @@ def column_setup(df: pd.DataFrame, show_columns: list[str] = None, markdown_colu
     return column_setup_list
 
 
-def style_data_conditional(color_column: str = None) -> list:
+def style_data_conditional(color_column: str = None, unique_categories: list = None) -> list:
     """Internal: Style the cells based on the color column
     Args:
         color_column: The column to use for the cell color
+        unique_categories: The unique categories (string) in the color_column
     Returns:
         list: The cell style information as a list of dicts
     """
 
-    # This just make a selected cell 'transparent' so it doesn't look selected
+    # This just makes a selected cell 'transparent' so it doesn't look selected
     style_cells = [
         {
             "if": {"state": "selected"},
@@ -62,17 +63,17 @@ def style_data_conditional(color_column: str = None) -> list:
         }
     ]
 
-    # If they want to color the cells based on a column value (like cluster)
-    if color_column is not None:
+    # If they want to color the cells based on a column value
+    if color_column is not None and unique_categories is not None:
         hex_color_map = px.colors.qualitative.Plotly
         len_color_map = len(hex_color_map)
         color_map = color_map_add_alpha(hex_color_map, 0.25)
         style_cells += [
             {
-                "if": {"filter_query": f"{{{color_column}}} = {lookup}"},
-                "backgroundColor": f"{color_map[lookup % len_color_map]}",
+                "if": {"filter_query": f"{{{color_column}}} eq '{cat}'"},
+                "backgroundColor": f"{color_map[i % len_color_map]}",
             }
-            for lookup in range(40)
+            for i, cat in enumerate(unique_categories)
         ]
 
     return style_cells
@@ -99,7 +100,12 @@ def create(
     column_setup_list = column_setup(df, show_columns, markdown_columns)
 
     # Construct our style_cell_conditionals
-    style_cells = style_data_conditional(color_column)
+    if color_column is None or color_column not in df.columns:
+        style_cells = style_data_conditional()
+    else:
+        unique_categories = df[color_column].unique().tolist()
+        unique_categories = [x for x in unique_categories if x != "sample"]
+        style_cells = style_data_conditional(color_column, unique_categories)
 
     # Create the Dash Table
     table = dash_table.DataTable(
