@@ -59,18 +59,8 @@ if __name__ == "__main__":
     """Exercise the DataToFeaturesLight Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "abalone_data"
-    output_uuid = "abalone_feature_set"
+    input_uuid = "test_data"
+    output_uuid = "test_feature_set"
     data_to_features = DataToFeaturesLight(input_uuid, output_uuid)
-    data_to_features.set_output_tags(["abalone", "public"])
-    columns = [
-        "sex",
-        "length",
-        "diameter",
-        "height",
-        "whole_weight",
-        "shucked_weight",
-        "viscera_weight",
-        "class_number_of_rings",
-    ]
-    data_to_features.transform(query="height < 0.3", column_select=columns)
+    data_to_features.set_output_tags(["test", "small"])
+    data_to_features.transform(id_column="id", event_time_column="date")

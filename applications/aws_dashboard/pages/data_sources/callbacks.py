@@ -90,12 +90,13 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
         [
             Output("sample_rows_header", "children"),
             Output("data_source_sample_rows", "columns"),
-            Output("data_source_sample_rows", "data", allow_duplicate=True),
+            Output("data_source_sample_rows", "style_data_conditional"),
+            Output("data_source_sample_rows", "data", allow_duplicate=True)
         ],
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
-    def sample_rows_update(selected_rows):
+    def sample_rows_update(selected_rows, color_column="outlier_group"):
         global smart_sample_rows
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
@@ -110,8 +111,16 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
         # The columns need to be in a special format for the DataTable
         column_setup_list = table.column_setup(smart_sample_rows)
 
-        # Return the columns and the data
-        return [header, column_setup_list, smart_sample_rows.to_dict("records")]
+        # We need to update our style_data_conditional to color the outlier groups
+        if color_column not in smart_sample_rows.columns:
+            style_cells = table.style_data_conditional()
+        else:
+            unique_categories = smart_sample_rows[color_column].unique().tolist()
+            unique_categories = [x for x in unique_categories if x != "sample"]
+            style_cells = table.style_data_conditional(color_column, unique_categories)
+
+        # Return the header, columns, style_cell, and the data
+        return [header, column_setup_list, style_cells, smart_sample_rows.to_dict("records")]
 
 
 def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):

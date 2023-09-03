@@ -28,16 +28,6 @@ class FeatureSetWebView(ArtifactsWebView):
         """
         return self.feature_sets_df
 
-    def feature_set_sample(self, feature_set_index: int) -> pd.DataFrame:
-        """Get a sample dataframe for the given FeatureSet Index"""
-        uuid = self.feature_set_name(feature_set_index)
-        fs = FeatureSet(uuid)
-        if fs.get_status() == "ready":
-            return fs.sample()
-        else:
-            status = fs.get_status()
-            return pd.DataFrame({"uuid": [uuid], "status": [f"{status}"]})
-
     def feature_set_outliers(self, feature_set_index: int) -> pd.DataFrame:
         """Get a dataframe of outliers for the given FeatureSet Index"""
         uuid = self.feature_set_name(feature_set_index)
@@ -62,19 +52,12 @@ class FeatureSetWebView(ArtifactsWebView):
         """Get a SMART sample dataframe for the given FeatureSet Index
         Note:
             SMART here means a sample data + outliers for each column"""
-        # Sample DataFrame
-        sample_rows = self.feature_set_sample(feature_set_index)
-
-        # Outliers DataFrame
-        outlier_rows = self.feature_set_outliers(feature_set_index)
-
-        # Combine the sample rows with the outlier rows
-        all_rows = pd.concat([sample_rows, outlier_rows]).reset_index(drop=True)
-
-        # Drop duplicates
-        all_except_outlier_group = [col for col in all_rows.columns if col != "outlier_group"]
-        all_rows = all_rows.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
-        return all_rows
+        uuid = self.feature_set_name(feature_set_index)
+        if uuid is not None:
+            fs = FeatureSet(uuid)
+            return fs.smart_sample()
+        else:
+            return pd.DataFrame()
 
     def feature_set_details(self, feature_set_index: int) -> (dict, None):
         """Get all the details for the given FeatureSet Index"""

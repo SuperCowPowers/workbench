@@ -50,14 +50,14 @@ def create_figure(df: pd.DataFrame, title: str = "Compound Clusters") -> plotly.
 
 
 def create(component_id: str, df: pd.DataFrame, title: str = "Compound Clusters") -> dcc.Graph:
-    """Create a Graph Component for vertical distribution plots.
+    """Create a Graph Component for scatter plots.
 
     Args:
         component_id (str): The ID of the UI component
         df (pd.DataFrame): A dataframe of data
         title (str): The title for the plot
     Returns:
-        dcc.Graph: A Dash Graph Component representing the vertical distribution plots.
+        dcc.Graph: A Dash Graph Component representing the scatter plots.
     """
 
     # Generate a figure and wrap it in a Dash Graph Component

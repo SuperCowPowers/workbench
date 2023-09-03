@@ -32,11 +32,11 @@ feature_sets_table = table.create(
     markdown_columns=["Feature Group"],
 )
 
-# Grab sample rows from the first data source
-sample_rows = feature_set_broker.feature_set_sample(0)
+# Grab smart_sample rows from the first Feature Set
+smart_sample_rows = feature_set_broker.feature_set_smart_sample(0)
 feature_set_sample_rows = table.create(
     "feature_set_sample_rows",
-    sample_rows,
+    smart_sample_rows,
     header_color="rgb(60, 60, 100)",
     max_height="300px",
     color_column="outlier_group",
@@ -47,7 +47,6 @@ details = feature_set_broker.feature_set_details(0)
 data_details = data_details_markdown.create("feature_set_details", details)
 
 # Create a violin plot of all the numeric columns in the Feature Set
-smart_sample_rows = feature_set_broker.feature_set_smart_sample(0)
 violin = distribution_plots.create(
     "feature_set_violin_plot",
     smart_sample_rows,

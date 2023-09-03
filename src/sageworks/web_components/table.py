@@ -67,10 +67,10 @@ def style_data_conditional(color_column: str = None, unique_categories: list = N
     if color_column is not None and unique_categories is not None:
         hex_color_map = px.colors.qualitative.Plotly
         len_color_map = len(hex_color_map)
-        color_map = color_map_add_alpha(hex_color_map, 0.25)
+        color_map = color_map_add_alpha(hex_color_map, 0.15)
         style_cells += [
             {
-                "if": {"filter_query": f"{{{color_column}}} eq '{cat}'"},
+                "if": {"filter_query": f"{{{color_column}}} = {cat}"},
                 "backgroundColor": f"{color_map[i % len_color_map]}",
             }
             for i, cat in enumerate(unique_categories)

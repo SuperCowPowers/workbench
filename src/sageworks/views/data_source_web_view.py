@@ -28,15 +28,6 @@ class DataSourceWebView(ArtifactsWebView):
         """
         return self.data_sources_df
 
-    def data_source_sample(self, data_source_index: int) -> pd.DataFrame:
-        """Get a sample dataframe for the given DataSource Index"""
-        data_uuid = self.data_source_name(data_source_index)
-        if data_uuid is not None:
-            ds = DataSource(data_uuid)
-            return ds.sample()
-        else:
-            return pd.DataFrame()
-
     def data_source_outliers(self, data_source_index: int) -> pd.DataFrame:
         """Get a dataframe of outliers for the given DataSource Index"""
         data_uuid = self.data_source_name(data_source_index)

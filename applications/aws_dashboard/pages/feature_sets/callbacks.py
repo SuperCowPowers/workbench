@@ -101,7 +101,7 @@ def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWe
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling FeatureSet Sample Rows...")
-        smart_sample_rows = feature_set_web_view.feature_set_sample(selected_rows[0])
+        smart_sample_rows = feature_set_web_view.feature_set_smart_sample(selected_rows[0])
 
         # Name of the data source
         feature_set_name = feature_set_web_view.feature_set_name(selected_rows[0])
