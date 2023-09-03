@@ -232,6 +232,7 @@ if __name__ == "__main__":
     print("\nOutliers")
     print(my_outlier_df)
 
-    my_outlier_df = my_outliers.compute_outliers(my_data, use_stddev=True)
-    print("\nOutliers (using stddev)")
-    print(my_outlier_df)
+    # Uncomment this to use the stddev instead of IQR
+    # my_outlier_df = my_outliers.compute_outliers(my_data, use_stddev=True)
+    # print("\nOutliers (using stddev)")
+    # print(my_outlier_df)
