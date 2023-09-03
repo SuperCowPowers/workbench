@@ -104,9 +104,9 @@ def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots
         dragmode="select",
         newselection=dict(line=dict(color="grey", width=1, dash="dot")),
     )
-    fig.update_traces(selected_marker=dict(size=8, color="white"), selector=dict(type="violin"))
+    fig.update_traces(selected_marker=dict(size=10, color="white"), selector=dict(type="violin"))
     # fig.update_traces(selected_marker_color="white", selector=dict(type="violin"))
-    # fig.update_traces(unselected_marker=dict(opacity=1.0), selector=dict(type="violin"))
+    fig.update_traces(unselected_marker=dict(size=6, opacity=0.5), selector=dict(type="violin"))
     fig.update_traces(box_line_color="white", meanline_color="white", width=0.5, selector=dict(type='violin'))
     return fig
 
