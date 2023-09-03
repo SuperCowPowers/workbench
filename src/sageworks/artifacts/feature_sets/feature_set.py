@@ -302,7 +302,7 @@ class FeatureSet(Artifact):
             Uses the IQR * 1.7 (~= 3 Sigma) method to compute outliers
             The scale parameter can be adjusted to change the IQR multiplier
         """
-        return self.data_source.outliers(scale, recompute)
+        return self.data_source.outliers(scale=scale, recompute=recompute)
 
     def smart_sample(self) -> pd.DataFrame:
         """Get a SMART sample dataframe from this FeatureSet
@@ -417,7 +417,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Grab a FeatureSet object and pull some information from it
-    my_features = FeatureSet("abalone_feature_set")
+    my_features = FeatureSet("test_feature_set")
 
     # Call the various methods
     # What's my AWS ARN and URL
@@ -446,7 +446,7 @@ if __name__ == "__main__":
 
     # Get the details for this Feature Set
     print("\nDetails:")
-    pprint(my_features.details(recompute=True))
+    pprint(my_features.details())
 
     # Now do deep dive on storage
     storage = my_features.get_data_source()
@@ -464,8 +464,8 @@ if __name__ == "__main__":
     pprint(stat_info)
 
     # Get outliers for all the columns
-    anom_df = my_features.outliers()
-    print(anom_df)
+    outlier_df = my_features.outliers(recompute=True)
+    print(outlier_df)
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print('Deleting SageWorks Feature Set...')
