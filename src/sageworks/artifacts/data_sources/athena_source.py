@@ -3,6 +3,7 @@ import pandas as pd
 import awswrangler as wr
 from datetime import datetime
 import json
+from io import StringIO
 import botocore
 from pprint import pprint
 
@@ -194,7 +195,7 @@ class AthenaSource(DataSourceAbstract):
         if self.sageworks_meta().get("sageworks_sample_rows") and not recompute:
             # Grab the sample_df from our SageWorks metadata
             sample_df = pd.read_json(
-                self.sageworks_meta()["sageworks_sample_rows"],
+                StringIO(self.sageworks_meta()["sageworks_sample_rows"]),
                 orient="records",
                 lines=True,
             )
@@ -251,7 +252,7 @@ class AthenaSource(DataSourceAbstract):
         # First check if we have already computed the outliers
         if self.sageworks_meta().get("sageworks_outliers") and not recompute:
             outlier_df = pd.read_json(
-                self.sageworks_meta()["sageworks_outliers"],
+                StringIO(self.sageworks_meta()["sageworks_outliers"]),
                 orient="records",
                 lines=True,
             )
