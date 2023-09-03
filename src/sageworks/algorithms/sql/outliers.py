@@ -92,7 +92,8 @@ class Outliers:
             pd.DataFrame: A DataFrame of all the outliers combined
         """
 
-        # Grab the descriptive stats for this DataSource
+        # Grab the column stats and descriptive stats for this DataSource
+        column_stats = data_source.column_stats()
         descriptive_stats = data_source.descriptive_stats()
 
         # For every column in the data_source that is numeric get the outliers
@@ -100,8 +101,12 @@ class Outliers:
         outlier_df_list = []
         numeric = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
         for column, data_type in zip(data_source.column_names(), data_source.column_types()):
-            print(column, data_type)
             if data_type in numeric:
+
+                # Skip columns that are 'binary' columns
+                if column_stats[column]["unique"] == 2:
+                    log.info(f"Skipping binary column {column}")
+                    continue
                 if use_stddev:
                     # Compute dataframes for the lower and upper bounds
                     mean = descriptive_stats[column]["mean"]
