@@ -197,6 +197,9 @@ class PandasToFeatures(Transform):
     @staticmethod
     def convert_column_types(df: pd.DataFrame) -> pd.DataFrame:
         """Convert the types of the DataFrame to the correct types for the Feature Store"""
+        for column in list(df.select_dtypes(include="bool").columns):
+            df[column] = df[column].astype("int32")
+        """FIXME Not sure we need any of these conversions
         datetime_type = ["datetime", "datetime64", "datetime64[ns]", "datetimetz"]
         for column in df.select_dtypes(include=datetime_type).columns:
             df[column] = df[column].astype("string")
@@ -204,10 +207,10 @@ class PandasToFeatures(Transform):
             df[column] = df[column].astype("string")
         for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
             df[column] = df[column].astype("int64")
-        for column in list(df.select_dtypes(include="bool").columns):
-            df[column] = df[column].astype("int64")
+
         for column in list(df.select_dtypes(include=[pd.Float64Dtype]).columns):
             df[column] = df[column].astype("float64")
+        """
         return df
 
     def prep_dataframe(self):
