@@ -63,9 +63,9 @@ class TestDataGenerator:
         df["salary"] = self.generate_correlated_series(df["height"], 0.95, 80000, 200000)
 
         # Create a few salary outliers
-        # Select 5 highest salaries and set them to a random value between 200k and 250k
-        salary_outliers = df.sort_values("salary", ascending=False)[:5]
-        df.loc[salary_outliers.index, "salary"] = np.random.randint(200000, 250000, len(salary_outliers))
+        # Select 4 highest salaries and set them to a random value between 200k and 230k
+        salary_outliers = df.sort_values("salary", ascending=False)[:4]
+        df.loc[salary_outliers.index, "salary"] = np.random.randint(200000, 230000, len(salary_outliers))
 
         # Age is loosely correlated with salary
         df["age"] = self.generate_correlated_series(df["salary"], 0.5, 20, 80)
