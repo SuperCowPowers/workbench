@@ -34,7 +34,7 @@ def update_data_sources_table(app: Dash, data_source_broker: DataSourceWebView):
         """Return the table data as a dictionary"""
         data_source_broker.refresh()
         data_source_rows = data_source_broker.data_sources_summary()
-        data_source_rows["id"] = data_source_rows.index
+        data_source_rows["id"] = range(len(data_source_rows))
         return data_source_rows.to_dict("records")
 
 
@@ -46,12 +46,12 @@ def table_row_select(app: Dash, table_name: str):
         prevent_initial_call=True,
     )
     def style_selected_rows(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
+        print(f"Highlight Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         row_style = [
             {
-                "if": {"filter_query": "{{id}} ={}".format(i)},
+                "if": {"filter_query": "{{id}}={}".format(i)},
                 "backgroundColor": "rgb(80, 80, 80)",
             }
             for i in selected_rows
@@ -70,7 +70,7 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
         prevent_initial_call=True,
     )
     def generate_new_markdown(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
+        print(f"Data Source Details Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling DataSource Details...")
@@ -98,7 +98,7 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
     )
     def sample_rows_update(selected_rows, color_column="outlier_group"):
         global smart_sample_rows
-        print(f"Selected Rows: {selected_rows}")
+        print(f"Sample Rows Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling DataSource Sample Rows...")
@@ -132,10 +132,9 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
         prevent_initial_call=True,
     )
     def generate_new_violin_plot(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
+        print(f"Violin Plot Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
-
         smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
 
         # Get the data source smart sample rows and create the violin plot
@@ -161,7 +160,7 @@ def update_correlation_matrix(app: Dash, data_source_web_view: DataSourceWebView
         prevent_initial_call=True,
     )
     def generate_new_corr_matrix(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
+        print(f"Corr Matrix Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
 
@@ -171,23 +170,6 @@ def update_correlation_matrix(app: Dash, data_source_web_view: DataSourceWebView
         # Convert the data details to a pandas dataframe
         corr_df = corr_df_from_artifact_info(artifact_info)
         return heatmap.create_figure(corr_df)
-
-
-# Updates the outlier plot when a new DataSource is selected
-def update_outlier_plot(app: Dash, data_source_web_view: DataSourceWebView):
-    """Updates the Outlier Plot when a new data source is selected"""
-
-    @app.callback(
-        Output("outlier_plot", "figure"),
-        Input("data_sources_table", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def generate_new_outlier_plot(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-        outlier_rows = data_source_web_view.data_source_outliers(selected_rows[0])
-        return scatter_plot.create_figure(outlier_rows)
 
 
 #
