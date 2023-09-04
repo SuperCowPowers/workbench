@@ -90,12 +90,13 @@ def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWe
         [
             Output("feature_sample_rows_header", "children"),
             Output("feature_set_sample_rows", "columns"),
+            Output("feature_set_sample_rows", "style_data_conditional"),
             Output("feature_set_sample_rows", "data", allow_duplicate=True),
         ],
         Input("feature_sets_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
-    def sample_rows_update(selected_rows):
+    def sample_rows_update(selected_rows, color_column="outlier_group"):
         global smart_sample_rows
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
@@ -110,8 +111,16 @@ def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWe
         # The columns need to be in a special format for the DataTable
         column_setup_list = table.column_setup(smart_sample_rows)
 
+        # We need to update our style_data_conditional to color the outlier groups
+        if color_column not in smart_sample_rows.columns:
+            style_cells = table.style_data_conditional()
+        else:
+            unique_categories = smart_sample_rows[color_column].unique().tolist()
+            unique_categories = [x for x in unique_categories if x != "sample"]
+            style_cells = table.style_data_conditional(color_column, unique_categories)
+
         # Return the columns and the data
-        return [header, column_setup_list, smart_sample_rows.to_dict("records")]
+        return [header, column_setup_list, style_cells, smart_sample_rows.to_dict("records")]
 
 
 def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
@@ -162,23 +171,6 @@ def update_correlation_matrix(app: Dash, feature_set_web_view: FeatureSetWebView
         # Convert the data details to a pandas dataframe
         corr_df = corr_df_from_artifact_info(artifact_info)
         return heatmap.create_figure(corr_df)
-
-
-# Updates the outlier plot when a new DataSource is selected
-def update_outlier_plot(app: Dash, feature_set_web_view: FeatureSetWebView):
-    """Updates the Outlier Plot when a new data source is selected"""
-
-    @app.callback(
-        Output("outlier_plot", "figure"),
-        Input("feature_sets_table", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def generate_new_outlier_plot(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-        outlier_rows = feature_set_web_view.feature_set_outliers(selected_rows[0])
-        return scatter_plot.create_figure(outlier_rows)
 
 
 #
