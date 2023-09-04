@@ -291,15 +291,15 @@ class FeatureSet(Artifact):
         """
         return self.data_source.sample(recompute)
 
-    def outliers(self, scale: float = 1.7, recompute: bool = False) -> pd.DataFrame:
+    def outliers(self, scale: float = 1.25, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
-            scale(float): The scale to use for the IQR (default: 1.7)
+            scale(float): The scale to use for the IQR (default: 1.25)
             recompute(bool): Recompute the outliers (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
         Notes:
-            Uses the IQR * 1.7 (~= 3 Sigma) method to compute outliers
+            Uses the IQR * 1.25 (~= 2 Sigma) method to compute outliers
             The scale parameter can be adjusted to change the IQR multiplier
         """
         return self.data_source.outliers(scale=scale, recompute=recompute)
