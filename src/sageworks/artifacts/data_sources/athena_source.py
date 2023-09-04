@@ -239,7 +239,7 @@ class AthenaSource(DataSourceAbstract):
     def outliers(self, scale: float = 1.25, use_stddev=False, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
-            scale(float): The scale to use for the IQR (default: 1.7)
+            scale(float): The scale to use for the IQR (default: 1.25)
             use_stddev(bool): Use Standard Deviation instead of IQR (default: False)
             recompute(bool): Recompute the outliers (default: False)
         Returns:
