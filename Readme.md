@@ -3,7 +3,7 @@
 # SageWorks<sup><i>TM</i></sup>
 
 <p align="center">
-<img width="720" aligh="right" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/c84ffdd4-7a66-4412-af95-5899fdcd3b0f">
+<img width="720" alt="DataSource_EDA" aligh="right" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/a5b063f7-a291-4dba-a766-b2e906920066">
 </p>
 
 #### SageWorks: The scientist's workbench powered by AWS® for scalability, flexibility, and security.
