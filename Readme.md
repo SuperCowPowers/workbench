@@ -3,8 +3,7 @@
 # SageWorks<sup><i>TM</i></sup>
 
 <p align="center">
-<img height="360" align="left" src="https://user-images.githubusercontent.com/4806709/236641571-fc38899a-8b92-4b7c-80a0-cc9d39b92e4a.png">
-<img height="360" aligh="right" src="https://user-images.githubusercontent.com/4806709/236641581-51777977-bca4-4af3-8bec-fb1758c964b8.png">
+<img width="720" aligh="right" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/c84ffdd4-7a66-4412-af95-5899fdcd3b0f">
 </p>
 
 #### SageWorks: The scientist's workbench powered by AWS® for scalability, flexibility, and security.
