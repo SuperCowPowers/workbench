@@ -1,6 +1,7 @@
 """Endpoints:  A SageWorks Web Interface to view, interact, and manage Endpoints"""
 from dash import register_page
 import dash
+from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
 from sageworks.web_components import line_chart
@@ -19,6 +20,9 @@ register_page(
 
 
 # Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
+
+# Put the components into 'dark' mode
+load_figure_template("darkly")
 
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks
 sageworks_artifacts = ArtifactsWebView()
