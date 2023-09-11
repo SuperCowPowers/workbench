@@ -8,7 +8,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.feature_set_web_view import FeatureSetWebView
-from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap, scatter_plot
+from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 
 # Cheese Sauce (FIXME: TDB)

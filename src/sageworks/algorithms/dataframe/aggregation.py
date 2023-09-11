@@ -1,5 +1,4 @@
 """Aggregation: Perform Row Aggregation on a DataFrame"""
-import numpy as np
 import pandas as pd
 import logging
 
