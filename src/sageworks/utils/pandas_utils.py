@@ -156,6 +156,7 @@ def shorten_values(df: pd.DataFrame, max_length: int = 100) -> pd.DataFrame:
         if isinstance(element, str) and len(element) > max_length:
             return element[:max_length] + "..."  # Add ellipsis to indicate truncation
         return element
+
     return df.map(truncate_element)
 
 

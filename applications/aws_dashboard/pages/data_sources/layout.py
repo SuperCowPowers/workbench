@@ -8,7 +8,7 @@ def data_sources_layout(
     data_source_sample_rows: dash_table.DataTable,
     data_source_details: dcc.Markdown,
     violin_plot: dcc.Graph,
-    correlation_matrix: dcc.Graph
+    correlation_matrix: dcc.Graph,
 ) -> html.Div:
     # The layout for the DataSources page
     layout = html.Div(
@@ -32,7 +32,6 @@ def data_sources_layout(
             ),
             # A table that lists out all the Data Sources
             dbc.Row(data_sources_table),
-
             # Sample/Outlier Rows for the selected Data Source AND Outlier Plot
             dbc.Row(
                 [
@@ -45,12 +44,11 @@ def data_sources_layout(
                             dbc.Row(
                                 data_source_sample_rows,
                                 style={"padding": "0px 0px 30px 0px"},
-                            )
+                            ),
                         ]
                     ),
                 ]
             ),
-
             # Column1: Data Source Details, Column2: Violin Plots, Correlation Matrix
             dbc.Row(
                 [

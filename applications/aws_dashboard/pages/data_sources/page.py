@@ -75,7 +75,7 @@ components = {
     "data_source_details": data_details,
     "data_source_sample_rows": data_source_sample_rows,
     "violin_plot": violin,
-    "correlation_matrix": corr_matrix
+    "correlation_matrix": corr_matrix,
 }
 
 # Set up our layout (Dash looks for a var called layout)

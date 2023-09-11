@@ -51,9 +51,9 @@ def create_figure(df: pd.DataFrame, title: str = "Outlier Groups") -> plotly.gra
     )
 
     # Sample column needs to be first
-    coord_df['is_sample'] = coord_df['outlier_group'] == 'sample'
-    coord_df.sort_values('is_sample', ascending=False, inplace=True)
-    coord_df.drop('is_sample', axis=1, inplace=True)
+    coord_df["is_sample"] = coord_df["outlier_group"] == "sample"
+    coord_df.sort_values("is_sample", ascending=False, inplace=True)
+    coord_df.drop("is_sample", axis=1, inplace=True)
 
     # Create the Outlier Plot
     color_map = px.colors.qualitative.Plotly

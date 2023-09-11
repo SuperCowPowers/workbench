@@ -102,7 +102,6 @@ class Outliers:
         numeric = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
         for column, data_type in zip(data_source.column_names(), data_source.column_types()):
             if data_type in numeric:
-
                 # Skip columns that are 'binary' columns
                 if column_stats[column]["unique"] == 2:
                     log.info(f"Skipping binary column {column}")
@@ -159,7 +158,6 @@ class Outliers:
             print(column, data_type)
             # String columns will use the value counts to compute outliers
             if data_type == "string":
-
                 # Skip columns that end with _id or _ip
                 if column.endswith("_id") or column.endswith("_ip"):
                     log.info(f"Skipping column {column}")

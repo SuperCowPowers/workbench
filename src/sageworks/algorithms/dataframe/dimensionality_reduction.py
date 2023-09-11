@@ -32,9 +32,7 @@ class DimensionalityReduction:
 
         # If no features are given, indentify all numeric columns
         if features is None:
-            features = [
-                x for x in df.select_dtypes(include='number').columns.tolist() if not x.endswith("id")
-            ]
+            features = [x for x in df.select_dtypes(include="number").columns.tolist() if not x.endswith("id")]
             # Also drop group_count if it exists
             features = [x for x in features if x != "group_count"]
             self.log.info("No features given, auto identifying numeric columns...")

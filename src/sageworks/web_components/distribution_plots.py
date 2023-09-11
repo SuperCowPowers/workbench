@@ -107,8 +107,12 @@ def create_figure(df: pd.DataFrame, plot_type: str, figure_args: dict, max_plots
     fig.update_traces(selected_marker=dict(size=10, color="white"), selector=dict(type="violin"))
     # fig.update_traces(selected_marker_color="white", selector=dict(type="violin"))
     fig.update_traces(unselected_marker=dict(size=6, opacity=0.5), selector=dict(type="violin"))
-    fig.update_traces(box_line_color="rgba(255, 255, 255, 0.75)", meanline_color="rgba(255, 255, 255, 0.75)",
-                      width=0.5, selector=dict(type='violin'))
+    fig.update_traces(
+        box_line_color="rgba(255, 255, 255, 0.75)",
+        meanline_color="rgba(255, 255, 255, 0.75)",
+        width=0.5,
+        selector=dict(type="violin"),
+    )
     return fig
 
 
