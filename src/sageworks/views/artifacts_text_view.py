@@ -326,7 +326,7 @@ class ArtifactsTextView(View):
     @staticmethod
     def datetime_string(datetime_obj):
         """Helper: Convert DateTime Object into a nice string"""
-        if datetime_obj is None:
+        if datetime_obj is None or datetime_obj == "-":
             return "-"
         # Date + Hour Minute
         return datetime_obj.strftime("%Y-%m-%d %H:%M")
