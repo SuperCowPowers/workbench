@@ -81,7 +81,6 @@ class PandasToFeatures(Transform):
     def _ensure_event_time(self):
         """Internal: AWS Feature Store requires an event_time field for all data stored"""
         if self.event_time_column is None or self.event_time_column not in self.output_df.columns:
-            # current_datetime = datetime.now(timezone.utc)
             self.log.info("Generating an event_time column before FeatureSet Creation...")
             self.event_time_column = "event_time"
             self.output_df[self.event_time_column] = pd.Timestamp("now", tz="UTC")
@@ -91,6 +90,7 @@ class PandasToFeatures(Transform):
             self.log.info(f"Converting {self.event_time_column} to ISOFormat Date String before FeatureSet Creation...")
 
             # Convert the datetime DType to ISO-8601 string
+            # TableFormat=ICEBERG does not support alternate formats for event_time field, it only supports String type.
             self.output_df[self.event_time_column] = self.output_df[self.event_time_column].map(datetime_to_iso8601)
             self.output_df[self.event_time_column] = self.output_df[self.event_time_column].astype(pd.StringDtype())
 
