@@ -133,10 +133,8 @@ def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
     )
     def generate_new_violin_plot(selected_rows):
         print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
+        if not selected_rows or selected_rows[0] is None or smart_sample_rows is None:
             return dash.no_update
-
-        smart_sample_rows = feature_set_web_view.feature_set_smart_sample(selected_rows[0])
 
         # Get the feature set smart sample rows and create the violin plot
         return distribution_plots.create_figure(
@@ -305,8 +303,8 @@ def reorder_sample_rows(app: Dash):
         # Convert the current table data back to a DataFrame
 
         # Get the selected indices from your plot selection
-        if selected_data is None:
-            return smart_sample_rows.to_dict("records")
+        if selected_data is None or smart_sample_rows is None:
+            return dash.no_update
         selected_indices = [point["pointIndex"] for point in selected_data["points"]]
 
         # Separate the selected rows and the rest of the rows
