@@ -1,4 +1,9 @@
-from aws_cdk import Stack, aws_iam as iam, aws_s3 as s3, aws_glue_alpha as glue
+from aws_cdk import (
+    Stack,
+    aws_iam as iam,
+    aws_s3 as s3,
+    aws_glue as glue
+)
 from constructs import Construct
 
 
@@ -17,9 +22,13 @@ class SageworksStack(Stack):
         self.artifact_bucket = self.add_artifact_bucket(s3_bucket_name)
 
         # Create our main SageWorks Execution Role and the Glue Service Role
-        self.sageworks_execution_role = self.create_execution_role(sageworks_role_name, iam.AnyPrincipal())
+        self.sageworks_execution_role = self.create_execution_role(
+            sageworks_role_name,
+            iam.AnyPrincipal()
+        )
         self.glue_service_role = self.create_execution_role(
-            "AWSGlueServiceRole-Sageworks", iam.ServicePrincipal("glue.amazonaws.com")
+            "AWSGlueServiceRole-Sageworks",
+            iam.ServicePrincipal("glue.amazonaws.com")
         )
 
         # Create the SageWorks Data Catalog Databases
@@ -55,6 +64,16 @@ class SageworksStack(Stack):
         return execution_role
 
     def create_data_catalog_databases(self) -> None:
-        # Create two Data Catalog Databases (sageworks and sagemaker_featurestore)
-        glue.Database(self, id="sageworks_database", database_name="sageworks")
-        glue.Database(self, id="sagemaker_featurestore_database", database_name="sagemaker_featurestore")
+        # Create two Data Catalog Databases using CfnDatabase (sageworks and sagemaker_featurestore)
+        self.add_data_catalog_database("sageworks")
+        self.add_data_catalog_database("sagemaker_featurestore")
+
+    def add_data_catalog_database(self, database_name: str) -> None:
+        glue.CfnDatabase(
+            self, f"{database_name}_database",
+            catalog_id=self.account,
+            database_input={
+                'name': database_name
+            }
+        )
+
