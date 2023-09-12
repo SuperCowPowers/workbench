@@ -10,9 +10,6 @@ EXPOSE 8000
 # Set the working directory
 WORKDIR /app
 
-# The Dash Application is using relative imports :(
-ENV PYTHONPATH /app
-
 # Install Dash, Gunicorn, and Sageworks
 RUN pip install dash gunicorn sageworks
 
