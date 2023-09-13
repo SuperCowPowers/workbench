@@ -3,7 +3,9 @@ import awswrangler as wr
 
 # Local imports
 from sageworks.transforms.transform import Transform
-from sageworks.transforms.pandas_transforms.pandas_to_features_chunked import PandasToFeaturesChunked
+from sageworks.transforms.pandas_transforms.pandas_to_features_chunked import (
+    PandasToFeaturesChunked,
+)
 from sageworks.artifacts.data_sources.data_source import DataSource
 
 

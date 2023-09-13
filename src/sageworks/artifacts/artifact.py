@@ -2,13 +2,14 @@
                 Artifacts simply reflect and aggregate one or more AWS Services"""
 from abc import ABC, abstractmethod
 from datetime import datetime
+import os
+import sys
 import logging
 import json
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
-from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -31,10 +32,14 @@ class Artifact(ABC):
     # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
     aws_broker = AWSServiceBroker()
 
-    # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings
-    sageworks_config = SageWorksConfig()
-    data_catalog_db = "sageworks"
-    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+    # Grab our SageWorks Bucket from ENV
+    sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
+    if sageworks_bucket is None:
+        log = logging.getLogger(__name__)
+        log.critical("Could not find ENV var for SAGEWORKS_BUCKET!")
+        sys.exit(1)
+
+    # Setup Bucket Paths
     data_source_s3_path = "s3://" + sageworks_bucket + "/data-sources"
     feature_sets_s3_path = "s3://" + sageworks_bucket + "/feature-sets"
 
@@ -128,7 +133,7 @@ class Artifact(ABC):
     def sageworks_meta(self) -> dict:
         """Get the SageWorks specific metadata for this Artifact
         Note: This functionality will work for FeatureSets, Models, and Endpoints
-              but not for DataSources. The DataSource class overwrites this method.
+              but not for DataSources. The DataSource class overrides this method.
         """
         aws_arn = self.arn()
         self.log.info(f"Retrieving SageWorks Metadata for Artifact: {aws_arn}...")
@@ -142,7 +147,7 @@ class Artifact(ABC):
             new_meta (dict): Dictionary of new metadata to add
         Note:
             This functionality will work for FeatureSets, Models, and Endpoints
-            but not for DataSources. The DataSource class overwrites this method.
+            but not for DataSources. The DataSource class overrides this method.
         """
         aws_arn = self.arn()
         self.log.info(f"Upserting SageWorks Metadata for Artifact: {aws_arn}...")

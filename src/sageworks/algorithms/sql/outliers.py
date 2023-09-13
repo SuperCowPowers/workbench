@@ -181,7 +181,12 @@ class Outliers:
         return pd.concat(outlier_df_list) if outlier_df_list else None
 
     @staticmethod
-    def _outlier_dfs(data_source: DataSourceAbstract, column: str, lower_bound: float, upper_bound: float):
+    def _outlier_dfs(
+        data_source: DataSourceAbstract,
+        column: str,
+        lower_bound: float,
+        upper_bound: float,
+    ):
         """Internal method to compute outliers for a numeric column
         Args:
             data_source(DataSource): The DataSource that we're computing outliers on

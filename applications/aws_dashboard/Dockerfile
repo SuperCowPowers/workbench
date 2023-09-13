@@ -22,6 +22,9 @@ COPY . /app
 # Set the ENV var for the SageWorks config file
 ENV SAGEWORKS_CONFIG_FILE=/app/sageworks_config.ini
 
+ # The REDIS_HOST ENV is over written when the container is run
+ENV REDIS_HOST localhost
+
 # Install app specific dependencies
 RUN pip install -r requirements.txt
 

@@ -1,4 +1,6 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
+import os
+import sys
 import boto3
 from botocore.exceptions import (
     ClientError,
@@ -12,7 +14,6 @@ from datetime import timedelta
 import logging
 
 # SageWorks Imports
-from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -25,8 +26,7 @@ class AWSAccountClamp:
         self.log = logging.getLogger(__file__)
 
         # Grab the AWS Role Name from the SageWorks Config
-        config = SageWorksConfig()
-        role_name = config.get_config_value("SAGEWORKS_AWS", "SAGEWORKS_ROLE_NAME")
+        role_name = os.environ.get("SAGEWORKS_ROLE", "SageWorks-ExecutionRole")
         self.role_name = role_name
 
         # Quick check on SSO Token
@@ -38,7 +38,12 @@ class AWSAccountClamp:
             raise RuntimeError(msg)
 
         # Let's fill in some of the AWS Session details
-        self.sageworks_bucket_name = config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+        # Grab our SageWorks Bucket from ENV
+        self.sageworks_bucket_name = os.environ.get("SAGEWORKS_BUCKET")
+        if self.sageworks_bucket_name is None:
+            log = logging.getLogger(__name__)
+            log.critical("Could not find ENV var for SAGEWORKS_BUCKET!")
+            sys.exit(1)
         self.account_id = boto3.client("sts").get_caller_identity()["Account"]
         self.region = boto3.session.Session().region_name
 

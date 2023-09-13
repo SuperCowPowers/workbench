@@ -1,4 +1,5 @@
 """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
+import os
 import sys
 import argparse
 from enum import Enum, auto
@@ -18,7 +19,6 @@ from sageworks.aws_service_broker.aws_service_connectors.model_registry import (
     ModelRegistry,
 )
 from sageworks.aws_service_broker.aws_service_connectors.endpoints import Endpoints
-from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -62,12 +62,16 @@ class AWSServiceBroker:
         """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
         cls.log = logging.getLogger(__file__)
 
-        # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings
-        sageworks_config = SageWorksConfig()
-        sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
-        cls.incoming_data_bucket = "s3://" + sageworks_bucket + "/incoming-data/"
-        cls.data_sources_bucket = "s3://" + sageworks_bucket + "/data-sources/"
-        cls.feature_sets_bucket = "s3://" + sageworks_bucket + "/feature-sets/"
+        # Grab our SageWorks Bucket
+        cls.sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
+        if cls.sageworks_bucket is None:
+            print("Could not find ENV var for SAGEWORKS_BUCKET!")
+            sys.exit(1)
+
+        # Construct bucket paths
+        cls.incoming_data_bucket = "s3://" + cls.sageworks_bucket + "/incoming-data/"
+        cls.data_sources_bucket = "s3://" + cls.sageworks_bucket + "/data-sources/"
+        cls.feature_sets_bucket = "s3://" + cls.sageworks_bucket + "/feature-sets/"
 
         # SageWorks category mapping to AWS Services
         # - incoming_data = S3

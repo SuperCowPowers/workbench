@@ -86,7 +86,12 @@ class S3HeavyToDataSource:
             dyf = dyf.rename_field(f"`{c_old}`", c_new)
         return dyf
 
-    def transform(self, input_type: str = "json", timestamp_columns: list = None, output_format: str = "parquet"):
+    def transform(
+        self,
+        input_type: str = "json",
+        timestamp_columns: list = None,
+        output_format: str = "parquet",
+    ):
         """Convert the CSV or JSON data into Parquet Format in the SageWorks S3 Bucket, and
         store the information about the data to the AWS Data Catalog sageworks database
         Args:

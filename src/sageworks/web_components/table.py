@@ -20,7 +20,15 @@ def column_setup(df: pd.DataFrame, show_columns: list[str] = None, markdown_colu
     """
 
     # HARDCODE: Not sure how to get around hard coding these columns
-    dont_show = ["id", "uuid", "write_time", "api_invocation_time", "is_deleted", "x", "y"]
+    dont_show = [
+        "id",
+        "uuid",
+        "write_time",
+        "api_invocation_time",
+        "is_deleted",
+        "x",
+        "y",
+    ]
 
     # Only show these columns
     if not show_columns:

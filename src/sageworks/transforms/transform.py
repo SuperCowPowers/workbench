@@ -3,12 +3,13 @@
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import final
+import os
+import sys
 import logging
 import awswrangler as wr
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -53,13 +54,15 @@ class Transform(ABC):
         self.input_uuid = str(input_uuid)  # Occasionally we get a pathlib.Path object
         self.output_uuid = str(output_uuid)  # Occasionally we get a pathlib.Path object
         self.output_meta = {"sageworks_input": self.input_uuid}
-
-        # Grab our SageWorksConfig for S3 Buckets and other SageWorks specific settings
-        sageworks_config = SageWorksConfig()
         self.data_catalog_db = "sageworks"
-        sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
-        self.data_source_s3_path = "s3://" + sageworks_bucket + "/data-sources"
-        self.feature_sets_s3_path = "s3://" + sageworks_bucket + "/feature-sets"
+
+        # Grab our SageWorks Bucket
+        self.sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
+        if self.sageworks_bucket is None:
+            print("Could not find ENV var for SAGEWORKS_BUCKET!")
+            sys.exit(1)
+        self.data_source_s3_path = "s3://" + self.sageworks_bucket + "/data-sources"
+        self.feature_sets_s3_path = "s3://" + self.sageworks_bucket + "/feature-sets"
 
         # Grab a SageWorks Role ARN, Boto3, SageMaker Session, and SageMaker Client
         self.aws_account_clamp = AWSAccountClamp()

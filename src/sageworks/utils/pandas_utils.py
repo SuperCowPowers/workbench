@@ -70,7 +70,8 @@ def numeric_stats(df):
 
 def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float = 20) -> pd.DataFrame:
     """Dropping NaNs in rows and columns. Obviously lots of ways to do this, so picked some reasonable defaults,
-    we can certainly change this later with a more formal set of operations and arguments"""
+    we can certainly change this later with a more formal set of operations and arguments
+    """
 
     # Grab input number of rows
     orig_num_rows = len(input_df)

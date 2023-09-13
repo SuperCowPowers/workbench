@@ -39,7 +39,8 @@ class CSVToDataSource(Transform):
 
     def transform_impl(self, overwrite: bool = True):
         """Convert the local CSV file into Parquet Format in the SageWorks Data Sources Bucket, and
-        store the information about the data to the AWS Data Catalog sageworks database"""
+        store the information about the data to the AWS Data Catalog sageworks database
+        """
 
         # Report the transformation initiation
         csv_file = os.path.basename(self.input_uuid)

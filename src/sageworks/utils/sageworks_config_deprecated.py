@@ -13,8 +13,8 @@ from sageworks.utils.sageworks_logging import logging_setup
 logging_setup()
 
 
-class SageWorksConfig:
-    """SageWorksConfig provides a set of utilities to read the SageWorks config file"""
+class SageWorksConfigDeprecated:
+    """SageWorksConfigDeprecated: This class is deprecated and should not be used"""
 
     def __init__(self):
         self.log = logging.getLogger(__file__)
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     """Exercise the SageWorks config utility methods"""
 
     # Create a SageWorksConfig object
-    sw_config = SageWorksConfig()
+    sw_config = SageWorksConfigDeprecated()
 
     config_sections = sw_config.get_config_sections()
     for section in config_sections:

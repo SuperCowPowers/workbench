@@ -4,7 +4,13 @@ from dash import dcc
 
 def _construct_full_type(column_info: dict) -> dict:
     """Internal method for showing the FeatureSet Types if they exist"""
-    shorten_map = {"Integral": "I", "Fractional": "F", "String": "S", "Timestamp": "TS", "Boolean": "B"}
+    shorten_map = {
+        "Integral": "I",
+        "Fractional": "F",
+        "String": "S",
+        "Timestamp": "TS",
+        "Boolean": "B",
+    }
     if "fs_dtype" in column_info:
         display_fs_type = shorten_map.get(column_info["fs_dtype"], "???")
         column_info["full_type"] = f"{display_fs_type}: {column_info['dtype']}"
@@ -26,7 +32,15 @@ def column_info_html(column_name, column_info: dict) -> str:
     html_template = """<b><<name>></b> <span class="lightblue">(<<full_type>>)</span>:"""
 
     # Add min, max, and number of zeros for numeric columns
-    numeric_types = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
+    numeric_types = [
+        "tinyint",
+        "smallint",
+        "int",
+        "bigint",
+        "float",
+        "double",
+        "decimal",
+    ]
     float_types = ["float", "double", "decimal"]
     if column_info["dtype"] in numeric_types:
         # Just hardcode the min and max for now
@@ -110,7 +124,15 @@ def create_markdown(artifact_details: dict) -> str:
     # Fill in numeric column details
     column_stats = artifact_details.get("column_stats", {})
     numeric_column_details = ""
-    numeric_types = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
+    numeric_types = [
+        "tinyint",
+        "smallint",
+        "int",
+        "bigint",
+        "float",
+        "double",
+        "decimal",
+    ]
     for column_name, column_info in column_stats.items():
         if column_info["dtype"] in numeric_types:
             column_html = column_info_html(column_name, column_info)

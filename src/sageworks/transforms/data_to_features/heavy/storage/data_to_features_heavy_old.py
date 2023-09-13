@@ -47,7 +47,8 @@ class DataToFeaturesHeavy(Transform):
 
     def transform_impl(self, query, id_column: str, event_time_column: str = None):
         """Convert the Data Source into a Feature Set, also storing the information
-        about the data to the AWS Data Catalog sageworks database and create S3 Objects"""
+        about the data to the AWS Data Catalog sageworks database and create S3 Objects
+        """
 
         # Do we want to delete the existing FeatureSet?
         try:

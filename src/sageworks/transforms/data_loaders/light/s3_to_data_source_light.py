@@ -56,7 +56,8 @@ class S3ToDataSourceLight(Transform):
 
     def transform_impl(self, overwrite: bool = True):
         """Convert the CSV data into Parquet Format in the SageWorks Data Sources Bucket, and
-        store the information about the data to the AWS Data Catalog sageworks database"""
+        store the information about the data to the AWS Data Catalog sageworks database
+        """
 
         # Sanity Check for S3 Object size
         object_megabytes = self.input_size_mb()
@@ -83,11 +84,16 @@ class S3ToDataSourceLight(Transform):
 
 if __name__ == "__main__":
     """Exercise the S3ToDataSourceLight Class"""
-    from sageworks.utils.sageworks_config import SageWorksConfig
+    import os
+    import sys
+
+    # Grab our SageWorks Bucket from ENV
+    sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
+    if sageworks_bucket is None:
+        print("Could not find ENV var for SAGEWORKS_BUCKET!")
+        sys.exit(1)
 
     # Create my Data Loader
-    sageworks_config = SageWorksConfig()
-    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
     input_path = "s3://" + sageworks_bucket + "/incoming-data/aqsol_public_data.csv"
     output_uuid = "aqsol_data"
     my_loader = S3ToDataSourceLight(input_path, output_uuid)

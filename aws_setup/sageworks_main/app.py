@@ -1,13 +1,12 @@
+import os
 import aws_cdk as cdk
 
 from stacks.sageworks_stack import SageworksStack
-from sageworks.utils.sageworks_config import SageWorksConfig
 
 app = cdk.App()
 
-sageworks_config: SageWorksConfig = SageWorksConfig()
-s3_bucket_name = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
-sageworks_role_name = sageworks_config.get_config_value("SAGEWORKS_AWS", "SAGEWORKS_ROLE_NAME")
+s3_bucket_name = os.environ.get("SAGEWORKS_BUCKET")
+sageworks_role_name = os.environ.get("SAGEWORKS_ROLE", "SageWorks-ExecutionRole")
 
 sandbox_stack = SageworksStack(
     app,

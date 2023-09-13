@@ -1,4 +1,5 @@
 """S3Bucket: Class to retrieve object/file information from an AWS S3 Bucket"""
+import os
 import awswrangler as wr
 from botocore.exceptions import ClientError
 
@@ -66,12 +67,14 @@ class S3Bucket(Connector):
 
 if __name__ == "__main__":
     """Exercises the S3Bucket Class"""
+    import sys
     from pprint import pprint
-    from sageworks.utils.sageworks_config import SageWorksConfig
 
     # Grab out incoming data bucket for something to test with
-    sageworks_config = SageWorksConfig()
-    sageworks_bucket = sageworks_config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
+    sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
+    if sageworks_bucket is None:
+        print("Could not find ENV var for SAGEWORKS_BUCKET!")
+        sys.exit(1)
     incoming_data_bucket = "s3://" + sageworks_bucket + "/incoming-data/"
 
     # Create the class and check the functionality

@@ -1,9 +1,6 @@
 from rich.console import Console
-from pathlib import Path
-import configparser
 import click
 import os
-import uuid
 
 
 console = Console()
@@ -32,22 +29,8 @@ def get_config_file_from_env():
 )
 def cli_create_config(bucket_name, file_path):
     """Create Sageworks config file"""
-    bucket_name += "-" + str(uuid.uuid4())
-    bucket_name = bucket_name.lower()
-    if len(bucket_name) > 63:
-        bucket_name = bucket_name[0:63]
-    if not file_path or not Path(file_path).is_file():
-        file_path = str(Path().home() / ".config" / "sageworks" / "sageworks_config.ini")
-    config = configparser.ConfigParser()
-    config["SAGEWORKS_AWS"] = {
-        "S3_BUCKET_NAME": bucket_name,
-        "SAGEWORKS_ROLE_NAME": "SageWorks-ExecutionRole",
-    }
-    config["SAGEWORKS_REDIS"] = {"HOST": "localhost", "PORT": "6379", "PASSWORD": ""}
-    with open(file_path, "w") as f:
-        config.write(f)
     console.print(
-        f"SageWorks config file successfully created at {file_path}\n",
+        "This does nothing right now\n",
         style="bold green",
     )
 

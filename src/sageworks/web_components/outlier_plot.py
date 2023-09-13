@@ -8,7 +8,9 @@ import logging
 
 # SageWorks Imports
 from sageworks.algorithms.dataframe.aggregation import aggregate
-from sageworks.algorithms.dataframe.dimensionality_reduction import DimensionalityReduction
+from sageworks.algorithms.dataframe.dimensionality_reduction import (
+    DimensionalityReduction,
+)
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -47,7 +49,9 @@ def create_figure(df: pd.DataFrame, title: str = "Outlier Groups") -> plotly.gra
     min_size = 5
     max_size = 100
     coord_df["group_count"] = np.interp(
-        coord_df["group_count"], (coord_df["group_count"].min(), coord_df["group_count"].max()), (min_size, max_size)
+        coord_df["group_count"],
+        (coord_df["group_count"].min(), coord_df["group_count"].max()),
+        (min_size, max_size),
     )
 
     # Sample column needs to be first

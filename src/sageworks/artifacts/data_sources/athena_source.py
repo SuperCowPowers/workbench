@@ -11,7 +11,14 @@ from pprint import pprint
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.iso_8601 import convert_all_to_iso8601
-from sageworks.algorithms.sql import sample_rows, value_counts, descriptive_stats, outliers, column_stats, correlations
+from sageworks.algorithms.sql import (
+    sample_rows,
+    value_counts,
+    descriptive_stats,
+    outliers,
+    column_stats,
+    correlations,
+)
 from sageworks.utils.pandas_utils import NumpyEncoder, athena_to_pandas_types
 
 

@@ -1,10 +1,10 @@
 """AWSAccountCheck runs a bunch of tests/checks to ensure SageWorks AWS Setup"""
+import os
 import sys
 import logging
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.sageworks_config import SageWorksConfig
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
@@ -21,23 +21,25 @@ class AWSAccountCheck:
         # Create the AWSAccountClamp Class
         self.aws_clamp = AWSAccountClamp()
 
-        # Grab our SageWorks Config
-        self.config = SageWorksConfig()
+        # Grab our SageWorks Bucket
+        self.sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
+        if self.sageworks_bucket is None:
+            print("Could not find ENV var for SAGEWORKS_BUCKET!")
+            sys.exit(1)
 
     def check_s3_bucket_subfolders(self):
         """Check if the SageWorks S3 Bucket is set up and has the correct sub-folders"""
 
         self.log.info("*** AWS SageWorks Bucket Check ***")
         s3 = self.aws_clamp.boto_session().resource("s3")
-        bucket_name = self.config.get_config_value("SAGEWORKS_AWS", "S3_BUCKET_NAME")
-        bucket = s3.Bucket(bucket_name)
+        bucket = s3.Bucket(self.sageworks_bucket)
 
         # Check if the bucket exists
         if bucket.creation_date is None:
-            self.log.critical(f"The {bucket_name} bucket does not exist")
+            self.log.critical(f"The {self.sageworks_bucket} bucket does not exist")
             sys.exit(1)
         else:
-            self.log.info(f"The {bucket_name} bucket exists")
+            self.log.info(f"The {self.sageworks_bucket} bucket exists")
 
         # Check if the sub-folders exists
         sub_folders = ["incoming-data", "data-sources", "feature-sets", "athena-queries"]

@@ -104,7 +104,11 @@ class FeatureSet(Artifact):
     def column_details(self) -> dict:
         """Return the column details of the Feature Set"""
         details = {item["FeatureName"]: item["FeatureType"] for item in self.feature_meta["FeatureDefinitions"]}
-        internal = {"write_time": "Timestamp", "api_invocation_time": "Timestamp", "is_deleted": "Boolean"}
+        internal = {
+            "write_time": "Timestamp",
+            "api_invocation_time": "Timestamp",
+            "is_deleted": "Boolean",
+        }
         details.update(internal)
         return details
 
@@ -385,7 +389,7 @@ class FeatureSet(Artifact):
         if feature_set_ready and data_source_ready:
             self.log.info(f"FeatureSet {self.uuid} is ready!")
             if status != "ready":
-                self.log.warning(f"FeatureSet {self.uuid} is ready but status is {status}, overwriting to 'ready'")
+                self.log.warning(f"FeatureSet {self.uuid} is ready but status is {status}, overriding to 'ready'")
                 self.set_status("ready")
             return True
         else:
