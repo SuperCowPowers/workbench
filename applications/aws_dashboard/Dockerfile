@@ -29,4 +29,4 @@ ENV REDIS_HOST localhost
 RUN pip install -r requirements.txt
 
 # Run Gunicorn
-CMD ["gunicorn", "app:server", "--bind", "0.0.0.0:8000", "--workers", "3"] & nginx -g 'daemon off;'
+CMD ["gunicorn", "app:server", "--bind", "0.0.0.0:8000", "--workers", "1"] & nginx -g 'daemon off;'

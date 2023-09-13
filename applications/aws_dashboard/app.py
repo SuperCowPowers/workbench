@@ -1,5 +1,4 @@
 """Artifact Viewer: A SageWorks Application for viewing and managing SageWorks Artifacts"""
-import os
 from dash import Dash
 import dash
 import dash_bootstrap_components as dbc
@@ -25,5 +24,5 @@ app.layout = dash.page_container
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
     # Note: This 'main' is purely for running/testing locally
-    # app.run_server(host="0.0.0.0", port=8080, debug=True)
-    app.run_server(host="0.0.0.0", port=8080)
+    # app.run_server(host="0.0.0.0", port=8000, debug=True)
+    app.run_server(host="0.0.0.0", port=8000)
