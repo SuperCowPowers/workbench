@@ -19,8 +19,8 @@ COPY nginx.conf /etc/nginx/sites-available/default
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Set the ENV var for the SageWorks config file
-ENV SAGEWORKS_CONFIG_FILE=/app/sageworks_config.ini
+# Set the ENV var for YOUR company's SageWorks Bucket
+ENV SAGEWORKS_BUCKET=sageworks-bucket-not-specified
 
  # The REDIS_HOST ENV is over written when the container is run
 ENV REDIS_HOST localhost
