@@ -26,8 +26,7 @@ class AWSAccountClamp:
         self.log = logging.getLogger(__file__)
 
         # Grab the AWS Role Name from the SageWorks Config
-        role_name = os.environ.get("SAGEWORKS_ROLE", "SageWorks-ExecutionRole")
-        self.role_name = role_name
+        self.role_name = os.environ.get("SAGEWORKS_ROLE", "SageWorks-ExecutionRole")
 
         # Quick check on SSO Token
         try:
