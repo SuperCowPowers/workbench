@@ -19,7 +19,7 @@ class SageworksDashboardStack(Stack):
         super().__init__(scope, id, **kwargs)
 
         # Define the ECS cluster
-        cluster = ecs.Cluster(self, "SageworksCluster", vpc=ec2.Vpc(self, "SageworksVpc"))
+        cluster = ecs.Cluster(self, "SageworksCluster", vpc=ec2.Vpc(self, "SageworksVpc", max_azs=2))
 
         # Import the existing SageWorks-ExecutionRole
         sageworks_execution_role = iam.Role.from_role_arn(
@@ -84,8 +84,22 @@ class SageworksDashboardStack(Stack):
         )
         container.add_port_mappings(ecs.PortMapping(container_port=8000))
 
+        # Create security group for the load balancer
+        lb_security_group = ec2.SecurityGroup(self, "LoadBalancerSecurityGroup", vpc=cluster.vpc)
+
+        # Get the whitelisted IPs from an environment variable, split by comma and strip any spaces
+        whitelist_ips = [ip.strip() for ip in os.environ.get("SAGEWORKS_WHITELIST", "").split(",") if ip.strip()]
+
+        # Add rules for the whitelist IPs
+        if whitelist_ips:
+            for ip in whitelist_ips:
+                lb_security_group.add_ingress_rule(
+                    ec2.Peer.ipv4(ip),
+                    ec2.Port.tcp(80)
+                )
+
         # Adding LoadBalancer with Fargate Service
-        ApplicationLoadBalancedFargateService(
+        fargate_service = ApplicationLoadBalancedFargateService(
             self,
             "SageworksService",
             cluster=cluster,
@@ -93,5 +107,9 @@ class SageworksDashboardStack(Stack):
             desired_count=1,
             task_definition=task_definition,
             memory_limit_mib=4096,
-            public_load_balancer=False
+            public_load_balancer=True,
         )
+
+        # Access the load balancer and add your custom security group
+        fargate_service.load_balancer.add_security_group(lb_security_group)
+
