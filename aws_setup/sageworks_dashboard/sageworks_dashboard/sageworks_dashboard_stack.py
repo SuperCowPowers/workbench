@@ -1,4 +1,4 @@
-import os
+from typing import Optional, List
 from aws_cdk import (
     Stack,
     aws_ecs as ecs,
@@ -7,24 +7,36 @@ from aws_cdk import (
     aws_elasticache as elasticache,
     aws_logs as logs,
 )
+from aws_cdk.aws_ec2 import Subnet
 from aws_cdk.aws_ecs_patterns import ApplicationLoadBalancedFargateService
 from constructs import Construct
 
 
-# Grab our SageWorks Bucket from ENV
-# We may want to revisit this and use a parameter instead
-sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
+class SageworksDashboardStackProps:
+    def __init__(self, sageworks_bucket: str, existing_vpc_id: Optional[str] = None,
+                 existing_subnet_ids: Optional[List[str]] = None,
+                 whitelist_ips: Optional[List[str]] = None):
+        self.sageworks_bucket = sageworks_bucket
+        self.existing_vpc_id = existing_vpc_id
+        self.existing_subnet_ids = existing_subnet_ids
+        self.whitelist_ips = whitelist_ips
 
 
 class SageworksDashboardStack(Stack):
-    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, id: str, props: SageworksDashboardStackProps, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
-        # Define the ECS cluster
-        # TODO: Add optional parameter passing for the VPC
-        #       This will allow us to use an existing VPC for clients that have a VPC already
-        #       Subnet will also be an optional parameter
-        cluster = ecs.Cluster(self, "SageworksCluster", vpc=ec2.Vpc(self, "SageworksVpc", max_azs=2))
+        if not props.sageworks_bucket:
+            raise ValueError("sageworks_bucket is a required property")
+
+        # Create a cluster using a EXISTING VPC
+        if props.existing_vpc_id:
+            vpc = ec2.Vpc.from_lookup(self, "ImportedVPC", vpc_id=props.existing_vpc_id)
+            cluster = ecs.Cluster(self, "SageworksCluster", vpc=vpc)
+
+        # Create a cluster using a NEW VPC
+        else:
+            cluster = ecs.Cluster(self, "SageworksCluster", vpc=ec2.Vpc(self, "SageworksVpc", max_azs=2))
 
         # Import the existing SageWorks-ExecutionRole
         sageworks_execution_role = iam.Role.from_role_arn(
@@ -82,7 +94,7 @@ class SageworksDashboardStack(Stack):
             memory_limit_mib=4096,
             environment={
                 "REDIS_HOST": redis_endpoint,
-                "SAGEWORKS_BUCKET": sageworks_bucket},
+                "SAGEWORKS_BUCKET": props.sageworks_bucket},
             logging=ecs.LogDriver.aws_logs(
                 stream_prefix="SageWorksDashboard",
                 log_group=log_group)
@@ -92,18 +104,22 @@ class SageworksDashboardStack(Stack):
         # Create security group for the load balancer
         lb_security_group = ec2.SecurityGroup(self, "LoadBalancerSecurityGroup", vpc=cluster.vpc)
 
-        # Get the whitelisted IPs from an environment variable, split by comma and strip any spaces
-        whitelist_ips = [ip.strip() for ip in os.environ.get("SAGEWORKS_WHITELIST", "").split(",") if ip.strip()]
-
         # Add rules for the whitelist IPs
-        if whitelist_ips:
-            for ip in whitelist_ips:
+        if props.whitelist_ips:
+            for ip in props.whitelist_ips:
                 lb_security_group.add_ingress_rule(
                     ec2.Peer.ipv4(ip),
                     ec2.Port.tcp(80)
                 )
 
+        # Were we given a subnet selection?
+        subnet_selection = None
+        if props.existing_subnet_ids:
+            subnets = [ec2.Subnet.from_subnet_id(self, f"Subnet{i}", subnet_id) for i, subnet_id in enumerate(props.existing_subnet_ids)]
+            subnet_selection = ec2.SubnetSelection(subnets=subnets)
+
         # Adding LoadBalancer with Fargate Service
+        # TODO: Add logic to use existing subnets
         fargate_service = ApplicationLoadBalancedFargateService(
             self,
             "SageworksService",
@@ -113,10 +129,11 @@ class SageworksDashboardStack(Stack):
             task_definition=task_definition,
             memory_limit_mib=4096,
             public_load_balancer=True,
+            security_groups=[lb_security_group],
         )
 
         # Remove all default security group from the load balancer
-        fargate_service.load_balancer.connections.security_groups.clear()
+        # fargate_service.load_balancer.connections.security_groups.clear()
 
         # Add our custom security group
-        fargate_service.load_balancer.add_security_group(lb_security_group)
+        # fargate_service.load_balancer.add_security_group(lb_security_group)

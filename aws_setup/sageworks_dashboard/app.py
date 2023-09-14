@@ -1,26 +1,36 @@
 import os
-
+import boto3
 import aws_cdk as cdk
 
-from sageworks_dashboard.sageworks_dashboard_stack import SageworksDashboardStack
+from sageworks_dashboard.sageworks_dashboard_stack import SageworksDashboardStack, SageworksDashboardStackProps
 
-# We'd like to set up our parameters here and NOT have them handled in the stack
-# Example: VPC, Subnet, Security Group, etc.
-# Perhaps a config file instead of ENV vars?
+# Grab the account and region using boto3
+session = boto3.session.Session()
+aws_account = session.client('sts').get_caller_identity().get('Account')
+aws_region = session.region_name
+print(f"Account: {aws_account}")
+print(f"Region: {aws_region}")
+
+# We'd like to set up our parameters here
+sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
+existing_vpc_id = os.environ.get("SAGEWORKS_VPC_ID")
+existing_subnet_ids = os.environ.get("SAGEWORKS_SUBNET_IDS")
+whitelist_ips = [ip.strip() for ip in os.environ.get("SAGEWORKS_WHITELIST", "").split(",") if ip.strip()]
+
 app = cdk.App()
 SageworksDashboardStack(
     app,
     "SageworksDashboard",
-    # If you don't specify 'env', this stack will be environment-agnostic.
-    # Account/Region-dependent features and context lookups will not work,
-    # but a single synthesized template can be deployed anywhere.
-    # Uncomment the next line to specialize this stack for the AWS Account
-    # and Region that are implied by the current CLI configuration.
-    # env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
-    # Uncomment the next line if you know exactly what Account and Region you
-    # want to deploy the stack to. */
-    # env=cdk.Environment(account='123456789012', region='us-east-1'),
-    # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
+    env={
+        'account': aws_account,
+        'region': aws_region
+    },
+    props=SageworksDashboardStackProps(
+        sageworks_bucket=sageworks_bucket,
+        existing_vpc_id=existing_vpc_id,
+        existing_subnet_ids=existing_subnet_ids,
+        whitelist_ips=whitelist_ips,
+    )
 )
 
 app.synth()
