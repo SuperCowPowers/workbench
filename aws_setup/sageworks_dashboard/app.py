@@ -4,7 +4,9 @@ import aws_cdk as cdk
 
 from sageworks_dashboard.sageworks_dashboard_stack import SageworksDashboardStack
 
-
+# We'd like to set up our parameters here and NOT have them handled in the stack
+# Example: VPC, Subnet, Security Group, etc.
+# Perhaps a config file instead of ENV vars?
 app = cdk.App()
 SageworksDashboardStack(
     app,

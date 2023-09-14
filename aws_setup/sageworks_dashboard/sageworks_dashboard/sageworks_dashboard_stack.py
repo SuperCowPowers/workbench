@@ -11,6 +11,8 @@ from aws_cdk.aws_ecs_patterns import ApplicationLoadBalancedFargateService
 from constructs import Construct
 
 
+# Grab our SageWorks Bucket from ENV
+# We may want to revisit this and use a parameter instead
 sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
 
 
@@ -19,6 +21,9 @@ class SageworksDashboardStack(Stack):
         super().__init__(scope, id, **kwargs)
 
         # Define the ECS cluster
+        # TODO: Add optional parameter passing for the VPC
+        #       This will allow us to use an existing VPC for clients that have a VPC already
+        #       Subnet will also be an optional parameter
         cluster = ecs.Cluster(self, "SageworksCluster", vpc=ec2.Vpc(self, "SageworksVpc", max_azs=2))
 
         # Import the existing SageWorks-ExecutionRole
