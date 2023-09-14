@@ -110,6 +110,9 @@ class SageworksDashboardStack(Stack):
             public_load_balancer=True,
         )
 
-        # Access the load balancer and add your custom security group
-        fargate_service.load_balancer.add_security_group(lb_security_group)
+        # Remove all default security group from the load balancer
+        for sg in fargate_service.load_balancer.node.find_all_children('SecurityGroup'):
+            fargate_service.load_balancer.remove_security_group(sg)
 
+        # Add our custom security group
+        fargate_service.load_balancer.add_security_group(lb_security_group)
