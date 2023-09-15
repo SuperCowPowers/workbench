@@ -116,7 +116,9 @@ class SageworksDashboardStack(Stack):
         subnet_selection = None
         if props.existing_subnet_ids:
             subnets = [ec2.Subnet.from_subnet_id(self, f"Subnet{i}", subnet_id) for i, subnet_id in enumerate(props.existing_subnet_ids)]
+            print(subnets)
             subnet_selection = ec2.SubnetSelection(subnets=subnets)
+            print(subnet_selection)
 
         # Adding LoadBalancer with Fargate Service
         # TODO: Add logic to use existing subnets
@@ -130,10 +132,12 @@ class SageworksDashboardStack(Stack):
             memory_limit_mib=4096,
             public_load_balancer=True,
             security_groups=[lb_security_group],
+            open_listener=False,
+            # task_subnets=subnet_selection
         )
 
         # Remove all default security group from the load balancer
-        # fargate_service.load_balancer.connections.security_groups.clear()
+        fargate_service.load_balancer.connections.security_groups.clear()
 
         # Add our custom security group
-        # fargate_service.load_balancer.add_security_group(lb_security_group)
+        fargate_service.load_balancer.add_security_group(lb_security_group)
