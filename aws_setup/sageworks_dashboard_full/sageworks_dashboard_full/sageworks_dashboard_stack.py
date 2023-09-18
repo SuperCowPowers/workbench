@@ -90,7 +90,7 @@ class SageworksDashboardStack(Stack):
 
         container = task_definition.add_container(
             "SageworksContainer",
-            image=ecs.ContainerImage.from_registry("public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest"),
+            image=ecs.ContainerImage.from_registry("public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest_amd64"),
             memory_limit_mib=4096,
             environment={
                 "REDIS_HOST": redis_endpoint,
