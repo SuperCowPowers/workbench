@@ -2,7 +2,7 @@ import os
 import boto3
 import aws_cdk as cdk
 
-from sageworks_dashboard.sageworks_dashboard_stack import SageworksDashboardStack, SageworksDashboardStackProps
+from sageworks_dashboard_full.sageworks_dashboard_stack import SageworksDashboardStack, SageworksDashboardStackProps
 
 # Grab the account and region using boto3
 session = boto3.session.Session()
