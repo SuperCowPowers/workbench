@@ -90,7 +90,7 @@ class SageworksDashboardStack(Stack):
 
         container = task_definition.add_container(
             "SageworksContainer",
-            image=ecs.ContainerImage.from_registry("public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest_amd64"),
+            image=ecs.ContainerImage.from_registry("public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest_no_redis_amd64"),
             memory_limit_mib=4096,
             environment={
                 "REDIS_HOST": redis_endpoint,
@@ -129,7 +129,7 @@ class SageworksDashboardStack(Stack):
             cpu=1024,
             desired_count=1,
             task_definition=task_definition,
-            memory_limit_mib=2048,
+            memory_limit_mib=4096,
             public_load_balancer=True,
             security_groups=[lb_security_group],
             open_listener=False,

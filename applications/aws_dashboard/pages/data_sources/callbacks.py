@@ -133,8 +133,9 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
     )
     def generate_new_violin_plot(selected_rows):
         print(f"Violin Plot Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None or smart_sample_rows is None:
+        if not selected_rows or selected_rows[0] is None:
             return dash.no_update
+        smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
 
         # Get the data source smart sample rows and create the violin plot
         return distribution_plots.create_figure(

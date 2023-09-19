@@ -6,6 +6,7 @@ from pandas.errors import ParserError
 # Local imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
+from sageworks.artifacts.data_sources.data_source import DataSource
 
 
 class S3ToDataSourceLight(Transform):
@@ -55,7 +56,7 @@ class S3ToDataSourceLight(Transform):
         return df
 
     def transform_impl(self, overwrite: bool = True):
-        """Convert the CSV data into Parquet Format in the SageWorks Data Sources Bucket, and
+        """Convert the S3 CSV data into Parquet Format in the SageWorks Data Sources Bucket, and
         store the information about the data to the AWS Data Catalog sageworks database
         """
 
@@ -71,6 +72,11 @@ class S3ToDataSourceLight(Transform):
         else:
             df = wr.s3.read_json(self.input_uuid, lines=True, boto3_session=self.boto_session)
 
+        # Temporary hack to limit the number of columns in the dataframe
+        if len(df.columns) > 40:
+            self.log.error(f"{self.input_uuid} TOO Many Columns! Talk to SageWorks Support...")
+            df = df.iloc[:, :40]
+
         # Convert object columns before sending to SageWorks Data Source
         df = self.convert_object_columns(df)
 
@@ -80,6 +86,20 @@ class S3ToDataSourceLight(Transform):
         pandas_to_data.set_output_tags(self.output_tags)
         pandas_to_data.add_output_meta(self.output_meta)
         pandas_to_data.transform()
+
+        # Report the transformation results
+        self.log.info(f"{self.input_uuid} -->  DataSource: {self.output_uuid} Complete!")
+
+    def post_transform(self, **kwargs):
+        """Post-Transform: Calling make_ready() on the DataSource"""
+        self.log.info("Post-Transform: Calling make_ready() on the DataSource...")
+
+        # Okay, lets wait just a bit for the
+        output_data_source = DataSource(self.output_uuid, force_refresh=True)
+        output_data_source.set_status("initializing")
+
+        # Call the FeatureSet make_ready method to compute a bunch of EDA stuff
+        output_data_source.make_ready()
 
 
 if __name__ == "__main__":
@@ -95,9 +115,10 @@ if __name__ == "__main__":
 
     # Create my Data Loader
     input_path = "s3://" + sageworks_bucket + "/incoming-data/aqsol_public_data.csv"
-    output_uuid = "aqsol_data"
+    input_path = "s3://ideaya-sageworks-bucket/incoming-data/hlm_phase2_Reg_0_230830_full.csv"
+    output_uuid = "test"
     my_loader = S3ToDataSourceLight(input_path, output_uuid)
-    my_loader.set_output_tags(["aqsol", "public"])
+    my_loader.set_output_tags(["test"])
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()
