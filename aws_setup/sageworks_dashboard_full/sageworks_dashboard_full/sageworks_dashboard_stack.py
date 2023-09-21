@@ -102,6 +102,7 @@ class SageworksDashboardStack(Stack):
         container.add_port_mappings(ecs.PortMapping(container_port=8000))
 
         # Create security group for the load balancer
+        # TODO: Pass in the security group
         lb_security_group = ec2.SecurityGroup(self, "LoadBalancerSecurityGroup", vpc=cluster.vpc)
 
         # Add rules for the whitelist IPs

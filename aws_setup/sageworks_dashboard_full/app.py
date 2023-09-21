@@ -17,6 +17,8 @@ existing_vpc_id = os.environ.get("SAGEWORKS_VPC_ID")
 existing_subnet_ids = os.environ.get("SAGEWORKS_SUBNET_IDS")
 whitelist_ips = [ip.strip() for ip in os.environ.get("SAGEWORKS_WHITELIST", "").split(",") if ip.strip()]
 
+# TODO: Add in a security group and pass as a prop to the stack
+
 app = cdk.App()
 SageworksDashboardStack(
     app,
