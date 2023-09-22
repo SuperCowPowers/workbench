@@ -16,6 +16,9 @@ sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
 existing_vpc_id = os.environ.get("SAGEWORKS_VPC_ID")
 existing_subnet_ids = os.environ.get("SAGEWORKS_SUBNET_IDS")
 whitelist_ips = [ip.strip() for ip in os.environ.get("SAGEWORKS_WHITELIST", "").split(",") if ip.strip()]
+whitelist_prefix_lists = [ip.strip() for ip in os.environ.get("SAGEWORKS_PREFIX_LISTS", "").split(",") if ip.strip()]
+certificate_arn = os.environ.get("SAGEWORKS_CERTIFICATE_ARN")
+
 
 # TODO: Add in a security group and pass as a prop to the stack
 
@@ -32,6 +35,8 @@ SageworksDashboardStack(
         existing_vpc_id=existing_vpc_id,
         existing_subnet_ids=existing_subnet_ids,
         whitelist_ips=whitelist_ips,
+        whitelist_prefix_lists=whitelist_prefix_lists,
+        certificate_arn=certificate_arn
     )
 )
 

@@ -8,6 +8,7 @@ from aws_cdk import (
     aws_logs as logs,
 )
 from aws_cdk.aws_ec2 import Subnet
+from aws_cdk.aws_certificatemanager import Certificate
 from aws_cdk.aws_ecs_patterns import ApplicationLoadBalancedFargateService
 from constructs import Construct
 
@@ -15,11 +16,15 @@ from constructs import Construct
 class SageworksDashboardStackProps:
     def __init__(self, sageworks_bucket: str, existing_vpc_id: Optional[str] = None,
                  existing_subnet_ids: Optional[List[str]] = None,
-                 whitelist_ips: Optional[List[str]] = None):
+                 whitelist_ips: Optional[List[str]] = None,
+                 whitelist_prefix_lists: Optional[List[str]] = None,
+                 certificate_arn: Optional[str] = None):
         self.sageworks_bucket = sageworks_bucket
         self.existing_vpc_id = existing_vpc_id
         self.existing_subnet_ids = existing_subnet_ids
         self.whitelist_ips = whitelist_ips
+        self.certificate_arn = certificate_arn
+        self.whitelist_prefix_lists = whitelist_prefix_lists
 
 
 class SageworksDashboardStack(Stack):
@@ -47,7 +52,7 @@ class SageworksDashboardStack(Stack):
         # Setup CloudWatch logs
         log_group = logs.LogGroup(self, "SageWorksLogGroup")
 
-        # Setup Redis
+        # Setup Security Group for Redis
         redis_security_group = ec2.SecurityGroup(self, "RedisSecurityGroup", vpc=cluster.vpc)
 
         # Allow the ECS task to connect to the Redis cluster
@@ -101,28 +106,40 @@ class SageworksDashboardStack(Stack):
         )
         container.add_port_mappings(ecs.PortMapping(container_port=8000))
 
-        # Create security group for the load balancer
-        # TODO: Pass in the security group
+        # Were we given a subnet selection?
+        # TODO: This isn't currently working, so we need to figure out how to use existing subnets
+        subnet_selection = None
+        if props.existing_subnet_ids:
+            subnets = [ec2.Subnet.from_subnet_id(self, f"Subnet{i}", subnet_id) for i, subnet_id in enumerate(props.existing_subnet_ids)]
+            subnet_selection = ec2.SubnetSelection(subnets=subnets)
+
+        # Create a NEW Security Group for the Load Balancer
         lb_security_group = ec2.SecurityGroup(self, "LoadBalancerSecurityGroup", vpc=cluster.vpc)
 
         # Add rules for the whitelist IPs
         if props.whitelist_ips:
+            print(f"Adding Whitelist IPs: {props.whitelist_ips}")
             for ip in props.whitelist_ips:
                 lb_security_group.add_ingress_rule(
                     ec2.Peer.ipv4(ip),
-                    ec2.Port.tcp(80)
+                    ec2.Port.tcp(443)
                 )
 
-        # Were we given a subnet selection?
-        subnet_selection = None
-        if props.existing_subnet_ids:
-            subnets = [ec2.Subnet.from_subnet_id(self, f"Subnet{i}", subnet_id) for i, subnet_id in enumerate(props.existing_subnet_ids)]
-            print(subnets)
-            subnet_selection = ec2.SubnetSelection(subnets=subnets)
-            print(subnet_selection)
+        # Adding AWS Managed Prefix Lists
+        if props.whitelist_prefix_lists:
+            print(f"Adding Whitelist Prefix Lists: {props.whitelist_prefix_lists}")
+            for pl in props.whitelist_prefix_lists:
+                lb_security_group.add_ingress_rule(
+                    ec2.Peer.prefix_list(pl),
+                    ec2.Port.tcp(443)
+                )
+
+        # Import existing SSL certificate if certificate_arn is provided
+        certificate = Certificate.from_certificate_arn(
+            self, "ImportedCertificate", certificate_arn=props.certificate_arn
+        ) if props.certificate_arn else None
 
         # Adding LoadBalancer with Fargate Service
-        # TODO: Add logic to use existing subnets
         fargate_service = ApplicationLoadBalancedFargateService(
             self,
             "SageworksService",
@@ -134,6 +151,7 @@ class SageworksDashboardStack(Stack):
             public_load_balancer=True,
             security_groups=[lb_security_group],
             open_listener=False,
+            certificate=certificate,
             # task_subnets=subnet_selection
         )
 
