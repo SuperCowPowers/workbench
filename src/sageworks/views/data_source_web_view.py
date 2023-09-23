@@ -28,15 +28,6 @@ class DataSourceWebView(ArtifactsWebView):
         """
         return self.data_sources_df
 
-    def data_source_outliers(self, data_source_index: int) -> pd.DataFrame:
-        """Get a dataframe of outliers for the given DataSource Index"""
-        data_uuid = self.data_source_name(data_source_index)
-        if data_uuid is not None:
-            ds = DataSource(data_uuid)
-            return ds.outliers()
-        else:
-            return pd.DataFrame()
-
     def data_source_smart_sample(self, data_source_index: int) -> pd.DataFrame:
         """Get a smart-sample dataframe (sample + outliers) for the given DataSource Index"""
         data_uuid = self.data_source_name(data_source_index)
@@ -45,14 +36,6 @@ class DataSourceWebView(ArtifactsWebView):
             return ds.smart_sample()
         else:
             return pd.DataFrame()
-
-    def data_source_descriptive_stats(self, data_source_index: int) -> (dict, None):
-        """Get all columns descriptive stats for the given DataSource Index"""
-        data_uuid = self.data_source_name(data_source_index)
-        if data_uuid is not None:
-            return DataSource(data_uuid).descriptive_stats()
-        else:
-            return None
 
     def data_source_details(self, data_source_index: int) -> (dict, None):
         """Get all the details for the given DataSource Index"""

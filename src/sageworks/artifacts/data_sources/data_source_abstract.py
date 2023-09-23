@@ -23,6 +23,9 @@ class DataSourceAbstract(Artifact):
         # Call superclass init
         super().__init__(uuid)
 
+        # Set up all my instance attributes
+        self.display_columns = None
+
     @abstractmethod
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
