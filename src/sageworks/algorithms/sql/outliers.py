@@ -70,9 +70,9 @@ class Outliers:
         all_outliers = all_outliers.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
 
         # Make sure the dataframe isn't too big, if it's too big sample it down
-        if len(all_outliers) > 100:
-            log.warning(f"Outliers DataFrame is too large {len(all_outliers)}, sampling down to 100 rows")
-            all_outliers = all_outliers.sample(100)
+        if len(all_outliers) > 200:
+            log.warning(f"Outliers DataFrame is too large {len(all_outliers)}, sampling down to 200 rows")
+            all_outliers = all_outliers.sample(200)
 
         # Sort by outlier_group and reset the index
         all_outliers = all_outliers.sort_values("outlier_group").reset_index(drop=True)
