@@ -23,15 +23,13 @@ class Outliers:
         self,
         data_source: DataSourceAbstract,
         scale: float = 1.25,
-        use_stddev: bool = False,
-        include_strings: bool = False,
+        use_stddev: bool = False
     ) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             data_source(DataSource): The DataSource that we're computing outliers on
             scale(float): The scale to use for either the IQR or stddev outlier calculation (default: 1.25)
             use_stddev(bool): Option to use the standard deviation for the outlier calculation (default: False)
-            include_strings(bool): Option to include string columns in the outlier calculation (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers for this DataSource
         Notes:
@@ -45,42 +43,28 @@ class Outliers:
             scale = 2.5
 
         # Compute the numeric outliers
-        numeric_outliers_df = self._numeric_outliers(data_source, scale, use_stddev)
+        outlier_df = self._numeric_outliers(data_source, scale, use_stddev)
 
-        # Compute the string outliers
-        if include_strings:
-            data_source.log.info("Computing Outliers for string columns...")
-            string_outliers_df = self._string_outliers(data_source)
-        else:
-            string_outliers_df = None
-
-        # Combine the numeric and string outliers
-        if numeric_outliers_df is not None and string_outliers_df is not None:
-            all_outliers = pd.concat([numeric_outliers_df, string_outliers_df])
-        elif numeric_outliers_df is not None:
-            all_outliers = numeric_outliers_df
-        elif string_outliers_df is not None:
-            all_outliers = string_outliers_df
-        else:
-            log.warning("No outliers found for this DataSource, returning empty DataFrame")
-            all_outliers = pd.DataFrame(columns=data_source.column_names() + ["outlier_group"])
+        # If there are no outliers, return a DataFrame with defined columns but no rows
+        if outlier_df is None:
+            return pd.DataFrame(columns=data_source.column_names() + ["outlier_group"])
 
         # Drop duplicates
-        all_except_outlier_group = [col for col in all_outliers.columns if col != "outlier_group"]
-        all_outliers = all_outliers.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
+        all_except_outlier_group = [col for col in outlier_df.columns if col != "outlier_group"]
+        outlier_df = outlier_df.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
 
         # Make sure the dataframe isn't too big, if it's too big sample it down
-        if len(all_outliers) > 200:
-            log.warning(f"Outliers DataFrame is too large {len(all_outliers)}, sampling down to 200 rows")
-            all_outliers = all_outliers.sample(200)
+        if len(outlier_df) > 200:
+            log.warning(f"Outliers DataFrame is too large {len(outlier_df)}, sampling down to 200 rows")
+            outlier_df = outlier_df.sample(200)
 
         # Sort by outlier_group and reset the index
-        all_outliers = all_outliers.sort_values("outlier_group").reset_index(drop=True)
+        outlier_df = outlier_df.sort_values("outlier_group").reset_index(drop=True)
 
         # Shorten any long string values
-        all_outliers = shorten_values(all_outliers)
+        outlier_df = shorten_values(outlier_df)
 
-        return all_outliers
+        return outlier_df
 
     def _numeric_outliers(self, data_source: DataSourceAbstract, scale: float, use_stddev=False) -> pd.DataFrame:
         """Internal method to compute outliers for all numeric columns
@@ -97,126 +81,89 @@ class Outliers:
         descriptive_stats = data_source.descriptive_stats()
 
         # For every column in the data_source that is numeric get the outliers
-        log.info("Computing outliers for numeric columns (this may take a while)...")
-        outlier_df_list = []
+        # This loop computes the columns, lower bounds, and upper bounds for the SQL query
+        log.info("Computing outliers for numeric columns...")
         numeric = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
+        columns = []
+        lower_bounds = []
+        upper_bounds = []
         for column, data_type in zip(data_source.column_names(), data_source.column_types()):
             if data_type in numeric:
                 # Skip columns that are 'binary' columns
                 if column_stats[column]["unique"] == 2:
                     log.info(f"Skipping binary column {column}")
                     continue
+
+                # Do they want to use the stddev instead of IQR?
                 if use_stddev:
-                    # Compute dataframes for the lower and upper bounds
                     mean = descriptive_stats[column]["mean"]
                     stddev = descriptive_stats[column]["stddev"]
                     lower_bound = mean - (stddev * scale)
                     upper_bound = mean + (stddev * scale)
-                    lower_df, upper_df = self._outlier_dfs(data_source, column, lower_bound, upper_bound)
+
+                # Compute the IQR for this column
                 else:
-                    # Compute the IQR for this column
                     iqr = descriptive_stats[column]["q3"] - descriptive_stats[column]["q1"]
-
-                    # Catch cases where IQR is 0
-                    if iqr == 0:
-                        log.info(f"IQR is 0 for column {column}, but we'll give it a go...")
-
-                    # Compute dataframes for the lower and upper bounds
                     lower_bound = descriptive_stats[column]["q1"] - (iqr * scale)
                     upper_bound = descriptive_stats[column]["q3"] + (iqr * scale)
-                    lower_df, upper_df = self._outlier_dfs(data_source, column, lower_bound, upper_bound)
 
-                # If we have outliers, add them to the list
-                if lower_df is not None:
-                    # Append the outlier DataFrame to the list
-                    log.info(f"Found {len(lower_df)} low outliers for column {column}")
-                    lower_df["outlier_group"] = f"{column}_low"
-                    outlier_df_list.append(lower_df)
-                if upper_df is not None:
-                    # Append the outlier DataFrame to the list
-                    log.info(f"Found {len(upper_df)} high outliers for column {column}")
-                    upper_df["outlier_group"] = f"{column}_high"
-                    outlier_df_list.append(upper_df)
+                # Add the column, lower bound, and upper bound to the lists
+                columns.append(column)
+                lower_bounds.append(lower_bound)
+                upper_bounds.append(upper_bound)
 
-        # Return the combined DataFrame
-        return pd.concat(outlier_df_list) if outlier_df_list else None
-
-    def _string_outliers(self, data_source: DataSourceAbstract) -> pd.DataFrame:
-        """Internal method to compute outliers for all the string columns in a DataSource
-        Args:
-            data_source(DataSource): The DataSource that we're computing outliers on
-        Returns:
-            pd.DataFrame: A DataFrame of all the outliers combined
-        """
-
-        log.info("Computing outliers for string columns (this may take a while)...")
-        outlier_df_list = []
-        num_rows = data_source.details()["num_rows"]
-        outlier_min_count = max(3, num_rows * 0.001)  # 0.1% of the total rows
-        value_count_info = data_source.value_counts()
-        for column, data_type in zip(data_source.column_names(), data_source.column_types()):
-            print(column, data_type)
-            # String columns will use the value counts to compute outliers
-            if data_type == "string":
-                # Skip columns that end with _id or _ip
-                if column.endswith("_id") or column.endswith("_ip"):
-                    log.info(f"Skipping column {column}")
-                    continue
-                # Skip columns where all values are unique (all counts are 1)
-                if all(value == 1 for value in value_count_info[column].values()):
-                    log.info(f"All values are unique for column {column}, skipping...")
-                    continue
-
-                # Now loop through the value counts and find any rare values
-                for value, count in value_count_info[column].items():
-                    if count < outlier_min_count:
-                        log.info(f"Found outlier feature {value} for column {column}")
-                        query = f"SELECT * from {data_source.table_name} where {column} = '{value}' limit 3"
-                        print(query)
-                        df = data_source.query(query)
-                        df["outlier_group"] = f"{column}_rare"
-                        outlier_df_list.append(df)
-
-        # Return the combined DataFrame
-        return pd.concat(outlier_df_list) if outlier_df_list else None
+        # Compute the SQL query
+        query = self._multi_column_outlier_query(data_source, columns, lower_bounds, upper_bounds)
+        print(query)
+        outlier_df = data_source.query(query)
+        
+        # Label the outlier groups
+        outlier_df = self._label_outlier_groups(outlier_df, columns, lower_bounds, upper_bounds)
+        return outlier_df
 
     @staticmethod
-    def _outlier_dfs(
-        data_source: DataSourceAbstract,
-        column: str,
-        lower_bound: float,
-        upper_bound: float,
-    ):
-        """Internal method to compute outliers for a numeric column
+    def _multi_column_outlier_query(data_source: DataSourceAbstract, columns: list, lower_bounds: list, upper_bounds: list) -> str:
+        """Internal method to compute outliers for multiple columns
         Args:
             data_source(DataSource): The DataSource that we're computing outliers on
-            column(str): The column to compute outliers on
-            lower_bound(float): The lower bound for outliers
-            upper_bound(float): The upper bound for outliers
+            columns(list): The columns to compute outliers on
+            lower_bounds(list): The lower bounds for outliers
+            upper_bounds(list): The upper bounds for outliers
         Returns:
-            (pd.DataFrame, pd.DataFrame): A DataFrame for lower outliers and a DataFrame for upper outliers
+            str: A SQL query to compute outliers for multiple columns
+        """
+        query = f"SELECT * FROM {data_source.table_name} WHERE "
+        for col, lb, ub in zip(columns, lower_bounds, upper_bounds):
+            query += f"({col} < {lb} OR {col} > {ub}) OR "
+        query = query[:-4]
+
+        # Add a limit just in case
+        query += " LIMIT 1000"
+        return query
+
+    @staticmethod
+    def _label_outlier_groups(outlier_df: pd.DataFrame, columns: list, lower_bounds: list, upper_bounds: list) -> pd.DataFrame:
+        """Internal method to label outliers by group.
+        Args:
+            outlier_df(pd.DataFrame): The DataFrame of outliers
+            columns(list): The columns for which to compute outliers
+            lower_bounds(list): The lower bounds for each column
+            upper_bounds(list): The upper bounds for each column
+        Returns:
+            pd.DataFrame: A DataFrame with an added 'outlier_group' column, indicating the type of outlier.
         """
 
-        # Get lower outlier bound
-        query = f'SELECT * from {data_source.table_name} where "{column}" < {lower_bound} order by "{column}" limit 10'
-        lower_df = data_source.query(query)
+        # Initialize an empty 'outlier_group' column
+        outlier_df['outlier_group'] = 'unknown'
 
-        # Check for no results
-        if lower_df.shape[0] == 0:
-            lower_df = None
+        for col, lb, ub in zip(columns, lower_bounds, upper_bounds):
+            mask_low = outlier_df[col] < lb
+            mask_high = outlier_df[col] > ub
 
-        # Get upper outlier bound
-        query = (
-            f'SELECT * from {data_source.table_name} where "{column}" > {upper_bound} order by "{column}" desc limit 10'
-        )
-        upper_df = data_source.query(query)
+            outlier_df.loc[mask_low, 'outlier_group'] = f"{col}_low"
+            outlier_df.loc[mask_high, 'outlier_group'] = f"{col}_high"
 
-        # Check for no results
-        if upper_df.shape[0] == 0:
-            upper_df = None
-
-        # Return the lower and upper outlier DataFrames
-        return lower_df, upper_df
+        return outlier_df
 
 
 if __name__ == "__main__":
