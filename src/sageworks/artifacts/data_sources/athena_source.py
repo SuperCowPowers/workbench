@@ -222,16 +222,16 @@ class AthenaSource(DataSourceAbstract):
         # Return the descriptive stats
         return stat_dict
 
-    def outliers_impl(self, scale: float = 1.25, use_stddev=False, recompute: bool = False) -> pd.DataFrame:
+    def outliers_impl(self, scale: float = 1.5, use_stddev=False, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
-            scale(float): The scale to use for the IQR (default: 1.25)
+            scale(float): The scale to use for the IQR (default: 1.5)
             use_stddev(bool): Use Standard Deviation instead of IQR (default: False)
             recompute(bool): Recompute the outliers (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
         Notes:
-            Uses the IQR * 1.25 (~= 2 Sigma) (use 1.7 for ~= 3 Sigma)
+            Uses the IQR * 1.5 (~= 2.5 Sigma) (use 1.7 for ~= 3 Sigma)
             The scale parameter can be adjusted to change the IQR multiplier
         """
 

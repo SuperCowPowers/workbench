@@ -22,24 +22,24 @@ class Outliers:
     def compute_outliers(
         self,
         data_source: DataSourceAbstract,
-        scale: float = 1.25,
+        scale: float = 1.5,
         use_stddev: bool = False
     ) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             data_source(DataSource): The DataSource that we're computing outliers on
-            scale(float): The scale to use for either the IQR or stddev outlier calculation (default: 1.25)
+            scale(float): The scale to use for either the IQR or stddev outlier calculation (default: 1.5)
             use_stddev(bool): Option to use the standard deviation for the outlier calculation (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers for this DataSource
         Notes:
-            Uses the IQR * 1.25 (~= 2 Sigma) (use 1.7 for ~= 3 Sigma)
+            Uses the IQR * 1.5 (~= 2.5 Sigma) (use 1.7 for ~= 3 Sigma)
             The scale parameter can be adjusted to change the IQR multiplier
         """
         data_source.log.info("Computing Outliers for numeric columns...")
 
         # Note: If use_stddev is True, then the scale parameter needs to be adjusted
-        if use_stddev and scale == 1.25:  # If the default scale is used, adjust it
+        if use_stddev and scale == 1.5:  # If the default scale is used, adjust it
             scale = 2.5
 
         # Compute the numeric outliers
@@ -52,6 +52,9 @@ class Outliers:
         # Drop duplicates
         all_except_outlier_group = [col for col in outlier_df.columns if col != "outlier_group"]
         outlier_df = outlier_df.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
+
+        # Get the top N outliers for each outlier group
+        outlier_df = self.get_top_n_outliers(outlier_df)
 
         # Make sure the dataframe isn't too big, if it's too big sample it down
         if len(outlier_df) > 200:
@@ -138,7 +141,7 @@ class Outliers:
         query = query[:-4]
 
         # Add a limit just in case
-        query += " LIMIT 1000"
+        query += " LIMIT 5000"
         return query
 
     @staticmethod
@@ -153,17 +156,54 @@ class Outliers:
             pd.DataFrame: A DataFrame with an added 'outlier_group' column, indicating the type of outlier.
         """
 
-        # Initialize an empty 'outlier_group' column
-        outlier_df['outlier_group'] = 'unknown'
+        # Initialize an empty 'outlier_group' column with empty strings
+        outlier_df['outlier_group'] = ''
 
         for col, lb, ub in zip(columns, lower_bounds, upper_bounds):
             mask_low = outlier_df[col] < lb
             mask_high = outlier_df[col] > ub
 
-            outlier_df.loc[mask_low, 'outlier_group'] = f"{col}_low"
-            outlier_df.loc[mask_high, 'outlier_group'] = f"{col}_high"
+            # Append labels with a comma separator, removing any trailing commas
+            outlier_df.loc[mask_low, 'outlier_group'] += f"{col}_low,"
+            outlier_df.loc[mask_high, 'outlier_group'] += f"{col}_high,"
 
+        # Remove trailing commas and replace empty strings with 'unknown'
+        outlier_df['outlier_group'] = outlier_df['outlier_group'].str.rstrip(',')
+        outlier_df.loc[outlier_df['outlier_group'] == '', 'outlier_group'] = 'unknown'
         return outlier_df
+
+    @staticmethod
+    def get_top_n_outliers(outlier_df: pd.DataFrame, n: int = 5) -> pd.DataFrame:
+        """Function to retrieve the top N highest and lowest outliers for each outlier group.
+
+        Args:
+            outlier_df (pd.DataFrame): The DataFrame of outliers with 'outlier_group' column
+            n (int): Number of top outliers to retrieve for each group, defaults to 5
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the top N outliers for each outlier group
+        """
+        def get_extreme_values(group):
+            """Helper function to get the top N extreme values from a group."""
+
+            # If the group name contains a comma, it means it has multiple
+            # outlier groups, so just pull the first outlier group
+            if "," in group.name:
+                outlier_group = group.name.split(",")[0]
+            else:
+                outlier_group = group.name
+
+            # Get the column and extreme type (high or low)
+            col, extreme_type = outlier_group.rsplit('_', 1)
+
+            # Sort values depending on whether they are 'high' or 'low' outliers
+            group = group.sort_values(by=col, ascending=(extreme_type == 'low'))
+
+            return group.head(n)
+
+        # Group by 'outlier_group' and apply the helper function to get top N extreme values
+        top_outliers = outlier_df.groupby('outlier_group').apply(get_extreme_values).reset_index(drop=True)
+        return top_outliers
 
 
 if __name__ == "__main__":
@@ -176,7 +216,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("test_data")
+    my_data = DataSource("abalone_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
