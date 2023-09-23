@@ -49,12 +49,12 @@ class Outliers:
         if outlier_df is None:
             return pd.DataFrame(columns=data_source.column_names() + ["outlier_group"])
 
+        # Get the top N outliers for each outlier group
+        outlier_df = self.get_top_n_outliers(outlier_df)
+
         # Drop duplicates
         all_except_outlier_group = [col for col in outlier_df.columns if col != "outlier_group"]
         outlier_df = outlier_df.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
-
-        # Get the top N outliers for each outlier group
-        outlier_df = self.get_top_n_outliers(outlier_df)
 
         # Make sure the dataframe isn't too big, if it's too big sample it down
         if len(outlier_df) > 200:
@@ -66,7 +66,6 @@ class Outliers:
 
         # Shorten any long string values
         outlier_df = shorten_values(outlier_df)
-
         return outlier_df
 
     def _numeric_outliers(self, data_source: DataSourceAbstract, scale: float, use_stddev=False) -> pd.DataFrame:
@@ -156,29 +155,28 @@ class Outliers:
             pd.DataFrame: A DataFrame with an added 'outlier_group' column, indicating the type of outlier.
         """
 
-        # Initialize an empty 'outlier_group' column with empty strings
-        outlier_df['outlier_group'] = ''
-
+        column_outlier_dfs = []
         for col, lb, ub in zip(columns, lower_bounds, upper_bounds):
             mask_low = outlier_df[col] < lb
             mask_high = outlier_df[col] > ub
 
-            # Append labels with a comma separator, removing any trailing commas
-            outlier_df.loc[mask_low, 'outlier_group'] += f"{col}_low,"
-            outlier_df.loc[mask_high, 'outlier_group'] += f"{col}_high,"
+            low_df = outlier_df[mask_low].copy()
+            low_df['outlier_group'] = f"{col}_low"
 
-        # Remove trailing commas and replace empty strings with 'unknown'
-        outlier_df['outlier_group'] = outlier_df['outlier_group'].str.rstrip(',')
-        outlier_df.loc[outlier_df['outlier_group'] == '', 'outlier_group'] = 'unknown'
-        return outlier_df
+            high_df = outlier_df[mask_high].copy()
+            high_df['outlier_group'] = f"{col}_high"
+
+            column_outlier_dfs.extend([low_df, high_df])
+
+        return pd.concat(column_outlier_dfs, ignore_index=True)
 
     @staticmethod
-    def get_top_n_outliers(outlier_df: pd.DataFrame, n: int = 5) -> pd.DataFrame:
+    def get_top_n_outliers(outlier_df: pd.DataFrame, n: int = 10) -> pd.DataFrame:
         """Function to retrieve the top N highest and lowest outliers for each outlier group.
 
         Args:
             outlier_df (pd.DataFrame): The DataFrame of outliers with 'outlier_group' column
-            n (int): Number of top outliers to retrieve for each group, defaults to 5
+            n (int): Number of top outliers to retrieve for each group, defaults to 10
 
         Returns:
             pd.DataFrame: A DataFrame containing the top N outliers for each outlier group
@@ -186,15 +184,8 @@ class Outliers:
         def get_extreme_values(group):
             """Helper function to get the top N extreme values from a group."""
 
-            # If the group name contains a comma, it means it has multiple
-            # outlier groups, so just pull the first outlier group
-            if "," in group.name:
-                outlier_group = group.name.split(",")[0]
-            else:
-                outlier_group = group.name
-
             # Get the column and extreme type (high or low)
-            col, extreme_type = outlier_group.rsplit('_', 1)
+            col, extreme_type = group.name.rsplit('_', 1)
 
             # Sort values depending on whether they are 'high' or 'low' outliers
             group = group.sort_values(by=col, ascending=(extreme_type == 'low'))
