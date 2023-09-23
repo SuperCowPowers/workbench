@@ -190,35 +190,14 @@ class AthenaSource(DataSourceAbstract):
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
-    def sample(self, recompute: bool = False) -> pd.DataFrame:
+    def sample_impl(self) -> pd.DataFrame:
         """Pull a sample of rows from the DataSource
-        Args:
-            recompute(bool): Recompute the sample (default: False)
         Returns:
-            pd.DataFrame: A sample DataFrame from this DataSource
+            pd.DataFrame: A sample DataFrame for an Athena DataSource
         """
 
-        # First check if we have already computed the sample dataframe
-        if self.sageworks_meta().get("sageworks_sample_rows") and not recompute:
-            # Grab the sample_df from our SageWorks metadata
-            sample_df = pd.read_json(
-                StringIO(self.sageworks_meta()["sageworks_sample_rows"]),
-                orient="records",
-                lines=True,
-            )
-            # Convert all the columns types to the correct types and return
-            sample_df = athena_to_pandas_types(sample_df, self.column_details())
-            return sample_df
-
         # Call the SQL function to pull a sample of the rows
-        sample_df = sample_rows.sample_rows(self)
-
-        # Store the sample_df in our SageWorks metadata
-        rows_json = sample_df.to_json(orient="records", lines=True)
-        self.upsert_sageworks_meta({"sageworks_sample_rows": rows_json})
-
-        # Return the sample_df
-        return sample_df
+        return sample_rows.sample_rows(self)
 
     def descriptive_stats(self, recompute: bool = False) -> dict[dict]:
         """Compute Descriptive Stats for all the numeric columns in a DataSource
@@ -243,7 +222,7 @@ class AthenaSource(DataSourceAbstract):
         # Return the descriptive stats
         return stat_dict
 
-    def outliers(self, scale: float = 1.25, use_stddev=False, recompute: bool = False) -> pd.DataFrame:
+    def outliers_impl(self, scale: float = 1.25, use_stddev=False, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             scale(float): The scale to use for the IQR (default: 1.25)
@@ -256,27 +235,9 @@ class AthenaSource(DataSourceAbstract):
             The scale parameter can be adjusted to change the IQR multiplier
         """
 
-        # First check if we have already computed the outliers
-        if self.sageworks_meta().get("sageworks_outliers") and not recompute:
-            outlier_df = pd.read_json(
-                StringIO(self.sageworks_meta()["sageworks_outliers"]),
-                orient="records",
-                lines=True,
-            )
-            # Convert all the columns types to the correct types and return
-            outlier_df = athena_to_pandas_types(outlier_df, self.column_details())
-            return outlier_df
-
         # Compute outliers using the SQL Outliers class
         sql_outliers = outliers.Outliers()
-        outlier_df = sql_outliers.compute_outliers(self, scale=scale, use_stddev=use_stddev)
-
-        # Store the outlier_df in our SageWorks metadata
-        rows_json = outlier_df.to_json(orient="records", lines=True)
-        self.upsert_sageworks_meta({"sageworks_outliers": rows_json})
-
-        # Return the outlier dataframe
-        return outlier_df
+        return sql_outliers.compute_outliers(self, scale=scale, use_stddev=use_stddev)
 
     def smart_sample(self) -> pd.DataFrame:
         """Get a smart sample dataframe for this DataSource

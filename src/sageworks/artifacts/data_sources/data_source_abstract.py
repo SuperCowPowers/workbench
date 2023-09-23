@@ -1,12 +1,22 @@
 """DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, JSONL, Parquet, RDS, etc)"""
 from abc import abstractmethod
 import pandas as pd
+from io import StringIO
 
-# Local imports
+# SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
+from sageworks.utils.cache import Cache
+from sageworks.utils.redis_cache import RedisCache
 
 
 class DataSourceAbstract(Artifact):
+
+    # Class attributes
+    if RedisCache().check():
+        row_storage = RedisCache()
+    else:
+        row_storage = Cache()
+
     def __init__(self, uuid):
         """DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, JSONL, Parquet, RDS, etc)"""
 
@@ -42,11 +52,28 @@ class DataSourceAbstract(Artifact):
         """Query the DataSourceAbstract"""
         pass
 
-    @abstractmethod
     def sample(self, recompute: bool = False) -> pd.DataFrame:
         """Return a sample DataFrame from this DataSource
         Args:
             recompute(bool): Recompute the sample (default: False)
+        Returns:
+            pd.DataFrame: A sample DataFrame from this DataSource
+        """
+
+        # Check if we have a cached sample of rows
+        storage_key = f"RowStorage:{self.uuid}:sample"
+        if not recompute and self.row_storage.get(storage_key):
+            return pd.read_json(StringIO(self.row_storage.get(storage_key)))
+
+        # No Cache, so we have to compute a sample of data
+        self.log.info(f"Sampling {self.uuid}...")
+        df = self.sample_impl()
+        self.row_storage.set(storage_key, df.to_json())
+        return df
+
+    @abstractmethod
+    def sample_impl(self) -> pd.DataFrame:
+        """Return a sample DataFrame from this DataSourceAbstract
         Returns:
             pd.DataFrame: A sample DataFrame from this DataSource
         """
@@ -64,8 +91,31 @@ class DataSourceAbstract(Artifact):
         """
         pass
 
-    @abstractmethod
     def outliers(self, scale: float = 1.25, recompute: bool = False) -> pd.DataFrame:
+        """Return a DataFrame of outliers from this DataSource
+        Args:
+            scale(float): The scale to use for the IQR (default: 1.25)
+            recompute(bool): Recompute the outliers (default: False)
+        Returns:
+            pd.DataFrame: A DataFrame of outliers from this DataSource
+        Notes:
+            Uses the IQR * 1.25 (~= 2 Sigma) method to compute outliers
+            The scale parameter can be adjusted to change the IQR multiplier
+        """
+
+        # Check if we have cached outliers
+        storage_key = f"RowStorage:{self.uuid}:outliers"
+        if not recompute and self.row_storage.get(storage_key):
+            return pd.read_json(StringIO(self.row_storage.get(storage_key)))
+
+        # No Cache, so we have to compute the outliers
+        self.log.info(f"Computing Outliers {self.uuid}...")
+        df = self.outliers_impl()
+        self.row_storage.set(storage_key, df.to_json())
+        return df
+
+    @abstractmethod
+    def outliers_impl(self, scale: float = 1.25, recompute: bool = False) -> pd.DataFrame:
         """Return a DataFrame of outliers from this DataSource
         Args:
             scale(float): The scale to use for the IQR (default: 1.25)
@@ -126,11 +176,9 @@ class DataSourceAbstract(Artifact):
         # For DataSources, we expect to see the following metadata
         expected_meta = [
             "sageworks_details",
-            "sageworks_sample_rows",
             "sageworks_descriptive_stats",
             "sageworks_value_counts",
             "sageworks_correlations",
-            "sageworks_outliers",
             "sageworks_column_stats",
         ]
         return expected_meta

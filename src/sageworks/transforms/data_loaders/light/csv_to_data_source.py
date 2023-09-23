@@ -78,11 +78,11 @@ if __name__ == "__main__":
     from pathlib import Path
 
     # Get the path to the dataset in the repository data directory
-    data_path = str(Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv")
+    data_path = str(Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv")
 
     # Create my Data Loader
-    my_loader = CSVToDataSource(data_path, "test_data")
-    my_loader.set_output_tags("test:small")
+    my_loader = CSVToDataSource(data_path, "abalone_data")
+    my_loader.set_output_tags("abalone:public")
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()

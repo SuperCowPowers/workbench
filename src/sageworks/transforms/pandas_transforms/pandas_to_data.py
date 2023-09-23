@@ -148,7 +148,7 @@ class PandasToData(Transform):
         output_data_source = DataSource(self.output_uuid, force_refresh=True)
         output_data_source.set_status("initializing")
 
-        # Call the FeatureSet make_ready method to compute a bunch of EDA stuff
+        # Call the DataSource make_ready method to compute a bunch of EDA stuff
         output_data_source.make_ready()
 
 
