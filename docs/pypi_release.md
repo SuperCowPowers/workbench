@@ -1,7 +1,4 @@
-# Admin Notes
-
-
-## PyPI Release How-To
+# PyPI Release Notes
 
 Notes and information on how to do the PyPI release for the SageMaker project. For full details on packaging you can reference this page
 [Packaging](https://packaging.python.org/tutorials/packaging-projects/#packaging-your-project)
