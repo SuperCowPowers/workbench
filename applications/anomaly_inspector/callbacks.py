@@ -148,5 +148,5 @@ def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
                 "showlegend": False,
                 "points": "all",
             },
-            max_plots=48,
+            max_plots=40,
         )

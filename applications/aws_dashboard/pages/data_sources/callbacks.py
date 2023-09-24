@@ -148,7 +148,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
                 "points": "all",
                 "spanmode": "hard",
             },
-            max_plots=48,
+            max_plots=40,
         )
 
 

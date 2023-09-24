@@ -48,6 +48,7 @@ def correlations(data_source: DataSourceAbstract) -> dict[dict]:
     details = data_source.column_details()
 
     # Get the numeric columns, if there are more than 20, cut them off
+    # TODO: Column Limit
     numeric = [column for column, data_type in details.items() if data_type in num_type][:20]
 
     # If we have at least two numeric columns, compute the correlations

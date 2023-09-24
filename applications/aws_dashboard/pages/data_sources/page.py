@@ -62,7 +62,7 @@ violin = distribution_plots.create(
         "points": "all",
         "spanmode": "hard",
     },
-    max_plots=48,
+    max_plots=40,
 )
 
 # Create a correlation matrix of all the numeric columns in the Data Source

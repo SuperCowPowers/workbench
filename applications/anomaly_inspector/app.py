@@ -64,7 +64,7 @@ violin = distribution_plots.create(
         "showlegend": False,
         "points": "all",
     },
-    max_plots=48,
+    max_plots=40,
 )
 
 # Create the anomaly cluster plot

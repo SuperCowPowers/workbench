@@ -111,6 +111,14 @@ class Outliers:
                 lower_bounds.append(lower_bound)
                 upper_bounds.append(upper_bound)
 
+        # Limit the number of columns to 40
+        # TODO: Column Limit
+        if len(columns) > 40:
+            log.warning(f"Too many columns ({len(columns)}), limiting to 40")
+            columns = columns[:40]
+            lower_bounds = lower_bounds[:40]
+            upper_bounds = upper_bounds[:40]
+
         # Compute the SQL query
         query = self._multi_column_outlier_query(data_source, columns, lower_bounds, upper_bounds)
         print(query)
