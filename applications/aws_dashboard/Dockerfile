@@ -15,7 +15,7 @@ RUN pip install dash gunicorn sageworks
 
 # Copy the Nginx and Supervisor configuration files
 COPY nginx.conf /etc/nginx/sites-available/default
-COPY supervisord_no_redis.conf /etc/supervisor/conf.d/supervisord.conf
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Set ENV variables
 ENV SAGEWORKS_BUCKET=sageworks-bucket-not-specified
