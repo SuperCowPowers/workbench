@@ -28,7 +28,7 @@ def feature_sets_layout(
                     ),
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                     # Just the auto updater
-                    dcc.Interval(id="feature-sets-updater", interval=5000, n_intervals=0),
+                    dcc.Interval(id="feature-sets-updater", interval=10000, n_intervals=0),
                 ]
             ),
             # A table that lists out all the Data Sources

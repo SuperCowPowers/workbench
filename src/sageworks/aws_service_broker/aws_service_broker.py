@@ -93,11 +93,11 @@ class AWSServiceBroker:
         # Cache for Metadata
         if RedisCache().check():
             cls.meta_cache = RedisCache()
-            cls.fresh_cache = RedisCache(expire=10, postfix=":fresh")
+            cls.fresh_cache = RedisCache(expire=20, postfix=":fresh")
             cls.open_threads = []
         else:
             cls.meta_cache = Cache()
-            cls.fresh_cache = Cache(expire=10)
+            cls.fresh_cache = Cache(expire=20)
             cls.open_threads = []
 
         # This connection map sets up the connector objects for each category of metadata

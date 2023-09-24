@@ -29,3 +29,8 @@ SageWorks Main Classes
      |      json_to_data.set_output_tags(["abalone", "json", "whatever"])
      |      json_to_data.transform()
 """
+import pkg_resources
+try:
+    __version__ = pkg_resources.get_distribution("sageworks").version
+except Exception:
+    __version__ = "unknown"

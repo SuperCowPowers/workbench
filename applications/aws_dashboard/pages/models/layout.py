@@ -64,7 +64,7 @@ def models_layout(
                     ),
                 ]
             ),
-            dcc.Interval(id="models-updater", interval=5000, n_intervals=0),
+            dcc.Interval(id="models-updater", interval=10000, n_intervals=0),
         ],
         style={"margin": "30px"},
     )

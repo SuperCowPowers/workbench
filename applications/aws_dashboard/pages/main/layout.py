@@ -2,6 +2,10 @@
 from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 
+# Get the SageWorks Version
+import sageworks
+sageworks_version = sageworks.__version__
+
 
 def main_layout(
     incoming_data: dash_table.DataTable,
@@ -32,7 +36,13 @@ def main_layout(
             ),
             dbc.Row(
                 [
-                    html.H2("SageWorks Dashboard"),
+                    html.H2([
+                        "SageWorks Dashboard ",
+                        html.Span(f" v {sageworks_version}", style={
+                            "color": "rgb(200, 140, 200)",
+                            "fontSize": 15,
+                        })
+                    ]),
                     html.Div(
                         "Last Updated: ",
                         id="last-updated",
@@ -56,7 +66,7 @@ def main_layout(
             dbc.Row(models),
             dbc.Row(html.H3("Endpoints"), style={"padding": "10px 0px 0px 0px"}),
             dbc.Row(endpoints),
-            dcc.Interval(id="main-updater", interval=5000, n_intervals=0),
+            dcc.Interval(id="main-updater", interval=10000, n_intervals=0),
         ],
         style={"margin": "30px"},
     )

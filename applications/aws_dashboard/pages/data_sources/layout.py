@@ -27,7 +27,7 @@ def data_sources_layout(
                     ),
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                     # Just the auto updater
-                    dcc.Interval(id="data-sources-updater", interval=5000, n_intervals=0),
+                    dcc.Interval(id="data-sources-updater", interval=10000, n_intervals=0),
                 ]
             ),
             # A table that lists out all the Data Sources
