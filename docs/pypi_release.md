@@ -46,13 +46,21 @@ $ tox
 
 If ALL the test above pass\...
 
+### Clean any previous distribution files
+```
+make clean
+```
+### Tag the New Version
+```
+git tag v0.1.8 (or whatever)
+git push --tags
+```
+
 ### Create the TEST PyPI Release
 
 ``` {.bash}
-$ vi setup.py and bump the version
-$ make clean
-$ python setup.py sdist bdist_wheel
-$ twine upload dist/* -r testpypi
+python setup.py sdist bdist_wheel
+twine upload dist/* -r testpypi
 ```
 
 ### Install the TEST PyPI Release
@@ -67,12 +75,8 @@ $ pip install --index-url https://test.pypi.org/simple sageworks
 $ twine upload dist/* -r pypi
 ```
 
-### Push changes to Github
+### Push any possible changes to Github
 
 ``` {.bash}
-$ git add setup.py
-$ git commit -m "sageworks version 1.8.7 (or whatever)"
-$ git tag v1.8.7 (or whatever)
-$ git push --tags
 $ git push
 ```
