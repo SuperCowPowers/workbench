@@ -28,6 +28,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY nginx.conf /etc/nginx/sites-available/default
 COPY supervisord_with_redis.conf /etc/supervisor/conf.d/supervisord.conf
 
+# Install Sageworks (changes often)
+RUN pip install --no-cache-dir sageworks
+
 # Copy the current directory contents into the container at /app
 COPY . /app
 

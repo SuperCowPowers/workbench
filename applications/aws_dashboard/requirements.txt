@@ -1,4 +1,15 @@
-dash>=2.8
-dash-bootstrap-components>=1.4.1
-dash-bootstrap-templates>=1.0.8
-sageworks
+boto3
+botocore
+redis
+numpy
+pandas >= 2.0
+scikit-learn >= 1.1.1
+awswrangler >= 3.0.0
+sagemaker >= 2.143
+plotly
+dash >= 2.8
+dash-bootstrap-components
+dash-bootstrap-templates
+aws-cdk-lib >= 2.76.0
+termcolor
+rich==13.3.5
