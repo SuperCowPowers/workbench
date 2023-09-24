@@ -82,8 +82,9 @@ class ArtifactsTextView(View):
         data = self.aws_artifact_data[ServiceCategory.INCOMING_DATA_S3]
         if data is None:
             print("No incoming-data S3 Bucket Found! Please set your SAGEWORKS_BUCKET ENV var!")
-            return pd.DataFrame(columns=["Name", "Size(MB)", "Modified", "ContentType",
-                                         "ServerSideEncryption", "Tags", "_aws_url"])
+            return pd.DataFrame(
+                columns=["Name", "Size(MB)", "Modified", "ContentType", "ServerSideEncryption", "Tags", "_aws_url"]
+            )
         data_summary = []
         for name, info in data.items():
             # Get the name and the size of the S3 Storage Object(s)

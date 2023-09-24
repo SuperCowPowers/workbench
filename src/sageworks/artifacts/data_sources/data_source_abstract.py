@@ -10,7 +10,6 @@ from sageworks.utils.redis_cache import RedisCache
 
 
 class DataSourceAbstract(Artifact):
-
     # Class attributes
     if RedisCache().check():
         row_storage = RedisCache()

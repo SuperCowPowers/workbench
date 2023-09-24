@@ -14,11 +14,15 @@ from constructs import Construct
 
 
 class SageworksDashboardStackProps:
-    def __init__(self, sageworks_bucket: str, existing_vpc_id: Optional[str] = None,
-                 existing_subnet_ids: Optional[List[str]] = None,
-                 whitelist_ips: Optional[List[str]] = None,
-                 whitelist_prefix_lists: Optional[List[str]] = None,
-                 certificate_arn: Optional[str] = None):
+    def __init__(
+        self,
+        sageworks_bucket: str,
+        existing_vpc_id: Optional[str] = None,
+        existing_subnet_ids: Optional[List[str]] = None,
+        whitelist_ips: Optional[List[str]] = None,
+        whitelist_prefix_lists: Optional[List[str]] = None,
+        certificate_arn: Optional[str] = None,
+    ):
         self.sageworks_bucket = sageworks_bucket
         self.existing_vpc_id = existing_vpc_id
         self.existing_subnet_ids = existing_subnet_ids
@@ -45,8 +49,7 @@ class SageworksDashboardStack(Stack):
 
         # Import the existing SageWorks-ExecutionRole
         sageworks_execution_role = iam.Role.from_role_arn(
-            self, "ImportedSageWorksExecutionRole",
-            f"arn:aws:iam::{self.account}:role/SageWorks-ExecutionRole"
+            self, "ImportedSageWorksExecutionRole", f"arn:aws:iam::{self.account}:role/SageWorks-ExecutionRole"
         )
 
         # Setup CloudWatch logs
@@ -57,8 +60,7 @@ class SageworksDashboardStack(Stack):
 
         # Allow the ECS task to connect to the Redis cluster
         redis_security_group.add_ingress_rule(
-            peer=ec2.Peer.ipv4(cluster.vpc.vpc_cidr_block),
-            connection=ec2.Port.tcp(6379)
+            peer=ec2.Peer.ipv4(cluster.vpc.vpc_cidr_block), connection=ec2.Port.tcp(6379)
         )
 
         # Create the Redis subnet group
@@ -97,12 +99,8 @@ class SageworksDashboardStack(Stack):
             "SageworksContainer",
             image=ecs.ContainerImage.from_registry("public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest_no_redis_amd64"),
             memory_limit_mib=4096,
-            environment={
-                "REDIS_HOST": redis_endpoint,
-                "SAGEWORKS_BUCKET": props.sageworks_bucket},
-            logging=ecs.LogDriver.aws_logs(
-                stream_prefix="SageWorksDashboard",
-                log_group=log_group)
+            environment={"REDIS_HOST": redis_endpoint, "SAGEWORKS_BUCKET": props.sageworks_bucket},
+            logging=ecs.LogDriver.aws_logs(stream_prefix="SageWorksDashboard", log_group=log_group),
         )
         container.add_port_mappings(ecs.PortMapping(container_port=8000))
 
@@ -110,7 +108,10 @@ class SageworksDashboardStack(Stack):
         # TODO: This isn't currently working, so we need to figure out how to use existing subnets
         subnet_selection = None
         if props.existing_subnet_ids:
-            subnets = [ec2.Subnet.from_subnet_id(self, f"Subnet{i}", subnet_id) for i, subnet_id in enumerate(props.existing_subnet_ids)]
+            subnets = [
+                ec2.Subnet.from_subnet_id(self, f"Subnet{i}", subnet_id)
+                for i, subnet_id in enumerate(props.existing_subnet_ids)
+            ]
             subnet_selection = ec2.SubnetSelection(subnets=subnets)
 
         # Create a NEW Security Group for the Load Balancer
@@ -120,24 +121,20 @@ class SageworksDashboardStack(Stack):
         if props.whitelist_ips:
             print(f"Adding Whitelist IPs: {props.whitelist_ips}")
             for ip in props.whitelist_ips:
-                lb_security_group.add_ingress_rule(
-                    ec2.Peer.ipv4(ip),
-                    ec2.Port.tcp(443)
-                )
+                lb_security_group.add_ingress_rule(ec2.Peer.ipv4(ip), ec2.Port.tcp(443))
 
         # Adding AWS Managed Prefix Lists
         if props.whitelist_prefix_lists:
             print(f"Adding Whitelist Prefix Lists: {props.whitelist_prefix_lists}")
             for pl in props.whitelist_prefix_lists:
-                lb_security_group.add_ingress_rule(
-                    ec2.Peer.prefix_list(pl),
-                    ec2.Port.tcp(443)
-                )
+                lb_security_group.add_ingress_rule(ec2.Peer.prefix_list(pl), ec2.Port.tcp(443))
 
         # Import existing SSL certificate if certificate_arn is provided
-        certificate = Certificate.from_certificate_arn(
-            self, "ImportedCertificate", certificate_arn=props.certificate_arn
-        ) if props.certificate_arn else None
+        certificate = (
+            Certificate.from_certificate_arn(self, "ImportedCertificate", certificate_arn=props.certificate_arn)
+            if props.certificate_arn
+            else None
+        )
 
         # Adding LoadBalancer with Fargate Service
         fargate_service = ApplicationLoadBalancedFargateService(

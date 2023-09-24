@@ -20,10 +20,7 @@ class Outliers:
         self.outlier_group = "unknown"
 
     def compute_outliers(
-        self,
-        data_source: DataSourceAbstract,
-        scale: float = 1.5,
-        use_stddev: bool = False
+        self, data_source: DataSourceAbstract, scale: float = 1.5, use_stddev: bool = False
     ) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
@@ -118,13 +115,15 @@ class Outliers:
         query = self._multi_column_outlier_query(data_source, columns, lower_bounds, upper_bounds)
         print(query)
         outlier_df = data_source.query(query)
-        
+
         # Label the outlier groups
         outlier_df = self._label_outlier_groups(outlier_df, columns, lower_bounds, upper_bounds)
         return outlier_df
 
     @staticmethod
-    def _multi_column_outlier_query(data_source: DataSourceAbstract, columns: list, lower_bounds: list, upper_bounds: list) -> str:
+    def _multi_column_outlier_query(
+        data_source: DataSourceAbstract, columns: list, lower_bounds: list, upper_bounds: list
+    ) -> str:
         """Internal method to compute outliers for multiple columns
         Args:
             data_source(DataSource): The DataSource that we're computing outliers on
@@ -144,7 +143,9 @@ class Outliers:
         return query
 
     @staticmethod
-    def _label_outlier_groups(outlier_df: pd.DataFrame, columns: list, lower_bounds: list, upper_bounds: list) -> pd.DataFrame:
+    def _label_outlier_groups(
+        outlier_df: pd.DataFrame, columns: list, lower_bounds: list, upper_bounds: list
+    ) -> pd.DataFrame:
         """Internal method to label outliers by group.
         Args:
             outlier_df(pd.DataFrame): The DataFrame of outliers
@@ -161,10 +162,10 @@ class Outliers:
             mask_high = outlier_df[col] > ub
 
             low_df = outlier_df[mask_low].copy()
-            low_df['outlier_group'] = f"{col}_low"
+            low_df["outlier_group"] = f"{col}_low"
 
             high_df = outlier_df[mask_high].copy()
-            high_df['outlier_group'] = f"{col}_high"
+            high_df["outlier_group"] = f"{col}_high"
 
             column_outlier_dfs.extend([low_df, high_df])
 
@@ -181,19 +182,20 @@ class Outliers:
         Returns:
             pd.DataFrame: A DataFrame containing the top N outliers for each outlier group
         """
+
         def get_extreme_values(group):
             """Helper function to get the top N extreme values from a group."""
 
             # Get the column and extreme type (high or low)
-            col, extreme_type = group.name.rsplit('_', 1)
+            col, extreme_type = group.name.rsplit("_", 1)
 
             # Sort values depending on whether they are 'high' or 'low' outliers
-            group = group.sort_values(by=col, ascending=(extreme_type == 'low'))
+            group = group.sort_values(by=col, ascending=(extreme_type == "low"))
 
             return group.head(n)
 
         # Group by 'outlier_group' and apply the helper function to get top N extreme values
-        top_outliers = outlier_df.groupby('outlier_group').apply(get_extreme_values).reset_index(drop=True)
+        top_outliers = outlier_df.groupby("outlier_group").apply(get_extreme_values).reset_index(drop=True)
         return top_outliers
 
 

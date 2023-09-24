@@ -3,7 +3,6 @@ import pandas as pd
 import awswrangler as wr
 from datetime import datetime
 import json
-from io import StringIO
 import botocore
 from pprint import pprint
 
@@ -19,7 +18,7 @@ from sageworks.algorithms.sql import (
     column_stats,
     correlations,
 )
-from sageworks.utils.pandas_utils import NumpyEncoder, athena_to_pandas_types
+from sageworks.utils.pandas_utils import NumpyEncoder
 
 
 class AthenaSource(DataSourceAbstract):

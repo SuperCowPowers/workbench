@@ -6,7 +6,7 @@ from sageworks_dashboard_full.sageworks_dashboard_stack import SageworksDashboar
 
 # Grab the account and region using boto3
 session = boto3.session.Session()
-aws_account = session.client('sts').get_caller_identity().get('Account')
+aws_account = session.client("sts").get_caller_identity().get("Account")
 aws_region = session.region_name
 print(f"Account: {aws_account}")
 print(f"Region: {aws_region}")
@@ -26,18 +26,15 @@ app = cdk.App()
 SageworksDashboardStack(
     app,
     "SageworksDashboard",
-    env={
-        'account': aws_account,
-        'region': aws_region
-    },
+    env={"account": aws_account, "region": aws_region},
     props=SageworksDashboardStackProps(
         sageworks_bucket=sageworks_bucket,
         existing_vpc_id=existing_vpc_id,
         existing_subnet_ids=existing_subnet_ids,
         whitelist_ips=whitelist_ips,
         whitelist_prefix_lists=whitelist_prefix_lists,
-        certificate_arn=certificate_arn
-    )
+        certificate_arn=certificate_arn,
+    ),
 )
 
 app.synth()
