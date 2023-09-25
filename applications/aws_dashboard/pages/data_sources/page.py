@@ -18,8 +18,6 @@ register_page(
     name="SageWorks - Data Sources",
 )
 
-# Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
-
 # Put the components into 'dark' mode
 load_figure_template("darkly")
 
