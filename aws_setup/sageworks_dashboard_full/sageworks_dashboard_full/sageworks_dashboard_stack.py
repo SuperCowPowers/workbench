@@ -151,7 +151,7 @@ class SageworksDashboardStack(Stack):
             desired_count=1,
             task_definition=task_definition,
             memory_limit_mib=4096,
-            public_load_balancer=True,
+            public_load_balancer=False,
             security_groups=[lb_security_group],
             open_listener=False,
             certificate=certificate,
