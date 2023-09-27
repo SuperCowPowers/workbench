@@ -33,20 +33,24 @@ class DataSourceWebView(ArtifactsWebView):
         data_uuid = self.data_source_name(data_source_index)
         if data_uuid is not None:
             ds = DataSource(data_uuid)
-            return ds.smart_sample()
-        else:
-            return pd.DataFrame()
+            if ds.ready():
+                return ds.smart_sample()
+
+        # If we get here, we couldn't get a smart sample
+        return pd.DataFrame()
 
     def data_source_details(self, data_source_index: int) -> (dict, None):
         """Get all the details for the given DataSource Index"""
         data_uuid = self.data_source_name(data_source_index)
         if data_uuid is not None:
             ds = DataSource(data_uuid)
-            details_data = ds.details()
-            details_data["column_stats"] = ds.column_stats()
-            return details_data
-        else:
-            return None
+            if ds.ready():
+                details_data = ds.details()
+                details_data["column_stats"] = ds.column_stats()
+                return details_data
+
+        # If we get here, we couldn't get a smart sample
+        return None
 
     def data_source_name(self, data_source_index: int) -> (str, None):
         """Helper method for getting the data source name for the given DataSource Index"""
