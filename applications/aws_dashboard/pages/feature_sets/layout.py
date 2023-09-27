@@ -8,7 +8,7 @@ def feature_sets_layout(
     feature_set_sample_rows: dash_table.DataTable,
     feature_set_details: dcc.Markdown,
     violin_plot: dcc.Graph,
-    correlation_matrix: dcc.Graph
+    correlation_matrix: dcc.Graph,
 ) -> html.Div:
     # The layout for the FeatureSets page
     layout = html.Div(

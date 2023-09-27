@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 
 # Get the SageWorks Version
 import sageworks
+
 sageworks_version = sageworks.__version__
 
 
@@ -36,13 +37,18 @@ def main_layout(
             ),
             dbc.Row(
                 [
-                    html.H2([
-                        "SageWorks Dashboard ",
-                        html.Span(f" v {sageworks_version}", style={
-                            "color": "rgb(200, 140, 200)",
-                            "fontSize": 15,
-                        })
-                    ]),
+                    html.H2(
+                        [
+                            "SageWorks Dashboard ",
+                            html.Span(
+                                f" v {sageworks_version}",
+                                style={
+                                    "color": "rgb(200, 140, 200)",
+                                    "fontSize": 15,
+                                },
+                            ),
+                        ]
+                    ),
                     html.Div(
                         "Last Updated: ",
                         id="last-updated",

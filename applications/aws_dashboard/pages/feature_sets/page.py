@@ -4,7 +4,7 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap, scatter_plot
+from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap
 from sageworks.views.feature_set_web_view import FeatureSetWebView
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 
@@ -72,7 +72,7 @@ components = {
     "feature_set_sample_rows": feature_set_sample_rows,
     "feature_set_details": data_details,
     "violin_plot": violin,
-    "correlation_matrix": corr_matrix
+    "correlation_matrix": corr_matrix,
 }
 
 # Set up our layout (Dash looks for a var called layout)

@@ -30,6 +30,7 @@ SageWorks Main Classes
      |      json_to_data.transform()
 """
 import pkg_resources
+
 try:
     __version__ = pkg_resources.get_distribution("sageworks").version
 except Exception:
