@@ -185,6 +185,22 @@ class DataSourceAbstract(Artifact):
         ]
         return expected_meta
 
+    def ready(self) -> bool:
+        """Is the DataSource ready?"""
+
+        # Check if the samples and outliers have been computed
+        storage_key = f"RowStorage:{self.uuid}:sample"
+        if not self.row_storage.get(storage_key):
+            self.log.info(f"DataSource {self.uuid} is not ready!")
+            return False
+        storage_key = f"RowStorage:{self.uuid}:outliers"
+        if not self.row_storage.get(storage_key):
+            self.log.info(f"DataSource {self.uuid} is not ready!")
+            return False
+
+        # Okay now call/return the Super Classes ready() method
+        return super().ready()
+
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Artifact is ready"""
         self.details()

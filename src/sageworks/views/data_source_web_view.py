@@ -30,26 +30,24 @@ class DataSourceWebView(ArtifactsWebView):
 
     def data_source_smart_sample(self, data_source_index: int) -> pd.DataFrame:
         """Get a smart-sample dataframe (sample + outliers) for the given DataSource Index"""
-        data_uuid = self.data_source_name(data_source_index)
-        if data_uuid is not None:
-            ds = DataSource(data_uuid)
-            if ds.ready():
-                return ds.smart_sample()
-
-        # If we get here, we couldn't get a smart sample
-        return pd.DataFrame()
+        uuid = self.data_source_name(data_source_index)
+        ds = DataSource(uuid)
+        if ds.ready():
+            return ds.smart_sample()
+        else:
+            status = ds.get_status()
+            return pd.DataFrame({"uuid": [uuid], "status": [f"{status}"]})
 
     def data_source_details(self, data_source_index: int) -> (dict, None):
         """Get all the details for the given DataSource Index"""
         data_uuid = self.data_source_name(data_source_index)
-        if data_uuid is not None:
-            ds = DataSource(data_uuid)
-            if ds.ready():
-                details_data = ds.details()
-                details_data["column_stats"] = ds.column_stats()
-                return details_data
+        ds = DataSource(data_uuid)
+        if ds.ready():
+            details_data = ds.details()
+            details_data["column_stats"] = ds.column_stats()
+            return details_data
 
-        # If we get here, we couldn't get a smart sample
+        # If we get here, we couldn't get the details
         return None
 
     def data_source_name(self, data_source_index: int) -> (str, None):

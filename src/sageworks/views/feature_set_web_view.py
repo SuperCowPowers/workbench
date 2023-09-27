@@ -28,47 +28,27 @@ class FeatureSetWebView(ArtifactsWebView):
         """
         return self.feature_sets_df
 
-    def feature_set_outliers(self, feature_set_index: int) -> pd.DataFrame:
-        """Get a dataframe of outliers for the given FeatureSet Index"""
+    def feature_set_smart_sample(self, feature_set_index: int) -> pd.DataFrame:
+        """Get a smart-sample dataframe (sample + outliers) for the given FeatureSet Index"""
         uuid = self.feature_set_name(feature_set_index)
         fs = FeatureSet(uuid)
-        if fs.get_status() == "ready":
-            return fs.outliers()
+        if fs.ready():
+            return fs.smart_sample()
         else:
             status = fs.get_status()
             return pd.DataFrame({"uuid": [uuid], "status": [f"{status}"]})
-
-    def feature_set_descriptive_stats(self, feature_set_index: int) -> (dict, None):
-        """Get all columns descriptive stats for the given FeatureSet Index"""
-        data_uuid = self.feature_set_name(feature_set_index)
-        uuid = self.feature_set_name(feature_set_index)
-        fs = FeatureSet(uuid)
-        if fs.get_status() == "ready":
-            return FeatureSet(data_uuid).descriptive_stats()
-        else:
-            return None
-
-    def feature_set_smart_sample(self, feature_set_index: int) -> pd.DataFrame:
-        """Get a SMART sample dataframe for the given FeatureSet Index
-        Note:
-            SMART here means a sample data + outliers for each column"""
-        uuid = self.feature_set_name(feature_set_index)
-        if uuid is not None:
-            fs = FeatureSet(uuid)
-            return fs.smart_sample()
-        else:
-            return pd.DataFrame()
 
     def feature_set_details(self, feature_set_index: int) -> (dict, None):
         """Get all the details for the given FeatureSet Index"""
         uuid = self.feature_set_name(feature_set_index)
         fs = FeatureSet(uuid)
-        if fs.get_status() == "ready":
+        if fs.ready():
             details_data = fs.data_source.details()
             details_data["column_stats"] = fs.column_stats()
             return details_data
-        else:
-            return None
+
+        # If we get here, we couldn't get the details
+        return None
 
     def feature_set_name(self, feature_set_index: int) -> (str, None):
         """Helper method for getting the data source name for the given FeatureSet Index"""

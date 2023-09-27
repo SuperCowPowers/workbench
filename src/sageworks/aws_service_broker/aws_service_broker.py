@@ -171,7 +171,7 @@ class AWSServiceBroker:
         Returns:
             dict: The Metadata for ALL the Service Categories
         """
-        cls.log.warning("Getting ALL AWS Metadata: You should call get_metadata() with specific categories")
+        cls.log.info("Getting ALL AWS Metadata: You should call get_metadata() with specific categories")
         return {_category: cls.get_metadata(_category, force_refresh) for _category in ServiceCategory}
 
     @classmethod

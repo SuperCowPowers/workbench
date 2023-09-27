@@ -374,27 +374,16 @@ class FeatureSet(Artifact):
         Note: Since FeatureSet is a composite of DataSource and FeatureGroup, we need to
            check both to see if the FeatureSet is ready."""
 
-        # Artifact's have a status flag so let's check that
-        status = self.get_status()
-
         # Check the expected metadata for the FeatureSet
         expected_meta = self.expected_meta()
         existing_meta = self.sageworks_meta()
         feature_set_ready = set(existing_meta.keys()).issuperset(expected_meta)
-
-        # Check the expected metadata for the DataSource
-        expected_meta = self.data_source.expected_meta()
-        existing_meta = self.data_source.sageworks_meta()
-        data_source_ready = set(existing_meta.keys()).issuperset(expected_meta)
-        if feature_set_ready and data_source_ready:
-            self.log.info(f"FeatureSet {self.uuid} is ready!")
-            if status != "ready":
-                self.log.warning(f"FeatureSet {self.uuid} is ready but status is {status}, overriding to 'ready'")
-                self.set_status("ready")
-            return True
-        else:
-            self.log.info("FeatureSet is not ready!")
+        if not feature_set_ready:
+            self.log.info(f"FeatureSet {self.uuid} is not ready!")
             return False
+
+        # Okay now call/return the DataSource ready() method
+        return self.data_source.ready()
 
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the FeatureSet is ready"""
