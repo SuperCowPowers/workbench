@@ -136,3 +136,6 @@ dmypy.json
 
 # Generated Model Harness files
 generated_*.py
+
+# CDK context files (they are account specific, so we don't want them getting checked int)
+cdk.context.json
