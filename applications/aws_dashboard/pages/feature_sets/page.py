@@ -65,10 +65,6 @@ violin = distribution_plots.create(
 corr_df = corr_df_from_artifact_info(details)
 corr_matrix = heatmap.create("feature_set_correlation_matrix", corr_df)
 
-# Grab outlier rows and create a scatter plot
-outlier_rows = feature_set_broker.feature_set_outliers(0)
-outlier_plot = scatter_plot.create("outlier_plot", outlier_rows, "Clusters")
-
 
 # Create our components
 components = {
@@ -76,8 +72,7 @@ components = {
     "feature_set_sample_rows": feature_set_sample_rows,
     "feature_set_details": data_details,
     "violin_plot": violin,
-    "correlation_matrix": corr_matrix,
-    "outlier_plot": outlier_plot,
+    "correlation_matrix": corr_matrix
 }
 
 # Set up our layout (Dash looks for a var called layout)
