@@ -1,5 +1,6 @@
 """FeaturesToModel: Train/Create a Model from a Feature Set"""
 import os
+import time
 import json
 from pathlib import Path
 from sagemaker.sklearn.estimator import SKLearn
@@ -71,7 +72,7 @@ class FeaturesToModel(Transform):
         Args:
             target (str): Column name of the target variable
             description (str): Description of the model
-            feature_list (list[str]): A list of columns for the features
+            feature_list (list[str]): A list of columns for the features (default None, will try to guess)
             model_type (str): regression or classification
         """
         # Set our model description
@@ -170,7 +171,7 @@ class FeaturesToModel(Transform):
         model = self.estimator.create_model(role=self.sageworks_role_arn)
         model.register(
             model_package_group_name=self.output_uuid,
-            framework_version="1.0.1",
+            framework_version="1.2.1",
             content_types=["text/csv"],
             response_types=["text/csv"],
             inference_instances=["ml.t2.medium"],
@@ -188,4 +189,4 @@ if __name__ == "__main__":
     output_uuid = "abalone-regression"
     to_model = FeaturesToModel(input_uuid, output_uuid)
     to_model.set_output_tags(["abalone", "public"])
-    to_model.transform(target="class_number_of_rings")
+    to_model.transform(description="Abalone Regression Model", target="class_number_of_rings")

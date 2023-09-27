@@ -5,6 +5,7 @@ import argparse
 from enum import Enum, auto
 import logging
 from threading import Thread
+from botocore.exceptions import ClientError
 
 # SageWorks Imports
 from sageworks.utils.cache import Cache
@@ -121,9 +122,12 @@ class AWSServiceBroker:
             category (ServiceCategory): The Category of metadata to Pull
         """
         # Refresh the connection for the given category and pull new data
-        cls.connection_map[category].refresh()
-        cls.meta_cache.set(category, cls.connection_map[category].aws_meta())
-        cls.fresh_cache.set(category, True)
+        try:
+            cls.connection_map[category].refresh()
+            cls.meta_cache.set(category, cls.connection_map[category].aws_meta())
+            cls.fresh_cache.set(category, True)
+        except ClientError as e:
+            cls.log.warning(f"Failed to refresh AWS data for {category}: {e}")
 
     @classmethod
     def get_metadata(cls, category: ServiceCategory, force_refresh: bool = False) -> dict:
