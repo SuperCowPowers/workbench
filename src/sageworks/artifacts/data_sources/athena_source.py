@@ -118,7 +118,7 @@ class AthenaSource(DataSourceAbstract):
             if error_code == "InvalidInputException":
                 self.log.error(f"Unable to upsert metadata for {self.table_name}")
                 self.log.error("Probably because the metadata is too large")
-                pprint(new_meta)
+                self.log.error(new_meta)
             else:
                 raise e
 
@@ -170,7 +170,7 @@ class AthenaSource(DataSourceAbstract):
             boto3_session=self.boto_session,
         )
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
-        self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
+        self.log.debug(f"Athena Query successful (scanned bytes: {scanned_bytes})")
         return df
 
     def s3_storage_location(self) -> str:
@@ -187,7 +187,7 @@ class AthenaSource(DataSourceAbstract):
             boto3_session=self.boto_session,
         )
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
-        self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
+        self.log.debug(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
     def sample_impl(self) -> pd.DataFrame:
         """Pull a sample of rows from the DataSource

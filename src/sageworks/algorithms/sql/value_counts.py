@@ -26,7 +26,6 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
     data_source.log.info("Computing value_counts for all string columns...")
     value_count_dict = dict()
     for column, data_type in zip(data_source.column_names(), data_source.column_types()):
-        print(column, data_type)
         if data_type in ["string", "boolean"]:
             # Top value counts for this column
             query = (

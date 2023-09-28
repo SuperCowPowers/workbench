@@ -77,7 +77,7 @@ class S3ToDataSourceLight(Transform):
 
         # Temporary hack to limit the number of columns in the dataframe
         if len(df.columns) > 40:
-            self.log.error(f"{self.input_uuid} TOO Many Columns! Talk to SageWorks Support...")
+            self.log.warning(f"{self.input_uuid} Too Many Columns! Talk to SageWorks Support...")
 
         # Convert object columns before sending to SageWorks Data Source
         df = self.convert_object_columns(df)
