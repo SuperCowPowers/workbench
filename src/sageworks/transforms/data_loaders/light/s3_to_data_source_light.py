@@ -43,12 +43,15 @@ class S3ToDataSourceLight(Transform):
     def convert_object_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Try to automatically convert object columns to datetime columns"""
         for c in df.columns[df.dtypes == "object"]:  # Look at the object columns
-            try:
-                df[c] = pd.to_datetime(df[c])
-            except (ParserError, ValueError, TypeError):
-                self.log.debug(f"Column {c} could not be converted to datetime...")
+            # Try to convert object to datetime
+            if "date" in c.lower():
+                try:
+                    df[c] = pd.to_datetime(df[c])
+                except (ParserError, ValueError, TypeError):
+                    self.log.debug(f"Column {c} could not be converted to datetime...")
 
-                # Now try to convert object to string
+            # Try to convert object to string
+            else:
                 try:
                     df[c] = df[c].astype(str)
                 except (ParserError, ValueError, TypeError):
