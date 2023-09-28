@@ -2,7 +2,7 @@ import os
 
 import aws_cdk as cdk
 
-#TODO Make sure this import works in new folder structure
+# TODO Make sure this import works in new folder structure
 from sageworks_image_update_stack import SageworksImageUpdateStack
 
 

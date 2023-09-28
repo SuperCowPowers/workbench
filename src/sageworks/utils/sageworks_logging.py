@@ -4,7 +4,7 @@ import os
 from functools import lru_cache
 
 
-@lru_cache(maxsize=None) # Cache the logging setup
+@lru_cache(maxsize=None)  # Cache the logging setup
 def logging_setup():
     logger = logging.getLogger("sageworks")
     logger.setLevel(os.environ.get("LOGLEVEL", "INFO"))
@@ -16,4 +16,3 @@ def logging_setup():
     )
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-

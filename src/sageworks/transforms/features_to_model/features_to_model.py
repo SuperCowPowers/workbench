@@ -1,6 +1,5 @@
 """FeaturesToModel: Train/Create a Model from a Feature Set"""
 import os
-import time
 import json
 from pathlib import Path
 from sagemaker.sklearn.estimator import SKLearn
