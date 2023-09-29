@@ -90,7 +90,7 @@ class Outliers:
             if data_type in numeric:
                 # Skip columns that are 'binary' columns
                 if column_stats[column]["unique"] == 2:
-                    log.info(f"Skipping binary column {column}")
+                    log.debug(f"Skipping binary column {column}")
                     continue
 
                 # Do they want to use the stddev instead of IQR?
@@ -121,7 +121,6 @@ class Outliers:
 
         # Compute the SQL query
         query = self._multi_column_outlier_query(data_source, columns, lower_bounds, upper_bounds)
-        print(query)
         outlier_df = data_source.query(query)
 
         # Label the outlier groups
