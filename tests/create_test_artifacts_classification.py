@@ -27,7 +27,6 @@ if __name__ == "__main__":
 
     # Create the abalone_classification FeatureSet
     if not FeatureSet("abalone_classification").exists():
-
         # Grab the data from the DataSource
         data_to_pandas = DataToPandas("abalone_data")
         data_to_pandas.transform()
@@ -49,7 +48,9 @@ if __name__ == "__main__":
     if not Model("abalone-classification").exists():
         features_to_model = FeaturesToModel("abalone_classification", "abalone-classification")
         features_to_model.set_output_tags(["abalone", "classification"])
-        features_to_model.transform(target="clam_age_class", description="Abalone Classification Model", model_type="classifier")
+        features_to_model.transform(
+            target="clam_age_class", description="Abalone Classification Model", model_type="classifier"
+        )
         print("Waiting for the Model to be created...")
         time.sleep(10)
 

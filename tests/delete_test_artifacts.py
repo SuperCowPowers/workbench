@@ -60,7 +60,7 @@ if __name__ == "__main__":
     if end.exists():
         print("Deleting abalone-regression-end endpoint...")
         end.delete()
-        
+
     # Classification Artifacts
     fs = FeatureSet("abalone_classification")
     if fs.exists():
