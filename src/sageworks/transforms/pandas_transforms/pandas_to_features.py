@@ -35,6 +35,7 @@ class PandasToFeatures(Transform):
         # Set up all my instance attributes
         self.input_type = TransformInput.PANDAS_DF
         self.output_type = TransformOutput.FEATURE_SET
+        self.target_column = None
         self.id_column = None
         self.event_time_column = None
         self.auto_categorical = auto_categorical
@@ -50,8 +51,9 @@ class PandasToFeatures(Transform):
         self.output_feature_set = None
         self.expected_rows = 0
 
-    def set_input(self, input_df: pd.DataFrame, id_column=None, event_time_column=None):
+    def set_input(self, input_df: pd.DataFrame, target_column, id_column=None, event_time_column=None):
         """Set the Input DataFrame for this Transform"""
+        self.target_column = target_column
         self.id_column = id_column
         self.event_time_column = event_time_column
         self.output_df = input_df.copy()
@@ -170,10 +172,10 @@ class PandasToFeatures(Transform):
         """Convert object and string types to Categorical"""
         categorical_columns = []
         for feature, dtype in self.output_df.dtypes.items():
-            print(feature, dtype)
-            if dtype in ["object", "string"] and feature not in [
+            if dtype in ["object", "string", "category"] and feature not in [
                 self.event_time_column,
                 self.id_column,
+                self.target_column,
             ]:
                 unique_values = self.output_df[feature].nunique()
                 print(f"Unique Values = {unique_values}")
@@ -199,6 +201,8 @@ class PandasToFeatures(Transform):
         """Convert the types of the DataFrame to the correct types for the Feature Store"""
         for column in list(df.select_dtypes(include="bool").columns):
             df[column] = df[column].astype("int32")
+        for column in list(df.select_dtypes(include="category").columns):
+            df[column] = df[column].astype("str")
         """FIXME Not sure we need any of these conversions
         datetime_type = ["datetime", "datetime64", "datetime64[ns]", "datetimetz"]
         for column in df.select_dtypes(include=datetime_type).columns:
@@ -207,7 +211,6 @@ class PandasToFeatures(Transform):
             df[column] = df[column].astype("string")
         for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
             df[column] = df[column].astype("int64")
-
         for column in list(df.select_dtypes(include=[pd.Float64Dtype]).columns):
             df[column] = df[column].astype("float64")
         """

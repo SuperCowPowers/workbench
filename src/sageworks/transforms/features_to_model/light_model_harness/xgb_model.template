@@ -4,6 +4,9 @@ import xgboost as xgb
 # Model Performance Scores
 from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error, precision_recall_fscore_support
 
+# Classification Encoder
+from sklearn.preprocessing import LabelEncoder
+
 # Scikit Learn Imports
 from sklearn.model_selection import train_test_split
 
@@ -56,8 +59,14 @@ if __name__ == '__main__':
     # Now spin up our XGB Model
     if model_type == 'classifier':
         xgb_model = xgb.XGBClassifier()
+
+        # Encode the target column
+        label_encoder = LabelEncoder()
+        df_train[target] = label_encoder.fit_transform(df_train[target])
+        df_val[target] = label_encoder.transform(df_val[target])
     else:
         xgb_model = xgb.XGBRegressor()
+        label_encoder = None  # We don't need this for regression
 
     # Grab our Features, Target and Train the Model
     y = df_train[target]
@@ -87,6 +96,8 @@ if __name__ == '__main__':
 
     # Now save the model to the standard place/name
     joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
+    if label_encoder:
+        joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
     # Also save the features (this will validate input during predictions)
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
@@ -128,8 +139,19 @@ def predict_fn(df, model):
         features = json.load(fp)
     print(f"Features: {features}")
 
+    # Load our Label Encoder if we have one
+    label_encoder = None
+    if os.path.exists(os.path.join(model_dir, "label_encoder.joblib")):
+        label_encoder = joblib.load(os.path.join(model_dir, "label_encoder.joblib"))
+
     # Predict the features against our XGB Model
     predictions = model.predict(df[features])
+
+    # If we have a label encoder, decode the predictions
+    if label_encoder:
+        predictions = label_encoder.inverse_transform(predictions)
+
+    # Set the predictions on the DataFrame
     df['prediction'] = predictions
 
     # Does our model have a 'predict_proba' method? If so add that to the DataFrame as well
