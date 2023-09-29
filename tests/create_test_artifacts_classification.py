@@ -10,6 +10,7 @@ Endpoints:
 import sys
 import time
 import pandas as pd
+
 from pathlib import Path
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 from sageworks.artifacts.models.model import Model
@@ -32,15 +33,15 @@ if __name__ == "__main__":
         data_to_pandas.transform()
         df = data_to_pandas.get_output()
 
-        # Convert the regression target to a classification target and drop the old column
-        bins = [0, 8, 14, float("inf")]
+        # Convert the regression target to a categorical type and drop the old column
+        bins = [0, 7, 12, float("inf")]
         labels = ["young", "adult", "old"]
-        df["clam_age"] = pd.cut(df["class_number_of_rings"], bins=bins, labels=labels)
+        df["clam_age_class"] = pd.cut(df["class_number_of_rings"], bins=bins, labels=labels)
         df.drop("class_number_of_rings", axis=1, inplace=True)
 
         # Create the FeatureSet
         pandas_to_features = PandasToFeatures("abalone_classification")
-        pandas_to_features.set_input(df, target_column="clam_age")
+        pandas_to_features.set_input(df, target_column="clam_age_class")
         pandas_to_features.set_output_tags(["abalone", "classification"])
         pandas_to_features.transform()
 
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     if not Model("abalone-classification").exists():
         features_to_model = FeaturesToModel("abalone_classification", "abalone-classification")
         features_to_model.set_output_tags(["abalone", "classification"])
-        features_to_model.transform(target="clam_age", description="Abalone Classification Model", model_type="classifier")
+        features_to_model.transform(target="clam_age_class", description="Abalone Classification Model", model_type="classifier")
         print("Waiting for the Model to be created...")
         time.sleep(10)
 

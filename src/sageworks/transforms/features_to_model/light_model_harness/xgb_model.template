@@ -78,12 +78,16 @@ if __name__ == '__main__':
 
     # Report Performance Metrics
     if model_type == 'classifier':
-        # Note: Using labels here might seem extraneous, but it ensures order of the output
-        scores = precision_recall_fscore_support(df_val[target], preds, average=None, labels=[0, 1, 2])
+        # Get the label names and their integer mapping
+        label_names = label_encoder.classes_
+        label_integers = label_encoder.transform(label_names)
+
+        # Calculate scores
+        scores = precision_recall_fscore_support(df_val[target], preds, average=None, labels=label_integers)
 
         # Put the scores into a dataframe
         scores_T = list(map(list, zip(*scores)))
-        score_df = pd.DataFrame({'level': ['low', 'medium', 'high'], 'precision': scores[0],
+        score_df = pd.DataFrame({'level': label_names, 'precision': scores[0],
                                  'recall': scores[1], 'fscore': scores[2], 'support': scores[3]})
         print(score_df)
     else:
@@ -117,17 +121,17 @@ def input_fn(input_data, content_type):
         input_df = pd.read_csv(StringIO(input_data))
         return input_df
     else:
-        raise ValueError("{} not supported by script!".format(content_type))
+        raise ValueError(f"{content_type} not supported by script!")
 
 
-def output_fn(output_df, accept):
+def output_fn(output_df, accept_type):
     """We only give CSV Output"""
-    if accept == "text/csv":
+    if accept_type == "text/csv":
         csv_buffer = StringIO()
         output_df.to_csv(csv_buffer, index=False)
         return csv_buffer.getvalue()
     else:
-        raise RuntimeError("{} accept type is not supported by this script.".format(accept))
+        raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
 
 
 def predict_fn(df, model):
