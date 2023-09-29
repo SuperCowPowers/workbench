@@ -1,4 +1,4 @@
-"""This Script DELETES the SageWorks Artifacts in AWS needed for the tests
+"""This Script DeleteS the SageWorks Artifacts in AWS needed for the tests
 
 DataSources:
     - test_data
@@ -25,40 +25,54 @@ if __name__ == "__main__":
     test_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
     abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
 
-    # DELETE the test_data DataSource
+    # Delete the test_data DataSource
     ds = DataSource("test_data")
     if ds.exists():
         print("Deleting test_data...")
         ds.delete()
 
-    # DELETE the abalone_data DataSource
+    # Delete the abalone_data DataSource
     ds = DataSource("abalone_data")
     if ds.exists():
         print("Deleting abalone_data...")
         ds.delete()
 
-    # DELETE the test_feature_set FeatureSet
+    # Delete the test_feature_set FeatureSet
     fs = FeatureSet("test_feature_set")
     if fs.exists():
         print("Deleting test_feature_set...")
         fs.delete()
 
-    # DELETE the abalone_feature_set FeatureSet
+    # Delete the abalone_feature_set FeatureSet
     fs = FeatureSet("abalone_feature_set")
     if fs.exists():
         print("Deleting abalone_feature_set...")
         fs.delete()
 
-    # DELETE the abalone_regression Model
+    # Delete the abalone_regression Model
     m = Model("abalone-regression")
     if m.exists():
-        print("Deleting abalone-regession model...")
+        print("Deleting abalone-regression model...")
         m.delete()
 
-    # DELETE the abalone_regression Endpoint
+    # Delete the abalone_regression Endpoint
     end = Endpoint("abalone-regression-end")
     if end.exists():
-        print("Deleting abalone-regession-end endpoint...")
+        print("Deleting abalone-regression-end endpoint...")
+        end.delete()
+        
+    # Classification Artifacts
+    fs = FeatureSet("abalone_classification")
+    if fs.exists():
+        print("Deleting abalone_classification...")
+        fs.delete()
+    m = Model("abalone-classification")
+    if m.exists():
+        print("Deleting abalone-classification model...")
+        m.delete()
+    end = Endpoint("abalone-classification-end")
+    if end.exists():
+        print("Deleting abalone-classification-end endpoint...")
         end.delete()
 
     time.sleep(5)
