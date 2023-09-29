@@ -69,7 +69,8 @@ class Cache(object):
         return len(self.store)
 
     def cleanup(self):
-        print("Calling cleanup...")
+        """Cleanup the cache (if we need to)"""
+        pass
 
     def _check_limit(self):
         """Internal method: check if current cache size exceeds maximum cache
