@@ -1,11 +1,13 @@
-"""This Script creates the Classification Artifacts in AWS
+"""This Script creates the Classification Artifacts in AWS/SageWorks
 
+DataSources:
+    - wine_data
 FeatureSets:
-    - abalone_classification
+    - wine_feature_set
 Models:
-    - abalone-classification
+    - wine-classification
 Endpoints:
-    - abalone-classification-end
+    - wine-classification-end
 """
 import sys
 import time
