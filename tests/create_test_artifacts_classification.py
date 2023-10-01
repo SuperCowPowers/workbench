@@ -9,7 +9,6 @@ Endpoints:
 """
 import sys
 import time
-import pandas as pd
 
 from pathlib import Path
 from sageworks.artifacts.data_sources.data_source import DataSource
@@ -44,9 +43,7 @@ if __name__ == "__main__":
     if not Model("wine-classification").exists():
         features_to_model = FeaturesToModel("wine_feature_set", "wine-classification")
         features_to_model.set_output_tags(["wine", "classification"])
-        features_to_model.transform(
-            target="target", description="Wine Classification Model", model_type="classifier"
-        )
+        features_to_model.transform(target="target", description="Wine Classification Model", model_type="classifier")
         print("Waiting for the Model to be created...")
         time.sleep(10)
 
