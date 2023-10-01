@@ -1,5 +1,6 @@
 """Utility/helper methods for Pandas dataframe operations"""
 import pandas as pd
+from pandas.errors import ParserError
 import numpy as np
 import json
 import logging
@@ -308,6 +309,25 @@ def athena_to_pandas_types(df: pd.DataFrame, column_athena_types: dict) -> pd.Da
 
     # Convert the DataFrame columns to the mapped Pandas types
     df = df.astype(pandas_column_types)
+    return df
+
+
+def convert_object_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Try to automatically convert object columns to something more concrete"""
+    for c in df.columns[df.dtypes == "object"]:  # Look at the object columns
+        # Try to convert object to datetime
+        if "date" in c.lower():
+            try:
+                df[c] = pd.to_datetime(df[c])
+            except (ParserError, ValueError, TypeError):
+                log.debug(f"Column {c} could not be converted to datetime...")
+
+        # Try to convert object to string
+        else:
+            try:
+                df[c] = df[c].astype(str)
+            except (ParserError, ValueError, TypeError):
+                log.debug(f"Column {c} could not be converted to string...")
     return df
 
 

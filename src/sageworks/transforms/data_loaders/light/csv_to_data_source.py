@@ -7,6 +7,7 @@ from pandas.errors import ParserError
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
 from sageworks.artifacts.data_sources.data_source import DataSource
+from sageworks.utils.pandas_utils import convert_object_columns
 
 
 class CSVToDataSource(Transform):
@@ -28,15 +29,6 @@ class CSVToDataSource(Transform):
         self.input_type = TransformInput.LOCAL_FILE
         self.output_type = TransformOutput.DATA_SOURCE
 
-    def convert_columns_to_datetime(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Try to automatically convert object columns to datetime columns"""
-        for c in df.columns[df.dtypes == "object"]:  # Look at the object columns
-            try:
-                df[c] = pd.to_datetime(df[c])
-            except (ParserError, ValueError):
-                self.log.debug(f"Column {c} could not be converted to datetime...")
-        return df
-
     def transform_impl(self, overwrite: bool = True):
         """Convert the local CSV file into Parquet Format in the SageWorks Data Sources Bucket, and
         store the information about the data to the AWS Data Catalog sageworks database
@@ -48,7 +40,7 @@ class CSVToDataSource(Transform):
 
         # Read in the Local CSV as a Pandas DataFrame
         df = pd.read_csv(self.input_uuid, low_memory=False)
-        df = self.convert_columns_to_datetime(df)
+        df = convert_object_columns(df)
 
         # Use the SageWorks Pandas to Data Source class
         pandas_to_data = PandasToData(self.output_uuid)

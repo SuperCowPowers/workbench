@@ -1,12 +1,11 @@
 """S3ToDataSourceLight: Class to move LIGHT S3 Files into a SageWorks DataSource"""
 import awswrangler as wr
-import pandas as pd
-from pandas.errors import ParserError
 
 # Local imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.transforms.pandas_transforms.pandas_to_data import PandasToData
 from sageworks.artifacts.data_sources.data_source import DataSource
+from sageworks.utils.pandas_utils import convert_object_columns
 
 
 class S3ToDataSourceLight(Transform):
@@ -40,24 +39,6 @@ class S3ToDataSourceLight(Transform):
         size_in_mb = round(size_in_bytes / 1_000_000)
         return size_in_mb
 
-    def convert_object_columns(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Try to automatically convert object columns to datetime columns"""
-        for c in df.columns[df.dtypes == "object"]:  # Look at the object columns
-            # Try to convert object to datetime
-            if "date" in c.lower():
-                try:
-                    df[c] = pd.to_datetime(df[c])
-                except (ParserError, ValueError, TypeError):
-                    self.log.debug(f"Column {c} could not be converted to datetime...")
-
-            # Try to convert object to string
-            else:
-                try:
-                    df[c] = df[c].astype(str)
-                except (ParserError, ValueError, TypeError):
-                    self.log.info(f"Column {c} could not be converted to string...")
-        return df
-
     def transform_impl(self, overwrite: bool = True):
         """Convert the S3 CSV data into Parquet Format in the SageWorks Data Sources Bucket, and
         store the information about the data to the AWS Data Catalog sageworks database
@@ -80,7 +61,7 @@ class S3ToDataSourceLight(Transform):
             self.log.warning(f"{self.input_uuid} Too Many Columns! Talk to SageWorks Support...")
 
         # Convert object columns before sending to SageWorks Data Source
-        df = self.convert_object_columns(df)
+        df = convert_object_columns(df)
 
         # Use the SageWorks Pandas to Data Source class
         pandas_to_data = PandasToData(self.output_uuid)
