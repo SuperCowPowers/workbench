@@ -119,7 +119,7 @@ if __name__ == "__main__":
     """Exercise the Model Class"""
 
     # Grab a Model object and pull some information from it
-    my_model = Model("abalone-regression")
+    my_model = Model("abalone-regression", force_refresh=True)
 
     # Call the various methods
 

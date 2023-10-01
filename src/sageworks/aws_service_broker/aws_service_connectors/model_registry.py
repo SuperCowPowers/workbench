@@ -14,7 +14,7 @@ class ModelRegistry(Connector):
 
         # Set up our internal data storage
         self.model_data = {}
-        self.model_package_group_arn = None
+        self.model_package_group_arns = {}
 
     def check(self) -> bool:
         """Check if we can reach/connect to this AWS Service"""
@@ -32,15 +32,15 @@ class ModelRegistry(Connector):
         _model_groups = self.sm_client.list_model_package_groups()["ModelPackageGroupSummaryList"]
         _mg_names = [model_group["ModelPackageGroupName"] for model_group in _model_groups]
 
-        # Grab the ModelPackageGroupArn (we store it in the model_data)
-        self.model_package_group_arn = _model_groups[0]["ModelPackageGroupArn"] if _model_groups else None
+        # Grab the ModelPackageGroupArns (we'll use them later to store in the model_data)
+        self.model_package_group_arns = {g["ModelPackageGroupName"]: g["ModelPackageGroupArn"] for g in _model_groups}
 
         # Get the details for each Model Group and convert to a data structure with direct lookup
         self.model_data = {name: self._model_group_details(name) for name in _mg_names}
 
         # Additional details under the sageworks_meta section for each Model Group
         for mg_name in _mg_names:
-            sageworks_meta = self.sageworks_meta_via_arn(self.model_package_group_arn)
+            sageworks_meta = self.sageworks_meta_via_arn(self.model_package_group_arns[mg_name])
             # Model groups have a list of models
             for model_info in self.model_data[mg_name]:
                 model_info["sageworks_meta"] = sageworks_meta
@@ -65,7 +65,7 @@ class ModelRegistry(Connector):
         for detail in details:
             model_arn = detail["ModelPackageArn"]
             detail["ModelPackageDetails"] = self.sm_client.describe_model_package(ModelPackageName=model_arn)
-            detail["ModelPackageGroupArn"] = self.model_package_group_arn
+            detail["ModelPackageGroupArn"] = self.model_package_group_arns[model_group_name]
         return details
 
 
