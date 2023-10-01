@@ -168,7 +168,6 @@ class ArtifactsTextView(View):
                 size = f"{size/1_000_000:.2f}"
                 summary = {
                     "Name": name,
-                    "Ver": info.get("VersionId", "-"),
                     "Size(MB)": size,
                     "Modified": self.datetime_string(info.get("UpdateTime")),
                     "Num Columns": self.num_columns(info),
@@ -187,7 +186,6 @@ class ArtifactsTextView(View):
         else:
             columns = [
                 "Name",
-                "Ver",
                 "Size(MB)",
                 "Modified",
                 "Num Columns",
@@ -260,7 +258,6 @@ class ArtifactsTextView(View):
                 sageworks_meta = model.get("sageworks_meta", {})
                 summary = {
                     "Model Group": model["ModelPackageGroupName"],
-                    "Ver": model["ModelPackageVersion"],
                     "Status": model["ModelPackageStatus"],
                     "Description": model["ModelPackageDescription"],
                     "Created": self.datetime_string(model.get("CreationTime")),
@@ -275,7 +272,6 @@ class ArtifactsTextView(View):
         else:
             columns = [
                 "Model Group",
-                "Ver",
                 "Status",
                 "Description",
                 "Created",
