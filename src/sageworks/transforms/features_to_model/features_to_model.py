@@ -18,7 +18,7 @@ class FeaturesToModel(Transform):
         to_model = FeaturesToModel(feature_uuid, model_uuid)
         to_model.set_output_tags(["abalone", "public", "whatever"])
         to_model.transform(target="class_number_of_rings", description="Abalone Regression Model".
-                           input_feature_list=<features>, model_type="regression/classification",
+                           input_feature_list=<features>, model_type="regressor/classifier",
                            )
     """
 
