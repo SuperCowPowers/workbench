@@ -6,7 +6,8 @@ import pandas as pd
 import numpy as np
 from io import StringIO
 
-from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error
+# Model Performance Scores
+from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error, precision_recall_fscore_support
 from math import sqrt
 
 from sagemaker.serializers import CSVSerializer
@@ -24,7 +25,7 @@ class Endpoint(Artifact):
     Common Usage:
         my_endpoint = Endpoint(endpoint_uuid)
         prediction_df = my_endpoint.predict(test_df)
-        metrics = my_endpoint.performance_metrics(target_column, prediction_df)
+        metrics = my_endpoint.regression_metrics(target_column, prediction_df)
         for metric, value in metrics.items():
             print(f"{metric}: {value:0.3f}")
     """
@@ -202,7 +203,7 @@ class Endpoint(Artifact):
         return True
 
     @staticmethod
-    def performance_metrics(target: str, prediction_df: pd.DataFrame) -> dict:
+    def regression_metrics(target: str, prediction_df: pd.DataFrame) -> dict:
         """Compute the performance metrics for this Endpoint"""
 
         # Compute the metrics
@@ -215,6 +216,23 @@ class Endpoint(Artifact):
         # Return the metrics
         return metrics
 
+    @staticmethod
+    def classification_metrics(target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+        """Compute the performance metrics for this Endpoint"""
+
+        # Get the label names and their integer mapping
+        # TODO: This should use the Label Encoder from the Model
+        label_names = prediction_df[target].unique()
+        label_integers = np.arange(len(label_names))
+
+        # Calculate scores
+        scores = precision_recall_fscore_support(prediction_df[target], prediction_df["prediction"],
+                                                 average=None, labels=None)
+
+        # Put the scores into a dataframe
+        score_df = pd.DataFrame({'target': label_names, 'precision': scores[0],
+                                 'recall': scores[1], 'fscore': scores[2], 'support': scores[3]})
+        print(score_df)
     def delete(self):
         """Delete the Endpoint and Endpoint Config"""
 
