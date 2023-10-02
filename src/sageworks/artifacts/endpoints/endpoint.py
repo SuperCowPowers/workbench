@@ -291,6 +291,6 @@ if __name__ == "__main__":
 
     # Compute performance metrics for out test predictions
     target_column = "class_number_of_rings"
-    metrics = my_endpoint.performance_metrics(target_column, my_prediction_df)
+    metrics = my_endpoint.regression_metrics(target_column, my_prediction_df)
     for metric, value in metrics.items():
         print(f"{metric}: {value:0.3f}")
