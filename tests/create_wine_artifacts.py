@@ -45,7 +45,9 @@ if __name__ == "__main__":
     if not Model("wine-classification").exists():
         features_to_model = FeaturesToModel("wine_features", "wine-classification")
         features_to_model.set_output_tags(["wine", "classification"])
-        features_to_model.transform(target="wine_class", description="Wine Classification Model", model_type="classifier")
+        features_to_model.transform(
+            target="wine_class", description="Wine Classification Model", model_type="classifier"
+        )
         print("Waiting for the Model to be created...")
         time.sleep(10)
 

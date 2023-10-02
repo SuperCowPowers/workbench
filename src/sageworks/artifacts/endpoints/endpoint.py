@@ -230,12 +230,14 @@ class Endpoint(Artifact):
         labels = prediction_df[target].unique()
 
         # Calculate scores
-        scores = precision_recall_fscore_support(prediction_df[target], prediction_df["prediction"],
-                                                 average=None, labels=labels)
+        scores = precision_recall_fscore_support(
+            prediction_df[target], prediction_df["prediction"], average=None, labels=labels
+        )
 
         # Put the scores into a dataframe
-        score_df = pd.DataFrame({target: labels, 'precision': scores[0],
-                                 'recall': scores[1], 'fscore': scores[2], 'support': scores[3]})
+        score_df = pd.DataFrame(
+            {target: labels, "precision": scores[0], "recall": scores[1], "fscore": scores[2], "support": scores[3]}
+        )
         print(score_df)
 
     def delete(self):
