@@ -15,7 +15,7 @@ logging_setup()
 class SageWorksEventBridge:
     def __init__(self, bus_name="sageworks"):
         """SageWorksEventBridge: Class for publishing events to AWS EventBridge"""
-        self.log = logging.getLogger(__name__)
+        self.log = logging.getLogger("sageworks")
         self.event_bus = bus_name
 
         # Grab a SageWorks Session (this allows us to assume the SageWorks ExecutionRole)

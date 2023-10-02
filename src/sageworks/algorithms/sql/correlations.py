@@ -9,7 +9,7 @@ from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
 logging_setup()
-log = logging.getLogger(__name__)
+log = logging.getLogger("sageworks")
 
 
 def correlation_query(columns: list[str], table_name: str) -> str:

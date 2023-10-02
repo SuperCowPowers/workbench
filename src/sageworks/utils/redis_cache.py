@@ -28,7 +28,7 @@ class RedisCache:
     """
 
     # Setup logger (class attribute)
-    log = logging.getLogger(__name__)
+    log = logging.getLogger("sageworks")
 
     # Try to read Redis configuration from environment variables
     host = os.environ.get("REDIS_HOST", "localhost")

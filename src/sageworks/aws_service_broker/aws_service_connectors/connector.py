@@ -14,7 +14,7 @@ logging_setup()
 
 class Connector(ABC):
     # Class attributes
-    log = logging.getLogger(__name__)
+    log = logging.getLogger("sageworks")
 
     # Set up our Boto3 and SageMaker Session and SageMaker Client
     aws_account_clamp = AWSAccountClamp()
@@ -24,7 +24,7 @@ class Connector(ABC):
 
     def __init__(self):
         """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
-        self.log = logging.getLogger(__name__)
+        self.log = logging.getLogger("sageworks")
 
     @abstractmethod
     def check(self) -> bool:

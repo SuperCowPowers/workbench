@@ -16,7 +16,7 @@ class AWSAccountCheck:
 
     def __init__(self):
         """AWSAccountCheck Initialization"""
-        self.log = logging.getLogger(__file__)
+        self.log = logging.getLogger("sageworks")
 
         # Create the AWSAccountClamp Class
         self.aws_clamp = AWSAccountClamp()

@@ -16,7 +16,7 @@ class DataSourceEDA:
         """DataSourceEDA: Provide basic EDA (Exploratory Data Analysis) for a DataSource
         Args:
             data_source_uuid (AthenaSource): DataSource for Exploratory Data Analysis"""
-        self.log = logging.getLogger(__name__)
+        self.log = logging.getLogger("sageworks")
         self.data_source_uuid = data_source_uuid
 
         # Spin up the DataToPandas class

@@ -16,7 +16,7 @@ logging_setup()
 class DimensionalityReduction:
     def __init__(self):
         """DimensionalityReduction:  Perform Dimensionality Reduction on a DataFrame"""
-        self.log = logging.getLogger(__name__)
+        self.log = logging.getLogger("sageworks")
         self.projection_model = None
         self.features = None
 

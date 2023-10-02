@@ -16,7 +16,7 @@ class AWSIdentityCheck:
 
     def __init__(self):
         """AWSIdentityCheck Initialization"""
-        self.log = logging.getLogger(__file__)
+        self.log = logging.getLogger("sageworks")
 
         # Create the AWSAccountClamp Class
         self.aws_clamp = AWSAccountClamp()

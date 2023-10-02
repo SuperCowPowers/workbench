@@ -15,7 +15,7 @@ logging_setup()
 class View(ABC):
     def __init__(self):
         """View: View in the database sense: Pulls from the AWS Service Broker and does slice and dice"""
-        self.log = logging.getLogger(__name__)
+        self.log = logging.getLogger("sageworks")
 
         # Grab an AWS Metadata Broker object for pulling AWS Service information
         self.aws_broker = AWSServiceBroker()

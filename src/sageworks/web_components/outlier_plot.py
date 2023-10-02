@@ -15,7 +15,7 @@ from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
 logging_setup()
-log = logging.getLogger(__name__)
+log = logging.getLogger("sageworks")
 
 
 # For colormaps see (https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express)

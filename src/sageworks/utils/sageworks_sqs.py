@@ -12,7 +12,7 @@ logging_setup()
 class SageWorksSQS:
     def __init__(self, queue_url="sageworks.fifo"):
         """SageWorksSQS: Class for retrieving messages from the AWS SQS Message Queue"""
-        self.log = logging.getLogger(__name__)
+        self.log = logging.getLogger("sageworks")
         self.queue_url = queue_url
 
         # Grab a SageWorks Session (this allows us to assume the SageWorks-ExecutionRole)

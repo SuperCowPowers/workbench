@@ -47,7 +47,7 @@ class Transform(ABC):
     def __init__(self, input_uuid: str, output_uuid: str):
         """Transform Initialization"""
 
-        self.log = logging.getLogger(__name__)
+        self.log = logging.getLogger("sageworks")
         self.input_type = None
         self.output_type = None
         self.output_tags = ""

@@ -35,7 +35,7 @@ class Artifact(ABC):
     # Grab our SageWorks Bucket from ENV
     sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
     if sageworks_bucket is None:
-        log = logging.getLogger(__name__)
+        log = logging.getLogger("sageworks")
         log.critical("Could not find ENV var for SAGEWORKS_BUCKET!")
         sys.exit(1)
 
@@ -46,7 +46,7 @@ class Artifact(ABC):
     def __init__(self, uuid: str):
         """Artifact Initialization"""
         self.uuid = uuid
-        self.log = logging.getLogger(__name__)
+        self.log = logging.getLogger("sageworks")
 
     @abstractmethod
     def exists(self) -> bool:

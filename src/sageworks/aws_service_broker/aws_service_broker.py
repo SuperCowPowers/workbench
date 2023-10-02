@@ -61,7 +61,7 @@ class AWSServiceBroker:
     @classmethod
     def __class_init__(cls, database_scope):
         """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
-        cls.log = logging.getLogger(__file__)
+        cls.log = logging.getLogger("sageworks")
 
         # Grab our SageWorks Bucket
         cls.sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")

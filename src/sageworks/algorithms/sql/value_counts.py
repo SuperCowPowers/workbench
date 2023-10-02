@@ -9,7 +9,7 @@ from sageworks.utils.pandas_utils import shorten_values
 
 # Setup Logging
 logging_setup()
-log = logging.getLogger(__name__)
+log = logging.getLogger("sageworks")
 
 
 def value_counts(data_source: DataSourceAbstract) -> dict[dict]:

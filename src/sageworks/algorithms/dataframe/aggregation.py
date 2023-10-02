@@ -6,7 +6,7 @@ import logging
 from sageworks.utils.sageworks_logging import logging_setup
 
 logging_setup()
-log = logging.getLogger(__name__)
+log = logging.getLogger("sageworks")
 
 
 def aggregate(df: pd.DataFrame, group_column: str, features: list = None) -> pd.DataFrame:

@@ -23,7 +23,7 @@ logging_setup()
 class AWSAccountClamp:
     def __init__(self):
         """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
-        self.log = logging.getLogger(__file__)
+        self.log = logging.getLogger("sageworks")
 
         # Grab the AWS Role Name from the SageWorks Config
         self.role_name = os.environ.get("SAGEWORKS_ROLE", "SageWorks-ExecutionRole")
@@ -40,7 +40,7 @@ class AWSAccountClamp:
         # Grab our SageWorks Bucket from ENV
         self.sageworks_bucket_name = os.environ.get("SAGEWORKS_BUCKET")
         if self.sageworks_bucket_name is None:
-            log = logging.getLogger(__name__)
+            log = logging.getLogger("sageworks")
             log.critical("Could not find ENV var for SAGEWORKS_BUCKET!")
             sys.exit(1)
         self.account_id = boto3.client("sts").get_caller_identity()["Account"]

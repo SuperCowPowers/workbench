@@ -20,7 +20,7 @@ class TestDataGenerator:
 
     def __init__(self):
         """TestDataGenerator Initialization"""
-        self.log = logging.getLogger(__file__)
+        self.log = logging.getLogger("sageworks")
 
     def ml_data(self, features: int = 10, rows: int = 100, target_type: str = "regression"):
         """Generate a Pandas DataFrame with random data
