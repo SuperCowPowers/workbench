@@ -4,6 +4,14 @@ Notes and information on how to do the Docker Builds and Push to AWS ECR.
 
 The following instructions should work, but things change :)
 
+### Update SageWorks Version
+```
+cd applications/aws_dashboard
+vi Dockerfile
+# Install Sageworks (changes often)
+RUN pip install --no-cache-dir sageworks==0.1.14
+```
+
 ### Build the Docker Image
 ```
 docker build -f Dockerfile -t sageworks_dashboard:v0_1_9_amd64 \
