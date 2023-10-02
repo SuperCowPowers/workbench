@@ -1,4 +1,5 @@
 # Imports for XGB Model
+from pprint import pprint
 import xgboost as xgb
 
 # Model Performance Scores
@@ -68,6 +69,15 @@ if __name__ == '__main__':
         xgb_model = xgb.XGBRegressor()
         label_encoder = None  # We don't need this for regression
 
+    # Print out the Label Encoder if we have one
+    if label_encoder:
+        # Create a dictionary mapping from original class names to integer labels
+        label_mapping = {label: idx for idx, label in enumerate(label_encoder.classes_)}
+
+        # Print the mapping
+        print("Label Encoder Dictionary Mapping:")
+        pprint(label_mapping)
+
     # Grab our Features, Target and Train the Model
     y = df_train[target]
     X = df_train[feature_list]
@@ -86,7 +96,7 @@ if __name__ == '__main__':
         scores = precision_recall_fscore_support(df_val[target], preds, average=None, labels=label_integers)
 
         # Put the scores into a dataframe
-        score_df = pd.DataFrame({'level': label_names, 'precision': scores[0],
+        score_df = pd.DataFrame({target: label_names, 'precision': scores[0],
                                  'recall': scores[1], 'fscore': scores[2], 'support': scores[3]})
         print(score_df)
     else:

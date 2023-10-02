@@ -217,22 +217,29 @@ class Endpoint(Artifact):
         return metrics
 
     @staticmethod
-    def classification_metrics(target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
-        """Compute the performance metrics for this Endpoint"""
+    def classification_metrics(target: str, label_encoder: dict, prediction_df: pd.DataFrame) -> pd.DataFrame:
+        """Compute the performance metrics for this Endpoint
+        Args:
+            target (str): Name of the target column
+            label_encoder (dict): Dictionary of label names and their integer mapping
+            prediction_df (pd.DataFrame): DataFrame with the prediction results
+        Returns:
+            pd.DataFrame: DataFrame with the performance metrics
+        """
 
-        # Get the label names and their integer mapping
-        # TODO: This should use the Label Encoder from the Model
-        label_names = prediction_df[target].unique()
-        label_integers = np.arange(len(label_names))
+        # Get a matched list of integer and string labels
+        int_labels = list(label_encoder.values())
+        str_labels = list(label_encoder.keys())
 
         # Calculate scores
         scores = precision_recall_fscore_support(prediction_df[target], prediction_df["prediction"],
-                                                 average=None, labels=None)
+                                                 average=None, labels=int_labels)
 
         # Put the scores into a dataframe
-        score_df = pd.DataFrame({'target': label_names, 'precision': scores[0],
+        score_df = pd.DataFrame({target: str_labels, 'precision': scores[0],
                                  'recall': scores[1], 'fscore': scores[2], 'support': scores[3]})
         print(score_df)
+
     def delete(self):
         """Delete the Endpoint and Endpoint Config"""
 

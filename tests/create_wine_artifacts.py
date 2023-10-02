@@ -25,7 +25,7 @@ from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndp
 
 if __name__ == "__main__":
     # Get the path to the dataset in the repository data directory
-    wine_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "wine_classification.csv"
+    wine_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "wine_dataset.csv"
 
     # Create the abalone_data DataSource
     if not DataSource("wine_data").exists():
@@ -39,13 +39,13 @@ if __name__ == "__main__":
     if not FeatureSet("wine_features").exists():
         data_to_features = DataToFeaturesLight("wine_data", "wine_features")
         data_to_features.set_output_tags(["wine", "classification"])
-        data_to_features.transform(target="target")
+        data_to_features.transform(target="wine_class", description="Wine Classification Features")
 
     # Create the abalone_classification Model
     if not Model("wine-classification").exists():
         features_to_model = FeaturesToModel("wine_features", "wine-classification")
         features_to_model.set_output_tags(["wine", "classification"])
-        features_to_model.transform(target="target", description="Wine Classification Model", model_type="classifier")
+        features_to_model.transform(target="wine_class", description="Wine Classification Model", model_type="classifier")
         print("Waiting for the Model to be created...")
         time.sleep(10)
 
