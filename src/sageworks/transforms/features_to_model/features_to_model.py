@@ -120,7 +120,7 @@ class FeaturesToModel(Transform):
             role=self.sageworks_role_arn,
             instance_type="ml.m5.large",
             sagemaker_session=self.sm_session,
-            framework_version="1.0-1",
+            framework_version="1.2-1",
         )
 
         # Train the estimator
