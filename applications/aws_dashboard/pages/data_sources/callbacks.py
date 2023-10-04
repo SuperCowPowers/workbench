@@ -8,7 +8,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import table, data_details_markdown, violin_plots, heatmap
+from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 
 # Cheese Sauce (FIXME: TDB)
@@ -168,7 +168,7 @@ def update_correlation_matrix(app: Dash, data_source_web_view: DataSourceWebView
 
         # Convert the data details to a pandas dataframe
         corr_df = corr_df_from_artifact_info(artifact_info)
-        return heatmap.create_figure(corr_df)
+        return correlation_matrix.create_figure(corr_df)
 
 
 #

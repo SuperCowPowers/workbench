@@ -4,7 +4,7 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import table, data_details_markdown, violin_plots, heatmap
+from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
 from sageworks.views.data_source_web_view import DataSourceWebView
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 
@@ -64,7 +64,7 @@ violin = violin_plots.create(
 
 # Create a correlation matrix of all the numeric columns in the Data Source
 corr_df = corr_df_from_artifact_info(details)
-corr_matrix = heatmap.create("correlation_matrix", corr_df)
+corr_matrix = correlation_matrix.create("correlation_matrix", corr_df)
 
 # Create our components
 components = {
