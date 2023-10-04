@@ -154,7 +154,6 @@ class DataDetailsMarkdown(ComponentInterface):
             column_info["full_type"] = column_info["dtype"]
         return column_info
 
-
     def _column_info_html(self, column_name, column_info: dict) -> str:
         """Internal: Create an HTML string for a column's information
         Args:

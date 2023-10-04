@@ -16,6 +16,7 @@ class ComponentInterface(ABC):
       - The 'create_component' method must be implemented by the child class
       - The 'generate_component_figure' is optional (some components don't use Plotly figures)
     """
+
     ComponentTypes = Union[go.Figure, dash_table.DataTable, dcc.Markdown, html.Div]
 
     @abstractmethod
