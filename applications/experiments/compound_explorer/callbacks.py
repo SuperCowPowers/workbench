@@ -202,5 +202,5 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
                 "meanline_visible": True,
                 "showlegend": False,
                 "points": "all",
-            }
+            },
         )

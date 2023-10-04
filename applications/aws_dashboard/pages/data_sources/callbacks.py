@@ -146,7 +146,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
                 "showlegend": False,
                 "points": "all",
                 "spanmode": "hard",
-            }
+            },
         )
 
 
