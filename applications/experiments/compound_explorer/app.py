@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 from sageworks.web_components import (
     table,
     compound_details,
-    distribution_plots,
+    violin_plots,
     scatter_plot,
 )
 from sageworks.views.data_source_web_view import DataSourceWebView
@@ -60,10 +60,9 @@ compound_rows = table.create(
 
 # Create a box plot of all the numeric columns in the sample rows
 smart_sample_rows = data_source_broker.data_source_smart_sample(0)
-violin = distribution_plots.create(
+violin = violin_plots.create(
     "data_source_violin_plot",
     smart_sample_rows,
-    plot_type="violin",
     figure_args={
         "box_visible": True,
         "meanline_visible": True,

@@ -8,7 +8,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap
+from sageworks.web_components import table, data_details_markdown, violin_plots, heatmap
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 
 # Cheese Sauce (FIXME: TDB)
@@ -138,9 +138,8 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
         smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
 
         # Get the data source smart sample rows and create the violin plot
-        return distribution_plots.create_figure(
+        return violin_plots.create_figure(
             smart_sample_rows,
-            plot_type="violin",
             figure_args={
                 "box_visible": True,
                 "meanline_visible": True,

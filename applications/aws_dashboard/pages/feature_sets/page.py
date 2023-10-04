@@ -4,7 +4,7 @@ import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import table, data_details_markdown, distribution_plots, heatmap
+from sageworks.web_components import table, data_details_markdown, violin_plots, heatmap
 from sageworks.views.feature_set_web_view import FeatureSetWebView
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 
@@ -47,10 +47,9 @@ details = feature_set_broker.feature_set_details(0)
 data_details = data_details_markdown.DataDetailsMarkdown().create_component("feature_set_details")
 
 # Create a violin plot of all the numeric columns in the Feature Set
-violin = distribution_plots.create(
+violin = violin_plots.create(
     "feature_set_violin_plot",
     smart_sample_rows,
-    plot_type="violin",
     figure_args={
         "box_visible": True,
         "meanline_visible": True,
