@@ -44,7 +44,7 @@ feature_set_sample_rows = table.create(
 
 # Feature Set Details
 details = feature_set_broker.feature_set_details(0)
-data_details = data_details_markdown.create("feature_set_details", details)
+data_details = data_details_markdown.DataDetailsMarkdown().create_component("feature_set_details")
 
 # Create a violin plot of all the numeric columns in the Feature Set
 violin = distribution_plots.create(

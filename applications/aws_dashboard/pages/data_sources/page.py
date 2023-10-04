@@ -46,7 +46,7 @@ data_source_sample_rows = table.create(
 
 # Data Source Details
 details = data_source_broker.data_source_details(0)
-data_details = data_details_markdown.create("data_source_details", details)
+data_details = data_details_markdown.DataDetailsMarkdown().create_component("data_source_details")
 
 # Create a violin plot of all the numeric columns in the Data Source
 violin = distribution_plots.create(

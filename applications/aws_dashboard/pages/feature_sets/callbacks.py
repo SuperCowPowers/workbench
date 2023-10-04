@@ -75,7 +75,7 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
             return dash.no_update
         print("Calling FeatureSet Details...")
         feature_details = feature_set_web_view.feature_set_details(selected_rows[0])
-        feature_details_markdown = data_details_markdown.create_markdown(feature_details)
+        feature_details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(feature_details)
 
         # Name of the data source for the Header
         feature_set_name = feature_set_web_view.feature_set_name(selected_rows[0])
