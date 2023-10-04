@@ -1,6 +1,5 @@
 """A Markdown Component for details/information about DataSources (and FeatureSets)"""
 from dash import dcc
-from typing import Any
 
 # SageWorks Imports
 from sageworks.web_components.component_interface import ComponentInterface
@@ -9,11 +8,10 @@ from sageworks.web_components.component_interface import ComponentInterface
 class DataDetailsMarkdown(ComponentInterface):
     """Data Details Markdown Component"""
 
-    def create_component(self, component_id: str, **kwargs: Any) -> dcc.Markdown:
+    def create_component(self, component_id: str) -> dcc.Markdown:
         """Create a Markdown Component without any data.
         Args:
             component_id (str): The ID of the web component
-            kwargs (Any): Any additional arguments to pass to the component
         Returns:
             dcc.Markdown: The Dash Markdown Component
         """
