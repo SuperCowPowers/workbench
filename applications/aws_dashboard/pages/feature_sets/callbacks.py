@@ -168,7 +168,7 @@ def update_correlation_matrix(app: Dash, feature_set_web_view: FeatureSetWebView
 
         # Convert the data details to a pandas dataframe
         corr_df = corr_df_from_artifact_info(artifact_info)
-        return correlation_matrix.create_figure(corr_df)
+        return correlation_matrix.CorrelationMatrix().generate_component_figure(corr_df)
 
 
 #

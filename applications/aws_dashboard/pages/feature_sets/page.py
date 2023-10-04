@@ -60,9 +60,8 @@ violin = violin_plots.create(
     max_plots=40,
 )
 
-# Create a correlation matrix of all the numeric columns in the Data Source
-corr_df = corr_df_from_artifact_info(details)
-corr_matrix = correlation_matrix.create("feature_set_correlation_matrix", corr_df)
+# Create a correlation matrix component
+corr_matrix = correlation_matrix.CorrelationMatrix().create_component("feature_set_correlation_matrix")
 
 
 # Create our components

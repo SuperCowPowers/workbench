@@ -154,7 +154,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
 # Updates the correlation matrix when a new DataSource is selected
 def update_correlation_matrix(app: Dash, data_source_web_view: DataSourceWebView):
     @app.callback(
-        Output("correlation_matrix", "figure", allow_duplicate=True),
+        Output("data_source_correlation_matrix", "figure", allow_duplicate=True),
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
@@ -168,7 +168,7 @@ def update_correlation_matrix(app: Dash, data_source_web_view: DataSourceWebView
 
         # Convert the data details to a pandas dataframe
         corr_df = corr_df_from_artifact_info(artifact_info)
-        return correlation_matrix.create_figure(corr_df)
+        return correlation_matrix.CorrelationMatrix().generate_component_figure(corr_df)
 
 
 #
@@ -261,11 +261,11 @@ def correlation_matrix_selection(app: Dash):
 
     @app.callback(
         [
-            Output("correlation_matrix", "figure", allow_duplicate=True),
+            Output("data_source_correlation_matrix", "figure", allow_duplicate=True),
             Output("data_source_violin_plot", "figure", allow_duplicate=True),
         ],
-        Input("correlation_matrix", "clickData"),
-        State("correlation_matrix", "figure"),
+        Input("data_source_correlation_matrix", "clickData"),
+        State("data_source_correlation_matrix", "figure"),
         State("data_source_violin_plot", "figure"),
         State("data_source_sample_rows", "data"),
         prevent_initial_call=True,
