@@ -19,17 +19,7 @@ class CorrelationMatrix(ComponentInterface):
         Returns:
             dcc.Graph: The Correlation Matrix Component
         """
-        waiting_figure = go.Figure()
-        waiting_figure.add_annotation(
-            x=0.5,
-            y=0.5,
-            xref="paper",
-            yref="paper",
-            text="Waiting for data...",
-            showarrow=False,
-            font=dict(size=20)
-        )
-        return dcc.Graph(id=component_id, figure=waiting_figure)
+        return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
     def generate_component_figure(self, df: pd.DataFrame) -> go.Figure:
         """Create a Correlation Matrix Figure for the numeric columns in the dataframe.

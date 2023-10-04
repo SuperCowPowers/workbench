@@ -138,7 +138,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
         smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
 
         # Get the data source smart sample rows and create the violin plot
-        return violin_plots.create_figure(
+        return violin_plots.ViolinPlots().generate_component_figure(
             smart_sample_rows,
             figure_args={
                 "box_visible": True,
@@ -146,8 +146,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
                 "showlegend": False,
                 "points": "all",
                 "spanmode": "hard",
-            },
-            max_plots=40,
+            }
         )
 
 

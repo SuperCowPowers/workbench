@@ -195,13 +195,12 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
-        return violin_plots.create_figure(
+        return violin_plots.ViolinPlots().generate_component_figure(
             smart_sample_rows,
             figure_args={
                 "box_visible": True,
                 "meanline_visible": True,
                 "showlegend": False,
                 "points": "all",
-            },
-            max_plots=40,
+            }
         )

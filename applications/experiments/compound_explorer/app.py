@@ -60,17 +60,7 @@ compound_rows = table.create(
 
 # Create a box plot of all the numeric columns in the sample rows
 smart_sample_rows = data_source_broker.data_source_smart_sample(0)
-violin = violin_plots.create(
-    "data_source_violin_plot",
-    smart_sample_rows,
-    figure_args={
-        "box_visible": True,
-        "meanline_visible": True,
-        "showlegend": False,
-        "points": "all",
-    },
-    max_plots=40,
-)
+violin = violin_plots.ViolinPlots().create_component("data_source_violin_plot")
 
 # Create the outlier cluster plot
 cluster_plot = scatter_plot.create("compound_scatter_plot", outlier_rows, "Compound Clusters")

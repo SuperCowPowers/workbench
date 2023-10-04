@@ -47,18 +47,7 @@ details = feature_set_broker.feature_set_details(0)
 data_details = data_details_markdown.DataDetailsMarkdown().create_component("feature_set_details")
 
 # Create a violin plot of all the numeric columns in the Feature Set
-violin = violin_plots.create(
-    "feature_set_violin_plot",
-    smart_sample_rows,
-    figure_args={
-        "box_visible": True,
-        "meanline_visible": True,
-        "showlegend": False,
-        "points": "all",
-        "spanmode": "hard",
-    },
-    max_plots=40,
-)
+violin = violin_plots.ViolinPlots().create_component("feature_set_violin_plot")
 
 # Create a correlation matrix component
 corr_matrix = correlation_matrix.CorrelationMatrix().create_component("feature_set_correlation_matrix")

@@ -39,3 +39,23 @@ class ComponentInterface(ABC):
             go.Figure: A Plotly Figure
         """
         raise NotImplementedError("This component doesn't use Plotly figures")
+
+    @staticmethod
+    def waiting_figure():
+        """This helper method creates a waiting figure for the component"""
+        waiting_figure = go.Figure()
+        waiting_figure.add_annotation(
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            text="Waiting for data...",
+            showarrow=False,
+            font=dict(size=32)
+        )
+        waiting_figure.update_layout(
+            xaxis=dict(showticklabels=False, zeroline=False, showgrid=False),
+            yaxis=dict(showticklabels=False, zeroline=False, showgrid=False),
+            margin=dict(l=0, r=0, b=0, t=0)
+        )
+        return waiting_figure

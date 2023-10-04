@@ -49,18 +49,7 @@ details = data_source_broker.data_source_details(0)
 data_details = data_details_markdown.DataDetailsMarkdown().create_component("data_source_details")
 
 # Create a violin plot of all the numeric columns in the Data Source
-violin = violin_plots.create(
-    "data_source_violin_plot",
-    smart_sample_rows,
-    figure_args={
-        "box_visible": True,
-        "meanline_visible": True,
-        "showlegend": False,
-        "points": "all",
-        "spanmode": "hard",
-    },
-    max_plots=40,
-)
+violin = violin_plots.ViolinPlots().create_component("data_source_violin_plot")
 
 # Create a correlation matrix of all the numeric columns in the Data Source
 corr_matrix = correlation_matrix.CorrelationMatrix().create_component("data_source_correlation_matrix")

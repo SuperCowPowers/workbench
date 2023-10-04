@@ -138,7 +138,7 @@ def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
         smart_sample_rows = feature_set_web_view.feature_set_smart_sample(selected_rows[0])
 
         # Get the feature set smart sample rows and create the violin plot
-        return violin_plots.create_figure(
+        return violin_plots.ViolinPlots().generate_component_figure(
             smart_sample_rows,
             figure_args={
                 "box_visible": True,
@@ -146,8 +146,7 @@ def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
                 "showlegend": False,
                 "points": "all",
                 "spanmode": "hard",
-            },
-            max_plots=40,
+            }
         )
 
 
