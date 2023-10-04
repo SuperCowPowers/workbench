@@ -1,5 +1,4 @@
 """A Violin Plot component"""
-import plotly.graph_objs
 from dash import dcc
 import pandas as pd
 from plotly.subplots import make_subplots
