@@ -13,7 +13,6 @@ from sageworks.web_components import (
     mock_model_details,
     mock_feature_details,
 )
-from sageworks.views.model_web_view import ModelWebView
 
 # Local Imports
 from .layout import models_layout

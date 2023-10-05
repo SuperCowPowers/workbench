@@ -5,7 +5,6 @@ from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
 from sageworks.web_components import line_chart
-from sageworks.views.artifacts_web_view import ArtifactsWebView
 from sageworks.web_components import table
 
 # Local Imports
