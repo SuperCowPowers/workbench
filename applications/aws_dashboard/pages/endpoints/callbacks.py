@@ -4,7 +4,8 @@ from dash import Dash
 from dash.dependencies import Input, Output
 
 # SageWorks Imports
-from sageworks.views.artifacts_web_view import ArtifactsWebView
+from sageworks.web_components import table
+from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 
 def update_last_updated(app: Dash):
@@ -16,10 +17,17 @@ def update_last_updated(app: Dash):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
-def update_endpoints_table(app: Dash, sageworks_artifacts: ArtifactsWebView):
-    @app.callback(Output("ENDPOINTS_DETAILS", "data"), Input("endpoints-updater", "n_intervals"))
-    def data_sources_update(n):
-        print("Calling FeatureSets Refresh...")
-        sageworks_artifacts.refresh()
-        endpoints = sageworks_artifacts.endpoints_summary()
-        return endpoints.to_dict("records")
+def update_endpoints_table(app: Dash):
+    @app.callback(
+        [
+            Output("endpoints_table", "columns"),
+            Output("endpoints_table", "data"),
+        ],
+        Input("aws-broker-data", "data"),
+    )
+    def endpoints_update(serialized_aws_broker_data):
+        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
+        endpoints = aws_broker_data["ENDPOINTS"]
+        endpoints["id"] = range(len(endpoints))
+        column_setup_list = table.Table().column_setup(endpoints, markdown_columns=["Name"])
+        return [column_setup_list, endpoints.to_dict("records")]

@@ -68,7 +68,7 @@ app = dash.get_app()
 callbacks.refresh_data_timer(app)
 
 # Periodic update to the data sources summary table
-callbacks.update_data_sources_table(app, data_source_broker)
+callbacks.update_data_sources_table(app)
 
 # Callbacks for when a data source is selected
 callbacks.table_row_select(app, "data_sources_table")

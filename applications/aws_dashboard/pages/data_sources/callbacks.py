@@ -10,6 +10,7 @@ import pandas as pd
 from sageworks.views.data_source_web_view import DataSourceWebView
 from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
+from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 # Cheese Sauce (FIXME: TDB)
 smart_sample_rows = None
@@ -24,22 +25,24 @@ def refresh_data_timer(app: Dash):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
-def update_data_sources_table(app: Dash, data_source_broker: DataSourceWebView):
+def update_data_sources_table(app: Dash):
     @app.callback(
         [
             Output("data_sources_table", "columns"),
             Output("data_sources_table", "data"),
         ],
-        Input("data-sources-updater", "n_intervals"),
-        prevent_initial_call=True,
+        Input("aws-broker-data", "data"),
     )
-    def data_sources_update(_n):
+    def data_sources_update(serialized_aws_broker_data):
         """Return the table data as a dictionary"""
-        data_source_broker.refresh()
-        data_source_rows = data_source_broker.data_sources_summary()
-        data_source_rows["id"] = range(len(data_source_rows))
-        column_setup_list = table.Table().column_setup(data_source_rows, markdown_columns=["Name"])
-        return [column_setup_list, data_source_rows.to_dict("records")]
+        if isinstance(serialized_aws_broker_data, int):
+            print(f"WTF: {serialized_aws_broker_data}")
+            return dash.no_update
+        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
+        data_sources = aws_broker_data["DATA_SOURCES"]
+        data_sources["id"] = range(len(data_sources))
+        column_setup_list = table.Table().column_setup(data_sources, markdown_columns=["Name"])
+        return [column_setup_list, data_sources.to_dict("records")]
 
 
 # Highlights the selected row in the table

@@ -13,7 +13,7 @@ from sageworks.web_components import (
     mock_model_details,
     mock_feature_details,
 )
-from sageworks.views.model_web_view import ModelWebView
+from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 
 def refresh_data_timer(app: Dash):
@@ -25,15 +25,20 @@ def refresh_data_timer(app: Dash):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
-def update_models_table(app: Dash, model_broker: ModelWebView):
-    @app.callback(Output("models_table", "data"), Input("models-updater", "n_intervals"))
-    def feature_sets_update(_n):
-        """Return the table data as a dictionary"""
-        model_broker.refresh()
-        model_rows = model_broker.models_summary()
-        model_rows["id"] = range(len(model_rows))
-        column_setup_list = table.Table().column_setup(model_rows, markdown_columns=["Model Group"])
-        return [column_setup_list, model_rows.to_dict("records")]
+def update_models_table(app: Dash):
+    @app.callback(
+        [
+            Output("models_table", "columns"),
+            Output("models_table", "data")
+        ],
+        Input("aws-broker-data", "data")
+    )
+    def models_update(serialized_aws_broker_data):
+        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
+        models = aws_broker_data["MODELS"]
+        models["id"] = range(len(models))
+        column_setup_list = table.Table().column_setup(models, markdown_columns=["Model Group"])
+        return [column_setup_list, models.to_dict("records")]
 
 
 # Highlights the selected row in the table

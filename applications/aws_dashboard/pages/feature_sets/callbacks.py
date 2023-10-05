@@ -10,6 +10,7 @@ import pandas as pd
 from sageworks.views.feature_set_web_view import FeatureSetWebView
 from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
+from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 # Cheese Sauce (FIXME: TDB)
 smart_sample_rows = None
@@ -24,22 +25,21 @@ def refresh_data_timer(app: Dash):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
-def update_feature_sets_table(app: Dash, feature_set_broker: FeatureSetWebView):
+def update_feature_sets_table(app: Dash):
     @app.callback(
         [
             Output("feature_sets_table", "columns"),
             Output("feature_sets_table", "data"),
         ],
-        Input("feature-sets-updater", "n_intervals"),
-        prevent_initial_call=True,
+        Input("aws-broker-data", "data"),
     )
-    def feature_sets_update(_n):
+    def feature_sets_update(serialized_aws_broker_data):
         """Return the table data for the FeatureSets Table"""
-        feature_set_broker.refresh()
-        feature_set_rows = feature_set_broker.feature_sets_summary()
-        feature_set_rows["id"] = range(len(feature_set_rows))
-        column_setup_list = table.Table().column_setup(feature_set_rows, markdown_columns=["Feature Group"])
-        return [column_setup_list, feature_set_rows.to_dict("records")]
+        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
+        feature_sets = aws_broker_data["FEATURE_SETS"]
+        feature_sets["id"] = range(len(feature_sets))
+        column_setup_list = table.Table().column_setup(feature_sets, markdown_columns=["Feature Group"])
+        return [column_setup_list, feature_sets.to_dict("records")]
 
 
 # Highlights the selected row in the table

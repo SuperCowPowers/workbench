@@ -24,13 +24,9 @@ register_page(
 # Put the components into 'dark' mode
 load_figure_template("darkly")
 
-# Grab a view that gives us a summary of all the artifacts currently in SageWorks
-sageworks_artifacts = ArtifactsWebView()
-endpoints_summary = sageworks_artifacts.endpoints_summary()
-
-# Create a table to display the feature sets
+# Create a table to display the endpoints
 endpoints_table = table.Table().create_component(
-    "ENDPOINTS_DETAILS",
+    "endpoints_table",
     header_color="rgb(100, 60, 100)",
     row_select="single",
 )
@@ -50,4 +46,4 @@ layout = endpoints_layout(**components)
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.update_last_updated(app)
-callbacks.update_endpoints_table(app, sageworks_artifacts)
+callbacks.update_endpoints_table(app)

@@ -28,10 +28,6 @@ register_page(
 # Put the components into 'dark' mode
 load_figure_template("darkly")
 
-# Grab a view that gives us a summary of the FeatureSets in SageWorks
-model_broker = ModelWebView()
-models_rows = model_broker.models_summary()
-
 # Read in our fake model data
 data_path = str(Path(__file__).resolve().parent.parent / "data/toy_data.csv")
 fake_model_info = mock_model_data.ModelData(data_path)
@@ -65,7 +61,7 @@ layout = models_layout(**components)
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.refresh_data_timer(app)
-callbacks.update_models_table(app, model_broker)
+callbacks.update_models_table(app)
 
 # Callback for the model table
 callbacks.table_row_select(app, "models_table")
