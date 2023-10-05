@@ -61,6 +61,5 @@ web_view = ArtifactsWebView()
 
 # Setup our callbacks/connections
 app = dash.get_app()
-callbacks.update_last_updated(app, web_view)
+callbacks.refresh_data(app, web_view)
 callbacks.update_artifact_tables(app)
-callbacks.delete_artifact_callbacks(app, web_view)

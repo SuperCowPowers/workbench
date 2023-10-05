@@ -1,6 +1,5 @@
-"""Artifact Viewer: A SageWorks Application for viewing and managing SageWorks Artifacts"""
-from dash import Dash
-import dash
+"""SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
+from dash import Dash, page_container, html, dcc
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
@@ -19,7 +18,11 @@ app = Dash(
 server = app.server
 
 # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
-app.layout = dash.page_container
+app.layout = html.Div(
+    [
+        dcc.Store(id='aws-broker-data', storage_type='local'),
+        page_container
+    ])
 
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
