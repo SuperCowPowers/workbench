@@ -1,5 +1,4 @@
 """FeatureSets Callbacks: Callback within the DataSources Web User Interface"""
-from datetime import datetime
 import dash
 from dash import Dash
 from dash.dependencies import Input, Output, State
@@ -14,15 +13,6 @@ from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 # Cheese Sauce (FIXME: TDB)
 smart_sample_rows = None
-
-
-def refresh_data_timer(app: Dash):
-    @app.callback(
-        Output("last-updated-data-sources", "children"),
-        Input("data-sources-updater", "n_intervals"),
-    )
-    def time_updated(_n):
-        return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
 def update_data_sources_table(app: Dash):

@@ -16,18 +16,7 @@ def data_sources_layout(
             dbc.Row(
                 [
                     html.H2("SageWorks: DataSources"),
-                    html.Div(
-                        "Last Updated: ",
-                        id="last-updated-data-sources",
-                        style={
-                            "color": "rgb(140, 200, 140)",
-                            "fontSize": 15,
-                            "padding": "0px 0px 0px 160px",
-                        },
-                    ),
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
-                    # Just the auto updater
-                    dcc.Interval(id="data-sources-updater", interval=10000, n_intervals=0),
                 ]
             ),
             # A table that lists out all the Data Sources

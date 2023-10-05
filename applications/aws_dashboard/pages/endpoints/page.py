@@ -44,5 +44,4 @@ layout = endpoints_layout(**components)
 
 # Setup our callbacks/connections
 app = dash.get_app()
-callbacks.update_last_updated(app)
 callbacks.update_endpoints_table(app)

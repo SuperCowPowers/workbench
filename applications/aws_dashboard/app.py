@@ -18,7 +18,10 @@ app = Dash(
 server = app.server
 
 # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
-app.layout = html.Div([dcc.Store(id="aws-broker-data", storage_type="local"), page_container])
+app.layout = html.Div([
+    dcc.Store(id="aws-broker-data", storage_type="local"),
+    dcc.Interval(id="broker-update-timer", interval=10000, n_intervals=0),
+    page_container])
 
 if __name__ == "__main__":
     """Run our web application in TEST mode"""

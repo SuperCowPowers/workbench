@@ -64,9 +64,6 @@ layout = data_sources_layout(**components)
 # Setup our callbacks/connections
 app = dash.get_app()
 
-# Refresh our data timer
-callbacks.refresh_data_timer(app)
-
 # Periodic update to the data sources summary table
 callbacks.update_data_sources_table(app)
 

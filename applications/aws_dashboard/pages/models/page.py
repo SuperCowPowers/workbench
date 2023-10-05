@@ -59,7 +59,6 @@ layout = models_layout(**components)
 
 # Setup our callbacks/connections
 app = dash.get_app()
-callbacks.refresh_data_timer(app)
 callbacks.update_models_table(app)
 
 # Callback for the model table

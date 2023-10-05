@@ -1,20 +1,10 @@
 """FeatureSets Callbacks: Callback within the FeatureSets Web User Interface"""
-from datetime import datetime
 from dash import Dash
 from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.web_components import table
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
-
-
-def update_last_updated(app: Dash):
-    @app.callback(
-        Output("last-updated-endpoints", "children"),
-        Input("endpoints-updater", "n_intervals"),
-    )
-    def time_updated(n):
-        return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
 def update_endpoints_table(app: Dash):

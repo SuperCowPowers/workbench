@@ -22,10 +22,10 @@ def refresh_data(app: Dash, web_view: ArtifactsWebView, force_refresh=False):
             Output("last-updated", "children"),
             Output("aws-broker-data", "data"),
         ],
-        Input("main-updater", "n_intervals"),
+        Input("broker-update-timer", "n_intervals"),
         State("aws-broker-data", "data"),
     )
-    def time_updated(n, aws_broker_data):
+    def refresh_aws_broker_data(n, aws_broker_data):
         # A string of the new time
         new_time = datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 

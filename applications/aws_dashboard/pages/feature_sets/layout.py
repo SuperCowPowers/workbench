@@ -16,18 +16,7 @@ def feature_sets_layout(
             dbc.Row(
                 [
                     html.H2("SageWorks: FeatureSets"),
-                    html.Div(
-                        "Last Updated: ",
-                        id="last-updated-feature-sets",
-                        style={
-                            "color": "rgb(140, 200, 140)",
-                            "fontSize": 15,
-                            "padding": "0px 0px 0px 160px",
-                        },
-                    ),
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
-                    # Just the auto updater
-                    dcc.Interval(id="feature-sets-updater", interval=10000, n_intervals=0),
                 ]
             ),
             # A table that lists out all the Data Sources

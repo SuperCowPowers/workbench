@@ -2,7 +2,6 @@
 import dash
 from dash import Dash
 from dash.dependencies import Input, Output
-from datetime import datetime
 
 # SageWorks Imports
 from sageworks.web_components.mock_model_data import ModelData
@@ -14,15 +13,6 @@ from sageworks.web_components import (
     mock_feature_details,
 )
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
-
-
-def refresh_data_timer(app: Dash):
-    @app.callback(
-        Output("last-updated-models", "children"),
-        Input("models-updater", "n_intervals"),
-    )
-    def time_updated(_n):
-        return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
 def update_models_table(app: Dash):
