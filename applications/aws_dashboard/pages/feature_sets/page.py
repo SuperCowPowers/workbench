@@ -20,7 +20,6 @@ load_figure_template("darkly")
 
 # Grab a view that gives us a summary of the FeatureSets in SageWorks
 feature_set_broker = FeatureSetWebView()
-feature_set_rows = feature_set_broker.feature_sets_summary()
 
 # Create a table to display the data sources
 feature_sets_table = table.Table().create_component(
@@ -30,7 +29,6 @@ feature_sets_table = table.Table().create_component(
 )
 
 # Grab smart_sample rows from the first Feature Set
-smart_sample_rows = feature_set_broker.feature_set_smart_sample(0)
 feature_set_sample_rows = table.Table().create_component(
     "feature_set_sample_rows",
     header_color="rgb(60, 60, 100)",
@@ -38,7 +36,6 @@ feature_set_sample_rows = table.Table().create_component(
 )
 
 # Feature Set Details
-details = feature_set_broker.feature_set_details(0)
 data_details = data_details_markdown.DataDetailsMarkdown().create_component("feature_set_details")
 
 # Create a violin plot of all the numeric columns in the Feature Set

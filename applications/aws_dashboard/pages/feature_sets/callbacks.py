@@ -53,7 +53,7 @@ def table_row_select(app: Dash, table_name: str):
         return row_style
 
 
-# Updates the data source details when a row is selected in the summary
+# Updates the feature set details when a row is selected in the summary
 def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebView):
     @app.callback(
         [

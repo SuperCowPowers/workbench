@@ -21,6 +21,7 @@ def data_sources_layout(
             ),
             # A table that lists out all the Data Sources
             dbc.Row(data_sources_table),
+
             # Sample/Outlier Rows for the selected Data Source AND Outlier Plot
             dbc.Row(
                 [

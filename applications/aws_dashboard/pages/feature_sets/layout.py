@@ -19,8 +19,9 @@ def feature_sets_layout(
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                 ]
             ),
-            # A table that lists out all the Data Sources
+            # A table that lists out all the Feature Sets
             dbc.Row(feature_sets_table),
+
             # Sample Rows for the selected Feature Set
             dbc.Row(
                 html.H3("Sampled Rows", id="feature_sample_rows_header"),

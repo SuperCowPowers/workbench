@@ -19,7 +19,7 @@ def content_hash(serialized_data):
 def refresh_data(app: Dash, web_view: ArtifactsWebView, force_refresh=False):
     @app.callback(
         [
-            Output("last-updated", "children"),
+            Output("data-last-updated", "children"),
             Output("aws-broker-data", "data"),
         ],
         Input("broker-update-timer", "n_intervals"),

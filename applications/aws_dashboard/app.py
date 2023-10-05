@@ -21,7 +21,6 @@ server = app.server
 app.layout = html.Div(
     [
         dcc.Store(id="aws-broker-data", storage_type="local"),
-        dcc.Interval(id="broker-update-timer", interval=5000, n_intervals=0),
         page_container,
     ]
 )
@@ -29,5 +28,5 @@ app.layout = html.Div(
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
     # Note: This 'main' is purely for running/testing locally
-    # app.run_server(host="0.0.0.0", port=8000, debug=True)
-    app.run_server(host="0.0.0.0", port=8000)
+    app.run_server(host="0.0.0.0", port=8000, debug=True)
+    # app.run_server(host="0.0.0.0", port=8000)

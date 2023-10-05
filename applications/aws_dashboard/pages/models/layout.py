@@ -6,52 +6,48 @@ import dash_bootstrap_components as dbc
 def models_layout(
     models_table: dash_table.DataTable,
     model_details: dcc.Markdown,
-    confusion_matrix: dcc.Graph,
-    scatter_plot: dcc.Graph,
-    feature_importance: dcc.Graph,
-    feature_details: dcc.Markdown,
 ) -> html.Div:
     layout = html.Div(
         children=[
-            dbc.Row(html.H2("SageWorks: Models (Alpha)")),
-            dbc.Row(style={"padding": "30px 0px 0px 0px"}),
             dbc.Row(
                 [
-                    # Model Table and Model Details
+                    html.H2("SageWorks: Models (Alpha)"),
+                    dbc.Row(style={"padding": "30px 0px 0px 0px"}),
+                ]
+            ),
+            # A table that lists out all the Models
+            dbc.Row(models_table),
+
+            # Model Details, and Plugins
+            dbc.Row(
+                [
+                    # Column 1: Model Details
                     dbc.Col(
                         [
-                            dbc.Row(models_table),
                             dbc.Row(
-                                html.H3("Model Details"),
-                                style={"padding": "50px 0px 0px 20px"},
+                                html.H3("Details", id="model_details_header"),
+                                style={"padding": "30px 0px 10px 0px"},
                             ),
                             dbc.Row(
-                                [
-                                    dbc.Col(model_details),
-                                    dbc.Col(confusion_matrix),
-                                ]
-                            ),
-                            dbc.Row(scatter_plot),
-                        ],
-                        width=8,
-                    ),
-                    # Feature Importance and Details
-                    dbc.Col(
-                        [
-                            dbc.Row(html.H3("Feature Importance")),
-                            dbc.Row(feature_importance),
-                            dbc.Row(
-                                html.H3(
-                                    "Feature Details",
-                                    style={"padding": "20px 0px 0px 20px"},
-                                )
-                            ),
-                            dbc.Row(
-                                feature_details,
-                                style={"padding": "0px 0px 0px 20px"},
+                                model_details,
+                                style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],
                         width=4,
+                    ),
+                    # Column 2: Plugins
+                    dbc.Col(
+                        [
+                            dbc.Row(
+                                html.H3("Plugins", id="plugins_header"),
+                                style={"padding": "30px 0px 10px 0px"},
+                            ),
+                            dbc.Row(
+                                html.H3("Plugin Widget", id="plugin_widget"),
+                                style={"padding": "50px 50px 50px 50px"},
+                            ),
+                        ],
+                        width=8,
                     ),
                 ]
             ),

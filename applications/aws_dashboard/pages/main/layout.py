@@ -19,22 +19,7 @@ def main_layout(
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
         children=[
-            dcc.Store(data="", id="remove-artifact-store", storage_type="session"),
-            dcc.Store(data="", id="modal-trigger-state-store", storage_type="session"),
-            dbc.Modal(
-                [
-                    dbc.ModalHeader(dbc.ModalTitle("Attention")),
-                    dbc.ModalBody(id="modal-body"),
-                    dbc.ModalFooter(
-                        [
-                            dbc.Button("No", id="no-button", n_clicks=0),
-                            dbc.Button("Yes", id="yes-button", n_clicks=0),
-                        ]
-                    ),
-                ],
-                id="modal",
-                is_open=False,
-            ),
+            dcc.Interval(id="broker-update-timer", interval=5000, n_intervals=0),
             dbc.Row(
                 [
                     html.H2(
@@ -51,7 +36,7 @@ def main_layout(
                     ),
                     html.Div(
                         "Last Updated: ",
-                        id="last-updated",
+                        id="data-last-updated",
                         style={
                             "color": "rgb(140, 200, 140)",
                             "fontSize": 15,
