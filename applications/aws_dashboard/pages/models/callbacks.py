@@ -6,6 +6,7 @@ from datetime import datetime
 
 # SageWorks Imports
 from sageworks.web_components.mock_model_data import ModelData
+from sageworks.web_components import table
 from sageworks.web_components import (
     mock_feature_importance,
     confusion_matrix,
@@ -25,13 +26,16 @@ def refresh_data_timer(app: Dash):
 
 
 def update_models_table(app: Dash, model_broker: ModelWebView):
-    @app.callback(Output("models_table", "data"), Input("models-updater", "n_intervals"))
+    @app.callback(
+        Output("models_table", "data"),
+        Input("models-updater", "n_intervals"))
     def feature_sets_update(_n):
         """Return the table data as a dictionary"""
         model_broker.refresh()
         model_rows = model_broker.models_summary()
-        model_rows["id"] = model_rows.index
-        return model_rows.to_dict("records")
+        model_rows["id"] = range(len(model_rows))
+        column_setup_list = table.Table().column_setup(model_rows, markdown_columns=["Model Group"])
+        return [column_setup_list, model_rows.to_dict("records")]
 
 
 # Highlights the selected row in the table

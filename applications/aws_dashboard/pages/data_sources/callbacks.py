@@ -26,7 +26,10 @@ def refresh_data_timer(app: Dash):
 
 def update_data_sources_table(app: Dash, data_source_broker: DataSourceWebView):
     @app.callback(
-        Output("data_sources_table", "data"),
+        [
+            Output("data_sources_table", "columns"),
+            Output("data_sources_table", "data"),
+        ],
         Input("data-sources-updater", "n_intervals"),
         prevent_initial_call=True,
     )
@@ -35,7 +38,8 @@ def update_data_sources_table(app: Dash, data_source_broker: DataSourceWebView):
         data_source_broker.refresh()
         data_source_rows = data_source_broker.data_sources_summary()
         data_source_rows["id"] = range(len(data_source_rows))
-        return data_source_rows.to_dict("records")
+        column_setup_list = table.Table().column_setup(data_source_rows, markdown_columns=["Name"])
+        return [column_setup_list, data_source_rows.to_dict("records")]
 
 
 # Highlights the selected row in the table
@@ -109,15 +113,15 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
         header = f"Sample/Outlier Rows: {data_source_name}"
 
         # The columns need to be in a special format for the DataTable
-        column_setup_list = table.column_setup(smart_sample_rows)
+        column_setup_list = table.Table().column_setup(smart_sample_rows)
 
         # We need to update our style_data_conditional to color the outlier groups
         if color_column not in smart_sample_rows.columns:
-            style_cells = table.style_data_conditional()
+            style_cells = table.Table().style_data_conditional()
         else:
             unique_categories = smart_sample_rows[color_column].unique().tolist()
             unique_categories = [x for x in unique_categories if x != "sample"]
-            style_cells = table.style_data_conditional(color_column, unique_categories)
+            style_cells = table.Table().style_data_conditional(color_column, unique_categories)
 
         # Return the header, columns, style_cell, and the data
         return [header, column_setup_list, style_cells, smart_sample_rows.to_dict("records")]

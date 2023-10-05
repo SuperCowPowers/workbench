@@ -26,7 +26,10 @@ def refresh_data_timer(app: Dash):
 
 def update_feature_sets_table(app: Dash, feature_set_broker: FeatureSetWebView):
     @app.callback(
-        Output("feature_sets_table", "data"),
+        [
+            Output("feature_sets_table", "columns"),
+            Output("feature_sets_table", "data"),
+        ],
         Input("feature-sets-updater", "n_intervals"),
         prevent_initial_call=True,
     )
@@ -34,8 +37,9 @@ def update_feature_sets_table(app: Dash, feature_set_broker: FeatureSetWebView):
         """Return the table data for the FeatureSets Table"""
         feature_set_broker.refresh()
         feature_set_rows = feature_set_broker.feature_sets_summary()
-        feature_set_rows["id"] = feature_set_rows.index
-        return feature_set_rows.to_dict("records")
+        feature_set_rows["id"] = range(len(feature_set_rows))
+        column_setup_list = table.Table().column_setup(feature_set_rows, markdown_columns=["Feature Group"])
+        return [column_setup_list, feature_set_rows.to_dict("records")]
 
 
 # Highlights the selected row in the table
@@ -109,15 +113,15 @@ def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWe
         header = f"Sample/Outlier Rows: {feature_set_name}"
 
         # The columns need to be in a special format for the DataTable
-        column_setup_list = table.column_setup(smart_sample_rows)
+        column_setup_list = table.Table().column_setup(smart_sample_rows)
 
         # We need to update our style_data_conditional to color the outlier groups
         if color_column not in smart_sample_rows.columns:
-            style_cells = table.style_data_conditional()
+            style_cells = table.Table().style_data_conditional()
         else:
             unique_categories = smart_sample_rows[color_column].unique().tolist()
             unique_categories = [x for x in unique_categories if x != "sample"]
-            style_cells = table.style_data_conditional(color_column, unique_categories)
+            style_cells = table.Table().style_data_conditional(color_column, unique_categories)
 
         # Return the columns and the data
         return [header, column_setup_list, style_cells, smart_sample_rows.to_dict("records")]

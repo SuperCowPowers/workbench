@@ -33,12 +33,10 @@ data_source_broker = DataSourceWebView()
 data_source_rows = data_source_broker.data_sources_summary()
 
 # Create a table to display the data sources
-data_sources_table = table.create(
+data_sources_table = table.Table().create_component(
     "data_sources_table",
-    data_source_rows,
     header_color="rgb(100, 60, 60)",
     row_select="single",
-    markdown_columns=["Name"],
 )
 
 # Data Source Details
@@ -48,14 +46,12 @@ data_details = compound_details.create("data_source_details", details)
 # Grab outlier rows from the first data source
 outlier_rows = data_source_broker.data_source_outliers(0)
 column_types = details["column_details"] if details is not None else None
-compound_rows = table.create(
+compound_rows = table.Table().create_component(
     "compound_rows",
-    outlier_rows,
     column_types=column_types,
     header_color="rgb(80, 80, 80)",
     row_select="single",
     max_height="400px",
-    color_column="outlier_group",
 )
 
 # Create a box plot of all the numeric columns in the sample rows

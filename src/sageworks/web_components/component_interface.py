@@ -4,8 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Union
 import plotly.graph_objects as go
 import pandas as pd
-from dash import dcc, html
-from dash import dash_table
+from dash import dcc, html, dash_table
 
 
 class ComponentInterface(ABC):

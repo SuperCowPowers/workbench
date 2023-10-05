@@ -117,7 +117,7 @@ def update_compound_rows(app: Dash, data_source_web_view: DataSourceWebView):
         header = f"{data_source_name}: compounds"
 
         # The columns need to be in a special format for the DataTable
-        column_setup_list = table.column_setup(sample_rows)
+        column_setup_list = table.Table().column_setup(sample_rows)
 
         # Return the columns and the data
         return [header, column_setup_list, sample_rows.to_dict("records")]

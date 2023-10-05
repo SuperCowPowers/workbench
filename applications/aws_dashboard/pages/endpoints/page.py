@@ -29,12 +29,10 @@ sageworks_artifacts = ArtifactsWebView()
 endpoints_summary = sageworks_artifacts.endpoints_summary()
 
 # Create a table to display the feature sets
-endpoints_table = table.create(
+endpoints_table = table.Table().create_component(
     "ENDPOINTS_DETAILS",
-    endpoints_summary,
     header_color="rgb(100, 60, 100)",
     row_select="single",
-    markdown_columns=["Name"],
 )
 
 # Create a fake scatter plot

@@ -16,58 +16,34 @@ register_page(
     name="SageWorks",
 )
 
-
-# Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
-
-# Grab a view that gives us a summary of all the artifacts currently in SageWorks
-web_view = ArtifactsWebView()
-sageworks_artifacts = web_view.view_data()
-
-# Add a 'delete' column for all the artifacts listings except for the INCOMING_DATA and GLUE_JOBS
-for category in sageworks_artifacts:
-    if category not in ["INCOMING_DATA", "GLUE_JOBS"]:
-        sageworks_artifacts[category]["del"] = "<img src='../assets/trash.png' id='trash-icon'>"
-
-# Grab the Artifact Information DataFrame for each AWS Service and pass it to the table creation
+# Create a table for each AWS Service and Artifact Type
 tables = dict()
-tables["INCOMING_DATA"] = table.create(
-    table_id="INCOMING_DATA",
-    df=sageworks_artifacts["INCOMING_DATA"],
+tables["INCOMING_DATA"] = table.Table().create_component(
+    "INCOMING_DATA",
     header_color="rgb(60, 60, 100)",
-    markdown_columns=["Name"],
 )
-tables["GLUE_JOBS"] = table.create(
-    table_id="GLUE_JOBS",
-    df=sageworks_artifacts["GLUE_JOBS"],
+tables["GLUE_JOBS"] = table.Table().create_component(
+    "GLUE_JOBS",
     header_color="rgb(60, 60, 100)",
-    markdown_columns=["Name"],
 )
-tables["DATA_SOURCES"] = table.create(
-    table_id="DATA_SOURCES",
-    df=sageworks_artifacts["DATA_SOURCES"],
+tables["DATA_SOURCES"] = table.Table().create_component(
+    "DATA_SOURCES",
     header_color="rgb(100, 60, 60)",
-    markdown_columns=["Name", "del"],
 )
-tables["FEATURE_SETS"] = table.create(
-    table_id="FEATURE_SETS",
-    df=sageworks_artifacts["FEATURE_SETS"],
+tables["FEATURE_SETS"] = table.Table().create_component(
+    "FEATURE_SETS",
     header_color="rgb(100, 100, 60)",
-    markdown_columns=["Feature Group", "del"],
 )
-tables["MODELS"] = table.create(
-    table_id="MODELS",
-    df=sageworks_artifacts["MODELS"],
+tables["MODELS"] = table.Table().create_component(
+    "MODELS",
     header_color="rgb(60, 100, 60)",
-    markdown_columns=["Model Group", "del"],
 )
-tables["ENDPOINTS"] = table.create(
-    table_id="ENDPOINTS",
-    df=sageworks_artifacts["ENDPOINTS"],
+tables["ENDPOINTS"] = table.Table().create_component(
+    "ENDPOINTS",
     header_color="rgb(100, 60, 100)",
-    markdown_columns=["Name", "del"],
 )
 
-# Create our components
+# Set up our components
 components = {
     "incoming_data": tables["INCOMING_DATA"],
     "glue_jobs": tables["GLUE_JOBS"],
@@ -79,6 +55,9 @@ components = {
 
 # Set up our layout (Dash looks for a var called layout)
 layout = main_layout(**components)
+
+# Grab a view that gives us a summary of all the artifacts currently in SageWorks
+web_view = ArtifactsWebView()
 
 # Setup our callbacks/connections
 app = dash.get_app()

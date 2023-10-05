@@ -37,12 +37,10 @@ data_path = str(Path(__file__).resolve().parent.parent / "data/toy_data.csv")
 fake_model_info = mock_model_data.ModelData(data_path)
 
 # Create a table to display the models
-models_table = table.create(
+models_table = table.Table().create_component(
     "models_table",
-    models_rows,
     header_color="rgb(60, 100, 60)",
     row_select="single",
-    markdown_columns=["Model Group"],
 )
 
 # Create all the other components on this page

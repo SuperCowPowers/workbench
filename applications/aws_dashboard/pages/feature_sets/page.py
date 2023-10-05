@@ -23,22 +23,18 @@ feature_set_broker = FeatureSetWebView()
 feature_set_rows = feature_set_broker.feature_sets_summary()
 
 # Create a table to display the data sources
-feature_sets_table = table.create(
+feature_sets_table = table.Table().create_component(
     "feature_sets_table",
-    feature_set_rows,
     header_color="rgb(100, 100, 60)",
     row_select="single",
-    markdown_columns=["Feature Group"],
 )
 
 # Grab smart_sample rows from the first Feature Set
 smart_sample_rows = feature_set_broker.feature_set_smart_sample(0)
-feature_set_sample_rows = table.create(
+feature_set_sample_rows = table.Table().create_component(
     "feature_set_sample_rows",
-    smart_sample_rows,
     header_color="rgb(60, 60, 100)",
     max_height="300px",
-    color_column="outlier_group",
 )
 
 # Feature Set Details

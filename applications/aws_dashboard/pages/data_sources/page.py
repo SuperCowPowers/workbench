@@ -25,22 +25,18 @@ data_source_broker = DataSourceWebView()
 data_source_rows = data_source_broker.data_sources_summary()
 
 # Create a table to display the data sources
-data_sources_table = table.create(
+data_sources_table = table.Table().create_component(
     "data_sources_table",
-    data_source_rows,
     header_color="rgb(100, 60, 60)",
     row_select="single",
-    markdown_columns=["Name"],
 )
 
 # Grab sample rows from the first data source
 smart_sample_rows = data_source_broker.data_source_smart_sample(0)
-data_source_sample_rows = table.create(
+data_source_sample_rows = table.Table().create_component(
     "data_source_sample_rows",
-    smart_sample_rows,
     header_color="rgb(60, 60, 100)",
     max_height="300px",
-    color_column="outlier_group",
 )
 
 # Data Source Details
