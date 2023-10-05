@@ -26,13 +26,7 @@ def refresh_data_timer(app: Dash):
 
 
 def update_models_table(app: Dash):
-    @app.callback(
-        [
-            Output("models_table", "columns"),
-            Output("models_table", "data")
-        ],
-        Input("aws-broker-data", "data")
-    )
+    @app.callback([Output("models_table", "columns"), Output("models_table", "data")], Input("aws-broker-data", "data"))
     def models_update(serialized_aws_broker_data):
         aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
         models = aws_broker_data["MODELS"]
