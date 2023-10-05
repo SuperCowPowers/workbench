@@ -38,8 +38,6 @@ def data_sources_layout(
                         },
                     ),
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
-                    # Just the auto updater (this isn't visible)
-                    dcc.Interval(id="data-sources-updater", interval=10000, n_intervals=0),
                 ]
             ),
             dbc.Row(

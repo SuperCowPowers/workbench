@@ -21,7 +21,7 @@ server = app.server
 app.layout = html.Div(
     [
         dcc.Store(id="aws-broker-data", storage_type="local"),
-        dcc.Interval(id="broker-update-timer", interval=10000, n_intervals=0),
+        dcc.Interval(id="broker-update-timer", interval=5000, n_intervals=0),
         page_container,
     ]
 )

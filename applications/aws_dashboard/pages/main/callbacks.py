@@ -40,11 +40,11 @@ def refresh_data(app: Dash, web_view: ArtifactsWebView, force_refresh=False):
             new_time = new_time + " (Data Update)"
             return [new_time, serialized_data]
 
-        # Check if the data has changed
+        # If the data hasn't changed just return the new time
         if n and content_hash(aws_broker_data) == content_hash(serialized_data):
             return [new_time, no_update]
 
-        # Update the time
+        # Update both the time and the data
         new_time = new_time + " (Data Update)"
         return [new_time, serialized_data]
 
