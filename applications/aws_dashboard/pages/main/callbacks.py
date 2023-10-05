@@ -71,7 +71,8 @@ def update_artifact_tables(app: Dash):
             Output("FEATURE_SETS", "data"),
         ],
         Input("main-updater", "n_intervals"),
-        prevent_initial_call=True)
+        prevent_initial_call=True,
+    )
     def feature_sets_update(n):
         if all_data is None:
             return [{}]  # Return an empty row
@@ -85,7 +86,8 @@ def update_artifact_tables(app: Dash):
             Output("MODELS", "data"),
         ],
         Input("main-updater", "n_intervals"),
-        prevent_initial_call=True)
+        prevent_initial_call=True,
+    )
     def models_update(n):
         if all_data is None:
             return [{}]  # Return an empty row
@@ -99,7 +101,8 @@ def update_artifact_tables(app: Dash):
             Output("ENDPOINTS", "data"),
         ],
         Input("main-updater", "n_intervals"),
-        prevent_initial_call=True)
+        prevent_initial_call=True,
+    )
     def endpoints_update(n):
         if all_data is None:
             return [{}]  # Return an empty row

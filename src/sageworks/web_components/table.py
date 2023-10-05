@@ -14,11 +14,14 @@ from sageworks.web_components.component_interface import ComponentInterface
 class Table(ComponentInterface):
     """Data Details Markdown Component"""
 
-    def create_component(self, component_id: str,
-                         header_color="rgb(60, 60, 60)",
-                         row_select=False,
-                         max_height: str = "200px",
-                         fixed_headers: bool = False) -> dash_table.DataTable:
+    def create_component(
+        self,
+        component_id: str,
+        header_color="rgb(60, 60, 60)",
+        row_select=False,
+        max_height: str = "200px",
+        fixed_headers: bool = False,
+    ) -> dash_table.DataTable:
         """Create a DataTable Component without any data.
         Args:
             component_id (str): The ID of the web component
@@ -64,7 +67,7 @@ class Table(ComponentInterface):
             style_header_conditional=[{"if": {"column_id": "del"}, "color": "transparent"}],
             style_cell_conditional=[
                 {"if": {"column_id": "del"}, "padding": "7px 0px 0px 0px"},
-            ]
+            ],
         )
         return table
 
