@@ -88,6 +88,21 @@ class Model(Artifact):
         details = self.summary()
         details["model_package_group_arn"] = self.group_arn()
         details["model_package_arn"] = self.model_arn()
+        aws_meta = self.aws_meta()
+        details["description"] = aws_meta["ModelPackageDescription"]
+        details["status"] = aws_meta["ModelPackageStatus"]
+        details["approval_status"] = aws_meta["ModelApprovalStatus"]
+        package_details = aws_meta["ModelPackageDetails"]
+        inference_spec = package_details["InferenceSpecification"]
+        container = inference_spec["Containers"][0]
+        image_short = container["Image"].split("/")[-1]
+        details["image"] = image_short
+        details["framework"] = container["Framework"]
+        details["framework_version"] = container["FrameworkVersion"]
+        details["inference_types"] = inference_spec["SupportedRealtimeInferenceInstanceTypes"]
+        details["transform_types"] = inference_spec["SupportedTransformInstanceTypes"]
+        details["content_types"] = inference_spec["SupportedContentTypes"]
+        details["response_types"] = inference_spec["SupportedResponseMIMETypes"]
         return details
 
     def make_ready(self) -> bool:
