@@ -3,6 +3,7 @@ import pandas as pd
 from pandas.errors import ParserError
 import numpy as np
 import json
+from io import StringIO
 import logging
 
 # SageWorks Imports
@@ -329,6 +330,30 @@ def convert_object_columns(df: pd.DataFrame) -> pd.DataFrame:
             except (ParserError, ValueError, TypeError):
                 log.debug(f"Column {c} could not be converted to string...")
     return df
+
+
+def serialize_aws_broker_data(broker_data):
+    """
+    Serializes a dictionary of DataFrames to a JSON-formatted string.
+    Args:
+        broker_data (dict): Dictionary of DataFrames
+    Returns:
+        str: JSON-formatted string
+    """
+    serialized_dict = {key: df.to_json() for key, df in broker_data.items()}
+    return json.dumps(serialized_dict)
+
+
+def deserialize_aws_broker_data(serialized_data):
+    """
+    Deserializes a JSON-formatted string to a dictionary of DataFrames.
+    Args:
+        serialized_data (str): JSON-formatted string
+    Returns:
+        dict: Dictionary of DataFrames
+    """
+    deserialized_dict = json.loads(serialized_data)
+    return {key: pd.read_json(StringIO(df_json)) for key, df_json in deserialized_dict.items()}
 
 
 if __name__ == "__main__":

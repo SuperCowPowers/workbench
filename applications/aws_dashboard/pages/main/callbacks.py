@@ -1,9 +1,6 @@
 """Callbacks/Connections in the Web User Interface"""
 from datetime import datetime
-from io import StringIO
 import hashlib
-import pandas as pd
-import json
 from dash import Dash, no_update
 from dash.dependencies import Input, Output, State
 
@@ -11,35 +8,12 @@ from dash.dependencies import Input, Output, State
 # SageWorks Imports
 from sageworks.views.artifacts_web_view import ArtifactsWebView
 from sageworks.web_components import table
+from sageworks.utils.pandas_utils import serialize_aws_broker_data, deserialize_aws_broker_data
 
 
 # Helper functions
 def content_hash(serialized_data):
     return hashlib.md5(serialized_data.encode()).hexdigest()
-
-
-def serialize_aws_broker_data(broker_data):
-    """
-    Serializes a dictionary of DataFrames to a JSON-formatted string.
-    Args:
-        broker_data (dict): Dictionary of DataFrames
-    Returns:
-        str: JSON-formatted string
-    """
-    serialized_dict = {key: df.to_json() for key, df in broker_data.items()}
-    return json.dumps(serialized_dict)
-
-
-def deserialize_aws_broker_data(serialized_data):
-    """
-    Deserializes a JSON-formatted string to a dictionary of DataFrames.
-    Args:
-        serialized_data (str): JSON-formatted string
-    Returns:
-        dict: Dictionary of DataFrames
-    """
-    deserialized_dict = json.loads(serialized_data)
-    return {key: pd.read_json(StringIO(df_json)) for key, df_json in deserialized_dict.items()}
 
 
 def refresh_data(app: Dash, web_view: ArtifactsWebView, force_refresh=False):
