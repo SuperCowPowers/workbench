@@ -1,5 +1,4 @@
 """Callbacks for the Model Subpage Web User Interface"""
-import dash
 from dash import Dash, no_update
 from dash.dependencies import Input, Output
 

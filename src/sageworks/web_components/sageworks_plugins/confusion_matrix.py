@@ -1,6 +1,5 @@
 """A confusion matrix plugin component"""
-from dash import Dash, dcc, no_update
-from dash.dependencies import Input, Output
+from dash import dcc
 import plotly.graph_objects as go
 import pandas as pd
 import random
