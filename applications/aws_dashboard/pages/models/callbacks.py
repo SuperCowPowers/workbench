@@ -1,6 +1,6 @@
 """Callbacks for the Model Subpage Web User Interface"""
 import dash
-from dash import Dash
+from dash import Dash, no_update
 from dash.dependencies import Input, Output
 
 # SageWorks Imports
@@ -36,7 +36,7 @@ def table_row_select(app: Dash, table_name: str):
     def style_selected_rows(selected_rows):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
+            return no_update
         row_style = [
             {
                 "if": {"filter_query": "{{id}} ={}".format(i)},
@@ -60,7 +60,7 @@ def update_model_details(app: Dash, model_web_view: ModelWebView):
     def generate_new_markdown(selected_rows):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
+            return no_update
         print("Calling Model Details...")
         model_details = model_web_view.model_details(selected_rows[0])
         model_details_markdown = model_markdown.ModelMarkdown().generate_markdown(model_details)
@@ -71,3 +71,18 @@ def update_model_details(app: Dash, model_web_view: ModelWebView):
 
         # Return the details/markdown for these data details
         return [header, model_details_markdown]
+
+
+# Updates the plugin component when a model row is selected
+def update_plugin(app: Dash, plugin):
+    @app.callback(
+        Output(plugin.component_id(), "figure"),
+        Input("models_table", "derived_viewport_selected_row_ids"),
+        prevent_initial_call=True,
+    )
+    def update_callback(selected_rows):
+        print(f"Selected Rows: {selected_rows}")
+        if not selected_rows or selected_rows[0] is None:
+            return no_update
+
+        return plugin.generate_component_figure()

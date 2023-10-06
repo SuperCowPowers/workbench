@@ -81,21 +81,3 @@ class ConfusionMatrix(ComponentInterface):
                 fig.add_annotation(x=j, y=i, text=f"{value:.2f}", showarrow=False, font_size=14)
 
         return fig
-
-    # Register the callbacks for the component
-    def register_callbacks(self, app: Dash):
-        self.update_confusion_matrix(app)
-
-    # Updates the confusion matrix when a model row is selected
-    def update_confusion_matrix(self, app: Dash):
-        @app.callback(
-            Output(self.component_id(), "figure"),
-            Input("models_table", "derived_viewport_selected_row_ids"),
-            prevent_initial_call=True,
-        )
-        def update_callback(selected_rows):
-            print(f"Selected Rows: {selected_rows}")
-            if not selected_rows or selected_rows[0] is None:
-                return no_update
-
-            return self.generate_component_figure()

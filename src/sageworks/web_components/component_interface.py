@@ -41,15 +41,6 @@ class ComponentInterface(ABC):
         """
         raise NotImplementedError("This component doesn't use Plotly figures")
 
-    def register_callbacks(self, app: Dash):
-        """Method for registering Dash callbacks
-        Args:
-            app (Dash): The Dash app to register the callbacks with
-        Notes:
-            Plugin Components should overload this method, not used for standard components
-        """
-        pass
-
     def component_id(self) -> str:
         """This helper method returns the component ID for the component
         Returns:

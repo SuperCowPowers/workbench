@@ -59,6 +59,7 @@ callbacks.update_models_table(app)
 callbacks.table_row_select(app, "models_table")
 callbacks.update_model_details(app, model_broker)
 
-# Register the callbacks for the plugins
+# For each plugin, set up a callback to update the plugin figure
 for plugin in plugins:
-    plugin.register_callbacks(app)
+    callbacks.update_plugin(app, plugin)
+
