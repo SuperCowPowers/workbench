@@ -32,11 +32,11 @@ class ConfusionMatrix(ComponentInterface):
         if df is None:
             # Make some fake data
             data = {
-                'low': [random.uniform(0.5, 0.9), 0.2, 0.3],
-                'med': [0.1, random.uniform(0.5, 0.9), 0.2],
-                'high': [0.1, 0.1, random.uniform(0.5, 0.9)]
+                "low": [random.uniform(0.5, 0.9), 0.2, 0.3],
+                "med": [0.1, random.uniform(0.5, 0.9), 0.2],
+                "high": [0.1, 0.1, random.uniform(0.5, 0.9)],
             }
-            index_labels = ['low', 'med', 'high']
+            index_labels = ["low", "med", "high"]
             df = pd.DataFrame(data, index=index_labels)
 
         # A nice color scale for the correlation matrix

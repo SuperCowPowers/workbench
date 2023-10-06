@@ -34,4 +34,3 @@ class ModelMarkdown(ComponentInterface):
             markdown += f"**{key}:** {value}<br>"
         markdown += "\n#### Model Scores and Metrics\n"
         return markdown
-

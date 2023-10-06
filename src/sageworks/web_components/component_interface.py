@@ -4,7 +4,7 @@ from typing import Any, Union
 import re
 import plotly.graph_objects as go
 import pandas as pd
-from dash import Dash, dcc, html, dash_table
+from dash import dcc, html, dash_table
 
 
 class ComponentInterface(ABC):
@@ -51,7 +51,7 @@ class ComponentInterface(ABC):
         plugin_class_name = self.__class__.__name__
 
         # Convert the plugin class name to snake case component ID
-        component_id = re.sub('([a-z0-9])([A-Z])', r'\1_\2', plugin_class_name).lower()
+        component_id = re.sub("([a-z0-9])([A-Z])", r"\1_\2", plugin_class_name).lower()
         return component_id
 
     @staticmethod

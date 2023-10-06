@@ -62,4 +62,3 @@ callbacks.update_model_details(app, model_broker)
 # For each plugin, set up a callback to update the plugin figure
 for plugin in plugins:
     callbacks.update_plugin(app, plugin)
-

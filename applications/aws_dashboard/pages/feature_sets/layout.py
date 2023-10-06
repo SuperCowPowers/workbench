@@ -21,7 +21,6 @@ def feature_sets_layout(
             ),
             # A table that lists out all the Feature Sets
             dbc.Row(feature_sets_table),
-
             # Sample Rows for the selected Feature Set
             dbc.Row(
                 html.H3("Sampled Rows", id="feature_sample_rows_header"),

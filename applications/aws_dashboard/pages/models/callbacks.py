@@ -11,10 +11,7 @@ from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 def update_models_table(app: Dash):
     @app.callback(
-        [
-            Output("models_table", "columns"),
-            Output("models_table", "data")
-        ],
+        [Output("models_table", "columns"), Output("models_table", "data")],
         Input("aws-broker-data", "data"),
     )
     def models_update(serialized_aws_broker_data):

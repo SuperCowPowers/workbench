@@ -9,13 +9,13 @@ def models_layout(
     model_details: dcc.Markdown,
     **kwargs: Any,
 ) -> html.Div:
-
     # Generate rows for each plugin
     plugin_rows = [
         dbc.Row(
             plugin,
             style={"padding": "50px 50px 50px 50px"},
-        ) for component_id, plugin in kwargs.items()
+        )
+        for component_id, plugin in kwargs.items()
     ]
     layout = html.Div(
         children=[
@@ -27,7 +27,6 @@ def models_layout(
             ),
             # A table that lists out all the Models
             dbc.Row(models_table),
-
             # Model Details, and Plugins
             dbc.Row(
                 [
@@ -53,7 +52,7 @@ def models_layout(
                                 style={"padding": "30px 0px 10px 0px"},
                             ),
                             # Add the dynamically generated Plugin rows
-                            *plugin_rows
+                            *plugin_rows,
                         ],
                         width=8,
                     ),
