@@ -32,6 +32,6 @@ class ModelMarkdown(ComponentInterface):
         markdown = f"#### {model_name}\n"
         for key, value in model_details.items():
             markdown += f"**{key}:** {value}<br>"
-        markdown += "#### Model Scores and Metrics\n"
+        markdown += "\n#### Model Scores and Metrics\n"
         return markdown
 

@@ -35,13 +35,13 @@ if __name__ == "__main__":
         print("Waiting for the wine_data to be created...")
         time.sleep(5)
 
-    # Create the wine_feature_set FeatureSet
+    # Create the wine_features FeatureSet
     if not FeatureSet("wine_features").exists():
         data_to_features = DataToFeaturesLight("wine_data", "wine_features")
         data_to_features.set_output_tags(["wine", "classification"])
         data_to_features.transform(target="wine_class", description="Wine Classification Features")
 
-    # Create the abalone_classification Model
+    # Create the wine classification Model
     if not Model("wine-classification").exists():
         features_to_model = FeaturesToModel("wine_features", "wine-classification")
         features_to_model.set_output_tags(["wine", "classification"])
@@ -51,7 +51,7 @@ if __name__ == "__main__":
         print("Waiting for the Model to be created...")
         time.sleep(10)
 
-    # Create the abalone_regression Endpoint
+    # Create the wine classification Endpoint
     if not Endpoint("wine-classification-end").exists():
         model_to_endpoint = ModelToEndpoint("wine-classification", "wine-classification-end")
         model_to_endpoint.set_output_tags(["wine", "classification"])
