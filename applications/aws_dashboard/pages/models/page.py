@@ -1,3 +1,4 @@
+import os
 from dash import register_page
 import dash
 from dash_bootstrap_templates import load_figure_template
@@ -7,7 +8,7 @@ from .layout import models_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, model_markdown
+from sageworks.web_components import table, model_markdown, plugin_loader
 from sageworks.views.model_web_view import ModelWebView
 
 # Register this page with Dash
@@ -33,12 +34,19 @@ models_table = table.Table().create_component(
 # Create a Markdown component to display the model details
 model_details = model_markdown.ModelMarkdown().create_component("model_details")
 
-
 # Capture our components in a dictionary to send off to the layout
 components = {
     "models_table": models_table,
     "model_details": model_details,
 }
+
+# Load the plugins from the sageworks_plugins directory
+plugins = plugin_loader.load_plugins_from_dir(os.getenv("SAGEWORKS_PLUGINS"))
+
+# Add the plugins to the components dictionary
+for plugin in plugins:
+    component_id = plugin.component_id()
+    components[component_id] = plugin.create_component(component_id)
 
 # Set up our layout (Dash looks for a var called layout)
 layout = models_layout(**components)
@@ -50,3 +58,7 @@ callbacks.update_models_table(app)
 # Callback for the model table
 callbacks.table_row_select(app, "models_table")
 callbacks.update_model_details(app, model_broker)
+
+# Register the callbacks for the plugins
+for plugin in plugins:
+    plugin.register_callbacks(app)

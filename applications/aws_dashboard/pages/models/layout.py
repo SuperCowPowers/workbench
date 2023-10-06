@@ -1,4 +1,5 @@
 """Layout for the models page"""
+from typing import Any
 from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
 
@@ -6,7 +7,16 @@ import dash_bootstrap_components as dbc
 def models_layout(
     models_table: dash_table.DataTable,
     model_details: dcc.Markdown,
+    **kwargs: Any,
 ) -> html.Div:
+
+    # Generate rows for each plugin
+    plugin_rows = [
+        dbc.Row(
+            plugin,
+            style={"padding": "50px 50px 50px 50px"},
+        ) for component_id, plugin in kwargs.items()
+    ]
     layout = html.Div(
         children=[
             dbc.Row(
@@ -42,10 +52,8 @@ def models_layout(
                                 html.H3("Plugins", id="plugins_header"),
                                 style={"padding": "30px 0px 10px 0px"},
                             ),
-                            dbc.Row(
-                                html.H3("Plugin Widget", id="plugin_widget"),
-                                style={"padding": "50px 50px 50px 50px"},
-                            ),
+                            # Add the dynamically generated Plugin rows
+                            *plugin_rows
                         ],
                         width=8,
                     ),

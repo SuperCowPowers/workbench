@@ -1,10 +1,10 @@
 """An abstract class that defines the web component interface for SageWorks"""
-
 from abc import ABC, abstractmethod
 from typing import Any, Union
+import re
 import plotly.graph_objects as go
 import pandas as pd
-from dash import dcc, html, dash_table
+from dash import Dash, dcc, html, dash_table
 
 
 class ComponentInterface(ABC):
@@ -36,8 +36,32 @@ class ComponentInterface(ABC):
             kwargs (Any): Any additional arguments to pass for figure generation.
         Returns:
             go.Figure: A Plotly Figure
+        Notes:
+            Overloading this method is optional, some components don't use Plotly figures.
         """
         raise NotImplementedError("This component doesn't use Plotly figures")
+
+    def register_callbacks(self, app: Dash):
+        """Method for registering Dash callbacks
+        Args:
+            app (Dash): The Dash app to register the callbacks with
+        Notes:
+            Plugin Components should overload this method, not used for standard components
+        """
+        pass
+
+    def component_id(self) -> str:
+        """This helper method returns the component ID for the component
+        Returns:
+            str: An auto generated component ID
+        """
+
+        # Get the plugin class name
+        plugin_class_name = self.__class__.__name__
+
+        # Convert the plugin class name to snake case component ID
+        component_id = re.sub('([a-z0-9])([A-Z])', r'\1_\2', plugin_class_name).lower()
+        return component_id
 
     @staticmethod
     def waiting_figure():
