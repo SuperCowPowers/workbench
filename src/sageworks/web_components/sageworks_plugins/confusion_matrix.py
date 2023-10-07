@@ -84,6 +84,7 @@ class ConfusionMatrix(PluginInterface):
 if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
     from sageworks.artifacts.models.model import Model
+
     m = Model("wine-classification")
     model_details = m.details()
 
