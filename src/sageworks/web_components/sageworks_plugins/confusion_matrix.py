@@ -2,7 +2,6 @@
 from dash import dcc
 import plotly.graph_objects as go
 import pandas as pd
-import random
 
 
 # SageWorks Imports

@@ -1,9 +1,7 @@
 """An abstract class that defines the web component interface for SageWorks"""
 from abc import abstractmethod
-from typing import Any, Union
+from typing import Any
 from enum import Enum
-import plotly.graph_objects as go
-from dash import dcc, html
 
 # Local Imports
 from sageworks.web_components.component_interface import ComponentInterface
