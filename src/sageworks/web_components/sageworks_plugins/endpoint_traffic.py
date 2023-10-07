@@ -9,6 +9,7 @@ from sageworks.web_components.plugin_interface import PluginInterface, PluginTyp
 
 class EndpointTraffic(PluginInterface):
     """Endpoint Traffic Component"""
+
     plugin_type = PluginType.ENDPOINT
     plugin_input_type = PluginInputType.ENDPOINT_DETAILS
 
