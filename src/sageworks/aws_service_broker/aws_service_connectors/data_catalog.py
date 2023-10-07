@@ -40,7 +40,7 @@ class DataCatalog(Connector):
 
         # For each database in our scoped list, load the tables
         for database in self.scoped_database_list:
-            print(f"Reading Data Catalog Database: {database}...")
+            self.log.debug(f"Reading Data Catalog Database: {database}...")
             table_list = wr.catalog.get_tables(database=database, boto3_session=self.boto_session)
 
             # Convert to a data structure with direct lookup

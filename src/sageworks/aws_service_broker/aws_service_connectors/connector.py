@@ -59,7 +59,7 @@ class Connector(ABC):
         Note: This functionality is a helper or Feature Store, Models, and Endpoints.
               The Data Catalog and Glue Jobs class have their own methods/logic
         """
-        self.log.info(f"Retrieving SageWorks Metadata for Artifact: {arn}...")
+        self.log.debug(f"Retrieving SageWorks Metadata for Artifact: {arn}...")
         aws_tags = self.sm_session.list_tags(arn)
         meta = self._aws_tags_to_dict(aws_tags)
         return meta

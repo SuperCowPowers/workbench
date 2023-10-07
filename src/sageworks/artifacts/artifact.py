@@ -75,7 +75,7 @@ class Artifact(ABC):
         existing_meta = self.sageworks_meta()
         ready = set(existing_meta.keys()).issuperset(expected_meta)
         if ready:
-            self.log.info(f"Artifact {self.uuid} expected metadata found")
+            self.log.debug(f"Artifact {self.uuid} expected metadata found")
             status = self.get_status()  # Sanity Check the Artifact Status
             if status != "ready":
                 self.log.warning(f"Artifact {self.uuid} is ready but status is {status}")
@@ -136,7 +136,7 @@ class Artifact(ABC):
               but not for DataSources. The DataSource class overrides this method.
         """
         aws_arn = self.arn()
-        self.log.info(f"Retrieving SageWorks Metadata for Artifact: {aws_arn}...")
+        self.log.debug(f"Retrieving SageWorks Metadata for Artifact: {aws_arn}...")
         aws_tags = self.sm_session.list_tags(aws_arn)
         meta = self._aws_tags_to_dict(aws_tags)
         return meta
