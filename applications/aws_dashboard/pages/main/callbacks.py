@@ -29,7 +29,6 @@ def refresh_data(app: Dash, web_view: ArtifactsWebView, force_refresh=False):
         # A string of the new time
         new_time = datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
-        print("Calling ALL Artifact Refresh...")
         web_view.refresh(force_refresh=force_refresh)
         new_broker_data = web_view.view_data()
         serialized_data = serialize_aws_broker_data(new_broker_data)
