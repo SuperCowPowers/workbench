@@ -70,7 +70,7 @@ def update_model_details(app: Dash, model_web_view: ModelWebView):
 
 
 # Updates the plugin component when a model row is selected
-def update_plugin(app: Dash, plugin):
+def update_plugin(app: Dash, plugin, model_web_view: ModelWebView):
     @app.callback(
         Output(plugin.component_id(), "figure"),
         Input("models_table", "derived_viewport_selected_row_ids"),
@@ -81,4 +81,6 @@ def update_plugin(app: Dash, plugin):
         if not selected_rows or selected_rows[0] is None:
             return no_update
 
-        return plugin.generate_component_figure()
+        print("Calling Model Details...")
+        model_details = model_web_view.model_details(selected_rows[0])
+        return plugin.generate_component_figure(model_details)

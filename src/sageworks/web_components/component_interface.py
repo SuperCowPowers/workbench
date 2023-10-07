@@ -10,7 +10,7 @@ from dash import dcc, html, dash_table
 class ComponentInterface(ABC):
     """A Stateless Abstract Web Component Interface
     Notes:
-      - These methods are ^stateless^,  all data should be passed through the
+      - These methods are ^stateless^, all data should be passed through the
         arguments and the implementations should not reference 'self' variables
       - The 'create_component' method must be implemented by the child class
       - The 'generate_component_figure' is optional (some components don't use Plotly figures)

@@ -1,5 +1,6 @@
 """Model: SageWorks Model Class"""
 from datetime import datetime
+import random
 
 
 # SageWorks Imports
@@ -103,6 +104,12 @@ class Model(Artifact):
         details["transform_types"] = inference_spec["SupportedTransformInstanceTypes"]
         details["content_types"] = inference_spec["SupportedContentTypes"]
         details["response_types"] = inference_spec["SupportedResponseMIMETypes"]
+
+        # Fake some details
+        cm = {'low': {'low': random.uniform(0.5, 0.9), 'med': 0.2, 'high': 0.2},
+              'med': {'low': 0.1, 'med': random.uniform(0.5, 0.9), 'high': 0.2},
+              'high': {'low': 0.1, 'med': 0.1, 'high': random.uniform(0.5, 0.9)}}
+        details["confusion_matrix"] = cm
         return details
 
     def make_ready(self) -> bool:

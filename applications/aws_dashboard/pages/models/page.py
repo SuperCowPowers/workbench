@@ -9,6 +9,7 @@ from . import callbacks
 
 # SageWorks Imports
 from sageworks.web_components import table, model_markdown, plugin_loader
+from sageworks.web_components.plugin_interface import PluginType
 from sageworks.views.model_web_view import ModelWebView
 
 # Register this page with Dash
@@ -41,7 +42,7 @@ components = {
 }
 
 # Load the plugins from the sageworks_plugins directory
-plugins = plugin_loader.load_plugins_from_dir(os.getenv("SAGEWORKS_PLUGINS"))
+plugins = plugin_loader.load_plugins_from_dir(os.getenv("SAGEWORKS_PLUGINS"), PluginType.MODEL)
 
 # Add the plugins to the components dictionary
 for plugin in plugins:
@@ -61,4 +62,4 @@ callbacks.update_model_details(app, model_broker)
 
 # For each plugin, set up a callback to update the plugin figure
 for plugin in plugins:
-    callbacks.update_plugin(app, plugin)
+    callbacks.update_plugin(app, plugin, model_broker)

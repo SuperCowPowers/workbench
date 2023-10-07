@@ -29,8 +29,18 @@ class ModelMarkdown(ComponentInterface):
         # Create simple markdown by iterating through the model_details dictionary
         # and adding a bullet point for each key/value pair
         model_name = model_details["uuid"]
+
+        # Excluded keys from the model_details dictionary (and any keys that end with '_arn')
+        exclude = ["size", "uuid", "confusion_matrix"]
+        top_level_details = {key: value for key, value in model_details.items() if key not in exclude and not key.endswith("_arn")}
+
+        # Now Loop through the model_details dictionary and create the markdown
         markdown = f"#### {model_name}\n"
-        for key, value in model_details.items():
+        for key, value in top_level_details.items():
             markdown += f"**{key}:** {value}<br>"
+
+        # Now let's add data associated with the Scoring and Metrics
         markdown += "\n#### Model Scores and Metrics\n"
+        if "confusion_matrix" in model_details:
+            markdown += f"**Confusion Matrix:** {model_details['confusion_matrix']}<br>"
         return markdown
