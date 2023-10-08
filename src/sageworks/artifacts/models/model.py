@@ -167,9 +167,11 @@ class Model(Artifact):
 
     def _extract_training_job_name(self) -> str:
         """Internal: Extract the training job name from the ModelDataUrl"""
-        model_data_url = self.latest_model["ModelPackageDetails"]["InferenceSpecification"]["Containers"][0]["ModelDataUrl"]
+        model_data_url = self.latest_model["ModelPackageDetails"]["InferenceSpecification"]["Containers"][0][
+            "ModelDataUrl"
+        ]
         parsed_url = urllib.parse.urlparse(model_data_url)
-        training_job_name = parsed_url.path.lstrip('/').split('/')[0]
+        training_job_name = parsed_url.path.lstrip("/").split("/")[0]
         return training_job_name
 
     def _process_training_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -177,12 +179,12 @@ class Model(Artifact):
 
         if self.model_type() == "classifier":
             # Extract the class and metric type from the metric_name column
-            df['metric_name'] = df['metric_name'].str.replace('Metrics_', '')
-            df['class'] = df['metric_name'].apply(lambda x: '_'.join(x.split('_')[:-1]))
-            df['metric_type'] = df['metric_name'].str.split('_').str[-1]
+            df["metric_name"] = df["metric_name"].str.replace("Metrics_", "")
+            df["class"] = df["metric_name"].apply(lambda x: "_".join(x.split("_")[:-1]))
+            df["metric_type"] = df["metric_name"].str.split("_").str[-1]
 
             # Pivot the DataFrame to get the desired structure
-            df_pivot = df.pivot(index='class', columns='metric_type', values='value').reset_index()
+            df_pivot = df.pivot(index="class", columns="metric_type", values="value").reset_index()
             df_pivot = df_pivot.rename_axis(None, axis=1)
             return df_pivot
         else:

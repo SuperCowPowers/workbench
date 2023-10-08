@@ -118,7 +118,7 @@ class FeaturesToModel(Transform):
             metric_definitions = [
                 {"Name": "RMSE", "Regex": "RMSE: ([0-9.]+)"},
                 {"Name": "MAE", "Regex": "MAE: ([0-9.]+)"},
-                {"Name": "R2", "Regex": "R2 Score: ([0-9.]+)"}
+                {"Name": "R2", "Regex": "R2 Score: ([0-9.]+)"},
             ]
         else:
             # We need to get creative with the Classification Metrics
@@ -131,7 +131,7 @@ class FeaturesToModel(Transform):
             metric_definitions = []
             for t in targets:
                 for m in metrics:
-                    metric_definitions.append({"Name": f"Metrics_{t}_{m}", 'Regex': f"Metrics_{t}_{m}: ([0-9.]+)"})
+                    metric_definitions.append({"Name": f"Metrics_{t}_{m}", "Regex": f"Metrics_{t}_{m}: ([0-9.]+)"})
 
         # Create a Sagemaker Model with our script
         self.estimator = SKLearn(
