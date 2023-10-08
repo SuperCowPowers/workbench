@@ -1,7 +1,10 @@
 """Model: SageWorks Model Class"""
 from datetime import datetime
 import random
+import urllib.parse
 
+import pandas as pd
+from sagemaker import TrainingJobAnalytics
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
@@ -35,6 +38,7 @@ class Model(Artifact):
         else:
             self.latest_model = self.model_meta[0]
             self.description = self.latest_model["ModelPackageDescription"]
+            self.training_job_name = self._extract_training_job_name()
 
         # All done
         self.log.info(f"Model Initialized: {self.model_name}")
@@ -44,6 +48,7 @@ class Model(Artifact):
         self.model_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS, force_refresh=True).get(self.model_name)
         self.latest_model = self.model_meta[0]
         self.description = self.latest_model["ModelPackageDescription"]
+        self.training_job_name = self._extract_training_job_name()
 
     def exists(self) -> bool:
         """Does the model metadata exist in the AWS Metadata?"""
@@ -51,6 +56,15 @@ class Model(Artifact):
             self.log.info(f"Model {self.model_name} not found in AWS Metadata!")
             return False
         return True
+
+    def model_type(self) -> str:
+        """Return the model type (classifier or regressor)"""
+        if "classification" in self.sageworks_tags():
+            return "classifier"
+        elif "regression" in self.sageworks_tags():
+            return "regressor"
+        else:
+            return "unknown"
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -138,6 +152,42 @@ class Model(Artifact):
         self.log.info(f"Deleting Model Group {self.model_name}...")
         self.sm_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
 
+    def training_job_metrics(self) -> pd.DataFrame:
+        """Grab any captured metrics from the training job for this model"""
+        try:
+            df = TrainingJobAnalytics(training_job_name=self.training_job_name).dataframe()
+            if "timestamp" in df.columns:
+                df = df.drop(columns=["timestamp"])
+
+            df = self._process_training_metrics(df)
+            return df
+        except KeyError:
+            self.log.warning(f"No training job metrics found for {self.training_job_name}")
+            return pd.DataFrame()
+
+    def _extract_training_job_name(self) -> str:
+        """Internal: Extract the training job name from the ModelDataUrl"""
+        model_data_url = self.latest_model["ModelPackageDetails"]["InferenceSpecification"]["Containers"][0]["ModelDataUrl"]
+        parsed_url = urllib.parse.urlparse(model_data_url)
+        training_job_name = parsed_url.path.lstrip('/').split('/')[0]
+        return training_job_name
+
+    def _process_training_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Internal: Process the training metrics into a more reasonable format"""
+
+        if self.model_type() == "classifier":
+            # Extract the class and metric type from the metric_name column
+            df['metric_name'] = df['metric_name'].str.replace('Metrics_', '')
+            df['class'] = df['metric_name'].apply(lambda x: '_'.join(x.split('_')[:-1]))
+            df['metric_type'] = df['metric_name'].str.split('_').str[-1]
+
+            # Pivot the DataFrame to get the desired structure
+            df_pivot = df.pivot(index='class', columns='metric_type', values='value').reset_index()
+            df_pivot = df_pivot.rename_axis(None, axis=1)
+            return df_pivot
+        else:
+            return df
+
 
 if __name__ == "__main__":
     """Exercise the Model Class"""
@@ -162,6 +212,13 @@ if __name__ == "__main__":
 
     # Get creation time
     print(f"Created: {my_model.created()}")
+
+    # Get training job name
+    print(f"Training Job: {my_model.training_job_name}")
+
+    # Get any captured metrics from the training job
+    print("Training Job Metrics:")
+    print(my_model.training_job_metrics())
 
     # Delete the Model
     # my_model.delete()

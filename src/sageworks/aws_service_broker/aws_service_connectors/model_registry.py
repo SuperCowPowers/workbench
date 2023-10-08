@@ -28,11 +28,10 @@ class ModelRegistry(Connector):
     def refresh_impl(self):
         """Load/reload the tables in the database"""
         # Grab all the Model Groups in the AWS Model Registry
-        print("Reading Model Registry...")
         _model_groups = self.sm_client.list_model_package_groups()["ModelPackageGroupSummaryList"]
         _mg_names = [model_group["ModelPackageGroupName"] for model_group in _model_groups]
 
-        # Grab the ModelPackageGroupArns (we'll use them later to store in the model_data)
+        # Grab the ModelPackageGroupARNs (we'll use them later to store in the model_data)
         self.model_package_group_arns = {g["ModelPackageGroupName"]: g["ModelPackageGroupArn"] for g in _model_groups}
 
         # Get the details for each Model Group and convert to a data structure with direct lookup

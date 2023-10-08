@@ -40,7 +40,7 @@ class FeaturesToModel(Transform):
         Args:
             target (str): Column name of the target variable
             feature_list (list[str]): A list of columns for the features
-            model_type (str): regression or classification
+            model_type (str): regressor or classifier
         Returns:
            str: The name of the generated model script
         """
@@ -65,14 +65,14 @@ class FeaturesToModel(Transform):
             fp.write(xgb_script)
         return script_name
 
-    def transform_impl(self, target, description, feature_list=None, model_type="regression"):
+    def transform_impl(self, target, description, feature_list=None, model_type="regressor"):
         """Generic Features to Model: Note you should create a new class and inherit from
         this one to include specific logic for your Feature Set/Model
         Args:
             target (str): Column name of the target variable
             description (str): Description of the model
             feature_list (list[str]): A list of columns for the features (default None, will try to guess)
-            model_type (str): regression or classification
+            model_type (str): regressor or classifier (default = regressor)
         """
         # Set our model description
         self.model_description = description
@@ -113,6 +113,26 @@ class FeaturesToModel(Transform):
         # Generate our model script
         script_path = self.generate_model_script(target, feature_list, model_type)
 
+        # Metric Definitions for Regression and Classification
+        if model_type == "regressor":
+            metric_definitions = [
+                {"Name": "RMSE", "Regex": "RMSE: ([0-9.]+)"},
+                {"Name": "MAE", "Regex": "MAE: ([0-9.]+)"},
+                {"Name": "R2", "Regex": "R2 Score: ([0-9.]+)"}
+            ]
+        else:
+            # We need to get creative with the Classification Metrics
+            # Grab all the target class values
+            table = feature_set.data_source.table_name
+            targets = feature_set.query(f"select DISTINCT {target} FROM {table}")[target].to_list()
+            metrics = ["precision", "recall", "fscore"]
+
+            # Dynamically create the metric definitions
+            metric_definitions = []
+            for t in targets:
+                for m in metrics:
+                    metric_definitions.append({"Name": f"Metrics_{t}_{m}", 'Regex': f"Metrics_{t}_{m}: ([0-9.]+)"})
+
         # Create a Sagemaker Model with our script
         self.estimator = SKLearn(
             entry_point=script_path,
@@ -121,6 +141,7 @@ class FeaturesToModel(Transform):
             instance_type="ml.m5.large",
             sagemaker_session=self.sm_session,
             framework_version="1.2-1",
+            metric_definitions=metric_definitions,
         )
 
         # Train the estimator

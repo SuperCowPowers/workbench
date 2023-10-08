@@ -24,6 +24,7 @@ from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup Logging
 logging_setup()
+log = logging.getLogger("sageworks")
 
 
 # Enumerated types for SageWorks Meta Requests
@@ -50,7 +51,7 @@ class AWSServiceBroker:
     def __new__(cls):
         """AWSServiceBroker Singleton Pattern"""
         if not hasattr(cls, "instance"):
-            print("Creating New AWSServiceBroker Instance...")
+            log.debug("Creating the AWSServiceBroker Singleton...")
             cls.instance = super(AWSServiceBroker, cls).__new__(cls)
 
             # Class Initialization

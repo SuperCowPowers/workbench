@@ -48,8 +48,8 @@ if __name__ == '__main__':
     # Does the dataframe have a training column?
     if 'training' in all_df.columns:
         print("Found training column, splitting data based on training column")
-        df_train = all_df[all_df['training'] == 1]
-        df_val = all_df[all_df['training'] == 0]
+        df_train = all_df[all_df['training'] == 1].copy()
+        df_val = all_df[all_df['training'] == 0].copy()
     else:
         # Just do a random training Split
         print("No training column found, splitting data with random state=42")
@@ -98,7 +98,20 @@ if __name__ == '__main__':
         # Put the scores into a dataframe
         score_df = pd.DataFrame({target: label_names, 'precision': scores[0],
                                  'recall': scores[1], 'fscore': scores[2], 'support': scores[3]})
-        print(score_df)
+
+        # We need to get creative with the Classification Metrics
+        metrics = ["precision", "recall", "fscore"]
+        for t in label_names:
+            for m in metrics:
+                value = score_df.loc[score_df[target] == t, m].iloc[0]
+                print(f"Metrics_{t}_{m}: {value}")
+
+        """
+        # Print out the scores in a form that metrics_definitions can regex
+        for idx, label in enumerate(label_names):
+            print(f"Label: {label}, precision: {scores[0][idx]}, recall: {scores[1][idx]}, f1: {scores[2][idx]}")
+        """
+
     else:
         rms = mean_squared_error(df_val[target], preds, squared=False)
         mae = mean_absolute_error(df_val[target], preds)

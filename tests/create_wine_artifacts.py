@@ -48,8 +48,6 @@ if __name__ == "__main__":
         features_to_model.transform(
             target="wine_class", description="Wine Classification Model", model_type="classifier"
         )
-        print("Waiting for the Model to be created...")
-        time.sleep(10)
 
     # Create the wine classification Endpoint
     if not Endpoint("wine-classification-end").exists():
