@@ -2,6 +2,7 @@
 from datetime import datetime
 import random
 import urllib.parse
+from typing import Union
 
 import pandas as pd
 from sagemaker import TrainingJobAnalytics
@@ -35,10 +36,12 @@ class Model(Artifact):
         self.model_meta = aws_meta.get(self.model_name)
         if self.model_meta is None:
             self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
+            self.latest_model = None
         else:
             self.latest_model = self.model_meta[0]
             self.description = self.latest_model["ModelPackageDescription"]
             self.training_job_name = self._extract_training_job_name()
+            self._model_metrics, self._confusion_matrix = self._training_job_metrics()
 
         # All done
         self.log.info(f"Model Initialized: {self.model_name}")
@@ -65,6 +68,20 @@ class Model(Artifact):
             return "regressor"
         else:
             return "unknown"
+
+    def model_metrics(self) -> pd.DataFrame:
+        """Retrieve the training metrics for this model
+        Returns:
+            pd.DataFrame: DataFrame of the Model Metrics
+        """
+        return self._model_metrics
+
+    def confusion_matrix(self) -> Union[pd.DataFrame, None]:
+        """Retrieve the confusion_matrix for this model
+        Returns:
+            pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
+        """
+        return self._confusion_matrix
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -152,18 +169,22 @@ class Model(Artifact):
         self.log.info(f"Deleting Model Group {self.model_name}...")
         self.sm_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
 
-    def training_job_metrics(self) -> pd.DataFrame:
-        """Grab any captured metrics from the training job for this model"""
+    def _training_job_metrics(self) -> (pd.DataFrame, pd.DataFrame):
+        """Internal: Grab any captured metrics from the training job for this model"""
         try:
             df = TrainingJobAnalytics(training_job_name=self.training_job_name).dataframe()
-            if "timestamp" in df.columns:
-                df = df.drop(columns=["timestamp"])
-
-            df = self._process_training_metrics(df)
-            return df
+            if self.model_type() == "regressor":
+                if "timestamp" in df.columns:
+                    df = df.drop(columns=["timestamp"])
+                return df, None
         except KeyError:
             self.log.warning(f"No training job metrics found for {self.training_job_name}")
-            return pd.DataFrame()
+            return None,  None
+
+        # We need additional processing for classification metrics
+        if self.model_type() == "classifier":
+            metrics_df, cm_df = self._process_classification_metrics(df)
+            return metrics_df, cm_df
 
     def _extract_training_job_name(self) -> str:
         """Internal: Extract the training job name from the ModelDataUrl"""
@@ -174,21 +195,37 @@ class Model(Artifact):
         training_job_name = parsed_url.path.lstrip("/").split("/")[0]
         return training_job_name
 
-    def _process_training_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Internal: Process the training metrics into a more reasonable format"""
+    @staticmethod
+    def _process_classification_metrics(df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
+        """Internal: Process classification metrics into a more reasonable format
+        Args:
+            df (pd.DataFrame): DataFrame of training metrics
+        Returns:
+            (pd.DataFrame, pd.DataFrame): Tuple of DataFrames. Metrics and confusion matrix
+        """
+        # Split into two DataFrames based on 'metric_name'
+        metrics_df = df[df['metric_name'].str.startswith('Metrics:')].copy()
+        cm_df = df[df['metric_name'].str.startswith('ConfusionMatrix:')].copy()
 
-        if self.model_type() == "classifier":
-            # Extract the class and metric type from the metric_name column
-            df["metric_name"] = df["metric_name"].str.replace("Metrics_", "")
-            df["class"] = df["metric_name"].apply(lambda x: "_".join(x.split("_")[:-1]))
-            df["metric_type"] = df["metric_name"].str.split("_").str[-1]
+        # Split the 'metric_name' into different parts
+        metrics_df['class'] = metrics_df['metric_name'].str.split(':').str[1]
+        metrics_df['metric_type'] = metrics_df['metric_name'].str.split(':').str[2]
 
-            # Pivot the DataFrame to get the desired structure
-            df_pivot = df.pivot(index="class", columns="metric_type", values="value").reset_index()
-            df_pivot = df_pivot.rename_axis(None, axis=1)
-            return df_pivot
-        else:
-            return df
+        # Pivot the DataFrame to get the desired structure
+        metrics_df = metrics_df.pivot(index="class", columns="metric_type", values="value").reset_index()
+        metrics_df = metrics_df.rename_axis(None, axis=1)
+
+        # Now process the confusion matrix
+        cm_df['row_class'] = cm_df['metric_name'].str.split(':').str[1]
+        cm_df['col_class'] = cm_df['metric_name'].str.split(':').str[2]
+
+        # Pivot the DataFrame to create a form suitable for the heatmap
+        cm_df = cm_df.pivot(index='row_class', columns='col_class', values='value')
+
+        # Normalize the rows between 0 and 1
+        cm_df = cm_df.div(cm_df.sum(axis=1), axis=0)
+
+        return metrics_df, cm_df
 
 
 if __name__ == "__main__":
@@ -219,8 +256,11 @@ if __name__ == "__main__":
     print(f"Training Job: {my_model.training_job_name}")
 
     # Get any captured metrics from the training job
-    print("Training Job Metrics:")
-    print(my_model.training_job_metrics())
+    print("Training Metrics:")
+    print(my_model.model_metrics())
+
+    print("Confusion Matrix: (might be None)")
+    print(my_model.confusion_matrix())
 
     # Delete the Model
     # my_model.delete()

@@ -3,7 +3,8 @@ from pprint import pprint
 import xgboost as xgb
 
 # Model Performance Scores
-from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error, precision_recall_fscore_support
+from sklearn.metrics import (mean_absolute_error, r2_score, mean_squared_error,
+                             precision_recall_fscore_support, confusion_matrix)
 
 # Classification Encoder
 from sklearn.preprocessing import LabelEncoder
@@ -92,7 +93,7 @@ if __name__ == '__main__':
         label_names = label_encoder.classes_
         label_integers = label_encoder.transform(label_names)
 
-        # Calculate scores
+        # Calculate various model performance metrics
         scores = precision_recall_fscore_support(df_val[target], preds, average=None, labels=label_integers)
 
         # Put the scores into a dataframe
@@ -104,13 +105,14 @@ if __name__ == '__main__':
         for t in label_names:
             for m in metrics:
                 value = score_df.loc[score_df[target] == t, m].iloc[0]
-                print(f"Metrics_{t}_{m}: {value}")
+                print(f"Metrics:{t}:{m} {value}")
 
-        """
-        # Print out the scores in a form that metrics_definitions can regex
-        for idx, label in enumerate(label_names):
-            print(f"Label: {label}, precision: {scores[0][idx]}, recall: {scores[1][idx]}, f1: {scores[2][idx]}")
-        """
+        # Compute and output the confusion matrix
+        conf_mtx = confusion_matrix(df_val[target], preds, labels=label_integers)
+        for i, row_name in enumerate(label_names):
+            for j, col_name in enumerate(label_names):
+                value = conf_mtx[i, j]
+                print(f"ConfusionMatrix:{row_name}:{col_name} {value}")
 
     else:
         rms = mean_squared_error(df_val[target], preds, squared=False)

@@ -131,7 +131,13 @@ class FeaturesToModel(Transform):
             metric_definitions = []
             for t in targets:
                 for m in metrics:
-                    metric_definitions.append({"Name": f"Metrics_{t}_{m}", "Regex": f"Metrics_{t}_{m}: ([0-9.]+)"})
+                    metric_definitions.append({"Name": f"Metrics:{t}:{m}", "Regex": f"Metrics:{t}:{m} ([0-9.]+)"})
+
+            # Add the confusion matrix metrics
+            for row in targets:
+                for col in targets:
+                    metric_definitions.append({"Name": f"ConfusionMatrix:{row}:{col}",
+                                               "Regex": f"ConfusionMatrix:{row}:{col} ([0-9.]+)"})
 
         # Create a Sagemaker Model with our script
         self.estimator = SKLearn(

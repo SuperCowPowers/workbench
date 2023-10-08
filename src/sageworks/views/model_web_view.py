@@ -34,14 +34,25 @@ class ModelWebView(ArtifactsWebView):
         model = Model(uuid)
         return model.details()
 
+    def model_metrics(self, model_index: int) -> (dict, None):
+        """Get the Model Training Metrics for the given Model Index"""
+        uuid = self.model_name(model_index)
+        model = Model(uuid)
+        return model.model_metrics()
+
+    def confusion_matrix(self, model_index: int) -> (dict, None):
+        """Get the Model Training Metrics for the given Model Index"""
+        uuid = self.model_name(model_index)
+        model = Model(uuid)
+        return model.confusion_matrix()
+
     def model_name(self, model_index: int) -> (str, None):
-        """Helper method for getting the data source name for the given Model Index"""
+        """Helper method for getting the model name for the given Model Index"""
         if not self.models_df.empty and model_index < len(self.models_df):
             data_uuid = self.models_df.iloc[model_index]["uuid"]
             return data_uuid
         else:
             return None
-
 
 if __name__ == "__main__":
     # Exercising the ModelWebView
