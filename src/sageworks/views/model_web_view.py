@@ -54,6 +54,7 @@ class ModelWebView(ArtifactsWebView):
         else:
             return None
 
+
 if __name__ == "__main__":
     # Exercising the ModelWebView
     from pprint import pprint

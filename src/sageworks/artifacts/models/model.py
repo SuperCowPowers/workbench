@@ -179,7 +179,7 @@ class Model(Artifact):
                 return df, None
         except KeyError:
             self.log.warning(f"No training job metrics found for {self.training_job_name}")
-            return None,  None
+            return None, None
 
         # We need additional processing for classification metrics
         if self.model_type() == "classifier":
@@ -204,23 +204,23 @@ class Model(Artifact):
             (pd.DataFrame, pd.DataFrame): Tuple of DataFrames. Metrics and confusion matrix
         """
         # Split into two DataFrames based on 'metric_name'
-        metrics_df = df[df['metric_name'].str.startswith('Metrics:')].copy()
-        cm_df = df[df['metric_name'].str.startswith('ConfusionMatrix:')].copy()
+        metrics_df = df[df["metric_name"].str.startswith("Metrics:")].copy()
+        cm_df = df[df["metric_name"].str.startswith("ConfusionMatrix:")].copy()
 
         # Split the 'metric_name' into different parts
-        metrics_df['class'] = metrics_df['metric_name'].str.split(':').str[1]
-        metrics_df['metric_type'] = metrics_df['metric_name'].str.split(':').str[2]
+        metrics_df["class"] = metrics_df["metric_name"].str.split(":").str[1]
+        metrics_df["metric_type"] = metrics_df["metric_name"].str.split(":").str[2]
 
         # Pivot the DataFrame to get the desired structure
         metrics_df = metrics_df.pivot(index="class", columns="metric_type", values="value").reset_index()
         metrics_df = metrics_df.rename_axis(None, axis=1)
 
         # Now process the confusion matrix
-        cm_df['row_class'] = cm_df['metric_name'].str.split(':').str[1]
-        cm_df['col_class'] = cm_df['metric_name'].str.split(':').str[2]
+        cm_df["row_class"] = cm_df["metric_name"].str.split(":").str[1]
+        cm_df["col_class"] = cm_df["metric_name"].str.split(":").str[2]
 
         # Pivot the DataFrame to create a form suitable for the heatmap
-        cm_df = cm_df.pivot(index='row_class', columns='col_class', values='value')
+        cm_df = cm_df.pivot(index="row_class", columns="col_class", values="value")
 
         # Normalize the rows between 0 and 1
         cm_df = cm_df.div(cm_df.sum(axis=1), axis=0)
