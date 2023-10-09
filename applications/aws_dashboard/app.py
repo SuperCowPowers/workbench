@@ -2,8 +2,6 @@
 from dash import Dash, page_container, html, dcc
 import dash_bootstrap_components as dbc
 
-# SageWorks Imports
-
 
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
