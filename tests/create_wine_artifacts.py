@@ -27,8 +27,11 @@ if __name__ == "__main__":
     # Get the path to the dataset in the repository data directory
     wine_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "wine_dataset.csv"
 
+    # Recreate Flag in case you want to recreate the artifacts
+    recreate = False
+
     # Create the abalone_data DataSource
-    if not DataSource("wine_data").exists():
+    if recreate or not DataSource("wine_data").exists():
         my_loader = CSVToDataSource(wine_data_path, "wine_data")
         my_loader.set_output_tags("wine:classification")
         my_loader.transform()
@@ -36,13 +39,13 @@ if __name__ == "__main__":
         time.sleep(5)
 
     # Create the wine_features FeatureSet
-    if not FeatureSet("wine_features").exists():
+    if recreate or not FeatureSet("wine_features").exists():
         data_to_features = DataToFeaturesLight("wine_data", "wine_features")
         data_to_features.set_output_tags(["wine", "classification"])
         data_to_features.transform(target="wine_class", description="Wine Classification Features")
 
     # Create the wine classification Model
-    if not Model("wine-classification").exists():
+    if recreate or not Model("wine-classification").exists():
         features_to_model = FeaturesToModel("wine_features", "wine-classification")
         features_to_model.set_output_tags(["wine", "classification"])
         features_to_model.transform(
@@ -50,7 +53,7 @@ if __name__ == "__main__":
         )
 
     # Create the wine classification Endpoint
-    if not Endpoint("wine-classification-end").exists():
+    if recreate or not Endpoint("wine-classification-end").exists():
         model_to_endpoint = ModelToEndpoint("wine-classification", "wine-classification-end")
         model_to_endpoint.set_output_tags(["wine", "classification"])
         model_to_endpoint.transform()
