@@ -34,10 +34,10 @@ class ConfusionMatrix(PluginInterface):
 
         # A nice color scale for the confusion matrix
         color_scale = [
-            [0, "rgb(64,64,200)"],
-            [0.35, "rgb(48, 180, 180)"],
-            [0.65, "rgb(180, 180, 48)"],
-            [1.0, "rgb(200, 64, 64)"],
+            [0, "rgb(64,64,160)"],
+            [0.35, "rgb(48, 140, 140)"],
+            [0.65, "rgb(140, 140, 48)"],
+            [1.0, "rgb(160, 64, 64)"],
         ]
 
         # Grab the confusion matrix from the model details
@@ -65,7 +65,7 @@ class ConfusionMatrix(PluginInterface):
                 zmax=1,
             )
         )
-        fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 0}, height=height)
+        fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10}, height=height)
 
         # Now remap the x and y axis labels (so they don't show the index)
         fig.update_xaxes(tickvals=x_labels, ticktext=df.columns, tickangle=30, tickfont_size=14)
