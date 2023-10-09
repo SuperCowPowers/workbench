@@ -1,6 +1,5 @@
 """Model: SageWorks Model Class"""
 from datetime import datetime
-import random
 import urllib.parse
 from typing import Union
 
