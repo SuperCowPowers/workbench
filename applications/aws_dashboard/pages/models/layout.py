@@ -13,7 +13,7 @@ def models_layout(
     plugin_rows = [
         dbc.Row(
             plugin,
-            style={"padding": "50px 50px 50px 50px"},
+            style={"padding": "0px 0px 0px 0px"},
         )
         for component_id, plugin in kwargs.items()
     ]
