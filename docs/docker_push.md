@@ -14,8 +14,7 @@ RUN pip install --no-cache-dir sageworks==0.1.14
 
 ### Build the Docker Image
 ```
-docker build -f Dockerfile -t sageworks_dashboard:v0_1_9_amd64 \
---platform linux/amd64 .
+docker build -t sageworks_dashboard:v0_1_9_amd64 --platform linux/amd64 .
 ```
 
 ### Test the Image Locally
