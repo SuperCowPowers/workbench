@@ -25,7 +25,7 @@ class AWSAccountClamp:
         """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
         self.log = logging.getLogger("sageworks")
 
-        # Grab the AWS Role Name from the SageWorks Config
+        # Grab the AWS Role Name from an ENV var or use Default
         self.role_name = os.environ.get("SAGEWORKS_ROLE", "SageWorks-ExecutionRole")
 
         # Quick check on SSO Token
