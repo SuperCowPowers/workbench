@@ -201,7 +201,7 @@ class Artifact(ABC):
 
         # First, fetch all the existing tags
         response = self.sm_client.list_tags(ResourceArn=aws_arn)
-        existing_tags = response.get('Tags', [])
+        existing_tags = response.get("Tags", [])
 
         # Convert existing AWS tags to a dictionary for easy manipulation
         existing_tags_dict = {item["Key"]: item["Value"] for item in existing_tags}
@@ -229,9 +229,8 @@ class Artifact(ABC):
         # First convert any non-string values to JSON strings
         for key, value in meta_data.items():
             if not isinstance(value, str):
-
                 # Convert dictionary to minified JSON string
-                json_str = json.dumps(value, separators=(',', ':'))
+                json_str = json.dumps(value, separators=(",", ":"))
 
                 # Base64 encode the value
                 encoded_value = base64.b64encode(json_str.encode()).decode()
@@ -265,7 +264,7 @@ class Artifact(ABC):
     @staticmethod
     def _chunk_dict_to_aws_tags(base_key: str, data: dict) -> dict:
         # Convert dictionary to minified JSON string
-        json_str = json.dumps(data, separators=(',', ':'))
+        json_str = json.dumps(data, separators=(",", ":"))
 
         # Encode JSON string to base64
         base64_str = base64.b64encode(json_str.encode()).decode()
@@ -276,7 +275,7 @@ class Artifact(ABC):
 
         # Split base64 string into chunks and create tags
         for i in range(0, len(base64_str), chunk_size):
-            chunk = base64_str[i:i + chunk_size]
+            chunk = base64_str[i : i + chunk_size]
             chunks[f"{base_key}_chunk_{i // chunk_size + 1}"] = chunk
 
         return chunks
@@ -287,7 +286,7 @@ class Artifact(ABC):
 
         def decode_value(value):
             try:
-                return json.loads(base64.b64decode(value).decode('utf-8'))
+                return json.loads(base64.b64decode(value).decode("utf-8"))
             except Exception:
                 return value
 
@@ -316,7 +315,7 @@ class Artifact(ABC):
             stitched_base64_str = "".join(sorted_chunks)
 
             # Decode the stitched base64 string
-            stitched_json_str = base64.b64decode(stitched_base64_str).decode('utf-8')
+            stitched_json_str = base64.b64decode(stitched_base64_str).decode("utf-8")
             stitched_dict = json.loads(stitched_json_str)
 
             regular_tags[base_key] = stitched_dict

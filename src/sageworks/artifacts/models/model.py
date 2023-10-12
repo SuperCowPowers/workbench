@@ -208,7 +208,9 @@ class Model(Artifact):
 
                 # Store and return the metrics in the SageWorks Metadata
                 df = df.round(3)
-                self.upsert_sageworks_meta({"sageworks_model_metrics": df.to_dict(), "sageworks_confusion_matrix": None})
+                self.upsert_sageworks_meta(
+                    {"sageworks_model_metrics": df.to_dict(), "sageworks_confusion_matrix": None}
+                )
                 return
         except KeyError:
             self.log.warning(f"No training job metrics found for {self.training_job_name}")
@@ -223,8 +225,9 @@ class Model(Artifact):
             # Store and return the metrics in the SageWorks Metadata
             metrics_df = metrics_df.round(3)
             cm_df = cm_df.round(3)
-            self.upsert_sageworks_meta({"sageworks_model_metrics": metrics_df.to_dict(),
-                                        "sageworks_confusion_matrix": cm_df.to_dict()})
+            self.upsert_sageworks_meta(
+                {"sageworks_model_metrics": metrics_df.to_dict(), "sageworks_confusion_matrix": cm_df.to_dict()}
+            )
 
     def _extract_training_job_name(self) -> str:
         """Internal: Extract the training job name from the ModelDataUrl"""
