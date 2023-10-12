@@ -8,7 +8,6 @@ from sageworks.artifacts.artifact import Artifact
 
 
 class DataSourceAbstract(Artifact):
-
     def __init__(self, uuid):
         """DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, JSONL, Parquet, RDS, etc)"""
 

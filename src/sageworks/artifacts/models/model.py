@@ -18,6 +18,7 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 # Enumerated Model Types
 class ModelType(Enum):
     """Enumerated Types for SageWorks Model Types"""
+
     CLASSIFIER = "classifier"
     REGRESSOR = "regressor"
     UNKNOWN = "unknown"
