@@ -13,4 +13,4 @@ dash-bootstrap-components
 dash-bootstrap-templates
 aws-cdk-lib >= 2.76.0
 termcolor
-rich==13.3.5
+rich>=13.3.5

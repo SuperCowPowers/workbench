@@ -12,6 +12,8 @@ import base64
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.utils.sageworks_logging import logging_setup
+from sageworks.utils.cache import Cache
+from sageworks.utils.redis_cache import RedisCache
 
 # Setup Logging
 logging_setup()
@@ -43,6 +45,14 @@ class Artifact(ABC):
     # Setup Bucket Paths
     data_sources_s3_path = "s3://" + sageworks_bucket + "/data-sources"
     feature_sets_s3_path = "s3://" + sageworks_bucket + "/feature-sets"
+    models_s3_path = "s3://" + sageworks_bucket + "/models"
+    endpoints_s3_path = "s3://" + sageworks_bucket + "/endpoints"
+
+    # Row Storage for Larger Cached Objects
+    if RedisCache().check():
+        row_storage = RedisCache()
+    else:
+        row_storage = Cache()
 
     def __init__(self, uuid: str):
         """Artifact Initialization"""

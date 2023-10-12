@@ -5,16 +5,9 @@ from io import StringIO
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
-from sageworks.utils.cache import Cache
-from sageworks.utils.redis_cache import RedisCache
 
 
 class DataSourceAbstract(Artifact):
-    # Class attributes
-    if RedisCache().check():
-        row_storage = RedisCache()
-    else:
-        row_storage = Cache()
 
     def __init__(self, uuid):
         """DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, JSONL, Parquet, RDS, etc)"""

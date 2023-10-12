@@ -2,13 +2,25 @@
 from datetime import datetime
 import urllib.parse
 from typing import Union
+from io import StringIO
+from enum import Enum
 
 import pandas as pd
+import awswrangler as wr
+from awswrangler.exceptions import NoFilesFound
 from sagemaker import TrainingJobAnalytics
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
+
+
+# Enumerated Model Types
+class ModelType(Enum):
+    """Enumerated Types for SageWorks Model Types"""
+    CLASSIFIER = "classifier"
+    REGRESSOR = "regressor"
+    UNKNOWN = "unknown"
 
 
 class Model(Artifact):
@@ -58,14 +70,17 @@ class Model(Artifact):
             return False
         return True
 
-    def model_type(self) -> str:
-        """Return the model type (classifier or regressor)"""
-        if "classification" in self.sageworks_tags():
-            return "classifier"
-        elif "regression" in self.sageworks_tags():
-            return "regressor"
+    def model_type(self) -> ModelType:
+        """Get the model type
+        Returns:
+            ModelType: The ModelType of this Model
+        """
+        model_type = self.sageworks_meta().get("sageworks_model_type")
+        if model_type and model_type != "unknown":
+            return ModelType(model_type)
         else:
-            return "unknown"
+            self.log.critical(f"Could not determine model type for {self.model_name}!")
+            return ModelType.UNKNOWN
 
     def model_metrics(self) -> Union[pd.DataFrame, None]:
         """Retrieve the training metrics for this model
@@ -74,10 +89,7 @@ class Model(Artifact):
         """
         # Grab the metrics from the SageWorks Metadata
         metrics = self.sageworks_meta().get("sageworks_model_metrics")
-        if metrics is None:
-            return None
-        else:
-            return pd.DataFrame.from_dict(metrics)
+        return pd.DataFrame.from_dict(metrics) if metrics else None
 
     def confusion_matrix(self) -> Union[pd.DataFrame, None]:
         """Retrieve the confusion_matrix for this model
@@ -86,10 +98,31 @@ class Model(Artifact):
         """
         # Grab the confusion matrix from the SageWorks Metadata
         matrix = self.sageworks_meta().get("sageworks_confusion_matrix")
-        if matrix is None:
+        return pd.DataFrame.from_dict(matrix) if matrix else None
+
+    def validation_predictions(self, recompute: bool = False) -> Union[pd.DataFrame, None]:
+        """Retrieve the training metrics for this model
+        Args:
+            recompute (bool, optional): Recompute the outliers (default: False)
+        Returns:
+            pd.DataFrame: DataFrame of the Model Metrics (might be None)
+        """
+        # Check if we have cached version of the validation predictions
+        storage_key = f"RowStorage:{self.uuid}:validation_predictions"
+        if not recompute and self.row_storage.get(storage_key):
+            return pd.read_json(StringIO(self.row_storage.get(storage_key)))
+
+        # Not Cached, so we have to pull the validation prediction CSV file from S3
+        self.log.info(f"Pulling validation predictions for {self.uuid}...")
+        s3_path = f"{self.models_s3_path}/{self.model_name}/validation_predictions.csv"
+        try:
+            df = wr.s3.read_csv(s3_path)
+            self.row_storage.set(storage_key, df.to_json())
+            return df
+        except NoFilesFound:
+            self.log.info(f"Could not find validation predictions at {s3_path}...")
+            self.row_storage.set(storage_key, None)
             return None
-        else:
-            return pd.DataFrame.from_dict(matrix)
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -189,7 +222,7 @@ class Model(Artifact):
 
         # First check if we have already computed the various metrics
         model_metrics = self.sageworks_meta().get("sageworks_model_metrics")
-        if self.model_type() == "regressor":
+        if self.model_type() == ModelType.REGRESSOR:
             if model_metrics and not force_pull:
                 return
 
@@ -202,7 +235,7 @@ class Model(Artifact):
         self.log.info(f"Pulling training job metrics for {self.training_job_name}...")
         try:
             df = TrainingJobAnalytics(training_job_name=self.training_job_name).dataframe()
-            if self.model_type() == "regressor":
+            if self.model_type() == ModelType.REGRESSOR:
                 if "timestamp" in df.columns:
                     df = df.drop(columns=["timestamp"])
 
@@ -219,7 +252,7 @@ class Model(Artifact):
             return
 
         # We need additional processing for classification metrics
-        if self.model_type() == "classifier":
+        if self.model_type() == ModelType.CLASSIFIER:
             metrics_df, cm_df = self._process_classification_metrics(df)
 
             # Store and return the metrics in the SageWorks Metadata
@@ -275,7 +308,7 @@ if __name__ == "__main__":
     """Exercise the Model Class"""
 
     # Grab a Model object and pull some information from it
-    my_model = Model("wine-classification", force_refresh=True)
+    my_model = Model("abalone-regression", force_refresh=True)
 
     # Call the various methods
 
@@ -308,6 +341,10 @@ if __name__ == "__main__":
     print("Confusion Matrix: (might be None)")
     print(my_model.confusion_matrix())
 
+    # Grab our training validation predictions from S3
+    print("Validation Predictions: (might be None)")
+    print(my_model.validation_predictions())
+
     # Test Large Metadata
     # my_model.upsert_sageworks_meta({"sageworks_large_meta": {"large_x": "x" * 200, "large_y": "y" * 200}})
 
@@ -316,5 +353,6 @@ if __name__ == "__main__":
 
     # Get the SageWorks metadata associated with this Model
     print(f"SageWorks Meta: {my_model.sageworks_meta()}")
+
     # Delete the Model
     # my_model.delete()

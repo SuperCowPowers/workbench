@@ -8,7 +8,7 @@ import awswrangler as wr
 # Local Imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
-from sageworks.artifacts.models.model import Model
+from sageworks.artifacts.models.model import Model, ModelType
 
 
 class FeaturesToModel(Transform):
@@ -18,12 +18,17 @@ class FeaturesToModel(Transform):
         to_model = FeaturesToModel(feature_uuid, model_uuid)
         to_model.set_output_tags(["abalone", "public", "whatever"])
         to_model.transform(target="class_number_of_rings", description="Abalone Regression Model".
-                           input_feature_list=<features>, model_type="regressor/classifier",
+                           input_feature_list=<features>, model_type=ModelType,
                            )
     """
 
-    def __init__(self, feature_uuid: str, model_uuid: str):
-        """FeaturesToModel Initialization"""
+    def __init__(self, feature_uuid: str, model_uuid: str, model_type: ModelType):
+        """FeaturesToModel Initialization
+        Args:
+            feature_uuid (str): UUID of the FeatureSet to use as input
+            model_uuid (str): UUID of the Model to create as output
+            model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER
+        """
 
         # Call superclass init
         super().__init__(feature_uuid, model_uuid)
@@ -31,16 +36,17 @@ class FeaturesToModel(Transform):
         # Set up all my instance attributes
         self.input_type = TransformInput.FEATURE_SET
         self.output_type = TransformOutput.MODEL
+        self.model_type = model_type
         self.estimator = None
         self.model_script_dir = None
         self.model_description = None
 
-    def generate_model_script(self, target: str, feature_list: list[str], model_type: str) -> str:
+    def generate_model_script(self, target: str, feature_list: list[str], model_type: ModelType) -> str:
         """Fill in the model template with specific target and feature_list
         Args:
             target (str): Column name of the target variable
             feature_list (list[str]): A list of columns for the features
-            model_type (str): regressor or classifier
+            model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER
         Returns:
            str: The name of the generated model script
         """
@@ -59,20 +65,21 @@ class FeaturesToModel(Transform):
         feature_list_str = json.dumps(feature_list)
         xgb_script = xgb_script.replace("{{feature_list}}", feature_list_str)
         xgb_script = xgb_script.replace("{{model_type}}", model_type)
+        metrics_s3_path = f"{self.models_s3_path}/{self.output_uuid}"
+        xgb_script = xgb_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
 
         # Now write out the generated model script and return the name
         with open(output_path, "w") as fp:
             fp.write(xgb_script)
         return script_name
 
-    def transform_impl(self, target, description, feature_list=None, model_type="regressor"):
+    def transform_impl(self, target: str, description: str, feature_list=None):
         """Generic Features to Model: Note you should create a new class and inherit from
         this one to include specific logic for your Feature Set/Model
         Args:
             target (str): Column name of the target variable
             description (str): Description of the model
             feature_list (list[str]): A list of columns for the features (default None, will try to guess)
-            model_type (str): regressor or classifier (default = regressor)
         """
         # Set our model description
         self.model_description = description
@@ -111,10 +118,10 @@ class FeaturesToModel(Transform):
             self.log.info(f"Guessed feature list: {feature_list}")
 
         # Generate our model script
-        script_path = self.generate_model_script(target, feature_list, model_type)
+        script_path = self.generate_model_script(target, feature_list, self.model_type.value)
 
         # Metric Definitions for Regression and Classification
-        if model_type == "regressor":
+        if self.model_type == ModelType.REGRESSOR:
             metric_definitions = [
                 {"Name": "RMSE", "Regex": "RMSE: ([0-9.]+)"},
                 {"Name": "MAE", "Regex": "MAE: ([0-9.]+)"},
@@ -177,6 +184,7 @@ class FeaturesToModel(Transform):
         # Okay, lets get our output model and set it to initializing
         output_model = Model(self.output_uuid, force_refresh=True)
         output_model.set_status("initializing")
+        output_model.upsert_sageworks_meta({"sageworks_model_type": self.model_type.value})
 
         # Call the Model make_ready method and set status to ready
         output_model.make_ready()
@@ -190,7 +198,7 @@ class FeaturesToModel(Transform):
         # Create model group (if it doesn't already exist)
         self.sm_client.create_model_package_group(
             ModelPackageGroupName=self.output_uuid,
-            ModelPackageGroupDescription="Test Model: AQSol Regression",
+            ModelPackageGroupDescription=self.model_description,
             Tags=aws_tags,
         )
 
@@ -214,6 +222,6 @@ if __name__ == "__main__":
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = "abalone_feature_set"
     output_uuid = "abalone-regression"
-    to_model = FeaturesToModel(input_uuid, output_uuid)
+    to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.REGRESSOR)
     to_model.set_output_tags(["abalone", "public"])
     to_model.transform(description="Abalone Regression Model", target="class_number_of_rings")

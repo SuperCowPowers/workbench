@@ -1,6 +1,7 @@
 # Imports for XGB Model
 from pprint import pprint
 import xgboost as xgb
+import awswrangler as wr
 
 # Model Performance Scores
 from sklearn.metrics import (mean_absolute_error, r2_score, mean_squared_error,
@@ -26,6 +27,7 @@ if __name__ == '__main__':
     target = '{{target}}'
     feature_list = {{feature_list}}
     model_type = '{{model_type}}'
+    model_metrics_s3_path = '{{model_metrics_s3_path}}'
     validation_split = 0.2
 
     # Sagemaker specific arguments. Defaults are set in the environment variables.
@@ -115,12 +117,18 @@ if __name__ == '__main__':
                 print(f"ConfusionMatrix:{row_name}:{col_name} {value}")
 
     else:
+        # Calculate various model performance metrics (regression)
         rms = mean_squared_error(df_val[target], preds, squared=False)
         mae = mean_absolute_error(df_val[target], preds)
         r2 = r2_score(df_val[target], preds)
         print(f'RMSE: {rms:.3f}')
         print(f'MAE: {mae:.3f}')
         print(f'R2 Score: {r2:.3f}')
+
+        # Combine the validation target values and predictions and then save to S3
+        df_val['prediction'] = preds
+        columns = [target, 'prediction']
+        wr.s3.to_csv(df_val[columns], path=f"{model_metrics_s3_path}/validation_predictions.csv", index=False)
 
     # Now save the model to the standard place/name
     joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))

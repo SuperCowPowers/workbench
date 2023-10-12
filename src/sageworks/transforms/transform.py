@@ -63,6 +63,8 @@ class Transform(ABC):
             sys.exit(1)
         self.data_sources_s3_path = "s3://" + self.sageworks_bucket + "/data-sources"
         self.feature_sets_s3_path = "s3://" + self.sageworks_bucket + "/feature-sets"
+        self.models_s3_path = "s3://" + self.sageworks_bucket + "/models"
+        self.endpoints_sets_s3_path = "s3://" + self.sageworks_bucket + "/endpoints"
 
         # Grab a SageWorks Role ARN, Boto3, SageMaker Session, and SageMaker Client
         self.aws_account_clamp = AWSAccountClamp()
