@@ -51,7 +51,7 @@ class AWSServiceBroker:
     def __new__(cls):
         """AWSServiceBroker Singleton Pattern"""
         if not hasattr(cls, "instance"):
-            log.debug("Creating the AWSServiceBroker Singleton...")
+            log.info("Creating the AWSServiceBroker Singleton...")
             cls.instance = super(AWSServiceBroker, cls).__new__(cls)
 
             # Class Initialization
@@ -175,7 +175,7 @@ class AWSServiceBroker:
         Returns:
             dict: The Metadata for ALL the Service Categories
         """
-        cls.log.debug("Getting ALL AWS Metadata: You should call get_metadata() with specific categories")
+        cls.log.info("Getting ALL AWS Metadata: You should call get_metadata() with specific categories")
         return {_category: cls.get_metadata(_category, force_refresh) for _category in ServiceCategory}
 
     @classmethod

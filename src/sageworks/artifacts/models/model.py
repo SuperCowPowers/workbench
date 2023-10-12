@@ -40,7 +40,6 @@ class Model(Artifact):
             self.latest_model = self.model_meta[0]
             self.description = self.latest_model["ModelPackageDescription"]
             self.training_job_name = self._extract_training_job_name()
-            self._model_metrics, self._confusion_matrix = self._training_job_metrics()
 
         # All done
         self.log.info(f"Model Initialized: {self.model_name}")
@@ -68,19 +67,29 @@ class Model(Artifact):
         else:
             return "unknown"
 
-    def model_metrics(self) -> pd.DataFrame:
+    def model_metrics(self) -> Union[pd.DataFrame, None]:
         """Retrieve the training metrics for this model
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics
         """
-        return self._model_metrics
+        # Grab the metrics from the SageWorks Metadata
+        metrics = self.sageworks_meta().get("sageworks_model_metrics")
+        if metrics is None:
+            return None
+        else:
+            return pd.DataFrame.from_dict(metrics)
 
     def confusion_matrix(self) -> Union[pd.DataFrame, None]:
         """Retrieve the confusion_matrix for this model
         Returns:
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
-        return self._confusion_matrix
+        # Grab the confusion matrix from the SageWorks Metadata
+        matrix = self.sageworks_meta().get("sageworks_confusion_matrix")
+        if matrix is None:
+            return None
+        else:
+            return pd.DataFrame.from_dict(matrix)
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -138,8 +147,18 @@ class Model(Artifact):
         details["confusion_matrix"] = self.confusion_matrix()
         return details
 
+    def expected_meta(self) -> list[str]:
+        """Metadata we expect to see for this Artifact when it's ready
+        Returns:
+            list[str]: List of expected metadata keys
+        """
+
+        # If an artifact has additional expected metadata override this method
+        return ["sageworks_status", "sageworks_model_metrics", "sageworks_confusion_matrix"]
+
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Model is ready"""
+        self._pull_training_job_metrics()
         self.details()
         self.set_status("ready")
         self.refresh_meta()
@@ -162,22 +181,50 @@ class Model(Artifact):
         self.log.info(f"Deleting Model Group {self.model_name}...")
         self.sm_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
 
-    def _training_job_metrics(self) -> (pd.DataFrame, pd.DataFrame):
-        """Internal: Grab any captured metrics from the training job for this model"""
+    def _pull_training_job_metrics(self, force_pull=False):
+        """Internal: Grab any captured metrics from the training job for this model
+        Args:
+            force_pull (bool, optional): Force a pull from TrainingJobAnalytics. Defaults to False.
+        """
+
+        # First check if we have already computed the various metrics
+        model_metrics = self.sageworks_meta().get("sageworks_model_metrics")
+        if self.model_type() == "regressor":
+            if model_metrics and not force_pull:
+                return
+
+        # For classifiers, we need to pull the confusion matrix as well
+        cm = self.sageworks_meta().get("sageworks_confusion_matrix")
+        if model_metrics and cm and not force_pull:
+            return
+
+        # We don't have them, so go and grab the training job metrics
+        self.log.info(f"Pulling training job metrics for {self.training_job_name}...")
         try:
             df = TrainingJobAnalytics(training_job_name=self.training_job_name).dataframe()
             if self.model_type() == "regressor":
                 if "timestamp" in df.columns:
                     df = df.drop(columns=["timestamp"])
-                return df, None
+
+                # Store and return the metrics in the SageWorks Metadata
+                df = df.round(3)
+                self.upsert_sageworks_meta({"sageworks_model_metrics": df.to_dict(), "sageworks_confusion_matrix": None})
+                return
         except KeyError:
             self.log.warning(f"No training job metrics found for {self.training_job_name}")
-            return None, None
+            # Store and return the metrics in the SageWorks Metadata
+            self.upsert_sageworks_meta({"sageworks_model_metrics": None, "sageworks_confusion_matrix": None})
+            return
 
         # We need additional processing for classification metrics
         if self.model_type() == "classifier":
             metrics_df, cm_df = self._process_classification_metrics(df)
-            return metrics_df, cm_df
+
+            # Store and return the metrics in the SageWorks Metadata
+            metrics_df = metrics_df.round(3)
+            cm_df = cm_df.round(3)
+            self.upsert_sageworks_meta({"sageworks_model_metrics": metrics_df.to_dict(),
+                                        "sageworks_confusion_matrix": cm_df.to_dict()})
 
     def _extract_training_job_name(self) -> str:
         """Internal: Extract the training job name from the ModelDataUrl"""
@@ -225,12 +272,15 @@ if __name__ == "__main__":
     """Exercise the Model Class"""
 
     # Grab a Model object and pull some information from it
-    my_model = Model("abalone-regression", force_refresh=True)
+    my_model = Model("wine-classification", force_refresh=True)
 
     # Call the various methods
 
     # Let's do a check/validation of the Model
     print(f"Model Check: {my_model.exists()}")
+
+    # Make sure the model is 'ready'
+    my_model.make_ready()
 
     # Get the ARN of the Model Group
     print(f"Model Group ARN: {my_model.group_arn()}")
@@ -255,5 +305,13 @@ if __name__ == "__main__":
     print("Confusion Matrix: (might be None)")
     print(my_model.confusion_matrix())
 
+    # Test Large Metadata
+    # my_model.upsert_sageworks_meta({"sageworks_large_meta": {"large_x": "x" * 200, "large_y": "y" * 200}})
+
+    # Test Deleting specific metadata
+    # my_model.delete_metadata(["sageworks_large_meta"])
+
+    # Get the SageWorks metadata associated with this Model
+    print(f"SageWorks Meta: {my_model.sageworks_meta()}")
     # Delete the Model
     # my_model.delete()
