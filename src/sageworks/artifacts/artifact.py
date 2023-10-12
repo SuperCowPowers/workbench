@@ -41,7 +41,7 @@ class Artifact(ABC):
         sys.exit(1)
 
     # Setup Bucket Paths
-    data_source_s3_path = "s3://" + sageworks_bucket + "/data-sources"
+    data_sources_s3_path = "s3://" + sageworks_bucket + "/data-sources"
     feature_sets_s3_path = "s3://" + sageworks_bucket + "/feature-sets"
 
     def __init__(self, uuid: str):

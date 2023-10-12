@@ -84,7 +84,7 @@ class PandasToData(Transform):
         sageworks_meta.update(self.output_meta)
 
         # Create the Output Parquet file S3 Storage Path
-        s3_storage_path = f"{self.data_source_s3_path}/{self.output_uuid}"
+        s3_storage_path = f"{self.data_sources_s3_path}/{self.output_uuid}"
 
         # Convert Object Columns to String
         self.output_df = self.convert_object_to_string(self.output_df)

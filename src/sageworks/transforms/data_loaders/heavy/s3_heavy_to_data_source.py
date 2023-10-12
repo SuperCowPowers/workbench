@@ -28,7 +28,7 @@ class S3HeavyToDataSource:
         self.output_uuid = output_uuid
         self.output_meta = {"sageworks_input": self.input_uuid}
         sageworks_bucket = "s3://sandbox-sageworks-artifacts"
-        self.data_source_s3_path = sageworks_bucket + "/data-sources"
+        self.data_sources_s3_path = sageworks_bucket + "/data-sources"
 
         # Our Spark Context
         self.glue_context = glue_context
@@ -104,7 +104,7 @@ class S3HeavyToDataSource:
         tags = ["heavy"]
 
         # Create the Output Parquet file S3 Storage Path
-        s3_storage_path = f"{self.data_source_s3_path}/{self.output_uuid}"
+        s3_storage_path = f"{self.data_sources_s3_path}/{self.output_uuid}"
 
         # Read JSONL files from S3 and infer schema dynamically
         self.log.info(f"Reading JSONL files from {self.input_uuid}...")

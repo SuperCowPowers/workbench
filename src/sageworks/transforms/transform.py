@@ -61,7 +61,7 @@ class Transform(ABC):
         if self.sageworks_bucket is None:
             print("Could not find ENV var for SAGEWORKS_BUCKET!")
             sys.exit(1)
-        self.data_source_s3_path = "s3://" + self.sageworks_bucket + "/data-sources"
+        self.data_sources_s3_path = "s3://" + self.sageworks_bucket + "/data-sources"
         self.feature_sets_s3_path = "s3://" + self.sageworks_bucket + "/feature-sets"
 
         # Grab a SageWorks Role ARN, Boto3, SageMaker Session, and SageMaker Client
