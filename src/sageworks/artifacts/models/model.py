@@ -163,6 +163,7 @@ class Model(Artifact):
     def details(self) -> dict:
         """Additional Details about this Endpoint"""
         details = self.summary()
+        details["model_type"] = self.model_type().value
         details["model_package_group_arn"] = self.group_arn()
         details["model_package_arn"] = self.model_arn()
         aws_meta = self.aws_meta()
