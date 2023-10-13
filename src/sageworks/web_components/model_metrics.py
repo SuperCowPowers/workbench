@@ -1,7 +1,6 @@
 """A Model Metrics component"""
 from dash import dcc
 import plotly.graph_objects as go
-import plotly.express as px
 
 # SageWorks Imports
 from sageworks.web_components.component_interface import ComponentInterface
