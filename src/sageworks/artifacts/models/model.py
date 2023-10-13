@@ -175,8 +175,8 @@ class Model(Artifact):
         container = inference_spec["Containers"][0]
         image_short = container["Image"].split("/")[-1]
         details["image"] = image_short
-        details["framework"] = container["Framework"]
-        details["framework_version"] = container["FrameworkVersion"]
+        details["framework"] = container.get("Framework", "unknown")
+        details["framework_version"] = container.get("FrameworkVersion", "unknown")
         details["inference_types"] = inference_spec["SupportedRealtimeInferenceInstanceTypes"]
         details["transform_types"] = inference_spec["SupportedTransformInstanceTypes"]
         details["content_types"] = inference_spec["SupportedContentTypes"]
