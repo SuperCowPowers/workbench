@@ -17,17 +17,16 @@ class RegressionPlot(ComponentInterface):
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
     def generate_component_figure(self, model_details: dict) -> go.Figure:
-
         # Grab the confusion matrix from the model details
         df = model_details.get("validation_predictions")
         if df is None:
             return self.message_figure("No Data")
 
         # Get the name of the actual field value column
-        actual_col = [col for col in df.columns if col != 'prediction'][0]
+        actual_col = [col for col in df.columns if col != "prediction"][0]
 
         # Calculate the distance from the diagonal for each point
-        df['prediction_error'] = abs(df['prediction'] - df[actual_col])
+        df["prediction_error"] = abs(df["prediction"] - df[actual_col])
 
         color_scale = [
             [0, "rgb(64,64,160)"],
@@ -37,8 +36,15 @@ class RegressionPlot(ComponentInterface):
         ]
 
         # Create the scatter plot with bigger dots
-        fig = px.scatter(df, x=actual_col, y='prediction', size='prediction_error', size_max=20,
-                         color='prediction_error', color_continuous_scale=color_scale)
+        fig = px.scatter(
+            df,
+            x=actual_col,
+            y="prediction",
+            size="prediction_error",
+            size_max=20,
+            color="prediction_error",
+            color_continuous_scale=color_scale,
+        )
 
         # Just fine tuning the dots on the scatter plot
         fig.update_traces(
@@ -47,15 +53,15 @@ class RegressionPlot(ComponentInterface):
         )
 
         # Add a diagonal line for reference
-        min_val = min(df[actual_col].min(), df['prediction'].min())
-        max_val = max(df[actual_col].max(), df['prediction'].max())
+        min_val = min(df[actual_col].min(), df["prediction"].min())
+        max_val = max(df[actual_col].max(), df["prediction"].max())
         fig.add_shape(
-            type='line',
+            type="line",
             line=dict(width=5, color="rgba(1.0, 1.0, 1.0, 0.5)"),
             x0=min_val,
             x1=max_val,
             y0=min_val,
-            y1=max_val
+            y1=max_val,
         )
 
         # Just some fine tuning of the plot

@@ -25,7 +25,7 @@ class ModelMetrics(ComponentInterface):
         Returns:
             plotly.graph_objs.Figure: A Figure object containing the model metrics.
         """
-        
+
         # Based on the model type, we'll generate a different plot
         model_type = model_details.get("model_type")
         if model_type == "classifier":
