@@ -36,7 +36,9 @@ class ModelMarkdown(ComponentInterface):
         }
 
         # Exclude dataframe values
-        top_level_details = {key: value for key, value in top_level_details.items() if not isinstance(value, pd.DataFrame)}
+        top_level_details = {
+            key: value for key, value in top_level_details.items() if not isinstance(value, pd.DataFrame)
+        }
 
         markdown = ""
         for key, value in top_level_details.items():
