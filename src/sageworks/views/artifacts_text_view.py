@@ -12,11 +12,27 @@ from sageworks.artifacts.models.model import Model
 from sageworks.artifacts.endpoints.endpoint import Endpoint
 
 
+"""
+# Singleton Decorator
+def singleton(cls):
+    instances = {}
+    def get_instance(*args, **kwargs):
+        if cls not in instances:
+            instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+    return get_instance
+
+
+@singleton
+"""
+
+
 class ArtifactsTextView(View):
     def __init__(self):
         """ArtifactsTextView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
         # Call SuperClass Initialization
         super().__init__()
+        self.log.info("Creating ArtifactsTextView Instance...")
 
         # Get AWS Service information for ALL the categories (data_source, feature_set, endpoints, etc)
         self.aws_artifact_data = self.aws_broker.get_all_metadata()

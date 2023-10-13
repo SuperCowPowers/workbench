@@ -9,7 +9,7 @@ from .layout import models_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, model_markdown, plugin_loader
+from sageworks.web_components import table, model_markdown, model_metrics, plugin_loader
 from sageworks.web_components.plugin_interface import PluginType
 from sageworks.views.model_web_view import ModelWebView
 
@@ -36,10 +36,14 @@ models_table = table.Table().create_component(
 # Create a Markdown component to display the model details
 model_details = model_markdown.ModelMarkdown().create_component("model_details")
 
+# Create a Model Metrics component to display the model metrics
+model_metrics = model_metrics.ModelMetrics().create_component("model_metrics")
+
 # Capture our components in a dictionary to send off to the layout
 components = {
     "models_table": models_table,
     "model_details": model_details,
+    "model_metrics": model_metrics,
 }
 
 # Load the plugins from the sageworks_plugins directory
@@ -60,6 +64,7 @@ callbacks.update_models_table(app)
 # Callback for the model table
 callbacks.table_row_select(app, "models_table")
 callbacks.update_model_details(app, model_broker)
+callbacks.update_model_metrics(app, model_broker)
 
 # For each plugin, set up a callback to update the plugin figure
 for plugin in plugins:

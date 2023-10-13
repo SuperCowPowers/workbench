@@ -4,7 +4,7 @@ from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.views.model_web_view import ModelWebView
-from sageworks.web_components import table, model_markdown
+from sageworks.web_components import table, model_markdown, model_metrics
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 
@@ -67,6 +67,23 @@ def update_model_details(app: Dash, model_web_view: ModelWebView):
 
         # Return the details/markdown for these data details
         return [header, model_details_markdown]
+
+
+# Updates the model metrics when a model row is selected
+def update_model_metrics(app: Dash, model_web_view: ModelWebView):
+    @app.callback(
+        Output("model_metrics", "figure"),
+        Input("models_table", "derived_viewport_selected_row_ids"),
+        prevent_initial_call=True,
+    )
+    def generate_new_markdown(selected_rows):
+        print(f"Selected Rows: {selected_rows}")
+        if not selected_rows or selected_rows[0] is None:
+            return no_update
+
+        print("Calling Model Details...")
+        model_details = model_web_view.model_details(selected_rows[0])
+        return model_metrics.ModelMetrics().generate_component_figure(model_details)
 
 
 # Updates the plugin component when a model row is selected
