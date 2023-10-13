@@ -67,3 +67,17 @@ class ComponentInterface(ABC):
             margin=dict(l=0, r=0, b=0, t=0),
         )
         return waiting_figure
+
+    @staticmethod
+    def no_data_figure():
+        """This helper method creates a 'No Data' figure for the component"""
+        no_data_figure = go.Figure()
+        no_data_figure.add_annotation(
+            x=0.5, y=0.5, xref="paper", yref="paper", text="No Data Found", showarrow=False, font=dict(size=32)
+        )
+        no_data_figure.update_layout(
+            xaxis=dict(showticklabels=False, zeroline=False, showgrid=False),
+            yaxis=dict(showticklabels=False, zeroline=False, showgrid=False),
+            margin=dict(l=0, r=0, b=0, t=0),
+        )
+        return no_data_figure
