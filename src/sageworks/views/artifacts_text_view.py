@@ -2,6 +2,7 @@
 import json
 import pandas as pd
 from termcolor import colored
+from typing import Dict
 
 # SageWorks Imports
 from sageworks.views.view import View
@@ -12,30 +13,17 @@ from sageworks.artifacts.models.model import Model
 from sageworks.artifacts.endpoints.endpoint import Endpoint
 
 
-"""
-# Singleton Decorator
-def singleton(cls):
-    instances = {}
-    def get_instance(*args, **kwargs):
-        if cls not in instances:
-            instances[cls] = cls(*args, **kwargs)
-        return instances[cls]
-    return get_instance
-
-
-@singleton
-"""
-
-
 class ArtifactsTextView(View):
+    aws_artifact_data = None  # Class-level attribute for caching the AWS Artifact Data
+
     def __init__(self):
         """ArtifactsTextView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
         # Call SuperClass Initialization
         super().__init__()
-        self.log.info("Creating ArtifactsTextView Instance...")
 
         # Get AWS Service information for ALL the categories (data_source, feature_set, endpoints, etc)
-        self.aws_artifact_data = self.aws_broker.get_all_metadata()
+        if ArtifactsTextView.aws_artifact_data is None:
+            ArtifactsTextView.aws_artifact_data = self.aws_broker.get_all_metadata()
 
         # Setup Pandas output options
         pd.set_option("display.max_colwidth", 50)
@@ -48,9 +36,9 @@ class ArtifactsTextView(View):
 
     def refresh(self, force_refresh: bool = False) -> None:
         """Refresh data/metadata associated with this view"""
-        self.aws_artifact_data = self.aws_broker.get_all_metadata(force_refresh=force_refresh)
+        ArtifactsTextView.aws_artifact_data = self.aws_broker.get_all_metadata(force_refresh=force_refresh)
 
-    def view_data(self) -> dict:
+    def view_data(self) -> Dict[str, pd.DataFrame]:
         """Get all the data that's useful for this view
 
         Returns:
@@ -95,7 +83,7 @@ class ArtifactsTextView(View):
 
     def incoming_data_summary(self) -> pd.DataFrame:
         """Get summary data about data in the incoming-data S3 Bucket"""
-        data = self.aws_artifact_data[ServiceCategory.INCOMING_DATA_S3]
+        data = ArtifactsTextView.aws_artifact_data[ServiceCategory.INCOMING_DATA_S3]
         if data is None:
             print("No incoming-data S3 Bucket Found! Please set your SAGEWORKS_BUCKET ENV var!")
             return pd.DataFrame(
@@ -135,7 +123,7 @@ class ArtifactsTextView(View):
 
     def glue_jobs_summary(self) -> pd.DataFrame:
         """Get summary data about AWS Glue Jobs"""
-        glue_meta = self.aws_artifact_data[ServiceCategory.GLUE_JOBS]
+        glue_meta = ArtifactsTextView.aws_artifact_data[ServiceCategory.GLUE_JOBS]
         glue_summary = []
 
         # Get the information about each Glue Job
@@ -170,7 +158,7 @@ class ArtifactsTextView(View):
 
     def data_sources_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks DataSources"""
-        data_catalog = self.aws_artifact_data[ServiceCategory.DATA_CATALOG]
+        data_catalog = ArtifactsTextView.aws_artifact_data[ServiceCategory.DATA_CATALOG]
         data_summary = []
 
         # Get the SageWorks DataSources
@@ -214,7 +202,7 @@ class ArtifactsTextView(View):
 
     def feature_sets_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks FeatureSets"""
-        data = self.aws_artifact_data[ServiceCategory.FEATURE_STORE]
+        data = ArtifactsTextView.aws_artifact_data[ServiceCategory.FEATURE_STORE]
         data_summary = []
         for feature_group, group_info in data.items():
             # Get the SageWorks metadata for this Feature Group
@@ -259,7 +247,7 @@ class ArtifactsTextView(View):
 
     def models_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Models"""
-        data = self.aws_artifact_data[ServiceCategory.MODELS]
+        data = ArtifactsTextView.aws_artifact_data[ServiceCategory.MODELS]
         model_summary = []
         for model_group_info, model_list in data.items():
             # Special Case for Model Groups without any Models
@@ -298,7 +286,7 @@ class ArtifactsTextView(View):
 
     def endpoints_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Endpoints"""
-        data = self.aws_artifact_data[ServiceCategory.ENDPOINTS]
+        data = ArtifactsTextView.aws_artifact_data[ServiceCategory.ENDPOINTS]
         data_summary = []
 
         # Get Summary information for each endpoint

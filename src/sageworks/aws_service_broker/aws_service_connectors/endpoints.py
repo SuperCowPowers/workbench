@@ -38,6 +38,7 @@ class Endpoints(Connector):
         for _end_name, end_info in self.endpoint_data.items():
             sageworks_meta = self.sageworks_meta_via_arn(end_info["EndpointArn"])
             end_info["sageworks_meta"] = sageworks_meta
+        self.log.info("Done with Endpoints...")
 
     def aws_meta(self) -> dict:
         """Get the full AWS metadata about endpoints"""
