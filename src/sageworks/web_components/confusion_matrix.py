@@ -18,7 +18,7 @@ class ConfusionMatrix(ComponentInterface):
         Returns:
             dcc.Graph: The Confusion Matrix Component
         """
-        return dcc.Graph(id=component_id, figure=self.waiting_figure())
+        return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
     def generate_component_figure(self, model_details: dict) -> go.Figure:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
@@ -31,7 +31,7 @@ class ConfusionMatrix(ComponentInterface):
         # Grab the confusion matrix from the model details
         df = model_details.get("confusion_matrix")
         if df is None:
-            return self.no_data_figure()
+            return self.message_figure("No Data")
 
         # A nice color scale for the confusion matrix
         color_scale = [
@@ -47,7 +47,6 @@ class ConfusionMatrix(ComponentInterface):
         y_labels = [f"{c}:{i}" for i, c in enumerate(df.index)]
 
         # Create the heatmap plot with custom settings
-        height = max(400, len(df.index) * 50)
         fig = go.Figure(
             data=go.Heatmap(
                 z=df,
@@ -59,7 +58,7 @@ class ConfusionMatrix(ComponentInterface):
                 zmax=1,
             )
         )
-        fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10}, height=height)
+        fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10}, height=400)
 
         # Now remap the x and y axis labels (so they don't show the index)
         fig.update_xaxes(tickvals=x_labels, ticktext=df.columns, tickangle=30, tickfont_size=14)

@@ -19,7 +19,7 @@ class ViolinPlots(ComponentInterface):
         Returns:
             dcc.Graph: The Violin Plot Component
         """
-        return dcc.Graph(id=component_id, figure=self.waiting_figure())
+        return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
     def generate_component_figure(self, df: pd.DataFrame, figure_args: dict, max_plots: int = 40) -> go.Figure:
         """Create a set of violin plots for the numeric columns in the dataframe.

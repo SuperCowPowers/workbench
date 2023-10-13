@@ -22,7 +22,7 @@ class ConfusionMatrix(PluginInterface):
         Returns:
             dcc.Graph: The Confusion Matrix Component
         """
-        return dcc.Graph(id=component_id, figure=self.waiting_figure())
+        return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
     def generate_component_figure(self, model_details: dict) -> go.Figure:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.

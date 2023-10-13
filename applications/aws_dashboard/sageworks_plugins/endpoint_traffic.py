@@ -20,7 +20,7 @@ class EndpointTraffic(PluginInterface):
         Returns:
             dcc.Graph: The Endpoint Traffic Component
         """
-        return dcc.Graph(id=component_id, figure=self.waiting_figure())
+        return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
     def generate_component_figure(self, endpoint_details: dict) -> go.Figure:
         df = px.data.stocks(indexed=True) - 1

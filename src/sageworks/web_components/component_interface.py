@@ -55,29 +55,15 @@ class ComponentInterface(ABC):
         return component_id
 
     @staticmethod
-    def waiting_figure():
+    def message_figure(message: str) -> go.Figure:
         """This helper method creates a waiting figure for the component"""
-        waiting_figure = go.Figure()
-        waiting_figure.add_annotation(
-            x=0.5, y=0.5, xref="paper", yref="paper", text="Waiting for data...", showarrow=False, font=dict(size=32)
+        message_figure = go.Figure()
+        message_figure.add_annotation(
+            x=0.5, y=0.5, xref="paper", yref="paper", text=message, showarrow=False, font=dict(size=32)
         )
-        waiting_figure.update_layout(
+        message_figure.update_layout(
             xaxis=dict(showticklabels=False, zeroline=False, showgrid=False),
             yaxis=dict(showticklabels=False, zeroline=False, showgrid=False),
             margin=dict(l=0, r=0, b=0, t=0),
         )
-        return waiting_figure
-
-    @staticmethod
-    def no_data_figure():
-        """This helper method creates a 'No Data' figure for the component"""
-        no_data_figure = go.Figure()
-        no_data_figure.add_annotation(
-            x=0.5, y=0.5, xref="paper", yref="paper", text="No Data Found", showarrow=False, font=dict(size=32)
-        )
-        no_data_figure.update_layout(
-            xaxis=dict(showticklabels=False, zeroline=False, showgrid=False),
-            yaxis=dict(showticklabels=False, zeroline=False, showgrid=False),
-            margin=dict(l=0, r=0, b=0, t=0),
-        )
-        return no_data_figure
+        return message_figure

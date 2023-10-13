@@ -14,14 +14,14 @@ class RegressionPlot(ComponentInterface):
 
     def create_component(self, component_id: str) -> dcc.Graph:
         # Initialize an empty scatter plot figure
-        return dcc.Graph(id=component_id, figure=self.waiting_figure())
+        return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
     def generate_component_figure(self, model_details: dict) -> go.Figure:
 
         # Grab the confusion matrix from the model details
         df = model_details.get("validation_predictions")
         if df is None:
-            return self.no_data_figure()
+            return self.message_figure("No Data")
 
         # Get the name of the actual field value column
         actual_col = [col for col in df.columns if col != 'prediction'][0]
@@ -57,6 +57,10 @@ class RegressionPlot(ComponentInterface):
             y0=min_val,
             y1=max_val
         )
+
+        # Just some fine tuning of the plot
+        fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10}, height=400)
+
         return fig
 
 
