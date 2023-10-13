@@ -179,6 +179,7 @@ class Model(Artifact):
         details["response_types"] = inference_spec["SupportedResponseMIMETypes"]
         details["model_metrics"] = self.model_metrics()
         details["confusion_matrix"] = self.confusion_matrix()
+        details["validation_predictions"] = self.validation_predictions()
         return details
 
     def expected_meta(self) -> list[str]:
