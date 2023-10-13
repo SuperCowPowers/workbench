@@ -110,8 +110,11 @@ class Model(Artifact):
         """
         # Check if we have cached version of the validation predictions
         storage_key = f"RowStorage:{self.uuid}:validation_predictions"
-        if not recompute and self.row_storage.get(storage_key):
-            return pd.read_json(StringIO(self.row_storage.get(storage_key)))
+        validation_predictions = self.row_storage.get(storage_key)
+        if not recompute and validation_predictions:
+            if validation_predictions == "no data":
+                return None
+            return pd.read_json(StringIO(validation_predictions))
 
         # Not Cached, so we have to pull the validation prediction CSV file from S3
         self.log.info(f"Pulling validation predictions for {self.uuid}...")
@@ -122,7 +125,7 @@ class Model(Artifact):
             return df
         except NoFilesFound:
             self.log.info(f"Could not find validation predictions at {s3_path}...")
-            self.row_storage.set(storage_key, None)
+            self.row_storage.set(storage_key, "no data")
             return None
 
     def size(self) -> float:
