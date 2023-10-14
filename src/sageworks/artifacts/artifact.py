@@ -13,6 +13,7 @@ from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.utils.cache import Cache
 from sageworks.utils.redis_cache import RedisCache
+from sageworks.utils.trace_calls import trace_calls
 
 
 class Artifact(ABC):
@@ -137,6 +138,7 @@ class Artifact(ABC):
         """Delete this artifact including all related AWS objects"""
         pass
 
+    @trace_calls
     def sageworks_meta(self) -> dict:
         """Get the SageWorks specific metadata for this Artifact
         Note: This functionality will work for FeatureSets, Models, and Endpoints

@@ -19,6 +19,7 @@ from sageworks.algorithms.sql import (
     correlations,
 )
 from sageworks.utils.pandas_utils import NumpyEncoder
+from sageworks.utils.trace_calls import trace_calls
 
 
 class AthenaSource(DataSourceAbstract):
@@ -74,6 +75,7 @@ class AthenaSource(DataSourceAbstract):
         arn = f"arn:aws:glue:{region}:{account_id}:table/{self.data_catalog_db}/{self.table_name}"
         return arn
 
+    @trace_calls
     def sageworks_meta(self) -> dict:
         """Get the SageWorks specific metadata for this Artifact"""
         # Sanity Check if we have invalid AWS Metadata
@@ -171,7 +173,7 @@ class AthenaSource(DataSourceAbstract):
             boto3_session=self.boto_session,
         )
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
-        self.log.debug(f"Athena Query successful (scanned bytes: {scanned_bytes})")
+        self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
         return df
 
     def s3_storage_location(self) -> str:
@@ -188,7 +190,7 @@ class AthenaSource(DataSourceAbstract):
             boto3_session=self.boto_session,
         )
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
-        self.log.debug(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
+        self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
     def sample_impl(self) -> pd.DataFrame:
         """Pull a sample of rows from the DataSource
