@@ -38,4 +38,5 @@ except Exception:
 
 # SageWorks Logging
 from sageworks.utils.sageworks_logging import logging_setup
+
 logging_setup()

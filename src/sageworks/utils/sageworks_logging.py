@@ -3,7 +3,7 @@ import logging
 
 
 def logging_setup():
-    log = logging.getLogger('sageworks')
+    log = logging.getLogger("sageworks")
     if not log.hasHandlers():
         handler = logging.StreamHandler()
         formatter = logging.Formatter(
