@@ -5,10 +5,9 @@ from collections import defaultdict
 
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
-from sageworks.utils.sageworks_logging import logging_setup
 
-# Setup Logging
-logging_setup()
+
+# SageWorks Logger
 log = logging.getLogger("sageworks")
 
 

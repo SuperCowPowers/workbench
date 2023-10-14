@@ -13,12 +13,6 @@ from sagemaker.session import Session as SageSession
 from datetime import timedelta
 import logging
 
-# SageWorks Imports
-from sageworks.utils.sageworks_logging import logging_setup
-
-# Setup Logging
-logging_setup()
-
 
 class AWSAccountClamp:
     def __init__(self):

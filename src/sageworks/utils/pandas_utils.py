@@ -6,11 +6,7 @@ import json
 from io import StringIO
 import logging
 
-# SageWorks Imports
-from sageworks.utils.sageworks_logging import logging_setup
-
-# Setup Logging
-logging_setup()
+# SageWorks Logger
 log = logging.getLogger("sageworks")
 
 

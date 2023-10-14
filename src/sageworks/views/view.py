@@ -6,10 +6,6 @@ import logging
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.sageworks_logging import logging_setup
-
-# Set up logging
-logging_setup()
 
 
 class View(ABC):

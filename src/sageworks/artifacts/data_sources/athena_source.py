@@ -77,6 +77,7 @@ class AthenaSource(DataSourceAbstract):
     def sageworks_meta(self) -> dict:
         """Get the SageWorks specific metadata for this Artifact"""
         # Sanity Check if we have invalid AWS Metadata
+        self.log.info(f"Retrieving SageWorks Metadata for Artifact: {self.uuid}...")
         if self.aws_meta() is None:
             self.log.critical(f"Unable to get AWS Metadata for {self.table_name}")
             self.log.critical("Malformed Artifact! Delete this Artifact and recreate it!")

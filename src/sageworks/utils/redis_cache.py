@@ -8,10 +8,6 @@ from datetime import datetime, date
 
 # Local Imports
 from sageworks.utils.iso_8601 import datetime_to_iso8601, iso8601_to_datetime
-from sageworks.utils.sageworks_logging import logging_setup
-
-# Setup Logging
-logging_setup()
 
 
 class RedisCache:

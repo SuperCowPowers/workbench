@@ -4,12 +4,6 @@ import pandas as pd
 import numpy as np
 from sklearn.datasets import make_classification, make_regression
 
-# Local Imports
-from sageworks.utils.sageworks_logging import logging_setup
-
-# Setup Logging
-logging_setup()
-
 
 class TestDataGenerator:
     """A Test Data Generator Class

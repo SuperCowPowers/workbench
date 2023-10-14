@@ -11,12 +11,8 @@ import base64
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
-from sageworks.utils.sageworks_logging import logging_setup
 from sageworks.utils.cache import Cache
 from sageworks.utils.redis_cache import RedisCache
-
-# Setup Logging
-logging_setup()
 
 
 class Artifact(ABC):
@@ -147,7 +143,7 @@ class Artifact(ABC):
               but not for DataSources. The DataSource class overrides this method.
         """
         aws_arn = self.arn()
-        self.log.debug(f"Retrieving SageWorks Metadata for Artifact: {aws_arn}...")
+        self.log.info(f"Retrieving SageWorks Metadata for Artifact: {self.uuid}...")
         aws_tags = self.sm_session.list_tags(aws_arn)
         meta = self._aws_tags_to_dict(aws_tags)
         return meta

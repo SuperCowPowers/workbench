@@ -2,9 +2,8 @@
 
 import inspect
 import logging
-from sageworks.utils.sageworks_logging import logging_setup
 
-logging_setup()
+# SageWorks Logger
 log = logging.getLogger("sageworks")
 
 

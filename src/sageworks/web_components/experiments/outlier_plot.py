@@ -8,13 +8,10 @@ import logging
 
 # SageWorks Imports
 from sageworks.algorithms.dataframe.aggregation import aggregate
-from sageworks.algorithms.dataframe.dimensionality_reduction import (
-    DimensionalityReduction,
-)
-from sageworks.utils.sageworks_logging import logging_setup
+from sageworks.algorithms.dataframe.dimensionality_reduction import DimensionalityReduction
 
-# Setup Logging
-logging_setup()
+
+# SageWorks Logger
 log = logging.getLogger("sageworks")
 
 

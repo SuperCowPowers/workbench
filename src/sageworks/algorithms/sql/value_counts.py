@@ -4,11 +4,9 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
-from sageworks.utils.sageworks_logging import logging_setup
 from sageworks.utils.pandas_utils import shorten_values
 
-# Setup Logging
-logging_setup()
+# SageWorks Logger
 log = logging.getLogger("sageworks")
 
 

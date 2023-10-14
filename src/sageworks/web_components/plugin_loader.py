@@ -6,10 +6,9 @@ import inspect
 
 # SageWorks imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginType
-from sageworks.utils.sageworks_logging import logging_setup
 
-# Setup Logging
-logging_setup()
+
+# SageWorks Logger
 log = logging.getLogger("sageworks")
 
 
@@ -17,6 +16,7 @@ def load_plugins_from_dir(directory: str, plugin_type: PluginType) -> List[Plugi
     """Load all the plugins from the given directory.
     Args:
         directory (str): The directory to load the plugins from.
+        plugin_type (PluginType): The type of plugin to load.
     Returns:
         List[PluginInterface]: A list of plugins that were loaded.
     """

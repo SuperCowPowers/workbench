@@ -35,3 +35,7 @@ try:
     __version__ = pkg_resources.get_distribution("sageworks").version
 except Exception:
     __version__ = "unknown"
+
+# SageWorks Logging
+from sageworks.utils.sageworks_logging import logging_setup
+logging_setup()

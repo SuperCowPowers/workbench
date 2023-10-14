@@ -6,11 +6,6 @@ from sklearn.manifold import TSNE, MDS
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-# SageWorks Imports
-from sageworks.utils.sageworks_logging import logging_setup
-
-logging_setup()
-
 
 # Dimensionality Reduction Class
 class DimensionalityReduction:
