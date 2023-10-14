@@ -4,8 +4,7 @@ import inspect
 import logging
 
 # SageWorks Logger
-import sageworks
-
+import sageworks  # noqa: F401 (we need to import this to set up the logger)
 log = logging.getLogger("sageworks")
 
 # Define ANSI color codes for blue text and class name color
@@ -47,7 +46,6 @@ def trace_calls(func):
 
 if __name__ == "__main__":
     """Exercise the trace call decorator"""
-    import sageworks
 
     class MyClass:
         def my_method(self):
