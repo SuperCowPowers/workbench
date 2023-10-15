@@ -57,8 +57,13 @@ class RedisCache:
     def check(cls):
         return cls.redis_db is not None
 
-    def __init__(self, expire=None, prefix="", postfix=""):  # No expiration, standard 0 db, no postfix on keys
-        """RedisCache Initialization"""
+    def __init__(self, expire=None, prefix="", postfix=""):
+        """RedisCache Initialization
+        Args:
+            expire: the number of seconds to keep items in the redis_cache
+            prefix: the prefix to use for all keys
+            postfix: the postfix to use for all keys
+            """
 
         # Setup instance variables
         self.expire = expire
