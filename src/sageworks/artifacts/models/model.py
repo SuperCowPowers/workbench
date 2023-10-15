@@ -109,7 +109,7 @@ class Model(Artifact):
             pd.DataFrame: DataFrame of the Model Metrics (might be None)
         """
         # Check if we have cached version of the validation predictions
-        storage_key = f"RowStorage:{self.uuid}:validation_predictions"
+        storage_key = f"DataStorage:{self.uuid}:validation_predictions"
         validation_predictions = self.row_storage.get(storage_key)
         if not recompute and validation_predictions:
             if validation_predictions == "no data":
