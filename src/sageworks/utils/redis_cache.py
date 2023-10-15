@@ -63,7 +63,7 @@ class RedisCache:
             expire: the number of seconds to keep items in the redis_cache
             prefix: the prefix to use for all keys
             postfix: the postfix to use for all keys
-            """
+        """
 
         # Setup instance variables
         self.expire = expire

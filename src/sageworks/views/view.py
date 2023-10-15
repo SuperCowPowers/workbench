@@ -6,6 +6,7 @@ import logging
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.utils.sageworks_cache import SageWorksCache
 
 
 class View(ABC):
@@ -18,6 +19,9 @@ class View(ABC):
         self.aws_account_clamp = AWSAccountClamp()
         self.boto_session = self.aws_account_clamp.boto_session()
         self.sm_session = self.aws_account_clamp.sagemaker_session()
+
+        # Create a SageWorks View Cache
+        self.view_cache = SageWorksCache(expire=60, prefix="view")
 
     @abstractmethod
     def check(self) -> bool:
