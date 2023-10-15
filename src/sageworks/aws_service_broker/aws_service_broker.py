@@ -1,6 +1,7 @@
 """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
 import os
 import sys
+import time
 import argparse
 from enum import Enum, auto
 import logging
@@ -8,8 +9,7 @@ from threading import Thread
 from botocore.exceptions import ClientError
 
 # SageWorks Imports
-from sageworks.utils.cache import Cache
-from sageworks.utils.redis_cache import RedisCache
+from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_broker.aws_service_connectors.glue_jobs import GlueJobs
 from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog
@@ -91,15 +91,9 @@ class AWSServiceBroker:
         cls.model_registry = ModelRegistry()
         cls.endpoints = Endpoints()
 
-        # Cache for Metadata
-        if RedisCache().check():
-            cls.meta_cache = RedisCache()
-            cls.fresh_cache = RedisCache(expire=20, postfix=":fresh")
-            cls.open_threads = []
-        else:
-            cls.meta_cache = Cache()
-            cls.fresh_cache = Cache(expire=20)
-            cls.open_threads = []
+        # Caches for Metadata
+        cls.meta_cache = SageWorksCache()
+        cls.fresh_cache = SageWorksCache(expire=20, postfix=":fresh")
 
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler
@@ -159,7 +153,6 @@ class AWSServiceBroker:
             cls.log.debug(f"Async: Metadata for {category} is stale, launching refresh thread...")
             cls.fresh_cache.set(category, True)
             thread = Thread(target=cls.refresh_aws_data, args=(category,))
-            cls.open_threads.append(thread)
             thread.start()
             return cls.meta_cache.get(category)
 
@@ -180,8 +173,12 @@ class AWSServiceBroker:
     @classmethod
     def wait_for_refreshes(cls) -> None:
         """Wait for any open threads to finish"""
+        # FIXME: We need to circle back to this, right now we just wait for a second
+        """
         for thread in cls.open_threads:
             thread.join()
+        """
+        time.sleep(1)
 
     @classmethod
     def get_s3_object_sizes(cls, category: ServiceCategory, prefix: str = "") -> int:

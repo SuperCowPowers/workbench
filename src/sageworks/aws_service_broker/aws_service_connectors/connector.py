@@ -59,7 +59,7 @@ class Connector(ABC):
         self.log.debug(f"Retrieving SageWorks Metadata for Artifact: {arn}...")
         # Note: AWS List Tags can get grumpy if called too often, so put in sleep
         self.log.info(f"Throttling list_tags AWS request {arn}...")
-        time.sleep(2)
+        time.sleep(1)
         aws_tags = self.sm_session.list_tags(arn)
         meta = self._aws_tags_to_dict(aws_tags)
         return meta
