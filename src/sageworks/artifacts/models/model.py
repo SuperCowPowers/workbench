@@ -13,7 +13,7 @@ from sagemaker import TrainingJobAnalytics
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-
+from sageworks.utils.trace_calls import trace_calls
 
 # Enumerated Model Types
 class ModelType(Enum):
@@ -33,6 +33,7 @@ class Model(Artifact):
         my_model.details()
     """
 
+    @trace_calls
     def __init__(self, model_uuid: str, force_refresh: bool = False):
         """Model Initialization
         Args:
@@ -110,7 +111,7 @@ class Model(Artifact):
         """
         # Check if we have cached version of the validation predictions
         storage_key = f"DataStorage:{self.uuid}:validation_predictions"
-        validation_predictions = self.row_storage.get(storage_key)
+        validation_predictions = self.data_storage.get(storage_key)
         if not recompute and validation_predictions:
             if validation_predictions == "no data":
                 return None
@@ -121,11 +122,11 @@ class Model(Artifact):
         s3_path = f"{self.models_s3_path}/{self.model_name}/validation_predictions.csv"
         try:
             df = wr.s3.read_csv(s3_path)
-            self.row_storage.set(storage_key, df.to_json())
+            self.data_storage.set(storage_key, df.to_json())
             return df
         except NoFilesFound:
             self.log.info(f"Could not find validation predictions at {s3_path}...")
-            self.row_storage.set(storage_key, "no data")
+            self.data_storage.set(storage_key, "no data")
             return None
 
     def size(self) -> float:

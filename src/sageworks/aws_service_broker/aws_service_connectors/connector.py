@@ -7,7 +7,6 @@ from typing import final
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.trace_calls import trace_calls
 
 
 class Connector(ABC):
@@ -59,8 +58,8 @@ class Connector(ABC):
         """
         self.log.debug(f"Retrieving SageWorks Metadata for Artifact: {arn}...")
         # Note: AWS List Tags can get grumpy if called too often, so put in sleep
-        self.log.debug(f"Throttling list_tags AWS request {arn}...")
-        time.sleep(1)
+        self.log.info(f"Throttling list_tags AWS request {arn}...")
+        time.sleep(2)
         aws_tags = self.sm_session.list_tags(arn)
         meta = self._aws_tags_to_dict(aws_tags)
         return meta

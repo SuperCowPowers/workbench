@@ -47,9 +47,9 @@ class Artifact(ABC):
 
     # Row Storage for Larger Cached Objects
     if RedisCache().check():
-        row_storage = RedisCache()
+        data_storage = RedisCache()
     else:
-        row_storage = Cache()
+        data_storage = Cache()
 
     def __init__(self, uuid: str):
         """Artifact Initialization"""

@@ -56,13 +56,13 @@ class DataSourceAbstract(Artifact):
 
         # Check if we have a cached sample of rows
         storage_key = f"DataStorage:{self.uuid}:sample"
-        if not recompute and self.row_storage.get(storage_key):
-            return pd.read_json(StringIO(self.row_storage.get(storage_key)))
+        if not recompute and self.data_storage.get(storage_key):
+            return pd.read_json(StringIO(self.data_storage.get(storage_key)))
 
         # No Cache, so we have to compute a sample of data
         self.log.info(f"Sampling {self.uuid}...")
         df = self.sample_impl()
-        self.row_storage.set(storage_key, df.to_json())
+        self.data_storage.set(storage_key, df.to_json())
         return df
 
     @abstractmethod
@@ -99,13 +99,13 @@ class DataSourceAbstract(Artifact):
 
         # Check if we have cached outliers
         storage_key = f"DataStorage:{self.uuid}:outliers"
-        if not recompute and self.row_storage.get(storage_key):
-            return pd.read_json(StringIO(self.row_storage.get(storage_key)))
+        if not recompute and self.data_storage.get(storage_key):
+            return pd.read_json(StringIO(self.data_storage.get(storage_key)))
 
         # No Cache, so we have to compute the outliers
         self.log.info(f"Computing Outliers {self.uuid}...")
         df = self.outliers_impl()
-        self.row_storage.set(storage_key, df.to_json())
+        self.data_storage.set(storage_key, df.to_json())
         return df
 
     @abstractmethod
@@ -182,11 +182,11 @@ class DataSourceAbstract(Artifact):
 
         # Check if the samples and outliers have been computed
         storage_key = f"DataStorage:{self.uuid}:sample"
-        if not self.row_storage.get(storage_key):
+        if not self.data_storage.get(storage_key):
             self.log.info(f"DataSource {self.uuid} implicitly calling sample()")
             self.sample()
         storage_key = f"DataStorage:{self.uuid}:outliers"
-        if not self.row_storage.get(storage_key):
+        if not self.data_storage.get(storage_key):
             self.log.info(f"DataSource {self.uuid} implicitly calling outliers()")
             self.outliers()
 
