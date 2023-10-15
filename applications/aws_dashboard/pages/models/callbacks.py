@@ -53,7 +53,7 @@ def update_model_details(app: Dash, model_web_view: ModelWebView):
         Input("models_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
-    def generate_new_markdown(selected_rows):
+    def generate_model_details_markdown(selected_rows):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return no_update
@@ -76,7 +76,7 @@ def update_model_metrics(app: Dash, model_web_view: ModelWebView):
         Input("models_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
-    def generate_new_markdown(selected_rows):
+    def generate_model_metrics_figure(selected_rows):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return no_update
@@ -93,7 +93,7 @@ def update_plugin(app: Dash, plugin, model_web_view: ModelWebView):
         Input("models_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
-    def update_callback(selected_rows):
+    def update_plugin_figure(selected_rows):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return no_update
