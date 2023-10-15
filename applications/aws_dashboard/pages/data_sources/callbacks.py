@@ -66,7 +66,7 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
-    def generate_new_markdown(selected_rows):
+    def generate_data_source_markdown(selected_rows):
         print(f"Data Source Details Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update

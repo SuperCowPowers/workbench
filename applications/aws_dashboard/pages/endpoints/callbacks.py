@@ -56,7 +56,7 @@ def update_endpoint_details(app: Dash, endpoint_web_view: EndpointWebView):
         Input("endpoints_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
-    def generate_new_markdown(selected_rows):
+    def generate_endpoint_markdown(selected_rows):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return no_update

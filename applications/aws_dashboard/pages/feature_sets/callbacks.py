@@ -63,7 +63,7 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
         Input("feature_sets_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
-    def generate_new_markdown(selected_rows):
+    def generate_feature_set_markdown(selected_rows):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
