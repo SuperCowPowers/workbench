@@ -61,6 +61,7 @@ class DataSourceWebView(ArtifactsWebView):
 
 if __name__ == "__main__":
     # Exercising the DataSourceWebView
+    import time
     from pprint import pprint
 
     # Create the class and get the AWS DataSource details
@@ -81,3 +82,6 @@ if __name__ == "__main__":
     sample_df = data_view.data_source_smart_sample(0)
     print(sample_df.shape)
     print(sample_df.head())
+
+    # Give any broker threads time to finish
+    time.sleep(1)

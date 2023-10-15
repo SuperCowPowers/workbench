@@ -13,7 +13,8 @@ GREEN = "\033[92m"
 CYAN = "\033[96m"
 RESET = "\033[0m"
 
-exclude_classes = ["Thread", "WSGIRequestHandler", "ThreadedWSGIServer", "Flask"]
+exclude_classes = ["Thread", "WSGIRequestHandler", "ThreadedWSGIServer", "Flask",
+                   "_NewThreadStartupWithTrace"]
 
 
 def trace_calls(func):
