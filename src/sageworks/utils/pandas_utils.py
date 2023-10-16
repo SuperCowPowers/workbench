@@ -373,6 +373,9 @@ def serialize_compound_data(data: dict) -> str:
         # Check for datetime objects
         elif isinstance(value, (datetime, date)):
             serialized_dict[key] = datetime_to_iso8601(value)
+        # Now convert any non-string values to JSON strings
+        elif not isinstance(value, str):
+            serialized_dict[key] = json.dumps(value, cls=NumpyEncoder)
         else:
             serialized_dict[key] = value
     return json.dumps(serialized_dict)

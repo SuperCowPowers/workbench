@@ -193,6 +193,8 @@ class Model(Artifact):
 
         # Cache the details
         self.data_storage.set(storage_key, serialize_compound_data(details))
+
+        # Return the details
         return details
 
     def expected_meta(self) -> list[str]:

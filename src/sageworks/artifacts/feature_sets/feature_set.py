@@ -15,7 +15,7 @@ from sageworks.artifacts.artifact import Artifact
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.utils.iso_8601 import convert_all_to_iso8601
+from sageworks.utils.pandas_utils import serialize_compound_data, deserialize_compound_data
 
 
 class FeatureSet(Artifact):
@@ -201,22 +201,18 @@ class FeatureSet(Artifact):
         Returns:
             dict(dict): A dictionary of details about this FeatureSet
         """
-        # First check if we have already computed the details
-        if self.sageworks_meta().get("details_computed") and not recompute:
-            # Get the SageWorks Metadata
-            details = self.sageworks_meta()
 
-            # Hack for AWS URL
-            details["aws_url"] = details["aws_url"].replace("__question__", "?").replace("__pound__", "#")
+        # Check if we have cached version of the FeatureSet Details
+        storage_key = f"feature_set:{self.uuid}:details"
+        cached_details = self.data_storage.get(storage_key)
+        if cached_details and not recompute:
+            return deserialize_compound_data(cached_details)
 
-            # Now we need to get the details from the underlying DataSource
-            details["storage_details"] = self.data_source.details()
+        self.log.info(f"Recomputing FeatureSet Details ({self.uuid})...")
+        details = self.summary()
 
-            return details
-
-        # Create a dictionary of details
-        details = dict()
-        details["details_computed"] = True
+        # Now we need to get the details from the underlying DataSource
+        details["storage_details"] = self.data_source.details()
 
         # Number of Columns
         details["num_columns"] = self.num_columns()
@@ -235,13 +231,10 @@ class FeatureSet(Artifact):
 
         # These details will be stored in AWS (as tags). AWS tags have
         # a bunch of constraints so we need to do some replacements
-        details["aws_url"] = self.aws_url().replace("?", "__question__").replace("#", "__pound__")
+        details["aws_url"] = self.aws_url()
 
-        # Convert any datetime fields to ISO-8601 strings
-        details = convert_all_to_iso8601(details)
-
-        # Push the details data into our DataSource Metadata
-        self.upsert_sageworks_meta(details)
+        # Cache the details
+        self.data_storage.set(storage_key, serialize_compound_data(details))
 
         # Return the details data
         return details
@@ -261,6 +254,10 @@ class FeatureSet(Artifact):
         s3_delete_path = self.feature_sets_s3_path + f"/{self.uuid}"
         self.log.info(f"Deleting S3 Storage Objects {s3_delete_path}")
         wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
+
+        # Now delete any data in the Cache
+        for key in self.data_storage.list_subkeys(f"feature_set:{self.uuid}"):
+            self.data_storage.delete(key)
 
     def ensure_feature_group_deleted(self, feature_group):
         status = "Deleting"
@@ -389,7 +386,7 @@ class FeatureSet(Artifact):
         """This is a BLOCKING method that will wait until the FeatureSet is ready"""
 
         # Make sure the FeatureSet Details are computed
-        self.details()
+        self.details(recompute=True)
 
         # Call our underlying DataSource make_ready method
         if not self.data_source.make_ready():

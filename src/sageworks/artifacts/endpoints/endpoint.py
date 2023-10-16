@@ -17,6 +17,7 @@ from sagemaker import Predictor
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
+from sageworks.utils.pandas_utils import serialize_compound_data, deserialize_compound_data
 
 
 class Endpoint(Artifact):
@@ -190,14 +191,30 @@ class Endpoint(Artifact):
         """Return the datetime when this artifact was last modified"""
         return self.endpoint_meta["LastModifiedTime"]
 
-    def details(self) -> dict:
-        """Additional Details about this Endpoint"""
+    def details(self, recompute: bool = False) -> dict:
+        """Additional Details about this Endpoint
+        Args:
+            recompute(bool): Recompute the details (default: False)
+        Returns:
+            dict(dict): A dictionary of details about this Endpoint
+        """
+        # Check if we have cached version of the FeatureSet Details
+        storage_key = f"endpoint:{self.uuid}:details"
+        cached_details = self.data_storage.get(storage_key)
+        if cached_details and not recompute:
+            return deserialize_compound_data(cached_details)
+
         details = self.summary()
+
+        # Cache the details
+        self.data_storage.set(storage_key, serialize_compound_data(details))
+
+        # Return the details
         return details
 
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Endpoint is ready"""
-        self.details()
+        self.details(recompute=True)
         self.set_status("ready")
         self.refresh_meta()
         return True
@@ -252,6 +269,10 @@ class Endpoint(Artifact):
             self.sm_client.delete_endpoint_config(EndpointConfigName=self.endpoint_name)
         except botocore.exceptions.ClientError:
             self.log.info(f"Endpoint Config {self.endpoint_name} doesn't exist...")
+
+        # Now delete any data in the Cache
+        for key in self.data_storage.list_subkeys(f"endpoint:{self.uuid}"):
+            self.data_storage.delete(key)
 
 
 if __name__ == "__main__":
