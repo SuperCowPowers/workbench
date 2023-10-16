@@ -55,7 +55,7 @@ class DataSourceAbstract(Artifact):
         """
 
         # Check if we have a cached sample of rows
-        storage_key = f"DataStorage:{self.uuid}:sample"
+        storage_key = f"data_source:{self.uuid}:sample"
         if not recompute and self.data_storage.get(storage_key):
             return pd.read_json(StringIO(self.data_storage.get(storage_key)))
 
@@ -98,7 +98,7 @@ class DataSourceAbstract(Artifact):
         """
 
         # Check if we have cached outliers
-        storage_key = f"DataStorage:{self.uuid}:outliers"
+        storage_key = f"data_source:{self.uuid}:outliers"
         if not recompute and self.data_storage.get(storage_key):
             return pd.read_json(StringIO(self.data_storage.get(storage_key)))
 
@@ -181,11 +181,11 @@ class DataSourceAbstract(Artifact):
         """Is the DataSource ready?"""
 
         # Check if the samples and outliers have been computed
-        storage_key = f"DataStorage:{self.uuid}:sample"
+        storage_key = f"data_source:{self.uuid}:sample"
         if not self.data_storage.get(storage_key):
             self.log.info(f"DataSource {self.uuid} implicitly calling sample()")
             self.sample()
-        storage_key = f"DataStorage:{self.uuid}:outliers"
+        storage_key = f"data_source:{self.uuid}:outliers"
         if not self.data_storage.get(storage_key):
             self.log.info(f"DataSource {self.uuid} implicitly calling outliers()")
             self.outliers()

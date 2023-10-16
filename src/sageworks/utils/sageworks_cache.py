@@ -6,6 +6,16 @@ from sageworks.utils.redis_cache import RedisCache
 
 
 class SageWorksCache:
+    # Initialize the actual cache at the class level
+    _actual_cache = None
+
+    @classmethod
+    def _initialize_cache(cls, expire=None, prefix="", postfix=""):
+        if RedisCache().check():
+            return RedisCache(expire=expire, prefix=prefix, postfix=postfix)
+        else:
+            return Cache(expire=expire)
+
     def __init__(self, expire=None, prefix="", postfix=""):
         """SageWorksCache Initialization
         Args:
@@ -13,12 +23,9 @@ class SageWorksCache:
             prefix: the prefix to use for all keys
             postfix: the postfix to use for all keys
         """
-        if RedisCache().check():
-            self._actual_cache = RedisCache(expire=expire, prefix=prefix, postfix=postfix)
-        else:
-            # If Redis isn't available, fall back to Cache
-            # Note: Since we have a 'separate' Cache, we don't need prefix/postfix logic
-            self._actual_cache = Cache(expire=expire)
+        # Initialize the actual cache if it hasn't been initialized yet
+        if SageWorksCache._actual_cache is None:
+            SageWorksCache._actual_cache = self._initialize_cache(expire, prefix, postfix)
 
     def set(self, key, value):
         self._actual_cache.set(key, value)
@@ -31,3 +38,4 @@ class SageWorksCache:
 
     def check(self):
         return self._actual_cache.check()
+

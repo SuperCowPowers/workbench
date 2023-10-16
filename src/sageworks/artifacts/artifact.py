@@ -44,8 +44,8 @@ class Artifact(ABC):
     models_s3_path = "s3://" + sageworks_bucket + "/models"
     endpoints_s3_path = "s3://" + sageworks_bucket + "/endpoints"
 
-    # Data Storage for Larger Cached Objects
-    data_storage = SageWorksCache()
+    # Data Cache for Artifacts
+    data_storage = SageWorksCache(prefix="data_storage")
 
     def __init__(self, uuid: str):
         """Artifact Initialization"""

@@ -18,16 +18,21 @@ class Cache(object):
          cache.clear()
     """
 
-    def __init__(self, max_size=10000, expire=None):
+    def __init__(self, max_size=10000, expire=None, prefix="", postfix=""):
         """Cache Initialization"""
         self.store = OrderedDict()
         self.max_size = max_size
         self.expire = expire
         self._compression_timer = 600
         self._last_compression = time.time()
+        self.prefix = prefix if not prefix or prefix.endswith(":") else prefix + ":"
+        self.postfix = postfix if not postfix or postfix.startswith(":") else ":" + postfix
 
         # Try to do cleanup/serialization at exit
         atexit.register(self.cleanup)
+
+    def _get_prefixed_key(self, key):
+        return f"{self.prefix}{key}{self.postfix}"
 
     def set(self, key, value):
         """Add an item to the cache
@@ -36,8 +41,9 @@ class Cache(object):
                value: the value associated with this key
         """
         self._check_limit()
+        actual_key = self._get_prefixed_key(key)
         _expire = time.time() + self.expire if self.expire else None
-        self.store[key] = (value, _expire)
+        self.store[actual_key] = (value, _expire)
 
     def get(self, key):
         """Get an item from the cache
@@ -46,19 +52,20 @@ class Cache(object):
         Returns:
             the value of the item or None if the item isn't in the cache
         """
-        data = self.store.get(key)
+        actual_key = self._get_prefixed_key(key)
+        data = self.store.get(actual_key)
         if not data:
             return None
         value, expire = data
         if expire and time.time() > expire:
-            del self.store[key]
+            del self.store[actual_key]
             return None
         return value
 
     def delete(self, key):
-        """Delete an item from the cache"""
-        if key in self.store:
-            del self.store[key]
+        actual_key = self._get_prefixed_key(key)
+        if actual_key in self.store:
+            del self.store[actual_key]
 
     def clear(self):
         """Clear the cache"""
@@ -67,7 +74,7 @@ class Cache(object):
     def dump(self):
         """Dump the cache (for debugging)"""
         for key in self.store.keys():
-            print(key, ":", self.get(key))
+            print(key, ":", self.store.get(key))
 
     @property
     def size(self):
@@ -156,3 +163,9 @@ if __name__ == "__main__":
 
     # Also make sure compression call is throttled
     my_cache._compress()  # Should not output a compression message
+
+    # Test prefix/postfix
+    my_cache = Cache(max_size=5, prefix="pre", postfix="post")
+    my_cache.set("foo", "bar")
+    assert my_cache.get("foo") == "bar"
+    my_cache.dump()

@@ -111,24 +111,15 @@ class Model(Artifact):
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics (might be None)
         """
-        # Check if we have cached version of the validation predictions
-        storage_key = f"DataStorage:{self.uuid}:validation_predictions"
-        validation_predictions = self.data_storage.get(storage_key)
-        if not recompute and validation_predictions:
-            if validation_predictions == "no data":
-                return None
-            return pd.read_json(StringIO(validation_predictions))
 
-        # Not Cached, so we have to pull the validation prediction CSV file from S3
+        # Pull the validation prediction CSV file from S3
         self.log.info(f"Pulling validation predictions for {self.uuid}...")
         s3_path = f"{self.models_s3_path}/{self.model_name}/validation_predictions.csv"
         try:
             df = wr.s3.read_csv(s3_path)
-            self.data_storage.set(storage_key, df.to_json())
             return df
         except NoFilesFound:
             self.log.info(f"Could not find validation predictions at {s3_path}...")
-            self.data_storage.set(storage_key, "no data")
             return None
 
     def size(self) -> float:
@@ -172,7 +163,7 @@ class Model(Artifact):
         """
 
         # Check if we have cached version of the Model Details
-        storage_key = f"DataStorage:{self.uuid}:details"
+        storage_key = f"model:{self.uuid}:details"
         cached_details = self.data_storage.get(storage_key)
         if cached_details and not recompute:
             return deserialize_compound_data(cached_details)
@@ -217,7 +208,7 @@ class Model(Artifact):
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Model is ready"""
         self._pull_training_job_metrics()
-        self.details()
+        self.details(recompute=True)
         self.set_status("ready")
         self.refresh_meta()
         return True
