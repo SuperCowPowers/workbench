@@ -156,7 +156,7 @@ def update_correlation_matrix(app: Dash, feature_set_web_view: FeatureSetWebView
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
 
-        # Get the data source smart sample rows and create the correlation matrix
+        # Get the feature set details and create the correlation matrix
         artifact_info = feature_set_web_view.feature_set_details(selected_rows[0])
 
         # Convert the data details to a pandas dataframe

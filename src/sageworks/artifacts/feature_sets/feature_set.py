@@ -210,6 +210,7 @@ class FeatureSet(Artifact):
 
         self.log.info(f"Recomputing FeatureSet Details ({self.uuid})...")
         details = self.summary()
+        details["aws_url"] = self.aws_url()
 
         # Now we need to get the details from the underlying DataSource
         details["storage_details"] = self.data_source.details()
@@ -228,10 +229,6 @@ class FeatureSet(Artifact):
         # Underlying Storage Details
         details["storage_type"] = "athena"  # TODO: Add RDS support
         details["storage_uuid"] = self.data_source.uuid
-
-        # These details will be stored in AWS (as tags). AWS tags have
-        # a bunch of constraints so we need to do some replacements
-        details["aws_url"] = self.aws_url()
 
         # Cache the details
         self.data_storage.set(storage_key, serialize_compound_data(details))
