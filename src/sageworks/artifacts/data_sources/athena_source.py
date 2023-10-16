@@ -18,7 +18,7 @@ from sageworks.algorithms.sql import (
     column_stats,
     correlations,
 )
-from sageworks.utils.pandas_utils import NumpyEncoder
+from sageworks.utils.pandas_utils import CustomEncoder
 from sageworks.utils.trace_calls import trace_calls
 
 
@@ -103,7 +103,7 @@ class AthenaSource(DataSourceAbstract):
         # Now convert any non-string values to JSON strings
         for key, value in new_meta.items():
             if not isinstance(value, str):
-                new_meta[key] = json.dumps(value, cls=NumpyEncoder)
+                new_meta[key] = json.dumps(value, cls=CustomEncoder)
 
         # Update our existing metadata with the new metadata
         meta.update(new_meta)

@@ -212,8 +212,8 @@ class FeatureSet(Artifact):
         details = self.summary()
         details["aws_url"] = self.aws_url()
 
-        # Now we need to get the details from the underlying DataSource
-        details["storage_details"] = self.data_source.details()
+        # Now get a summary of the underlying DataSource
+        details["storage_summary"] = self.data_source.summary()
 
         # Number of Columns
         details["num_columns"] = self.num_columns()
@@ -229,6 +229,10 @@ class FeatureSet(Artifact):
         # Underlying Storage Details
         details["storage_type"] = "athena"  # TODO: Add RDS support
         details["storage_uuid"] = self.data_source.uuid
+
+        # Add the column details and column stats
+        details["column_details"] = self.column_details()
+        details["column_stats"] = self.column_stats()
 
         # Cache the details
         self.data_storage.set(storage_key, serialize_compound_data(details))

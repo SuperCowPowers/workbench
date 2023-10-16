@@ -210,8 +210,8 @@ def get_dummy_cols(df: pd.DataFrame) -> list:
             dummy_cols.append(col)
     return dummy_cols
 
-
-class NumpyEncoder(json.JSONEncoder):
+        
+class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, dict):
             return {key: self.default(value) for key, value in obj.items()}
@@ -223,8 +223,10 @@ class NumpyEncoder(json.JSONEncoder):
             return bool(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
+        elif isinstance(obj, (datetime, date)):
+            return datetime_to_iso8601(obj)
         else:
-            return super(NumpyEncoder, self).default(obj)
+            return super(CustomEncoder, self).default(obj)
 
 
 def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.3) -> pd.DataFrame:
@@ -368,14 +370,12 @@ def serialize_compound_data(data: dict) -> str:
     # Check each value in the dictionary and if it's a DataFrame, convert it to JSON
     serialized_dict = {}
     for key, value in data.items():
+        # Serialize DataFrames to JSON
         if isinstance(value, pd.DataFrame):
             serialized_dict[key] = value.to_json()
-        # Check for datetime objects
-        elif isinstance(value, (datetime, date)):
-            serialized_dict[key] = datetime_to_iso8601(value)
-        # Now convert any non-string values to JSON strings
+        # Now convert any non-string values to JSON strings via CustomEncoder
         elif not isinstance(value, str):
-            serialized_dict[key] = json.dumps(value, cls=NumpyEncoder)
+            serialized_dict[key] = json.dumps(value, cls=CustomEncoder)
         else:
             serialized_dict[key] = value
     return json.dumps(serialized_dict)
@@ -440,7 +440,7 @@ if __name__ == "__main__":
 
     # Test Numpy Encoder
     data = {"int": np.int64(6), "float": np.float64(6.5), "array": np.array([1, 2, 3])}
-    json_data = json.dumps(data, cls=NumpyEncoder)
+    json_data = json.dumps(data, cls=CustomEncoder)
     print(json_data)
 
     # Correlation Matrix

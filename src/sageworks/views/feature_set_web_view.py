@@ -43,6 +43,7 @@ class FeatureSetWebView(ArtifactsWebView):
         uuid = self.feature_set_name(feature_set_index)
         fs = FeatureSet(uuid)
         if fs.ready():
+            # return fs.details()
             details_data = fs.data_source.details()
             details_data["column_stats"] = fs.column_stats()
             return details_data
