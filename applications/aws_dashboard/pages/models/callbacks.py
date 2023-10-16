@@ -10,7 +10,10 @@ from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 def update_models_table(app: Dash):
     @app.callback(
-        [Output("models_table", "columns"), Output("models_table", "data")],
+        [
+            Output("models_table", "columns"),
+            Output("models_table", "data")
+        ],
         Input("aws-broker-data", "data"),
     )
     def models_update(serialized_aws_broker_data):
@@ -44,46 +47,35 @@ def table_row_select(app: Dash, table_name: str):
 
 
 # Updates the model details when a model row is selected
-def update_model_details(app: Dash, model_web_view: ModelWebView):
+def update_model_detail_components(app: Dash, model_web_view: ModelWebView):
     @app.callback(
         [
             Output("model_details_header", "children"),
             Output("model_details", "children"),
+            Output("model_metrics", "figure"),
         ],
         Input("models_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
     def generate_model_details_markdown(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
+
+        # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
-            return no_update
-        print("Calling Model Details...")
-        model_details = model_web_view.model_details(selected_rows[0])
-        model_details_markdown = model_markdown.ModelMarkdown().generate_markdown(model_details)
+            return [no_update, no_update, no_update]
 
         # Name of the data source for the Header
         model_name = model_web_view.model_name(selected_rows[0])
         header = f"Details: {model_name}"
 
-        # Return the details/markdown for these data details
-        return [header, model_details_markdown]
-
-
-# Updates the model metrics when a model row is selected
-def update_model_metrics(app: Dash, model_web_view: ModelWebView):
-    @app.callback(
-        Output("model_metrics", "figure"),
-        Input("models_table", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def generate_model_metrics_figure(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return no_update
-
-        print("Calling Model Details...")
+        # Model Details
         model_details = model_web_view.model_details(selected_rows[0])
-        return model_metrics.ModelMetrics().generate_component_figure(model_details)
+        model_details_markdown = model_markdown.ModelMarkdown().generate_markdown(model_details)
+
+        # Model Metrics
+        model_metrics_figure = model_metrics.ModelMetrics().generate_component_figure(model_details)
+
+        # Return the details/markdown for these data details
+        return [header, model_details_markdown, model_metrics_figure]
 
 
 # Updates the plugin component when a model row is selected
@@ -94,10 +86,11 @@ def update_plugin(app: Dash, plugin, model_web_view: ModelWebView):
         prevent_initial_call=True,
     )
     def update_plugin_figure(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
+
+        # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return no_update
 
-        print("Calling Model Details...")
+        # Get the model details and send it to the plugin
         model_details = model_web_view.model_details(selected_rows[0])
         return plugin.generate_component_figure(model_details)
