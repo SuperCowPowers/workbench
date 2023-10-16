@@ -35,10 +35,14 @@ def trace_calls(func):
         return stack
 
     def wrapper(*args, **kwargs):
+        if "self" in inspect.signature(func).parameters:
+            class_name = args[0].__class__.__name__
+            func_name_colored = f"{BLUE}{class_name}.{func.__name__}{RESET}"  # Add color and class name to func name
+        else:
+            func_name_colored = f"{BLUE}{func.__name__}{RESET}"  # Add color to func name
         call_stack = get_call_stack()
         call_stack.reverse()  # Reverse the stack to show the calling order.
         call_chain = " -> ".join(call_stack)
-        func_name_colored = f"{BLUE}{func.__name__}{RESET}"  # Add color to func name
         log.info(f"{func_name_colored} called by {call_chain}")
         return func(*args, **kwargs)
 
