@@ -5,6 +5,7 @@ import logging
 
 # SageWorks Logger
 import sageworks  # noqa: F401 (we need to import this to set up the logger)
+
 log = logging.getLogger("sageworks")
 
 # Define ANSI color codes for blue text and class name color
@@ -13,8 +14,7 @@ GREEN = "\033[92m"
 CYAN = "\033[96m"
 RESET = "\033[0m"
 
-exclude_classes = ["Thread", "WSGIRequestHandler", "ThreadedWSGIServer", "Flask",
-                   "_NewThreadStartupWithTrace"]
+exclude_classes = ["Thread", "WSGIRequestHandler", "ThreadedWSGIServer", "Flask", "_NewThreadStartupWithTrace"]
 
 
 def trace_calls(func):

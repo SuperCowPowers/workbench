@@ -10,10 +10,7 @@ from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 def update_models_table(app: Dash):
     @app.callback(
-        [
-            Output("models_table", "columns"),
-            Output("models_table", "data")
-        ],
+        [Output("models_table", "columns"), Output("models_table", "data")],
         Input("aws-broker-data", "data"),
     )
     def models_update(serialized_aws_broker_data):
@@ -58,7 +55,6 @@ def update_model_detail_components(app: Dash, model_web_view: ModelWebView):
         prevent_initial_call=True,
     )
     def generate_model_details_figures(selected_rows):
-
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return [no_update, no_update, no_update]
@@ -86,7 +82,6 @@ def update_plugin(app: Dash, plugin, model_web_view: ModelWebView):
         prevent_initial_call=True,
     )
     def update_plugin_figure(selected_rows):
-
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return no_update

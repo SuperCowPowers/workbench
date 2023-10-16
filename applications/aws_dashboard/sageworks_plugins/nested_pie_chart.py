@@ -32,22 +32,27 @@ class NestedPieChart(PluginInterface):
         """
 
         data = [  # Portfolio (inner donut)
-            go.Pie(values=[20, 40],
-                   labels=['Reds', 'Blues'],
-                   domain={'x': [0.2, 0.8], 'y': [0.1, 0.9]},
-                   hole=0.5,
-                   direction='clockwise',
-                   sort=False,
-                   marker={'colors': ['#CB4335', '#2E86C1']}),
+            go.Pie(
+                values=[20, 40],
+                labels=["Reds", "Blues"],
+                domain={"x": [0.2, 0.8], "y": [0.1, 0.9]},
+                hole=0.5,
+                direction="clockwise",
+                sort=False,
+                marker={"colors": ["#CB4335", "#2E86C1"]},
+            ),
             # Individual components (outer donut)
-            go.Pie(values=[5, 15, 30, 10],
-                   labels=['Medium Red', 'Light Red', 'Medium Blue', 'Light Blue'],
-                   domain={'x': [0.1, 0.9], 'y': [0, 1]},
-                   hole=0.75,
-                   direction='clockwise',
-                   sort=False,
-                   marker={'colors': ['#EC7063', '#F1948A', '#5DADE2', '#85C1E9']},
-                   showlegend=False)]
+            go.Pie(
+                values=[5, 15, 30, 10],
+                labels=["Medium Red", "Light Red", "Medium Blue", "Light Blue"],
+                domain={"x": [0.1, 0.9], "y": [0, 1]},
+                hole=0.75,
+                direction="clockwise",
+                sort=False,
+                marker={"colors": ["#EC7063", "#F1948A", "#5DADE2", "#85C1E9"]},
+                showlegend=False,
+            ),
+        ]
 
         # Create the nested pie chart plot with custom settings
         fig = go.Figure(data=data)

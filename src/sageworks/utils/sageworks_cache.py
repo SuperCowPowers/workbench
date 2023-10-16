@@ -38,4 +38,3 @@ class SageWorksCache:
 
     def check(self):
         return self._actual_cache.check()
-
