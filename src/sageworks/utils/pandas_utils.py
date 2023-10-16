@@ -5,6 +5,10 @@ import numpy as np
 import json
 from io import StringIO
 import logging
+from datetime import datetime, date
+
+# SageWorks Imports
+from sageworks.utils.iso_8601 import datetime_to_iso8601
 
 # SageWorks Logger
 log = logging.getLogger("sageworks")
@@ -350,6 +354,51 @@ def deserialize_aws_broker_data(serialized_data):
     """
     deserialized_dict = json.loads(serialized_data)
     return {key: pd.read_json(StringIO(df_json)) for key, df_json in deserialized_dict.items()}
+
+
+def serialize_compound_data(data: dict) -> str:
+    """
+    Serializes a dictionary of DataFrames to a JSON-formatted string.
+    Args:
+        data (dict): Dictionary that may have DataFrames as values
+    Returns:
+        str: JSON-formatted string
+    """
+
+    # Check each value in the dictionary and if it's a DataFrame, convert it to JSON
+    serialized_dict = {}
+    for key, value in data.items():
+        if isinstance(value, pd.DataFrame):
+            serialized_dict[key] = value.to_json()
+        # Check for datetime objects
+        elif isinstance(value, (datetime, date)):
+            serialized_dict[key] = datetime_to_iso8601(value)
+        else:
+            serialized_dict[key] = value
+    return json.dumps(serialized_dict)
+
+
+def deserialize_compound_data(serialized_data: str) -> dict:
+    """
+    Deserializes a JSON-formatted string to a dictionary of DataFrames.
+    Args:
+        serialized_data (str): JSON-formatted string
+    Returns:
+        dict: Dictionary of DataFrames
+    """
+    deserialized_dict = json.loads(serialized_data)
+
+    # Check each value in the dictionary and if it's a DataFrame, convert it from JSON
+    for key, value in deserialized_dict.items():
+        if isinstance(value, str):
+            try:
+                deserialized_dict[key] = pd.read_json(StringIO(value))
+            except ValueError:
+                try:
+                    deserialized_dict[key] = datetime.fromisoformat(value)
+                except ValueError:
+                    pass
+    return deserialized_dict
 
 
 if __name__ == "__main__":

@@ -14,6 +14,8 @@ from sagemaker import TrainingJobAnalytics
 from sageworks.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.trace_calls import trace_calls
+from sageworks.utils.pandas_utils import serialize_compound_data, deserialize_compound_data
+
 
 # Enumerated Model Types
 class ModelType(Enum):
@@ -161,8 +163,21 @@ class Model(Artifact):
         """Return the datetime when this artifact was last modified"""
         return self.latest_model["CreationTime"]
 
-    def details(self) -> dict:
-        """Additional Details about this Model"""
+    def details(self, recompute=False) -> dict:
+        """Additional Details about this Model
+        Args:
+            recompute (bool, optional): Recompute the details (default: False)
+        Returns:
+            dict: Dictionary of details about this Model
+        """
+
+        # Check if we have cached version of the Model Details
+        storage_key = f"DataStorage:{self.uuid}:details"
+        cached_details = self.data_storage.get(storage_key)
+        if cached_details and not recompute:
+            return deserialize_compound_data(cached_details)
+
+        self.log.info("Recomputing Model Details...")
         details = self.summary()
         details["model_type"] = self.model_type().value
         details["model_package_group_arn"] = self.group_arn()
@@ -185,6 +200,9 @@ class Model(Artifact):
         details["model_metrics"] = self.model_metrics()
         details["confusion_matrix"] = self.confusion_matrix()
         details["validation_predictions"] = self.validation_predictions()
+
+        # Cache the details
+        self.data_storage.set(storage_key, serialize_compound_data(details))
         return details
 
     def expected_meta(self) -> list[str]:

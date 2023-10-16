@@ -20,9 +20,6 @@ class View(ABC):
         self.boto_session = self.aws_account_clamp.boto_session()
         self.sm_session = self.aws_account_clamp.sagemaker_session()
 
-        # Create a SageWorks View Cache
-        self.view_cache = SageWorksCache(expire=60, prefix="view")
-
     @abstractmethod
     def check(self) -> bool:
         """Can we connect to this view/service?"""
