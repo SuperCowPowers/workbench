@@ -2,7 +2,6 @@
 from datetime import datetime
 import urllib.parse
 from typing import Union
-from io import StringIO
 from enum import Enum
 
 import pandas as pd
