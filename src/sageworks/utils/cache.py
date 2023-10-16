@@ -67,6 +67,14 @@ class Cache(object):
         if actual_key in self.store:
             del self.store[actual_key]
 
+    def list_keys(self):
+        """List all keys in the cache"""
+        return list(self.store.keys())
+
+    def list_subkeys(self, key):
+        """List all sub-keys in the cache"""
+        return [k for k in self.store.keys() if k.startswith(self._get_prefixed_key(key))]
+
     def clear(self):
         """Clear the cache"""
         self.store = OrderedDict()
@@ -129,6 +137,11 @@ if __name__ == "__main__":
     # So the '0' key should no longer be there FIFO
     assert my_cache.get("0") is None
     assert my_cache.get("5") is not None
+
+    # Test listing keys
+    print("Listing Keys...")
+    print(my_cache.list_keys())
+    print(my_cache.list_subkeys("foo"))
 
     # Make sure size is working
     assert my_cache.size == 5

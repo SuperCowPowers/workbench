@@ -229,6 +229,10 @@ class Model(Artifact):
         self.log.info(f"Deleting Model Group {self.model_name}...")
         self.sm_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
 
+        # Now delete any data in the Cache
+        for key in self.data_storage.list_subkeys(f"model:{self.uuid}"):
+            self.data_storage.delete(key)
+
     def _pull_training_job_metrics(self, force_pull=False):
         """Internal: Grab any captured metrics from the training job for this model
         Args:

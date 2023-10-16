@@ -111,6 +111,14 @@ class RedisCache:
         """Delete an item from the redis_cache"""
         self.redis_db.delete(self.prefix + str(key) + self.postfix)
 
+    def list_keys(self):
+        """List all keys in the redis_cache"""
+        return self.redis_db.keys(self.prefix + "*")
+
+    def list_subkeys(self, key):
+        """List all sub-keys in the redis_cache"""
+        return self.redis_db.keys(self.prefix + str(key) + "*")
+
     @classmethod
     def clear(cls):
         """Clear the redis_cache"""
@@ -210,6 +218,11 @@ if __name__ == "__main__":
     my_redis_cache = RedisCache(prefix="test", postfix="fresh")
     my_redis_cache.set("foo", "bar")
     assert my_redis_cache.get("foo") == "bar"
+
+    # Test listing keys
+    print("Listing Keys...")
+    print(my_redis_cache.list_keys())
+    print(my_redis_cache.list_subkeys("foo"))
 
     # Clear out the Redis Cache
     my_redis_cache.clear()
