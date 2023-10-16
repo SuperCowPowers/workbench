@@ -26,5 +26,8 @@ class SageWorksCache:
     def get(self, key):
         return self._actual_cache.get(key)
 
+    def delete(self, key):
+        self._actual_cache.delete(key)
+
     def check(self):
         return self._actual_cache.check()

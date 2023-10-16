@@ -55,6 +55,11 @@ class Cache(object):
             return None
         return value
 
+    def delete(self, key):
+        """Delete an item from the cache"""
+        if key in self.store:
+            del self.store[key]
+
     def clear(self):
         """Clear the cache"""
         self.store = OrderedDict()
@@ -123,6 +128,10 @@ if __name__ == "__main__":
 
     # Dump the cache
     my_cache.dump()
+
+    # Test deleting
+    my_cache.delete("1")
+    assert my_cache.get("1") is None
 
     # Test storing 'null' values
     my_cache.set(0, "foo")

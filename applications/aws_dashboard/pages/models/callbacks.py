@@ -57,7 +57,7 @@ def update_model_detail_components(app: Dash, model_web_view: ModelWebView):
         Input("models_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
-    def generate_model_details_markdown(selected_rows):
+    def generate_model_details_figures(selected_rows):
 
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:

@@ -107,6 +107,10 @@ class RedisCache:
         # Get the value in redis with optional postfix
         return self.redis_db.get(self.prefix + str(key) + self.postfix)
 
+    def delete(self, key):
+        """Delete an item from the redis_cache"""
+        self.redis_db.delete(self.prefix + str(key) + self.postfix)
+
     @classmethod
     def clear(cls):
         """Clear the redis_cache"""
@@ -180,6 +184,10 @@ if __name__ == "__main__":
 
     # Dump the redis_cache
     my_redis_cache.dump()
+
+    # Test deleting
+    my_redis_cache.delete("1")
+    assert my_redis_cache.get("1") is None
 
     # Test storing 'falsey' values
     my_redis_cache.set(0, "foo")

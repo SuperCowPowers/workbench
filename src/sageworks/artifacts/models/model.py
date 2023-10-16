@@ -162,7 +162,7 @@ class Model(Artifact):
         return self.latest_model["CreationTime"]
 
     def details(self) -> dict:
-        """Additional Details about this Endpoint"""
+        """Additional Details about this Model"""
         details = self.summary()
         details["model_type"] = self.model_type().value
         details["model_package_group_arn"] = self.group_arn()
