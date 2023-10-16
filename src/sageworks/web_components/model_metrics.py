@@ -1,4 +1,4 @@
-"""A Model Metrics component"""
+"""A Model Metrics component that switches display based on model type"""
 from dash import dcc
 import plotly.graph_objects as go
 
@@ -7,9 +7,6 @@ from sageworks.web_components.component_interface import ComponentInterface
 from sageworks.web_components.confusion_matrix import ConfusionMatrix
 from sageworks.web_components.regression_plot import RegressionPlot
 
-
-# This class is basically a specialized version of a Plotly Scatter Plot
-# For heatmaps see (https://plotly.com/python/line-and-scatter/)
 class ModelMetrics(ComponentInterface):
     """Model Metrics Components"""
 
