@@ -12,6 +12,7 @@ from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 from sageworks.artifacts.models.model import Model
 from sageworks.artifacts.endpoints.endpoint import Endpoint
+from sageworks.utils.iso_8601 import iso8601_to_datetime
 
 
 class ArtifactsTextView(View):
@@ -343,22 +344,18 @@ class ArtifactsTextView(View):
             return placeholder
 
         if not isinstance(datetime_obj, datetime):
-            self.log.warning("Invalid input: Expected datetime object")
-            return str(datetime_obj)
+            self.log.debug("Expected datetime object.. trying to convert...")
+            try:
+                datetime_obj = iso8601_to_datetime(datetime_obj)
+            except Exception as e:
+                self.log.error(f"Failed to convert datetime object: {e}")
+                return str(datetime_obj)
 
         try:
             return datetime_obj.strftime("%Y-%m-%d %H:%M")
         except Exception as e:
             self.log.error(f"Failed to convert datetime to string: {e}")
             return str(datetime_obj)
-
-    @staticmethod
-    def datetime_string(datetime_obj):
-        """Helper: Convert DateTime Object into a nice string"""
-        if datetime_obj is None or datetime_obj == "-":
-            return "-"
-        # Date + Hour Minute
-        return datetime_obj.strftime("%Y-%m-%d %H:%M")
 
     def aws_url(self, artifact_info, artifact_type):
         """Helper: Try to extract the AWS URL from the Artifact Info Object"""

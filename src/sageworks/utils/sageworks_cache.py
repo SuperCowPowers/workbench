@@ -1,7 +1,6 @@
 """SageWorksCache is a wrapper around Cache and RedisCache that allows us to
 use RedisCache if it's available, and fall back to Cache if it's not.
 """
-import json
 from sageworks.utils.cache import Cache
 from sageworks.utils.redis_cache import RedisCache
 

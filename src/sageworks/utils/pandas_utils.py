@@ -5,10 +5,6 @@ import numpy as np
 import json
 from io import StringIO
 import logging
-from datetime import datetime, date
-
-# SageWorks Imports
-from sageworks.utils.iso_8601 import datetime_to_iso8601
 
 # SageWorks Logger
 log = logging.getLogger("sageworks")
