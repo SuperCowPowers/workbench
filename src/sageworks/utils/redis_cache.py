@@ -1,6 +1,8 @@
 """A Redis Database Cache Class"""
 import os
 import json
+import numpy as np
+import pandas as pd
 
 import redis
 import logging
@@ -8,6 +10,45 @@ from datetime import datetime, date
 
 # Local Imports
 from sageworks.utils.iso_8601 import datetime_to_iso8601, iso8601_to_datetime
+log = logging.getLogger("sageworks")
+
+
+# Custom JSON Encoder for Redis
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj) -> object:
+        try:
+            if isinstance(obj, dict):
+                return {key: self.default(value) for key, value in obj.items()}
+            elif isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.bool_):
+                return bool(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, (datetime, date)):
+                return {'__datetime__': True, 'datetime': datetime_to_iso8601(obj)}
+            elif isinstance(obj, pd.DataFrame):
+                return {'__dataframe__': True, 'df': obj.to_dict()}
+            else:
+                return super(CustomEncoder, self).default(obj)
+        except Exception as e:
+            log.error(f"Failed to encode object: {e}")
+            return super(CustomEncoder, self).default(obj)
+
+
+# Custom JSON Decoder for Redis
+def custom_decoder(dct):
+    try:
+        if '__datetime__' in dct:
+            return iso8601_to_datetime(dct['datetime'])
+        elif '__dataframe__' in dct:
+            return pd.DataFrame.from_dict(dct['df'])
+        return dct
+    except Exception as e:
+        log.error(f"Failed to decode object: {e}")
+        return dct
 
 
 class RedisCache:
@@ -78,7 +119,7 @@ class RedisCache:
                key: item key
                value: the value associated with this key
         """
-        self._set(key, json.dumps(value, default=self.serialize_datetime))
+        self._set(key, json.dumps(value, cls=CustomEncoder))
 
     def get(self, key):
         """Get an item from the redis_cache, all items are JSON deserialized
@@ -88,7 +129,7 @@ class RedisCache:
             the value of the item or None if the item isn't in the redis_cache
         """
         raw_value = self._get(key)
-        return json.loads(raw_value, object_pairs_hook=self.deserialize_datetime) if raw_value else None
+        return json.loads(raw_value, object_hook=custom_decoder) if raw_value else None
 
     def _set(self, key, value):
         """Internal Method: Add an item to the redis_cache"""
@@ -119,46 +160,39 @@ class RedisCache:
         """List all sub-keys in the redis_cache"""
         return self.redis_db.keys(self.prefix + str(key) + "*")
 
-    @classmethod
-    def clear(cls):
-        """Clear the redis_cache"""
-        print("Clearing Redis Cache...")
-        cls.redis_db.flushall()
+    def clear(self, all_keys=False):
+        """Clear the redis_cache
+        Args:
+            all_keys: if True, clear all keys in the redis_cache, otherwise only clear keys with the prefix
+        """
+        if all_keys:
+            print("Clearing ALL Redis Keys...")
+            self.redis_db.flushdb()
+        else:
+            print(f"Clearing {self.prefix} Redis Keys...")
+            for key in self.redis_db.scan_iter(self.prefix + "*"):
+                self.redis_db.delete(key)
 
-    @classmethod
-    def dump(cls):
-        """Dump the redis_cache (for debugging)"""
-        for key in cls.redis_db.scan_iter():
-            print(key, ":", cls.redis_db.get(key))
+    def dump(self, all_keys=False):
+        """Dump the redis_cache (for debugging)
+         Args:
+            all_keys: if True, print out ALL keys in the redis_cache, otherwise only keys with the prefix
+        """
+        if all_keys:
+            for key in self.redis_db.scan_iter():
+                print(key, ":", self.redis_db.get(key))
+        else:
+            for key in self.redis_db.scan_iter(self.prefix + "*"):
+                print(key, ":", self.redis_db.get(key))
 
     @classmethod
     def size(cls):
         return cls.redis_db.dbsize()
 
-    @staticmethod
-    def serialize_datetime(obj):
-        """JSON serializer for datetime objects"""
-        if isinstance(obj, (datetime, date)):
-            return datetime_to_iso8601(obj)
-        raise TypeError("Type %s not serializable" % type(obj))
-
-    @staticmethod
-    def deserialize_datetime(pairs):
-        """JSON deserializer for datetime objects"""
-        d = {}
-        for k, v in pairs:
-            if isinstance(v, str):
-                try:
-                    d[k] = iso8601_to_datetime(v)
-                except ValueError:
-                    d[k] = v
-            else:
-                d[k] = v
-        return d
-
 
 if __name__ == "__main__":
     """Exercise the RedisCache class"""
+    from pprint import pprint
     import time
 
     # Create a RedisCache
@@ -188,7 +222,7 @@ if __name__ == "__main__":
     for i in range(1, 6):
         my_redis_cache.set(str(i), i)
     print(my_redis_cache.size())
-    assert my_redis_cache.size() == 5
+    assert my_redis_cache.size() >= 5
 
     # Dump the redis_cache
     my_redis_cache.dump()
@@ -224,6 +258,26 @@ if __name__ == "__main__":
     print(my_redis_cache.list_keys())
     print(my_redis_cache.list_subkeys("foo"))
 
-    # Clear out the Redis Cache
+    # Clear out the Redis Cache (just the test keys)
     my_redis_cache.clear()
-    assert my_redis_cache.size() == 0
+
+    # Test storing numpy data
+    data = {"int": np.int64(6), "float": np.float64(6.5), "array": np.array([1, 2, 3])}
+    my_redis_cache.set("data", data)
+    ret_data = my_redis_cache.get("data")
+    pprint(data)
+    pprint(ret_data)
+
+    # Test storing datetime data
+    data = {"now": datetime.now(), "today": date.today()}
+    my_redis_cache.set("data", data)
+    ret_data = my_redis_cache.get("data")
+    pprint(data)
+    pprint(ret_data)
+
+    # Test storing pandas data
+    data = {"my_dataframe": pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]})}
+    my_redis_cache.set("data", data)
+    ret_data = my_redis_cache.get("data")
+    pprint(data)
+    pprint(ret_data)
