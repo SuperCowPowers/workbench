@@ -113,6 +113,10 @@ class DataDetailsMarkdown(ComponentInterface):
             if column_info["dtype"] in numeric_types:
                 continue
 
+            # Skipping any columns that are dates/timestamps
+            if column_info["dtype"] == "timestamp":
+                continue
+
             # Create the column info
             column_html = self._column_info_html(column_name, column_info)
             column_details = expanding_list.replace("<<column_info>>", column_html)
@@ -207,3 +211,34 @@ class DataDetailsMarkdown(ComponentInterface):
             html_template = html_template.replace(f"<<{key}>>", str(value))
 
         return html_template
+
+
+if __name__ == "__main__":
+    # This class takes in model details and generates a Confusion Matrix
+    import dash
+    from dash import dcc
+    from dash import html
+    from sageworks.artifacts.data_sources.data_source import DataSource
+
+    # Create the class and get the AWS FeatureSet details
+    ds = DataSource("wine_data")
+    data_details = ds.details()
+    data_details["column_stats"] = ds.column_stats()
+
+    # Instantiate the DataDetailsMarkdown class
+    ddm = DataDetailsMarkdown()
+    component = ddm.create_component("data_details_markdown")
+
+    # Generate the markdown
+    markdown = ddm.generate_markdown(data_details)
+
+    # Initialize Dash app
+    app = dash.Dash(__name__)
+
+    app.layout = html.Div([
+        component
+    ])
+    component.children = markdown
+
+    if __name__ == '__main__':
+        app.run_server(debug=True)
