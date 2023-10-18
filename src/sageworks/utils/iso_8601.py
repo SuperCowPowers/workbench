@@ -1,25 +1,43 @@
 """Helper functions for working with ISO-8601 formatted dates and times"""
 
-from datetime import datetime, timezone
+from datetime import datetime, date, timezone
 import numpy as np
+import logging
+
+log = logging.getLogger("sageworks")
 
 
-def datetime_to_iso8601(datetime_field: datetime) -> str:
-    """Convert datetime to string in UTC format (yyyy-MM-dd'T'HH:mm:ss.SSSZ)
+def datetime_to_iso8601(datetime_obj) -> str:
+    """Convert datetime or date to string in UTC format (yyyy-MM-dd'T'HH:mm:ss.SSSZ)
     Args:
-        datetime_field (datetime): The datetime object to convert
+        datetime_obj (datetime/date): The datetime or date object to convert
     Returns:
         str: The datetime as a string in ISO-8601 format
     Note: This particular format is required by AWS Feature Store
     """
 
-    # Check for TimeZone
-    if datetime_field.tzinfo is None:
-        datetime_field = datetime_field.tz_localize(timezone.utc)
+    # Check for valid input
+    if not isinstance(datetime_obj, (datetime, date)):
+        log.error("Invalid input: Expected datetime or date object")
+        return None
 
-    # Convert to ISO-8601 String
-    iso_str = datetime_field.astimezone(timezone.utc).isoformat("T", "milliseconds")
-    return iso_str.replace("+00:00", "Z")
+    # Convert date to datetime if needed
+    if isinstance(datetime_obj, date) and not isinstance(datetime_obj, datetime):
+        log.info("Received date object; converting to datetime at midnight UTC.")
+        datetime_obj = datetime.combine(datetime_obj, datetime.min.time()).replace(tzinfo=timezone.utc)
+
+    # Check for TimeZone
+    if datetime_obj.tzinfo is None:
+        log.warning("Datetime object is naive; localizing to UTC.")
+        datetime_obj = datetime_obj.replace(tzinfo=timezone.utc)
+
+    try:
+        # Convert to ISO-8601 String
+        iso_str = datetime_obj.astimezone(timezone.utc).isoformat("T", "milliseconds")
+        return iso_str.replace("+00:00", "Z")
+    except Exception as e:
+        log.error(f"Failed to convert datetime to ISO-8601 string: {e}")
+        return None
 
 
 def iso8601_to_datetime(iso8601_str: str) -> datetime:
