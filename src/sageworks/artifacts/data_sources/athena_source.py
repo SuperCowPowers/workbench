@@ -18,7 +18,7 @@ from sageworks.algorithms.sql import (
     column_stats,
     correlations,
 )
-from sageworks.utils.pandas_utils import CustomEncoder
+from sageworks.utils.redis_cache import CustomEncoder
 from sageworks.utils.trace_calls import trace_calls
 
 

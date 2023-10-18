@@ -17,7 +17,6 @@ from sagemaker import Predictor
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.utils.pandas_utils import serialize_compound_data, deserialize_compound_data
 
 
 class Endpoint(Artifact):
@@ -202,12 +201,12 @@ class Endpoint(Artifact):
         storage_key = f"endpoint:{self.uuid}:details"
         cached_details = self.data_storage.get(storage_key)
         if cached_details and not recompute:
-            return deserialize_compound_data(cached_details)
+            return cached_details
 
         details = self.summary()
 
         # Cache the details
-        self.data_storage.set(storage_key, serialize_compound_data(details))
+        self.data_storage.set(storage_key, details)
 
         # Return the details
         return details

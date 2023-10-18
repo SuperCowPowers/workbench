@@ -1,6 +1,7 @@
 """SageWorksCache is a wrapper around Cache and RedisCache that allows us to
 use RedisCache if it's available, and fall back to Cache if it's not.
 """
+import json
 from sageworks.utils.cache import Cache
 from sageworks.utils.redis_cache import RedisCache
 
@@ -9,15 +10,14 @@ class SageWorksCache:
     def __init__(self, expire=None, prefix="", postfix=""):
         """SageWorksCache Initialization
         Args:
-            expire: the number of seconds to keep items in the redis_cache
+            expire: the number of seconds to keep items in the cache
             prefix: the prefix to use for all keys
             postfix: the postfix to use for all keys
         """
         if RedisCache().check():
             self._actual_cache = RedisCache(expire=expire, prefix=prefix, postfix=postfix)
         else:
-            # If Redis isn't available, fall back to Cache
-            # Note: Since we have a 'separate' Cache, we don't need prefix/postfix logic
+            # If Redis isn't available, fall back to an In-Memory Cache
             self._actual_cache = Cache(expire=expire, prefix=prefix, postfix=postfix)
 
     def set(self, key, value):

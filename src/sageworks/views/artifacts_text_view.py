@@ -1,6 +1,7 @@
 """ArtifactsTextView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
 import json
 import pandas as pd
+from datetime import datetime
 from termcolor import colored
 from typing import Dict
 
@@ -327,6 +328,29 @@ class ArtifactsTextView(View):
             return len(data_info["StorageDescriptor"]["Columns"])
         except KeyError:
             return "-"
+
+    def datetime_string(self, datetime_obj: datetime) -> str:
+        """Helper: Convert DateTime Object into a nicely formatted string.
+
+        Args:
+            datetime_obj (datetime): The datetime object to convert.
+
+        Returns:
+            str: The datetime as a string in the format "YYYY-MM-DD HH:MM", or "-" if input is None or "-".
+        """
+        placeholder = "-"
+        if datetime_obj is None or datetime_obj == placeholder:
+            return placeholder
+
+        if not isinstance(datetime_obj, datetime):
+            self.log.warning("Invalid input: Expected datetime object")
+            return str(datetime_obj)
+
+        try:
+            return datetime_obj.strftime("%Y-%m-%d %H:%M")
+        except Exception as e:
+            self.log.error(f"Failed to convert datetime to string: {e}")
+            return str(datetime_obj)
 
     @staticmethod
     def datetime_string(datetime_obj):

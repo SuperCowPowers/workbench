@@ -15,7 +15,6 @@ from sageworks.artifacts.artifact import Artifact
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.data_sources.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.utils.pandas_utils import serialize_compound_data, deserialize_compound_data
 
 
 class FeatureSet(Artifact):
@@ -206,7 +205,7 @@ class FeatureSet(Artifact):
         storage_key = f"feature_set:{self.uuid}:details"
         cached_details = self.data_storage.get(storage_key)
         if cached_details and not recompute:
-            return deserialize_compound_data(cached_details)
+            return cached_details
 
         self.log.info(f"Recomputing FeatureSet Details ({self.uuid})...")
         details = self.summary()
@@ -235,7 +234,7 @@ class FeatureSet(Artifact):
         details["column_stats"] = self.column_stats()
 
         # Cache the details
-        self.data_storage.set(storage_key, serialize_compound_data(details))
+        self.data_storage.set(storage_key, details)
 
         # Return the details data
         return details

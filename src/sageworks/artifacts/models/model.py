@@ -13,7 +13,6 @@ from sagemaker import TrainingJobAnalytics
 from sageworks.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.trace_calls import trace_calls
-from sageworks.utils.pandas_utils import serialize_compound_data, deserialize_compound_data
 
 
 # Enumerated Model Types
@@ -165,7 +164,7 @@ class Model(Artifact):
         storage_key = f"model:{self.uuid}:details"
         cached_details = self.data_storage.get(storage_key)
         if cached_details and not recompute:
-            return deserialize_compound_data(cached_details)
+            return cached_details
 
         self.log.info("Recomputing Model Details...")
         details = self.summary()
@@ -192,7 +191,7 @@ class Model(Artifact):
         details["validation_predictions"] = self.validation_predictions()
 
         # Cache the details
-        self.data_storage.set(storage_key, serialize_compound_data(details))
+        self.data_storage.set(storage_key, details)
 
         # Return the details
         return details
