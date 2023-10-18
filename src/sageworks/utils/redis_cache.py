@@ -10,6 +10,7 @@ from datetime import datetime, date
 
 # Local Imports
 from sageworks.utils.iso_8601 import datetime_to_iso8601, iso8601_to_datetime
+
 log = logging.getLogger("sageworks")
 
 
@@ -28,9 +29,9 @@ class CustomEncoder(json.JSONEncoder):
             elif isinstance(obj, np.ndarray):
                 return obj.tolist()
             elif isinstance(obj, (datetime, date)):
-                return {'__datetime__': True, 'datetime': datetime_to_iso8601(obj)}
+                return {"__datetime__": True, "datetime": datetime_to_iso8601(obj)}
             elif isinstance(obj, pd.DataFrame):
-                return {'__dataframe__': True, 'df': obj.to_dict()}
+                return {"__dataframe__": True, "df": obj.to_dict()}
             else:
                 return super(CustomEncoder, self).default(obj)
         except Exception as e:
@@ -41,10 +42,10 @@ class CustomEncoder(json.JSONEncoder):
 # Custom JSON Decoder for Redis
 def custom_decoder(dct):
     try:
-        if '__datetime__' in dct:
-            return iso8601_to_datetime(dct['datetime'])
-        elif '__dataframe__' in dct:
-            return pd.DataFrame.from_dict(dct['df'])
+        if "__datetime__" in dct:
+            return iso8601_to_datetime(dct["datetime"])
+        elif "__dataframe__" in dct:
+            return pd.DataFrame.from_dict(dct["df"])
         return dct
     except Exception as e:
         log.error(f"Failed to decode object: {e}")
@@ -175,8 +176,8 @@ class RedisCache:
 
     def dump(self, all_keys=False):
         """Dump the redis_cache (for debugging)
-         Args:
-            all_keys: if True, print out ALL keys in the redis_cache, otherwise only keys with the prefix
+        Args:
+           all_keys: if True, print out ALL keys in the redis_cache, otherwise only keys with the prefix
         """
         if all_keys:
             for key in self.redis_db.scan_iter():
@@ -276,7 +277,7 @@ if __name__ == "__main__":
     pprint(ret_data)
 
     # Test storing pandas data
-    data = {"my_dataframe": pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]})}
+    data = {"my_dataframe": pd.DataFrame({"col1": [1, 2], "col2": [3, 4]})}
     my_redis_cache.set("data", data)
     ret_data = my_redis_cache.get("data")
     pprint(data)

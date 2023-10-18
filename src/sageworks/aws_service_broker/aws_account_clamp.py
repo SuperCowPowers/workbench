@@ -14,11 +14,9 @@ import logging
 
 
 class AWSAccountClamp:
-
     def __new__(cls):
         """AWSAccountClamp Singleton Pattern"""
         if not hasattr(cls, "instance"):
-
             # Initialize class attributes here
             cls.log = logging.getLogger("sageworks")
             cls.log.info("Creating the AWSAccountClamp Singleton...")

@@ -7,6 +7,7 @@ from sageworks.web_components.component_interface import ComponentInterface
 from sageworks.web_components.confusion_matrix import ConfusionMatrix
 from sageworks.web_components.regression_plot import RegressionPlot
 
+
 class ModelMetrics(ComponentInterface):
     """Model Metrics Components"""
 

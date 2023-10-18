@@ -35,7 +35,6 @@ class ModelMarkdown(ComponentInterface):
             key: value for key, value in model_details.items() if key not in exclude and not key.endswith("_arn")
         }
 
-
         # Exclude dataframe values
         top_level_details = {
             key: value for key, value in top_level_details.items() if not isinstance(value, pd.DataFrame)
@@ -64,7 +63,7 @@ class ModelMarkdown(ComponentInterface):
         # Grab the Metrics from the model details
         metrics = model_details.get("model_metrics")
         if metrics is None:
-            markdown += ("  \nNo Data  \n")
+            markdown += "  \nNo Data  \n"
         else:
             markdown += "  \n"
             markdown += metrics.to_markdown(index=False)
@@ -93,10 +92,8 @@ if __name__ == "__main__":
     # Initialize Dash app
     app = dash.Dash(__name__)
 
-    app.layout = html.Div([
-        component
-    ])
+    app.layout = html.Div([component])
     component.children = markdown
 
-    if __name__ == '__main__':
+    if __name__ == "__main__":
         app.run_server(debug=True)

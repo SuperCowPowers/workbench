@@ -235,10 +235,8 @@ if __name__ == "__main__":
     # Initialize Dash app
     app = dash.Dash(__name__)
 
-    app.layout = html.Div([
-        component
-    ])
+    app.layout = html.Div([component])
     component.children = markdown
 
-    if __name__ == '__main__':
+    if __name__ == "__main__":
         app.run_server(debug=True)
