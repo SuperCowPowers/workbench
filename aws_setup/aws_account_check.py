@@ -63,10 +63,6 @@ class AWSAccountCheck:
         check_boto_session = self.aws_clamp.boto_session()
         self.log.info("Assume Role Success...")
 
-        self.log.info("*** AWS App Config Check ***")
-        self.aws_clamp.check_app_config(check_boto_session)
-        self.log.info("App Config Check Success...")
-
         self.log.info("*** AWS S3 Access Check ***")
         self.aws_clamp.check_s3_access(check_boto_session)
         self.log.info("S3 Access Check Success...")
