@@ -9,7 +9,7 @@ sagemaker >= 2.143
 plotly
 dash >= 2.8
 dash-bootstrap-components
-dash-bootstrap-templates
+dash-bootstrap-templates >= 1.1.1
 aws-cdk-lib >= 2.76.0
 termcolor
-rich==13.3.5
+tabulate
