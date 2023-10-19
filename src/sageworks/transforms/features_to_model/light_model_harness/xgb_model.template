@@ -124,7 +124,7 @@ if __name__ == "__main__":
         )
 
         # We need to get creative with the Classification Metrics
-        metrics = ["precision", "recall", "fscore"]
+        metrics = ["precision", "recall", "fscore", "support"]
         for t in label_names:
             for m in metrics:
                 value = score_df.loc[score_df[target] == t, m].iloc[0]

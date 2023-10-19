@@ -65,7 +65,7 @@ class FeaturesToModel(Transform):
         feature_list_str = json.dumps(feature_list)
         xgb_script = xgb_script.replace("{{feature_list}}", feature_list_str)
         xgb_script = xgb_script.replace("{{model_type}}", model_type)
-        metrics_s3_path = f"{self.models_s3_path}/{self.output_uuid}"
+        metrics_s3_path = f"{self.models_s3_path}/training/{self.output_uuid}"
         xgb_script = xgb_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
 
         # Now write out the generated model script and return the name
