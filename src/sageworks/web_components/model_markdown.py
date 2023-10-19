@@ -90,9 +90,11 @@ if __name__ == "__main__":
     markdown = ddm.generate_markdown(model_details)
 
     # Initialize Dash app
-    app = dash.Dash(__name__,
-                    external_stylesheets=[dbc.themes.DARKLY],
-                    assets_folder="/Users/briford/work/sageworks/applications/aws_dashboard/assets")
+    app = dash.Dash(
+        __name__,
+        external_stylesheets=[dbc.themes.DARKLY],
+        assets_folder="/Users/briford/work/sageworks/applications/aws_dashboard/assets",
+    )
 
     app.layout = html.Div([component])
     component.children = markdown
