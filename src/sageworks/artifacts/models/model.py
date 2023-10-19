@@ -43,6 +43,10 @@ class Model(Artifact):
         # Call SuperClass Initialization
         super().__init__(model_uuid)
 
+        # Set the Model Training and Inference S3 Paths
+        self.model_training_path = self.models_s3_path + "/training"
+        self.model_inference_path = self.models_s3_path + "/inference"
+
         # Grab an AWS Metadata Broker object and pull information for Models
         self.model_name = model_uuid
         aws_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS, force_refresh=force_refresh)
@@ -102,20 +106,34 @@ class Model(Artifact):
         matrix = self.sageworks_meta().get("sageworks_confusion_matrix")
         return pd.DataFrame.from_dict(matrix) if matrix else None
 
-    def validation_predictions(self) -> Union[pd.DataFrame, None]:
-        """Retrieve the training validation predictions for this model
+    def regression_predictions(self) -> Union[pd.DataFrame, None]:
+        """Retrieve the regression based predictions for this model
         Returns:
-            pd.DataFrame: DataFrame of the Model Metrics (might be None)
+            pd.DataFrame: DataFrame of the Regression based Predictions (might be None)
         """
 
-        # Pull the validation prediction CSV file from S3
-        self.log.info(f"Pulling validation predictions for {self.uuid}...")
-        s3_path = f"{self.models_s3_path}/training/{self.model_name}/validation_predictions.csv"
+        # Pull the regression predictions, try first from inference, then from training
+        s3_path = f"{self.model_inference_path}/{self.model_name}/inference_predictions.csv"
+        df = self._pull_regresssion_predictions(s3_path)
+        if df is not None:
+            return df
+        else:
+            s3_path = f"{self.model_training_path}/{self.model_name}/validation_predictions.csv"
+            df = self._pull_regresssion_predictions(s3_path)
+            return df
+
+    def _pull_regresssion_predictions(self, s3_path) -> Union[pd.DataFrame, None]:
+        """Internal: Retrieve the regression based predictions for this model
+        Returns:
+            pd.DataFrame: DataFrame of the regression based Predictions (might be None)
+        """
+
+        # Pull the regression prediction CSV file from S3
         try:
             df = wr.s3.read_csv(s3_path)
             return df
         except NoFilesFound:
-            self.log.info(f"Could not find validation predictions at {s3_path}...")
+            self.log.info(f"Could not find regression predictions at {s3_path}...")
             return None
 
     def size(self) -> float:
@@ -186,7 +204,7 @@ class Model(Artifact):
         details["response_types"] = inference_spec["SupportedResponseMIMETypes"]
         details["model_metrics"] = self.model_metrics()
         details["confusion_matrix"] = self.confusion_matrix()
-        details["validation_predictions"] = self.validation_predictions()
+        details["regression_predictions"] = self.regression_predictions()
 
         # Cache the details
         self.data_storage.set(storage_key, details)
@@ -362,9 +380,9 @@ if __name__ == "__main__":
     print("Confusion Matrix: (might be None)")
     print(my_model.confusion_matrix())
 
-    # Grab our training validation predictions from S3
-    print("Validation Predictions: (might be None)")
-    print(my_model.validation_predictions())
+    # Grab our regression predictions from S3
+    print("Regression Predictions: (might be None)")
+    print(my_model.regresssion_predictions())
 
     # Test Large Metadata
     # my_model.upsert_sageworks_meta({"sageworks_large_meta": {"large_x": "x" * 200, "large_y": "y" * 200}})
