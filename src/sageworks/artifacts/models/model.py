@@ -102,17 +102,15 @@ class Model(Artifact):
         matrix = self.sageworks_meta().get("sageworks_confusion_matrix")
         return pd.DataFrame.from_dict(matrix) if matrix else None
 
-    def validation_predictions(self, recompute: bool = False) -> Union[pd.DataFrame, None]:
-        """Retrieve the training metrics for this model
-        Args:
-            recompute (bool, optional): Recompute the outliers (default: False)
+    def validation_predictions(self) -> Union[pd.DataFrame, None]:
+        """Retrieve the training validation predictions for this model
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics (might be None)
         """
 
         # Pull the validation prediction CSV file from S3
         self.log.info(f"Pulling validation predictions for {self.uuid}...")
-        s3_path = f"{self.models_s3_path}/{self.model_name}/validation_predictions.csv"
+        s3_path = f"{self.models_s3_path}/training/{self.model_name}/validation_predictions.csv"
         try:
             df = wr.s3.read_csv(s3_path)
             return df
@@ -282,14 +280,17 @@ class Model(Artifact):
                 {"sageworks_model_metrics": metrics_df.to_dict(), "sageworks_confusion_matrix": cm_df.to_dict()}
             )
 
-    def _extract_training_job_name(self) -> str:
+    def _extract_training_job_name(self) -> Union[str, None]:
         """Internal: Extract the training job name from the ModelDataUrl"""
-        model_data_url = self.latest_model["ModelPackageDetails"]["InferenceSpecification"]["Containers"][0][
-            "ModelDataUrl"
-        ]
-        parsed_url = urllib.parse.urlparse(model_data_url)
-        training_job_name = parsed_url.path.lstrip("/").split("/")[0]
-        return training_job_name
+        try:
+            container = self.latest_model["ModelPackageDetails"]["InferenceSpecification"]["Containers"][0]
+            model_data_url = container["ModelDataUrl"]
+            parsed_url = urllib.parse.urlparse(model_data_url)
+            training_job_name = parsed_url.path.lstrip("/").split("/")[0]
+            return training_job_name
+        except KeyError:
+            self.log.warning(f"Could not extract training job name from {model_data_url}")
+            return None
 
     @staticmethod
     def _process_classification_metrics(df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
