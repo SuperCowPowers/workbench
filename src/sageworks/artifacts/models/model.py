@@ -93,8 +93,11 @@ class Model(Artifact):
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics
         """
-        # Grab the metrics from the SageWorks Metadata
-        metrics = self.sageworks_meta().get("sageworks_model_metrics")
+        # Grab the metrics from the SageWorks Metadata (try inference first, then training)
+        metrics = self._pull_inference_metrics()
+        if metrics is not None:
+            return metrics
+        metrics = self.sageworks_meta().get("sageworks_training_metrics")
         return pd.DataFrame.from_dict(metrics) if metrics else None
 
     def confusion_matrix(self) -> Union[pd.DataFrame, None]:
@@ -103,8 +106,11 @@ class Model(Artifact):
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
         # Grab the confusion matrix from the SageWorks Metadata
-        matrix = self.sageworks_meta().get("sageworks_confusion_matrix")
-        return pd.DataFrame.from_dict(matrix) if matrix else None
+        cm = self._pull_inference_cm()
+        if cm is not None:
+            return cm
+        cm = self.sageworks_meta().get("sageworks_training_cm")
+        return pd.DataFrame.from_dict(cm) if cm else None
 
     def regression_predictions(self) -> Union[pd.DataFrame, None]:
         """Retrieve the regression based predictions for this model
@@ -114,26 +120,44 @@ class Model(Artifact):
 
         # Pull the regression predictions, try first from inference, then from training
         s3_path = f"{self.model_inference_path}/{self.model_name}/inference_predictions.csv"
-        df = self._pull_regresssion_predictions(s3_path)
+        df = self._pull_s3_model_artifacts(s3_path)
         if df is not None:
             return df
         else:
             s3_path = f"{self.model_training_path}/{self.model_name}/validation_predictions.csv"
-            df = self._pull_regresssion_predictions(s3_path)
+            df = self._pull_s3_model_artifacts(s3_path)
             return df
 
-    def _pull_regresssion_predictions(self, s3_path) -> Union[pd.DataFrame, None]:
-        """Internal: Retrieve the regression based predictions for this model
+    def _pull_inference_metrics(self) -> Union[pd.DataFrame, None]:
+        """Internal: Retrieve the inference model metrics for this model
         Returns:
-            pd.DataFrame: DataFrame of the regression based Predictions (might be None)
+            pd.DataFrame: DataFrame of the inference model metrics (might be None)
+        """
+        s3_path = f"{self.model_inference_path}/{self.model_name}/inference_metrics.csv"
+        return self._pull_s3_model_artifacts(s3_path)
+
+    def _pull_inference_cm(self) -> Union[pd.DataFrame, None]:
+        """Internal: Retrieve the inference Confusion Matrix for this model
+        Returns:
+            pd.DataFrame: DataFrame of the inference Confusion Matrix (might be None)
+        """
+        s3_path = f"{self.model_inference_path}/{self.model_name}/inference_cm.csv"
+        return self._pull_s3_model_artifacts(s3_path)
+
+    def _pull_s3_model_artifacts(self, s3_path) -> Union[pd.DataFrame, None]:
+        """Internal: Helper method to pull Model Artifact data from S3 storage
+        Args:
+            s3_path (str): S3 Path to the Model Artifact
+        Returns:
+            pd.DataFrame: DataFrame of the Model Artifact (metrics, CM, regression_preds) (might be None)
         """
 
-        # Pull the regression prediction CSV file from S3
+        # Pull the CSV file from S3
         try:
             df = wr.s3.read_csv(s3_path)
             return df
         except NoFilesFound:
-            self.log.info(f"Could not find regression predictions at {s3_path}...")
+            self.log.info(f"Could not find model artifact at {s3_path}...")
             return None
 
     def size(self) -> float:
@@ -219,7 +243,7 @@ class Model(Artifact):
         """
 
         # If an artifact has additional expected metadata override this method
-        return ["sageworks_status", "sageworks_model_metrics", "sageworks_confusion_matrix"]
+        return ["sageworks_status", "sageworks_training_metrics_training", "sageworks_training_cm"]
 
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Model is ready"""
@@ -257,13 +281,13 @@ class Model(Artifact):
         """
 
         # First check if we have already computed the various metrics
-        model_metrics = self.sageworks_meta().get("sageworks_model_metrics")
+        model_metrics = self.sageworks_meta().get("sageworks_training_metrics_training")
         if self.model_type() == ModelType.REGRESSOR:
             if model_metrics and not force_pull:
                 return
 
         # For classifiers, we need to pull the confusion matrix as well
-        cm = self.sageworks_meta().get("sageworks_confusion_matrix")
+        cm = self.sageworks_meta().get("sageworks_training_cm")
         if model_metrics and cm and not force_pull:
             return
 
@@ -278,13 +302,13 @@ class Model(Artifact):
                 # Store and return the metrics in the SageWorks Metadata
                 df = df.round(3)
                 self.upsert_sageworks_meta(
-                    {"sageworks_model_metrics": df.to_dict(), "sageworks_confusion_matrix": None}
+                    {"sageworks_training_metrics_training": df.to_dict(), "sageworks_training_cm": None}
                 )
                 return
         except KeyError:
             self.log.warning(f"No training job metrics found for {self.training_job_name}")
             # Store and return the metrics in the SageWorks Metadata
-            self.upsert_sageworks_meta({"sageworks_model_metrics": None, "sageworks_confusion_matrix": None})
+            self.upsert_sageworks_meta({"sageworks_training_metrics_training": None, "sageworks_training_cm": None})
             return
 
         # We need additional processing for classification metrics
@@ -295,7 +319,7 @@ class Model(Artifact):
             metrics_df = metrics_df.round(3)
             cm_df = cm_df.round(3)
             self.upsert_sageworks_meta(
-                {"sageworks_model_metrics": metrics_df.to_dict(), "sageworks_confusion_matrix": cm_df.to_dict()}
+                {"sageworks_training_metrics": metrics_df.to_dict(), "sageworks_training_cm": cm_df.to_dict()}
             )
 
     def _extract_training_job_name(self) -> Union[str, None]:
@@ -347,7 +371,7 @@ if __name__ == "__main__":
     """Exercise the Model Class"""
 
     # Grab a Model object and pull some information from it
-    my_model = Model("abalone-regression", force_refresh=True)
+    my_model = Model("wine-classification")
 
     # Call the various methods
 
@@ -382,7 +406,7 @@ if __name__ == "__main__":
 
     # Grab our regression predictions from S3
     print("Regression Predictions: (might be None)")
-    print(my_model.regresssion_predictions())
+    print(my_model.regression_predictions())
 
     # Test Large Metadata
     # my_model.upsert_sageworks_meta({"sageworks_large_meta": {"large_x": "x" * 200, "large_y": "y" * 200}})
