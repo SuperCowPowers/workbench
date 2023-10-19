@@ -16,6 +16,7 @@ from sagemaker import Predictor
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
+from sageworks.artifacts.models.model import Model
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
@@ -204,6 +205,7 @@ class Endpoint(Artifact):
             return cached_details
 
         details = self.summary()
+        details["model_info"] = self.model_details()
 
         # Cache the details
         self.data_storage.set(storage_key, details)
@@ -217,6 +219,14 @@ class Endpoint(Artifact):
         self.set_status("ready")
         self.refresh_meta()
         return True
+
+    def model_details(self) -> dict:
+        """Return the details about the model used in this Endpoint"""
+        if self.get_input() == "unknown":
+            return {}
+        else:
+            model = Model(self.get_input())
+            return model.details()
 
     @staticmethod
     def regression_metrics(target: str, prediction_df: pd.DataFrame) -> dict:
