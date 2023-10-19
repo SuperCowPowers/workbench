@@ -128,6 +128,16 @@ class Model(Artifact):
             df = self._pull_s3_model_artifacts(s3_path)
             return df
 
+    def _pull_inference_metadata(self) -> Union[dict, None]:
+        """Internal: Retrieve the inference metadata for this model
+        Returns:
+            dict: Dictionary of the inference metadata (might be None)
+        Notes:
+            Basically when the inference was run, name of the dataset, the MD5, etc
+        """
+        s3_path = f"{self.model_inference_path}/{self.model_name}/inference_meta.csv"
+        return wr.s3.read_json(s3_path)
+
     def _pull_inference_metrics(self) -> Union[pd.DataFrame, None]:
         """Internal: Retrieve the inference model metrics for this model
         Returns:
@@ -229,6 +239,9 @@ class Model(Artifact):
         details["model_metrics"] = self.model_metrics()
         details["confusion_matrix"] = self.confusion_matrix()
         details["regression_predictions"] = self.regression_predictions()
+
+        # Grab the inference metadata
+        details["inference_meta"] = self._pull_inference_metadata()
 
         # Cache the details
         self.data_storage.set(storage_key, details)

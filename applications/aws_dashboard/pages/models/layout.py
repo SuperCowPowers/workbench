@@ -49,7 +49,7 @@ def models_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                html.H3("Model Metrics", id="model_metrics_header"),
+                                html.H3("Model Testing", id="model_metrics_header"),
                                 style={"padding": "30px 0px 10px 0px"},
                             ),
                             dbc.Row(

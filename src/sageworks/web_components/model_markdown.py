@@ -30,7 +30,7 @@ class ModelMarkdown(ComponentInterface):
         # Create simple markdown by iterating through the model_details dictionary
 
         # Excluded keys from the model_details dictionary (and any keys that end with '_arn')
-        exclude = ["size", "uuid"]
+        exclude = ["size", "uuid", "inference_meta"]
         top_level_details = {
             key: value for key, value in model_details.items() if key not in exclude and not key.endswith("_arn")
         }
@@ -51,14 +51,23 @@ class ModelMarkdown(ComponentInterface):
             # Add to markdown string
             markdown += f"**{key}:** {value_str}  \n"
 
-        # Model Metrics
-        markdown += "### Model Metrics  \n"
-        if model_details["uuid"] == "abalone-regression":
-            markdown += "**Test Data:** Abalone_Regression_Test_2023_10_11  \n"
-            markdown += "**Test Data Hash:** ebea16fbc63574fe91dcac35a0b2432f  \n"
+        # Model Test Metrics
+        markdown += "### Model Test Metrics  \n"
+        if model_details.get("inference_meta"):
+            test_data = model_details["inference_meta"].get("test_data", " - ")
+            test_data_hash = model_details["inference_meta"].get("test_data_hash", " - ")
+            test_rows = model_details["inference_meta"].get("test_rows", " - ")
+            description = model_details["inference_meta"].get("description", " - ")
         else:
-            markdown += "**Test Data:** Wine_Classification_Test_2023_09_03  \n"
-            markdown += "**Test Data Hash:** cac35a0b2432febea16fbc63574fe91d  \n"
+            test_data = "AWS Training Capture"
+            test_data_hash = " N/A "
+            test_rows = " - "
+            description = " - "
+
+        markdown += f"**Test Data:** {test_data}  \n"
+        markdown += f"**Data Hash:** {test_data_hash}  \n"
+        markdown += f"**Test Rows:** {test_rows}  \n"
+        markdown += f"**Description:** {description}  \n"
 
         # Grab the Metrics from the model details
         metrics = model_details.get("model_metrics")
