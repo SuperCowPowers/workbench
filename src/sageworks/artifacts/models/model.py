@@ -243,7 +243,7 @@ class Model(Artifact):
         """
 
         # If an artifact has additional expected metadata override this method
-        return ["sageworks_status", "sageworks_training_metrics_training", "sageworks_training_cm"]
+        return ["sageworks_status", "sageworks_training_metrics", "sageworks_training_cm"]
 
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Model is ready"""
@@ -281,7 +281,7 @@ class Model(Artifact):
         """
 
         # First check if we have already computed the various metrics
-        model_metrics = self.sageworks_meta().get("sageworks_training_metrics_training")
+        model_metrics = self.sageworks_meta().get("sageworks_training_metrics")
         if self.model_type() == ModelType.REGRESSOR:
             if model_metrics and not force_pull:
                 return
@@ -302,13 +302,13 @@ class Model(Artifact):
                 # Store and return the metrics in the SageWorks Metadata
                 df = df.round(3)
                 self.upsert_sageworks_meta(
-                    {"sageworks_training_metrics_training": df.to_dict(), "sageworks_training_cm": None}
+                    {"sageworks_training_metrics": df.to_dict(), "sageworks_training_cm": None}
                 )
                 return
         except KeyError:
             self.log.warning(f"No training job metrics found for {self.training_job_name}")
             # Store and return the metrics in the SageWorks Metadata
-            self.upsert_sageworks_meta({"sageworks_training_metrics_training": None, "sageworks_training_cm": None})
+            self.upsert_sageworks_meta({"sageworks_training_metrics": None, "sageworks_training_cm": None})
             return
 
         # We need additional processing for classification metrics
@@ -371,7 +371,7 @@ if __name__ == "__main__":
     """Exercise the Model Class"""
 
     # Grab a Model object and pull some information from it
-    my_model = Model("wine-classification")
+    my_model = Model("abalone-regression")
 
     # Call the various methods
 
