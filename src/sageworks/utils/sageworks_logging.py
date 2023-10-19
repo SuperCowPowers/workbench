@@ -21,6 +21,10 @@ def logging_setup():
         else:
             log.setLevel(logging.INFO)
 
+        # Sagemaker continuously complains about config, so we'll suppress it
+        logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
+
+        # All done
         log.info("SageWorks Logging Setup Complete...")
 
 
