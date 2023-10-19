@@ -74,12 +74,12 @@ class ModelMarkdown(ComponentInterface):
 if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
     import dash
-    from dash import dcc
-    from dash import html
+    from dash import dcc, html
+    import dash_bootstrap_components as dbc
     from sageworks.artifacts.models.model import Model
 
     # Create the class and get the AWS FeatureSet details
-    m = Model("abalone-regression")
+    m = Model("wine-classification")
     model_details = m.details()
 
     # Instantiate the DataDetailsMarkdown class
@@ -90,7 +90,9 @@ if __name__ == "__main__":
     markdown = ddm.generate_markdown(model_details)
 
     # Initialize Dash app
-    app = dash.Dash(__name__)
+    app = dash.Dash(__name__,
+                    external_stylesheets=[dbc.themes.DARKLY],
+                    assets_folder="/Users/briford/work/sageworks/applications/aws_dashboard/assets")
 
     app.layout = html.Div([component])
     component.children = markdown
