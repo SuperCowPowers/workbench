@@ -4,7 +4,7 @@
 # - Run inference on an Endpoint
 # - Capture performance metrics in S3 SageWorks Model Bucket
 
-from sageworks.transforms.pandas_transforms.features_to_pandas import FeaturesToPandas
+from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 from sageworks.artifacts.models.model import Model
 from sageworks.artifacts.endpoints.endpoint import Endpoint
 import awswrangler as wr
@@ -34,9 +34,9 @@ if S3_DATA_PATH is not None:
     df = wr.s3.read_csv(S3_DATA_PATH)
 else:
     # Grab the FeatureSet
-    feature_to_pandas = FeaturesToPandas(FEATURE_SET_NAME)
-    feature_to_pandas.transform(max_rows=500)
-    df = feature_to_pandas.get_output()
+    features = FeatureSet(FEATURE_SET_NAME)
+    table = features.data_source.table_name
+    df = features.query(f"SELECT * FROM {table} where training = 0")
 
 # Spin up our Endpoint
 my_endpoint = Endpoint(ENDPOINT_NAME)
