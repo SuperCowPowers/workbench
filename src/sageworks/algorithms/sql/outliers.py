@@ -87,9 +87,14 @@ class Outliers:
         upper_bounds = []
         for column, data_type in zip(data_source.column_names(), data_source.column_types()):
             if data_type in numeric:
+                # Skip columns that just have one value (or are all nans)
+                if column_stats[column]["unique"] <= 1:
+                    log.info(f"Skipping unary column {column} with value {descriptive_stats[column]['min']}")
+                    continue
+
                 # Skip columns that are 'binary' columns
                 if column_stats[column]["unique"] == 2:
-                    log.debug(f"Skipping binary column {column}")
+                    log.info(f"Skipping binary column {column}")
                     continue
 
                 # Do they want to use the stddev instead of IQR?

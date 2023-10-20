@@ -392,7 +392,7 @@ if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
 
     # Retrieve a Data Source
-    my_data = AthenaSource("abalone_data")
+    my_data = AthenaSource("logs_test_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
