@@ -40,6 +40,9 @@ class ConfusionMatrix(ComponentInterface):
             [1.0, "rgb(160, 64, 64)"],
         ]
 
+        # Okay so the heatmap has inverse y-axis ordering so we need to flip the dataframe
+        df = df.iloc[::-1]
+
         # Okay so there are numerous issues with getting back the index of the clicked on point
         # so we're going to store the indexes of the columns (this is SO stupid)
         x_labels = [f"{c}:{i}" for i, c in enumerate(df.columns)]
@@ -54,7 +57,6 @@ class ConfusionMatrix(ComponentInterface):
                 name="",
                 colorscale=color_scale,
                 zmin=0,
-                zmax=1,
             )
         )
         fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10}, height=400)
@@ -67,7 +69,10 @@ class ConfusionMatrix(ComponentInterface):
         for i, row in enumerate(df.index):
             for j, col in enumerate(df.columns):
                 value = df.loc[row, col]
-                fig.add_annotation(x=j, y=i, text=f"{value:.2f}", showarrow=False, font_size=14)
+
+                # For floats, we want to show 2 decimal places
+                text_value = f"{value:.2f}" if isinstance(value, float) else str(value)
+                fig.add_annotation(x=j, y=i, text=text_value, showarrow=False, font_size=14)
 
         return fig
 

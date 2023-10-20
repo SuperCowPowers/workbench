@@ -152,19 +152,23 @@ class Model(Artifact):
             pd.DataFrame: DataFrame of the inference Confusion Matrix (might be None)
         """
         s3_path = f"{self.model_inference_path}/{self.model_name}/inference_cm.csv"
-        return self._pull_s3_model_artifacts(s3_path)
+        return self._pull_s3_model_artifacts(s3_path, embedded_index=True)
 
-    def _pull_s3_model_artifacts(self, s3_path) -> Union[pd.DataFrame, None]:
+    def _pull_s3_model_artifacts(self, s3_path, embedded_index=False) -> Union[pd.DataFrame, None]:
         """Internal: Helper method to pull Model Artifact data from S3 storage
         Args:
             s3_path (str): S3 Path to the Model Artifact
+            embedded_index (bool, optional): Is the index embedded in the CSV? Defaults to False.
         Returns:
             pd.DataFrame: DataFrame of the Model Artifact (metrics, CM, regression_preds) (might be None)
         """
 
         # Pull the CSV file from S3
         try:
-            df = wr.s3.read_csv(s3_path)
+            if embedded_index:
+                df = wr.s3.read_csv(s3_path, index_col=0)
+            else:
+                df = wr.s3.read_csv(s3_path)
             return df
         except NoFilesFound:
             self.log.info(f"Could not find model artifact at {s3_path}...")

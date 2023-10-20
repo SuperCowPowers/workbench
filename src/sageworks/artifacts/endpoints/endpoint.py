@@ -15,7 +15,8 @@ from sklearn.metrics import (
     mean_squared_error,
     precision_recall_fscore_support,
     median_absolute_error,
-    roc_auc_score
+    roc_auc_score,
+    confusion_matrix,
 )
 from sklearn.preprocessing import LabelBinarizer
 from math import sqrt
@@ -286,6 +287,12 @@ class Endpoint(Artifact):
         wr.s3.to_json(pd.DataFrame([inference_meta]), f"{self.model_inference_path}/{self.model_name}/inference_meta.json", index=False)
         wr.s3.to_csv(metrics, f"{self.model_inference_path}/{self.model_name}/inference_metrics.csv", index=False)
 
+        # Write the confusion matrix to our S3 Model Inference Folder
+        if model_type == "classifier":
+            conf_mtx = self.confusion_matrix(target_column, prediction_df)
+            # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
+            wr.s3.to_csv(conf_mtx, f"{self.model_inference_path}/{self.model_name}/inference_cm.csv", index=True)
+
     @staticmethod
     def regression_metrics(target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
@@ -347,7 +354,32 @@ class Endpoint(Artifact):
         score_df = pd.DataFrame(
             {target: labels, "precision": scores[0], "recall": scores[1], "fscore": scores[2], "roc_auc": roc_auc, "support": scores[3]}
         )
+
+        # Sort the target labels
+        score_df = score_df.sort_values(by=[target], ascending=True)
         return score_df
+
+    def confusion_matrix(self, target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+        """Compute the confusion matrix for this Endpoint
+        Args:
+            target (str): Name of the target column
+            prediction_df (pd.DataFrame): DataFrame with the prediction results
+        Returns:
+            pd.DataFrame: DataFrame with the confusion matrix
+        """
+
+        y_true = prediction_df[target]
+        y_pred = prediction_df["prediction"]
+
+        # Compute the confusion matrix
+        conf_mtx = confusion_matrix(y_true, y_pred)
+
+        # Get unique labels
+        labels = sorted(list(set(y_true) | set(y_pred)))
+
+        # Create a DataFrame
+        conf_mtx_df = pd.DataFrame(conf_mtx, index=labels, columns=labels)
+        return conf_mtx_df
 
     def delete(self):
         """Delete the Endpoint and Endpoint Config"""
@@ -379,10 +411,16 @@ if __name__ == "__main__":
         my_endpoint = Endpoint("abalone-regression-end")
         feature_to_pandas = FeaturesToPandas("abalone_feature_set")
         my_target_column = "class_number_of_rings"
+        data_name = "abalone_holdout_2023_10_19",
+        data_hash = "12345",
+        description = "Test Abalone Data"
     else:
         my_endpoint = Endpoint("wine-classification-end")
         feature_to_pandas = FeaturesToPandas("wine_features")
         my_target_column = "wine_class"
+        data_name = "wine_holdout_2023_10_19",
+        data_hash = "67890",
+        description = "Test Wine Data"
 
     # Let's do a check/validation of the Endpoint
     assert my_endpoint.exists()
@@ -414,6 +452,6 @@ if __name__ == "__main__":
 
     # Capture the performance metrics for this Endpoint
     my_endpoint.capture_performance_metrics(my_feature_df, my_target_column,
-                                            data_name="abalone_holdout_2023_10_19",
-                                            data_hash="12345",
-                                            description="Test Abalone Data")
+                                            data_name=data_name,
+                                            data_hash=data_hash,
+                                            description=description)
