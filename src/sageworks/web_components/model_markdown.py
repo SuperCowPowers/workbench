@@ -35,7 +35,7 @@ class ModelMarkdown(ComponentInterface):
             key: value for key, value in model_details.items() if key not in exclude and not key.endswith("_arn")
         }
 
-        # Add the model info to the top level details
+        # FIXME: Remove this later: Add the model info to the top level details
         model_info = model_details.get("model_info", {})
         prefixed_model_info = {f'model_{k}': v for k, v in model_info.items()}
         top_level_details.update(prefixed_model_info)
@@ -59,17 +59,20 @@ class ModelMarkdown(ComponentInterface):
 
         # Model Test Metrics
         markdown += "### Model Test Metrics  \n"
-        if model_details.get("inference_meta"):
-            test_data = model_details["inference_meta"].get("test_data", " - ")
-            test_data_hash = model_details["inference_meta"].get("test_data_hash", " - ")
-            test_rows = model_details["inference_meta"].get("test_rows", " - ")
-            description = model_details["inference_meta"].get("description", " - ")
-        else:
+        meta_df = model_details.get('inference_meta')
+        if meta_df is None:
             test_data = "AWS Training Capture"
             test_data_hash = " N/A "
             test_rows = " - "
             description = " - "
+        else:
+            inference_meta = meta_df.to_dict(orient='records')[0]
+            test_data = inference_meta.get("test_data", " - ")
+            test_data_hash = inference_meta.get("test_data_hash", " - ")
+            test_rows = inference_meta.get("test_rows", " - ")
+            description = inference_meta.get("description", " - ")
 
+        # Add the markdown for the model test metrics
         markdown += f"**Test Data:** {test_data}  \n"
         markdown += f"**Data Hash:** {test_data_hash}  \n"
         markdown += f"**Test Rows:** {test_rows}  \n"
@@ -81,6 +84,7 @@ class ModelMarkdown(ComponentInterface):
             markdown += "  \nNo Data  \n"
         else:
             markdown += "  \n"
+            metrics = metrics.round(3)
             markdown += metrics.to_markdown(index=False)
 
         return markdown
@@ -94,7 +98,7 @@ if __name__ == "__main__":
     from sageworks.artifacts.models.model import Model
 
     # Create the class and get the AWS FeatureSet details
-    m = Model("wine-classification")
+    m = Model("abalone-regression")
     model_details = m.details()
 
     # Instantiate the DataDetailsMarkdown class

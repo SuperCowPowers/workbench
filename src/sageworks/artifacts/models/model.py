@@ -135,7 +135,7 @@ class Model(Artifact):
         Notes:
             Basically when the inference was run, name of the dataset, the MD5, etc
         """
-        s3_path = f"{self.model_inference_path}/{self.model_name}/inference_meta.csv"
+        s3_path = f"{self.model_inference_path}/{self.model_name}/inference_meta.json"
         return wr.s3.read_json(s3_path)
 
     def _pull_inference_metrics(self) -> Union[pd.DataFrame, None]:

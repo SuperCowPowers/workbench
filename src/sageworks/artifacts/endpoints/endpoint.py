@@ -5,9 +5,19 @@ import botocore
 import pandas as pd
 import numpy as np
 from io import StringIO
+import awswrangler as wr
+import ast
 
 # Model Performance Scores
-from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error, precision_recall_fscore_support
+from sklearn.metrics import (
+    mean_absolute_error,
+    r2_score,
+    mean_squared_error,
+    precision_recall_fscore_support,
+    median_absolute_error,
+    roc_auc_score
+)
+from sklearn.preprocessing import LabelBinarizer
 from math import sqrt
 
 from sagemaker.serializers import CSVSerializer
@@ -48,6 +58,11 @@ class Endpoint(Artifact):
         )
         self.endpoint_return_columns = None
         self.exit_on_error = exit_on_error
+
+        # Set the Model Training and Inference S3 Paths
+        self.model_name = self.get_input()
+        self.model_training_path = self.models_s3_path + "/training"
+        self.model_inference_path = self.models_s3_path + "/inference"
 
         # All done
         self.log.info(f"Endpoint Initialized: {self.endpoint_name}")
@@ -222,25 +237,77 @@ class Endpoint(Artifact):
 
     def model_details(self) -> dict:
         """Return the details about the model used in this Endpoint"""
-        if self.get_input() == "unknown":
+        if self.model_name == "unknown":
             return {}
         else:
-            model = Model(self.get_input())
+            model = Model(self.model_name)
             return model.details()
 
-    @staticmethod
-    def regression_metrics(target: str, prediction_df: pd.DataFrame) -> dict:
-        """Compute the performance metrics for this Endpoint"""
+    def model_type(self) -> str:
+        """Return the type of model used in this Endpoint"""
+        return self.details()["model_info"].get("model_type", "unknown")
+
+    def capture_performance_metrics(self,
+                                    feature_df: pd.DataFrame,
+                                    target_column: str,
+                                    data_name: str,
+                                    data_hash: str,
+                                    description: str) -> None:
+        """Capture the performance metrics for this Endpoint
+        Args:
+            feature_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
+            target_column (str): Name of the target column
+            data_name (str): Name of the data used for inference
+            data_hash (str): Hash of the data used for inference
+            description (str): Description of the data used for inference
+        Returns:
+            None
+        Note:
+            This method captures performance metrics and writes them to the S3 Model Inference Folder
+        """
+
+        # Run predictions on the feature_df
+        prediction_df = self.predict(feature_df)
 
         # Compute the metrics
-        metrics = {
-            "MAE": mean_absolute_error(prediction_df[target], prediction_df["prediction"]),
-            "RMSE": sqrt(mean_squared_error(prediction_df[target], prediction_df["prediction"])),
-            "R2": r2_score(prediction_df[target], prediction_df["prediction"]),
-        }
+        model_type = self.model_type()
+        if model_type == "regressor":
+            metrics = self.regression_metrics(target_column, prediction_df)
+        elif model_type == "classifier":
+            metrics = self.classification_metrics(target_column, prediction_df)
+        else:
+            raise ValueError(f"Unknown Model Type: {self.model_type}")
+
+        # Metadata for the model inference
+        inference_meta = {"test_data": data_name, "test_data_hash": data_hash,
+                          "test_rows": len(feature_df), "description": description}
+
+        # Write the metadata dictionary, and metrics to our S3 Model Inference Folder
+        wr.s3.to_json(pd.DataFrame([inference_meta]), f"{self.model_inference_path}/{self.model_name}/inference_meta.json", index=False)
+        wr.s3.to_csv(metrics, f"{self.model_inference_path}/{self.model_name}/inference_metrics.csv", index=False)
+
+    @staticmethod
+    def regression_metrics(target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+        """Compute the performance metrics for this Endpoint
+        Args:
+            target (str): Name of the target column
+            prediction_df (pd.DataFrame): DataFrame with the prediction results
+        Returns:
+            pd.DataFrame: DataFrame with the performance metrics
+        """
+
+        # Compute the metrics
+        y_true = prediction_df[target]
+        y_pred = prediction_df["prediction"]
+
+        mae = mean_absolute_error(y_true, y_pred)
+        rmse = sqrt(mean_squared_error(y_true, y_pred))
+        r2 = r2_score(y_true, y_pred)
+        mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100  # Mean Absolute Percentage Error
+        medae = median_absolute_error(y_true, y_pred)  # Median Absolute Error
 
         # Return the metrics
-        return metrics
+        return pd.DataFrame.from_records([{"MAE": mae, "RMSE": rmse, "R2": r2, "MAPE": mape, "MedAE": medae}])
 
     @staticmethod
     def classification_metrics(target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
@@ -260,11 +327,27 @@ class Endpoint(Artifact):
             prediction_df[target], prediction_df["prediction"], average=None, labels=labels
         )
 
+        # Calculate ROC AUC
+        # ROC-AUC score measures the model's ability to distinguish between classes;
+        # - A value of 0.5 indicates no discrimination (equivalent to random guessing)
+        # - A score close to 1 indicates high discriminative power
+
+        # Convert 'pred_proba' column to a 2D NumPy array
+        y_score = np.array([ast.literal_eval(x) for x in prediction_df['pred_proba']], dtype=float)
+        # y_score = np.array(prediction_df['pred_proba'].tolist())
+
+        # One-hot encode the true labels
+        lb = LabelBinarizer()
+        lb.fit(prediction_df[target])  # Replace 'true_labels' with your actual column name for true labels
+        y_true = lb.transform(prediction_df[target])
+
+        roc_auc = roc_auc_score(y_true, y_score, multi_class='ovr', average=None)
+
         # Put the scores into a dataframe
         score_df = pd.DataFrame(
-            {target: labels, "precision": scores[0], "recall": scores[1], "fscore": scores[2], "support": scores[3]}
+            {target: labels, "precision": scores[0], "recall": scores[1], "fscore": scores[2], "roc_auc": roc_auc, "support": scores[3]}
         )
-        print(score_df)
+        return score_df
 
     def delete(self):
         """Delete the Endpoint and Endpoint Config"""
@@ -291,9 +374,15 @@ if __name__ == "__main__":
     )
 
     # Grab an Endpoint object and pull some information from it
-    my_endpoint = Endpoint("abalone-regression-end")
-
-    # Call the various methods
+    REGRESSION = False
+    if REGRESSION:
+        my_endpoint = Endpoint("abalone-regression-end")
+        feature_to_pandas = FeaturesToPandas("abalone_feature_set")
+        my_target_column = "class_number_of_rings"
+    else:
+        my_endpoint = Endpoint("wine-classification-end")
+        feature_to_pandas = FeaturesToPandas("wine_features")
+        my_target_column = "wine_class"
 
     # Let's do a check/validation of the Endpoint
     assert my_endpoint.exists()
@@ -305,22 +394,26 @@ if __name__ == "__main__":
     # Get the tags associated with this Endpoint
     print(f"Tags: {my_endpoint.sageworks_tags()}")
 
-    # Create the FeatureSet to DF Transform
-    feature_to_pandas = FeaturesToPandas("abalone_feature_set")
-
     # Transform the DataSource into a Pandas DataFrame (with max_rows = 100)
     feature_to_pandas.transform(max_rows=100)
 
     # Grab the output and show it
-    feature_df = feature_to_pandas.get_output()
-    print(feature_df)
+    my_feature_df = feature_to_pandas.get_output()
+    print(my_feature_df)
 
     # Okay now run inference against our Features DataFrame
-    my_prediction_df = my_endpoint.predict(feature_df)
+    my_prediction_df = my_endpoint.predict(my_feature_df)
     print(my_prediction_df)
 
     # Compute performance metrics for out test predictions
-    target_column = "class_number_of_rings"
-    metrics = my_endpoint.regression_metrics(target_column, my_prediction_df)
-    for metric, value in metrics.items():
-        print(f"{metric}: {value:0.3f}")
+    if REGRESSION:
+        my_metrics = my_endpoint.regression_metrics(my_target_column, my_prediction_df)
+    else:
+        my_metrics = my_endpoint.classification_metrics(my_target_column, my_prediction_df)
+    print(my_metrics)
+
+    # Capture the performance metrics for this Endpoint
+    my_endpoint.capture_performance_metrics(my_feature_df, my_target_column,
+                                            data_name="abalone_holdout_2023_10_19",
+                                            data_hash="12345",
+                                            description="Test Abalone Data")
