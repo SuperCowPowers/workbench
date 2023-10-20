@@ -27,7 +27,7 @@ from sagemaker import Predictor
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
-from sageworks.artifacts.models.model import Model
+from sageworks.artifacts.models.model import Model, ModelType
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
@@ -272,12 +272,12 @@ class Endpoint(Artifact):
 
         # Compute the metrics
         model_type = self.model_type()
-        if model_type == "regressor":
+        if model_type == ModelType.REGRESSOR.value:
             metrics = self.regression_metrics(target_column, prediction_df)
-        elif model_type == "classifier":
+        elif model_type == ModelType.CLASSIFIER.value:
             metrics = self.classification_metrics(target_column, prediction_df)
         else:
-            raise ValueError(f"Unknown Model Type: {self.model_type}")
+            raise ValueError(f"Unknown Model Type: {model_type}")
 
         # Metadata for the model inference
         inference_meta = {"test_data": data_name, "test_data_hash": data_hash,
@@ -288,10 +288,15 @@ class Endpoint(Artifact):
         wr.s3.to_csv(metrics, f"{self.model_inference_path}/{self.model_name}/inference_metrics.csv", index=False)
 
         # Write the confusion matrix to our S3 Model Inference Folder
-        if model_type == "classifier":
+        if model_type == ModelType.CLASSIFIER.value:
             conf_mtx = self.confusion_matrix(target_column, prediction_df)
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
             wr.s3.to_csv(conf_mtx, f"{self.model_inference_path}/{self.model_name}/inference_cm.csv", index=True)
+
+        # Write the regression predictions to our S3 Model Inference Folder
+        if model_type == ModelType.REGRESSOR.value:
+            pred_df = self.regression_predictions(target_column, prediction_df)
+            wr.s3.to_csv(pred_df, f"{self.model_inference_path}/{self.model_name}/inference_predictions.csv", index=False)
 
     @staticmethod
     def regression_metrics(target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
@@ -381,6 +386,18 @@ class Endpoint(Artifact):
         conf_mtx_df = pd.DataFrame(conf_mtx, index=labels, columns=labels)
         return conf_mtx_df
 
+    def regression_predictions(self, target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+        """Compute the regression predictions for this Endpoint
+        Args:
+            target (str): Name of the target column
+            prediction_df (pd.DataFrame): DataFrame with the prediction results
+        Returns:
+            pd.DataFrame: DataFrame with the regression predictions
+        """
+
+        # Return the predictions
+        return prediction_df[[target, "prediction"]]
+
     def delete(self):
         """Delete the Endpoint and Endpoint Config"""
 
@@ -406,7 +423,7 @@ if __name__ == "__main__":
     )
 
     # Grab an Endpoint object and pull some information from it
-    REGRESSION = False
+    REGRESSION = True
     if REGRESSION:
         my_endpoint = Endpoint("abalone-regression-end")
         feature_to_pandas = FeaturesToPandas("abalone_feature_set")
@@ -432,8 +449,8 @@ if __name__ == "__main__":
     # Get the tags associated with this Endpoint
     print(f"Tags: {my_endpoint.sageworks_tags()}")
 
-    # Transform the DataSource into a Pandas DataFrame (with max_rows = 100)
-    feature_to_pandas.transform(max_rows=100)
+    # Transform the DataSource into a Pandas DataFrame (with max_rows = 500)
+    feature_to_pandas.transform(max_rows=500)
 
     # Grab the output and show it
     my_feature_df = feature_to_pandas.get_output()

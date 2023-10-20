@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
-from sageworks.artifacts.models.model import Model
+from sageworks.artifacts.models.model import Model, ModelType
 from sageworks.artifacts.endpoints.endpoint import Endpoint
 
 from sageworks.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         features_to_model = FeaturesToModel("wine_features", "wine-classification")
         features_to_model.set_output_tags(["wine", "classification"])
         features_to_model.transform(
-            target="wine_class", description="Wine Classification Model", model_type="classifier"
+            target="wine_class", description="Wine Classification Model", model_type=ModelType.CLASSIFIER
         )
 
     # Create the wine classification Endpoint

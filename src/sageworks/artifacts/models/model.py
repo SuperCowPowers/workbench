@@ -128,7 +128,7 @@ class Model(Artifact):
             df = self._pull_s3_model_artifacts(s3_path)
             return df
 
-    def _pull_inference_metadata(self) -> Union[dict, None]:
+    def _pull_inference_metadata(self) -> Union[pd.DataFrame, None]:
         """Internal: Retrieve the inference metadata for this model
         Returns:
             dict: Dictionary of the inference metadata (might be None)
@@ -136,7 +136,11 @@ class Model(Artifact):
             Basically when the inference was run, name of the dataset, the MD5, etc
         """
         s3_path = f"{self.model_inference_path}/{self.model_name}/inference_meta.json"
-        return wr.s3.read_json(s3_path)
+        try:
+            return wr.s3.read_json(s3_path)
+        except NoFilesFound:
+            self.log.info(f"Could not find model artifact at {s3_path}...")
+            return None
 
     def _pull_inference_metrics(self) -> Union[pd.DataFrame, None]:
         """Internal: Retrieve the inference model metrics for this model
@@ -241,8 +245,12 @@ class Model(Artifact):
         details["content_types"] = inference_spec["SupportedContentTypes"]
         details["response_types"] = inference_spec["SupportedResponseMIMETypes"]
         details["model_metrics"] = self.model_metrics()
-        details["confusion_matrix"] = self.confusion_matrix()
-        details["regression_predictions"] = self.regression_predictions()
+        if self.model_type() == ModelType.CLASSIFIER:
+            details["confusion_matrix"] = self.confusion_matrix()
+            details["regression_predictions"] = None
+        else:
+            details["confusion_matrix"] = None
+            details["regression_predictions"] = self.regression_predictions()
 
         # Grab the inference metadata
         details["inference_meta"] = self._pull_inference_metadata()
