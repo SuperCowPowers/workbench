@@ -44,6 +44,9 @@ class DataToFeaturesLight(Transform):
             Query is a Pandas Expression, e.g. 'col1<2.5 & col2=="x"'
             Column Select is a list of column names, e.g. ['col3', 'col4']
         """
+
+        # This is a reference implementation that should either be overridden by the subclass or
+        # called by the subclass if it wants to use this implementation
         self.target = target
         self.output_df = self.input_df.query(query).reset_index(drop=True) if query else self.input_df
         self.output_df = self.output_df[column_select] if column_select else self.output_df
