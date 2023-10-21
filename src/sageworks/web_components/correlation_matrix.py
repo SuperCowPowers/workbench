@@ -45,7 +45,7 @@ class CorrelationMatrix(ComponentInterface):
 
         # If the dataframe is empty then return a message
         if df.empty:
-            return self.message_figure("No Correlations Found")
+            return self.message_figure("No Correlations Found", figure_height=200)
 
         # Okay so the heatmap has inverse y-axis ordering, so we need to flip the dataframe
         df = df.iloc[::-1]
