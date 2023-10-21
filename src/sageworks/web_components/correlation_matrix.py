@@ -43,6 +43,10 @@ class CorrelationMatrix(ComponentInterface):
         # Convert the data details into a correlation dataframe
         df = self._corr_df_from_data_details(data_source_details)
 
+        # If the dataframe is empty then return a message
+        if df.empty:
+            return self.message_figure("No Correlations Found")
+
         # Okay so the heatmap has inverse y-axis ordering, so we need to flip the dataframe
         df = df.iloc[::-1]
 
@@ -123,7 +127,7 @@ if __name__ == "__main__":
     # This class takes in data details and generates a Correlation Matrix
     from sageworks.artifacts.data_sources.data_source import DataSource
 
-    ds = DataSource("abalone_data")
+    ds = DataSource("logs_test_data")
     ds_details = ds.details()
     ds_details["column_stats"] = ds.column_stats()
 
