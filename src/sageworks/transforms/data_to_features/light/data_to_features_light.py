@@ -35,7 +35,7 @@ class DataToFeaturesLight(Transform):
         self.input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
 
     def transform_impl(self, target: str = None, query: str = None, column_select: list = None, **kwargs):
-        """Optional Query to filter the input DataFrame, then publish to the output location
+        """Transform the input DataFrame into a Feature Set
         Args:
             target(str): The name of the target column
             query(str): Optional query to filter the input DataFrame

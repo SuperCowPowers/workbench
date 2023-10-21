@@ -37,26 +37,37 @@ class RDKitDescriptors(DataToFeaturesLight):
         # Turn off warnings for RDKIT (revisit this)
         RDLogger.DisableLog("rdApp.*")
 
-    def transform_impl(self, **kwargs):
-        """Compute a Feature Set based on RDKit Descriptors"""
+    def transform_impl(self, target: str, **kwargs):
+        """Compute a Feature Set based on RDKit Descriptors
+        Args:
+            target(str): The name of the target column
+        """
 
-        # Note: The parent class manages the input_df and output_df
-        #       So we simply need to grab the input_df and produce the output_df
+        # Set up our target column
+        self.target = target
 
-        # Remove all the dataframe columns except for ID and SMILES
-        self.output_df = self.input_df[["id", "smiles", "solubility"]]
+        # Check the input DataFrame has the required columns
+        if "smiles" not in self.input_df.columns:
+            raise ValueError("Input DataFrame must have a 'smiles' column")
+        if target not in self.input_df.columns:
+            raise ValueError(f"Input DataFrame must have a '{target}' column")
 
         # Compute/add all the RDKIT Descriptors
-        self.output_df = self.compute_rdkit_descriptors()
+        self.output_df = self.compute_rdkit_descriptors(self.input_df)
 
         # Drop any NaNs (and INFs)
         self.output_df = pandas_utils.drop_nans(self.output_df, how="any")
 
-    def compute_rdkit_descriptors(self):
-        """Compute and add all the RDKit Descriptors"""
+    def compute_rdkit_descriptors(self, process_df: pd.DataFrame) -> pd.DataFrame:
+        """Compute and add all the RDKit Descriptors
+        Args:
+            process_df(pd.DataFrame): The DataFrame to process and generate RDKit Descriptors
+        Returns:
+            pd.DataFrame: The input DataFrame with all the RDKit Descriptors added
+        """
 
         # Conversion to Molecules
-        molecules = [Chem.MolFromSmiles(smile) for smile in self.input_df["smiles"]]
+        molecules = [Chem.MolFromSmiles(smile) for smile in process_df["smiles"]]
 
         # Now get all the RDKIT Descriptors
         all_descriptors = [x[0] for x in Descriptors._descList]
@@ -66,12 +77,15 @@ class RDKitDescriptors(DataToFeaturesLight):
         if "Ipc" in all_descriptors:
             all_descriptors.remove("Ipc")
 
+        # FIXME: Stupid hack
+        all_descriptors = all_descriptors[:40]
+
         # Super useful Molecular Descriptor Calculator Class
         calc = MoleculeDescriptors.MolecularDescriptorCalculator(all_descriptors)
         column_names = calc.GetDescriptorNames()
         descriptor_values = [calc.CalcDescriptors(m) for m in molecules]
         df_features = pd.DataFrame(descriptor_values, columns=column_names)
-        return pd.concat([self.output_df, df_features], axis=1)
+        return pd.concat([process_df, df_features], axis=1)
 
 
 if __name__ == "__main__":
