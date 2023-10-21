@@ -21,10 +21,10 @@ class CorrelationMatrix(ComponentInterface):
         """
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, df: pd.DataFrame) -> go.Figure:
+    def generate_component_figure(self, data_source_details: dict) -> go.Figure:
         """Create a Correlation Matrix Figure for the numeric columns in the dataframe.
         Args:
-            df (pd.DataFrame): The dataframe containing the data for the correlation matrix.
+            data_source_details (dict): A dictionary containing DataSource details.
         Returns:
             plotly.graph_objs.Figure: A Figure object containing the correlation matrix.
         """
@@ -40,7 +40,10 @@ class CorrelationMatrix(ComponentInterface):
             [1.0, "rgb(128, 64, 64)"],
         ]
 
-        # Okay so the heatmap has inverse y-axis ordering so we need to flip the dataframe
+        # Convert the data details into a correlation dataframe
+        df = self._corr_df_from_data_details(data_source_details)
+
+        # Okay so the heatmap has inverse y-axis ordering, so we need to flip the dataframe
         df = df.iloc[::-1]
 
         # Okay so there are numerous issues with getting back the index of the clicked on point
@@ -76,3 +79,62 @@ class CorrelationMatrix(ComponentInterface):
                     fig.add_annotation(x=j, y=i, text=f"{value:.2f}", showarrow=False)
 
         return fig
+
+    @staticmethod
+    def _corr_df_from_data_details(data_details: dict, threshold: float = 0.3) -> pd.DataFrame:
+        """Internal: Create a Pandas DataFrame in the form given by df.corr() from DataSource details.
+        Args:
+            data_details (dict): A dictionary containing DataSource details.
+            threshold (float): Any correlations below this value will be excluded.
+        Returns:
+            pd.DataFrame: A Pandas DataFrame containing the correlation matrix
+        """
+
+        # Sanity check
+        if not data_details:
+            return pd.DataFrame()
+
+        # Process the data so that we can make a Dataframe of the correlation data
+        column_stats = data_details["column_stats"]
+        corr_dict = {key: info["correlations"] for key, info in column_stats.items() if "correlations" in info}
+        corr_df = pd.DataFrame(corr_dict)
+
+        # The diagonal will be NaN, so fill it with 0
+        corr_df.fillna(0, inplace=True)
+
+        # Now filter out any correlations below the threshold
+        corr_df = corr_df.loc[:, (corr_df.abs().max() > threshold)]
+        corr_df = corr_df[(corr_df.abs().max(axis=1) > threshold)]
+
+        # If the correlation matrix is bigger than 8x8 then we need to filter it down
+        while corr_df.shape[0] > 8 and threshold <= 0.6:
+            # Now filter out any correlations below the threshold
+            corr_df = corr_df.loc[:, (corr_df.abs().max() > threshold)]
+            corr_df = corr_df[(corr_df.abs().max(axis=1) > threshold)]
+            threshold += 0.1
+
+        # Return the correlation dataframe in the form of df.corr()
+        corr_df.sort_index(inplace=True)
+        corr_df = corr_df[corr_df.index]
+        return corr_df
+
+
+if __name__ == "__main__":
+    # This class takes in data details and generates a Correlation Matrix
+    from sageworks.artifacts.data_sources.data_source import DataSource
+
+    ds = DataSource("abalone_data")
+    ds_details = ds.details()
+    ds_details["column_stats"] = ds.column_stats()
+
+    # Instantiate the ConfusionMatrix class
+    corr_plot = CorrelationMatrix()
+
+    # Generate the figure
+    fig = corr_plot.generate_component_figure(ds_details)
+
+    # Apply dark theme
+    fig.update_layout(template="plotly_dark")
+
+    # Show the figure
+    fig.show()

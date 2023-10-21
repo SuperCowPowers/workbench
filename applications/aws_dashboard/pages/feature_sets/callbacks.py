@@ -8,7 +8,6 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.views.feature_set_web_view import FeatureSetWebView
 from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
-from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 # Cheese Sauce
@@ -81,8 +80,7 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
         feature_details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(feature_details)
 
         # Generate a new correlation matrix figure
-        corr_df = corr_df_from_artifact_info(feature_details)
-        corr_figure = correlation_matrix.CorrelationMatrix().generate_component_figure(corr_df)
+        corr_figure = correlation_matrix.CorrelationMatrix().generate_component_figure(feature_details)
 
         # Return the details/markdown for these data details
         return [header, feature_details_markdown, corr_figure]

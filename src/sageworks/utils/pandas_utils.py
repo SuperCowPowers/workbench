@@ -207,44 +207,6 @@ def get_dummy_cols(df: pd.DataFrame) -> list:
     return dummy_cols
 
 
-def corr_df_from_artifact_info(artifact_info: dict, threshold: float = 0.3) -> pd.DataFrame:
-    """Create a Pandas DataFrame in the form given by df.corr() from the artifact info
-    Args:
-        artifact_info (dict): A dictionary containing the artifact details.
-        threshold (float): Any correlations below this value will be excluded.
-    Returns:
-        pd.DataFrame: A Pandas DataFrame containing the correlation matrix
-    """
-
-    # Sanity check
-    if not artifact_info:
-        return pd.DataFrame()
-
-    # Process the data so that we can make a Dataframe of the correlation data
-    column_stats = artifact_info["column_stats"]
-    corr_dict = {key: info["correlations"] for key, info in column_stats.items() if "correlations" in info}
-    corr_df = pd.DataFrame(corr_dict)
-
-    # The diagonal will be NaN, so fill it with 0
-    corr_df.fillna(0, inplace=True)
-
-    # Now filter out any correlations below the threshold
-    corr_df = corr_df.loc[:, (corr_df.abs().max() > threshold)]
-    corr_df = corr_df[(corr_df.abs().max(axis=1) > threshold)]
-
-    # If the correlation matrix is bigger than 8x8 then we need to filter it down
-    while corr_df.shape[0] > 8 and threshold <= 0.6:
-        # Now filter out any correlations below the threshold
-        corr_df = corr_df.loc[:, (corr_df.abs().max() > threshold)]
-        corr_df = corr_df[(corr_df.abs().max(axis=1) > threshold)]
-        threshold += 0.1
-
-    # Return the correlation dataframe in the form of df.corr()
-    corr_df.sort_index(inplace=True)
-    corr_df = corr_df[corr_df.index]
-    return corr_df
-
-
 def athena_to_pandas_types(df: pd.DataFrame, column_athena_types: dict) -> pd.DataFrame:
     """Converts a dataframe into the proper Pandas types
     Args:
