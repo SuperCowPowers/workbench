@@ -28,35 +28,40 @@ class DataSourceWebView(ArtifactsWebView):
         """
         return self.data_sources_df
 
-    def data_source_smart_sample(self, data_source_index: int) -> pd.DataFrame:
-        """Get a smart-sample dataframe (sample + outliers) for the given DataSource Index"""
-        uuid = self.data_source_name(data_source_index)
-        ds = DataSource(uuid)
-        if ds.ready():
-            return ds.smart_sample()
-        else:
-            status = ds.get_status()
-            return pd.DataFrame({"uuid": [uuid], "status": [f"{status}"]})
-
-    def data_source_details(self, data_source_index: int) -> (dict, None):
-        """Get all the details for the given DataSource Index"""
-        data_uuid = self.data_source_name(data_source_index)
+    @staticmethod
+    def data_source_smart_sample(data_uuid: str) -> pd.DataFrame:
+        """Get a smart-sample dataframe (sample + outliers) for the given DataSource Index
+        Args:
+            data_uuid(str): The UUID of the DataSource
+        Returns:
+            pd.DataFrame: The smart-sample DataFrame
+        """
         ds = DataSource(data_uuid)
-        if ds.ready():
-            details_data = ds.details()
-            details_data["column_stats"] = ds.column_stats()
-            return details_data
-
-        # If we get here, we couldn't get the details
-        return None
-
-    def data_source_name(self, data_source_index: int) -> (str, None):
-        """Helper method for getting the data source name for the given DataSource Index"""
-        if not self.data_sources_df.empty and data_source_index < len(self.data_sources_df):
-            data_uuid = self.data_sources_df.iloc[data_source_index]["uuid"]
-            return data_uuid
+        if not ds.exists():
+            return pd.DataFrame({"uuid": [data_uuid], "status": ["NOT FOUND"]})
+        if not ds.ready():
+            status = ds.get_status()
+            return pd.DataFrame({"uuid": [data_uuid], "status": [f"{status}"]})
         else:
+            return ds.smart_sample()
+
+    @staticmethod
+    def data_source_details(data_uuid: str) -> (dict, None):
+        """Get all the details for the given DataSource UUID
+        Args:
+            data_uuid(str): The UUID of the DataSource
+        Returns:
+            dict: The details for the given DataSource (or None if not found)
+        """
+        # Grab the DataSource, if it exists and is ready
+        ds = DataSource(data_uuid)
+        if not ds.exists() or not ds.ready():
             return None
+
+        # Return the DataSource Details
+        details_data = ds.details()
+        details_data["column_stats"] = ds.column_stats()
+        return details_data
 
 
 if __name__ == "__main__":
@@ -73,13 +78,14 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first DataSource
-    print("\nDataSourceDetails:")
-    details = data_view.data_source_details(0)
+    my_data_uuid = summary['uuid'][0]
+    print(f"\nDataSourceDetails: {my_data_uuid}")
+    details = data_view.data_source_details(my_data_uuid)
     pprint(details)
 
     # Get a sample dataframe for the given DataSources
-    print("\nSampleDataFrame:")
-    sample_df = data_view.data_source_smart_sample(0)
+    print(f"\nSampleDataFrame: {my_data_uuid}")
+    sample_df = data_view.data_source_smart_sample(my_data_uuid)
     print(sample_df.shape)
     print(sample_df.head())
 

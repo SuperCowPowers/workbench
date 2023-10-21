@@ -71,8 +71,6 @@ callbacks.update_data_sources_table(app)
 callbacks.table_row_select(app, "data_sources_table")
 callbacks.update_data_source_details(app, data_source_broker)
 callbacks.update_data_source_sample_rows(app, data_source_broker)
-callbacks.update_violin_plots(app, data_source_broker)
-callbacks.update_correlation_matrix(app, data_source_broker)
 
 # Callbacks for selections
 callbacks.violin_plot_selection(app)

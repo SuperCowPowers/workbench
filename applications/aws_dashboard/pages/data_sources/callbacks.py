@@ -11,9 +11,6 @@ from sageworks.web_components import table, data_details_markdown, violin_plots,
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
-# Cheese Sauce (FIXME: TDB)
-smart_sample_rows = None
-
 
 def update_data_sources_table(app: Dash):
     @app.callback(
@@ -56,30 +53,41 @@ def table_row_select(app: Dash, table_name: str):
         return row_style
 
 
-# Updates the data source details when a new DataSource is selected
+# Updates the data source details and the correlation matrix when a new DataSource is selected
 def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebView):
     @app.callback(
         [
             Output("data_details_header", "children"),
             Output("data_source_details", "children"),
+            Output("data_source_correlation_matrix", "figure", allow_duplicate=True)
         ],
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
+        State("data_sources_table", "data"),
         prevent_initial_call=True,
     )
-    def generate_data_source_markdown(selected_rows):
+    def generate_data_source_markdown(selected_rows, table_data):
         print(f"Data Source Details Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
+
+        # Get the selected row data and grab the uuid
+        selected_row_data = table_data[selected_rows[0]]
+        data_source_uuid = selected_row_data["uuid"]
+        print(f"Data Source UUID: {data_source_uuid}")
+
         print("Calling DataSource Details...")
-        data_details = data_source_web_view.data_source_details(selected_rows[0])
+        data_details = data_source_web_view.data_source_details(data_source_uuid)
         details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(data_details)
 
-        # Name of the data source for the Header
-        data_source_name = data_source_web_view.data_source_name(selected_rows[0])
-        header = f"Details: {data_source_name}"
+        # Set the Header Text
+        header = f"Details: {data_source_uuid}"
+
+        # Generate a new correlation matrix figure
+        corr_df = corr_df_from_artifact_info(data_details)
+        corr_figure = correlation_matrix.CorrelationMatrix().generate_component_figure(corr_df)
 
         # Return the details/markdown for these data details
-        return [header, details_markdown]
+        return [header, details_markdown, corr_figure]
 
 
 def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWebView):
@@ -89,26 +97,32 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
             Output("data_source_sample_rows", "columns"),
             Output("data_source_sample_rows", "style_data_conditional"),
             Output("data_source_sample_rows", "data", allow_duplicate=True),
+            Output("data_source_violin_plot", "figure", allow_duplicate=True)
         ],
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
+        State("data_sources_table", "data"),
         prevent_initial_call=True,
     )
-    def sample_rows_update(selected_rows, color_column="outlier_group"):
-        global smart_sample_rows
-        print(f"Sample Rows Selected Rows: {selected_rows}")
+    def smart_sample_rows_update(selected_rows, table_data):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
-        print("Calling DataSource Sample Rows...")
-        smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
 
-        # Name of the data source
-        data_source_name = data_source_web_view.data_source_name(selected_rows[0])
-        header = f"Sample/Outlier Rows: {data_source_name}"
+        # Get the selected row data and grab the uuid
+        selected_row_data = table_data[selected_rows[0]]
+        data_source_uuid = selected_row_data["uuid"]
+        print(f"Data Source UUID: {data_source_uuid}")
+
+        print("Calling DataSource Sample Rows...")
+        smart_sample_rows = data_source_web_view.data_source_smart_sample(data_source_uuid)
+
+        # Header Text
+        header = f"Sample/Outlier Rows: {data_source_uuid}"
 
         # The columns need to be in a special format for the DataTable
         column_setup_list = table.Table().column_setup(smart_sample_rows)
 
         # We need to update our style_data_conditional to color the outlier groups
+        color_column = "outlier_group"
         if color_column not in smart_sample_rows.columns:
             style_cells = table.Table().style_data_conditional()
         else:
@@ -116,55 +130,20 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
             unique_categories = [x for x in unique_categories if x != "sample"]
             style_cells = table.Table().style_data_conditional(color_column, unique_categories)
 
+        # Update the Violin Plot with the new smart sample rows
+        violin_figure = violin_plots.ViolinPlots().generate_component_figure(
+                smart_sample_rows,
+                figure_args={
+                    "box_visible": True,
+                    "meanline_visible": True,
+                    "showlegend": False,
+                    "points": "all",
+                    "spanmode": "hard",
+                },
+            )
+
         # Return the header, columns, style_cell, and the data
-        return [header, column_setup_list, style_cells, smart_sample_rows.to_dict("records")]
-
-
-def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
-    """Updates the Violin Plots when a new data source is selected"""
-
-    @app.callback(
-        Output("data_source_violin_plot", "figure", allow_duplicate=True),
-        Input("data_sources_table", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def generate_new_violin_plot(selected_rows):
-        print(f"Violin Plot Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-        smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
-
-        # Get the data source smart sample rows and create the violin plot
-        return violin_plots.ViolinPlots().generate_component_figure(
-            smart_sample_rows,
-            figure_args={
-                "box_visible": True,
-                "meanline_visible": True,
-                "showlegend": False,
-                "points": "all",
-                "spanmode": "hard",
-            },
-        )
-
-
-# Updates the correlation matrix when a new DataSource is selected
-def update_correlation_matrix(app: Dash, data_source_web_view: DataSourceWebView):
-    @app.callback(
-        Output("data_source_correlation_matrix", "figure", allow_duplicate=True),
-        Input("data_sources_table", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def generate_new_corr_matrix(selected_rows):
-        print(f"Corr Matrix Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-
-        # Get the data source smart sample rows and create the correlation matrix
-        artifact_info = data_source_web_view.data_source_details(selected_rows[0])
-
-        # Convert the data details to a pandas dataframe
-        corr_df = corr_df_from_artifact_info(artifact_info)
-        return correlation_matrix.CorrelationMatrix().generate_component_figure(corr_df)
+        return [header, column_setup_list, style_cells, smart_sample_rows.to_dict("records"), violin_figure]
 
 
 #
