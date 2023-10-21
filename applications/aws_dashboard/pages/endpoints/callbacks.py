@@ -1,6 +1,6 @@
 """Callbacks for the Endpoints Subpage Web User Interface"""
 from dash import Dash, no_update
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.endpoint_web_view import EndpointWebView
@@ -33,12 +33,11 @@ def table_row_select(app: Dash, table_name: str):
         prevent_initial_call=True,
     )
     def style_selected_rows(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return no_update
         row_style = [
             {
-                "if": {"filter_query": "{{id}} ={}".format(i)},
+                "if": {"filter_query": "{{id}}={}".format(i)},
                 "backgroundColor": "rgb(80, 80, 80)",
             }
             for i in selected_rows
@@ -47,26 +46,32 @@ def table_row_select(app: Dash, table_name: str):
 
 
 # Updates the endpoint details when a endpoint row is selected
-def update_endpoint_details(app: Dash, endpoint_web_view: EndpointWebView):
+def update_endpoint_details_components(app: Dash, endpoint_web_view: EndpointWebView):
     @app.callback(
         [
             Output("endpoint_details_header", "children"),
             Output("endpoint_details", "children"),
         ],
         Input("endpoints_table", "derived_viewport_selected_row_ids"),
+        State("endpoints_table", "data"),
         prevent_initial_call=True,
     )
-    def generate_endpoint_markdown(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
+    def generate_endpoint_details_figures(selected_rows, table_data):
+        # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return no_update
-        print("Calling Model Details...")
-        endpoint_details = endpoint_web_view.endpoint_details(selected_rows[0])
-        endpoint_details_markdown = model_markdown.ModelMarkdown().generate_markdown(endpoint_details)
 
-        # Name of the data source for the Header
-        endpoint_name = endpoint_web_view.endpoint_name(selected_rows[0])
-        header = f"Details: {endpoint_name}"
+        # Get the selected row data and grab the uuid
+        selected_row_data = table_data[selected_rows[0]]
+        endpoint_uuid = selected_row_data["uuid"]
+        print(f"Endpoint UUID: {endpoint_uuid}")
+
+        # Set the Header Text
+        header = f"Details: {endpoint_uuid}"
+
+        # Endpoint Details
+        endpoint_details = endpoint_web_view.endpoint_details(endpoint_uuid)
+        endpoint_details_markdown = model_markdown.ModelMarkdown().generate_markdown(endpoint_details)
 
         # Return the details/markdown for these data details
         return [header, endpoint_details_markdown]
@@ -77,13 +82,18 @@ def update_plugin(app: Dash, plugin, endpoint_web_view: EndpointWebView):
     @app.callback(
         Output(plugin.component_id(), "figure"),
         Input("endpoints_table", "derived_viewport_selected_row_ids"),
+        State("endpoints_table", "data"),
         prevent_initial_call=True,
     )
-    def update_callback(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
+    def update_callback(selected_rows, table_data):
+        # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return no_update
 
-        print("Calling Model Details...")
-        endpoint_details = endpoint_web_view.endpoint_details(selected_rows[0])
+        # Get the selected row data and grab the uuid
+        selected_row_data = table_data[selected_rows[0]]
+        endpoint_uuid = selected_row_data["uuid"]
+
+        # Get the endpoint details and send it to the plugin
+        endpoint_details = endpoint_web_view.endpoint_details(endpoint_uuid)
         return plugin.generate_component_figure(endpoint_details)

@@ -28,23 +28,24 @@ class EndpointWebView(ArtifactsWebView):
         """
         return self.endpoint_df
 
-    def endpoint_details(self, endpoint_index: int) -> (dict, None):
-        """Get all the details for the given Endpoint Index"""
-        uuid = self.endpoint_name(endpoint_index)
-        endpoint = Endpoint(uuid)
-        return endpoint.details()
-
-    def endpoint_name(self, endpoint_index: int) -> (str, None):
-        """Helper method for getting the data source name for the given Endpoint Index"""
-        if not self.endpoint_df.empty and endpoint_index < len(self.endpoint_df):
-            data_uuid = self.endpoint_df.iloc[endpoint_index]["uuid"]
-            return data_uuid
-        else:
+    def endpoint_details(self, endpoint_uuid: str) -> (dict, None):
+        """Get all the details for the given Endpoint UUID
+         Args:
+            endpoint_uuid(str): The UUID of the Endpoint
+        Returns:
+            dict: The details for the given Model (or None if not found)
+        """
+        endpoint = Endpoint(endpoint_uuid)
+        if not endpoint.exists() or not endpoint.ready():
             return None
+
+        # Return the Endpoint Details
+        return endpoint.details()
 
 
 if __name__ == "__main__":
     # Exercising the EndpointWebView
+    import time
     from pprint import pprint
 
     # Create the class and get the AWS Endpoint details
@@ -56,6 +57,10 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first Endpoint
+    my_endpoint_uuid = summary['uuid'][0]
     print("\nEndpointDetails:")
-    details = endpoint_view.endpoint_details(0)
+    details = endpoint_view.endpoint_details(my_endpoint_uuid)
     pprint(details)
+
+    # Give any broker threads time to finish
+    time.sleep(1)

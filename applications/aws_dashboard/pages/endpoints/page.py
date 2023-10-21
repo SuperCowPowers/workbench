@@ -59,7 +59,7 @@ callbacks.update_endpoints_table(app)
 
 # Callback for the endpoints table
 callbacks.table_row_select(app, "endpoints_table")
-callbacks.update_endpoint_details(app, endpoint_broker)
+callbacks.update_endpoint_details_components(app, endpoint_broker)
 
 # For each plugin, set up a callback to update the plugin figure
 for plugin in plugins:
