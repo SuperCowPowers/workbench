@@ -183,19 +183,19 @@ class DataSourceAbstract(Artifact):
         # Check if the samples and outliers have been computed
         storage_key = f"data_source:{self.uuid}:sample"
         if not self.data_storage.get(storage_key):
-            self.log.info(f"DataSource {self.uuid} implicitly calling sample()")
-            self.sample()
+            self.log.warning(f"DataSource {self.uuid} doesn't have sample() call make_ready() to compute")
+            return False
         storage_key = f"data_source:{self.uuid}:outliers"
         if not self.data_storage.get(storage_key):
-            self.log.info(f"DataSource {self.uuid} implicitly calling outliers()")
-            self.outliers()
+            self.log.warning(f"DataSource {self.uuid} doesn't have outliers() call make_ready() to compute")
+            return False
 
         # Okay now call/return the Super Classes ready() method
         return super().ready()
 
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Artifact is ready"""
-        self.details()
+        self.details(recompute=True)
         self.sample()
         self.descriptive_stats()
         self.value_counts()
