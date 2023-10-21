@@ -15,7 +15,7 @@ try:
     from rdkit.ML.Descriptors import MoleculeDescriptors
     from rdkit import RDLogger
 except ImportError:
-    print("RDKit Python module not found! pip install rdkit-pypi")
+    print("RDKit Python module not found! pip install rdkit")
     sys.exit(1)
 
 
@@ -66,6 +66,9 @@ class RDKitDescriptors(DataToFeaturesLight):
             pd.DataFrame: The input DataFrame with all the RDKit Descriptors added
         """
 
+        # Hack:
+        process_df = process_df.head(100)
+
         # Conversion to Molecules
         molecules = [Chem.MolFromSmiles(smile) for smile in process_df["smiles"]]
 
@@ -78,11 +81,14 @@ class RDKitDescriptors(DataToFeaturesLight):
             all_descriptors.remove("Ipc")
 
         # FIXME: Stupid hack
-        all_descriptors = all_descriptors[:40]
+        all_descriptors = all_descriptors[:10]
+        print(f"Using {len(all_descriptors)} descriptors")
+        print(all_descriptors)
 
         # Super useful Molecular Descriptor Calculator Class
         calc = MoleculeDescriptors.MolecularDescriptorCalculator(all_descriptors)
         column_names = calc.GetDescriptorNames()
+
         descriptor_values = [calc.CalcDescriptors(m) for m in molecules]
         df_features = pd.DataFrame(descriptor_values, columns=column_names)
         return pd.concat([process_df, df_features], axis=1)
@@ -92,4 +98,6 @@ if __name__ == "__main__":
     """Exercise the RDKitDescriptors Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    RDKitDescriptors("aqsol_data", "test_rdkit_features").transform()
+    data_to_features = RDKitDescriptors("logs_test_data_clean", "test_rdkit_features")
+    data_to_features.set_output_tags(["logS", "test", "proprietary"])
+    data_to_features.transform(target="udm_asy_res_value", id_column="udm_mol_bat_id", event_time_column="udm_asy_date")
