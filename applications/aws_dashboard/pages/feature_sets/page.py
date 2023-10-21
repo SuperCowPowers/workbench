@@ -67,8 +67,6 @@ callbacks.update_feature_sets_table(app)
 callbacks.table_row_select(app, "feature_sets_table")
 callbacks.update_feature_set_details(app, feature_set_broker)
 callbacks.update_feature_set_sample_rows(app, feature_set_broker)
-callbacks.update_violin_plots(app, feature_set_broker)
-callbacks.update_correlation_matrix(app, feature_set_broker)
 
 # Callbacks for selections
 callbacks.violin_plot_selection(app)

@@ -28,37 +28,41 @@ class FeatureSetWebView(ArtifactsWebView):
         """
         return self.feature_sets_df
 
-    def feature_set_smart_sample(self, feature_set_index: int) -> pd.DataFrame:
-        """Get a smart-sample dataframe (sample + outliers) for the given FeatureSet Index"""
-        uuid = self.feature_set_name(feature_set_index)
-        fs = FeatureSet(uuid)
-        if fs.ready():
-            return fs.smart_sample()
-        else:
+    def feature_set_smart_sample(self, feature_uuid: str) -> pd.DataFrame:
+        """Get a smart-sample dataframe (sample + outliers) for the given FeatureSet Index
+        Args:
+            feature_uuid(str): The UUID of the DataSource
+        Returns:
+            pd.DataFrame: The smart-sample DataFrame
+            """
+        fs = FeatureSet(feature_uuid)
+        if not fs.exists():
+            return pd.DataFrame({"uuid": [feature_uuid], "status": ["NOT FOUND"]})
+        if not fs.ready():
             status = fs.get_status()
-            return pd.DataFrame({"uuid": [uuid], "status": [f"{status}"]})
-
-    def feature_set_details(self, feature_set_index: int) -> (dict, None):
-        """Get all the details for the given FeatureSet Index"""
-        uuid = self.feature_set_name(feature_set_index)
-        fs = FeatureSet(uuid)
-        if fs.ready():
-            return fs.details()
-
-        # If we get here, we couldn't get the details
-        return None
-
-    def feature_set_name(self, feature_set_index: int) -> (str, None):
-        """Helper method for getting the data source name for the given FeatureSet Index"""
-        if not self.feature_sets_df.empty and feature_set_index < len(self.feature_sets_df):
-            data_uuid = self.feature_sets_df.iloc[feature_set_index]["uuid"]
-            return data_uuid
+            return pd.DataFrame({"uuid": [feature_uuid], "status": [f"{status}"]})
         else:
+            return fs.smart_sample()
+
+    @staticmethod
+    def feature_set_details(feature_uuid: str) -> (dict, None):
+        """Get all the details for the given FeatureSet UUID
+        Args:
+            feature_uuid(str): The UUID of the FeatureSet
+        Returns:
+            dict: The details for the given FeatureSet (or None if not found)
+        """
+        fs = FeatureSet(feature_uuid)
+        if not fs.exists or not fs.ready():
             return None
+
+        # Return the FeatureSet Details
+        return fs.details()
 
 
 if __name__ == "__main__":
     # Exercising the FeatureSetWebView
+    import time
     from pprint import pprint
 
     # Create the class and get the AWS FeatureSet details
@@ -70,12 +74,16 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first FeatureSet
+    my_feature_uuid = summary['uuid'][0]
     print("\nFeatureSetDetails:")
-    details = feature_view.feature_set_details(0)
+    details = feature_view.feature_set_details(my_feature_uuid)
     pprint(details)
 
     # Get a sample dataframe for the given FeatureSets
     print("\nSampleDataFrame:")
-    sample_df = feature_view.feature_set_smart_sample(0)
+    sample_df = feature_view.feature_set_smart_sample(my_feature_uuid)
     print(sample_df.shape)
     print(sample_df.head())
+
+    # Give any broker threads time to finish
+    time.sleep(1)

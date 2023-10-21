@@ -11,6 +11,8 @@ from sageworks.web_components import table, data_details_markdown, violin_plots,
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
+# Cheese Sauce
+smart_sample_rows = []
 
 def update_data_sources_table(app: Dash):
     @app.callback(
@@ -21,10 +23,7 @@ def update_data_sources_table(app: Dash):
         Input("aws-broker-data", "data"),
     )
     def data_sources_update(serialized_aws_broker_data):
-        """Return the table data as a dictionary"""
-        if isinstance(serialized_aws_broker_data, int):
-            print(f"WTF: {serialized_aws_broker_data}")
-            return dash.no_update
+        """Return the table data for the DataSources Table"""
         aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
         data_sources = aws_broker_data["DATA_SOURCES"]
         data_sources["id"] = range(len(data_sources))
@@ -40,7 +39,6 @@ def table_row_select(app: Dash, table_name: str):
         prevent_initial_call=True,
     )
     def style_selected_rows(selected_rows):
-        print(f"Highlight Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         row_style = [
@@ -73,7 +71,7 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
         # Get the selected row data and grab the uuid
         selected_row_data = table_data[selected_rows[0]]
         data_source_uuid = selected_row_data["uuid"]
-        print(f"Data Source UUID: {data_source_uuid}")
+        print(f"DataSource UUID: {data_source_uuid}")
 
         print("Calling DataSource Details...")
         data_details = data_source_web_view.data_source_details(data_source_uuid)
@@ -104,13 +102,14 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
         prevent_initial_call=True,
     )
     def smart_sample_rows_update(selected_rows, table_data):
+        global smart_sample_rows
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
 
         # Get the selected row data and grab the uuid
         selected_row_data = table_data[selected_rows[0]]
         data_source_uuid = selected_row_data["uuid"]
-        print(f"Data Source UUID: {data_source_uuid}")
+        print(f"DataSource UUID: {data_source_uuid}")
 
         print("Calling DataSource Sample Rows...")
         smart_sample_rows = data_source_web_view.data_source_smart_sample(data_source_uuid)

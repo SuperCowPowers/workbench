@@ -11,9 +11,8 @@ from sageworks.web_components import table, data_details_markdown, violin_plots,
 from sageworks.utils.pandas_utils import corr_df_from_artifact_info
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
-# Cheese Sauce (FIXME: TDB)
-smart_sample_rows = None
-
+# Cheese Sauce
+smart_sample_rows = []
 
 def update_feature_sets_table(app: Dash):
     @app.callback(
@@ -40,12 +39,11 @@ def table_row_select(app: Dash, table_name: str):
         prevent_initial_call=True,
     )
     def style_selected_rows(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         row_style = [
             {
-                "if": {"filter_query": "{{id}} ={}".format(i)},
+                "if": {"filter_query": "{{id}}={}".format(i)},
                 "backgroundColor": "rgb(80, 80, 80)",
             }
             for i in selected_rows
@@ -53,30 +51,41 @@ def table_row_select(app: Dash, table_name: str):
         return row_style
 
 
-# Updates the feature set details when a row is selected in the summary
+# Updates the feature set details and correlation matrix when a new FeatureSet is selected
 def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebView):
     @app.callback(
         [
             Output("feature_details_header", "children"),
             Output("feature_set_details", "children"),
+            Output("feature_set_correlation_matrix", "figure", allow_duplicate=True)
         ],
         Input("feature_sets_table", "derived_viewport_selected_row_ids"),
+        State("feature_sets_table", "data"),
         prevent_initial_call=True,
     )
-    def generate_feature_set_markdown(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
+    def generate_feature_set_markdown(selected_rows, table_data):
+        print(f"Feature Set Details Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
+
+        # Get the selected row data and grab the uuid
+        selected_row_data = table_data[selected_rows[0]]
+        feature_set_uuid = selected_row_data["uuid"]
+        print(f"FeatureSet UUID: {feature_set_uuid}")
+
         print("Calling FeatureSet Details...")
-        feature_details = feature_set_web_view.feature_set_details(selected_rows[0])
+        feature_details = feature_set_web_view.feature_set_details(feature_set_uuid)
         feature_details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(feature_details)
 
-        # Name of the data source for the Header
-        feature_set_name = feature_set_web_view.feature_set_name(selected_rows[0])
-        header = f"Details: {feature_set_name}"
+        # Set the Header Text
+        header = f"Details: {feature_set_uuid}"
+
+        # Generate a new correlation matrix figure
+        corr_df = corr_df_from_artifact_info(feature_details)
+        corr_figure = correlation_matrix.CorrelationMatrix().generate_component_figure(corr_df)
 
         # Return the details/markdown for these data details
-        return [header, feature_details_markdown]
+        return [header, feature_details_markdown, corr_figure]
 
 
 def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWebView):
@@ -86,26 +95,33 @@ def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWe
             Output("feature_set_sample_rows", "columns"),
             Output("feature_set_sample_rows", "style_data_conditional"),
             Output("feature_set_sample_rows", "data", allow_duplicate=True),
+            Output("feature_set_violin_plot", "figure", allow_duplicate=True)
         ],
         Input("feature_sets_table", "derived_viewport_selected_row_ids"),
+        State("feature_sets_table", "data"),
         prevent_initial_call=True,
     )
-    def sample_rows_update(selected_rows, color_column="outlier_group"):
+    def smart_sample_rows_update(selected_rows, table_data):
         global smart_sample_rows
-        print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
-        print("Calling FeatureSet Sample Rows...")
-        smart_sample_rows = feature_set_web_view.feature_set_smart_sample(selected_rows[0])
 
-        # Name of the data source
-        feature_set_name = feature_set_web_view.feature_set_name(selected_rows[0])
-        header = f"Sample/Outlier Rows: {feature_set_name}"
+        # Get the selected row data and grab the uuid
+        selected_row_data = table_data[selected_rows[0]]
+        feature_set_uuid = selected_row_data["uuid"]
+        print(f"FeatureSet UUID: {feature_set_uuid}")
+
+        print("Calling FeatureSet Sample Rows...")
+        smart_sample_rows = feature_set_web_view.feature_set_smart_sample(feature_set_uuid)
+
+        # Header Text
+        header = f"Sample/Outlier Rows: {feature_set_uuid}"
 
         # The columns need to be in a special format for the DataTable
         column_setup_list = table.Table().column_setup(smart_sample_rows)
 
         # We need to update our style_data_conditional to color the outlier groups
+        color_column = "outlier_group"
         if color_column not in smart_sample_rows.columns:
             style_cells = table.Table().style_data_conditional()
         else:
@@ -113,26 +129,8 @@ def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWe
             unique_categories = [x for x in unique_categories if x != "sample"]
             style_cells = table.Table().style_data_conditional(color_column, unique_categories)
 
-        # Return the columns and the data
-        return [header, column_setup_list, style_cells, smart_sample_rows.to_dict("records")]
-
-
-def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
-    """Updates the Violin Plots when a new data source is selected"""
-
-    @app.callback(
-        Output("feature_set_violin_plot", "figure"),
-        Input("feature_sets_table", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def generate_new_violin_plot(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-        smart_sample_rows = feature_set_web_view.feature_set_smart_sample(selected_rows[0])
-
-        # Get the feature set smart sample rows and create the violin plot
-        return violin_plots.ViolinPlots().generate_component_figure(
+        # Update the Violin Plot with the new smart sample rows
+        violin_figure = violin_plots.ViolinPlots().generate_component_figure(
             smart_sample_rows,
             figure_args={
                 "box_visible": True,
@@ -143,25 +141,8 @@ def update_violin_plots(app: Dash, feature_set_web_view: FeatureSetWebView):
             },
         )
 
-
-# Updates the correlation matrix when a new DataSource is selected
-def update_correlation_matrix(app: Dash, feature_set_web_view: FeatureSetWebView):
-    @app.callback(
-        Output("feature_set_correlation_matrix", "figure", allow_duplicate=True),
-        Input("feature_sets_table", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def generate_new_corr_matrix(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-
-        # Get the feature set details and create the correlation matrix
-        artifact_info = feature_set_web_view.feature_set_details(selected_rows[0])
-
-        # Convert the data details to a pandas dataframe
-        corr_df = corr_df_from_artifact_info(artifact_info)
-        return correlation_matrix.CorrelationMatrix().generate_component_figure(corr_df)
+        # Return the header, columns, style_cell, and the data
+        return [header, column_setup_list, style_cells, smart_sample_rows.to_dict("records"), violin_figure]
 
 
 #
