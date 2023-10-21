@@ -53,7 +53,7 @@ class FeatureSetWebView(ArtifactsWebView):
             dict: The details for the given FeatureSet (or None if not found)
         """
         fs = FeatureSet(feature_uuid)
-        if not fs.exists or not fs.ready():
+        if not fs.exists() or not fs.ready():
             return None
 
         # Return the FeatureSet Details
