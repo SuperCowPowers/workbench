@@ -23,12 +23,13 @@ FEATURE_SET_NAME = "hlm_phase2_reg_0_230830"
 
 ENDPOINT_NAME = "abalone-regression-end"
 ENDPOINT_NAME = "aqsol-solubility-regression-end"
+ENDPOINT_NAME = "hlm-phase2-reg-0-230830-test-endpoint"
 
 # These should be filled in
-DATA_NAME = "aqsol_holdout_2023_10_19",
+DATA_NAME = "hlm-phase2-holdout-2023-10-21",
 DATA_HASH = "12345",
-DESCRIPTION = "Test AQSol Data"
-TARGET_COLUMN = "solubility"
+DESCRIPTION = "Test HML Phase2 Data"
+TARGET_COLUMN = "icl"
 
 if S3_DATA_PATH is not None:
     # Read the data from S3
