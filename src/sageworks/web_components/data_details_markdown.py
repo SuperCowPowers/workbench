@@ -223,7 +223,6 @@ if __name__ == "__main__":
     # Create the class and get the AWS FeatureSet details
     ds = DataSource("wine_data")
     data_details = ds.details()
-    data_details["column_stats"] = ds.column_stats()
 
     # Instantiate the DataDetailsMarkdown class
     ddm = DataDetailsMarkdown()

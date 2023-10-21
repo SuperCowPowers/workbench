@@ -341,10 +341,13 @@ class AthenaSource(DataSourceAbstract):
             dict(dict): A dictionary of details about this AthenaSource
         """
 
-        # First check if we have already computed the details
-        if self.sageworks_meta().get("sageworks_details") and not recompute:
-            return json.loads(self.sageworks_meta()["sageworks_details"])
+        # Check if we have cached version of the DataSource Details
+        storage_key = f"data_source:{self.uuid}:details"
+        cached_details = self.data_storage.get(storage_key)
+        if cached_details and not recompute:
+            return cached_details
 
+        self.log.info(f"Recomputing DataSource Details ({self.uuid})...")
         # Get the details from the base class
         details = super().details()
 
@@ -363,8 +366,11 @@ class AthenaSource(DataSourceAbstract):
         # Convert any datetime fields to ISO-8601 strings
         details = convert_all_to_iso8601(details)
 
-        # Push the details data into our DataSource Metadata
-        self.upsert_sageworks_meta({"sageworks_details": details})
+        # Add the column stats
+        details["column_stats"] = self.column_stats()
+
+        # Cache the details
+        self.data_storage.set(storage_key, details)
 
         # Return the details data
         return details

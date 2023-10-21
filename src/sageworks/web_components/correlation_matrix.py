@@ -40,6 +40,10 @@ class CorrelationMatrix(ComponentInterface):
             [1.0, "rgb(128, 64, 64)"],
         ]
 
+        # Sanity check the data
+        if "column_stats" not in data_source_details:
+            return self.message_figure("No column_stats Found", figure_height=200)
+
         # Convert the data details into a correlation dataframe
         df = self._corr_df_from_data_details(data_source_details)
 
@@ -129,7 +133,6 @@ if __name__ == "__main__":
 
     ds = DataSource("logs_test_data")
     ds_details = ds.details()
-    ds_details["column_stats"] = ds.column_stats()
 
     # Instantiate the ConfusionMatrix class
     corr_plot = CorrelationMatrix()

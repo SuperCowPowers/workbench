@@ -59,9 +59,7 @@ class DataSourceWebView(ArtifactsWebView):
             return None
 
         # Return the DataSource Details
-        details_data = ds.details()
-        details_data["column_stats"] = ds.column_stats()
-        return details_data
+        return ds.details()
 
 
 if __name__ == "__main__":
