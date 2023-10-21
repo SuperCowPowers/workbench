@@ -64,7 +64,7 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
         prevent_initial_call=True,
     )
     def generate_feature_set_markdown(selected_rows, table_data):
-        print(f"Feature Set Details Selected Rows: {selected_rows}")
+        # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
 
@@ -73,12 +73,12 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
         feature_set_uuid = selected_row_data["uuid"]
         print(f"FeatureSet UUID: {feature_set_uuid}")
 
-        print("Calling FeatureSet Details...")
-        feature_details = feature_set_web_view.feature_set_details(feature_set_uuid)
-        feature_details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(feature_details)
-
         # Set the Header Text
         header = f"Details: {feature_set_uuid}"
+
+        # FeatureSet Details
+        feature_details = feature_set_web_view.feature_set_details(feature_set_uuid)
+        feature_details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(feature_details)
 
         # Generate a new correlation matrix figure
         corr_df = corr_df_from_artifact_info(feature_details)
