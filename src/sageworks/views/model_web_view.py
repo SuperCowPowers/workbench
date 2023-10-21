@@ -28,19 +28,19 @@ class ModelWebView(ArtifactsWebView):
         """
         return self.models_df
 
-    def model_details(self, model_index: int) -> (dict, None):
-        """Get all the details for the given Model Index"""
-        uuid = self.model_name(model_index)
-        model = Model(uuid)
-        return model.details()
-
-    def model_name(self, model_index: int) -> (str, None):
-        """Helper method for getting the model name for the given Model Index"""
-        if not self.models_df.empty and model_index < len(self.models_df):
-            data_uuid = self.models_df.iloc[model_index]["uuid"]
-            return data_uuid
-        else:
+    def model_details(self, model_uuid: str) -> (dict, None):
+        """Get all the details for the given Model UUID
+        Args:
+            model_uuid(str): The UUID of the Model
+        Returns:
+            dict: The details for the given Model (or None if not found)
+        """
+        model = Model(model_uuid)
+        if not model.exists() or not model.ready():
             return None
+
+        # Return the Model Details
+        return model.details()
 
 
 if __name__ == "__main__":
@@ -57,8 +57,9 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first Model
+    my_model_uuid = summary['uuid'][0]
     print("\nModelDetails:")
-    details = model_view.model_details(0)
+    details = model_view.model_details(my_model_uuid)
     pprint(details)
 
     # Give any broker threads time to finish

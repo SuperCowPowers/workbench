@@ -1,6 +1,6 @@
 """Callbacks for the Model Subpage Web User Interface"""
 from dash import Dash, no_update
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.model_web_view import ModelWebView
@@ -30,12 +30,11 @@ def table_row_select(app: Dash, table_name: str):
         prevent_initial_call=True,
     )
     def style_selected_rows(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return no_update
         row_style = [
             {
-                "if": {"filter_query": "{{id}} ={}".format(i)},
+                "if": {"filter_query": "{{id}}={}".format(i)},
                 "backgroundColor": "rgb(80, 80, 80)",
             }
             for i in selected_rows
@@ -52,19 +51,24 @@ def update_model_detail_components(app: Dash, model_web_view: ModelWebView):
             Output("model_metrics", "figure"),
         ],
         Input("models_table", "derived_viewport_selected_row_ids"),
+        State("models_table", "data"),
         prevent_initial_call=True,
     )
-    def generate_model_details_figures(selected_rows):
+    def generate_model_details_figures(selected_rows, table_data):
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
-            return [no_update, no_update, no_update]
+            return no_update
 
-        # Name of the data source for the Header
-        model_name = model_web_view.model_name(selected_rows[0])
-        header = f"Details: {model_name}"
+        # Get the selected row data and grab the uuid
+        selected_row_data = table_data[selected_rows[0]]
+        model_uuid = selected_row_data["uuid"]
+        print(f"Model UUID: {model_uuid}")
+
+        # Set the Header Text
+        header = f"Details: {model_uuid}"
 
         # Model Details
-        model_details = model_web_view.model_details(selected_rows[0])
+        model_details = model_web_view.model_details(model_uuid)
         model_details_markdown = model_markdown.ModelMarkdown().generate_markdown(model_details)
 
         # Model Metrics
@@ -79,13 +83,18 @@ def update_plugin(app: Dash, plugin, model_web_view: ModelWebView):
     @app.callback(
         Output(plugin.component_id(), "figure"),
         Input("models_table", "derived_viewport_selected_row_ids"),
+        State("models_table", "data"),
         prevent_initial_call=True,
     )
-    def update_plugin_figure(selected_rows):
+    def update_plugin_figure(selected_rows, table_data):
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return no_update
 
+        # Get the selected row data and grab the uuid
+        selected_row_data = table_data[selected_rows[0]]
+        model_uuid = selected_row_data["uuid"]
+
         # Get the model details and send it to the plugin
-        model_details = model_web_view.model_details(selected_rows[0])
+        model_details = model_web_view.model_details(model_uuid)
         return plugin.generate_component_figure(model_details)
