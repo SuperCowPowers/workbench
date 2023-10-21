@@ -34,7 +34,7 @@ class ViolinPlots(ComponentInterface):
 
         # Sanity check the dataframe
         if df is None or df.empty or list(df.columns) == ["uuid", "status"]:
-            return go.Figure()
+            return self.message_figure("No Data Found", figure_height=200)
 
         numeric_columns = list(df.select_dtypes("number").columns)
         numeric_columns = [col for col in numeric_columns if df[col].nunique() > 1]  # Only columns > 1 unique value

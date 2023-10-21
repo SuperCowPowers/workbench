@@ -41,6 +41,8 @@ class CorrelationMatrix(ComponentInterface):
         ]
 
         # Sanity check the data
+        if data_source_details is None:
+            return self.message_figure("No Details Data Found", figure_height=200)
         if "column_stats" not in data_source_details:
             return self.message_figure("No column_stats Found", figure_height=200)
 
