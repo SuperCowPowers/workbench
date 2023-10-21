@@ -18,6 +18,7 @@ import awswrangler as wr
 S3_DATA_PATH = None
 FEATURE_SET_NAME = "abalone_feature_set"
 FEATURE_SET_NAME = "aqsol_features"
+FEATURE_SET_NAME = "hlm_phase2_reg_0_230830"
 # FEATURE_SET_NAME = None
 
 ENDPOINT_NAME = "abalone-regression-end"

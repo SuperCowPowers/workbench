@@ -23,6 +23,10 @@ class ModelMetrics(ComponentInterface):
             plotly.graph_objs.Figure: A Figure object containing the model metrics.
         """
 
+        # If the model details are empty then return a message
+        if model_details is None:
+            return self.message_figure("Model Details are Empty")
+
         # Based on the model type, we'll generate a different plot
         model_type = model_details.get("model_type")
         if model_type == "classifier":

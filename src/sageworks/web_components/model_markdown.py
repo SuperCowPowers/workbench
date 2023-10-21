@@ -27,6 +27,10 @@ class ModelMarkdown(ComponentInterface):
             str: A Markdown string
         """
 
+        # If the model details are empty then return a message
+        if model_details is None:
+            return "*No Data*"
+
         # Create simple markdown by iterating through the model_details dictionary
 
         # Excluded keys from the model_details dictionary (and any keys that end with '_arn')
