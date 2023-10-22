@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 import os
 import sys
+import time
 import logging
 import json
 import base64
@@ -79,11 +80,6 @@ class Artifact(ABC):
         existing_meta = self.sageworks_meta()
         ready = set(existing_meta.keys()).issuperset(expected_meta)
         if ready:
-            self.log.debug(f"Artifact {self.uuid} expected metadata found")
-            status = self.get_status()  # Sanity Check the Artifact Status
-            if status != "ready":
-                self.log.warning(f"Artifact {self.uuid} is ready but status is {status}")
-                self.set_status("ready")
             return True
         else:
             self.log.info("Artifact is not ready!")

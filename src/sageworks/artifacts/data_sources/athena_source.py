@@ -3,6 +3,7 @@ import pandas as pd
 import awswrangler as wr
 from datetime import datetime
 import json
+import time
 import botocore
 from pprint import pprint
 
@@ -122,6 +123,15 @@ class AthenaSource(DataSourceAbstract):
                 self.log.error(f"Unable to upsert metadata for {self.table_name}")
                 self.log.error("Probably because the metadata is too large")
                 self.log.error(new_meta)
+            elif error_code == "ConcurrentModificationException":
+                self.log.warning("ConcurrentModificationException... trying again...")
+                time.sleep(1)
+                wr.catalog.upsert_table_parameters(
+                    parameters=meta,
+                    database=self.data_catalog_db,
+                    table=self.table_name,
+                    boto3_session=self.boto_session,
+                )
             else:
                 raise e
 
@@ -363,14 +373,14 @@ class AthenaSource(DataSourceAbstract):
         base_url = "https://console.aws.amazon.com/athena/home"
         details["aws_url"] = f"{base_url}?region={self.aws_region}#query/history/{query_exec_id}"
 
+        # Push the aws_url data into our DataSource Metadata
+        self.upsert_sageworks_meta({"sageworks_details": {"aws_url": details["aws_url"]}})
+
         # Convert any datetime fields to ISO-8601 strings
         details = convert_all_to_iso8601(details)
 
         # Add the column stats
         details["column_stats"] = self.column_stats()
-
-        # Push a details computed flag into our DataSource Metadata
-        self.upsert_sageworks_meta({"sageworks_details": {"aws_url": details["aws_url"]}})
 
         # Cache the details
         self.data_storage.set(storage_key, details)
