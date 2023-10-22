@@ -43,7 +43,7 @@ if __name__ == "__main__":
     if recreate or not Model("aqsol-regression").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_features")
-        exclude = ['name', 'inchi', 'inchikey', 'smiles', 'solubility']
+        exclude = ['id', 'name', 'inchi', 'inchikey', 'smiles', 'solubility']
         feature_list = [f for f in feature_set.column_names() if f not in exclude]
         features_to_model = FeaturesToModel("aqsol_features", "aqsol-regression", model_type=ModelType.REGRESSOR)
         features_to_model.set_output_tags(["aqsol", "regression"])
