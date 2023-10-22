@@ -3,7 +3,7 @@ import pandas as pd
 
 # Local imports
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.artifacts.data_sources.athena_source import AthenaSource
+from sageworks.artifacts.data_sources.data_source import DataSource
 
 
 class DataToPandas(Transform):
@@ -27,19 +27,27 @@ class DataToPandas(Transform):
         self.output_df = None
         self.transform_run = False
 
-    def transform_impl(self, max_rows=100000):
-        """Convert the DataSource into a Pandas DataFrame"""
+    def transform_impl(self, query: str = None, max_rows=100000):
+        """Convert the DataSource into a Pandas DataFrame
+        Args:
+            query(str): The query to run against the DataSource (default: None)
+            max_rows(int): The maximum number of rows to return (default: 100000)
+        """
 
         # Grab the Input (Data Source)
-        input_data = AthenaSource(self.input_uuid)
+        input_data = DataSource(self.input_uuid)
         if not input_data.exists():
             self.log.critical(f"Data Check on {self.input_uuid} failed!")
             return
 
-        # Get the number of rows in the DataSource
-        num_rows = input_data.num_rows()
+        # If a query is provided, that overrides the queries below
+        if query:
+            self.log.info(f"Querying {self.input_uuid} with {query}...")
+            self.output_df = input_data.query(query)
+            return
 
         # If the data source has more rows than max_rows, do a sample query
+        num_rows = input_data.num_rows()
         if num_rows > max_rows:
             percentage = round(max_rows * 100.0 / num_rows)
             self.log.warning(f"DataSource has {num_rows} rows.. sampling down to {max_rows}...")
@@ -72,7 +80,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Grab a Data Source
-    data_uuid = "test_data"
+    data_uuid = "abalone_data"
 
     # Create the DataSource to DF Transform
     data_to_df = DataToPandas(data_uuid)
@@ -83,3 +91,9 @@ if __name__ == "__main__":
     # Grab the output dataframe and show it
     my_df = data_to_df.get_output()
     print(my_df)
+
+    # Now test the query functionality
+    data_to_df.transform(query=f"SELECT * from {data_uuid} limit 100")
+    my_df = data_to_df.get_output()
+    print(my_df)
+
