@@ -25,7 +25,7 @@ def update_data_sources_table(app: Dash):
         """Return the table data for the DataSources Table"""
         aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
         data_sources = aws_broker_data["DATA_SOURCES"]
-        data_sources["dash_id"] = range(len(data_sources))
+        data_sources["id"] = range(len(data_sources))
         column_setup_list = table.Table().column_setup(data_sources, markdown_columns=["Name"])
         return [column_setup_list, data_sources.to_dict("records")]
 
@@ -34,16 +34,15 @@ def update_data_sources_table(app: Dash):
 def table_row_select(app: Dash, table_name: str):
     @app.callback(
         Output(table_name, "style_data_conditional"),
-        Input(table_name, "selected_rows"),
+        Input(table_name, "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
     def style_selected_rows(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         row_style = [
             {
-                "if": {"filter_query": "{{dash_id}}={}".format(i)},
+                "if": {"filter_query": "{{id}}={}".format(i)},
                 "backgroundColor": "rgb(80, 80, 80)",
             }
             for i in selected_rows
@@ -59,11 +58,12 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
             Output("data_source_details", "children"),
             Output("data_source_correlation_matrix", "figure", allow_duplicate=True)
         ],
-        Input("data_sources_table", "selected_rows"),
+        Input("data_sources_table", "derived_viewport_selected_row_ids"),
         State("data_sources_table", "data"),
         prevent_initial_call=True,
     )
     def generate_data_source_markdown(selected_rows, table_data):
+        # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
 
@@ -95,7 +95,7 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
             Output("data_source_sample_rows", "data", allow_duplicate=True),
             Output("data_source_violin_plot", "figure", allow_duplicate=True)
         ],
-        Input("data_sources_table", "selected_rows"),
+        Input("data_sources_table", "derived_viewport_selected_row_ids"),
         State("data_sources_table", "data"),
         prevent_initial_call=True,
     )
