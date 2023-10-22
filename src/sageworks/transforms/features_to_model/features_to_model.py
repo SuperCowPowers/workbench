@@ -90,10 +90,13 @@ class FeaturesToModel(Transform):
         s3_training_path = feature_set.create_s3_training_data()
         self.log.info(f"Created new training data {s3_training_path}...")
 
+        # Report the target field
+        self.log.info(f"Target field: {target}")
+
         # Did they specify a feature list?
         if feature_list:
             # AWS Feature Groups will also add these implicit columns, so remove them
-            aws_cols = ["write_time", "api_invocation_time", "is_deleted"]
+            aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time", "training"]
             feature_list = [c for c in feature_list if c not in aws_cols]
             self.log.info(f"Using feature list: {feature_list}")
 
@@ -195,6 +198,7 @@ class FeaturesToModel(Transform):
         output_model.upsert_sageworks_meta({"sageworks_model_type": self.model_type.value})
 
         # Call the Model make_ready method and set status to ready
+        output_model = Model(self.output_uuid, force_refresh=True)  # We have to do this since model_type is pulled at init
         output_model.make_ready()
 
     def create_and_register_model(self):
