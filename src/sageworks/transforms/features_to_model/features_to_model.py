@@ -15,11 +15,11 @@ class FeaturesToModel(Transform):
     """FeaturesToModel: Train/Create a Model from a FeatureSet
 
     Common Usage:
-        to_model = FeaturesToModel(feature_uuid, model_uuid)
+        to_model = FeaturesToModel(feature_uuid, model_uuid, model_type=ModelType
         to_model.set_output_tags(["abalone", "public", "whatever"])
-        to_model.transform(target="class_number_of_rings", description="Abalone Regression Model".
-                           input_feature_list=<features>, model_type=ModelType,
-                           )
+        to_model.transform(target="class_number_of_rings",
+                           description="Abalone Regression Model".
+                           input_feature_list=<features>)
     """
 
     def __init__(self, feature_uuid: str, model_uuid: str, model_type: ModelType):
@@ -40,6 +40,7 @@ class FeaturesToModel(Transform):
         self.estimator = None
         self.model_script_dir = None
         self.model_description = None
+        self.model_training_path = self.models_s3_path + "/training"
 
     def generate_model_script(self, target: str, feature_list: list[str], model_type: ModelType) -> str:
         """Fill in the model template with specific target and feature_list
@@ -89,8 +90,15 @@ class FeaturesToModel(Transform):
         s3_training_path = feature_set.create_s3_training_data()
         self.log.info(f"Created new training data {s3_training_path}...")
 
+        # Did they specify a feature list?
+        if feature_list:
+            # AWS Feature Groups will also add these implicit columns, so remove them
+            aws_cols = ['write_time', 'api_invocation_time', 'is_deleted']
+            feature_list = [c for c in feature_list if c not in aws_cols]
+            self.log.info(f"Using feature list: {feature_list}")
+
         # If they didn't specify a feature list, try to guess it
-        if feature_list is None:
+        else:
             # Try to figure out features with this logic
             # - Don't include id, event_time, __index_level_0__, or training columns
             # - Don't include AWS generated columns (e.g. write_time, api_invocation_time, is_deleted)

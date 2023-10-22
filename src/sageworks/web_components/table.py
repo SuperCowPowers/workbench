@@ -64,10 +64,6 @@ class Table(ComponentInterface):
                 "border": "0px",
             },
             markdown_options={"html": True},
-            style_header_conditional=[{"if": {"column_id": "del"}, "color": "transparent"}],
-            style_cell_conditional=[
-                {"if": {"column_id": "del"}, "padding": "7px 0px 0px 0px"},
-            ],
         )
         return table
 
@@ -85,7 +81,6 @@ class Table(ComponentInterface):
 
         # HARDCODE: Not sure how to get around hard coding these columns
         dont_show = [
-            "id",
             "uuid",
             "write_time",
             "api_invocation_time",

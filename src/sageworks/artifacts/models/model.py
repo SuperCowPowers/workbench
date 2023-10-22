@@ -54,10 +54,12 @@ class Model(Artifact):
         if self.model_meta is None:
             self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
             self.latest_model = None
+            self.model_type = ModelType.UNKNOWN
         else:
             self.latest_model = self.model_meta[0]
             self.description = self.latest_model["ModelPackageDescription"]
             self.training_job_name = self._extract_training_job_name()
+            self.model_type = self._get_model_type()
 
         # All done
         self.log.info(f"Model Initialized: {self.model_name}")
@@ -76,10 +78,13 @@ class Model(Artifact):
             return False
         return True
 
-    def model_type(self) -> ModelType:
-        """Get the model type
+    def _get_model_type(self) -> ModelType:
+        """Internal: Query the SageWorks Metadata to get the model type
         Returns:
             ModelType: The ModelType of this Model
+        Notes:
+            This is an internal method that should not be called directly
+            Use the model_type attribute instead
         """
         model_type = self.sageworks_meta().get("sageworks_model_type")
         if model_type and model_type != "unknown":
@@ -226,7 +231,7 @@ class Model(Artifact):
 
         self.log.info("Recomputing Model Details...")
         details = self.summary()
-        details["model_type"] = self.model_type().value
+        details["model_type"] = self.model_type.value
         details["model_package_group_arn"] = self.group_arn()
         details["model_package_arn"] = self.model_arn()
         aws_meta = self.aws_meta()
@@ -245,7 +250,7 @@ class Model(Artifact):
         details["content_types"] = inference_spec["SupportedContentTypes"]
         details["response_types"] = inference_spec["SupportedResponseMIMETypes"]
         details["model_metrics"] = self.model_metrics()
-        if self.model_type() == ModelType.CLASSIFIER:
+        if self.model_type == ModelType.CLASSIFIER:
             details["confusion_matrix"] = self.confusion_matrix()
             details["regression_predictions"] = None
         else:
@@ -307,7 +312,7 @@ class Model(Artifact):
 
         # First check if we have already computed the various metrics
         model_metrics = self.sageworks_meta().get("sageworks_training_metrics")
-        if self.model_type() == ModelType.REGRESSOR:
+        if self.model_type == ModelType.REGRESSOR:
             if model_metrics and not force_pull:
                 return
 
@@ -320,7 +325,7 @@ class Model(Artifact):
         self.log.info(f"Pulling training job metrics for {self.training_job_name}...")
         try:
             df = TrainingJobAnalytics(training_job_name=self.training_job_name).dataframe()
-            if self.model_type() == ModelType.REGRESSOR:
+            if self.model_type == ModelType.REGRESSOR:
                 if "timestamp" in df.columns:
                     df = df.drop(columns=["timestamp"])
 
@@ -337,7 +342,7 @@ class Model(Artifact):
             return
 
         # We need additional processing for classification metrics
-        if self.model_type() == ModelType.CLASSIFIER:
+        if self.model_type == ModelType.CLASSIFIER:
             metrics_df, cm_df = self._process_classification_metrics(df)
 
             # Store and return the metrics in the SageWorks Metadata
