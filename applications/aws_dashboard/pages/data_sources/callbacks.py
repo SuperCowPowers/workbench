@@ -13,6 +13,7 @@ from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 # Cheese Sauce
 smart_sample_rows = []
 
+
 def update_data_sources_table(app: Dash):
     @app.callback(
         [
@@ -56,7 +57,7 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
         [
             Output("data_details_header", "children"),
             Output("data_source_details", "children"),
-            Output("data_source_correlation_matrix", "figure", allow_duplicate=True)
+            Output("data_source_correlation_matrix", "figure", allow_duplicate=True),
         ],
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
         State("data_sources_table", "data"),
@@ -93,7 +94,7 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
             Output("data_source_sample_rows", "columns"),
             Output("data_source_sample_rows", "style_data_conditional"),
             Output("data_source_sample_rows", "data", allow_duplicate=True),
-            Output("data_source_violin_plot", "figure", allow_duplicate=True)
+            Output("data_source_violin_plot", "figure", allow_duplicate=True),
         ],
         Input("data_sources_table", "derived_viewport_selected_row_ids"),
         State("data_sources_table", "data"),
@@ -129,15 +130,15 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
 
         # Update the Violin Plot with the new smart sample rows
         violin_figure = violin_plots.ViolinPlots().generate_component_figure(
-                smart_sample_rows,
-                figure_args={
-                    "box_visible": True,
-                    "meanline_visible": True,
-                    "showlegend": False,
-                    "points": "all",
-                    "spanmode": "hard",
-                },
-            )
+            smart_sample_rows,
+            figure_args={
+                "box_visible": True,
+                "meanline_visible": True,
+                "showlegend": False,
+                "points": "all",
+                "spanmode": "hard",
+            },
+        )
 
         # Return the header, columns, style_cell, and the data
         return [header, column_setup_list, style_cells, smart_sample_rows.to_dict("records"), violin_figure]

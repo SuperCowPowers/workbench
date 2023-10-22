@@ -26,8 +26,8 @@ ENDPOINT_NAME = "aqsol-solubility-regression-end"
 ENDPOINT_NAME = "hlm-phase2-reg-0-230830-test-endpoint"
 
 # These should be filled in
-DATA_NAME = "hlm-phase2-holdout-2023-10-21",
-DATA_HASH = "12345",
+DATA_NAME = ("hlm-phase2-holdout-2023-10-21",)
+DATA_HASH = ("12345",)
 DESCRIPTION = "Test HML Phase2 Data"
 TARGET_COLUMN = "icl"
 
@@ -44,10 +44,9 @@ else:
 my_endpoint = Endpoint(ENDPOINT_NAME)
 
 # Capture the performance metrics for this Endpoint
-my_endpoint.capture_performance_metrics(df, TARGET_COLUMN,
-                                        data_name=DATA_NAME,
-                                        data_hash=DATA_HASH,
-                                        description=DESCRIPTION)
+my_endpoint.capture_performance_metrics(
+    df, TARGET_COLUMN, data_name=DATA_NAME, data_hash=DATA_HASH, description=DESCRIPTION
+)
 
 # Important: The Model must explicitly recompute its details
 # after the performance metrics are captured

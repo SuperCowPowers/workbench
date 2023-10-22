@@ -32,7 +32,6 @@ class Turbo(PluginInterface):
         """
 
         data = [  # Portfolio (inner donut)
-
             # Inner ring
             go.Pie(
                 values=[20, 40],
@@ -75,7 +74,6 @@ class Turbo(PluginInterface):
                 marker={"colors": ["#668866", "#779977", "#EEA540", "#FFC060"]},
                 showlegend=False,
             ),
-
         ]
 
         # Create the nested pie chart plot with custom settings
@@ -86,7 +84,7 @@ class Turbo(PluginInterface):
 
 
 if __name__ == "__main__":
-    # This class takes in model details and generates a Turbo 
+    # This class takes in model details and generates a Turbo
     from sageworks.artifacts.models.model import Model
 
     m = Model("wine-classification")

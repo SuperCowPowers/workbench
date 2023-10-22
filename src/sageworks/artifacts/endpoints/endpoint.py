@@ -248,12 +248,9 @@ class Endpoint(Artifact):
         """Return the type of model used in this Endpoint"""
         return self.details()["model_info"].get("model_type", "unknown")
 
-    def capture_performance_metrics(self,
-                                    feature_df: pd.DataFrame,
-                                    target_column: str,
-                                    data_name: str,
-                                    data_hash: str,
-                                    description: str) -> None:
+    def capture_performance_metrics(
+        self, feature_df: pd.DataFrame, target_column: str, data_name: str, data_hash: str, description: str
+    ) -> None:
         """Capture the performance metrics for this Endpoint
         Args:
             feature_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
@@ -280,11 +277,19 @@ class Endpoint(Artifact):
             raise ValueError(f"Unknown Model Type: {model_type}")
 
         # Metadata for the model inference
-        inference_meta = {"test_data": data_name, "test_data_hash": data_hash,
-                          "test_rows": len(feature_df), "description": description}
+        inference_meta = {
+            "test_data": data_name,
+            "test_data_hash": data_hash,
+            "test_rows": len(feature_df),
+            "description": description,
+        }
 
         # Write the metadata dictionary, and metrics to our S3 Model Inference Folder
-        wr.s3.to_json(pd.DataFrame([inference_meta]), f"{self.model_inference_path}/{self.model_name}/inference_meta.json", index=False)
+        wr.s3.to_json(
+            pd.DataFrame([inference_meta]),
+            f"{self.model_inference_path}/{self.model_name}/inference_meta.json",
+            index=False,
+        )
         wr.s3.to_csv(metrics, f"{self.model_inference_path}/{self.model_name}/inference_metrics.csv", index=False)
 
         # Write the confusion matrix to our S3 Model Inference Folder
@@ -296,7 +301,9 @@ class Endpoint(Artifact):
         # Write the regression predictions to our S3 Model Inference Folder
         if model_type == ModelType.REGRESSOR.value:
             pred_df = self.regression_predictions(target_column, prediction_df)
-            wr.s3.to_csv(pred_df, f"{self.model_inference_path}/{self.model_name}/inference_predictions.csv", index=False)
+            wr.s3.to_csv(
+                pred_df, f"{self.model_inference_path}/{self.model_name}/inference_predictions.csv", index=False
+            )
 
     @staticmethod
     def regression_metrics(target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
@@ -345,7 +352,7 @@ class Endpoint(Artifact):
         # - A score close to 1 indicates high discriminative power
 
         # Convert 'pred_proba' column to a 2D NumPy array
-        y_score = np.array([ast.literal_eval(x) for x in prediction_df['pred_proba']], dtype=float)
+        y_score = np.array([ast.literal_eval(x) for x in prediction_df["pred_proba"]], dtype=float)
         # y_score = np.array(prediction_df['pred_proba'].tolist())
 
         # One-hot encode the true labels
@@ -353,11 +360,18 @@ class Endpoint(Artifact):
         lb.fit(prediction_df[target])  # Replace 'true_labels' with your actual column name for true labels
         y_true = lb.transform(prediction_df[target])
 
-        roc_auc = roc_auc_score(y_true, y_score, multi_class='ovr', average=None)
+        roc_auc = roc_auc_score(y_true, y_score, multi_class="ovr", average=None)
 
         # Put the scores into a dataframe
         score_df = pd.DataFrame(
-            {target: labels, "precision": scores[0], "recall": scores[1], "fscore": scores[2], "roc_auc": roc_auc, "support": scores[3]}
+            {
+                target: labels,
+                "precision": scores[0],
+                "recall": scores[1],
+                "fscore": scores[2],
+                "roc_auc": roc_auc,
+                "support": scores[3],
+            }
         )
 
         # Sort the target labels
@@ -428,15 +442,15 @@ if __name__ == "__main__":
         my_endpoint = Endpoint("abalone-regression-end")
         feature_to_pandas = FeaturesToPandas("abalone_feature_set")
         my_target_column = "class_number_of_rings"
-        data_name = "abalone_holdout_2023_10_19",
-        data_hash = "12345",
+        data_name = ("abalone_holdout_2023_10_19",)
+        data_hash = ("12345",)
         description = "Test Abalone Data"
     else:
         my_endpoint = Endpoint("wine-classification-end")
         feature_to_pandas = FeaturesToPandas("wine_features")
         my_target_column = "wine_class"
-        data_name = "wine_holdout_2023_10_19",
-        data_hash = "67890",
+        data_name = ("wine_holdout_2023_10_19",)
+        data_hash = ("67890",)
         description = "Test Wine Data"
 
     # Let's do a check/validation of the Endpoint
@@ -468,7 +482,6 @@ if __name__ == "__main__":
     print(my_metrics)
 
     # Capture the performance metrics for this Endpoint
-    my_endpoint.capture_performance_metrics(my_feature_df, my_target_column,
-                                            data_name=data_name,
-                                            data_hash=data_hash,
-                                            description=description)
+    my_endpoint.capture_performance_metrics(
+        my_feature_df, my_target_column, data_name=data_name, data_hash=data_hash, description=description
+    )

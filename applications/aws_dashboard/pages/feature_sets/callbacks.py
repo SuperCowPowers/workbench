@@ -13,6 +13,7 @@ from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 # Cheese Sauce
 smart_sample_rows = []
 
+
 def update_feature_sets_table(app: Dash):
     @app.callback(
         [
@@ -56,7 +57,7 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
         [
             Output("feature_details_header", "children"),
             Output("feature_set_details", "children"),
-            Output("feature_set_correlation_matrix", "figure", allow_duplicate=True)
+            Output("feature_set_correlation_matrix", "figure", allow_duplicate=True),
         ],
         Input("feature_sets_table", "derived_viewport_selected_row_ids"),
         State("feature_sets_table", "data"),
@@ -93,7 +94,7 @@ def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWe
             Output("feature_set_sample_rows", "columns"),
             Output("feature_set_sample_rows", "style_data_conditional"),
             Output("feature_set_sample_rows", "data", allow_duplicate=True),
-            Output("feature_set_violin_plot", "figure", allow_duplicate=True)
+            Output("feature_set_violin_plot", "figure", allow_duplicate=True),
         ],
         Input("feature_sets_table", "derived_viewport_selected_row_ids"),
         State("feature_sets_table", "data"),

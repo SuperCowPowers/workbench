@@ -57,7 +57,7 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first Endpoint
-    my_endpoint_uuid = summary['uuid'][0]
+    my_endpoint_uuid = summary["uuid"][0]
     print("\nEndpointDetails:")
     details = endpoint_view.endpoint_details(my_endpoint_uuid)
     pprint(details)

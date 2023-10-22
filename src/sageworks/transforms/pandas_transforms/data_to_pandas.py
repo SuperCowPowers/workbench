@@ -95,4 +95,3 @@ if __name__ == "__main__":
     data_to_df.transform(query=f"SELECT * from {data_uuid} limit 100")
     my_df = data_to_df.get_output()
     print(my_df)
-

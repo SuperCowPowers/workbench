@@ -41,7 +41,7 @@ class ModelMarkdown(ComponentInterface):
 
         # FIXME: Remove this later: Add the model info to the top level details
         model_info = model_details.get("model_info", {})
-        prefixed_model_info = {f'model_{k}': v for k, v in model_info.items()}
+        prefixed_model_info = {f"model_{k}": v for k, v in model_info.items()}
         top_level_details.update(prefixed_model_info)
 
         # Exclude dataframe values
@@ -63,14 +63,14 @@ class ModelMarkdown(ComponentInterface):
 
         # Model Test Metrics
         markdown += "### Model Test Metrics  \n"
-        meta_df = model_details.get('inference_meta')
+        meta_df = model_details.get("inference_meta")
         if meta_df is None:
             test_data = "AWS Training Capture"
             test_data_hash = " N/A "
             test_rows = " - "
             description = " - "
         else:
-            inference_meta = meta_df.to_dict(orient='records')[0]
+            inference_meta = meta_df.to_dict(orient="records")[0]
             test_data = inference_meta.get("test_data", " - ")
             test_data_hash = inference_meta.get("test_data_hash", " - ")
             test_rows = inference_meta.get("test_rows", " - ")

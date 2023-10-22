@@ -331,9 +331,7 @@ class Model(Artifact):
 
                 # Store and return the metrics in the SageWorks Metadata
                 df = df.round(3)
-                self.upsert_sageworks_meta(
-                    {"sageworks_training_metrics": df.to_dict(), "sageworks_training_cm": None}
-                )
+                self.upsert_sageworks_meta({"sageworks_training_metrics": df.to_dict(), "sageworks_training_cm": None})
                 return
         except KeyError:
             self.log.warning(f"No training job metrics found for {self.training_job_name}")

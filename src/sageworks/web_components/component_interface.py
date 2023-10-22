@@ -75,7 +75,7 @@ class ComponentInterface(ABC):
         )
 
         if figure_height is not None:
-            layout_options['height'] = figure_height
+            layout_options["height"] = figure_height
 
         message_figure.update_layout(**layout_options)
 

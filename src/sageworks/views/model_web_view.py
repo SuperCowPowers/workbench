@@ -57,7 +57,7 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first Model
-    my_model_uuid = summary['uuid'][0]
+    my_model_uuid = summary["uuid"][0]
     print("\nModelDetails:")
     details = model_view.model_details(my_model_uuid)
     pprint(details)

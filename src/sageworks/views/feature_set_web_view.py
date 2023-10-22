@@ -34,7 +34,7 @@ class FeatureSetWebView(ArtifactsWebView):
             feature_uuid(str): The UUID of the DataSource
         Returns:
             pd.DataFrame: The smart-sample DataFrame
-            """
+        """
         fs = FeatureSet(feature_uuid)
         if not fs.exists():
             return pd.DataFrame({"uuid": [feature_uuid], "status": ["NOT FOUND"]})
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first FeatureSet
-    my_feature_uuid = summary['uuid'][0]
+    my_feature_uuid = summary["uuid"][0]
     print("\nFeatureSetDetails:")
     details = feature_view.feature_set_details(my_feature_uuid)
     pprint(details)

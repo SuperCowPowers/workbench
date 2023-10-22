@@ -28,11 +28,11 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
             # Combined query to get both top and bottom counts
             query = (
                 f'(SELECT "{column}", count(*) as count '
-                f'FROM {data_source.table_name} '
+                f"FROM {data_source.table_name} "
                 f'GROUP BY "{column}" ORDER BY count DESC LIMIT 20) '
-                f'UNION ALL '
+                f"UNION ALL "
                 f'(SELECT "{column}", count(*) as count '
-                f'FROM {data_source.table_name} '
+                f"FROM {data_source.table_name} "
                 f'GROUP BY "{column}" ORDER BY count ASC LIMIT 20)'
             )
             result_df = data_source.query(query)
