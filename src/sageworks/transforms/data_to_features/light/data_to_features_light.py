@@ -12,7 +12,8 @@ class DataToFeaturesLight(Transform):
     Common Usage:
         to_features = DataToFeaturesLight(data_uuid, feature_uuid)
         to_features.set_output_tags(["abalone", "public", "whatever"])
-        to_features.transform(id_column="id"/None, event_time_column="date"/None, query=str/None)
+        to_features.transform(target_column="target"/None, id_column="id"/None,
+                              event_time_column="date"/None, query=str/None)
     """
 
     def __init__(self, data_uuid: str, feature_uuid: str):
@@ -28,28 +29,24 @@ class DataToFeaturesLight(Transform):
         self.output_df = None
         self.target = None
 
-    def pre_transform(self, **kwargs):
-        """Pull the input DataSource into our Input Pandas DataFrame"""
+    def pre_transform(self, target_column: str = None, query: str = None, **kwargs):
+        """Pull the input DataSource into our Input Pandas DataFrame
+        Args:
+            target_column(str): The name of the target column
+            query(str): Optional query to filter the input DataFrame
+        """
+        self.target = target_column
 
         # Grab the Input (Data Source)
-        self.input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
+        data_to_pandas = DataToPandas(self.input_uuid)
+        data_to_pandas.transform(query=query)
+        self.input_df = data_to_pandas.get_output()
 
-    def transform_impl(self, target: str = None, query: str = None, column_select: list = None, **kwargs):
-        """Transform the input DataFrame into a Feature Set
-        Args:
-            target(str): The name of the target column
-            query(str): Optional query to filter the input DataFrame
-            column_select(list): Optional list of columns to select from the input DataFrame
-        Notes:
-            Query is a Pandas Expression, e.g. 'col1<2.5 & col2=="x"'
-            Column Select is a list of column names, e.g. ['col3', 'col4']
-        """
+    def transform_impl(self, **kwargs):
+        """Transform the input DataFrame into a Feature Set"""
 
-        # This is a reference implementation that should either be overridden by the subclass or
-        # called by the subclass if it wants to use this implementation
-        self.target = target
-        self.output_df = self.input_df.query(query).reset_index(drop=True) if query else self.input_df
-        self.output_df = self.output_df[column_select] if column_select else self.output_df
+        # This is a reference implementation that should be overridden by the subclass
+        self.output_df = self.input_df
 
     def post_transform(self, id_column=None, event_time_column=None, **kwargs):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set"""
