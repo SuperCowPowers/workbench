@@ -25,24 +25,17 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
     value_count_dict = dict()
     for column, data_type in zip(data_source.column_names(), data_source.column_types()):
         if data_type in ["string", "boolean"]:
-            # Top value counts for this column
+            # Combined query to get both top and bottom counts
             query = (
-                f'SELECT "{column}", count(*) as count '
-                f"FROM {data_source.table_name} "
-                f'GROUP BY "{column}" ORDER BY count DESC limit 20'
+                f'(SELECT "{column}", count(*) as count '
+                f'FROM {data_source.table_name} '
+                f'GROUP BY "{column}" ORDER BY count DESC LIMIT 20) '
+                f'UNION ALL '
+                f'(SELECT "{column}", count(*) as count '
+                f'FROM {data_source.table_name} '
+                f'GROUP BY "{column}" ORDER BY count ASC LIMIT 20)'
             )
-            top_df = data_source.query(query)
-
-            # Bottom value counts for this column
-            query = (
-                f'SELECT "{column}", count(*) as count '
-                f"FROM {data_source.table_name} "
-                f'GROUP BY "{column}" ORDER BY count ASC limit 20'
-            )
-            bottom_df = data_source.query(query).iloc[::-1]  # Reverse the DataFrame
-
-            # Add the top and bottom value counts together
-            result_df = pd.concat([top_df, bottom_df], ignore_index=True).drop_duplicates()
+            result_df = data_source.query(query)
 
             # Convert Int64 (nullable) to int32 so that we can serialize to JSON
             result_df["count"] = result_df["count"].astype("int32")
@@ -79,7 +72,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("test_data")
+    my_data = DataSource("abalone_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
