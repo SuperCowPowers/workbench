@@ -183,12 +183,12 @@ class DataSourceAbstract(Artifact):
         # Check if the samples and outliers have been computed
         storage_key = f"data_source:{self.uuid}:sample"
         if not self.data_storage.get(storage_key):
-            self.log.warning(f"DataSource {self.uuid} doesn't have sample() call make_ready() to compute")
-            return False
+            self.log.warning(f"DataSource {self.uuid} doesn't have sample() calling it...")
+            self.sample()
         storage_key = f"data_source:{self.uuid}:outliers"
         if not self.data_storage.get(storage_key):
-            self.log.warning(f"DataSource {self.uuid} doesn't have outliers() call make_ready() to compute")
-            return False
+            self.log.warning(f"DataSource {self.uuid} doesn't have outliers() calling it...")
+            self.outliers()
 
         # Okay now call/return the Super Classes ready() method
         return super().ready()
