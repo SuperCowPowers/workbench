@@ -51,8 +51,14 @@ class PandasToFeatures(Transform):
         self.output_feature_set = None
         self.expected_rows = 0
 
-    def set_input(self, input_df: pd.DataFrame, target_column, id_column=None, event_time_column=None):
-        """Set the Input DataFrame for this Transform"""
+    def set_input(self, input_df: pd.DataFrame, target_column: str, id_column=None, event_time_column=None):
+        """Set the Input DataFrame for this Transform
+        Args:
+            input_df (pd.DataFrame): The input DataFrame
+            target_column (str): The name of the target column
+            id_column (str): The name of the id column (default: None)
+            event_time_column (str): The name of the event_time column (default: None)
+        """
         self.target_column = target_column
         self.id_column = id_column
         self.event_time_column = event_time_column
