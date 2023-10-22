@@ -370,7 +370,7 @@ class AthenaSource(DataSourceAbstract):
         details["column_stats"] = self.column_stats()
 
         # Push a details computed flag into our DataSource Metadata
-        self.upsert_sageworks_meta({"sageworks_details": True})
+        self.upsert_sageworks_meta({"sageworks_details": {"aws_url": details["aws_url"]}})
 
         # Cache the details
         self.data_storage.set(storage_key, details)
