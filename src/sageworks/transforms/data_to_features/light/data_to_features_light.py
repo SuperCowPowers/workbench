@@ -27,15 +27,12 @@ class DataToFeaturesLight(Transform):
         self.output_type = TransformOutput.FEATURE_SET
         self.input_df = None
         self.output_df = None
-        self.target = None
 
-    def pre_transform(self, target_column: str = None, query: str = None, **kwargs):
+    def pre_transform(self, query: str = None, **kwargs):
         """Pull the input DataSource into our Input Pandas DataFrame
         Args:
-            target_column(str): The name of the target column
             query(str): Optional query to filter the input DataFrame
         """
-        self.target = target_column
 
         # Grab the Input (Data Source)
         data_to_pandas = DataToPandas(self.input_uuid)
@@ -48,11 +45,19 @@ class DataToFeaturesLight(Transform):
         # This is a reference implementation that should be overridden by the subclass
         self.output_df = self.input_df
 
-    def post_transform(self, id_column=None, event_time_column=None, **kwargs):
-        """At this point the output DataFrame should be populated, so publish it as a Feature Set"""
+    def post_transform(self, target_column=None, id_column=None, event_time_column=None, **kwargs):
+        """At this point the output DataFrame should be populated, so publish it as a Feature Set
+        Args:
+            target_column(str): The name of the target column in the output DataFrame (default: None)
+            id_column(str): The name of the id column in the output DataFrame (default: None)
+            event_time_column(str): The name of the event time column in the output DataFrame (default: None)
+        """
         # Now publish to the output location
         output_features = PandasToFeatures(self.output_uuid)
-        output_features.set_input(self.output_df, self.target, id_column=id_column, event_time_column=event_time_column)
+        output_features.set_input(self.output_df,
+                                  target_column=target_column,
+                                  id_column=id_column,
+                                  event_time_column=event_time_column)
         output_features.set_output_tags(self.output_tags)
         output_features.add_output_meta(self.output_meta)
         output_features.transform()
