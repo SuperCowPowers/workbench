@@ -57,6 +57,12 @@ class Endpoint(Artifact):
         self.endpoint_meta = self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS, force_refresh=force_refresh).get(
             self.endpoint_name
         )
+
+        # Sanity check and then set up our FeatureSet attributes
+        if self.endpoint_meta is None:
+            self.log.info(f"Could not find endpoint {self.uuid} within current visibility scope")
+            return
+
         self.endpoint_return_columns = None
         self.exit_on_error = exit_on_error
 
