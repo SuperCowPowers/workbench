@@ -10,7 +10,6 @@ Endpoints:
     - wine-classification-end
 """
 import sys
-import time
 
 from pathlib import Path
 from sageworks.artifacts.data_sources.data_source import DataSource
@@ -30,13 +29,11 @@ if __name__ == "__main__":
     # Recreate Flag in case you want to recreate the artifacts
     recreate = False
 
-    # Create the abalone_data DataSource
+    # Create the wine_data DataSource
     if recreate or not DataSource("wine_data").exists():
         my_loader = CSVToDataSource(wine_data_path, "wine_data")
         my_loader.set_output_tags("wine:classification")
         my_loader.transform()
-        print("Waiting for the wine_data to be created...")
-        time.sleep(5)
 
     # Create the wine_features FeatureSet
     if recreate or not FeatureSet("wine_features").exists():
