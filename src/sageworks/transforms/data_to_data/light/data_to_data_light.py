@@ -30,7 +30,10 @@ class DataToDataLight(Transform):
         self.output_df = None
 
     def pre_transform(self, query: str = None):
-        """Pull the input DataSource into our Input Pandas DataFrame"""
+        """Pull the input DataSource into our Input Pandas DataFrame
+        Args:
+            query(str): Optional query to filter the input DataFrame
+        """
 
         # Grab the Input (Data Source)
         data_to_pandas = DataToPandas(self.input_uuid)
