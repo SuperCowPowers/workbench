@@ -12,7 +12,9 @@ class DataToDataLight(Transform):
     Common Usage:
         to_data = DataToDataLight(input_data_uuid, output_data_uuid)
         to_data.set_output_tags(["abalone", "public", "whatever"])
-        to_data.transform()
+        to_data.transform(query=<optional SQL query to filter/process data>)
+
+        Note: query is the best way to use this class, so use it :)
     """
 
     def __init__(self, input_data_uuid: str, output_data_uuid: str):
@@ -27,14 +29,16 @@ class DataToDataLight(Transform):
         self.input_df = None
         self.output_df = None
 
-    def pre_transform(self, **kwargs):
+    def pre_transform(self, query: str = None):
         """Pull the input DataSource into our Input Pandas DataFrame"""
 
         # Grab the Input (Data Source)
-        self.input_df = DataToPandas(self.input_uuid).get_output()  # Shorthand for transform, get_output
+        data_to_pandas = DataToPandas(self.input_uuid)
+        data_to_pandas.transform(query=query)
+        self.input_df = data_to_pandas.get_output()
 
     def transform_impl(self, **kwargs):
-        """Base Class is simply an identity transform"""
+        """Base Class simply takes the input DataFrame and copies it to the output DataFrame"""
         self.output_df = self.input_df
 
     def post_transform(self, **kwargs):
@@ -56,4 +60,4 @@ if __name__ == "__main__":
     output_uuid = "abalone_data_copy"
     data_to_data = DataToDataLight(input_uuid, output_uuid)
     data_to_data.set_output_tags(["abalone", "public"])
-    data_to_data.transform()
+    data_to_data.transform(query=f"SELECT * from {input_uuid} limit 100")

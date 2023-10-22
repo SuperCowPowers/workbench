@@ -11,8 +11,11 @@ class DataToPandas(Transform):
 
     Common Usage:
         data_to_df = DataToPandas(data_source_uuid)
+        data_to_df.transform(query=<optional SQL query to filter/process data>)
         data_to_df.transform(max_rows=<optional max rows to sample>)
         my_df = data_to_df.get_output()
+
+        Note: query is the best way to use this class, so use it :)
     """
 
     def __init__(self, input_uuid: str):
@@ -25,7 +28,6 @@ class DataToPandas(Transform):
         self.input_type = TransformInput.DATA_SOURCE
         self.output_type = TransformOutput.PANDAS_DF
         self.output_df = None
-        self.transform_run = False
 
     def transform_impl(self, query: str = None, max_rows=100000):
         """Convert the DataSource into a Pandas DataFrame
@@ -56,7 +58,6 @@ class DataToPandas(Transform):
             query = f"SELECT * FROM {self.input_uuid}"
 
         # Mark the transform as complete and set the output DataFrame
-        self.transform_run = True
         self.output_df = input_data.query(query)
 
     def post_transform(self, **kwargs):
@@ -66,8 +67,6 @@ class DataToPandas(Transform):
 
     def get_output(self) -> pd.DataFrame:
         """Get the DataFrame Output from this Transform"""
-        if not self.transform_run:
-            self.transform()
         return self.output_df
 
 
