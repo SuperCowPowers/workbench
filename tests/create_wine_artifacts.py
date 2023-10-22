@@ -43,11 +43,9 @@ if __name__ == "__main__":
 
     # Create the wine classification Model
     if recreate or not Model("wine-classification").exists():
-        features_to_model = FeaturesToModel("wine_features", "wine-classification")
+        features_to_model = FeaturesToModel("wine_features", "wine-classification", model_type=ModelType.CLASSIFIER)
         features_to_model.set_output_tags(["wine", "classification"])
-        features_to_model.transform(
-            target="wine_class", description="Wine Classification Model", model_type=ModelType.CLASSIFIER
-        )
+        features_to_model.transform(target="wine_class", description="Wine Classification Model")
 
     # Create the wine classification Endpoint
     if recreate or not Endpoint("wine-classification-end").exists():
