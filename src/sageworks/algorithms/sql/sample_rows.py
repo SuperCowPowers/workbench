@@ -21,7 +21,7 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
 
     # Note: Hardcoded to 100 rows so that metadata storage is consistent
     sample_rows = 100
-    num_rows = data_source.details()["num_rows"]
+    num_rows = data_source.num_rows()
     if num_rows > sample_rows:
         # Bernoulli Sampling has reasonable variance, so we're going to +1 the
         # sample percentage and then simply clamp it to 100 rows
