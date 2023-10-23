@@ -43,7 +43,7 @@ def trace_calls(func):
         call_stack = get_call_stack()
         call_stack.reverse()  # Reverse the stack to show the calling order.
         call_chain = " -> ".join(call_stack)
-        log.info(f"{func_name_colored} called by {call_chain}")
+        log.trace(f"{func_name_colored} called by {call_chain}")
         return func(*args, **kwargs)
 
     return wrapper
