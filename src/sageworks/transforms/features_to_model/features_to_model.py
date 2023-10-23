@@ -199,7 +199,7 @@ class FeaturesToModel(Transform):
         output_model.upsert_sageworks_meta({"sageworks_model_type": self.model_type.value})
 
         # Call the Model make_ready method and set status to ready
-        time.sleep(1)  # Give the model a second to get ready
+        time.sleep(3)  # Give the model a bit of time to get ready
         output_model = Model(
             self.output_uuid, force_refresh=True
         )  # We have to do this since model_type is pulled at init

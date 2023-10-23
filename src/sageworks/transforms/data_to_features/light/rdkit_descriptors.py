@@ -107,9 +107,21 @@ class RDKitDescriptors(DataToFeaturesLight):
             "MinPartialCharge",
             "MaxAbsPartialCharge",
         ]
+        best_40_descriptors = best_30_descriptors + [
+            'MolMR',
+            'ExactMolWt',
+            'NOCount',
+            'NumHeteroatoms',
+            'NumAmideBonds',
+            'FpDensityMorgan1',
+            'FpDensityMorgan2',
+            'FpDensityMorgan3',
+            'MaxEStateIndex',
+            'MinEStateIndex',
+        ]
 
         # Super useful Molecular Descriptor Calculator Class
-        calc = MoleculeDescriptors.MolecularDescriptorCalculator(best_30_descriptors)
+        calc = MoleculeDescriptors.MolecularDescriptorCalculator(best_40_descriptors)
         column_names = calc.GetDescriptorNames()
 
         descriptor_values = [calc.CalcDescriptors(m) for m in molecules]

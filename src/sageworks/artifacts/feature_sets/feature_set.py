@@ -64,7 +64,7 @@ class FeatureSet(Artifact):
 
     def refresh_meta(self):
         """Internal: Refresh our internal AWS Feature Store metadata"""
-        self.log.warning("Calling refresh_meta() on the underlying DataSource")
+        self.log.info("Calling refresh_meta() on the underlying DataSource")
         self.data_source.refresh_meta()
 
     def exists(self) -> bool:
@@ -169,7 +169,7 @@ class FeatureSet(Artifact):
         # Make the query
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
-        self.log.info("Waiting for Athena Query...")
+        self.log.info("Creating S3 Training Data...")
         athena_query.wait()
         query_execution = athena_query.get_query_execution()
 
@@ -262,7 +262,7 @@ class FeatureSet(Artifact):
     def ensure_feature_group_deleted(self, feature_group):
         status = "Deleting"
         while status == "Deleting":
-            self.log.info("FeatureSet being Deleted...")
+            self.log.debug("FeatureSet being Deleted...")
             try:
                 status = feature_group.describe().get("FeatureGroupStatus")
             except botocore.exceptions.ClientError as error:

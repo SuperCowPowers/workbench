@@ -4,13 +4,14 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
-
 from sageworks.utils.pandas_utils import shorten_values
+from sageworks.utils.trace_calls import trace_calls
 
 # SageWorks Logger
 log = logging.getLogger("sageworks")
 
 
+@trace_calls
 def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
     """Pull a sample of rows from the DataSource
     Args:

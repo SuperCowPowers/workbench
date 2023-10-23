@@ -136,7 +136,7 @@ class DataToFeaturesHeavy(Transform):
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")
         while status == "Creating":
-            self.log.info("FeatureSet being Created...")
+            self.log.debug("FeatureSet being Created...")
             time.sleep(5)
             status = feature_group.describe().get("FeatureGroupStatus")
         self.log.info(f"FeatureSet {feature_group.name} successfully created")

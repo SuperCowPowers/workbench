@@ -183,7 +183,8 @@ class AthenaSource(DataSourceAbstract):
             boto3_session=self.boto_session,
         )
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
-        self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
+        if scanned_bytes > 0:
+            self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
         return df
 
     def s3_storage_location(self) -> str:

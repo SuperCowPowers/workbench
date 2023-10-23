@@ -12,7 +12,6 @@ from sagemaker import TrainingJobAnalytics
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.utils.trace_calls import trace_calls
 
 
 # Enumerated Model Types
@@ -32,8 +31,6 @@ class Model(Artifact):
         my_model.summary()
         my_model.details()
     """
-
-    @trace_calls
     def __init__(self, model_uuid: str, force_refresh: bool = False):
         """Model Initialization
         Args:
