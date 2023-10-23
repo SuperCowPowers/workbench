@@ -84,6 +84,7 @@ class Table(ComponentInterface):
             "id",
             "uuid",
             "write_time",
+            "event_time",
             "api_invocation_time",
             "is_deleted",
             "x",

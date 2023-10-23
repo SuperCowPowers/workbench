@@ -67,8 +67,8 @@ if __name__ == "__main__":
     # Create the rdkit FeatureSet
     if recreate or not FeatureSet("aqsol_rdkit_features").exists():
         rdkit_features = RDKitDescriptors("aqsol_data", "aqsol_rdkit_features")
-        data_to_features.set_output_tags(["aqsol", "public", "rdkit"])
-        query = 'SELECT id, "group", solubility, smiles FROM aqsol_data'
+        rdkit_features.set_output_tags(["aqsol", "public", "rdkit"])
+        query = 'SELECT id, solubility, smiles FROM aqsol_data'
         rdkit_features.transform(target="solubility", id_column="udm_mol_bat_id", query=query)
 
     # Create the RDKIT based  regression Model
