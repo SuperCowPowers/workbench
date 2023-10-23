@@ -1,7 +1,6 @@
 """FeaturesToModel: Train/Create a Model from a Feature Set"""
 import os
 import json
-import time
 from pathlib import Path
 from sagemaker.sklearn.estimator import SKLearn
 import awswrangler as wr
@@ -194,15 +193,10 @@ class FeaturesToModel(Transform):
         self.log.info("Post-Transform: Calling make_ready() on the Model...")
 
         # Okay, lets get our output model and set it to initializing
-        output_model = Model(self.output_uuid)
+        output_model = Model(self.output_uuid, model_type=self.model_type)
         output_model.set_status("initializing")
-        output_model.upsert_sageworks_meta({"sageworks_model_type": self.model_type.value})
 
-        # Call the Model make_ready method and set status to ready
-        time.sleep(3)  # Give the model a bit of time to get ready
-        output_model = Model(
-            self.output_uuid, force_refresh=True
-        )  # We have to do this since model_type is pulled at init
+        # Call the Model make_ready method
         output_model.make_ready()
 
     def create_and_register_model(self):

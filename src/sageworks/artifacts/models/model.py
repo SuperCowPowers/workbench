@@ -31,11 +31,12 @@ class Model(Artifact):
         my_model.summary()
         my_model.details()
     """
-    def __init__(self, model_uuid: str, force_refresh: bool = False):
+    def __init__(self, model_uuid: str, force_refresh: bool = False, model_type: ModelType = None):
         """Model Initialization
         Args:
             model_uuid (str): Name of Model in SageWorks.
             force_refresh (bool, optional): Force a refresh of the AWS Broker. Defaults to False.
+            model_type (ModelType, optional): Set this for newly created Models. Defaults to None.
         """
         # Call SuperClass Initialization
         super().__init__(model_uuid)
@@ -56,7 +57,10 @@ class Model(Artifact):
             self.latest_model = self.model_meta[0]
             self.description = self.latest_model["ModelPackageDescription"]
             self.training_job_name = self._extract_training_job_name()
-            self.model_type = self._get_model_type()
+            if model_type:
+                self._set_model_type(model_type)
+            else:
+                self.model_type = self._get_model_type()
 
         # All done
         self.log.info(f"Model Initialized: {self.model_name}")
@@ -74,6 +78,11 @@ class Model(Artifact):
             self.log.info(f"Model {self.model_name} not found in AWS Metadata!")
             return False
         return True
+
+    def _set_model_type(self, model_type: ModelType):
+        """Internal: Set the Model Type for this Model"""
+        self.model_type = model_type
+        self.upsert_sageworks_meta({"sageworks_model_type": self.model_type.value})
 
     def _get_model_type(self) -> ModelType:
         """Internal: Query the SageWorks Metadata to get the model type
