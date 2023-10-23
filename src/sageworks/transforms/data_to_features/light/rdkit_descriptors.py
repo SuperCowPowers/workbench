@@ -76,9 +76,16 @@ class RDKitDescriptors(DataToFeaturesLight):
             'NumRotatableBonds', 'NumAromaticRings', 'NumSaturatedRings',
             'NumAliphaticRings', 'NumAromaticCarbocycles'
         ]
+        best_20_descriptors = [
+            'MolLogP', 'MolWt', 'TPSA', 'NumHDonors', 'NumHAcceptors',
+            'NumRotatableBonds', 'NumAromaticRings', 'NumSaturatedRings',
+            'NumAliphaticRings', 'NumAromaticCarbocycles', 'HeavyAtomCount',
+            'RingCount', 'Chi0', 'Chi1', 'Kappa1', 'Kappa2', 'Kappa3',
+            'LabuteASA', 'FractionCSP3', 'HallKierAlpha'
+        ]
 
         # Super useful Molecular Descriptor Calculator Class
-        calc = MoleculeDescriptors.MolecularDescriptorCalculator(best_descriptors)
+        calc = MoleculeDescriptors.MolecularDescriptorCalculator(best_20_descriptors)
         column_names = calc.GetDescriptorNames()
 
         descriptor_values = [calc.CalcDescriptors(m) for m in molecules]
