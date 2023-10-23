@@ -16,7 +16,7 @@ class ComponentInterface(ABC):
       - The 'generate_component_figure' is optional (some components don't use Plotly figures)
     """
 
-    ComponentTypes = Union[go.Figure, dash_table.DataTable, dcc.Markdown, html.Div]
+    ComponentTypes = Union[dcc.Graph, go.Figure, dash_table.DataTable, dcc.Markdown, html.Div]
 
     @abstractmethod
     def create_component(self, component_id: str, **kwargs: Any) -> ComponentTypes:
