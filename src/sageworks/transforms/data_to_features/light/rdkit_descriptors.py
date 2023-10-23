@@ -11,7 +11,7 @@ from sageworks.utils import pandas_utils
 # Third Party Imports
 try:
     from rdkit import Chem
-    from rdkit.Chem import Descriptors
+    # from rdkit.Chem import Descriptors
     from rdkit.ML.Descriptors import MoleculeDescriptors
     from rdkit import RDLogger
 except ImportError:
@@ -83,17 +83,7 @@ class RDKitDescriptors(DataToFeaturesLight):
             "NumAliphaticRings",
             "NumAromaticCarbocycles",
         ]
-        best_20_descriptors = [
-            "MolLogP",
-            "MolWt",
-            "TPSA",
-            "NumHDonors",
-            "NumHAcceptors",
-            "NumRotatableBonds",
-            "NumAromaticRings",
-            "NumSaturatedRings",
-            "NumAliphaticRings",
-            "NumAromaticCarbocycles",
+        best_20_descriptors = best_descriptors + [
             "HeavyAtomCount",
             "RingCount",
             "Chi0",
@@ -105,9 +95,21 @@ class RDKitDescriptors(DataToFeaturesLight):
             "FractionCSP3",
             "HallKierAlpha",
         ]
+        best_30_descriptors = best_20_descriptors + [
+            "SMR_VSA1",
+            "SlogP_VSA1",
+            "EState_VSA1",
+            "VSA_EState1",
+            "PEOE_VSA1",
+            "NumValenceElectrons",
+            "NumRadicalElectrons",
+            "MaxPartialCharge",
+            "MinPartialCharge",
+            "MaxAbsPartialCharge",
+        ]
 
         # Super useful Molecular Descriptor Calculator Class
-        calc = MoleculeDescriptors.MolecularDescriptorCalculator(best_20_descriptors)
+        calc = MoleculeDescriptors.MolecularDescriptorCalculator(best_30_descriptors)
         column_names = calc.GetDescriptorNames()
 
         descriptor_values = [calc.CalcDescriptors(m) for m in molecules]
