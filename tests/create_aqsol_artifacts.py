@@ -44,9 +44,27 @@ if __name__ == "__main__":
     if recreate or not Model("aqsol-regression").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_features")
-        feature_list = ['sd', 'ocurrences', 'molwt', 'mollogp', 'molmr', 'heavyatomcount', 'numhacceptors', 'numhdonors',
-                        'numheteroatoms', 'numrotatablebonds', 'numvalenceelectrons', 'numaromaticrings', 'numsaturatedrings',
-                        'numaliphaticrings', 'ringcount', 'tpsa', 'labuteasa', 'balabanj', 'bertzct']
+        feature_list = [
+            "sd",
+            "ocurrences",
+            "molwt",
+            "mollogp",
+            "molmr",
+            "heavyatomcount",
+            "numhacceptors",
+            "numhdonors",
+            "numheteroatoms",
+            "numrotatablebonds",
+            "numvalenceelectrons",
+            "numaromaticrings",
+            "numsaturatedrings",
+            "numaliphaticrings",
+            "ringcount",
+            "tpsa",
+            "labuteasa",
+            "balabanj",
+            "bertzct",
+        ]
         # exclude = ["id", "name", "inchi", "inchikey", "smiles", "solubility", "group"]
         # feature_list = [f for f in feature_set.column_names() if f not in exclude]
         features_to_model = FeaturesToModel("aqsol_features", "aqsol-regression", model_type=ModelType.REGRESSOR)
@@ -68,7 +86,7 @@ if __name__ == "__main__":
     if recreate or not FeatureSet("aqsol_rdkit_features").exists():
         rdkit_features = RDKitDescriptors("aqsol_data", "aqsol_rdkit_features")
         rdkit_features.set_output_tags(["aqsol", "public", "rdkit"])
-        query = 'SELECT id, solubility, smiles FROM aqsol_data'
+        query = "SELECT id, solubility, smiles FROM aqsol_data"
         rdkit_features.transform(target="solubility", id_column="udm_mol_bat_id", query=query)
 
     # Create the RDKIT based  regression Model
@@ -77,7 +95,9 @@ if __name__ == "__main__":
         feature_set = FeatureSet("aqsol_rdkit_features")
         exclude = ["id", "smiles", "solubility"]
         feature_list = [f for f in feature_set.column_names() if f not in exclude]
-        features_to_model = FeaturesToModel("aqsol_rdkit_features", "aqsol-rdkit-regression", model_type=ModelType.REGRESSOR)
+        features_to_model = FeaturesToModel(
+            "aqsol_rdkit_features", "aqsol-rdkit-regression", model_type=ModelType.REGRESSOR
+        )
         features_to_model.set_output_tags(["aqsol", "regression", "rdkit"])
         features_to_model.transform(
             target="solubility", description="AQSol/RDKit Regression Model", feature_list=feature_list

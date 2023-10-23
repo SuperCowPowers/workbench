@@ -200,7 +200,9 @@ class FeaturesToModel(Transform):
 
         # Call the Model make_ready method and set status to ready
         time.sleep(1)  # Give the model a second to get ready
-        output_model = Model(self.output_uuid, force_refresh=True)  # We have to do this since model_type is pulled at init
+        output_model = Model(
+            self.output_uuid, force_refresh=True
+        )  # We have to do this since model_type is pulled at init
         output_model.make_ready()
 
     def create_and_register_model(self):

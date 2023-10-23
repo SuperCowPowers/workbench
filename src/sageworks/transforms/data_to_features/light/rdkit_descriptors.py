@@ -72,16 +72,38 @@ class RDKitDescriptors(DataToFeaturesLight):
 
         # Get the descriptors that are most useful for Solubility
         best_descriptors = [
-            'MolLogP', 'MolWt', 'TPSA', 'NumHDonors', 'NumHAcceptors',
-            'NumRotatableBonds', 'NumAromaticRings', 'NumSaturatedRings',
-            'NumAliphaticRings', 'NumAromaticCarbocycles'
+            "MolLogP",
+            "MolWt",
+            "TPSA",
+            "NumHDonors",
+            "NumHAcceptors",
+            "NumRotatableBonds",
+            "NumAromaticRings",
+            "NumSaturatedRings",
+            "NumAliphaticRings",
+            "NumAromaticCarbocycles",
         ]
         best_20_descriptors = [
-            'MolLogP', 'MolWt', 'TPSA', 'NumHDonors', 'NumHAcceptors',
-            'NumRotatableBonds', 'NumAromaticRings', 'NumSaturatedRings',
-            'NumAliphaticRings', 'NumAromaticCarbocycles', 'HeavyAtomCount',
-            'RingCount', 'Chi0', 'Chi1', 'Kappa1', 'Kappa2', 'Kappa3',
-            'LabuteASA', 'FractionCSP3', 'HallKierAlpha'
+            "MolLogP",
+            "MolWt",
+            "TPSA",
+            "NumHDonors",
+            "NumHAcceptors",
+            "NumRotatableBonds",
+            "NumAromaticRings",
+            "NumSaturatedRings",
+            "NumAliphaticRings",
+            "NumAromaticCarbocycles",
+            "HeavyAtomCount",
+            "RingCount",
+            "Chi0",
+            "Chi1",
+            "Kappa1",
+            "Kappa2",
+            "Kappa3",
+            "LabuteASA",
+            "FractionCSP3",
+            "HallKierAlpha",
         ]
 
         # Super useful Molecular Descriptor Calculator Class
