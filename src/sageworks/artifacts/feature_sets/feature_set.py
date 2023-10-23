@@ -389,8 +389,8 @@ class FeatureSet(Artifact):
         self.details(recompute=True)
 
         # Call our underlying DataSource make_ready method
-        if not self.data_source.make_ready():
-            return False
+        if not self.data_source.ready():
+            self.data_source.make_ready()
 
         # Set ourselves to ready
         self.set_status("ready")
