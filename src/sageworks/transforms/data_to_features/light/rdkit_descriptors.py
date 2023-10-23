@@ -37,20 +37,12 @@ class RDKitDescriptors(DataToFeaturesLight):
         # Turn off warnings for RDKIT (revisit this)
         RDLogger.DisableLog("rdApp.*")
 
-    def transform_impl(self, target: str, **kwargs):
-        """Compute a Feature Set based on RDKit Descriptors
-        Args:
-            target(str): The name of the target column
-        """
-
-        # Set up our target column
-        self.target = target
+    def transform_impl(self, **kwargs):
+        """Compute a Feature Set based on RDKit Descriptors"""
 
         # Check the input DataFrame has the required columns
         if "smiles" not in self.input_df.columns:
             raise ValueError("Input DataFrame must have a 'smiles' column")
-        if target not in self.input_df.columns:
-            raise ValueError(f"Input DataFrame must have a '{target}' column")
 
         # Compute/add all the RDKIT Descriptors
         self.output_df = self.compute_rdkit_descriptors(self.input_df)
@@ -58,7 +50,8 @@ class RDKitDescriptors(DataToFeaturesLight):
         # Drop any NaNs (and INFs)
         self.output_df = pandas_utils.drop_nans(self.output_df, how="any")
 
-    def compute_rdkit_descriptors(self, process_df: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def compute_rdkit_descriptors(process_df: pd.DataFrame) -> pd.DataFrame:
         """Compute and add all the RDKit Descriptors
         Args:
             process_df(pd.DataFrame): The DataFrame to process and generate RDKit Descriptors
@@ -66,27 +59,26 @@ class RDKitDescriptors(DataToFeaturesLight):
             pd.DataFrame: The input DataFrame with all the RDKit Descriptors added
         """
 
-        # Hack:
-        process_df = process_df.head(100)
-
         # Conversion to Molecules
         molecules = [Chem.MolFromSmiles(smile) for smile in process_df["smiles"]]
 
         # Now get all the RDKIT Descriptors
-        all_descriptors = [x[0] for x in Descriptors._descList]
+        # all_descriptors = [x[0] for x in Descriptors._descList]
 
         # There's an overflow issue that happens with the IPC descriptor, so we'll remove it
         # See: https://github.com/rdkit/rdkit/issues/1527
-        if "Ipc" in all_descriptors:
-            all_descriptors.remove("Ipc")
+        # if "Ipc" in all_descriptors:
+        #    all_descriptors.remove("Ipc")
 
-        # FIXME: Stupid hack
-        all_descriptors = all_descriptors[:10]
-        print(f"Using {len(all_descriptors)} descriptors")
-        print(all_descriptors)
+        # Get the descriptors that are most useful for Solubility
+        best_descriptors = [
+            'MolLogP', 'MolWt', 'TPSA', 'NumHDonors', 'NumHAcceptors',
+            'NumRotatableBonds', 'NumAromaticRings', 'NumSaturatedRings',
+            'NumAliphaticRings', 'NumAromaticCarbocycles'
+        ]
 
         # Super useful Molecular Descriptor Calculator Class
-        calc = MoleculeDescriptors.MolecularDescriptorCalculator(all_descriptors)
+        calc = MoleculeDescriptors.MolecularDescriptorCalculator(best_descriptors)
         column_names = calc.GetDescriptorNames()
 
         descriptor_values = [calc.CalcDescriptors(m) for m in molecules]
@@ -98,6 +90,7 @@ if __name__ == "__main__":
     """Exercise the RDKitDescriptors Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    data_to_features = RDKitDescriptors("logs_test_data_clean", "test_rdkit_features")
-    data_to_features.set_output_tags(["logS", "test", "proprietary"])
-    data_to_features.transform(target="udm_asy_res_value", id_column="udm_mol_bat_id", event_time_column="udm_asy_date")
+    data_to_features = RDKitDescriptors("aqsol_data", "aqsol_rdkit_features")
+    data_to_features.set_output_tags(["logS", "rdkit", "public"])
+    query = 'SELECT id, "group", solubility, smiles FROM aqsol_data'
+    data_to_features.transform(target="solubility", id_column="udm_mol_bat_id", query=query)

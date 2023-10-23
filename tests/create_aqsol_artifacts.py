@@ -17,6 +17,7 @@ from sageworks.artifacts.endpoints.endpoint import Endpoint
 
 from sageworks.transforms.data_loaders.light.s3_to_data_source_light import S3ToDataSourceLight
 from sageworks.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
+from sageworks.transforms.data_to_features.light.rdkit_descriptors import RDKitDescriptors
 from sageworks.transforms.features_to_model.features_to_model import FeaturesToModel
 from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 
@@ -37,22 +38,53 @@ if __name__ == "__main__":
     if recreate or not FeatureSet("aqsol_features").exists():
         data_to_features = DataToFeaturesLight("aqsol_data", "aqsol_features")
         data_to_features.set_output_tags(["aqsol", "public"])
-        data_to_features.transform(id_column="name", target_column="solubility")
+        data_to_features.transform(id_column="id", target_column="solubility")
 
     # Create the aqsol solubility regression Model
     if recreate or not Model("aqsol-regression").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_features")
-        exclude = ["id", "name", "inchi", "inchikey", "smiles", "solubility"]
-        feature_list = [f for f in feature_set.column_names() if f not in exclude]
+        feature_list = ['sd', 'ocurrences', 'molwt', 'mollogp', 'molmr', 'heavyatomcount', 'numhacceptors', 'numhdonors',
+                        'numheteroatoms', 'numrotatablebonds', 'numvalenceelectrons', 'numaromaticrings', 'numsaturatedrings',
+                        'numaliphaticrings', 'ringcount', 'tpsa', 'labuteasa', 'balabanj', 'bertzct']
+        # exclude = ["id", "name", "inchi", "inchikey", "smiles", "solubility", "group"]
+        # feature_list = [f for f in feature_set.column_names() if f not in exclude]
         features_to_model = FeaturesToModel("aqsol_features", "aqsol-regression", model_type=ModelType.REGRESSOR)
         features_to_model.set_output_tags(["aqsol", "regression"])
         features_to_model.transform(
             target="solubility", description="AQSol Regression Model", feature_list=feature_list
         )
 
-    # Create the wine classification Endpoint
+    # Create the aqsol regression Endpoint
     if recreate or not Endpoint("aqsol-regression-end").exists():
         model_to_endpoint = ModelToEndpoint("aqsol-regression", "aqsol-regression-end")
         model_to_endpoint.set_output_tags(["aqsol", "regression"])
+        model_to_endpoint.transform()
+
+    #
+    # RDKIT Descriptor Artifacts
+    #
+    # Create the rdkit FeatureSet
+    if recreate or not FeatureSet("aqsol_rdkit_features").exists():
+        rdkit_features = RDKitDescriptors("aqsol_data", "aqsol_rdkit_features")
+        data_to_features.set_output_tags(["aqsol", "public", "rdkit"])
+        query = 'SELECT id, "group", solubility, smiles FROM aqsol_data'
+        rdkit_features.transform(target="solubility", id_column="udm_mol_bat_id", query=query)
+
+    # Create the RDKIT based  regression Model
+    if recreate or not Model("aqsol-rdkit-regression").exists():
+        # Compute our features
+        feature_set = FeatureSet("aqsol_rdkit_features")
+        exclude = ["id", "smiles", "solubility"]
+        feature_list = [f for f in feature_set.column_names() if f not in exclude]
+        features_to_model = FeaturesToModel("aqsol_rdkit_features", "aqsol-rdkit-regression", model_type=ModelType.REGRESSOR)
+        features_to_model.set_output_tags(["aqsol", "regression", "rdkit"])
+        features_to_model.transform(
+            target="solubility", description="AQSol/RDKit Regression Model", feature_list=feature_list
+        )
+
+    # Create the aqsol regression Endpoint
+    if recreate or not Endpoint("aqsol-rdkit-regression-end").exists():
+        model_to_endpoint = ModelToEndpoint("aqsol-rdkit-regression", "aqsol-rdkit-regression-end")
+        model_to_endpoint.set_output_tags(["aqsol", "rdkit", "regression"])
         model_to_endpoint.transform()
