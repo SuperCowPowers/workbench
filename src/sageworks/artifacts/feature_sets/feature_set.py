@@ -385,12 +385,12 @@ class FeatureSet(Artifact):
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the FeatureSet is ready"""
 
-        # Make sure the FeatureSet Details are computed
-        self.details(recompute=True)
-
         # Call our underlying DataSource make_ready method
         if not self.data_source.ready():
             self.data_source.make_ready()
+
+        # Make sure the FeatureSet Details are computed
+        self.details(recompute=True)
 
         # Set ourselves to ready
         self.set_status("ready")
