@@ -27,7 +27,6 @@ class FeatureStore(Connector):
     def refresh_impl(self):
         """Load/reload the tables in the database"""
         # Grab all the Feature Groups in the AWS Feature Store
-        print("Reading Feature Store Database...")
         _feature_groups = self.sm_client.list_feature_groups()["FeatureGroupSummaries"]
         _fg_names = [feature_group["FeatureGroupName"] for feature_group in _feature_groups]
 
