@@ -78,6 +78,7 @@ class PandasToData(Transform):
         Args:
             overwrite (bool): Overwrite the existing data in the SageWorks S3 Bucket
         """
+        self.log.info(f"DataFrame to SageWorks DataSource: {self.output_uuid}...")
 
         # Set up our metadata storage
         sageworks_meta = {"sageworks_tags": self.output_tags}

@@ -1,6 +1,25 @@
 import os
 import sys
 import logging
+from collections import defaultdict
+import time
+
+
+class ThrottlingFilter(logging.Filter):
+    def __init__(self, rate_seconds=60):
+        super().__init__()
+        self.rate_seconds = rate_seconds
+        self.last_log_times = defaultdict(lambda: 0)
+
+    def filter(self, record):
+        last_log_time = self.last_log_times[record.msg]
+        current_time = time.time()
+
+        if current_time - last_log_time > self.rate_seconds:
+            self.last_log_times[record.msg] = current_time
+            return True
+
+        return False
 
 
 # Define TRACE level
@@ -40,6 +59,8 @@ def logging_setup(color_logs=True):
     log = logging.getLogger("sageworks")
     if not log.hasHandlers():
         handler = logging.StreamHandler(stream=sys.stdout)
+        throttle_filter = ThrottlingFilter(rate_seconds=5)
+        handler.addFilter(throttle_filter)
         formatter = ColoredFormatter(
             "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
@@ -66,7 +87,6 @@ def logging_setup(color_logs=True):
 
 
 if __name__ == "__main__":
-    import time
     # Uncomment to test the SAGEWORKS_DEBUG env variable
     # os.environ["SAGEWORKS_DEBUG"] = "True"
 
@@ -85,5 +105,8 @@ if __name__ == "__main__":
     my_log.info("This should be a nice color")
     my_log.trace("This color should stand out from debug and info")
     my_log.warning("This should be a color that attracts attention")
+    my_log.warning("ThrottlingFilter should work AFTER this message")
+    my_log.warning("ThrottlingFilter should work AFTER this message")
+    my_log.warning("ThrottlingFilter should work AFTER this message")
     my_log.error("This should be a bright, alert color")
     my_log.critical("This should be a bright, alert color")
