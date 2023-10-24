@@ -27,7 +27,7 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
         # Bernoulli Sampling has reasonable variance, so we're going to +1 the
         # sample percentage and then simply clamp it to 100 rows
         percentage = round(sample_rows * 100.0 / num_rows) + 1
-        data_source.log.warning(f"DataSource has {num_rows} rows.. sampling down to {sample_rows}...")
+        data_source.log.info(f"DataSource has {num_rows} rows.. sampling down to {sample_rows}...")
         query = f"SELECT * FROM {data_source.table_name} TABLESAMPLE BERNOULLI({percentage})"
     else:
         query = f"SELECT * FROM {data_source.table_name}"

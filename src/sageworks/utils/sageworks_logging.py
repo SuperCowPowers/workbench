@@ -1,8 +1,5 @@
 import os
-import logging
-
-
-import os
+import sys
 import logging
 
 
@@ -42,7 +39,7 @@ class ColoredFormatter(logging.Formatter):
 def logging_setup(color_logs=True):
     log = logging.getLogger("sageworks")
     if not log.hasHandlers():
-        handler = logging.StreamHandler()
+        handler = logging.StreamHandler(stream=sys.stdout)
         formatter = ColoredFormatter(
             "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
