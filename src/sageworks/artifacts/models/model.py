@@ -31,6 +31,7 @@ class Model(Artifact):
         my_model.summary()
         my_model.details()
     """
+
     def __init__(self, model_uuid: str, force_refresh: bool = False, model_type: ModelType = None):
         """Model Initialization
         Args:

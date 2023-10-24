@@ -11,6 +11,7 @@ from sageworks.utils import pandas_utils
 # Third Party Imports
 try:
     from rdkit import Chem
+
     # from rdkit.Chem import Descriptors
     from rdkit.ML.Descriptors import MoleculeDescriptors
     from rdkit import RDLogger
@@ -108,16 +109,16 @@ class RDKitDescriptors(DataToFeaturesLight):
             "MaxAbsPartialCharge",
         ]
         best_40_descriptors = best_30_descriptors + [
-            'MolMR',
-            'ExactMolWt',
-            'NOCount',
-            'NumHeteroatoms',
-            'NumAmideBonds',
-            'FpDensityMorgan1',
-            'FpDensityMorgan2',
-            'FpDensityMorgan3',
-            'MaxEStateIndex',
-            'MinEStateIndex',
+            "MolMR",
+            "ExactMolWt",
+            "NOCount",
+            "NumHeteroatoms",
+            "NumAmideBonds",
+            "FpDensityMorgan1",
+            "FpDensityMorgan2",
+            "FpDensityMorgan3",
+            "MaxEStateIndex",
+            "MinEStateIndex",
         ]
 
         # Super useful Molecular Descriptor Calculator Class

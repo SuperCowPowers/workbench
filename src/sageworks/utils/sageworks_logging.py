@@ -40,15 +40,15 @@ logging.Logger.trace = trace
 # Define a ColoredFormatter
 class ColoredFormatter(logging.Formatter):
     COLORS = {
-        'TRACE': '\033[38;5;141m',  # LightPurple
-        'DEBUG': '\033[38;5;111m',  # LightBlue
-        'INFO': '\033[38;5;113m',   # LightGreen
-        'WARNING': '\033[38;5;220m',  # Yellow
-        'ERROR': '\033[38;5;202m',  # Orange?
-        'CRITICAL': '\033[38;5;196m',  # Red
+        "TRACE": "\033[38;5;141m",  # LightPurple
+        "DEBUG": "\033[38;5;111m",  # LightBlue
+        "INFO": "\033[38;5;113m",  # LightGreen
+        "WARNING": "\033[38;5;220m",  # Yellow
+        "ERROR": "\033[38;5;202m",  # Orange?
+        "CRITICAL": "\033[38;5;196m",  # Red
     }
 
-    RESET = '\033[0m'
+    RESET = "\033[0m"
 
     def format(self, record):
         log_message = super().format(record)
@@ -61,12 +61,16 @@ def logging_setup(color_logs=True):
         handler = logging.StreamHandler(stream=sys.stdout)
         throttle_filter = ThrottlingFilter(rate_seconds=5)
         handler.addFilter(throttle_filter)
-        formatter = ColoredFormatter(
-            "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        ) if color_logs else logging.Formatter(
-            "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
+        formatter = (
+            ColoredFormatter(
+                "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+            if color_logs
+            else logging.Formatter(
+                "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
         )
         handler.setFormatter(formatter)
         log.addHandler(handler)
