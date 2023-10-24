@@ -17,7 +17,7 @@ try:
     from rdkit import RDLogger
 except ImportError:
     print("RDKit Python module not found! pip install rdkit")
-    sys.exit(1)
+    sys.exit(0)
 
 
 class RDKitDescriptors(DataToFeaturesLight):
