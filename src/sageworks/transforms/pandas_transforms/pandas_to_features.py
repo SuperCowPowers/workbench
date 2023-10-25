@@ -109,15 +109,20 @@ class PandasToFeatures(Transform):
             if pd.api.types.is_object_dtype(self.output_df[col].dtype):
                 self.output_df[col] = self.output_df[col].astype(pd.StringDtype())
 
-    def process_column_name(self, column):
-        """Call various methods to make sure the column is ready for Feature Store"""
+    def process_column_name(self, column: str, shorten: bool = False) -> str:
+        """Call various methods to make sure the column is ready for Feature Store
+        Args:
+            column (str): The column name to process
+            shorten (bool): Should we shorten the column name? (default: False)
+        """
         self.log.info(f"Processing column {column}...")
 
         # Make sure the column name is valid
         column = self.sanitize_column_name(column)
 
         # Make sure the column name isn't too long
-        column = self.shorten_column_name(column)
+        if shorten:
+            column = self.shorten_column_name(column)
 
         return column
 
@@ -185,9 +190,8 @@ class PandasToFeatures(Transform):
                 self.target_column,
             ]:
                 unique_values = self.output_df[feature].nunique()
-                print(f"Unique Values = {unique_values}")
-                if unique_values < 6:
-                    print(f"Converting object column {feature} to categorical")
+                if 1 < unique_values < 6:
+                    self.log.info(f"Converting  column {feature} to categorical (unique {unique_values}")
                     self.output_df[feature] = self.output_df[feature].astype("category")
                     categorical_columns.append(feature)
 
@@ -343,10 +347,15 @@ class PandasToFeatures(Transform):
 
         # Wait for the rows to be populated
         self.log.info(f"Waiting for AWS Feature Group {self.output_uuid} Offline Storage...")
-        while rows < expected_rows:
+        not_all_rows_retry = 5
+        while rows < expected_rows and not_all_rows_retry > 0:
             sleep_time = 5 if rows else 60
+            not_all_rows_retry -= 1 if rows else 0
             time.sleep(sleep_time)
             rows = self.output_feature_set.num_rows()
+            self.log.info(f"Offline Storage {self.output_uuid}: {rows} rows out of {expected_rows}")
+        if rows < expected_rows:
+            self.log.warning(f"Failed to reach expected rows ({rows} rows out of {expected_rows})")
         self.log.info(f"Success: Reached Expected Rows ({rows} rows)...")
 
 
