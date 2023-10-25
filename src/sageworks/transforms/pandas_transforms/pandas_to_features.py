@@ -99,7 +99,7 @@ class PandasToFeatures(Transform):
         time_column = self.output_df[self.event_time_column]
 
         # Check if the event_time_column is of type object or string convert it to DateTime
-        if time_column.dtypes == 'object' or time_column.dtypes.name == 'string':
+        if time_column.dtypes == "object" or time_column.dtypes.name == "string":
             self.log.info(f"Converting {self.event_time_column} to DateTime...")
             time_column = pd.to_datetime(time_column)
 
@@ -367,7 +367,9 @@ class PandasToFeatures(Transform):
         if rows == expected_rows:
             self.log.important(f"Success: Reached Expected Rows ({rows} rows)...")
         else:
-            self.log.warning(f"Did not reach expected rows ({rows}/{expected_rows}) but we're not sweating the small stuff...")
+            self.log.warning(
+                f"Did not reach expected rows ({rows}/{expected_rows}) but we're not sweating the small stuff..."
+            )
 
 
 if __name__ == "__main__":
