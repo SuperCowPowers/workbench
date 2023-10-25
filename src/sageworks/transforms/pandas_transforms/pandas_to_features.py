@@ -291,6 +291,7 @@ class PandasToFeatures(Transform):
         """Transform Implementation: Ingest the data into the Feature Group"""
 
         # Now we actually push the data into the Feature Group (called ingestion)
+        self.log.important("Ingesting rows into Feature Group...")
         try:
             ingest_manager = self.output_feature_group.ingest(self.output_df, max_processes=16, wait=False)
             ingest_manager.wait()
@@ -355,9 +356,9 @@ class PandasToFeatures(Transform):
             rows = self.output_feature_set.num_rows()
             self.log.info(f"Offline Storage {self.output_uuid}: {rows} rows out of {expected_rows}")
         if rows == expected_rows:
-            self.log.info(f"Success: Reached Expected Rows ({rows} rows)...")
+            self.log.important(f"Success: Reached Expected Rows ({rows} rows)...")
         else:
-            self.log.warning(f"Failed to reach expected rows ({rows} rows out of {expected_rows})")
+            self.log.warning(f"Did not reach expected rows ({rows}/{expected_rows}) but moving on...")
 
 
 if __name__ == "__main__":

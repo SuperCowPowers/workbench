@@ -26,11 +26,16 @@ class AWSAccountClamp:
             if cls.sageworks_bucket_name is None:
                 cls.log.critical("Could not find ENV var for SAGEWORKS_BUCKET!")
                 raise EnvironmentError("Could not find ENV var for SAGEWORKS_BUCKET!")
-            cls.account_id = boto3.client("sts").get_caller_identity()["Account"]
-            cls.region = boto3.session.Session().region_name
-            cls.session_time_delta = timedelta(minutes=50)
+            try:
+                cls.account_id = boto3.client("sts").get_caller_identity()["Account"]
+                cls.region = boto3.session.Session().region_name
+            except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
+                msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+                cls.log.critical(msg)
+                raise RuntimeError(msg)
 
             # Initialize the boto3 session (this is a refreshable session)
+            cls.session_time_delta = timedelta(minutes=50)
             cls.boto3_session = cls._init_boto3_session()
 
         # Return the singleton

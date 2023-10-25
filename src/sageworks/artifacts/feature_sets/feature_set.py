@@ -243,6 +243,7 @@ class FeatureSet(Artifact):
         """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
 
         # Delete the Feature Group and ensure that it gets deleted
+        self.log.important(f"Deleting FeatureSet {self.uuid}...")
         remove_fg = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session)
         remove_fg.delete()
         self.ensure_feature_group_deleted(remove_fg)
