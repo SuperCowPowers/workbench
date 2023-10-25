@@ -354,9 +354,10 @@ class PandasToFeatures(Transform):
             time.sleep(sleep_time)
             rows = self.output_feature_set.num_rows()
             self.log.info(f"Offline Storage {self.output_uuid}: {rows} rows out of {expected_rows}")
-        if rows < expected_rows:
+        if rows == expected_rows:
+            self.log.info(f"Success: Reached Expected Rows ({rows} rows)...")
+        else:
             self.log.warning(f"Failed to reach expected rows ({rows} rows out of {expected_rows})")
-        self.log.info(f"Success: Reached Expected Rows ({rows} rows)...")
 
 
 if __name__ == "__main__":
