@@ -386,6 +386,11 @@ class FeatureSet(Artifact):
         """This is a BLOCKING method that will wait until the FeatureSet is ready"""
 
         # Call our underlying DataSource make_ready method
+        self.data_source.refresh_meta()
+        if not self.data_source.exists():
+            self.log.critical(f"Data Source check failed for {self.uuid}")
+            self.log.critical("Delete this Feature Set and recreate it to fix this issue")
+            return False
         if not self.data_source.ready():
             self.data_source.make_ready()
 
@@ -395,6 +400,7 @@ class FeatureSet(Artifact):
         # Set ourselves to ready
         self.set_status("ready")
         self.refresh_meta()
+        return True
 
 
 if __name__ == "__main__":
