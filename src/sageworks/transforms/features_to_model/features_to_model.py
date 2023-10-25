@@ -180,12 +180,12 @@ class FeaturesToModel(Transform):
         )
 
         # Delete the existing model (if it exists)
-        self.log.info("Trying to delete existing model...")
+        self.log.important("Trying to delete existing model...")
         delete_model = Model(self.output_uuid, force_refresh=True)
         delete_model.delete()
 
         # Create Model and officially Register
-        self.log.info(f"Creating new model {self.output_uuid}...")
+        self.log.important(f"Creating new model {self.output_uuid}...")
         self.create_and_register_model()
 
     def post_transform(self, **kwargs):

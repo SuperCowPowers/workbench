@@ -23,7 +23,7 @@ class PandasToFeatures(Transform):
         to_features.transform()
     """
 
-    def __init__(self, output_uuid: str, auto_categorical=True):
+    def __init__(self, output_uuid: str, auto_categorical=False):
         """PandasToFeatures Initialization
         Args:
             output_uuid (str): The UUID of the FeatureSet to create
@@ -94,14 +94,23 @@ class PandasToFeatures(Transform):
             self.event_time_column = "event_time"
             self.output_df[self.event_time_column] = pd.Timestamp("now", tz="UTC")
 
-        # The event_time_column is defined so lets make sure it the right type for Feature Store
-        if pd.api.types.is_datetime64_any_dtype(self.output_df[self.event_time_column]):
+        # The event_time_column is defined so we need to make sure it's in ISO-8601 string format
+        # Note: AWS Feature Store only a particular ISO-8601 format not ALL ISO-8601 formats
+        time_column = self.output_df[self.event_time_column]
+
+        # Check if the event_time_column is of type object or string convert it to DateTime
+        if time_column.dtypes == 'object' or time_column.dtypes.name == 'string':
+            self.log.info(f"Converting {self.event_time_column} to DateTime...")
+            time_column = pd.to_datetime(time_column)
+
+        # so lets make sure it the right type for Feature Store
+        if pd.api.types.is_datetime64_any_dtype(time_column):
             self.log.info(f"Converting {self.event_time_column} to ISOFormat Date String before FeatureSet Creation...")
 
             # Convert the datetime DType to ISO-8601 string
             # TableFormat=ICEBERG does not support alternate formats for event_time field, it only supports String type.
-            self.output_df[self.event_time_column] = self.output_df[self.event_time_column].map(datetime_to_iso8601)
-            self.output_df[self.event_time_column] = self.output_df[self.event_time_column].astype(pd.StringDtype())
+            time_column = time_column.map(datetime_to_iso8601)
+            self.output_df[self.event_time_column] = time_column.astype(pd.StringDtype())
 
     def _convert_objs_to_string(self):
         """Internal: AWS Feature Store doesn't know how to store object dtypes, so convert to String"""
@@ -115,7 +124,7 @@ class PandasToFeatures(Transform):
             column (str): The column name to process
             shorten (bool): Should we shorten the column name? (default: False)
         """
-        self.log.info(f"Processing column {column}...")
+        self.log.debug(f"Processing column {column}...")
 
         # Make sure the column name is valid
         column = self.sanitize_column_name(column)
@@ -191,7 +200,7 @@ class PandasToFeatures(Transform):
             ]:
                 unique_values = self.output_df[feature].nunique()
                 if 1 < unique_values < 6:
-                    self.log.info(f"Converting  column {feature} to categorical (unique {unique_values}")
+                    self.log.info(f"Converting  column {feature} to categorical (unique {unique_values})")
                     self.output_df[feature] = self.output_df[feature].astype("category")
                     categorical_columns.append(feature)
 
@@ -358,7 +367,7 @@ class PandasToFeatures(Transform):
         if rows == expected_rows:
             self.log.important(f"Success: Reached Expected Rows ({rows} rows)...")
         else:
-            self.log.warning(f"Did not reach expected rows ({rows}/{expected_rows}) but moving on...")
+            self.log.warning(f"Did not reach expected rows ({rows}/{expected_rows}) but we're not sweating the small stuff...")
 
 
 if __name__ == "__main__":

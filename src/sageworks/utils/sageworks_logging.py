@@ -24,7 +24,7 @@ class ThrottlingFilter(logging.Filter):
 
 # Define TRACE level
 # Note: see https://docs.python.org/3/library/logging.html#logging-levels
-TRACE_LEVEL_NUM = 25  # Between INFO and WARNING
+TRACE_LEVEL_NUM = 15  # Between DEBUG and INFO
 logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
 
 
@@ -35,7 +35,7 @@ def trace(self, message, *args, **kws):
 
 # Define IMPORTANT level
 # Note: see https://docs.python.org/3/library/logging.html#logging-levels
-IMPORTANT_LEVEL_NUM = 27  # Between INFO and WARNING
+IMPORTANT_LEVEL_NUM = 25  # Between INFO and WARNING
 logging.addLevelName(IMPORTANT_LEVEL_NUM, "IMPORTANT")
 
 
@@ -52,20 +52,20 @@ logging.Logger.important = important
 # Define a ColoredFormatter
 class ColoredFormatter(logging.Formatter):
     COLORS_DARK_THEME = {
-        "TRACE": "\033[38;5;141m",  # LightPurple
-        "IMPORTANT": "\033[38;5;141m",  # LightPurple
         "DEBUG": "\033[38;5;111m",  # LightBlue
+        "TRACE": "\033[38;5;141m",  # LightPurple
         "INFO": "\033[38;5;113m",  # LightGreen
-        "WARNING": "\033[38;5;172m",  # Yellow
+        "IMPORTANT": "\033[38;5;154m",  # Lime
+        "WARNING": "\033[38;5;172m",  # DarkYellow
         "ERROR": "\033[38;5;202m",  # Orange
         "CRITICAL": "\033[38;5;196m",  # Red
     }
     COLORS_LIGHT_THEME = {
-        "TRACE": "\033[38;5;91m",  # Purple
-        "IMPORTANT": "\033[38;5;91m",  # Purple
         "DEBUG": "\033[38;5;21m",  # Blue
+        "TRACE": "\033[38;5;91m",  # Purple
         "INFO": "\033[38;5;22m",  # Green
-        "WARNING": "\033[38;5;94m",  # Yellow
+        "IMPORTANT": "\033[38;5;178m",  # Lime
+        "WARNING": "\033[38;5;94m",  # DarkYellow
         "ERROR": "\033[38;5;166m",  # Orange
         "CRITICAL": "\033[38;5;124m",  # Red
     }
@@ -129,9 +129,9 @@ if __name__ == "__main__":
     logging.getLogger("sageworks").setLevel(logging.DEBUG)
     my_log.debug("\n\nColorized Logging...")
     my_log.debug("This should be a muted color")
+    my_log.trace("Trace color should stand out from debug")
     my_log.info("This should be a nice color")
-    my_log.important("Important color should stand out from debug and info")
-    my_log.trace("Trace color should stand out from debug and info")
+    my_log.important("Important color should stand out from info")
     my_log.warning("This should be a color that attracts attention")
     my_log.warning("ThrottlingFilter should work AFTER this message")
     my_log.warning("ThrottlingFilter should work AFTER this message")

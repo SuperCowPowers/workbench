@@ -66,7 +66,7 @@ def numeric_stats(df):
     return df.describe().round(2).T.drop("count", axis=1)
 
 
-def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float = 20) -> pd.DataFrame:
+def drop_nans(input_df: pd.DataFrame, how: str = "all", nan_drop_percent: float = 50) -> pd.DataFrame:
     """Dropping NaNs in rows and columns. Obviously lots of ways to do this, so picked some reasonable defaults,
     we can certainly change this later with a more formal set of operations and arguments
     """
@@ -83,14 +83,17 @@ def drop_nans(input_df: pd.DataFrame, how: str = "any", nan_drop_percent: float 
     output_df = output_df.drop(drop_columns, axis=1)
 
     # Report on Dropped Columns
+    nan_warn_percent = 0
     for name, percent in column_nan_percent.items():
+        if percent > nan_warn_percent:
+            log.important(f"Column ({name}) has {percent}% NaN Values")
         if percent > nan_drop_percent:
             log.warning(f"Dropping Column ({name}) with {percent}% NaN Values!")
 
     # Drop Rows that have NaNs in them
     output_df.dropna(axis=0, how=how, inplace=True)
     if len(output_df) != orig_num_rows:
-        log.info(f"Dropping {orig_num_rows - len(output_df)} rows that have a NaN in them")
+        log.important(f"Dropping {orig_num_rows - len(output_df)} rows that have a NaN in them")
         output_df.reset_index(drop=True, inplace=True)
 
     return output_df
