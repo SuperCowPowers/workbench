@@ -325,8 +325,8 @@ class PandasToFeatures(Transform):
         self.output_feature_set.set_status("initializing")
 
         # Wait for offline storage of the Feature Group to be ready
-        self.log.info("Waiting for Feature Group Offline storage to be ready...")
-        self.log.info("Note: This will often take 10-20 minutes...go have coffee or lunch :)")
+        self.log.important("Waiting for Feature Group Offline storage to be ready...")
+        self.log.important("This will often take 10-20 minutes...go have coffee or lunch :)")
         self.wait_for_rows(self.expected_rows)
 
         # Call the FeatureSet make_ready method to compute a bunch of EDA stuff
