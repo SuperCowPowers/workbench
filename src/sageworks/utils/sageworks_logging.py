@@ -33,20 +33,43 @@ def trace(self, message, *args, **kws):
         self._log(TRACE_LEVEL_NUM, message, args, **kws)
 
 
-# Add the trace level to the logger
+# Define IMPORTANT level
+# Note: see https://docs.python.org/3/library/logging.html#logging-levels
+IMPORTANT_LEVEL_NUM = 27  # Between INFO and WARNING
+logging.addLevelName(IMPORTANT_LEVEL_NUM, "IMPORTANT")
+
+
+def important(self, message, *args, **kws):
+    if self.isEnabledFor(IMPORTANT_LEVEL_NUM):
+        self._log(IMPORTANT_LEVEL_NUM, message, args, **kws)
+
+
+# Add the trace and important level to the logger
 logging.Logger.trace = trace
+logging.Logger.important = important
 
 
 # Define a ColoredFormatter
 class ColoredFormatter(logging.Formatter):
-    COLORS = {
+    COLORS_DARK_THEME = {
         "TRACE": "\033[38;5;141m",  # LightPurple
+        "IMPORTANT": "\033[38;5;141m",  # LightPurple
         "DEBUG": "\033[38;5;111m",  # LightBlue
         "INFO": "\033[38;5;113m",  # LightGreen
         "WARNING": "\033[38;5;220m",  # Yellow
-        "ERROR": "\033[38;5;202m",  # Orange?
+        "ERROR": "\033[38;5;202m",  # Orange
         "CRITICAL": "\033[38;5;196m",  # Red
     }
+    COLORS_LIGHT_THEME = {
+        "TRACE": "\033[38;5;91m",  # Purple
+        "IMPORTANT": "\033[38;5;91m",  # Purple
+        "DEBUG": "\033[38;5;21m",  # Blue
+        "INFO": "\033[38;5;22m",  # Green
+        "WARNING": "\033[38;5;94m",  # Yellow
+        "ERROR": "\033[38;5;166m",  # Orange
+        "CRITICAL": "\033[38;5;124m",  # Red
+    }
+    COLORS = COLORS_DARK_THEME
 
     RESET = "\033[0m"
 
@@ -107,10 +130,11 @@ if __name__ == "__main__":
     my_log.debug("\n\nColorized Logging...")
     my_log.debug("This should be a muted color")
     my_log.info("This should be a nice color")
-    my_log.trace("This color should stand out from debug and info")
+    my_log.important("Important color should stand out from debug and info")
+    my_log.trace("Trace color should stand out from debug and info")
     my_log.warning("This should be a color that attracts attention")
     my_log.warning("ThrottlingFilter should work AFTER this message")
     my_log.warning("ThrottlingFilter should work AFTER this message")
     my_log.warning("ThrottlingFilter should work AFTER this message")
-    my_log.error("This should be a bright, alert color")
-    my_log.critical("This should be a bright, alert color")
+    my_log.error("This should be a bright color")
+    my_log.critical("This should be an alert color")
