@@ -56,7 +56,7 @@ class ColoredFormatter(logging.Formatter):
         "IMPORTANT": "\033[38;5;141m",  # LightPurple
         "DEBUG": "\033[38;5;111m",  # LightBlue
         "INFO": "\033[38;5;113m",  # LightGreen
-        "WARNING": "\033[38;5;220m",  # Yellow
+        "WARNING": "\033[38;5;172m",  # Yellow
         "ERROR": "\033[38;5;202m",  # Orange
         "CRITICAL": "\033[38;5;196m",  # Red
     }

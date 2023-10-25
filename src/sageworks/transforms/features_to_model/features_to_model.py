@@ -181,7 +181,7 @@ class FeaturesToModel(Transform):
 
         # Delete the existing model (if it exists)
         self.log.info("Trying to delete existing model...")
-        delete_model = Model(self.output_uuid)
+        delete_model = Model(self.output_uuid, force_refresh=True)
         delete_model.delete()
 
         # Create Model and officially Register
@@ -193,7 +193,7 @@ class FeaturesToModel(Transform):
         self.log.info("Post-Transform: Calling make_ready() on the Model...")
 
         # Okay, lets get our output model and set it to initializing
-        output_model = Model(self.output_uuid, model_type=self.model_type)
+        output_model = Model(self.output_uuid, model_type=self.model_type, force_refresh=True)
         output_model.set_status("initializing")
 
         # Call the Model make_ready method
