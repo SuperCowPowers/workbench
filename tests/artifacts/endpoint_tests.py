@@ -40,8 +40,7 @@ def test():
     # Compute performance metrics for our test predictions
     target_column = "class_number_of_rings"
     metrics = my_endpoint.regression_metrics(target_column, result_df)
-    for metric, value in metrics.items():
-        print(f"{metric}: {value:0.3f}")
+    print(metrics)
 
 
 if __name__ == "__main__":

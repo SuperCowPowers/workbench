@@ -31,7 +31,7 @@ class DataDetailsMarkdown(ComponentInterface):
         <br>**Columns:** <<num_columns>>
         <br>**Created/Mod:** <<created>> / <<modified>>
         <br>**Tags:** <<sageworks_tags>>
-        <br>**S3:** <<s3_storage_location>>
+        <br>**Input:** <<input>>
 
         #### Numeric Columns
         <<numeric_column_details>>
