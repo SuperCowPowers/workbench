@@ -36,8 +36,10 @@ class ModelWebView(ArtifactsWebView):
             dict: The details for the given Model (or None if not found)
         """
         model = Model(model_uuid)
-        if not model.exists() or not model.ready():
-            return None
+        if not model.exists():
+            return {'Status': 'Not Found'}
+        elif not model.ready():
+            return {'Status': 'Call SageWorks make_ready()'}
 
         # Return the Model Details
         return model.details()

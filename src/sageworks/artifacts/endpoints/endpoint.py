@@ -232,16 +232,19 @@ class Endpoint(Artifact):
         # Get details from our AWS Metadata
         details["status"] = self.endpoint_meta["EndpointStatus"]
         details["instance"] = self.endpoint_meta["InstanceType"]
-        details["instance_count"] = self.endpoint_meta["ProductionVariants"][0].get("InstanceCount", "-")
+        try:
+            details["instance_count"] = self.endpoint_meta["ProductionVariants"][0]["CurrentInstanceCount"]
+        except KeyError:
+            details["instance_count"] = "-"
 
         # Add the underlying model details
         details["model_name"] = self.model_name
         model_details = self.model_details()
-        details["model_type"] = model_details["model_type"]
-        details["model_metrics"] = model_details["model_metrics"]
-        details["confusion_matrix"] = model_details["confusion_matrix"]
-        details["regression_predictions"] = model_details["regression_predictions"]
-        details["inference_meta"] = model_details["inference_meta"]
+        details["model_type"] = model_details.get("model_type", "unknown")
+        details["model_metrics"] = model_details.get("model_metrics")
+        details["confusion_matrix"] = model_details.get("confusion_matrix")
+        details["regression_predictions"] = model_details.get("regression_predictions")
+        details["inference_meta"] = model_details.get("inference_meta")
 
         # Cache the details
         self.data_storage.set(storage_key, details)
@@ -459,7 +462,7 @@ if __name__ == "__main__":
     )
 
     # Grab an Endpoint object and pull some information from it
-    my_endpoint = Endpoint("wine-classification-end", force_refresh=True)
+    my_endpoint = Endpoint("wine-classification-end")
 
     # Let's do a check/validation of the Endpoint
     assert my_endpoint.exists()
@@ -472,7 +475,7 @@ if __name__ == "__main__":
     print(f"Tags: {my_endpoint.sageworks_tags()}")
 
     print("Details:")
-    print(f"{my_endpoint.details()}")
+    print(f"{my_endpoint.details(recompute=True)}")
 
     #
     # This section is all about INFERENCE TESTING

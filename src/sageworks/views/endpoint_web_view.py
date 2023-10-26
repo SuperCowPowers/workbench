@@ -36,8 +36,10 @@ class EndpointWebView(ArtifactsWebView):
             dict: The details for the given Model (or None if not found)
         """
         endpoint = Endpoint(endpoint_uuid)
-        if not endpoint.exists() or not endpoint.ready():
-            return None
+        if not endpoint.exists():
+            return {'Status': 'Not Found'}
+        elif not endpoint.ready():
+            return {'Status': 'Call SageWorks make_ready()'}
 
         # Return the Endpoint Details
         return endpoint.details()
