@@ -37,9 +37,9 @@ class ModelWebView(ArtifactsWebView):
         """
         model = Model(model_uuid)
         if not model.exists():
-            return {'Status': 'Not Found'}
+            return {"Status": "Not Found"}
         elif not model.ready():
-            return {'Status': 'Call SageWorks make_ready()'}
+            return {"Status": "Call SageWorks make_ready()"}
 
         # Return the Model Details
         return model.details()

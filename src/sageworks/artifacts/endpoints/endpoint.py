@@ -481,7 +481,6 @@ if __name__ == "__main__":
     # This section is all about INFERENCE TESTING
     INFERENCE_TESTING = False
     if INFERENCE_TESTING:
-
         REGRESSION = False
         if REGRESSION:
             my_endpoint = Endpoint("abalone-regression-end")

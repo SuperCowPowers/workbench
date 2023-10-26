@@ -58,11 +58,11 @@ class Endpoints(Connector):
         details = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
 
         # We just need the instance type from the Endpoint Config
-        endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=details['EndpointConfigName'])
+        endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=details["EndpointConfigName"])
         instance_type = endpoint_config["ProductionVariants"][0].get("InstanceType")
         if instance_type is None:
             mem_size = endpoint_config["ProductionVariants"][0]["ServerlessConfig"]["MemorySizeInMB"]
-            mem_in_gb = int(mem_size/1024)
+            mem_in_gb = int(mem_size / 1024)
             instance_type = f"Serverless({mem_in_gb}GB)"
         details["InstanceType"] = instance_type
         return details
