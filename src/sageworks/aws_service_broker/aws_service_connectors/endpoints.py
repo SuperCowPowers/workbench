@@ -25,8 +25,7 @@ class Endpoints(Connector):
             return False
 
     def refresh_impl(self):
-        """Load/reload the tables in the database"""
-        # Grab all the Endpoint Data from SageMaker
+        """Grab all the Endpoint Data from SageMaker"""
         self.log.info("Reading Endpoints from SageMaker...")
         _endpoints = self.sm_client.list_endpoints()["Endpoints"]
         _end_names = [_endpoint["EndpointName"] for _endpoint in _endpoints]
@@ -57,6 +56,15 @@ class Endpoints(Connector):
 
         # Grab the Model Group details from the AWS Model Registry
         details = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
+
+        # We just need the instance type from the Endpoint Config
+        endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=details['EndpointConfigName'])
+        instance_type = endpoint_config["ProductionVariants"][0].get("InstanceType")
+        if instance_type is None:
+            mem_size = endpoint_config["ProductionVariants"][0]["ServerlessConfig"]["MemorySizeInMB"]
+            mem_in_gb = int(mem_size/1024)
+            instance_type = f"Serverless({mem_in_gb}GB)"
+        details["InstanceType"] = instance_type
         return details
 
 
@@ -76,11 +84,8 @@ if __name__ == "__main__":
     my_endpoints = Endpoints()
     my_endpoints.refresh()
 
-    # List the Endpoint Names
+    # List the Endpoint Names and Details
     print("Endpoints:")
     for end_name in my_endpoints.endpoint_names():
         print(f"\t{end_name}")
-
-    # Get the details for a specific Endpoint
-    endpoint_info = my_endpoints.endpoint_details(end_name)
-    pprint(endpoint_info)
+        pprint(my_endpoints.endpoint_details(end_name))

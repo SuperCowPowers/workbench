@@ -295,13 +295,13 @@ class ArtifactsTextView(View):
         for endpoint, endpoint_info in data.items():
             # Get the SageWorks metadata for this Endpoint
             sageworks_meta = endpoint_info.get("sageworks_meta", {})
-
             summary = {
                 "Name": endpoint_info["EndpointName"],
+                "Instance": endpoint_info.get("InstanceType", "-"),
                 "Status": endpoint_info["EndpointStatus"],
                 "Created": self.datetime_string(endpoint_info.get("CreationTime")),
-                "DataCapture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
-                "Sampling(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
+                "Capture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
+                "Samp(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
             }
@@ -313,6 +313,7 @@ class ArtifactsTextView(View):
         else:
             columns = [
                 "Name",
+                "Instance",
                 "Status",
                 "Created",
                 "DataCapture",
@@ -413,8 +414,5 @@ if __name__ == "__main__":
     # Give a text summary of all the Artifacts in the AWS Account
     artifacts.summary()
 
-    # Create and then delete a specific artifact
-    artifacts.delete_artifact("test_data")
-
     # Give any broker threads time to finish
-    time.sleep(1)
+    time.sleep(2)
