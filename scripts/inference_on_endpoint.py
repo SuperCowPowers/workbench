@@ -19,17 +19,25 @@ S3_DATA_PATH = None
 FEATURE_SET_NAME = "abalone_feature_set"
 FEATURE_SET_NAME = "aqsol_features"
 FEATURE_SET_NAME = "hlm_phase2_reg_0_230830"
+FEATURE_SET_NAME = "stab_phase_2_features"
+FEATURE_SET_NAME = "solubility_test_features"
 # FEATURE_SET_NAME = None
 
 ENDPOINT_NAME = "abalone-regression-end"
 ENDPOINT_NAME = "aqsol-solubility-regression-end"
 ENDPOINT_NAME = "hlm-phase2-reg-0-230830-test-endpoint"
+ENDPOINT_NAME = "stab-regression-end"
+ENDPOINT_NAME = "solubility-test-regression-end"
 
 # These should be filled in
-DATA_NAME = ("hlm-phase2-holdout-2023-10-21",)
+DATA_NAME = ("stab_phase_2_features(20)",)
 DATA_HASH = ("12345",)
-DESCRIPTION = "Test HML Phase2 Data"
-TARGET_COLUMN = "icl"
+DESCRIPTION = "Test Stability Phase2 Features"
+TARGET_COLUMN = "stability"
+DATA_NAME = ("solubility_test_features(20)",)
+DATA_HASH = ("12345",)
+DESCRIPTION = "Test Solubility Features"
+TARGET_COLUMN = "log_s"
 
 if S3_DATA_PATH is not None:
     # Read the data from S3
