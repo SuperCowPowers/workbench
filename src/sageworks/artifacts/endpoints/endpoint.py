@@ -226,7 +226,20 @@ class Endpoint(Artifact):
         if cached_details and not recompute:
             return cached_details
 
+        # Fill in all the details about this Endpoint
         details = self.summary()
+
+        """
+        # Get the Endpoint Description
+        description = self.sm_session.describe_endpoint(EndpointName=endpoint_name)
+
+        # Check the endpoint configuration to determine if it's serverless
+        # Note: SageMaker doesn't have a direct "serverless" property, so you may need to use other criteria
+        endpoint_config_name = description['EndpointConfigName']
+        endpoint_config = sagemaker.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
+        """
+
+        # Add the underlying model details
         details["model_info"] = self.model_details()
 
         # Cache the details
@@ -328,8 +341,10 @@ class Endpoint(Artifact):
         mae = mean_absolute_error(y_true, y_pred)
         rmse = sqrt(mean_squared_error(y_true, y_pred))
         r2 = r2_score(y_true, y_pred)
-        mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100  # Mean Absolute Percentage Error
-        medae = median_absolute_error(y_true, y_pred)  # Median Absolute Error
+        # Mean Absolute Percentage Error
+        mape = np.mean(np.where(y_true != 0, np.abs((y_true - y_pred) / y_true), np.abs(y_true - y_pred))) * 100
+        # Median Absolute Error
+        medae = median_absolute_error(y_true, y_pred)
 
         # Return the metrics
         return pd.DataFrame.from_records([{"MAE": mae, "RMSE": rmse, "R2": r2, "MAPE": mape, "MedAE": medae}])
@@ -443,21 +458,7 @@ if __name__ == "__main__":
     )
 
     # Grab an Endpoint object and pull some information from it
-    REGRESSION = True
-    if REGRESSION:
-        my_endpoint = Endpoint("abalone-regression-end")
-        feature_to_pandas = FeaturesToPandas("abalone_feature_set")
-        my_target_column = "class_number_of_rings"
-        data_name = ("abalone_holdout_2023_10_19",)
-        data_hash = ("12345",)
-        description = "Test Abalone Data"
-    else:
-        my_endpoint = Endpoint("wine-classification-end")
-        feature_to_pandas = FeaturesToPandas("wine_features")
-        my_target_column = "wine_class"
-        data_name = ("wine_holdout_2023_10_19",)
-        data_hash = ("67890",)
-        description = "Test Wine Data"
+    my_endpoint = Endpoint("wine-classification-end")
 
     # Let's do a check/validation of the Endpoint
     assert my_endpoint.exists()
@@ -469,25 +470,49 @@ if __name__ == "__main__":
     # Get the tags associated with this Endpoint
     print(f"Tags: {my_endpoint.sageworks_tags()}")
 
-    # Transform the DataSource into a Pandas DataFrame (with max_rows = 500)
-    feature_to_pandas.transform(max_rows=500)
+    print("Details:")
+    print(f"{my_endpoint.details()}")
 
-    # Grab the output and show it
-    my_feature_df = feature_to_pandas.get_output()
-    print(my_feature_df)
+    #
+    # This section is all about INFERENCE TESTING
+    INFERENCE_TESTING = False
+    if INFERENCE_TESTING:
 
-    # Okay now run inference against our Features DataFrame
-    my_prediction_df = my_endpoint.predict(my_feature_df)
-    print(my_prediction_df)
+        REGRESSION = False
+        if REGRESSION:
+            my_endpoint = Endpoint("abalone-regression-end")
+            feature_to_pandas = FeaturesToPandas("abalone_feature_set")
+            my_target_column = "class_number_of_rings"
+            data_name = ("abalone_holdout_2023_10_19",)
+            data_hash = ("12345",)
+            description = "Test Abalone Data"
+        else:
+            my_endpoint = Endpoint("wine-classification-end")
+            feature_to_pandas = FeaturesToPandas("wine_features")
+            my_target_column = "wine_class"
+            data_name = ("wine_holdout_2023_10_19",)
+            data_hash = ("67890",)
+            description = "Test Wine Data"
 
-    # Compute performance metrics for out test predictions
-    if REGRESSION:
-        my_metrics = my_endpoint.regression_metrics(my_target_column, my_prediction_df)
-    else:
-        my_metrics = my_endpoint.classification_metrics(my_target_column, my_prediction_df)
-    print(my_metrics)
+        # Transform the DataSource into a Pandas DataFrame (with max_rows = 500)
+        feature_to_pandas.transform(max_rows=500)
 
-    # Capture the performance metrics for this Endpoint
-    my_endpoint.capture_performance_metrics(
-        my_feature_df, my_target_column, data_name=data_name, data_hash=data_hash, description=description
-    )
+        # Grab the output and show it
+        my_feature_df = feature_to_pandas.get_output()
+        print(my_feature_df)
+
+        # Okay now run inference against our Features DataFrame
+        my_prediction_df = my_endpoint.predict(my_feature_df)
+        print(my_prediction_df)
+
+        # Compute performance metrics for out test predictions
+        if REGRESSION:
+            my_metrics = my_endpoint.regression_metrics(my_target_column, my_prediction_df)
+        else:
+            my_metrics = my_endpoint.classification_metrics(my_target_column, my_prediction_df)
+        print(my_metrics)
+
+        # Capture the performance metrics for this Endpoint
+        my_endpoint.capture_performance_metrics(
+            my_feature_df, my_target_column, data_name=data_name, data_hash=data_hash, description=description
+        )
