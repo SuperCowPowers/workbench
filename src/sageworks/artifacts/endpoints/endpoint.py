@@ -229,18 +229,19 @@ class Endpoint(Artifact):
         # Fill in all the details about this Endpoint
         details = self.summary()
 
-        """
-        # Get the Endpoint Description
-        description = self.sm_session.describe_endpoint(EndpointName=endpoint_name)
-
-        # Check the endpoint configuration to determine if it's serverless
-        # Note: SageMaker doesn't have a direct "serverless" property, so you may need to use other criteria
-        endpoint_config_name = description['EndpointConfigName']
-        endpoint_config = sagemaker.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
-        """
+        # Get details from our AWS Metadata
+        details["status"] = self.endpoint_meta["EndpointStatus"]
+        details["instance"] = self.endpoint_meta["InstanceType"]
+        details["instance_count"] = self.endpoint_meta["ProductionVariants"][0].get("InstanceCount", "-")
 
         # Add the underlying model details
-        details["model_info"] = self.model_details()
+        details["model_name"] = self.model_name
+        model_details = self.model_details()
+        details["model_type"] = model_details["model_type"]
+        details["model_metrics"] = model_details["model_metrics"]
+        details["confusion_matrix"] = model_details["confusion_matrix"]
+        details["regression_predictions"] = model_details["regression_predictions"]
+        details["inference_meta"] = model_details["inference_meta"]
 
         # Cache the details
         self.data_storage.set(storage_key, details)
@@ -458,7 +459,7 @@ if __name__ == "__main__":
     )
 
     # Grab an Endpoint object and pull some information from it
-    my_endpoint = Endpoint("wine-classification-end")
+    my_endpoint = Endpoint("wine-classification-end", force_refresh=True)
 
     # Let's do a check/validation of the Endpoint
     assert my_endpoint.exists()
