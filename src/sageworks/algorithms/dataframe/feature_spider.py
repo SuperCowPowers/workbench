@@ -8,16 +8,16 @@ from sklearn.preprocessing import StandardScaler
 
 # Feature Spider Class
 class FeatureSpider:
-    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target: str):
+    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target_column: str):
         """FeatureSpider: A Spider for data/feature investigation and QA
         Args:
              df: Pandas DataFrame
              features: List of feature column names
              id_column: Name of the ID column
-             target: Name of the target column
+             target_column: Name of the target column
         """
         # Check for expected columns (used later)
-        for column in [id_column, target] + features:
+        for column in [id_column, target_column] + features:
             if column not in df.columns:
                 print(f"DataFrame does not have required {column} Column!")
                 return
@@ -25,7 +25,7 @@ class FeatureSpider:
         # Set internal vars that are used later
         self.df = df
         self.id_column = id_column
-        self.target = target
+        self.target_column = target_column
         self.features = features
 
         # Build our KNN model pipeline with StandardScalar
@@ -33,8 +33,8 @@ class FeatureSpider:
         self.pipe = make_pipeline(StandardScaler(), knn)
 
         # Fit Model on features and target
-        y = df[target]
-        X = df[features]
+        y = df[self.target_column]
+        X = df[self.features]
         self.pipe.fit(X, y)
 
         # Grab the Standard Scalar and KNN from the pipeline model

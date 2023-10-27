@@ -21,9 +21,6 @@ from sageworks.artifacts.endpoints.endpoint import Endpoint
 
 
 if __name__ == "__main__":
-    # Get the path to the dataset in the repository data directory
-    test_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
-    abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
 
     # Delete the test_data DataSource
     ds = DataSource("test_data")
@@ -73,6 +70,54 @@ if __name__ == "__main__":
     end = Endpoint("abalone-classification-end")
     if end.exists():
         print("Deleting abalone-classification-end endpoint...")
+        end.delete()
+
+    # Wine Artifacts
+    ds = DataSource("wine_data")
+    if ds.exists():
+        print("Deleting wine_data...")
+        ds.delete()
+    fs = FeatureSet("wine_features")
+    if fs.exists():
+        print("Deleting wine_features...")
+        fs.delete()
+    m = Model("wine-classification")
+    if m.exists():
+        print("Deleting wine-classification model...")
+        m.delete()
+    end = Endpoint("wine-classification-end")
+    if end.exists():
+        print("Deleting wine-classification-end endpoint...")
+        end.delete()
+
+    # AQSol Artifacts
+    ds = DataSource("aqsol_data")
+    if ds.exists():
+        print("Deleting aqsol_data...")
+        ds.delete()
+    fs = FeatureSet("aqsol_features")
+    if fs.exists():
+        print("Deleting aqsol_features...")
+        fs.delete()
+    m = Model("aqsol-regression")
+    if m.exists():
+        print("Deleting aqsol-regression model...")
+        m.delete()
+    end = Endpoint("aqsol-regression-end")
+    if end.exists():
+        print("Deleting aqsol-regression-end endpoint...")
+        end.delete()
+    fs = FeatureSet("aqsol_rdkit_features")
+    if fs.exists():
+        print("Deleting aqsol_rdkit_features...")
+        fs.delete()
+    m = Model("aqsol-rdkit-regression")
+    if m.exists():
+        print("Deleting aqsol-rdkit-regression model...")
+        m.delete()
+    end = Endpoint("aqsol-rdkit-regression-end")
+    if end.exists():
+        print("Deleting aqsol-rdkit-regression-end endpoint...")
         end.delete()
 
     time.sleep(5)

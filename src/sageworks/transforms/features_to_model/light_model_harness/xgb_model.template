@@ -28,7 +28,7 @@ import pandas as pd
 
 if __name__ == "__main__":
     # Harness Template Parameters
-    target = "{{target}}"
+    target = "{{target_column}}"
     feature_list = {{feature_list}}
     model_type = "{{model_type}}"
     model_metrics_s3_path = "{{model_metrics_s3_path}}"

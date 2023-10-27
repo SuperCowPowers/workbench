@@ -42,10 +42,10 @@ class FeaturesToModel(Transform):
         self.model_description = None
         self.model_training_path = self.models_s3_path + "/training"
 
-    def generate_model_script(self, target: str, feature_list: list[str], model_type: ModelType) -> str:
+    def generate_model_script(self, target_column: str, feature_list: list[str], model_type: ModelType) -> str:
         """Fill in the model template with specific target and feature_list
         Args:
-            target (str): Column name of the target variable
+            target_column (str): Column name of the target variable
             feature_list (list[str]): A list of columns for the features
             model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER
         Returns:
@@ -62,7 +62,7 @@ class FeaturesToModel(Transform):
             xgb_template = fp.read()
 
         # Template replacements
-        xgb_script = xgb_template.replace("{{target}}", target)
+        xgb_script = xgb_template.replace("{{target_column}}", target_column)
         feature_list_str = json.dumps(feature_list)
         xgb_script = xgb_script.replace("{{feature_list}}", feature_list_str)
         xgb_script = xgb_script.replace("{{model_type}}", model_type)
@@ -74,11 +74,11 @@ class FeaturesToModel(Transform):
             fp.write(xgb_script)
         return script_name
 
-    def transform_impl(self, target: str, description: str, feature_list=None):
+    def transform_impl(self, target_column: str, description: str, feature_list=None):
         """Generic Features to Model: Note you should create a new class and inherit from
         this one to include specific logic for your Feature Set/Model
         Args:
-            target (str): Column name of the target variable
+            target_column (str): Column name of the target variable
             description (str): Description of the model
             feature_list (list[str]): A list of columns for the features (default None, will try to guess)
         """
@@ -90,8 +90,8 @@ class FeaturesToModel(Transform):
         s3_training_path = feature_set.create_s3_training_data()
         self.log.info(f"Created new training data {s3_training_path}...")
 
-        # Report the target field
-        self.log.info(f"Target field: {target}")
+        # Report the target column
+        self.log.info(f"Target column: {target_column}")
 
         # Did they specify a feature list?
         if feature_list:
@@ -118,7 +118,7 @@ class FeaturesToModel(Transform):
                 "write_time",
                 "api_invocation_time",
                 "is_deleted",
-            ] + [target]
+            ] + [target_column]
             feature_list = [c for c in all_columns if c not in filter_list]
 
             # Now remove any string or datetime columns from the Feature List
@@ -129,7 +129,7 @@ class FeaturesToModel(Transform):
             self.log.info(f"Guessed feature list: {feature_list}")
 
         # Generate our model script
-        script_path = self.generate_model_script(target, feature_list, self.model_type.value)
+        script_path = self.generate_model_script(target_column, feature_list, self.model_type.value)
 
         # Metric Definitions for Regression and Classification
         if self.model_type == ModelType.REGRESSOR:
@@ -140,9 +140,9 @@ class FeaturesToModel(Transform):
             ]
         else:
             # We need to get creative with the Classification Metrics
-            # Grab all the target class values
+            # Grab all the target column class values
             table = feature_set.data_source.table_name
-            targets = feature_set.query(f"select DISTINCT {target} FROM {table}")[target].to_list()
+            targets = feature_set.query(f"select DISTINCT {target_column} FROM {table}")[target_column].to_list()
             metrics = ["precision", "recall", "fscore"]
 
             # Dynamically create the metric definitions

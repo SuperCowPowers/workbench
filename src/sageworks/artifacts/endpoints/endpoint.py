@@ -329,17 +329,17 @@ class Endpoint(Artifact):
             )
 
     @staticmethod
-    def regression_metrics(target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+    def regression_metrics(target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
         Args:
-            target (str): Name of the target column
+            target_column (str): Name of the target column
             prediction_df (pd.DataFrame): DataFrame with the prediction results
         Returns:
             pd.DataFrame: DataFrame with the performance metrics
         """
 
         # Compute the metrics
-        y_true = prediction_df[target]
+        y_true = prediction_df[target_column]
         y_pred = prediction_df["prediction"]
 
         mae = mean_absolute_error(y_true, y_pred)
@@ -354,21 +354,21 @@ class Endpoint(Artifact):
         return pd.DataFrame.from_records([{"MAE": mae, "RMSE": rmse, "R2": r2, "MAPE": mape, "MedAE": medae}])
 
     @staticmethod
-    def classification_metrics(target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+    def classification_metrics(target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
         Args:
-            target (str): Name of the target column
+            target_column (str): Name of the target column
             prediction_df (pd.DataFrame): DataFrame with the prediction results
         Returns:
             pd.DataFrame: DataFrame with the performance metrics
         """
 
         # Get a list of unique labels
-        labels = prediction_df[target].unique()
+        labels = prediction_df[target_column].unique()
 
         # Calculate scores
         scores = precision_recall_fscore_support(
-            prediction_df[target], prediction_df["prediction"], average=None, labels=labels
+            prediction_df[target_column], prediction_df["prediction"], average=None, labels=labels
         )
 
         # Calculate ROC AUC
@@ -382,15 +382,15 @@ class Endpoint(Artifact):
 
         # One-hot encode the true labels
         lb = LabelBinarizer()
-        lb.fit(prediction_df[target])  # Replace 'true_labels' with your actual column name for true labels
-        y_true = lb.transform(prediction_df[target])
+        lb.fit(prediction_df[target_column])
+        y_true = lb.transform(prediction_df[target_column])
 
         roc_auc = roc_auc_score(y_true, y_score, multi_class="ovr", average=None)
 
         # Put the scores into a dataframe
         score_df = pd.DataFrame(
             {
-                target: labels,
+                target_column: labels,
                 "precision": scores[0],
                 "recall": scores[1],
                 "fscore": scores[2],
@@ -400,19 +400,19 @@ class Endpoint(Artifact):
         )
 
         # Sort the target labels
-        score_df = score_df.sort_values(by=[target], ascending=True)
+        score_df = score_df.sort_values(by=[target_column], ascending=True)
         return score_df
 
-    def confusion_matrix(self, target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+    def confusion_matrix(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the confusion matrix for this Endpoint
         Args:
-            target (str): Name of the target column
+            target_column (str): Name of the target column
             prediction_df (pd.DataFrame): DataFrame with the prediction results
         Returns:
             pd.DataFrame: DataFrame with the confusion matrix
         """
 
-        y_true = prediction_df[target]
+        y_true = prediction_df[target_column]
         y_pred = prediction_df["prediction"]
 
         # Compute the confusion matrix
