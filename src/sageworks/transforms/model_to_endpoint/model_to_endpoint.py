@@ -39,13 +39,13 @@ class ModelToEndpoint(Transform):
     def transform_impl(self):
         """Compute a Feature Set based on RDKit Descriptors"""
 
-        # Will this be a Serverless Endpoint?
-        if self.instance_type == "serverless":
-            self._serverless_deploy()
-            return
-
         # Get the Model Package ARN for our input model
         model_package_arn = Model(self.input_uuid).model_arn()
+
+        # Will this be a Serverless Endpoint?
+        if self.instance_type == "serverless":
+            self._serverless_deploy(model_package_arn)
+            return
 
         # Create a Model Package
         model_package = ModelPackage(role=self.sageworks_role_arn, model_package_arn=model_package_arn)
@@ -66,7 +66,7 @@ class ModelToEndpoint(Transform):
             tags=aws_tags,
         )
 
-    def _serverless_deploy(self, mem_size=2048, max_concurrency=5, wait=True):
+    def _serverless_deploy(self, model_package_arn, mem_size=2048, max_concurrency=5, wait=True):
         """Internal Method: Deploy the Endpoint in serverless mode
         Args:
             mem_size(int): Memory size in MB (default: 2048)
@@ -75,6 +75,18 @@ class ModelToEndpoint(Transform):
         """
         model_name = self.input_uuid
         endpoint_name = self.output_uuid
+        aws_tags = self.get_aws_tags()
+
+        # Create Low Level Model Resource (Endpoint Config below references this Model Resource)
+        self.log.info(f"Creating Low Level Model Package {model_name}...")
+        self.sm_client.create_model(
+            ModelName=model_name,
+            PrimaryContainer={
+                'ModelPackageName': model_package_arn,
+            },
+            ExecutionRoleArn=self.sageworks_role_arn,
+            Tags=aws_tags
+        )
 
         # Create Endpoint Config
         self.log.info(f"Creating Endpoint Config {endpoint_name}...")
