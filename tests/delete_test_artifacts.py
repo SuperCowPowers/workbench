@@ -1,19 +1,5 @@
-"""This Script DeleteS the SageWorks Artifacts in AWS needed for the tests
-
-DataSources:
-    - test_data
-    - abalone_data
-FeatureSets:
-    - test_feature_set
-    - abalone_feature_set
-Models:
-    - abalone-regression
-Endpoints:
-    - abalone-regression-end
-"""
-import sys
+"""This Script Deletes the SageWorks Artifacts in AWS used for the tests"""
 import time
-from pathlib import Path
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 from sageworks.artifacts.models.model import Model
@@ -21,7 +7,6 @@ from sageworks.artifacts.endpoints.endpoint import Endpoint
 
 
 if __name__ == "__main__":
-
     # Delete the test_data DataSource
     ds = DataSource("test_data")
     if ds.exists():

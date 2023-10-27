@@ -45,7 +45,9 @@ class DataToFeaturesLight(Transform):
         # This is a reference implementation that should be overridden by the subclass
         self.output_df = self.input_df
 
-    def post_transform(self, target_column=None, id_column=None, event_time_column=None, auto_categorize=True, **kwargs):
+    def post_transform(
+        self, target_column=None, id_column=None, event_time_column=None, auto_categorize=True, **kwargs
+    ):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set
         Args:
             target_column(str): The name of the target column in the output DataFrame (default: None)
