@@ -51,7 +51,7 @@ class Model(Artifact):
         aws_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS, force_refresh=force_refresh)
         self.model_meta = aws_meta.get(self.model_name)
         if self.model_meta is None:
-            self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
+            self.log.important(f"Could not find model {self.model_name} within current visibility scope")
             self.latest_model = None
             self.model_type = ModelType.UNKNOWN
         else:

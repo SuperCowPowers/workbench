@@ -41,7 +41,7 @@ class FeatureSet(Artifact):
 
         # Sanity check and then set up our FeatureSet attributes
         if self.feature_meta is None:
-            self.log.info(f"Could not find feature set {self.uuid} within current visibility scope")
+            self.log.important(f"Could not find feature set {self.uuid} within current visibility scope")
             self.data_source = None
             return
         else:
