@@ -32,7 +32,7 @@ class ModelToEndpoint(Transform):
         super().__init__(model_uuid, endpoint_uuid)
 
         # Set up all my instance attributes
-        self.instance_type = "serverless" if serverless else "ml.t2.medium"
+        self.instance_type = "serverless" if serverless else "ml.t3.medium"
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 
@@ -66,11 +66,11 @@ class ModelToEndpoint(Transform):
             tags=aws_tags,
         )
 
-    def _serverless_deploy(self, mem_size=2048, max_concurrency=10, wait=True):
+    def _serverless_deploy(self, mem_size=2048, max_concurrency=5, wait=True):
         """Internal Method: Deploy the Endpoint in serverless mode
         Args:
             mem_size(int): Memory size in MB (default: 2048)
-            max_concurrency(int): Max concurrency (default: 10)
+            max_concurrency(int): Max concurrency (default: 5)
             wait(bool): Wait for the Endpoint to be ready (default: True)
         """
         model_name = self.input_uuid
@@ -104,9 +104,9 @@ class ModelToEndpoint(Transform):
             self.log.important(f"Waiting for Endpoint {endpoint_name} to be ready...")
             describe_endpoint_response = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
             while describe_endpoint_response["EndpointStatus"] == "Creating":
+                time.sleep(30)
                 describe_endpoint_response = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
                 self.log.info(describe_endpoint_response["EndpointStatus"])
-                time.sleep(60)
             status = describe_endpoint_response["EndpointStatus"]
             self.log.important(f"Endpoint {endpoint_name} is now {status}...")
 
