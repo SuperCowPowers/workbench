@@ -92,9 +92,7 @@ class ModelToEndpoint(Transform):
         # Create Endpoint
         self.log.info(f"Creating Serverless Endpoint {endpoint_name}...")
         self.sm_client.create_endpoint(
-            EndpointName=endpoint_name,
-            EndpointConfigName=endpoint_name,
-            Tags=self.get_aws_tags()
+            EndpointName=endpoint_name, EndpointConfigName=endpoint_name, Tags=self.get_aws_tags()
         )
 
         # Wait for Endpoint to be ready
