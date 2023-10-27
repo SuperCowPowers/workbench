@@ -269,7 +269,7 @@ class Endpoint(Artifact):
 
     def model_type(self) -> str:
         """Return the type of model used in this Endpoint"""
-        return self.details()["model_info"].get("model_type", "unknown")
+        return self.details().get("model_type", "unknown")
 
     def capture_performance_metrics(
         self, feature_df: pd.DataFrame, target_column: str, data_name: str, data_hash: str, description: str
