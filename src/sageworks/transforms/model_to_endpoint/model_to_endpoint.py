@@ -82,10 +82,10 @@ class ModelToEndpoint(Transform):
         self.sm_client.create_model(
             ModelName=model_name,
             PrimaryContainer={
-                'ModelPackageName': model_package_arn,
+                "ModelPackageName": model_package_arn,
             },
             ExecutionRoleArn=self.sageworks_role_arn,
-            Tags=aws_tags
+            Tags=aws_tags,
         )
 
         # Create Endpoint Config
