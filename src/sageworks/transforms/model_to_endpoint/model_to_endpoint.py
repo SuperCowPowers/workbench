@@ -32,7 +32,7 @@ class ModelToEndpoint(Transform):
         super().__init__(model_uuid, endpoint_uuid)
 
         # Set up all my instance attributes
-        self.instance_type = "serverless" if serverless else "ml.t3.medium"
+        self.instance_type = "serverless" if serverless else "ml.t2.medium"
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 

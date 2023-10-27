@@ -228,7 +228,7 @@ class FeaturesToModel(Transform):
             framework_version="1.2.1",
             content_types=["text/csv"],
             response_types=["text/csv"],
-            inference_instances=["ml.t3.medium"],
+            inference_instances=["ml.t2.medium"],
             transform_instances=["ml.m5.large"],
             approval_status="Approved",
             description=self.model_description,
