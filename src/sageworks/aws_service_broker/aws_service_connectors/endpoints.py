@@ -54,7 +54,7 @@ class Endpoints(Connector):
     def _retrieve_details(self, endpoint_name: str) -> dict:
         """Internal: Do not call this method directly, use endpoint_details() instead"""
 
-        # Grab the Model Group details from the AWS Model Registry
+        # Grab the Endpoint details from AWS
         details = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
 
         # We just need the instance type from the Endpoint Config
@@ -62,8 +62,9 @@ class Endpoints(Connector):
         instance_type = endpoint_config["ProductionVariants"][0].get("InstanceType")
         if instance_type is None:
             mem_size = endpoint_config["ProductionVariants"][0]["ServerlessConfig"]["MemorySizeInMB"]
+            concurrency = endpoint_config["ProductionVariants"][0]["ServerlessConfig"]["MaxConcurrency"]
             mem_in_gb = int(mem_size / 1024)
-            instance_type = f"Serverless({mem_in_gb}GB)"
+            instance_type = f"Serverless ({mem_in_gb}GB/{concurrency})"
         details["InstanceType"] = instance_type
         return details
 

@@ -233,7 +233,7 @@ class Endpoint(Artifact):
         details["status"] = self.endpoint_meta["EndpointStatus"]
         details["instance"] = self.endpoint_meta["InstanceType"]
         try:
-            details["instance_count"] = self.endpoint_meta["ProductionVariants"][0]["CurrentInstanceCount"]
+            details["instance_count"] = self.endpoint_meta["ProductionVariants"][0]["CurrentInstanceCount"] or "-"
         except KeyError:
             details["instance_count"] = "-"
 
@@ -462,7 +462,7 @@ if __name__ == "__main__":
     )
 
     # Grab an Endpoint object and pull some information from it
-    my_endpoint = Endpoint("wine-classification-end")
+    my_endpoint = Endpoint("abalone-regression-end")
 
     # Let's do a check/validation of the Endpoint
     assert my_endpoint.exists()

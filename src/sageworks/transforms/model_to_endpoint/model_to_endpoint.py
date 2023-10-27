@@ -1,4 +1,5 @@
 """ModelToEndpoint: Deploy an Endpoint for a Model"""
+import time
 import botocore
 from sagemaker import ModelPackage
 from sagemaker.serializers import CSVSerializer
@@ -19,18 +20,29 @@ class ModelToEndpoint(Transform):
         to_endpoint.transform()
     """
 
-    def __init__(self, model_uuid: str, endpoint_uuid: str):
-        """ModelToEndpoint Initialization"""
+    def __init__(self, model_uuid: str, endpoint_uuid: str, serverless: bool = True):
+        """ModelToEndpoint Initialization
+        Args:
+            model_uuid(str): The UUID of the input Model
+            endpoint_uuid(str): The UUID of the output Endpoint
+            serverless(bool): Deploy the Endpoint in serverless mode (default: True)
+        """
 
         # Call superclass init
         super().__init__(model_uuid, endpoint_uuid)
 
         # Set up all my instance attributes
+        self.instance_type = "serverless" if serverless else "ml.t2.medium"
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 
     def transform_impl(self):
         """Compute a Feature Set based on RDKit Descriptors"""
+
+        # Will this be a Serverless Endpoint?
+        if self.instance_type == "serverless":
+            self._serverless_deploy()
+            return
 
         # Get the Model Package ARN for our input model
         model_package_arn = Model(self.input_uuid).model_arn()
@@ -47,12 +59,56 @@ class ModelToEndpoint(Transform):
         # Deploy an Endpoint
         model_package.deploy(
             initial_instance_count=1,
-            instance_type="ml.t2.medium",
+            instance_type=self.instance_type,
             endpoint_name=self.output_uuid,
             serializer=CSVSerializer(),
             deserializer=CSVDeserializer(),
             tags=aws_tags,
         )
+
+    def _serverless_deploy(self, mem_size=2048, max_concurrency=10, wait=True):
+        """Internal Method: Deploy the Endpoint in serverless mode
+        Args:
+            mem_size(int): Memory size in MB (default: 2048)
+            max_concurrency(int): Max concurrency (default: 10)
+            wait(bool): Wait for the Endpoint to be ready (default: True)
+        """
+        model_name = self.input_uuid
+        endpoint_name = self.output_uuid
+
+        # Create Endpoint Config
+        self.log.info(f"Creating Endpoint Config {endpoint_name}...")
+        self.sm_client.create_endpoint_config(
+            EndpointConfigName=endpoint_name,
+            ProductionVariants=[
+                {
+                    "ServerlessConfig": {"MemorySizeInMB": mem_size, "MaxConcurrency": max_concurrency},
+                    "ModelName": model_name,
+                    "VariantName": "AllTraffic",
+                }
+            ],
+        )
+
+        # Create Endpoint
+        self.log.info(f"Creating Serverless Endpoint {endpoint_name}...")
+        self.sm_client.create_endpoint(
+            EndpointName=endpoint_name,
+            EndpointConfigName=endpoint_name,
+            Tags=self.get_aws_tags()
+        )
+
+        # Wait for Endpoint to be ready
+        if not wait:
+            self.log.important(f"Endpoint {endpoint_name} is being created...")
+        else:
+            self.log.important(f"Waiting for Endpoint {endpoint_name} to be ready...")
+            describe_endpoint_response = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
+            while describe_endpoint_response["EndpointStatus"] == "Creating":
+                describe_endpoint_response = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
+                self.log.info(describe_endpoint_response["EndpointStatus"])
+                time.sleep(60)
+            status = describe_endpoint_response["EndpointStatus"]
+            self.log.important(f"Endpoint {endpoint_name} is now {status}...")
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling make_ready() on the Model"""
@@ -82,8 +138,8 @@ if __name__ == "__main__":
     """Exercise the ModelToEndpoint Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "aqsol-regression"
-    output_uuid = "aqsol-regression-endpoint"
+    input_uuid = "abalone-regression"
+    output_uuid = "abalone-regression-end"
     to_endpoint = ModelToEndpoint(input_uuid, output_uuid)
     to_endpoint.set_output_tags(["aqsol", "public"])
     to_endpoint.transform()
