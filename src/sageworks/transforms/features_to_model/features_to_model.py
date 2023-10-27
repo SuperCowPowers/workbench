@@ -112,21 +112,30 @@ class FeaturesToModel(Transform):
             all_columns = feature_set.column_names()
             filter_list = [
                 "id",
-                "event_time",
                 "__index_level_0__",
-                "training",
                 "write_time",
                 "api_invocation_time",
                 "is_deleted",
+                "event_time",
+                "training",
             ] + [target_column]
             feature_list = [c for c in all_columns if c not in filter_list]
 
-            # Now remove any string or datetime columns from the Feature List
-            # Note: AWS Feature Store has 4 column types (string, integral, fractional, and timestamp)
-            # Note2: The 'bigint' type = integral and 'double' type = fractional
-            column_details = feature_set.column_details()
-            feature_list = [c for c in feature_list if column_details[c] not in ["string", "timestamp"]]
-            self.log.info(f"Guessed feature list: {feature_list}")
+        # AWS Feature Store has 3 user column types (String, Integral, Fractional)
+        # and two internal types (Timestamp and Boolean). A Feature List for
+        # modeling can only contain Integral and Fractional types.
+        remove_columns = []
+        column_details = feature_set.column_details()
+        for column_name in feature_list:
+            if column_details[column_name] not in ["Integral", "Fractional"]:
+                self.log.warning(
+                    f"Removing {column_name} from feature list, improper type {column_details[column_name]}"
+                )
+                remove_columns.append(column_name)
+
+        # Remove the columns that are not Integral or Fractional
+        feature_list = [c for c in feature_list if c not in remove_columns]
+        self.log.important(f"Feature List for Modeling: {feature_list}")
 
         # Generate our model script
         script_path = self.generate_model_script(target_column, feature_list, self.model_type.value)
@@ -234,4 +243,4 @@ if __name__ == "__main__":
     output_uuid = "abalone-regression"
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.REGRESSOR)
     to_model.set_output_tags(["abalone", "public"])
-    to_model.transform(description="Abalone Regression Model", target="class_number_of_rings")
+    to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")

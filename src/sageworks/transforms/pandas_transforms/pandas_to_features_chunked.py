@@ -32,7 +32,7 @@ class PandasToFeaturesChunked(Transform):
         self.id_column = id_column
         self.event_time_column = event_time_column
         self.first_chunk = None
-        self.pandas_to_features = PandasToFeatures(output_uuid, auto_categorical=False)
+        self.pandas_to_features = PandasToFeatures(output_uuid, auto_categorize=False)
 
     def set_categorical_info(self, cat_column_info: dict[list[str]]):
         """Set the Categorical Columns

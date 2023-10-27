@@ -23,11 +23,11 @@ class PandasToFeatures(Transform):
         to_features.transform()
     """
 
-    def __init__(self, output_uuid: str, auto_categorical=False):
+    def __init__(self, output_uuid: str, auto_categorize=True):
         """PandasToFeatures Initialization
         Args:
             output_uuid (str): The UUID of the FeatureSet to create
-            auto_categorical (bool): Should we automatically create categorical columns?
+            auto_categorize (bool): Should we automatically create categorical columns?
         """
         # Call superclass init
         super().__init__("DataFrame", output_uuid)
@@ -38,7 +38,7 @@ class PandasToFeatures(Transform):
         self.target_column = None
         self.id_column = None
         self.event_time_column = None
-        self.auto_categorical = auto_categorical
+        self.auto_categorize = auto_categorize
         self.categorical_dtypes = {}
         self.output_df = None
         self.table_format = TableFormatEnum.ICEBERG
@@ -189,7 +189,7 @@ class PandasToFeatures(Transform):
         return df
 
     # Helper Methods
-    def auto_categorical_converter(self):
+    def auto_categorize_converter(self):
         """Convert object and string types to Categorical"""
         categorical_columns = []
         for feature, dtype in self.output_df.dtypes.items():
@@ -200,7 +200,7 @@ class PandasToFeatures(Transform):
             ]:
                 unique_values = self.output_df[feature].nunique()
                 if 1 < unique_values < 6:
-                    self.log.info(f"Converting  column {feature} to categorical (unique {unique_values})")
+                    self.log.important(f"Converting column {feature} to categorical (unique {unique_values})")
                     self.output_df[feature] = self.output_df[feature].astype("category")
                     categorical_columns.append(feature)
 
@@ -245,8 +245,8 @@ class PandasToFeatures(Transform):
         self._ensure_event_time()
 
         # Convert object and string types to Categorical
-        if self.auto_categorical:
-            self.auto_categorical_converter()
+        if self.auto_categorize:
+            self.auto_categorize_converter()
         else:
             self.manual_categorical_converter()
 

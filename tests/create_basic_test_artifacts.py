@@ -16,7 +16,7 @@ import time
 from pathlib import Path
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
-from sageworks.artifacts.models.model import Model
+from sageworks.artifacts.models.model import Model, ModelType
 from sageworks.artifacts.endpoints.endpoint import Endpoint
 
 from sageworks.utils.test_data_generator import TestDataGenerator
@@ -65,13 +65,13 @@ if __name__ == "__main__":
     if recreate or not FeatureSet("abalone_feature_set").exists():
         data_to_features = DataToFeaturesLight("abalone_data", "abalone_feature_set")
         data_to_features.set_output_tags(["abalone", "public"])
-        data_to_features.transform()
+        data_to_features.transform(target_column="class_number_of_rings")
 
     # Create the abalone_regression Model
     if recreate or not Model("abalone-regression").exists():
-        features_to_model = FeaturesToModel("abalone_feature_set", "abalone-regression")
+        features_to_model = FeaturesToModel("abalone_feature_set", "abalone-regression", model_type=ModelType.REGRESSOR)
         features_to_model.set_output_tags(["abalone", "regression"])
-        features_to_model.transform(target="class_number_of_rings", description="Abalone Regression Model")
+        features_to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")
         print("Waiting for the Model to be created...")
         time.sleep(10)
 
