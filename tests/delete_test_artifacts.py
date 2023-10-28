@@ -19,6 +19,12 @@ if __name__ == "__main__":
         print("Deleting abalone_data...")
         ds.delete()
 
+    # Delete the abalone_data_copy DataSource
+    ds = DataSource("abalone_data_copy")
+    if ds.exists():
+        print("Deleting abalone_data_copy...")
+        ds.delete()
+
     # Delete the test_feature_set FeatureSet
     fs = FeatureSet("test_feature_set")
     if fs.exists():
