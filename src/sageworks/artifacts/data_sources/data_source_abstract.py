@@ -14,7 +14,7 @@ class DataSourceAbstract(Artifact):
         # Call superclass init
         super().__init__(uuid)
 
-        # Set up all my instance attributes
+        # Set up our instance attributes
         self._display_columns = None
 
     @abstractmethod
@@ -47,8 +47,9 @@ class DataSourceAbstract(Artifact):
             list[str]: The display columns for this Data Source
         """
         if self._display_columns is None and self.num_columns() > 20:
-            self.log.important(f"Setting display columns for {self.uuid} to the first 20 columns...")
+            self.log.important(f"Setting display columns for {self.uuid} to 20 columns...")
             self._display_columns = self.column_names()[:20]
+            self._display_columns.append("outlier_group")
         return self._display_columns
 
     def set_display_columns(self, display_columns: list[str]):

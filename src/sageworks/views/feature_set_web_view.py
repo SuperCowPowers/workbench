@@ -42,7 +42,16 @@ class FeatureSetWebView(ArtifactsWebView):
             status = fs.get_status()
             return pd.DataFrame({"uuid": [feature_uuid], "status": [f"{status}"]})
         else:
-            return fs.smart_sample()
+            # Grab the Smart Sample
+            smart_sample = fs.smart_sample()
+
+            # Does the DataSource have display_columns set?
+            display_columns = fs.get_display_columns()
+            if display_columns is not None:
+                smart_sample = smart_sample[display_columns]
+
+            # Return the Smart Sample
+            return smart_sample
 
     @staticmethod
     def feature_set_details(feature_uuid: str) -> (dict, None):

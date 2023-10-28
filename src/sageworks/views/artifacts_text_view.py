@@ -220,10 +220,10 @@ class ArtifactsTextView(View):
             summary = {
                 "Feature Group": group_info["FeatureGroupName"],
                 "Size(MB)": size,
+                "Created": self.datetime_string(group_info.get("CreationTime")),
                 "Num Columns": self.num_columns_fs(group_info),
                 "Athena Table": cat_config.get("TableName", "-"),
                 "Online": str(group_info.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
-                "Created": self.datetime_string(group_info.get("CreationTime")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
                 "_aws_url": self.aws_url(group_info, "FeatureSet"),  # Hidden Column

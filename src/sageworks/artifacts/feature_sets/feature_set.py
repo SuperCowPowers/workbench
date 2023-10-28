@@ -39,6 +39,9 @@ class FeatureSet(Artifact):
         _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=force_refresh)
         self.feature_meta = _catalog_meta.get(self.uuid)
 
+        # Set up our instance attributes
+        self._display_columns = None
+
         # Sanity check and then set up our FeatureSet attributes
         if self.feature_meta is None:
             self.log.important(f"Could not find feature set {self.uuid} within current visibility scope")
@@ -52,6 +55,7 @@ class FeatureSet(Artifact):
             self.athena_database = self.feature_meta["sageworks_meta"].get("athena_database")
             self.athena_table = self.feature_meta["sageworks_meta"].get("athena_table")
             self.s3_storage = self.feature_meta["sageworks_meta"].get("s3_storage")
+            self._display_columns = self.feature_meta["sageworks_meta"].get("display_columns")
 
             # Create our internal DataSource (hardcoded to Athena for now)
             self.data_source = AthenaSource(self.athena_table, self.athena_database)
@@ -110,6 +114,24 @@ class FeatureSet(Artifact):
         }
         details.update(internal)
         return details
+
+    def get_display_columns(self) -> list[str]:
+        """Set the display columns for this Data Source
+        Returns:
+            list[str]: The display columns for this Data Source
+        """
+        if self._display_columns is None and self.num_columns() > 20:
+            self.log.important(f"Setting display columns for {self.uuid} to 20 columns...")
+            self._display_columns = self.column_names()[:20]
+            self._display_columns.append("outlier_group")
+        return self._display_columns
+
+    def set_display_columns(self, display_columns: list[str]):
+        """Set the display columns for this Data Source
+        Args:
+            display_columns(list[str]): The display columns for this Data Source
+        """
+        self._display_columns = display_columns
 
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""
