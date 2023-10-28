@@ -15,7 +15,7 @@ def test():
     output_uuid = "abalone-regression"
     to_model = FeaturesToModel(input_uuid, output_uuid)
     to_model.set_output_tags(["abalone", "public"])
-    to_model.transform(target="class_number_of_rings")
+    to_model.transform(target_column="class_number_of_rings")
 
 
 if __name__ == "__main__":

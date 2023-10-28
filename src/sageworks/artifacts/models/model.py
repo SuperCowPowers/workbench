@@ -55,13 +55,18 @@ class Model(Artifact):
             self.latest_model = None
             self.model_type = ModelType.UNKNOWN
         else:
-            self.latest_model = self.model_meta[0]
-            self.description = self.latest_model["ModelPackageDescription"]
-            self.training_job_name = self._extract_training_job_name()
-            if model_type:
-                self._set_model_type(model_type)
-            else:
-                self.model_type = self._get_model_type()
+            try:
+                self.latest_model = self.model_meta[0]
+                self.description = self.latest_model["ModelPackageDescription"]
+                self.training_job_name = self._extract_training_job_name()
+                if model_type:
+                    self._set_model_type(model_type)
+                else:
+                    self.model_type = self._get_model_type()
+            except (IndexError, KeyError):
+                self.log.critical(f"Model {self.model_name} appears to be malformed. Delete and recreate it!")
+                self.latest_model = None
+                self.model_type = ModelType.UNKNOWN
 
         # All done
         self.log.info(f"Model Initialized: {self.model_name}")
