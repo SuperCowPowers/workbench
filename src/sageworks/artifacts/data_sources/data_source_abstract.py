@@ -15,7 +15,7 @@ class DataSourceAbstract(Artifact):
         super().__init__(uuid)
 
         # Set up all my instance attributes
-        self.display_columns = None
+        self._display_columns = None
 
     @abstractmethod
     def num_rows(self) -> int:
@@ -40,6 +40,27 @@ class DataSourceAbstract(Artifact):
     def column_details(self) -> dict:
         """Return the column details for this Data Source"""
         return {name: type_ for name, type_ in zip(self.column_names(), self.column_types())}
+
+    def get_display_columns(self) -> list[str]:
+        """Set the display columns for this Data Source
+        Returns:
+            list[str]: The display columns for this Data Source
+        """
+        if self._display_columns is None and self.num_columns() > 20:
+            self.log.important(f"Setting display columns for {self.uuid} to the first 20 columns...")
+            self._display_columns = self.column_names()[:20]
+        return self._display_columns
+
+    def set_display_columns(self, display_columns: list[str]):
+        """Set the display columns for this Data Source
+        Args:
+            display_columns(list[str]): The display columns for this Data Source
+        """
+        self._display_columns = display_columns
+
+    def num_display_columns(self) -> int:
+        """Return the number of display columns for this Data Source"""
+        return len(self._display_columns) if self._display_columns else 0
 
     @abstractmethod
     def query(self, query: str) -> pd.DataFrame:
@@ -161,6 +182,7 @@ class DataSourceAbstract(Artifact):
         details = self.summary()
         details["num_rows"] = self.num_rows()
         details["num_columns"] = self.num_columns()
+        details["num_display_columns"] = self.num_display_columns()
         details["column_details"] = self.column_details()
         return details
 

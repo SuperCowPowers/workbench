@@ -43,7 +43,16 @@ class DataSourceWebView(ArtifactsWebView):
             status = ds.get_status()
             return pd.DataFrame({"uuid": [data_uuid], "status": [f"{status}"]})
         else:
-            return ds.smart_sample()
+            # Grab the Smart Sample
+            smart_sample = ds.smart_sample()
+
+            # Does the DataSource have display_columns set?
+            display_columns = ds.get_display_columns()
+            if display_columns is not None:
+                smart_sample = smart_sample[display_columns]
+
+            # Return the Smart Sample
+            return smart_sample
 
     @staticmethod
     def data_source_details(data_uuid: str) -> (dict, None):

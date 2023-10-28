@@ -176,7 +176,7 @@ class ArtifactsTextView(View):
                     "Name": name,
                     "Size(MB)": size,
                     "Modified": self.datetime_string(info.get("UpdateTime")),
-                    "Num Columns": self.num_columns(info),
+                    "Num Columns": self.num_columns_ds(info),
                     "DataLake": info.get("IsRegisteredWithLakeFormation", "-"),
                     "Tags": info.get("Parameters", {}).get("sageworks_tags", "-"),
                     "Input": str(
@@ -220,7 +220,7 @@ class ArtifactsTextView(View):
             summary = {
                 "Feature Group": group_info["FeatureGroupName"],
                 "Size(MB)": size,
-                "Catalog DB": cat_config.get("Database", "-").lower(),
+                "Num Columns": self.num_columns_fs(group_info),
                 "Athena Table": cat_config.get("TableName", "-"),
                 "Online": str(group_info.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
                 "Created": self.datetime_string(group_info.get("CreationTime")),
@@ -237,7 +237,7 @@ class ArtifactsTextView(View):
             columns = [
                 "Feature Group",
                 "Size(MB)",
-                "Catalog DB",
+                "Num Columns",
                 "Athena Table",
                 "Online",
                 "Created",
@@ -324,10 +324,18 @@ class ArtifactsTextView(View):
             return pd.DataFrame(columns=columns)
 
     @staticmethod
-    def num_columns(data_info):
+    def num_columns_ds(data_info):
         """Helper: Compute the number of columns from the storage descriptor data"""
         try:
             return len(data_info["StorageDescriptor"]["Columns"])
+        except KeyError:
+            return "-"
+
+    @staticmethod
+    def num_columns_fs(data_info):
+        """Helper: Compute the number of columns from the feature group data"""
+        try:
+            return len(data_info["FeatureDefinitions"])
         except KeyError:
             return "-"
 
