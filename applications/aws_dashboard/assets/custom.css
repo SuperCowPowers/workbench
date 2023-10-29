@@ -309,7 +309,7 @@ p {
   color: rgb(150, 160, 240);
 }
 .lightgreen {
-  color: rgb(160, 200, 160);
+  color: rgb(150, 200, 150);
 }
 .lightgrey {
   color: rgb(160, 160, 160);
@@ -319,7 +319,7 @@ p {
 }
 
 b, strong {
-  color: rgb(160, 200, 160);
+  color: rgb(150, 200, 150);
 }
 
 /* Links

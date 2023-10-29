@@ -40,7 +40,7 @@ class ModelToEndpoint(Transform):
         """Compute a Feature Set based on RDKit Descriptors"""
 
         # Get the Model Package ARN for our input model
-        model_package_arn = Model(self.input_uuid).model_arn()
+        model_package_arn = Model(self.input_uuid).model_package_arn()
 
         # Will this be a Serverless Endpoint?
         if self.instance_type == "serverless":
