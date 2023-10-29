@@ -74,9 +74,7 @@ if __name__ == "__main__":
 
     # Create the aqsol regression Endpoint
     if recreate or not Endpoint("aqsol-regression-end").exists():
-        model_to_endpoint = ModelToEndpoint("aqsol-regression",
-                                            "aqsol-regression-end",
-                                            serverless=False)
+        model_to_endpoint = ModelToEndpoint("aqsol-regression", "aqsol-regression-end", serverless=False)
         model_to_endpoint.set_output_tags(["aqsol", "regression"])
         model_to_endpoint.transform()
 
@@ -106,8 +104,6 @@ if __name__ == "__main__":
 
     # Create the aqsol regression Endpoint
     if recreate or not Endpoint("aqsol-rdkit-regression-end").exists():
-        model_to_endpoint = ModelToEndpoint("aqsol-rdkit-regression",
-                                            "aqsol-rdkit-regression-end",
-                                            serverless=False)
+        model_to_endpoint = ModelToEndpoint("aqsol-rdkit-regression", "aqsol-rdkit-regression-end", serverless=False)
         model_to_endpoint.set_output_tags(["aqsol", "rdkit", "regression"])
         model_to_endpoint.transform()

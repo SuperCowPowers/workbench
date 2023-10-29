@@ -137,9 +137,9 @@ class ModelToEndpoint(Transform):
 
     def delete_endpoint(self):
         """Delete an existing Endpoint
-            - Underlying Model
-            - Configuration
-            - Endpoint
+        - Underlying Model
+        - Configuration
+        - Endpoint
         """
         self.delete_endpoint_models()
         try:
@@ -164,7 +164,7 @@ class ModelToEndpoint(Transform):
         except botocore.exceptions.ClientError:
             self.log.info(f"Endpoint Config {self.output_uuid} doesn't exist...")
             return
-        model_names = [variant['ModelName'] for variant in endpoint_config['ProductionVariants']]
+        model_names = [variant["ModelName"] for variant in endpoint_config["ProductionVariants"]]
         for model_name in model_names:
             self.log.info(f"Deleting Model {model_name}...")
             self.sm_client.delete_model(ModelName=model_name)
