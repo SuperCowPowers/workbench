@@ -93,8 +93,6 @@ class AthenaSource(DataSourceAbstract):
         Args:
             new_meta (dict): Dictionary of new metadata to add
         """
-        # Grab our existing metadata
-        meta = self.sageworks_meta()
 
         # Make sure the new data has keys that are valid
         for key in new_meta.keys():
@@ -106,13 +104,10 @@ class AthenaSource(DataSourceAbstract):
             if not isinstance(value, str):
                 new_meta[key] = json.dumps(value, cls=CustomEncoder)
 
-        # Update our existing metadata with the new metadata
-        meta.update(new_meta)
-
         # Store our updated metadata
         try:
             wr.catalog.upsert_table_parameters(
-                parameters=meta,
+                parameters=new_meta,
                 database=self.data_catalog_db,
                 table=self.table_name,
                 boto3_session=self.boto_session,
@@ -127,7 +122,7 @@ class AthenaSource(DataSourceAbstract):
                 self.log.warning("ConcurrentModificationException... trying again...")
                 time.sleep(1)
                 wr.catalog.upsert_table_parameters(
-                    parameters=meta,
+                    parameters=new_meta,
                     database=self.data_catalog_db,
                     table=self.table_name,
                     boto3_session=self.boto_session,

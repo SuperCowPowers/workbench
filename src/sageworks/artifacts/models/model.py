@@ -211,8 +211,8 @@ class Model(Artifact):
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
         return self.latest_model["ModelPackageGroupArn"]
 
-    def model_arn(self) -> str:
-        """AWS ARN (Amazon Resource Name) for the Model Package Group"""
+    def model_package_arn(self) -> str:
+        """AWS ARN (Amazon Resource Name) for the Model Package (within the Group)"""
         return self.latest_model["ModelPackageArn"]
 
     def aws_url(self):
@@ -245,7 +245,7 @@ class Model(Artifact):
         details = self.summary()
         details["model_type"] = self.model_type.value
         details["model_package_group_arn"] = self.group_arn()
-        details["model_package_arn"] = self.model_arn()
+        details["model_package_arn"] = self.model_package_arn()
         aws_meta = self.aws_meta()
         details["description"] = aws_meta["ModelPackageDescription"]
         details["status"] = aws_meta["ModelPackageStatus"]

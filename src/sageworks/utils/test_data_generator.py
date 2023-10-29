@@ -86,7 +86,7 @@ class TestDataGenerator:
         df["likes_dogs"] = df["likes_dogs"].apply(lambda x: True if x == 1 else False)
 
         # Date is a random date between 1/1/2022 and 12/31/2022
-        df["date"] = pd.date_range(start="1/1/2022", end="12/31/2022", periods=rows)
+        df["date"] = pd.date_range(start="1/1/2022", end="12/31/2022", periods=rows, tz="US/Mountain")
 
         # Get less bloated types for the columns
         df = df.astype(
