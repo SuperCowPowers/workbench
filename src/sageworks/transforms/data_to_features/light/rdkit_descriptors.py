@@ -137,4 +137,4 @@ if __name__ == "__main__":
     data_to_features = RDKitDescriptors("aqsol_data", "aqsol_rdkit_features")
     data_to_features.set_output_tags(["logS", "rdkit", "public"])
     query = 'SELECT id, "group", solubility, smiles FROM aqsol_data'
-    data_to_features.transform(target="solubility", id_column="udm_mol_bat_id", query=query)
+    data_to_features.transform(target_column="solubility", id_column="udm_mol_bat_id", query=query)

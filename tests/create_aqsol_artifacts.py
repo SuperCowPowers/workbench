@@ -69,7 +69,7 @@ if __name__ == "__main__":
         features_to_model = FeaturesToModel("aqsol_features", "aqsol-regression", model_type=ModelType.REGRESSOR)
         features_to_model.set_output_tags(["aqsol", "regression"])
         features_to_model.transform(
-            target="solubility", description="AQSol Regression Model", feature_list=feature_list
+            target_column="solubility", description="AQSol Regression Model", feature_list=feature_list
         )
 
     # Create the aqsol regression Endpoint
@@ -86,7 +86,7 @@ if __name__ == "__main__":
         rdkit_features = RDKitDescriptors("aqsol_data", "aqsol_rdkit_features")
         rdkit_features.set_output_tags(["aqsol", "public", "rdkit"])
         query = "SELECT id, solubility, smiles FROM aqsol_data"
-        rdkit_features.transform(target="solubility", id_column="udm_mol_bat_id", query=query)
+        rdkit_features.transform(target_column="solubility", id_column="udm_mol_bat_id", query=query)
 
     # Create the RDKIT based  regression Model
     if recreate or not Model("aqsol-rdkit-regression").exists():
@@ -99,7 +99,7 @@ if __name__ == "__main__":
         )
         features_to_model.set_output_tags(["aqsol", "regression", "rdkit"])
         features_to_model.transform(
-            target="solubility", description="AQSol/RDKit Regression Model", feature_list=feature_list
+            target_column="solubility", description="AQSol/RDKit Regression Model", feature_list=feature_list
         )
 
     # Create the aqsol regression Endpoint

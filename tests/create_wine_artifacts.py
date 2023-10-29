@@ -39,13 +39,13 @@ if __name__ == "__main__":
     if recreate or not FeatureSet("wine_features").exists():
         data_to_features = DataToFeaturesLight("wine_data", "wine_features")
         data_to_features.set_output_tags(["wine", "classification"])
-        data_to_features.transform(target="wine_class", description="Wine Classification Features")
+        data_to_features.transform(target_column="wine_class", description="Wine Classification Features")
 
     # Create the wine classification Model
     if recreate or not Model("wine-classification").exists():
         features_to_model = FeaturesToModel("wine_features", "wine-classification", model_type=ModelType.CLASSIFIER)
         features_to_model.set_output_tags(["wine", "classification"])
-        features_to_model.transform(target="wine_class", description="Wine Classification Model")
+        features_to_model.transform(target_column="wine_class", description="Wine Classification Model")
 
     # Create the wine classification Endpoint
     if recreate or not Endpoint("wine-classification-end").exists():
