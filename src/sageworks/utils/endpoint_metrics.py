@@ -19,13 +19,26 @@ class EndpointMetrics:
         """
         self.aws_account_clamp = AWSAccountClamp()
         self.boto_session = self.aws_account_clamp.boto_session()
-        self.cloudwatch = self.boto_session.client('cloudwatch')
-        self.metrics = ['Invocations', 'ModelLatency', 'OverheadLatency', 'ModelSetupTime',
-                        'InvocationModelErrors', 'Invocation5XXErrors', 'Invocation4XXErrors']
-        self.metric_conversions = {"Invocations": 1, "ModelLatency": 1e-6, "OverheadLatency": 1e-6,
-                                   "ModelSetupTime": 1e-6, "InvocationModelErrors": 1,
-                                   "Invocation5XXErrors": 1, "Invocation4XXErrors": 1}
-        self.stats = ['Sum', 'Average', 'Average', 'Average', 'Sum', 'Sum', 'Sum']
+        self.cloudwatch = self.boto_session.client("cloudwatch")
+        self.metrics = [
+            "Invocations",
+            "ModelLatency",
+            "OverheadLatency",
+            "ModelSetupTime",
+            "InvocationModelErrors",
+            "Invocation5XXErrors",
+            "Invocation4XXErrors",
+        ]
+        self.metric_conversions = {
+            "Invocations": 1,
+            "ModelLatency": 1e-6,
+            "OverheadLatency": 1e-6,
+            "ModelSetupTime": 1e-6,
+            "InvocationModelErrors": 1,
+            "Invocation5XXErrors": 1,
+            "Invocation4XXErrors": 1,
+        }
+        self.stats = ["Sum", "Average", "Average", "Average", "Sum", "Sum", "Sum"]
 
     def get_time_range(self, days_back=7):
         now_utc = datetime.utcnow()
@@ -33,13 +46,12 @@ class EndpointMetrics:
         end_time = today_time + timedelta(days=1)
         start_time = end_time - timedelta(days=days_back)
 
-        end_time_str = end_time.strftime('%Y-%m-%dT%H:%M:%S') + 'Z'
-        start_time_str = start_time.strftime('%Y-%m-%dT%H:%M:%S') + 'Z'
+        end_time_str = end_time.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+        start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
 
         return start_time_str, end_time_str
 
     def get_metric_data_queries(self, endpoint, days_back=1):
-
         # Change the Period based on the number of days back
         if days_back <= 1:
             period = 600
@@ -49,20 +61,20 @@ class EndpointMetrics:
 
         for metric_name, stat in zip(self.metrics, self.stats):
             query = {
-                'Id': f'm_{metric_name}',
-                'MetricStat': {
-                    'Metric': {
-                        'Namespace': 'AWS/SageMaker',
-                        'MetricName': metric_name,
-                        'Dimensions': [
-                            {'Name': 'EndpointName', 'Value': endpoint},
-                            {'Name': 'VariantName', 'Value': 'AllTraffic'}
-                        ]
+                "Id": f"m_{metric_name}",
+                "MetricStat": {
+                    "Metric": {
+                        "Namespace": "AWS/SageMaker",
+                        "MetricName": metric_name,
+                        "Dimensions": [
+                            {"Name": "EndpointName", "Value": endpoint},
+                            {"Name": "VariantName", "Value": "AllTraffic"},
+                        ],
                     },
-                    'Period': period,
-                    'Stat': stat,
+                    "Period": period,
+                    "Stat": stat,
                 },
-                'ReturnData': True
+                "ReturnData": True,
             }
             metric_data_queries.append(query)
 
@@ -84,12 +96,12 @@ class EndpointMetrics:
 
         # Parse the response
         metric_data = {}
-        for metric in response['MetricDataResults']:
-            metric_name = metric['Label']
-            timestamps = metric['Timestamps']
-            values = metric['Values']
+        for metric in response["MetricDataResults"]:
+            metric_name = metric["Label"]
+            timestamps = metric["Timestamps"]
+            values = metric["Values"]
             values = [round(v * self.metric_conversions[metric_name], 2) for v in values]
-            metric_data[metric_name] = {'timestamps': timestamps, 'values': values}
+            metric_data[metric_name] = {"timestamps": timestamps, "values": values}
 
         return metric_data
 
@@ -99,9 +111,7 @@ class EndpointMetrics:
         metric_data_queries = self.get_metric_data_queries(endpoint=endpoint, days_back=days_back)
 
         response = self.cloudwatch.get_metric_data(
-            MetricDataQueries=metric_data_queries,
-            StartTime=start_time_str,
-            EndTime=end_time_str
+            MetricDataQueries=metric_data_queries, StartTime=start_time_str, EndTime=end_time_str
         )
         return response
 
@@ -112,5 +122,5 @@ if __name__ == "__main__":
 
     # Create the Class and query for metrics
     my_metrics = EndpointMetrics()
-    metrics_data = my_metrics.get_metrics(endpoint='abalone-regression-end')
+    metrics_data = my_metrics.get_metrics(endpoint="abalone-regression-end")
     pprint(metrics_data)
