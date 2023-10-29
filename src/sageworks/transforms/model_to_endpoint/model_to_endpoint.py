@@ -1,5 +1,6 @@
 """ModelToEndpoint: Deploy an Endpoint for a Model"""
 import time
+from datetime import datetime
 import botocore
 from sagemaker import ModelPackage
 from sagemaker.serializers import CSVSerializer
@@ -39,6 +40,9 @@ class ModelToEndpoint(Transform):
     def transform_impl(self):
         """Compute a Feature Set based on RDKit Descriptors"""
 
+        # Delete endpoint (if it already exists)
+        self.delete_endpoint()
+
         # Get the Model Package ARN for our input model
         model_package_arn = Model(self.input_uuid).model_package_arn()
 
@@ -49,9 +53,6 @@ class ModelToEndpoint(Transform):
 
         # Create a Model Package
         model_package = ModelPackage(role=self.sageworks_role_arn, model_package_arn=model_package_arn)
-
-        # Delete endpoint (if it already exists)
-        self.delete_endpoint()
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
@@ -78,7 +79,10 @@ class ModelToEndpoint(Transform):
         aws_tags = self.get_aws_tags()
 
         # Create Low Level Model Resource (Endpoint Config below references this Model Resource)
-        self.log.info(f"Creating Low Level Model Package {model_name}...")
+        # Note: Since model is internal to the endpoint we'll add a timestamp (just like SageMaker does)
+        datetime_str = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")[:-3]
+        model_name = f"{model_name}-{datetime_str}"
+        self.log.info(f"Creating Low Level Model: {model_name}...")
         self.sm_client.create_model(
             ModelName=model_name,
             PrimaryContainer={
@@ -132,16 +136,38 @@ class ModelToEndpoint(Transform):
         output_endpoint.make_ready()
 
     def delete_endpoint(self):
-        """Delete an existing Endpoint and it's Configuration"""
-        # Delete endpoint (if it already exists)
+        """Delete an existing Endpoint
+            - Underlying Model
+            - Configuration
+            - Endpoint
+        """
+        self.delete_endpoint_models()
         try:
-            self.sm_client.delete_endpoint(EndpointName=self.output_uuid)
-        except botocore.exceptions.ClientError:
-            self.log.info(f"Endpoint {self.output_uuid} doesn't exist...")
-        try:
+            self.log.info(f"Deleting Endpoint Config {self.output_uuid}...")
             self.sm_client.delete_endpoint_config(EndpointConfigName=self.output_uuid)
         except botocore.exceptions.ClientError:
             self.log.info(f"Endpoint Config {self.output_uuid} doesn't exist...")
+        try:
+            self.log.info(f"Deleting Endpoint {self.output_uuid}...")
+            self.sm_client.delete_endpoint(EndpointName=self.output_uuid)
+            # Wait for the Endpoint to be deleted
+            time.sleep(5)
+        except botocore.exceptions.ClientError:
+            self.log.info(f"Endpoint {self.output_uuid} doesn't exist...")
+
+    def delete_endpoint_models(self):
+        """Delete the underlying Model for an Endpoint"""
+
+        # Retrieve the Model Names from the Endpoint Config
+        try:
+            endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=self.output_uuid)
+        except botocore.exceptions.ClientError:
+            self.log.info(f"Endpoint Config {self.output_uuid} doesn't exist...")
+            return
+        model_names = [variant['ModelName'] for variant in endpoint_config['ProductionVariants']]
+        for model_name in model_names:
+            self.log.info(f"Deleting Model {model_name}...")
+            self.sm_client.delete_model(ModelName=model_name)
 
 
 if __name__ == "__main__":
