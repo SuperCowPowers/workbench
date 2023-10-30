@@ -20,30 +20,30 @@ FEATURE_SET_NAME = "aqsol_features"
 FEATURE_SET_NAME = "hlm_phase2_reg_0_230830"
 FEATURE_SET_NAME = "stab_phase_2_features"
 FEATURE_SET_NAME = "solubility_test_features"
-FEATURE_SET_NAME = "abalone_feature_set"
 FEATURE_SET_NAME = "wine_features"
+FEATURE_SET_NAME = "abalone_feature_set"
 # FEATURE_SET_NAME = None
 
 ENDPOINT_NAME = "aqsol-solubility-regression-end"
 ENDPOINT_NAME = "hlm-phase2-reg-0-230830-test-endpoint"
 ENDPOINT_NAME = "stab-regression-end"
 ENDPOINT_NAME = "solubility-test-regression-end"
-ENDPOINT_NAME = "abalone-regression-end-rt"
 ENDPOINT_NAME = "wine-classification-end"
+ENDPOINT_NAME = "abalone-regression-end-rt"
 
 # These should be filled in
 DATA_NAME = "stab_phase_2_features(20)"
 DATA_HASH = "12345"
 DESCRIPTION = "Test Stability Phase2 Features"
 TARGET_COLUMN = "stability"
-DATA_NAME = "abalone_feature_set (20)"
-DATA_HASH = "12345"
-DESCRIPTION = "Test Abalone Features"
-TARGET_COLUMN = "class_number_of_rings"
 DATA_NAME = "wine_features (20)"
 DATA_HASH = "12345"
 DESCRIPTION = "Test Wine Features"
 TARGET_COLUMN = "wine_class"
+DATA_NAME = "abalone_feature_set (20)"
+DATA_HASH = "12345"
+DESCRIPTION = "Test Abalone Features"
+TARGET_COLUMN = "class_number_of_rings"
 
 
 if S3_DATA_PATH is not None:

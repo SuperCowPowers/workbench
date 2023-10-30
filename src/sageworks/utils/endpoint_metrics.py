@@ -111,7 +111,11 @@ class EndpointMetrics:
             metric_df.set_index("timestamps", inplace=True, drop=True)
 
             # Make sure the index is a datetime index
-            metric_df.index = pd.to_datetime(metric_df.index, errors='raise')
+            metric_df.index = pd.to_datetime(metric_df.index, errors='raise', utc=True)
+
+            # Temp Debugging
+            if metric_name == "Invocations":
+                print(metric_df)
 
             # Set our metric data dataframe
             metric_data[metric_name] = metric_df
