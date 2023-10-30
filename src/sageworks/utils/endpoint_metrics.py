@@ -107,8 +107,14 @@ class EndpointMetrics:
             values.append(0)
 
             # Create a dataframe and set the index to the timestamps
-            metric_data[metric_name] = pd.DataFrame({"timestamps": timestamps, "values": values})
-            metric_data[metric_name].set_index("timestamps", inplace=True, drop=True)
+            metric_df = pd.DataFrame({"timestamps": timestamps, "values": values})
+            metric_df.set_index("timestamps", inplace=True, drop=True)
+
+            # Make sure the index is a datetime index
+            metric_df.index = pd.to_datetime(metric_df.index, errors='raise')
+
+            # Set our metric data dataframe
+            metric_data[metric_name] = metric_df
 
         # Now we're going to merge the dataframes
         metric_df = self._merge_dataframes(metric_data=metric_data)
@@ -135,9 +141,6 @@ class EndpointMetrics:
                     right_index=True,
                     how="outer",
                 )
-
-        # Make sure the index is datetime
-        merged_df.index = pd.to_datetime(merged_df.index, errors='coerce')
 
         # Sort by index (which is the timestamp)
         merged_df.sort_index(inplace=True)
