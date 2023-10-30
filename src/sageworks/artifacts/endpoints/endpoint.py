@@ -29,6 +29,7 @@ from sagemaker import Predictor
 from sageworks.artifacts.artifact import Artifact
 from sageworks.artifacts.models.model import Model, ModelType
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
+from sageworks.utils.endpoint_metrics import EndpointMetrics
 
 
 class Endpoint(Artifact):
@@ -224,6 +225,14 @@ class Endpoint(Artifact):
         storage_key = f"endpoint:{self.uuid}:details"
         cached_details = self.data_storage.get(storage_key)
         if cached_details and not recompute:
+
+            # Return the cached details but first check if we need to update the endpoint metrics
+            endpoint_metrics = self.temp_storage.get(storage_key)
+            if endpoint_metrics is None:
+                self.log.important("Updating endpoint metrics...")
+                endpoint_metrics = EndpointMetrics().get_metrics(self.uuid)
+                self.temp_storage.set(storage_key, endpoint_metrics)
+                cached_details["endpoint_metrics"] = endpoint_metrics
             return cached_details
 
         # Fill in all the details about this Endpoint
@@ -245,6 +254,10 @@ class Endpoint(Artifact):
         details["confusion_matrix"] = model_details.get("confusion_matrix")
         details["regression_predictions"] = model_details.get("regression_predictions")
         details["inference_meta"] = model_details.get("inference_meta")
+
+        # Add endpoint metrics from CloudWatch
+        details["endpoint_metrics"] = EndpointMetrics().get_metrics(self.uuid)
+        self.temp_storage.set("endpoint_metrics", details["endpoint_metrics"])
 
         # Cache the details
         self.data_storage.set(storage_key, details)

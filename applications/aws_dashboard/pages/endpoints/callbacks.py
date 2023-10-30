@@ -4,7 +4,7 @@ from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.endpoint_web_view import EndpointWebView
-from sageworks.web_components import table, model_markdown
+from sageworks.web_components import table, model_markdown, endpoint_metric_plots
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 
@@ -51,6 +51,7 @@ def update_endpoint_details_components(app: Dash, endpoint_web_view: EndpointWeb
         [
             Output("endpoint_details_header", "children"),
             Output("endpoint_details", "children"),
+            Output("endpoint_metrics", "figure"),
         ],
         Input("endpoints_table", "derived_viewport_selected_row_ids"),
         State("endpoints_table", "data"),
@@ -73,8 +74,11 @@ def update_endpoint_details_components(app: Dash, endpoint_web_view: EndpointWeb
         endpoint_details = endpoint_web_view.endpoint_details(endpoint_uuid)
         endpoint_details_markdown = model_markdown.ModelMarkdown().generate_markdown(endpoint_details)
 
+        # Endpoint Metrics
+        endpoint_metrics_figure = endpoint_metric_plots.EndpointMetricPlots().generate_component_figure(endpoint_details)
+
         # Return the details/markdown for these data details
-        return [header, endpoint_details_markdown]
+        return [header, endpoint_details_markdown, endpoint_metrics_figure]
 
 
 # Updates the plugin component when a endpoint row is selected

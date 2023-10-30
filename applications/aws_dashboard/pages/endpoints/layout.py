@@ -7,6 +7,7 @@ import dash_bootstrap_components as dbc
 def endpoints_layout(
     endpoints_table: dash_table.DataTable,
     endpoint_details: dcc.Markdown,
+    endpoint_metrics: dcc.Graph,
     **kwargs: Any,
 ) -> html.Div:
     # Generate rows for each plugin
@@ -21,7 +22,7 @@ def endpoints_layout(
         children=[
             dbc.Row(
                 [
-                    html.H2("SageWorks: Endpoints (Alpha)"),
+                    html.H2("SageWorks: Endpoints"),
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                 ]
             ),
@@ -44,9 +45,17 @@ def endpoints_layout(
                         ],
                         width=4,
                     ),
-                    # Column 2: Plugins
+                    # Column 2: Endpoint Metrics and Plugins
                     dbc.Col(
                         [
+                            dbc.Row(
+                                html.H3("Endpoint Metrics", id="model_metrics_header"),
+                                style={"padding": "30px 0px 0px 0px"},
+                            ),
+                            dbc.Row(
+                                endpoint_metrics,
+                                style={"padding": "0px 0px 0px 0px"},
+                            ),
                             dbc.Row(
                                 html.H3("Plugins", id="plugins_header"),
                                 style={"padding": "30px 0px 10px 0px"},

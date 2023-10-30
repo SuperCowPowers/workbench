@@ -5,6 +5,7 @@ import numpy as np
 import json
 from io import StringIO
 import logging
+from typing import Dict, Tuple
 
 # SageWorks Logger
 log = logging.getLogger("sageworks")
@@ -160,6 +161,15 @@ def shorten_values(df: pd.DataFrame, max_length: int = 100) -> pd.DataFrame:
         return element
 
     return df.map(truncate_element)
+
+
+def subplot_positions(df: pd.DataFrame, num_columns: int = 2) -> Dict[str, Tuple[int, int]]:
+    positions = {}
+    for i, col in enumerate(df.columns):
+        row = i // num_columns + 1
+        col_pos = i % num_columns + 1
+        positions[col] = (row, col_pos)
+    return positions
 
 
 def displayable_df(input_df: pd.DataFrame) -> pd.DataFrame:

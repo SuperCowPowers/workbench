@@ -22,7 +22,7 @@ def models_layout(
         children=[
             dbc.Row(
                 [
-                    html.H2("SageWorks: Models (Alpha)"),
+                    html.H2("SageWorks: Models"),
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                 ]
             ),

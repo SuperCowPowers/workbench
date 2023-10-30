@@ -46,6 +46,7 @@ class Artifact(ABC):
 
     # Data Cache for Artifacts
     data_storage = SageWorksCache(prefix="data_storage")
+    temp_storage = SageWorksCache(prefix="temp_storage", expire=300)  # 5 minutes
 
     def __init__(self, uuid: str):
         """Artifact Initialization"""
