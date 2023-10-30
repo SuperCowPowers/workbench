@@ -450,21 +450,38 @@ class Endpoint(Artifact):
         return prediction_df[[target, "prediction"]]
 
     def delete(self):
-        """Delete the Endpoint and Endpoint Config"""
-
-        # Delete endpoint (if it already exists)
+        """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
+        self.delete_endpoint_models()
         try:
-            self.sm_client.delete_endpoint(EndpointName=self.endpoint_name)
+            self.log.info(f"Deleting Endpoint Config {self.uuid}...")
+            self.sm_client.delete_endpoint_config(EndpointConfigName=self.uuid)
         except botocore.exceptions.ClientError:
-            self.log.info(f"Endpoint {self.endpoint_name} doesn't exist...")
+            self.log.info(f"Endpoint Config {self.uuid} doesn't exist...")
         try:
-            self.sm_client.delete_endpoint_config(EndpointConfigName=self.endpoint_name)
+            self.log.info(f"Deleting Endpoint {self.uuid}...")
+            self.sm_client.delete_endpoint(EndpointName=self.uuid)
         except botocore.exceptions.ClientError:
-            self.log.info(f"Endpoint Config {self.endpoint_name} doesn't exist...")
+            self.log.info(f"Endpoint {self.uuid} doesn't exist...")
 
         # Now delete any data in the Cache
         for key in self.data_storage.list_subkeys(f"endpoint:{self.uuid}"):
+            self.log.info(f"Deleting Cache Key: {key}")
             self.data_storage.delete(key)
+
+    def delete_endpoint_models(self):
+        """Delete the underlying Model for an Endpoint"""
+
+        # Retrieve the Model Names from the Endpoint Config
+        try:
+            endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=self.uuid)
+        except botocore.exceptions.ClientError:
+            self.log.info(f"Endpoint Config {self.uuid} doesn't exist...")
+            return
+        model_names = [variant["ModelName"] for variant in endpoint_config["ProductionVariants"]]
+        for model_name in model_names:
+            self.log.info(f"Deleting Model {model_name}...")
+            self.sm_client.delete_model(ModelName=model_name)
+
 
 
 if __name__ == "__main__":

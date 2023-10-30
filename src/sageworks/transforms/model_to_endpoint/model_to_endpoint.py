@@ -41,7 +41,9 @@ class ModelToEndpoint(Transform):
         """Compute a Feature Set based on RDKit Descriptors"""
 
         # Delete endpoint (if it already exists)
-        self.delete_endpoint()
+        existing_endpoint = Endpoint(self.output_uuid)
+        if existing_endpoint.exists():
+            existing_endpoint.delete()
 
         # Get the Model Package ARN for our input model
         model_package_arn = Model(self.input_uuid).model_package_arn()
@@ -134,40 +136,6 @@ class ModelToEndpoint(Transform):
 
         # Call the Model make_ready method and set status to ready
         output_endpoint.make_ready()
-
-    def delete_endpoint(self):
-        """Delete an existing Endpoint
-        - Underlying Model
-        - Configuration
-        - Endpoint
-        """
-        self.delete_endpoint_models()
-        try:
-            self.log.info(f"Deleting Endpoint Config {self.output_uuid}...")
-            self.sm_client.delete_endpoint_config(EndpointConfigName=self.output_uuid)
-        except botocore.exceptions.ClientError:
-            self.log.info(f"Endpoint Config {self.output_uuid} doesn't exist...")
-        try:
-            self.log.info(f"Deleting Endpoint {self.output_uuid}...")
-            self.sm_client.delete_endpoint(EndpointName=self.output_uuid)
-            # Wait for the Endpoint to be deleted
-            time.sleep(5)
-        except botocore.exceptions.ClientError:
-            self.log.info(f"Endpoint {self.output_uuid} doesn't exist...")
-
-    def delete_endpoint_models(self):
-        """Delete the underlying Model for an Endpoint"""
-
-        # Retrieve the Model Names from the Endpoint Config
-        try:
-            endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=self.output_uuid)
-        except botocore.exceptions.ClientError:
-            self.log.info(f"Endpoint Config {self.output_uuid} doesn't exist...")
-            return
-        model_names = [variant["ModelName"] for variant in endpoint_config["ProductionVariants"]]
-        for model_name in model_names:
-            self.log.info(f"Deleting Model {model_name}...")
-            self.sm_client.delete_model(ModelName=model_name)
 
 
 if __name__ == "__main__":
