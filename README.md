@@ -19,7 +19,6 @@ SageWorks is a medium granularity framework that manages and aggregates AWS® Se
 
 
 ## Why SageWorks?
-
 <img align="right" src="docs/images/graph_representation.png" width="300">
 
 - The AWS SageMaker® ecosystem is **awesome** but has a large number of services with significant complexity
