@@ -483,7 +483,6 @@ class Endpoint(Artifact):
             self.sm_client.delete_model(ModelName=model_name)
 
 
-
 if __name__ == "__main__":
     """Exercise the Endpoint Class"""
     from sageworks.transforms.pandas_transforms.features_to_pandas import (

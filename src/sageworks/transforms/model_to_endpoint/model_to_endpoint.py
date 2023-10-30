@@ -1,7 +1,6 @@
 """ModelToEndpoint: Deploy an Endpoint for a Model"""
 import time
 from datetime import datetime
-import botocore
 from sagemaker import ModelPackage
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
