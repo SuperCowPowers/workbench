@@ -75,7 +75,9 @@ def update_endpoint_details_components(app: Dash, endpoint_web_view: EndpointWeb
         endpoint_details_markdown = model_markdown.ModelMarkdown().generate_markdown(endpoint_details)
 
         # Endpoint Metrics
-        endpoint_metrics_figure = endpoint_metric_plots.EndpointMetricPlots().generate_component_figure(endpoint_details)
+        endpoint_metrics_figure = endpoint_metric_plots.EndpointMetricPlots().generate_component_figure(
+            endpoint_details
+        )
 
         # Return the details/markdown for these data details
         return [header, endpoint_details_markdown, endpoint_metrics_figure]

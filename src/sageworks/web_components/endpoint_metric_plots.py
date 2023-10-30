@@ -39,7 +39,7 @@ class EndpointMetricPlots(ComponentInterface):
             return self.message_figure("No Data")
 
         # Let's convert all the timestamps to local timezone
-        metrics_df['timestamps'] = metrics_df['timestamps'].dt.tz_convert(local_tz)
+        metrics_df["timestamps"] = metrics_df["timestamps"].dt.tz_convert(local_tz)
 
         # Move the timestamps to the index
         metrics_df.set_index("timestamps", inplace=True, drop=True)
@@ -52,14 +52,11 @@ class EndpointMetricPlots(ComponentInterface):
         fig = make_subplots(rows=num_rows, cols=2, subplot_titles=metrics_df.columns, vertical_spacing=0.2)
         for metric in metrics_df.columns:
             row, col = subplot_pos_lookup[metric]
-            fig.add_trace(
-                go.Scatter(x=metrics_df.index, y=metrics_df[metric], fill='toself'),
-                row=row, col=col
-            )
+            fig.add_trace(go.Scatter(x=metrics_df.index, y=metrics_df[metric], fill="toself"), row=row, col=col)
 
         # Update the figure layout
         fig.update_xaxes(tickfont_size=10)
-        fig.update_yaxes(rangemode="tozero",  tickfont_size=10)
+        fig.update_yaxes(rangemode="tozero", tickfont_size=10)
         fig.update_layout(showlegend=False, margin={"t": 30, "b": 0, "r": 10, "l": 10}, height=400)
 
         # Return the figure

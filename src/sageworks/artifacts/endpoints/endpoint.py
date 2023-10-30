@@ -225,7 +225,6 @@ class Endpoint(Artifact):
         storage_key = f"endpoint:{self.uuid}:details"
         cached_details = self.data_storage.get(storage_key)
         if cached_details and not recompute:
-
             # Return the cached details but first check if we need to update the endpoint metrics
             endpoint_metrics = self.temp_storage.get(storage_key)
             if endpoint_metrics is None:

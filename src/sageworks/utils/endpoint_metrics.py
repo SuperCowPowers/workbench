@@ -108,7 +108,7 @@ class EndpointMetrics:
 
             # Create a dataframe and set the index to the timestamps
             metric_data[metric_name] = pd.DataFrame({"timestamps": timestamps, "values": values})
-            metric_data[metric_name].set_index('timestamps', inplace=True, drop=True)
+            metric_data[metric_name].set_index("timestamps", inplace=True, drop=True)
 
         # Now we're going to merge the dataframes
         metric_df = self._merge_dataframes(metric_data=metric_data)
@@ -126,15 +126,21 @@ class EndpointMetrics:
         merged_df = pd.DataFrame()
         for metric_name, df in metric_data.items():
             if merged_df.empty:
-                merged_df = df.rename(columns={'values': metric_name})
+                merged_df = df.rename(columns={"values": metric_name})
             else:
-                merged_df = pd.merge(merged_df, df.rename(columns={'values': metric_name}), left_index=True, right_index=True, how='outer')
+                merged_df = pd.merge(
+                    merged_df,
+                    df.rename(columns={"values": metric_name}),
+                    left_index=True,
+                    right_index=True,
+                    how="outer",
+                )
 
         # Sort by index (which is the timestamp)
         merged_df.sort_index(inplace=True)
 
         # Resample the index to have 1 hour intervals
-        merged_df = merged_df.resample('1H').max()
+        merged_df = merged_df.resample("1H").max()
 
         # Fill NA values with 0 and reset the index (so we can serialize to JSON)
         merged_df.fillna(0, inplace=True)
