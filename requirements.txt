@@ -1,16 +1,16 @@
-pytest
 boto3
 botocore
 redis
 numpy
-pandas >= 2.0
+pandas >= 2.1.2
 scikit-learn >= 1.1.1
 awswrangler >= 3.0.0
 sagemaker >= 2.143
 plotly
 dash >= 2.8
 dash-bootstrap-components
-dash-bootstrap-templates
+dash-bootstrap-templates >= 1.1.1
 aws-cdk-lib >= 2.76.0
 termcolor
+tabulate
 rich>=13.3.5

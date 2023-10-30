@@ -30,7 +30,7 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Install Sageworks (changes often)
 # RUN pip install --no-cache-dir sageworks==0.2.8
-RUN pip install git+https://github.com/SuperCowPowers/sageworks.git@e9ac86a95835b8f352bcfa7df39c129bec7e6afc
+RUN pip install git+https://github.com/SuperCowPowers/sageworks.git@4300c48
 
 # Copy the current directory contents into the container at /app
 COPY . /app
