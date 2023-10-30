@@ -109,6 +109,7 @@ class EndpointMetrics:
             # Create a dataframe and set the index to the timestamps
             metric_data[metric_name] = pd.DataFrame({"timestamps": timestamps, "values": values})
             metric_data[metric_name].set_index("timestamps", inplace=True, drop=True)
+            metric_data[metric_name].index = pd.to_datetime(metric_data[metric_name].index)
 
         # Now we're going to merge the dataframes
         metric_df = self._merge_dataframes(metric_data=metric_data)
@@ -140,6 +141,7 @@ class EndpointMetrics:
         merged_df.sort_index(inplace=True)
 
         # Resample the index to have 1 hour intervals
+
         merged_df = merged_df.resample("1H").max()
 
         # Fill NA values with 0 and reset the index (so we can serialize to JSON)
