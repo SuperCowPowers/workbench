@@ -222,15 +222,18 @@ class Endpoint(Artifact):
             dict(dict): A dictionary of details about this Endpoint
         """
         # Check if we have cached version of the FeatureSet Details
-        storage_key = f"endpoint:{self.uuid}:details"
-        cached_details = self.data_storage.get(storage_key)
+        details_key = f"endpoint:{self.uuid}:details"
+        metrics_key = f"endpoint:{self.uuid}:endpoint_metrics"
+        cached_details = self.data_storage.get(details_key)
         if cached_details and not recompute:
             # Return the cached details but first check if we need to update the endpoint metrics
-            endpoint_metrics = self.temp_storage.get(storage_key)
+            endpoint_metrics = self.temp_storage.get(metrics_key)
             if endpoint_metrics is None:
                 self.log.important("Updating endpoint metrics...")
                 endpoint_metrics = EndpointMetrics().get_metrics(self.uuid)
-                self.temp_storage.set(storage_key, endpoint_metrics)
+                cached_details["endpoint_metrics"] = endpoint_metrics
+                self.temp_storage.set(metrics_key, endpoint_metrics)
+            else:
                 cached_details["endpoint_metrics"] = endpoint_metrics
             return cached_details
 
@@ -256,10 +259,10 @@ class Endpoint(Artifact):
 
         # Add endpoint metrics from CloudWatch
         details["endpoint_metrics"] = EndpointMetrics().get_metrics(self.uuid)
-        self.temp_storage.set("endpoint_metrics", details["endpoint_metrics"])
+        self.temp_storage.set(metrics_key, details["endpoint_metrics"])
 
         # Cache the details
-        self.data_storage.set(storage_key, details)
+        self.data_storage.set(details_key, details)
 
         # Return the details
         return details

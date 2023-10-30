@@ -102,14 +102,13 @@ class EndpointMetrics:
             # We're going to add the start and end times to the metric data so that
             # every graph has the same date range (x-axis)
             timestamps.insert(0, self.end_time)
-            timestamps.append(self.start_time)
+            timestamps.append(self.start_time - timedelta(hours=1))  # Make sure graph starts at 0
             values.insert(0, 0)
             values.append(0)
 
             # Create a dataframe and set the index to the timestamps
             metric_data[metric_name] = pd.DataFrame({"timestamps": timestamps, "values": values})
             metric_data[metric_name].set_index("timestamps", inplace=True, drop=True)
-            metric_data[metric_name].index = pd.to_datetime(metric_data[metric_name].index)
 
         # Now we're going to merge the dataframes
         metric_df = self._merge_dataframes(metric_data=metric_data)
@@ -137,11 +136,13 @@ class EndpointMetrics:
                     how="outer",
                 )
 
+        # Make sure the index is datetime
+        merged_df.index = pd.to_datetime(merged_df.index, errors='coerce')
+
         # Sort by index (which is the timestamp)
         merged_df.sort_index(inplace=True)
 
         # Resample the index to have 1 hour intervals
-
         merged_df = merged_df.resample("1H").max()
 
         # Fill NA values with 0 and reset the index (so we can serialize to JSON)
