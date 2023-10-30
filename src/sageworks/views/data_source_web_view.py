@@ -51,8 +51,8 @@ class DataSourceWebView(ArtifactsWebView):
             if display_columns is not None:
                 smart_sample = smart_sample[display_columns]
 
-            # Return the Smart Sample
-            return smart_sample
+            # Return the Smart Sample (max 100 rows)
+            return smart_sample[:100]
 
     @staticmethod
     def data_source_details(data_uuid: str) -> (dict, None):
