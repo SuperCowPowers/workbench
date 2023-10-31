@@ -57,7 +57,7 @@ class EndpointMetricPlots(ComponentInterface):
         # Update the figure layout
         fig.update_xaxes(tickfont_size=10)
         fig.update_yaxes(rangemode="tozero", tickfont_size=10)
-        fig.update_layout(showlegend=False, margin={"t": 30, "b": 0, "r": 10, "l": 10}, height=400)
+        fig.update_layout(showlegend=False, margin={"t": 50, "b": 0, "r": 10, "l": 10}, height=400)
 
         # Return the figure
         return fig
