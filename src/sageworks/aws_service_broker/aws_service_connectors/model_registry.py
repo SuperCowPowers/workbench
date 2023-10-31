@@ -28,7 +28,7 @@ class ModelRegistry(Connector):
     def refresh_impl(self):
         """Load/reload the tables in the database"""
         # Grab all the Model Groups in the AWS Model Registry
-        _model_groups = self.sm_client.list_model_package_groups()["ModelPackageGroupSummaryList"]
+        _model_groups = self.sm_client.list_model_package_groups(MaxResults=100)["ModelPackageGroupSummaryList"]
         _mg_names = [model_group["ModelPackageGroupName"] for model_group in _model_groups]
 
         # Grab the ModelPackageGroupARNs (we'll use them later to store in the model_data)
