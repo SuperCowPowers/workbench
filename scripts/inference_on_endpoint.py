@@ -29,7 +29,7 @@ ENDPOINT_NAME = "hlm-phase2-reg-0-230830-test-endpoint"
 ENDPOINT_NAME = "stab-regression-end"
 ENDPOINT_NAME = "solubility-test-regression-end"
 ENDPOINT_NAME = "wine-classification-end"
-ENDPOINT_NAME = "abalone-regression-end-rt"
+ENDPOINT_NAME = "abalone-regression-end"
 
 # These should be filled in
 DATA_NAME = "stab_phase_2_features(20)"

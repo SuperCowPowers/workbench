@@ -280,7 +280,10 @@ class Endpoint(Artifact):
             return {}
         else:
             model = Model(self.model_name)
-            return model.details()
+            if model.exists():
+                return model.details()
+            else:
+                return {}
 
     def model_type(self) -> str:
         """Return the type of model used in this Endpoint"""
