@@ -52,7 +52,7 @@ class EndpointMetrics:
 
         return start_time_str, end_time_str
 
-    def get_metric_data_queries(self, endpoint, days_back=1):
+    def get_metric_data_queries(self, endpoint) -> list[dict]:
         # Change the Period based on the number of days back
         period = 3600  # Hardcoded to 1 hour for now
         metric_data_queries = []
@@ -156,7 +156,7 @@ class EndpointMetrics:
     def _fetch_metrics(self, endpoint: str, days_back: int):
         """Internal Method: Fetch metrics from CloudWatch"""
         start_time_str, end_time_str = self.get_time_range(days_back=days_back)
-        metric_data_queries = self.get_metric_data_queries(endpoint=endpoint, days_back=days_back)
+        metric_data_queries = self.get_metric_data_queries(endpoint=endpoint)
 
         response = self.cloudwatch.get_metric_data(
             MetricDataQueries=metric_data_queries, StartTime=start_time_str, EndTime=end_time_str
