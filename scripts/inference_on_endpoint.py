@@ -62,8 +62,3 @@ my_endpoint = Endpoint(ENDPOINT_NAME)
 my_endpoint.capture_performance_metrics(
     df, TARGET_COLUMN, data_name=DATA_NAME, data_hash=DATA_HASH, description=DESCRIPTION
 )
-
-# Important: The Model must explicitly recompute its details
-# after the performance metrics are captured
-model = Model(my_endpoint.model_name)
-model.details(recompute=True)
