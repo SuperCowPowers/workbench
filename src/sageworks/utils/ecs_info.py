@@ -65,7 +65,6 @@ class ECSInfo:
 
 if __name__ == "__main__":
     """Exercise the DashboardMetrics class"""
-    from pprint import pprint
 
     # Create the Class and query for metrics
     my_metrics = ECSInfo()
