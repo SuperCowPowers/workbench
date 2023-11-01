@@ -1,6 +1,7 @@
 from typing import Optional, List
 from aws_cdk import (
     Stack,
+    StackProps,
     aws_ecs as ecs,
     aws_ec2 as ec2,
     aws_iam as iam,
@@ -13,7 +14,7 @@ from aws_cdk.aws_ecs_patterns import ApplicationLoadBalancedFargateService
 from constructs import Construct
 
 
-class SageworksDashboardStackProps:
+class SageworksDashboardStackProps(StackProps):
     def __init__(
         self,
         sageworks_bucket: str,
