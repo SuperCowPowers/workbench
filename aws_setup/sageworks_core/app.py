@@ -1,28 +1,39 @@
 import os
+import boto3
 import aws_cdk as cdk
 
-from stacks.sageworks_stack import SageworksStack
+from sageworks_core.sageworks_core_stack import SageworksCoreStack, SageworksCoreStackProps
 
+
+# Grab the account and region using boto3
+session = boto3.session.Session()
+aws_account = session.client("sts").get_caller_identity().get("Account")
+aws_region = session.region_name
+print(f"Account: {aws_account}")
+print(f"Region: {aws_region}")
+
+# We'd like to set up our parameters here
+sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
+sageworks_role_name = os.environ.get("SAGEWORKS_ROLE", "SageWorks-ExecutionRole")
+sso_role_arn = os.environ.get("SAGEWORKS_SSO_ROLE_ARN")
+
+
+# Our CDK App
 app = cdk.App()
 
-s3_bucket_name = os.environ.get("SAGEWORKS_BUCKET")
-sageworks_role_name = os.environ.get("SAGEWORKS_ROLE", "SageWorks-ExecutionRole")
+# Note: We might want to look into this
+# env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
+env = cdk.Environment(account=aws_account, region=aws_region)
 
-sandbox_stack = SageworksStack(
+sandbox_stack = SageworksCoreStack(
     app,
     "Sageworks",
-    s3_bucket_name=s3_bucket_name,
-    sageworks_role_name=sageworks_role_name
-    # If you don't specify 'env', this stack will be environment-agnostic.
-    # Account/Region-dependent features and context lookups will not work,
-    # but a single synthesized template can be deployed anywhere.
-    # Uncomment the next line to specialize this stack for the AWS Account
-    # and Region that are implied by the current CLI configuration.
-    # env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
-    # Uncomment the next line if you know exactly what Account and Region you
-    # want to deploy the stack to. */
-    # env=cdk.Environment(account='123456789012', region='us-east-1'),
-    # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
+    env=env,
+    props=SageworksCoreStackProps(
+        sageworks_bucket=sageworks_bucket,
+        sageworks_role_name=sageworks_role_name,
+        sso_role_arn=sso_role_arn
+    )
 )
 
 app.synth()
