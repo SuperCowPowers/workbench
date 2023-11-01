@@ -30,10 +30,8 @@ sandbox_stack = SageworksCoreStack(
     "Sageworks",
     env=env,
     props=SageworksCoreStackProps(
-        sageworks_bucket=sageworks_bucket,
-        sageworks_role_name=sageworks_role_name,
-        sso_role_arn=sso_role_arn
-    )
+        sageworks_bucket=sageworks_bucket, sageworks_role_name=sageworks_role_name, sso_role_arn=sso_role_arn
+    ),
 )
 
 app.synth()

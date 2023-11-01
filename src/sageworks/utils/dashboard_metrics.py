@@ -8,7 +8,6 @@ from sageworks.utils.ecs_info import ECSInfo
 
 
 class DashboardMetrics:
-
     # Get the ECS Cluster Name, Service Name, and Load Balancer Name
     ecs_info = ECSInfo()
     cluster_name = ecs_info.get_cluster_name()
@@ -72,10 +71,15 @@ class DashboardMetrics:
         period = 3600  # Hardcoded to 1 hour for now
         metric_data_queries = []
 
-        metrics = ["ActiveConnectionCount",  "TargetResponseTime", "RequestCount",
-                   "ProcessedBytes", "HTTPCode_Target_4XX_Count", "HTTPCode_Target_5XX_Count"]
-        stats = ["Sum", "Maximum", "Sum",
-                 "Sum", "Sum", "Sum"]
+        metrics = [
+            "ActiveConnectionCount",
+            "TargetResponseTime",
+            "RequestCount",
+            "ProcessedBytes",
+            "HTTPCode_Target_4XX_Count",
+            "HTTPCode_Target_5XX_Count",
+        ]
+        stats = ["Sum", "Maximum", "Sum", "Sum", "Sum", "Sum"]
 
         for metric, stat in zip(metrics, stats):
             query = {
@@ -84,9 +88,7 @@ class DashboardMetrics:
                     "Metric": {
                         "Namespace": "AWS/ApplicationELB",
                         "MetricName": metric,
-                        "Dimensions": [
-                            {"Name": "LoadBalancer", "Value": self.load_balancer_name}
-                        ],
+                        "Dimensions": [{"Name": "LoadBalancer", "Value": self.load_balancer_name}],
                     },
                     "Period": period,
                     "Stat": stat,

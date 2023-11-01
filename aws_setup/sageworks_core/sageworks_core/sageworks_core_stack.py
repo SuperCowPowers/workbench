@@ -1,4 +1,3 @@
-
 from aws_cdk import (
     Environment,
     Stack,
@@ -9,6 +8,7 @@ from aws_cdk import (
 from constructs import Construct
 from typing import Any
 from dataclasses import dataclass
+
 
 @dataclass
 class SageworksCoreStackProps:
@@ -23,7 +23,8 @@ class SageworksCoreStack(Stack):
         scope: Construct,
         construct_id: str,
         env: Environment,
-        props: SageworksCoreStackProps, **kwargs: Any,
+        props: SageworksCoreStackProps,
+        **kwargs: Any,
     ) -> None:
         desc = "SageWorks Core Stack: Execution Role, Data Catalog Databases, and Artifact Bucket"
         super().__init__(scope, construct_id, description=desc, **kwargs)
@@ -85,7 +86,7 @@ class SageworksCoreStack(Stack):
                 resources=[
                     "arn:aws:s3:::aws-athena-query-results*/*",
                     f"arn:aws:s3:::{self.artifact_bucket.bucket_name}/*",
-                ]
+                ],
             )
         )
 
