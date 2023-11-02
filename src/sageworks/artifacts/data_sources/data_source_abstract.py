@@ -65,7 +65,18 @@ class DataSourceAbstract(Artifact):
 
     @abstractmethod
     def query(self, query: str) -> pd.DataFrame:
-        """Query the DataSourceAbstract"""
+        """Query the DataSourceAbstract
+        Args:
+            query(str): The SQL query to execute
+        """
+        pass
+
+    @abstractmethod
+    def execute_statement(self, query: str):
+        """Execute a non-returning SQL statement
+        Args:
+            query(str): The SQL query to execute
+        """
         pass
 
     def sample(self, recompute: bool = False) -> pd.DataFrame:
