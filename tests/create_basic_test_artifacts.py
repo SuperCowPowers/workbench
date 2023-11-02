@@ -4,7 +4,7 @@ DataSources:
     - test_data
     - abalone_data
 FeatureSets:
-    - test_feature_set  # Disabled for now
+    - test_feature_set
     - abalone_feature_set
 Models:
     - abalone-regression
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         time.sleep(5)
 
     # Create the test_feature_set FeatureSet
-    if 0 and recreate or not FeatureSet("test_feature_set").exists():
+    if recreate or not FeatureSet("test_feature_set").exists():
         data_to_features = DataToFeaturesLight("test_data", "test_feature_set")
         data_to_features.set_output_tags(["test", "small"])
         data_to_features.transform(id_column="id", event_time_column="date")
