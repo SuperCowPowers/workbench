@@ -1,6 +1,5 @@
 """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet"""
 import pandas as pd
-import numpy as np
 import time
 import re
 import botocore

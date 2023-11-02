@@ -42,7 +42,9 @@ class FeaturesToModel(Transform):
         self.model_description = None
         self.model_training_path = self.models_s3_path + "/training"
 
-    def generate_model_script(self, target_column: str, feature_list: list[str], model_type: ModelType, train_all_data) -> str:
+    def generate_model_script(
+        self, target_column: str, feature_list: list[str], model_type: ModelType, train_all_data
+    ) -> str:
         """Fill in the model template with specific target and feature_list
         Args:
             target_column (str): Column name of the target variable

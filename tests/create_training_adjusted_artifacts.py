@@ -30,8 +30,9 @@ if __name__ == "__main__":
 
     # Create the abalone_regression Model
     if recreate or not Model("abalone-regression-100").exists():
-        features_to_model = FeaturesToModel("abalone_feature_set", "abalone-regression",
-                                            model_type=ModelType.REGRESSOR, train_all_data=True)
+        features_to_model = FeaturesToModel(
+            "abalone_feature_set", "abalone-regression", model_type=ModelType.REGRESSOR, train_all_data=True
+        )
         features_to_model.set_output_tags(["abalone", "regression"])
         features_to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")
         print("Waiting for the Model to be created...")

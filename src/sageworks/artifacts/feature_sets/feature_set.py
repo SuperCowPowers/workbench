@@ -288,6 +288,7 @@ class FeatureSet(Artifact):
 
         # If we have a training view, delete it
         if self.training_view:
+            self.log.info(f"Deleting Training View {self.training_view.uuid}")
             self.training_view.delete()
 
         # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
@@ -328,9 +329,9 @@ class FeatureSet(Artifact):
 
         # Format the list of hold out ids for SQL IN clause
         if hold_out_ids and all(isinstance(id, str) for id in hold_out_ids):
-            formatted_hold_out_ids = ', '.join(f"'{id}'" for id in hold_out_ids)
+            formatted_hold_out_ids = ", ".join(f"'{id}'" for id in hold_out_ids)
         else:
-            formatted_hold_out_ids = ', '.join(map(str, hold_out_ids))
+            formatted_hold_out_ids = ", ".join(map(str, hold_out_ids))
 
         # Construct the CREATE VIEW query
         create_view_query = f"""
@@ -544,7 +545,7 @@ if __name__ == "__main__":
 
     # Test the hold out set functionality with strings
     print("Setting hold out ids (strings)...")
-    my_hold_out_ids = [name for name in df["name"] if int(name.split(' ')[1]) > 80]
+    my_hold_out_ids = [name for name in df["name"] if int(name.split(" ")[1]) > 80]
     my_features.create_training_view("name", my_hold_out_ids)
 
     # Now delete the AWS artifacts associated with this Feature Set
