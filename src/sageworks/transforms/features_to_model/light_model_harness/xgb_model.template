@@ -156,6 +156,9 @@ if __name__ == "__main__":
         # Combine the validation target values and predictions and then save to S3
         df_val["prediction"] = preds
         columns = [target, "prediction"]
+
+        # Limit to a max of 500 rows
+        df_val = df_val[:500]
         wr.s3.to_csv(
             df_val[columns],
             path=f"{model_metrics_s3_path}/validation_predictions.csv",

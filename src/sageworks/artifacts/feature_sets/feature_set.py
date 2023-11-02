@@ -189,7 +189,7 @@ class FeatureSet(Artifact):
 
         # Do we have a training view?
         if self.training_view:
-            table_name = self.training_view.athena_table
+            table_name = self.training_view.table_name
         else:
             table_name = self.athena_table
 

@@ -43,7 +43,7 @@ class FeaturesToModel(Transform):
         self.model_training_path = self.models_s3_path + "/training"
 
     def generate_model_script(
-        self, target_column: str, feature_list: list[str], model_type: ModelType, train_all_data
+        self, target_column: str, feature_list: list[str], model_type: ModelType, train_all_data: bool
     ) -> str:
         """Fill in the model template with specific target and feature_list
         Args:
@@ -71,7 +71,7 @@ class FeaturesToModel(Transform):
         xgb_script = xgb_script.replace("{{model_type}}", model_type)
         metrics_s3_path = f"{self.model_training_path}/{self.output_uuid}"
         xgb_script = xgb_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
-        xgb_script = xgb_script.replace("{{train_all_data}}", train_all_data)
+        xgb_script = xgb_script.replace("{{train_all_data}}", str(train_all_data))
 
         # Now write out the generated model script and return the name
         with open(output_path, "w") as fp:
