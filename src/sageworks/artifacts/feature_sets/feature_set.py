@@ -175,14 +175,10 @@ class FeatureSet(Artifact):
         """
         return self.feature_store
 
-    def create_s3_training_data(self, training_split=80, test_split=20, val_split=0) -> str:
+    def create_s3_training_data(self) -> str:
         """Create some Training Data (S3 CSV) from a Feature Set using standard options. If you want
         additional options/features use the get_feature_store() method and see AWS docs for all
         the details: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
-        Args:
-            training_split (int): Percentage of data that goes into the TRAINING set
-            test_split (int): Percentage of data that goes into the TEST set
-            val_split (int): Percentage of data that goes into the VALIDATION set (default=0)
         Returns:
             str: The full path/file for the CSV file created by Feature Store create_dataset()
         """
@@ -191,8 +187,14 @@ class FeatureSet(Artifact):
         date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
         s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
 
+        # Do we have a training view?
+        if self.training_view:
+            table_name = self.training_view.athena_table
+        else:
+            table_name = self.athena_table
+
         # Get the snapshot query
-        query = self.snapshot_query()
+        query = self.snapshot_query(table_name=table_name)
 
         # Make the query
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
@@ -205,8 +207,13 @@ class FeatureSet(Artifact):
         full_s3_path = s3_output_path + f"/{query_execution['QueryExecution']['QueryExecutionId']}.csv"
         return full_s3_path
 
-    def snapshot_query(self):
-        """An Athena query to get the latest snapshot of features"""
+    def snapshot_query(self, table_name: str = None) -> str:
+        """An Athena query to get the latest snapshot of features
+        Args:
+            table_name (str): The name of the table to query (default: None)
+        Returns:
+            str: The Athena query to get the latest snapshot of features
+        """
         # Remove FeatureGroup metadata columns that might have gotten added
         columns = self.column_names()
         filter_columns = ["write_time", "api_invocation_time", "is_deleted"]
@@ -216,8 +223,8 @@ class FeatureSet(Artifact):
             f"SELECT {columns} "
             f"    FROM (SELECT *, row_number() OVER (PARTITION BY {self.record_id} "
             f"        ORDER BY {self.event_time} desc, api_invocation_time DESC, write_time DESC) AS row_num "
-            f'        FROM "{self.athena_table}") '
-            "    WHERE row_num = 1 and  NOT is_deleted;"
+            f'        FROM "{table_name}") '
+            "    WHERE row_num = 1 and NOT is_deleted;"
         )
         return query
 
