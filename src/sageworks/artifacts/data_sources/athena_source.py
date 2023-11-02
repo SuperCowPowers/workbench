@@ -182,6 +182,24 @@ class AthenaSource(DataSourceAbstract):
             self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
         return df
 
+    def execute_statement(self, query: str):
+        """Execute a non-returning SQL statement in Athena."""
+        try:
+            # Start the query execution
+            query_execution_id = wr.athena.start_query_execution(
+                sql=query,
+                database=self.data_catalog_db,
+                boto3_session=self.boto_session,
+            )
+            self.log.debug(f"QueryExecutionId: {query_execution_id}")
+
+            # Wait for the query to complete
+            wr.athena.wait_query(query_execution_id=query_execution_id, boto3_session=self.boto_session)
+            self.log.debug(f"Statement executed successfully: {query_execution_id}")
+        except Exception as e:
+            self.log.error(f"Failed to execute statement: {e}")
+            raise
+
     def s3_storage_location(self) -> str:
         """Get the S3 Storage Location for this Data Source"""
         return self.catalog_table_meta["StorageDescriptor"]["Location"]
@@ -407,7 +425,7 @@ if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
 
     # Retrieve a Data Source
-    my_data = AthenaSource("logs_test_data_clean")
+    my_data = AthenaSource("test_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
