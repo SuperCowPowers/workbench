@@ -42,12 +42,13 @@ class FeaturesToModel(Transform):
         self.model_description = None
         self.model_training_path = self.models_s3_path + "/training"
 
-    def generate_model_script(self, target_column: str, feature_list: list[str], model_type: ModelType) -> str:
+    def generate_model_script(self, target_column: str, feature_list: list[str], model_type: ModelType, train_all_data) -> str:
         """Fill in the model template with specific target and feature_list
         Args:
             target_column (str): Column name of the target variable
             feature_list (list[str]): A list of columns for the features
             model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER
+            train_all_data (bool): Train on ALL (100%) of the data
         Returns:
            str: The name of the generated model script
         """
@@ -68,19 +69,21 @@ class FeaturesToModel(Transform):
         xgb_script = xgb_script.replace("{{model_type}}", model_type)
         metrics_s3_path = f"{self.model_training_path}/{self.output_uuid}"
         xgb_script = xgb_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
+        xgb_script = xgb_script.replace("{{train_all_data}}", train_all_data)
 
         # Now write out the generated model script and return the name
         with open(output_path, "w") as fp:
             fp.write(xgb_script)
         return script_name
 
-    def transform_impl(self, target_column: str, description: str, feature_list=None):
+    def transform_impl(self, target_column: str, description: str, feature_list=None, train_all_data=False):
         """Generic Features to Model: Note you should create a new class and inherit from
         this one to include specific logic for your Feature Set/Model
         Args:
             target_column (str): Column name of the target variable
             description (str): Description of the model
             feature_list (list[str]): A list of columns for the features (default None, will try to guess)
+            train_all_data (bool): Train on ALL (100%) of the data (default False)
         """
         # Set our model description
         self.model_description = description
@@ -138,7 +141,7 @@ class FeaturesToModel(Transform):
         self.log.important(f"Feature List for Modeling: {feature_list}")
 
         # Generate our model script
-        script_path = self.generate_model_script(target_column, feature_list, self.model_type.value)
+        script_path = self.generate_model_script(target_column, feature_list, self.model_type.value, train_all_data)
 
         # Metric Definitions for Regression and Classification
         if self.model_type == ModelType.REGRESSOR:

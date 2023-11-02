@@ -61,11 +61,6 @@ if __name__ == "__main__":
         data_to_features.set_output_tags(["test", "small"])
         data_to_features.transform(id_column="id", event_time_column="date")
 
-    # Create a training view of the test_feature_set
-    print("Creating training view for test_feature_set...")
-    fs = FeatureSet("test_feature_set", force_refresh=True)
-    fs.create_training_view("id", range(20))  # Just the first 20 rows
-
     # Create the abalone_feature_set FeatureSet
     if recreate or not FeatureSet("abalone_feature_set").exists():
         data_to_features = DataToFeaturesLight("abalone_data", "abalone_feature_set")
@@ -74,7 +69,8 @@ if __name__ == "__main__":
 
     # Create the abalone_regression Model
     if recreate or not Model("abalone-regression").exists():
-        features_to_model = FeaturesToModel("abalone_feature_set", "abalone-regression", model_type=ModelType.REGRESSOR)
+        features_to_model = FeaturesToModel("abalone_feature_set", "abalone-regression",
+                                            model_type=ModelType.REGRESSOR)
         features_to_model.set_output_tags(["abalone", "regression"])
         features_to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")
         print("Waiting for the Model to be created...")

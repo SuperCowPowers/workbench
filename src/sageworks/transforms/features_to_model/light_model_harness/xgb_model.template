@@ -32,6 +32,7 @@ if __name__ == "__main__":
     feature_list = {{feature_list}}
     model_type = "{{model_type}}"
     model_metrics_s3_path = "{{model_metrics_s3_path}}"
+    train_all_data = "{{train_all_data}}"
     validation_split = 0.2
 
     # Sagemaker specific arguments. Defaults are set in the environment variables.
@@ -58,8 +59,14 @@ if __name__ == "__main__":
     print(f"Target: {target}")
     print(f"Features: {str(feature_list)}")
 
+    # Do we want to train on all the data?
+    if train_all_data == "True":
+        print("Training on ALL of the data")
+        df_train = all_df.copy()
+        df_val = all_df.copy()
+
     # Does the dataframe have a training column?
-    if "training" in all_df.columns:
+    elif "training" in all_df.columns:
         print("Found training column, splitting data based on training column")
         df_train = all_df[all_df["training"] == 1].copy()
         df_val = all_df[all_df["training"] == 0].copy()
