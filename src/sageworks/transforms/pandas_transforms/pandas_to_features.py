@@ -261,9 +261,6 @@ class PandasToFeatures(Transform):
         # to make sure that the column names are lowercase to match and avoid downstream issues
         self.output_df.columns = self.output_df.columns.str.lower()
 
-        # Mark 80% of the data as training and 20% as validation/test
-        self.output_df["training"] = np.random.binomial(size=len(self.output_df), n=1, p=0.8)
-
     def create_feature_group(self):
         """Create a Feature Group, load our Feature Definitions, and wait for it to be ready"""
 

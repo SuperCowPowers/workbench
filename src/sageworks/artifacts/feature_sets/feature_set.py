@@ -60,6 +60,12 @@ class FeatureSet(Artifact):
             # Create our internal DataSource (hardcoded to Athena for now)
             self.data_source = AthenaSource(self.athena_table, self.athena_database)
 
+            # Get our Training View (if it exists)
+            training_view_name = f"{self.athena_table}_training"
+            self.training_view = AthenaSource(training_view_name, self.athena_database)
+            if not self.training_view.exists():
+                self.training_view = None
+
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
 
@@ -297,6 +303,38 @@ class FeatureSet(Artifact):
             time.sleep(1)
         self.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
+    def create_training_view(self, id_column: str, hold_out_ids: list[str]):
+        """Create a view in Athena that marks hold out ids for this FeatureSet
+
+        Args:
+            id_column (str): The name of the id column in the output DataFrame.
+            hold_out_ids (list[str]): The list of hold out ids.
+        """
+
+        # Create the view name
+        view_name = f"{self.athena_table}_training"
+        self.log.info(f"Creating view for training data for {view_name}...")
+
+        # Format the list of hold out ids for SQL IN clause
+        if hold_out_ids and all(isinstance(id, str) for id in hold_out_ids):
+            formatted_hold_out_ids = ', '.join(f"'{id}'" for id in hold_out_ids)
+        else:
+            formatted_hold_out_ids = ', '.join(map(str, hold_out_ids))
+
+        # Construct the CREATE VIEW query
+        create_view_query = f"""
+        CREATE OR REPLACE VIEW {view_name} AS
+        SELECT *, CASE
+            WHEN {id_column} IN ({formatted_hold_out_ids}) THEN 0
+            ELSE 1
+        END AS training
+        FROM {self.athena_table}
+        """
+
+        # Execute the CREATE VIEW query
+        self.data_source.execute_statement(create_view_query)
+        self.log.info(f"View {view_name} created successfully.")
+
     def descriptive_stats(self, recompute: bool = False) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource
         Args:
@@ -483,9 +521,22 @@ if __name__ == "__main__":
     pprint(stat_info)
 
     # Get outliers for all the columns
-    outlier_df = my_features.outliers(recompute=True)
+    outlier_df = my_features.outliers()
     print(outlier_df)
+
+    # Test the hold out set functionality with ints
+    print("Setting hold out ids (ints)...")
+    table = my_features.data_source.table_name
+    df = my_features.query(f"SELECT id, name FROM {table}")
+    my_hold_out_ids = [id for id in df["id"] if id < 20]
+    my_features.create_training_view("id", my_hold_out_ids)
+
+    # Test the hold out set functionality with strings
+    print("Setting hold out ids (strings)...")
+    my_hold_out_ids = [name for name in df["name"] if int(name.split(' ')[1]) > 80]
+    my_features.create_training_view("name", my_hold_out_ids)
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print('Deleting SageWorks Feature Set...')
     # my_features.delete()
+    print("Done")
