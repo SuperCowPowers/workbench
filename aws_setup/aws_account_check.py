@@ -72,9 +72,10 @@ class AWSAccountCheck:
 
         self.log.info("*** AWS Sagemaker Session/Client Check ***")
         sm_client = self.aws_clamp.sagemaker_client()
-        self.log.info(sm_client.list_feature_groups()["FeatureGroupSummaries"])
+        for feature_group in sm_client.list_feature_groups()["FeatureGroupSummaries"]:
+            self.log.info(str(feature_group))
 
-        self.log.info("AWS Account Clamp: AOK!")
+        self.log.info("\n\nAWS Account Clamp: AOK!")
 
 
 if __name__ == "__main__":
