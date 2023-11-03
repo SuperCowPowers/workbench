@@ -1,5 +1,6 @@
 """FeatureSet: SageWorks Feature Set accessible through Athena"""
 import time
+import random
 from datetime import datetime, timezone
 
 import botocore.exceptions
@@ -189,17 +190,24 @@ class FeatureSet(Artifact):
 
         # Do we have a training view?
         if self.training_view:
+            self.log.important(f"Creating S3 Training Data from Training View {self.training_view.uuid}...")
             table_name = self.training_view.table_name
         else:
+            self.log.warning(f"No Training View found for {self.uuid}, using FeatureSet directly...")
             table_name = self.athena_table
 
+        # Make a query that gets all the data from the FeatureSet
+        query = f"SELECT * FROM {table_name}"
+
+        """
+        Note: We're going to circle back to this
         # Get the snapshot query
         query = self.snapshot_query(table_name=table_name)
+        """
 
         # Make the query
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
-        self.log.info("Creating S3 Training Data...")
         athena_query.wait()
         query_execution = athena_query.get_query_execution()
 
@@ -316,6 +324,26 @@ class FeatureSet(Artifact):
             time.sleep(1)
         self.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
+    def create_default_training_view(self):
+        """Create a default view in Athena that assigns roughly 80% of the data to training"""
+
+        # Create the view name
+        view_name = f"{self.athena_table}_training"
+        self.log.important(f"Creating default Training View {view_name}...")
+
+        # Construct the CREATE VIEW query with random assignment
+        create_view_query = f"""
+        CREATE OR REPLACE VIEW {view_name} AS
+        SELECT *, CASE
+            WHEN RAND() < 0.8 THEN 1  -- Assign roughly 80% to training
+            ELSE 0  -- Assign roughly 20% to hold-out
+        END AS training
+        FROM {self.athena_table}
+        """
+
+        # Execute the CREATE VIEW query
+        self.data_source.execute_statement(create_view_query)
+
     def create_training_view(self, id_column: str, hold_out_ids: list[str]):
         """Create a view in Athena that marks hold out ids for this FeatureSet
 
@@ -326,7 +354,7 @@ class FeatureSet(Artifact):
 
         # Create the view name
         view_name = f"{self.athena_table}_training"
-        self.log.info(f"Creating view for training data for {view_name}...")
+        self.log.important(f"Creating Training View {view_name}...")
 
         # Format the list of hold out ids for SQL IN clause
         if hold_out_ids and all(isinstance(id, str) for id in hold_out_ids):
@@ -346,7 +374,6 @@ class FeatureSet(Artifact):
 
         # Execute the CREATE VIEW query
         self.data_source.execute_statement(create_view_query)
-        self.log.info(f"View {view_name} created successfully.")
 
     def descriptive_stats(self, recompute: bool = False) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource

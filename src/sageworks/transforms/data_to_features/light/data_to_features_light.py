@@ -4,6 +4,7 @@
 from sageworks.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.transforms.pandas_transforms.data_to_pandas import DataToPandas
 from sageworks.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
+from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
 
 class DataToFeaturesLight(Transform):
@@ -63,6 +64,10 @@ class DataToFeaturesLight(Transform):
         output_features.set_output_tags(self.output_tags)
         output_features.add_output_meta(self.output_meta)
         output_features.transform()
+
+        # Create a default training_view for this FeatureSet
+        fs = FeatureSet(self.output_uuid, force_refresh=True)
+        fs.create_default_training_view()
 
 
 if __name__ == "__main__":

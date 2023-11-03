@@ -103,7 +103,6 @@ class FeaturesToModel(Transform):
             # AWS Feature Groups will also add these implicit columns, so remove them
             aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time", "training"]
             feature_list = [c for c in feature_list if c not in aws_cols]
-            self.log.info(f"Using feature list: {feature_list}")
 
         # If they didn't specify a feature list, try to guess it
         else:

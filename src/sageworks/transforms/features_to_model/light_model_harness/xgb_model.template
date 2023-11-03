@@ -72,7 +72,7 @@ if __name__ == "__main__":
         df_val = all_df[all_df["training"] == 0].copy()
     else:
         # Just do a random training Split
-        print("No training column found, splitting data with random state=42")
+        print("WARNING: No training column found, splitting data with random state=42")
         df_train, df_val = train_test_split(
             all_df, test_size=validation_split, random_state=42
         )
