@@ -51,8 +51,7 @@ class RDKitDescriptors(DataToFeaturesLight):
         # Drop any NaNs (and INFs)
         self.output_df = pandas_utils.drop_nans(self.output_df, how="all")
 
-    @staticmethod
-    def compute_rdkit_descriptors(process_df: pd.DataFrame) -> pd.DataFrame:
+    def compute_rdkit_descriptors(self, process_df: pd.DataFrame) -> pd.DataFrame:
         """Compute and add all the RDKit Descriptors
         Args:
             process_df(pd.DataFrame): The DataFrame to process and generate RDKit Descriptors

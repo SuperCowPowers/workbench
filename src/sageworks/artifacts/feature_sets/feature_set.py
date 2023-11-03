@@ -1,6 +1,5 @@
 """FeatureSet: SageWorks Feature Set accessible through Athena"""
 import time
-import random
 from datetime import datetime, timezone
 
 import botocore.exceptions
