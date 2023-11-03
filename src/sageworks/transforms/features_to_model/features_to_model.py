@@ -87,6 +87,11 @@ class FeaturesToModel(Transform):
             feature_list (list[str]): A list of columns for the features (default None, will try to guess)
             train_all_data (bool): Train on ALL (100%) of the data (default False)
         """
+        # Delete the existing model (if it exists)
+        self.log.important("Trying to delete existing model...")
+        delete_model = Model(self.output_uuid, force_refresh=True)
+        delete_model.delete()
+
         # Set our model description
         self.model_description = description
 
@@ -191,11 +196,6 @@ class FeaturesToModel(Transform):
             [s3_training_path, s3_training_path.replace(".csv", ".csv.metadata")],
             boto3_session=self.boto_session,
         )
-
-        # Delete the existing model (if it exists)
-        self.log.important("Trying to delete existing model...")
-        delete_model = Model(self.output_uuid, force_refresh=True)
-        delete_model.delete()
 
         # Create Model and officially Register
         self.log.important(f"Creating new model {self.output_uuid}...")
