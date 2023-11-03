@@ -308,12 +308,23 @@ class Model(Artifact):
             self.log.info(f"Deleting Model Package {model['ModelPackageArn']}...")
             self.sm_client.delete_model_package(ModelPackageName=model["ModelPackageArn"])
 
-        # Now delete the Model Package Group
+        # Delete the Model Package Group
         self.log.info(f"Deleting Model Group {self.model_name}...")
         self.sm_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
 
-        # Now delete any data in the Cache
+        # Delete any inference artifacts
+        s3_delete_path = f"{self.model_inference_path}/{self.model_name}"
+        self.log.info(f"Deleting Training S3 Objects {s3_delete_path}")
+        wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
+
+        # Delete any training artifacts
+        s3_delete_path = f"{self.model_training_path}/{self.model_name}"
+        self.log.info(f"Deleting Inference S3 Objects {s3_delete_path}")
+        wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
+
+        # Delete any data in the Cache
         for key in self.data_storage.list_subkeys(f"model:{self.uuid}"):
+            self.log.info(f"Deleting Cache Key {key}...")
             self.data_storage.delete(key)
 
     def _pull_training_job_metrics(self, force_pull=False):

@@ -298,6 +298,7 @@ class FeatureSet(Artifact):
 
         # Now delete any data in the Cache
         for key in self.data_storage.list_subkeys(f"feature_set:{self.uuid}"):
+            self.log.info(f"Deleting Cache Key: {key}")
             self.data_storage.delete(key)
 
     def ensure_feature_group_deleted(self, feature_group):

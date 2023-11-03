@@ -59,6 +59,7 @@ class RDKitDescriptors(DataToFeaturesLight):
         Returns:
             pd.DataFrame: The input DataFrame with all the RDKit Descriptors added
         """
+        self.log.important("Computing RDKit Descriptors...")
 
         # Conversion to Molecules
         molecules = [Chem.MolFromSmiles(smile) for smile in process_df["smiles"]]
