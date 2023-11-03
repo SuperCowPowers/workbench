@@ -57,8 +57,8 @@ class Connector(ABC):
               The Data Catalog and Glue Jobs class have their own methods/logic
         """
         # Note: AWS List Tags can get grumpy if called too often, so put in sleep
-        self.log.debug(f"Throttling list_tags AWS request {arn}...")
-        time.sleep(1)
-        aws_tags = self.sm_session.list_tags(arn)
+        self.log.info(f"Throttling list_tags AWS request {arn}...")
+        time.sleep(2)
+        aws_tags = self.sm_session.list_tags(ResourceArn=arn)
         meta = self._aws_tags_to_dict(aws_tags)
         return meta

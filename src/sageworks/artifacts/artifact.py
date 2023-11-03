@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 import os
 import sys
+import time
 import logging
 import json
 import base64
@@ -138,7 +139,9 @@ class Artifact(ABC):
         """
         aws_arn = self.arn()
         self.log.info(f"Retrieving SageWorks Metadata for Artifact: {self.uuid}...")
-        aws_tags = self.sm_session.list_tags(aws_arn)
+        self.log.info(f"Throttling list_tags AWS request {arn}...")
+        time.sleep(2)
+        aws_tags = self.sm_session.list_tags(ResourceArn=aws_arn)
         meta = self._aws_tags_to_dict(aws_tags)
         return meta
 
@@ -197,10 +200,10 @@ class Artifact(ABC):
         """
 
         aws_arn = self.arn()
-        self.log.info(f"Deleting Metadata {key_to_delete} for Artifact: {aws_arn}...")
+        self.log.important(f"Deleting Metadata {key_to_delete} for Artifact: {aws_arn}...")
 
         # First, fetch all the existing tags
-        response = self.sm_client.list_tags(ResourceArn=aws_arn)
+        response = self.sm_session.list_tags(ResourceArn=aws_arn)
         existing_tags = response.get("Tags", [])
 
         # Convert existing AWS tags to a dictionary for easy manipulation

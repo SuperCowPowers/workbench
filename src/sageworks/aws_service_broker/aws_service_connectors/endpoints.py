@@ -27,7 +27,7 @@ class Endpoints(Connector):
     def refresh_impl(self):
         """Grab all the Endpoint Data from SageMaker"""
         self.log.info("Reading Endpoints from SageMaker...")
-        _endpoints = self.sm_client.list_endpoints()["Endpoints"]
+        _endpoints = self.sm_client.list_endpoints(MaxResults=100)["Endpoints"]
         _end_names = [_endpoint["EndpointName"] for _endpoint in _endpoints]
 
         # Get the details for Endpoints and convert to a data structure with direct lookup
