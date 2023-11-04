@@ -37,6 +37,12 @@ if __name__ == "__main__":
         print("Deleting abalone_feature_set...")
         fs.delete()
 
+    # Delete the abalone_feature_set FeatureSet
+    fs = FeatureSet("wine_features")
+    if fs.exists():
+        print("Deleting wine_features...")
+        fs.delete()
+
     # Delete the abalone_regression Model
     m = Model("abalone-regression")
     if m.exists():
