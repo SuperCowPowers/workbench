@@ -1,6 +1,6 @@
 import os
 import importlib.util
-from typing import List
+from typing import List, Optional
 import logging
 import inspect
 
@@ -21,41 +21,37 @@ def load_plugins_from_dir(directory: str, plugin_type: PluginType) -> List[Plugi
         List[PluginInterface]: A list of plugins that were loaded.
     """
 
-    # Sanity check
-    if directory is None or not os.path.isdir(directory):
-        log.info(f"Not loading plugins, from directory: {directory}")
+    if not os.path.isdir(directory):
+        log.warning(f"Directory {directory} does not exist. No plugins loaded.")
         return []
 
     plugins = []
     for filename in os.listdir(directory):
         if filename.endswith(".py"):
             file_path = os.path.join(directory, filename)
-
-            # Load the module
             spec = importlib.util.spec_from_file_location(filename, file_path)
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
-
-            # Check for classes that inherit from PluginInterface
-            class_found = False
-            for attribute_name, attribute in inspect.getmembers(module, inspect.isclass):
-                if attribute.__module__ == module.__name__:  # This filters out imported classes
-                    class_found = True
+            for _, attribute in inspect.getmembers(module, inspect.isclass):
+                if attribute.__module__ == module.__name__:
                     if issubclass(attribute, PluginInterface) and attribute is not PluginInterface:
-                        instance = attribute()
-                        if instance.plugin_type == plugin_type:  # Check if plugin_type matches
-                            plugins.append(instance)
+                        try:
+                            instance = attribute()
+                            if instance.plugin_type == plugin_type:
+                                plugins.append(instance)
+                        except TypeError as e:
+                            log.error(f"Error initializing plugin from {filename}: {e}")
                     else:
-                        log.error(f"The class {attribute_name} in {filename} does not inherit from PluginInterface.")
-            if not class_found:
-                log.error(f"No classes found in {filename}.")
+                        log.warning(f"Class {attribute.__name__} in {filename} is not a valid PluginInterface subclass.")
 
     return plugins
 
 
 if __name__ == "__main__":
-    # This is a simple example of how to load plugins from a directory
-    plugin_dir = os.getenv("SAGEWORKS_PLUGINS")
-    plugins = load_plugins_from_dir(plugin_dir)
-    for plugin in plugins:
-        log.info(f"Loaded plugin: {plugin.__class__.__name__}")
+    plugin_dir = os.getenv("SAGEWORKS_PLUGINS", "default_plugin_directory")
+    if plugin_dir:
+        plugins = load_plugins_from_dir(plugin_dir, PluginType.DATA_SOURCE)  # Example for loading DATA_SOURCE type plugins
+        for plugin in plugins:
+            log.info(f"Loaded plugin: {plugin.__class__.__name__}")
+    else:
+        log.error("The SAGEWORKS_PLUGINS environment variable is not set.")

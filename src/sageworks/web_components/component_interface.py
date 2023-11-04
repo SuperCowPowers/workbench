@@ -2,8 +2,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Union
 import re
+import logging
 import plotly.graph_objects as go
-import pandas as pd
 from dash import dcc, html, dash_table
 
 
@@ -15,8 +15,10 @@ class ComponentInterface(ABC):
       - The 'create_component' method must be implemented by the child class
       - The 'generate_component_figure' is optional (some components don't use Plotly figures)
     """
+    log = logging.getLogger("sageworks")
 
-    ComponentTypes = Union[dcc.Graph, go.Figure, dash_table.DataTable, dcc.Markdown, html.Div]
+    ComponentTypes = Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]
+    FigureTypes = Union[go.Figure]
 
     @abstractmethod
     def create_component(self, component_id: str, **kwargs: Any) -> ComponentTypes:
@@ -28,18 +30,6 @@ class ComponentInterface(ABC):
             Union[go.Figure, dcc.Markdown, html.Div]: The Dash Web component
         """
         pass
-
-    def generate_component_figure(self, df: pd.DataFrame, **kwargs: Any) -> go.Figure:
-        """Generate a figure from the data in the given dataframe.
-        Args:
-            df (pd.DataFrame): The dataframe to generate the figure from.
-            kwargs (Any): Any additional arguments to pass for figure generation.
-        Returns:
-            go.Figure: A Plotly Figure
-        Notes:
-            Overloading this method is optional, some components don't use Plotly figures.
-        """
-        raise NotImplementedError("This component doesn't use Plotly figures")
 
     def component_id(self) -> str:
         """This helper method returns the component ID for the component

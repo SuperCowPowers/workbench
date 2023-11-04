@@ -14,7 +14,7 @@ class EndpointTurbo(PluginInterface):
     plugin_type = PluginType.ENDPOINT
     plugin_input_type = PluginInputType.ENDPOINT_DETAILS
 
-    def create_component(self, component_id: str) -> dcc.Graph:
+    def create_component(self, component_id: str) -> PluginInterface.ComponentTypes:
         """Create a EndpointTurbo Component without any data.
         Args:
             component_id (str): The ID of the web component
@@ -23,10 +23,10 @@ class EndpointTurbo(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, endpoint_details: dict) -> go.Figure:
+    def generate_component_figure(self, figure_input: PluginInputType) -> PluginInterface.FigureTypes:
         """Create a EndpointTurbo Figure for the numeric columns in the dataframe.
         Args:
-            endpoint_details (dict): The model details dictionary
+            figure_input (PluginInputType): Input data for generating the figure.
         Returns:
             plotly.graph_objs.Figure: A Figure object containing the confusion matrix.
         """
