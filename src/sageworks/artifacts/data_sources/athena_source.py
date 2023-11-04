@@ -56,7 +56,6 @@ class AthenaSource(DataSourceAbstract):
             self.log.critical("You must run the sageworks/aws_setup/aws_account_check.py script")
             raise RuntimeError("Unable to find {self.data_catalog_db} in Catalogs...")
 
-
         # All done
         self.log.debug(f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}")
 
