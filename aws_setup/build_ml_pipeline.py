@@ -50,7 +50,7 @@ if __name__ == "__main__":
     redis_check()
 
     # Create the test_data DataSource
-    if not DataSource("test_data").exists():
+    if not DataSource("test_data", force_refresh=True).exists():
         my_loader = CSVToDataSource(test_data_path, "test_data")
         my_loader.set_output_tags("test:small")
         my_loader.transform()

@@ -86,7 +86,8 @@ class FeatureSet(Artifact):
             if not self.data_source.exists():
                 self.log.critical(f"Data Source check failed for {self.uuid}")
                 self.log.critical("Delete this Feature Set and recreate it to fix this issue")
-                return False
+                # Note: This True is 'interesting' the Artifact DOES exist and should be deleted
+                return True
         # AOK
         return True
 

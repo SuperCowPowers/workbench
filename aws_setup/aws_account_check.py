@@ -75,6 +75,11 @@ class AWSAccountCheck:
         for feature_group in sm_client.list_feature_groups()["FeatureGroupSummaries"]:
             self.log.info(str(feature_group))
 
+        # Check that the Glue Database exist
+        self.log.info("*** AWS Glue Database Check ***")
+        for catalog_db in ["sageworks", "sagemaker_featurestore"]:
+            self.aws_clamp.ensure_aws_catalog_db(catalog_db)
+
         self.log.info("\n\nAWS Account Clamp: AOK!")
 
 

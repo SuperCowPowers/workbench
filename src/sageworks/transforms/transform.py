@@ -69,10 +69,6 @@ class Transform(ABC):
         self.sm_session = self.aws_account_clamp.sagemaker_session(self.boto_session)
         self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto_session)
 
-        # Make sure the AWS data catalog database exists
-        self.ensure_aws_catalog_db(self.data_catalog_db)
-        self.ensure_aws_catalog_db("sagemaker_featurestore")
-
     @abstractmethod
     def transform_impl(self, **kwargs):
         """Abstract Method: Implement the Transformation from Input to Output"""
@@ -139,7 +135,3 @@ class Transform(ABC):
     def set_output_uuid(self, output_uuid: str):
         """Set the Output UUID (Name) for this Transform"""
         self.output_uuid = output_uuid
-
-    def ensure_aws_catalog_db(self, catalog_db: str):
-        """Ensure that the AWS Catalog Database exists"""
-        wr.catalog.create_database(catalog_db, exist_ok=True, boto3_session=self.boto_session)

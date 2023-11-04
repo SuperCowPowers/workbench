@@ -49,7 +49,13 @@ class AthenaSource(DataSourceAbstract):
 
         # Setup our AWS Broker catalog metadata
         _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=force_refresh)
-        self.catalog_table_meta = _catalog_meta[self.data_catalog_db].get(self.uuid)
+        try:
+            self.catalog_table_meta = _catalog_meta[self.data_catalog_db].get(self.table_name)
+        except KeyError:
+            self.log.critical(f"Unable to find {self.data_catalog_db} in Catalogs...")
+            self.log.critical("You must run the sageworks/aws_setup/aws_account_check.py script")
+            raise RuntimeError("Unable to find {self.data_catalog_db} in Catalogs...")
+
 
         # All done
         self.log.debug(f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}")
