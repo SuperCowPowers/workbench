@@ -1,6 +1,6 @@
 import os
 import importlib.util
-from typing import List, Optional
+from typing import List
 import logging
 import inspect
 
@@ -42,15 +42,16 @@ def load_plugins_from_dir(directory: str, plugin_type: PluginType) -> List[Plugi
                         except TypeError as e:
                             log.error(f"Error initializing plugin from {filename}: {e}")
                     else:
-                        log.warning(f"Class {attribute.__name__} in {filename} is not a valid PluginInterface subclass.")
+                        log.warning(f"Class {attribute.__name__} in {filename} invalid PluginInterface subclass")
 
     return plugins
 
 
 if __name__ == "__main__":
+    # Example of loading plugins from a directory
     plugin_dir = os.getenv("SAGEWORKS_PLUGINS", "default_plugin_directory")
     if plugin_dir:
-        plugins = load_plugins_from_dir(plugin_dir, PluginType.DATA_SOURCE)  # Example for loading DATA_SOURCE type plugins
+        plugins = load_plugins_from_dir(plugin_dir, PluginType.DATA_SOURCE)
         for plugin in plugins:
             log.info(f"Loaded plugin: {plugin.__class__.__name__}")
     else:

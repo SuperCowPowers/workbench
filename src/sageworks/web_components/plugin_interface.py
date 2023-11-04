@@ -29,6 +29,7 @@ class PluginInterface(ComponentInterface):
       - The 'create_component' method must be implemented by the child class
       - The 'generate_component_figure' method must be implemented by the child class
     """
+
     @abstractmethod
     def create_component(self, component_id: str) -> ComponentInterface.ComponentTypes:
         """Create a Dash Component without any data.
@@ -60,15 +61,15 @@ class PluginInterface(ComponentInterface):
 
         if not hasattr(cls, "plugin_input_type") or not isinstance(cls.plugin_input_type, PluginInputType):
             raise TypeError("Subclasses must define a 'plugin_input_type' of type PluginInputType")
-    
-    # If any base class method or parameter is missing from a subclass, or if a subclass method parameter is not correctly typed,
-    # a call of issubclass(subclass, cls) will return False, allowing runtime checks for plugins
-    # An 'assert issubclass(subclass, cls) call could be implemented in the plugin loader interface or the test plugin_interface_test.py
+
+    # If any base class method or parameter is missing from a subclass, or if a subclass method parameter is not
+    # correctly typed a call of issubclass(subclass, cls) will return False, allowing runtime checks for plugins
+    # The plugin loader calls issubclass(subclass, cls) to determine if the subclass is a valid plugin
     @classmethod
     def __subclasshook__(cls, subclass):
         if cls is PluginInterface:
             # Check if the subclass has all the required attributes
-            if not all(hasattr(subclass, attr) for attr in ('plugin_type', 'plugin_input_type')):
+            if not all(hasattr(subclass, attr) for attr in ("plugin_type", "plugin_input_type")):
                 cls.log.warning(f"Subclass {subclass.__name__} is missing required attributes")
                 return False
 

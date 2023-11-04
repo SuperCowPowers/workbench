@@ -26,7 +26,7 @@ class Turbo(PluginInterface):
     def generate_component_figure(self, figure_input: PluginInputType) -> PluginInterface.FigureTypes:
         """Create a Turbo Figure for the numeric columns in the dataframe.
         Args:
-            figure_input (PluginInputType): Input data for generating the figure.
+            figure_input (PluginInputType.MODEL_DETAILS): Input data for generating the figure.
         Returns:
             plotly.graph_objs.Figure: A Figure object containing the confusion matrix.
         """

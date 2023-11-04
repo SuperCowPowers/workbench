@@ -15,6 +15,7 @@ class ComponentInterface(ABC):
       - The 'create_component' method must be implemented by the child class
       - The 'generate_component_figure' is optional (some components don't use Plotly figures)
     """
+
     log = logging.getLogger("sageworks")
 
     ComponentTypes = Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]
