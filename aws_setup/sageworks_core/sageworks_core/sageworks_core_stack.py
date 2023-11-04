@@ -26,7 +26,7 @@ class SageworksCoreStack(Stack):
         props: SageworksCoreStackProps,
         **kwargs: Any,
     ) -> None:
-        desc = "SageWorks Core Stack: Execution Role, Data Catalog Databases, and Artifact Bucket"
+        desc = "SageWorks Core Stack: Execution Role and Artifact Bucket"
         super().__init__(scope, construct_id, description=desc, **kwargs)
 
         # Grab our properties
@@ -53,9 +53,6 @@ class SageworksCoreStack(Stack):
         self.glue_service_role = self.create_execution_role(
             "AWSGlueServiceRole-Sageworks", iam.ServicePrincipal("glue.amazonaws.com")
         )
-
-        # Create the SageWorks Data Catalog Databases
-        self.create_data_catalog_databases()
 
     def add_artifact_bucket(self, bucket_name) -> s3.Bucket:
         return s3.Bucket(
@@ -106,13 +103,3 @@ class SageworksCoreStack(Stack):
             )
         )
         return execution_role
-
-    def create_data_catalog_databases(self) -> None:
-        # Create two Data Catalog Databases using CfnDatabase (sageworks and sagemaker_featurestore)
-        self.add_data_catalog_database("sageworks")
-        self.add_data_catalog_database("sagemaker_featurestore")
-
-    def add_data_catalog_database(self, database_name: str) -> None:
-        glue.CfnDatabase(
-            self, f"{database_name}_database", catalog_id=self.account, database_input={"name": database_name}
-        )
