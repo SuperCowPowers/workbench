@@ -17,7 +17,7 @@ from pathlib import Path
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
-from sageworks.artifacts.models.model import Model
+from sageworks.artifacts.models.model import Model, ModelType
 from sageworks.artifacts.endpoints.endpoint import Endpoint
 from sageworks.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
 from sageworks.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
@@ -85,14 +85,9 @@ if __name__ == "__main__":
 
     # Create the abalone_regression Model
     if not Model("abalone-regression").exists():
-        features_to_model = FeaturesToModel("abalone_feature_set", "abalone-regression")
+        features_to_model = FeaturesToModel("abalone_feature_set", "abalone-regression", ModelType.REGRESSOR)
         features_to_model.set_output_tags(["abalone", "regression"])
         features_to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")
-
-    # Wait for the Model to be created
-    while not Model("abalone-regression").exists():
-        print("Waiting for the Model to be created...")
-        time.sleep(5)
 
     # Create the abalone_regression Endpoint
     if not Endpoint("abalone-regression-end").exists():
