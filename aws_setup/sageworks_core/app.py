@@ -27,7 +27,7 @@ env = cdk.Environment(account=aws_account, region=aws_region)
 
 sandbox_stack = SageworksCoreStack(
     app,
-    "Sageworks",
+    "SageworksCore",
     env=env,
     props=SageworksCoreStackProps(
         sageworks_bucket=sageworks_bucket, sageworks_role_name=sageworks_role_name, sso_role_arn=sso_role_arn
