@@ -38,15 +38,8 @@ class SageworksCoreStack(Stack):
         # Create the SageWorks Artifact Bucket (must be created before Roles)
         self.artifact_bucket = self.add_artifact_bucket(self.sageworks_bucket)
 
-        # We're going pin down who can assume the SageWorks Execution Role
-        # member_of_sso_group = iam.ArnPrincipal(self.sso_role_arn)
-        member_of_sso_group = iam.AccountPrincipal(self.account_id)
-        member_of_sso_group = iam.CompositePrincipal(member_of_sso_group)
-        print(member_of_sso_group)
-        member_of_sso_group = iam.AnyPrincipal()
-
         # Create our main SageWorks Execution Role
-        self.sageworks_execution_role = self.create_execution_role(self.sageworks_role_name, member_of_sso_group)
+        self.sageworks_execution_role = self.create_execution_role(self.sageworks_role_name, iam.AccountPrincipal(self.account_id))
 
         # Create a SageWorks Execution Role for AWS Glue
         # Note: This is a duplicate, but Glue Jobs require a specific role name and this role can be assumed by Glue Services
