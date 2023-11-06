@@ -77,8 +77,13 @@ class PluginInterface(ComponentInterface):
             required_methods = set(cls.__abstractmethods__)
             for method in required_methods:
                 # Check for the presence of the method
-                if not any(method == m[0] and callable(m[1]) for m in inspect.getmembers(subclass, inspect.isfunction)):
+                if not hasattr(subclass, method):
                     cls.log.warning(f"Subclass {subclass.__name__} is missing required method {method}")
+                    return False
+
+                # Check if the method is different from the base class (i.e., it's been implemented)
+                if getattr(subclass, method) is getattr(PluginInterface, method):
+                    cls.log.warning(f"Subclass {subclass.__name__} has not implemented the method {method}")
                     return False
 
                 # Check for the correct signature

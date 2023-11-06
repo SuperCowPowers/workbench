@@ -34,6 +34,24 @@ class CorrectPlugin(PluginInterface):
         return PluginInterface.message_figure("I'm a good plugin...")
 
 
+class IncorrectMethods(PluginInterface):
+    """Subclass of PluginInterface with incorrect methods
+    they have create_component but forgot to implement generate_component_figure"""
+
+    """Initialize this Plugin Component Class with required attributes"""
+    plugin_type = PluginType.MODEL
+    plugin_input_type = PluginInputType.MODEL_DETAILS
+
+    def create_component(self, component_id: str) -> PluginInterface.ComponentTypes:
+        """Create a Confusion Matrix Component without any data.
+        Args:
+            component_id (str): The ID of the web component
+        Returns:
+            dcc.Graph: The Confusion Matrix Component
+        """
+        return dcc.Graph(id=component_id, figure=self.waiting_figure())
+
+
 class IncorrectNamedInputs(PluginInterface):
     """Subclass of PluginInterface with incorrectly named inputs."""
 
@@ -88,6 +106,14 @@ class IncorrectTypedInputs(PluginInterface):
         return PluginInterface.message_figure("I'm a bad plugin...")
 
 
+def test_incorrect_methods():
+    """Test if incorrect methods are caught by the PluginInterface"""
+    subclass_cond = issubclass(IncorrectMethods, PluginInterface)
+    print(f"Incorrect Methods is a subclass of PluginInterface?: {subclass_cond}")
+    print("\n")
+    assert subclass_cond is False
+
+
 def test_incorrect_names():
     """Test if incorrect names are caught by the PluginInterface"""
     subclass_cond = issubclass(IncorrectNamedInputs, PluginInterface)
@@ -110,3 +136,11 @@ def test_proper_subclass():
     print(f"Correct is a subclass of PluginInterface?: {subclass_cond}")
     print("\n")
     assert subclass_cond is True
+
+
+if __name__ == "__main__":
+    # Run the tests
+    test_incorrect_methods()
+    test_incorrect_names()
+    test_incorrect_types()
+    test_proper_subclass()
