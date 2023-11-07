@@ -9,6 +9,7 @@ from sageworks.web_components.component_interface import ComponentInterface
 
 class PluginType(Enum):
     """TBD: Nice Docstring here or link to docs"""
+
     DATA_SOURCE = "data_source"
     FEATURE_SET = "feature_set"
     MODEL = "model"
@@ -17,6 +18,7 @@ class PluginType(Enum):
 
 class PluginInputType(Enum):
     """TBD: Nice Docstring here or link to docs"""
+
     DATA_SOURCE_DETAILS = "data_source_details"
     FEATURE_SET_DETAILS = "feature_set_details"
     MODEL_DETAILS = "model_details"
