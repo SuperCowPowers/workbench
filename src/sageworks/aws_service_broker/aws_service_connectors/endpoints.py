@@ -1,9 +1,11 @@
 """Endpoints: Helper Class for AWS SageMaker Endpoints"""
 import sys
 import argparse
+import botocore
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
+from sageworks.utils.boto_error_info import client_error_info
 
 
 class Endpoints(Connector):
@@ -58,15 +60,20 @@ class Endpoints(Connector):
         details = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
 
         # We just need the instance type from the Endpoint Config
-        endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=details["EndpointConfigName"])
-        instance_type = endpoint_config["ProductionVariants"][0].get("InstanceType")
-        if instance_type is None:
-            mem_size = endpoint_config["ProductionVariants"][0]["ServerlessConfig"]["MemorySizeInMB"]
-            concurrency = endpoint_config["ProductionVariants"][0]["ServerlessConfig"]["MaxConcurrency"]
-            mem_in_gb = int(mem_size / 1024)
-            instance_type = f"Serverless ({mem_in_gb}GB/{concurrency})"
-        details["InstanceType"] = instance_type
-        return details
+        try:
+            endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=details["EndpointConfigName"])
+            instance_type = endpoint_config["ProductionVariants"][0].get("InstanceType")
+            if instance_type is None:
+                mem_size = endpoint_config["ProductionVariants"][0]["ServerlessConfig"]["MemorySizeInMB"]
+                concurrency = endpoint_config["ProductionVariants"][0]["ServerlessConfig"]["MaxConcurrency"]
+                mem_in_gb = int(mem_size / 1024)
+                instance_type = f"Serverless ({mem_in_gb}GB/{concurrency})"
+            details["InstanceType"] = instance_type
+            return details
+        except botocore.exceptions.ClientError as e:
+            client_error_info(e)
+            details["InstanceType"] = "No Endpoint Config"
+            return details
 
 
 if __name__ == "__main__":
