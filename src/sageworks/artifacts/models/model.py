@@ -3,6 +3,7 @@ from datetime import datetime
 import urllib.parse
 from typing import Union
 from enum import Enum
+import botocore
 
 import pandas as pd
 import awswrangler as wr
@@ -356,7 +357,7 @@ class Model(Artifact):
                 df = df.round(3)
                 self.upsert_sageworks_meta({"sageworks_training_metrics": df.to_dict(), "sageworks_training_cm": None})
                 return
-        except KeyError:
+        except (KeyError, botocore.exceptions.ClientError):
             self.log.warning(f"No training job metrics found for {self.training_job_name}")
             # Store and return the metrics in the SageWorks Metadata
             self.upsert_sageworks_meta({"sageworks_training_metrics": None, "sageworks_training_cm": None})
