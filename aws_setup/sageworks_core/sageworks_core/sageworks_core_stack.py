@@ -59,11 +59,7 @@ class SageworksCoreStack(Stack):
             # sso_group_arn = f"arn:aws:sts::{self.account_id}:assumed-role/{self.sso_group}_*/*"
             # sso_group_arn = f"arn:aws:sts::{self.account_id}:assumed-role/{self.sso_group}_*/{self.sso_group}*"
             sso_group_arn = f"arn:aws:iam::{self.account_id}:role/aws-reserved/sso.amazonaws.com/*/{self.sso_group}_*"
-            condition = {
-                "ArnLike": {
-                    "aws:PrincipalArn": sso_group_arn
-                }
-            }
+            condition = {"ArnLike": {"aws:PrincipalArn": sso_group_arn}}
             assumed_by.add_principals(iam.AccountPrincipal(self.account_id).with_conditions(condition))
         else:
             assumed_by.add_principals(iam.AccountPrincipal(self.account_id))
