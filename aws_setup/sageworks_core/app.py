@@ -15,7 +15,7 @@ print(f"Region: {aws_region}")
 # We'd like to set up our parameters here
 sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
 sageworks_role_name = os.environ.get("SAGEWORKS_ROLE", "SageWorks-ExecutionRole")
-sso_role_arn = os.environ.get("SAGEWORKS_SSO_ROLE_ARN")
+sso_group = os.environ.get("SAGEWORKS_SSO_GROUP")
 
 
 # Our CDK App
@@ -30,7 +30,7 @@ sandbox_stack = SageworksCoreStack(
     "SageworksCore",
     env=env,
     props=SageworksCoreStackProps(
-        sageworks_bucket=sageworks_bucket, sageworks_role_name=sageworks_role_name, sso_role_arn=sso_role_arn
+        sageworks_bucket=sageworks_bucket, sageworks_role_name=sageworks_role_name, sso_group=sso_group
     ),
 )
 
