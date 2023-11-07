@@ -56,7 +56,7 @@ class SageworksCoreStack(Stack):
 
         # If sso_group is provided, add the condition to the trust relationship
         if self.sso_group:
-            sso_group_arn = f"arn:aws:iam::{self.account_id}:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_{self.sso_group}_*"
+            sso_group_arn = f"arn:aws:iam::{self.account_id}:role/aws-reserved/sso.amazonaws.com/*/{self.sso_group}_*"
             condition = {
                 "ArnLike": {
                     "aws:PrincipalArn": sso_group_arn
