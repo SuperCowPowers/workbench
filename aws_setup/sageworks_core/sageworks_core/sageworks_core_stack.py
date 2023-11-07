@@ -52,7 +52,9 @@ class SageworksCoreStack(Stack):
         """Create the SageWorks Execution Role for API-related tasks"""
 
         # Define the base assumed by principals with ECS service principal
-        assumed_by = iam.CompositePrincipal(iam.ServicePrincipal("ecs-tasks.amazonaws.com"))
+        assumed_by = iam.CompositePrincipal(
+            iam.ServicePrincipal("ecs-tasks.amazonaws.com"), iam.ServicePrincipal("sagemaker.amazonaws.com")
+        )
 
         # If sso_group is provided, add the condition to the trust relationship
         if self.sso_group:
