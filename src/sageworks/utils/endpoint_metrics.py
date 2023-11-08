@@ -170,7 +170,7 @@ if __name__ == "__main__":
 
     # Create the Class and query for metrics
     my_metrics = EndpointMetrics()
-    metrics_data = my_metrics.get_metrics(endpoint="abalone-regression-end", days_back=3)
+    metrics_data = my_metrics.get_metrics(endpoint="solubility-test-regression", days_back=3)
     pprint(metrics_data)
 
     # Sum up the columns and display
