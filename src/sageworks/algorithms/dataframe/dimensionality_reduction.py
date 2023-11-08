@@ -15,12 +15,12 @@ class DimensionalityReduction:
         self.projection_model = None
         self.features = None
 
-    def fit_transform(self, df: pd.DataFrame, projection: str = "TSNE", features: list = None) -> pd.DataFrame:
+    def fit_transform(self, df: pd.DataFrame, features: list = None, projection: str = "TSNE") -> pd.DataFrame:
         """Fit and Transform the DataFrame
         Args:
             df: Pandas DataFrame
-            projection: The projection model to use (TSNE, MDS or PCA, default: PCA)
             features: List of feature column names (default: None)
+            projection: The projection model to use (TSNE, MDS or PCA, default: PCA)
         Returns:
             Pandas DataFrame with new columns x and y
         """
@@ -130,7 +130,7 @@ def test():
 
     # Create the class and run the dimensionality reduction
     projection = DimensionalityReduction()
-    new_df = projection.fit_transform(data_df, features)
+    new_df = projection.fit_transform(data_df, features=features, projection="TSNE")
 
     # Check that the x and y columns were added
     assert "x" in new_df.columns

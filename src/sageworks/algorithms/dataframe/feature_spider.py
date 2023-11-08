@@ -134,17 +134,32 @@ class FeatureSpider:
         ]
         return results_df
 
-    def coincident(self, target_diff, verbose=True):
-        """Convenience method that calls high_gradients with a distance of 0"""
+    def coincident(self, target_diff: float, verbose: bool = True):
+        """Convenience method that returns high_gradients with a distance of 0.0
+        Args:
+            target_diff(float): The target difference threshold
+            verbose(bool): Print out the results (default: True)
+        Returns:
+            List of indexes that are part of high target gradient (HTG) pairs
+
+        Note: See high_gradients for more information
+        """
         return self.high_gradients(0.0, target_diff, verbose)
 
     def high_gradients(self, within_distance: float, target_diff: float, verbose: bool = True) -> list:
-        """This basically loops over all the X features in the KNN model
+        """Find High Target Gradients in the KNN Model
+        Args:
+            within_distance(float): The distance threshold to consider
+            target_diff(float): The target difference threshold
+            verbose(bool): Print out the results (default: True)
+        Returns:
+            List of indexes that are part of high target gradient (HTG) pairs
+
+        Notes: This basically loops over all the X features in the KNN model
         - Grab the neighbors distances and indices
         - For neighbors `within_distance`* grab target values
         - If target values have a difference > `target_diff`
            - List out the details of the observations and the distance, target diff
-        *Note: standardized feature space
         """
         global_htg_set = set()
         for my_index, obs in enumerate(self.knn._fit_X):
@@ -200,7 +215,7 @@ def test():
     data = {
         "ID": [
             "id_0",
-            "id_0",
+            "id_1",
             "id_2",
             "id_3",
             "id_4",
@@ -218,7 +233,7 @@ def test():
     data_df = pd.DataFrame(data)
 
     # Create the class and run the taggers
-    f_spider = FeatureSpider(data_df, ["feat1", "feat2", "feat3"], id_column="ID", target="price")
+    f_spider = FeatureSpider(data_df, ["feat1", "feat2", "feat3"], id_column="ID", target_column="price")
     preds = f_spider.predict(data_df)
     print(preds)
     coincident = f_spider.coincident(2)

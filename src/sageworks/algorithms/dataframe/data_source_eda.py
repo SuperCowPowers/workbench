@@ -18,6 +18,7 @@ class DataSourceEDA:
         # Spin up the DataToPandas class
         self.data_to_pandas = DataToPandas(self.data_source_uuid)
         self.log.info(f"Getting DataFrame from {self.data_source_uuid}...")
+        self.data_to_pandas.transform()
         self.df = self.data_to_pandas.get_output()
 
     def get_column_info(self):
