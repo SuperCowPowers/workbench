@@ -28,9 +28,9 @@ class ArtifactsTextView(View):
             ArtifactsTextView.aws_artifact_data = self.aws_broker.get_all_metadata()
 
         # Setup Pandas output options
-        pd.set_option("display.max_colwidth", 50)
+        pd.set_option("display.max_colwidth", 30)
         pd.set_option("display.max_columns", 15)
-        pd.set_option("display.width", 1000)
+        pd.set_option("display.width", 800)
 
     def check(self) -> bool:
         """Can we connect to this view/service?"""
