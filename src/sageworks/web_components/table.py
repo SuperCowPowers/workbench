@@ -52,9 +52,12 @@ class Table(ComponentInterface):
                 "textAlign": "left",
             },
             style_header={
+                'className': 'dash-table-header',
                 "textAlign": "left",
                 "fontSize": 16,
+                'padding': '3px 5px 7px 5px',
                 "backgroundColor": header_color,
+                'backgroundImage': f"linear-gradient(to bottom, {header_color}, rgba(0, 0, 0, 0.6))",
                 "color": "rgb(200, 200, 200)",
             },
             style_data={
