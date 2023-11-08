@@ -172,3 +172,6 @@ if __name__ == "__main__":
     my_metrics = EndpointMetrics()
     metrics_data = my_metrics.get_metrics(endpoint="abalone-regression-end", days_back=3)
     pprint(metrics_data)
+
+    # Sum up the columns and display
+    print(metrics_data.select_dtypes(include=['number']).sum())
