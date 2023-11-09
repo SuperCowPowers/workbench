@@ -20,19 +20,19 @@ register_page(
 tables = dict()
 tables["INCOMING_DATA"] = table.Table().create_component(
     "INCOMING_DATA",
-    header_color="rgb(60, 60, 100)",
+    header_color="rgb(70, 70, 110)",
 )
 tables["GLUE_JOBS"] = table.Table().create_component(
     "GLUE_JOBS",
-    header_color="rgb(60, 60, 100)",
+    header_color="rgb(70, 70, 110)",
 )
 tables["DATA_SOURCES"] = table.Table().create_component(
     "DATA_SOURCES",
-    header_color="rgb(100, 60, 60)",
+    header_color="rgb(120, 70, 70)",
 )
 tables["FEATURE_SETS"] = table.Table().create_component(
     "FEATURE_SETS",
-    header_color="rgb(100, 100, 60)",
+    header_color="rgb(110, 110, 70)",
 )
 tables["MODELS"] = table.Table().create_component(
     "MODELS",

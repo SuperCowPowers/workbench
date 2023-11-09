@@ -20,7 +20,7 @@ class Table(ComponentInterface):
         header_color="rgb(60, 60, 60)",
         row_select=False,
         max_height: str = "200px",
-        fixed_headers: bool = False,
+        fixed_headers: bool = True,
     ) -> dash_table.DataTable:
         """Create a DataTable Component without any data.
         Args:
@@ -48,6 +48,7 @@ class Table(ComponentInterface):
                 "padding": "5px",
                 "overflow": "hidden",
                 "textOverflow": "ellipsis",
+                "minWidth": 100,
                 "maxWidth": 250,
                 "textAlign": "left",
             },
@@ -55,9 +56,9 @@ class Table(ComponentInterface):
                 "className": "dash-table-header",
                 "textAlign": "left",
                 "fontSize": 16,
-                "padding": "3px 5px 10px 5px",
+                "padding": "8px 8px 8px 8px",
                 "backgroundColor": header_color,
-                "backgroundImage": f"linear-gradient(to bottom, {header_color}, rgba(0, 0, 0, 0.6))",
+                "backgroundImage": f"linear-gradient(to bottom, {header_color}, rgba(0, 0, 0, 0.5))",
                 "color": "rgb(200, 200, 200)",
             },
             style_data={
@@ -98,22 +99,23 @@ class Table(ComponentInterface):
         if not show_columns:
             show_columns = [c for c in df.columns.to_list() if c not in dont_show]
 
-        # Column Setup with name, id, and presentation type
         column_setup_list = []
         for c in show_columns:
-            presentation = "markdown" if markdown_columns and c in markdown_columns else "input"
-            # Check for a numeric column
+            column_def = {
+                "name": c,
+                "id": c,
+                "presentation": "markdown" if markdown_columns and c in markdown_columns else "input"
+            }
+
+            # Check for a numeric column and add additional properties as needed
             if df[c].dtype in ["float64", "float32"]:
-                column_setup_list.append(
-                    {
-                        "name": c,
-                        "id": c,
-                        "type": "numeric",
-                        "format": Format(group=",", precision=3, scheme="f"),
-                    }
-                )
-            else:
-                column_setup_list.append({"name": c, "id": c, "presentation": presentation})
+                column_def.update({
+                    "type": "numeric",
+                    "format": Format(group=",", precision=3, scheme="f"),
+                })
+
+            column_setup_list.append(column_def)
+
         return column_setup_list
 
     @staticmethod

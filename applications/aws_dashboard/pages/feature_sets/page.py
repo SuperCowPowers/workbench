@@ -21,17 +21,17 @@ load_figure_template("darkly")
 # Grab a view that gives us a summary of the FeatureSets in SageWorks
 feature_set_broker = FeatureSetWebView()
 
-# Create a table to display the data sources
+# Create a table to display the feature sets
 feature_sets_table = table.Table().create_component(
     "feature_sets_table",
-    header_color="rgb(100, 100, 60)",
+    header_color="rgb(110, 110, 70)",
     row_select="single",
 )
 
 # Grab smart_sample rows from the first Feature Set
 feature_set_sample_rows = table.Table().create_component(
     "feature_set_sample_rows",
-    header_color="rgb(60, 60, 100)",
+    header_color="rgb(70, 70, 110)",
     max_height="300px",
 )
 

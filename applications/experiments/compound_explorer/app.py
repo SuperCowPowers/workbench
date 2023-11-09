@@ -35,7 +35,7 @@ data_source_rows = data_source_broker.data_sources_summary()
 # Create a table to display the data sources
 data_sources_table = table.Table().create_component(
     "data_sources_table",
-    header_color="rgb(100, 60, 60)",
+    header_color="rgb(120, 70, 70)",
     row_select="single",
 )
 
