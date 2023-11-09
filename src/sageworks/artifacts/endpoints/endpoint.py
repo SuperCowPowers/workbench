@@ -348,6 +348,10 @@ class Endpoint(Artifact):
                 pred_df, f"{self.model_inference_path}/{self.model_name}/inference_predictions.csv", index=False
             )
 
+        # Recompute the details so that inference model metrics are updated
+        self.log.important(f"Recomputing Details for {self.uuid} to show latest Inference Results...")
+        self.details(recompute=True)
+
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
         model = Model(self.model_name)
