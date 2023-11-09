@@ -1,9 +1,15 @@
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.styles import Style
+from pprint import pprint
 
 # SageWorks Imports
 from sageworks.views.artifacts_text_view import ArtifactsTextView
+from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
+import logging
+
+# SageWorks is currently quite verbose so lets set the logs to warning
+logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
 
 # Create a global instance of the ArtifactsTextView
 artifacts_text_view = ArtifactsTextView()
@@ -14,6 +20,17 @@ history = InMemoryHistory()
 
 # Command handler
 class CommandHandler:
+    def __init__(self):
+        # This dictionary will hold all the variables defined during the REPL session.
+        self.session_globals = {}
+        initial_imports = """
+from sageworks.artifacts.data_sources.data_source import DataSource
+from sageworks.artifacts.feature_sets.feature_set import FeatureSet
+from sageworks.artifacts.models.model import Model
+from sageworks.artifacts.endpoints.endpoint import Endpoint
+        """
+        exec(initial_imports, self.session_globals)
+
     def exit(self):
         print("Exiting SageWorks REPL...")
         return True  # Returning True will exit the REPL loop
@@ -41,6 +58,7 @@ class CommandHandler:
             print(artifacts_text_view.endpoints_summary())
 
     def handle_command(self, raw_text):
+        # Check for custom commands first
         tokens = raw_text.strip().split()
         if not tokens:
             return False  # No command entered
@@ -53,7 +71,28 @@ class CommandHandler:
             result = method(*args)
             return result
         else:
-            print(f"Unknown command: {command}")
+            # If not a custom command, try to execute it as Python code
+            try:
+                # Try evaluating it as an expression first
+                result = eval(raw_text, self.session_globals, self.session_globals)
+                pprint(result)  # This will print the result of the expression if eval succeeds
+            except SyntaxError:
+                # If it's not an expression (or if eval fails), it might be a statement.
+                # For example, assignment (`foo = 5`) is a statement.
+                try:
+                    exec(raw_text, self.session_globals, self.session_globals)
+                    if raw_text.startswith('print'):
+                        pass  # Avoid printing None if it was a print statement
+                    elif '=' in raw_text:
+                        # If there was an assignment, print the assigned variable
+                        left_hand_side = raw_text.split('=')[0].strip()
+                        # Evaluate the left hand side to print its new value
+                        print(eval(left_hand_side, self.session_globals, self.session_globals))
+                except Exception as e:
+                    print(f"Python execution error: {e}")
+            except Exception as e:
+                # Catch all other exceptions that might be raised by eval
+                print(f"Python execution error: {e}")
             return False
 
 
@@ -65,7 +104,7 @@ def repl():
     while True:
         try:
             # The 'prompt' parameter defines the text to display for the prompt
-            text = session.prompt("🍺  SageWorks>", style=Style.from_dict({"prompt": "hotpink"}))
+            text = session.prompt("🍺  SageWorks> ", style=Style.from_dict({"prompt": "hotpink"}))
             if handler.handle_command(text):
                 break  # Exit the REPL loop if the command handler returns True
         except KeyboardInterrupt:
