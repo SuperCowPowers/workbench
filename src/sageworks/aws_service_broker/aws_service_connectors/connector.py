@@ -1,5 +1,6 @@
 """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
 from abc import ABC, abstractmethod
+import botocore
 import time
 
 import logging
@@ -56,9 +57,18 @@ class Connector(ABC):
         Note: This functionality is a helper or Feature Store, Models, and Endpoints.
               The Data Catalog and Glue Jobs class have their own methods/logic
         """
-        # Note: AWS List Tags can get grumpy if called too often, so put in sleep
-        self.log.debug(f"Throttling list_tags AWS request {arn}...")
-        time.sleep(2)
-        aws_tags = self.sm_session.list_tags(arn)
+        # Note: AWS List Tags can get grumpy if called too often
+        self.log.debug(f"Calling list_tags AWS request {arn}...")
+        try:
+            aws_tags = self.sm_session.list_tags(arn)
+        except botocore.exceptions.ClientError as e:
+            error_code = e.response['Error']['Code']
+            if error_code == 'ThrottlingException':
+                self.log.warning(f"ThrottlingException: {error_code}")
+                time.sleep(5)
+                aws_tags = self.sm_session.list_tags(arn)
+            else:
+                # Handle other ClientErrors that may occur
+                self.log.error(f"Caught a different ClientError: {error_code}")
         meta = self._aws_tags_to_dict(aws_tags)
         return meta

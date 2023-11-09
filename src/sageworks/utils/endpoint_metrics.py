@@ -41,53 +41,17 @@ class EndpointMetrics:
         }
         self.stats = ["Sum", "Average", "Average", "Average", "Sum", "Sum"]
 
-    def get_time_range(self, days_back=7):
-        now_utc = datetime.now(timezone.utc)
-        self.end_time = now_utc
-        self.start_time = self.end_time - timedelta(days=days_back)
-
-        # Convert times to strings that the CloudWatch API expects
-        end_time_str = self.end_time.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
-        start_time_str = self.start_time.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
-
-        return start_time_str, end_time_str
-
-    def get_metric_data_queries(self, endpoint) -> list[dict]:
-        # Change the Period based on the number of days back
-        period = 3600  # Hardcoded to 1 hour for now
-        metric_data_queries = []
-
-        for metric_name, stat in zip(self.metrics, self.stats):
-            query = {
-                "Id": f"m_{metric_name}",
-                "MetricStat": {
-                    "Metric": {
-                        "Namespace": "AWS/SageMaker",
-                        "MetricName": metric_name,
-                        "Dimensions": [
-                            {"Name": "EndpointName", "Value": endpoint},
-                            {"Name": "VariantName", "Value": "AllTraffic"},
-                        ],
-                    },
-                    "Period": period,
-                    "Stat": stat,
-                },
-                "ReturnData": True,
-            }
-            metric_data_queries.append(query)
-
-        return metric_data_queries
-
-    def get_metrics(self, endpoint: str, days_back: int = 3) -> pd.DataFrame:
+    def get_metrics(self, endpoint: str, variant: str = "AllTraffic", days_back: int = 3) -> pd.DataFrame:
         """Get the metric data for a given endpoint
         Args:
             endpoint(str): The name of the endpoint
+            variant(str): The variant name (default: AllTraffic)
             days_back(int): The number of days back to fetch metrics
         Returns:
             pd.DataFrame: The metric data in a dataframe
         """
         # Fetch the metrics
-        response = self._fetch_metrics(endpoint=endpoint, days_back=days_back)
+        response = self._fetch_metrics(endpoint=endpoint, variant=variant, days_back=days_back)
 
         # Parse the response
         metric_data = {}
@@ -119,6 +83,61 @@ class EndpointMetrics:
         # Now we're going to merge the dataframes
         metric_df = self._merge_dataframes(metric_data=metric_data)
         return metric_df
+
+    def _fetch_metrics(self, endpoint: str, variant: str, days_back: int):
+        """Internal Method: Fetch metrics from CloudWatch"""
+        start_time_str, end_time_str = self._get_time_range(days_back=days_back)
+        metric_data_queries = self._get_metric_data_queries(endpoint=endpoint, variant=variant)
+
+        response = self.cloudwatch.get_metric_data(
+            MetricDataQueries=metric_data_queries, StartTime=start_time_str, EndTime=end_time_str
+        )
+        return response
+
+    def _get_time_range(self, days_back=3):
+        """Internal Method: Get the time range for the metrics"""
+        now_utc = datetime.now(timezone.utc)
+        self.end_time = now_utc
+        self.start_time = self.end_time - timedelta(days=days_back)
+
+        # Convert times to strings that the CloudWatch API expects
+        end_time_str = self.end_time.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+        start_time_str = self.start_time.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+
+        return start_time_str, end_time_str
+
+    def _get_metric_data_queries(self, endpoint: str, variant: str) -> list[dict]:
+        """Inernal: Get the metric data queries for a given endpoint
+        Args:
+            endpoint(str): The name of the endpoint
+            variant(str): The variant name
+        Returns:
+            list[dict]: The metric data queries
+        """
+        # Change the Period based on the number of days back
+        period = 3600  # Hardcoded to 1 hour for now
+        metric_data_queries = []
+
+        for metric_name, stat in zip(self.metrics, self.stats):
+            query = {
+                "Id": f"m_{metric_name}",
+                "MetricStat": {
+                    "Metric": {
+                        "Namespace": "AWS/SageMaker",
+                        "MetricName": metric_name,
+                        "Dimensions": [
+                            {"Name": "EndpointName", "Value": endpoint},
+                            {"Name": "VariantName", "Value": variant},
+                        ],
+                    },
+                    "Period": period,
+                    "Stat": stat,
+                },
+                "ReturnData": True,
+            }
+            metric_data_queries.append(query)
+
+        return metric_data_queries
 
     @staticmethod
     def _merge_dataframes(metric_data: dict) -> pd.DataFrame:
@@ -153,24 +172,18 @@ class EndpointMetrics:
         merged_df.reset_index(inplace=True)
         return merged_df
 
-    def _fetch_metrics(self, endpoint: str, days_back: int):
-        """Internal Method: Fetch metrics from CloudWatch"""
-        start_time_str, end_time_str = self.get_time_range(days_back=days_back)
-        metric_data_queries = self.get_metric_data_queries(endpoint=endpoint)
-
-        response = self.cloudwatch.get_metric_data(
-            MetricDataQueries=metric_data_queries, StartTime=start_time_str, EndTime=end_time_str
-        )
-        return response
-
 
 if __name__ == "__main__":
     """Exercise the EndpointMetrics class"""
     from pprint import pprint
 
+    endpoint = "solubility-test-regression-end"
+    endpoint = "abalone-regression-end"
+    print(f"Fetching metrics for endpoint: {endpoint}...")
+
     # Create the Class and query for metrics
     my_metrics = EndpointMetrics()
-    metrics_data = my_metrics.get_metrics(endpoint="solubility-test-regression", days_back=3)
+    metrics_data = my_metrics.get_metrics(endpoint=endpoint, days_back=3)
     pprint(metrics_data)
 
     # Sum up the columns and display

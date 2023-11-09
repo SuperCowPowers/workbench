@@ -93,7 +93,7 @@ class AWSServiceBroker:
 
         # Caches for Metadata
         cls.meta_cache = SageWorksCache()
-        cls.fresh_cache = SageWorksCache(expire=20, postfix=":fresh")
+        cls.fresh_cache = SageWorksCache(expire=60, postfix=":fresh")
 
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler

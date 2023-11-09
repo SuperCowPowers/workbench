@@ -35,7 +35,7 @@ class Endpoints(Connector):
         # Get the details for Endpoints and convert to a data structure with direct lookup
         self.endpoint_data = {name: self._retrieve_details(name) for name in _end_names}
 
-        # Additional details under the sageworks_meta section for each Model Group
+        # Additional details under the sageworks_meta section for each Endpoint
         for _end_name, end_info in self.endpoint_data.items():
             sageworks_meta = self.sageworks_meta_via_arn(end_info["EndpointArn"])
             end_info["sageworks_meta"] = sageworks_meta

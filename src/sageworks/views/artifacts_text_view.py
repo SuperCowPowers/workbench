@@ -299,6 +299,7 @@ class ArtifactsTextView(View):
                 "Name": endpoint_info["EndpointName"],
                 "Instance": endpoint_info.get("InstanceType", "-"),
                 "Status": endpoint_info["EndpointStatus"],
+                "Variant": endpoint_info.get("ProductionVariants", [{}])[0].get("VariantName", "-"),
                 "Created": self.datetime_string(endpoint_info.get("CreationTime")),
                 "Capture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
                 "Samp(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),

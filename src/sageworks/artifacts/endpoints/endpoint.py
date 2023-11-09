@@ -230,7 +230,8 @@ class Endpoint(Artifact):
             endpoint_metrics = self.temp_storage.get(metrics_key)
             if endpoint_metrics is None:
                 self.log.important("Updating endpoint metrics...")
-                endpoint_metrics = EndpointMetrics().get_metrics(self.uuid)
+                variant = self.endpoint_meta["ProductionVariants"][0]["VariantName"]
+                endpoint_metrics = EndpointMetrics().get_metrics(self.uuid, variant=variant)
                 cached_details["endpoint_metrics"] = endpoint_metrics
                 self.temp_storage.set(metrics_key, endpoint_metrics)
             else:
@@ -247,6 +248,7 @@ class Endpoint(Artifact):
             details["instance_count"] = self.endpoint_meta["ProductionVariants"][0]["CurrentInstanceCount"] or "-"
         except KeyError:
             details["instance_count"] = "-"
+        details["variant"] = self.endpoint_meta["ProductionVariants"][0]["VariantName"]
 
         # Add the underlying model details
         details["model_name"] = self.model_name
@@ -258,7 +260,7 @@ class Endpoint(Artifact):
         details["inference_meta"] = model_details.get("inference_meta")
 
         # Add endpoint metrics from CloudWatch
-        details["endpoint_metrics"] = EndpointMetrics().get_metrics(self.uuid)
+        details["endpoint_metrics"] = EndpointMetrics().get_metrics(self.uuid, variant=details["variant"])
         self.temp_storage.set(metrics_key, details["endpoint_metrics"])
 
         # Cache the details
