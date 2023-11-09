@@ -104,15 +104,17 @@ class Table(ComponentInterface):
             column_def = {
                 "name": c,
                 "id": c,
-                "presentation": "markdown" if markdown_columns and c in markdown_columns else "input"
+                "presentation": "markdown" if markdown_columns and c in markdown_columns else "input",
             }
 
             # Check for a numeric column and add additional properties as needed
             if df[c].dtype in ["float64", "float32"]:
-                column_def.update({
-                    "type": "numeric",
-                    "format": Format(group=",", precision=3, scheme="f"),
-                })
+                column_def.update(
+                    {
+                        "type": "numeric",
+                        "format": Format(group=",", precision=3, scheme="f"),
+                    }
+                )
 
             column_setup_list.append(column_def)
 
