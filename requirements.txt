@@ -13,4 +13,4 @@ dash-bootstrap-templates >= 1.1.1
 aws-cdk-lib >= 2.76.0
 termcolor
 tabulate
-rich>=13.3.5
+prompt_toolkit
