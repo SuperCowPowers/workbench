@@ -15,11 +15,11 @@ history = InMemoryHistory()
 # Command handler
 class CommandHandler:
     def exit(self):
-        print('Exiting SageWorks REPL...')
+        print("Exiting SageWorks REPL...")
         return True  # Returning True will exit the REPL loop
 
     def help(self):
-        print('Commands:')
+        print("Commands:")
         print("  - list <artifact_type>: List all the data_sources, feature_sets, etc")
         print("  - exit: Exit SageWorks REPL")
 
@@ -31,13 +31,13 @@ class CommandHandler:
             print("  - models: List all models")
             print("  - endpoints: List all endpoints")
             return
-        elif arg == 'data_sources':
+        elif arg == "data_sources":
             print(artifacts_text_view.data_sources_summary())
-        elif arg == 'feature_sets':
+        elif arg == "feature_sets":
             print(artifacts_text_view.feature_sets_summary())
-        elif arg == 'models':
+        elif arg == "models":
             print(artifacts_text_view.models_summary())
-        if arg == 'endpoints':
+        if arg == "endpoints":
             print(artifacts_text_view.endpoints_summary())
 
     def handle_command(self, raw_text):
@@ -53,7 +53,7 @@ class CommandHandler:
             result = method(*args)
             return result
         else:
-            print(f'Unknown command: {command}')
+            print(f"Unknown command: {command}")
             return False
 
 
@@ -65,7 +65,7 @@ def repl():
     while True:
         try:
             # The 'prompt' parameter defines the text to display for the prompt
-            text = session.prompt('🍺  SageWorks>', style=Style.from_dict({'prompt': 'hotpink'}))
+            text = session.prompt("🍺  SageWorks>", style=Style.from_dict({"prompt": "hotpink"}))
             if handler.handle_command(text):
                 break  # Exit the REPL loop if the command handler returns True
         except KeyboardInterrupt:
@@ -75,10 +75,8 @@ def repl():
             # Handle Ctrl-D
             break
 
-    print('Goodbye!')
+    print("Goodbye!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     repl()
-
-

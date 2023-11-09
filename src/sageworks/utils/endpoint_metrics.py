@@ -187,4 +187,4 @@ if __name__ == "__main__":
     pprint(metrics_data)
 
     # Sum up the columns and display
-    print(metrics_data.select_dtypes(include=['number']).sum())
+    print(metrics_data.select_dtypes(include=["number"]).sum())

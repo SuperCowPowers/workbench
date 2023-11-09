@@ -62,8 +62,8 @@ class Connector(ABC):
         try:
             aws_tags = self.sm_session.list_tags(arn)
         except botocore.exceptions.ClientError as e:
-            error_code = e.response['Error']['Code']
-            if error_code == 'ThrottlingException':
+            error_code = e.response["Error"]["Code"]
+            if error_code == "ThrottlingException":
                 self.log.warning(f"ThrottlingException: {error_code}")
                 time.sleep(5)
                 aws_tags = self.sm_session.list_tags(arn)
