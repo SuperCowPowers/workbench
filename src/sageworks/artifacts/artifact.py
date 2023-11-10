@@ -7,6 +7,8 @@ import sys
 import logging
 import json
 import base64
+import time
+import botocore
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
@@ -136,9 +138,20 @@ class Artifact(ABC):
         Note: This functionality will work for FeatureSets, Models, and Endpoints
               but not for DataSources. The DataSource class overrides this method.
         """
+        # Note: AWS List Tags can get grumpy if called too often
         aws_arn = self.arn()
-        self.log.info(f"Retrieving SageWorks Metadata for Artifact: {self.uuid}...")
-        aws_tags = self.sm_session.list_tags(aws_arn)
+        self.log.debug(f"Calling list_tags AWS request {aws_arn}...")
+        try:
+            aws_tags = self.sm_session.list_tags(aws_arn)
+        except botocore.exceptions.ClientError as e:
+            error_code = e.response["Error"]["Code"]
+            if error_code == "ThrottlingException":
+                self.log.warning(f"ThrottlingException: list_tags on {aws_arn}")
+                time.sleep(5)
+                aws_tags = self.sm_session.list_tags(aws_arn)
+            else:
+                # Handle other ClientErrors that may occur
+                self.log.error(f"Caught a different ClientError: {error_code}")
         meta = self._aws_tags_to_dict(aws_tags)
         return meta
 

@@ -300,7 +300,6 @@ class Model(Artifact):
         self.set_status("ready")
         if refresh_meta:
             self.refresh_meta()
-        self.refresh_meta()
         return True
 
     def delete(self):
