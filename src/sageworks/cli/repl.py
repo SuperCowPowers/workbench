@@ -3,6 +3,7 @@ from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.styles import Style
 from prompt_toolkit.completion import Completer, Completion
 from pprint import pprint
+import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.artifacts_text_view import ArtifactsTextView
@@ -17,6 +18,10 @@ artifacts_text_view = ArtifactsTextView()
 
 # History instance to store the history of commands
 history = InMemoryHistory()
+
+# Setup Pandas output options
+pd.set_option("display.max_colwidth", 45)
+pd.set_option("display.width", 1000)
 
 
 class SageWorksCompleter(Completer):
@@ -34,15 +39,47 @@ class SageWorksCompleter(Completer):
 # Command handler
 class CommandHandler:
     def __init__(self):
-        # This dictionary will hold all the variables defined during the REPL session.
-        self.session_globals = {}
-        initial_imports = """
-from sageworks.artifacts.data_sources.data_source import DataSource
-from sageworks.artifacts.feature_sets.feature_set import FeatureSet
-from sageworks.artifacts.models.model import Model
-from sageworks.artifacts.endpoints.endpoint import Endpoint
-        """
-        exec(initial_imports, self.session_globals)
+        # This dictionary will hold all the variables and functions defined during the REPL session.
+        self.session_globals = globals().copy()  # Copy the current global namespace
+
+        # Add the necessary imports to the session globals
+        self.preload_imports()
+
+        # Add custom helper functions to the session globals
+        self.session_globals['get_data_sources'] = self.get_data_sources
+        self.session_globals['get_feature_sets'] = self.get_feature_sets
+        self.session_globals['get_models'] = self.get_models
+        self.session_globals['get_endpoints'] = self.get_endpoints
+
+    def preload_imports(self):
+        from sageworks.artifacts.data_sources.data_source import DataSource
+        from sageworks.artifacts.feature_sets.feature_set import FeatureSet
+        from sageworks.artifacts.models.model import Model
+        from sageworks.artifacts.endpoints.endpoint import Endpoint
+        self.session_globals['DataSource'] = DataSource
+        self.session_globals['FeatureSet'] = FeatureSet
+        self.session_globals['Model'] = Model
+        self.session_globals['Endpoint'] = Endpoint
+
+    @staticmethod
+    def get_data_sources():
+        """Get a dataframe of all data sources"""
+        return artifacts_text_view.data_sources_summary()
+
+    @staticmethod
+    def get_feature_sets():
+        """Get a dataframe of all feature sets"""
+        return artifacts_text_view.feature_sets_summary()
+
+    @staticmethod
+    def get_models():
+        """Get a dataframe of all models"""
+        return artifacts_text_view.models_summary()
+
+    @staticmethod
+    def get_endpoints():
+        """Get a dataframe of all endpoints"""
+        return artifacts_text_view.endpoints_summary()
 
     def exit(self):
         print("Exiting SageWorks REPL...")
@@ -51,6 +88,10 @@ from sageworks.artifacts.endpoints.endpoint import Endpoint
     def help(self):
         print("Commands:")
         print("  - list <artifact_type>: List all the data_sources, feature_sets, etc")
+        print("  - get_data_sources(): Get a dataframe of the data_sources")
+        print("  - get_feature_sets(): Get a dataframe of the feature_sets")
+        print("  - get_models(): Get a dataframe of the models")
+        print("  - get_endpoints(): Get a dataframe of the endpoints")
         print("  - exit: Exit SageWorks REPL")
 
     def list(self, arg=None):
@@ -70,6 +111,10 @@ from sageworks.artifacts.endpoints.endpoint import Endpoint
         if arg == "endpoints":
             print(artifacts_text_view.endpoints_summary())
 
+    def get_data_sources(self):
+        """Get a dataframe of all data sources"""
+        return artifacts_text_view.data_sources_summary()
+
     def handle_command(self, raw_text):
         # Check for custom commands first
         tokens = raw_text.strip().split()
@@ -86,21 +131,13 @@ from sageworks.artifacts.endpoints.endpoint import Endpoint
         else:
             # If not a custom command, try to execute it as Python code
             try:
-                # Try evaluating it as an expression first
+                # Attempt to evaluate it as an expression
                 result = eval(raw_text, self.session_globals, self.session_globals)
-                pprint(result)  # This will print the result of the expression if eval succeeds
+                pprint(result)  # This will print the result of the expression
             except SyntaxError:
-                # If it's not an expression (or if eval fails), it might be a statement.
-                # For example, assignment (`foo = 5`) is a statement.
+                # If eval fails, it could be a statement (like an assignment).
                 try:
                     exec(raw_text, self.session_globals, self.session_globals)
-                    if raw_text.startswith("print"):
-                        pass  # Avoid printing None if it was a print statement
-                    elif "=" in raw_text:
-                        # If there was an assignment, print the assigned variable
-                        left_hand_side = raw_text.split("=")[0].strip()
-                        # Evaluate the left hand side to print its new value
-                        print(eval(left_hand_side, self.session_globals, self.session_globals))
                 except Exception as e:
                     print(f"Python execution error: {e}")
             except Exception as e:
