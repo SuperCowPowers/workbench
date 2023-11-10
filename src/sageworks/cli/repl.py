@@ -46,20 +46,21 @@ class CommandHandler:
         self.preload_imports()
 
         # Add custom helper functions to the session globals
-        self.session_globals['get_data_sources'] = self.get_data_sources
-        self.session_globals['get_feature_sets'] = self.get_feature_sets
-        self.session_globals['get_models'] = self.get_models
-        self.session_globals['get_endpoints'] = self.get_endpoints
+        self.session_globals["get_data_sources"] = self.get_data_sources
+        self.session_globals["get_feature_sets"] = self.get_feature_sets
+        self.session_globals["get_models"] = self.get_models
+        self.session_globals["get_endpoints"] = self.get_endpoints
 
     def preload_imports(self):
         from sageworks.artifacts.data_sources.data_source import DataSource
         from sageworks.artifacts.feature_sets.feature_set import FeatureSet
         from sageworks.artifacts.models.model import Model
         from sageworks.artifacts.endpoints.endpoint import Endpoint
-        self.session_globals['DataSource'] = DataSource
-        self.session_globals['FeatureSet'] = FeatureSet
-        self.session_globals['Model'] = Model
-        self.session_globals['Endpoint'] = Endpoint
+
+        self.session_globals["DataSource"] = DataSource
+        self.session_globals["FeatureSet"] = FeatureSet
+        self.session_globals["Model"] = Model
+        self.session_globals["Endpoint"] = Endpoint
 
     @staticmethod
     def get_data_sources():
