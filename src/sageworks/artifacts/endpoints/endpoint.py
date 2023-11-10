@@ -269,11 +269,17 @@ class Endpoint(Artifact):
         # Return the details
         return details
 
-    def make_ready(self) -> bool:
-        """This is a BLOCKING method that will wait until the Endpoint is ready"""
+    def make_ready(self, refresh_meta=True) -> bool:
+        """This is a BLOCKING method that will wait until the Endpoint is ready
+        Args:
+            refresh_meta (bool): Refresh the AWS Metadata (default: True)
+        Returns:
+            bool: True if the Endpoint is ready, False otherwise
+        """
         self.details(recompute=True)
         self.set_status("ready")
-        self.refresh_meta()
+        if refresh_meta:
+            self.refresh_meta()
         return True
 
     def model_details(self) -> dict:
