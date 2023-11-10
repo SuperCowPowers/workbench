@@ -112,10 +112,6 @@ class CommandHandler:
         if arg == "endpoints":
             print(artifacts_text_view.endpoints_summary())
 
-    def get_data_sources(self):
-        """Get a dataframe of all data sources"""
-        return artifacts_text_view.data_sources_summary()
-
     def handle_command(self, raw_text):
         # Check for custom commands first
         tokens = raw_text.strip().split()
