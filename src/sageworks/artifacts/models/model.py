@@ -21,6 +21,8 @@ class ModelType(Enum):
 
     CLASSIFIER = "classifier"
     REGRESSOR = "regressor"
+    UNSUPERVISED = "unsupervised"
+    TRANSFORMER = "transformer"
     UNKNOWN = "unknown"
 
 
@@ -419,9 +421,6 @@ class Model(Artifact):
 
         # Pivot the DataFrame to create a form suitable for the heatmap
         cm_df = cm_df.pivot(index="row_class", columns="col_class", values="value")
-
-        # Normalize the rows between 0 and 1
-        cm_df = cm_df.div(cm_df.sum(axis=1), axis=0)
 
         return metrics_df, cm_df
 
