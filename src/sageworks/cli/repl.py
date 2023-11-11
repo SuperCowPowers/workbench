@@ -4,14 +4,13 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.completion import Completer, Completion
 from pprint import pprint
 import pandas as pd
-
-# SageWorks Imports
-from sageworks.views.artifacts_text_view import ArtifactsTextView
-from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
 import logging
 
 # SageWorks is currently quite verbose so lets set the logs to warning
-logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
+from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
+
+# SageWorks Imports
+from sageworks.views.artifacts_text_view import ArtifactsTextView
 
 # Create a global instance of the ArtifactsTextView
 artifacts_text_view = ArtifactsTextView()
@@ -46,6 +45,8 @@ class CommandHandler:
         self.preload_imports()
 
         # Add custom helper functions to the session globals
+        self.session_globals["incoming_data"] = self.incoming_data
+        self.session_globals["get_glue_jobs"] = self.get_glue_jobs
         self.session_globals["get_data_sources"] = self.get_data_sources
         self.session_globals["get_feature_sets"] = self.get_feature_sets
         self.session_globals["get_models"] = self.get_models
@@ -63,23 +64,33 @@ class CommandHandler:
         self.session_globals["Endpoint"] = Endpoint
 
     @staticmethod
+    def incoming_data():
+        """Get a dataframe of the S3 Incoming Data"""
+        return artifacts_text_view.incoming_data_summary()
+
+    @staticmethod
+    def get_glue_jobs():
+        """Get a dataframe of all the Glue Jobs"""
+        return artifacts_text_view.glue_jobs_summary()
+
+    @staticmethod
     def get_data_sources():
-        """Get a dataframe of all data sources"""
+        """Get a dataframe of all the Data Sources"""
         return artifacts_text_view.data_sources_summary()
 
     @staticmethod
     def get_feature_sets():
-        """Get a dataframe of all feature sets"""
+        """Get a dataframe of all the Feature Sets"""
         return artifacts_text_view.feature_sets_summary()
 
     @staticmethod
     def get_models():
-        """Get a dataframe of all models"""
+        """Get a dataframe of all the Models"""
         return artifacts_text_view.models_summary()
 
     @staticmethod
     def get_endpoints():
-        """Get a dataframe of all endpoints"""
+        """Get a dataframe of all the Endpoints"""
         return artifacts_text_view.endpoints_summary()
 
     def exit(self):
@@ -89,20 +100,29 @@ class CommandHandler:
     def help(self):
         print("Commands:")
         print("  - list <artifact_type>: List all the data_sources, feature_sets, etc")
-        print("  - get_data_sources(): Get a dataframe of the data_sources")
-        print("  - get_feature_sets(): Get a dataframe of the feature_sets")
-        print("  - get_models(): Get a dataframe of the models")
-        print("  - get_endpoints(): Get a dataframe of the endpoints")
+        print("  - incoming_data(): Get a dataframe of the S3 Incoming Data")
+        print("  - get_glue_jobs(): Get a dataframe of the Glue Jobs")
+        print("  - get_data_sources(): Get a dataframe of the DataSources")
+        print("  - get_feature_sets(): Get a dataframe of the FeatureSets")
+        print("  - get_models(): Get a dataframe of the Models")
+        print("  - get_endpoints(): Get a dataframe of the Endpoints")
+        print("  - set_log_level <level>: Set the log level to debug or important")
         print("  - exit: Exit SageWorks REPL")
 
     def list(self, arg=None):
         if arg is None:
             print("Please specify what you'd like to list. Options are:")
-            print("  - data_sources: List all data sources")
-            print("  - feature_sets: List all feature sets")
-            print("  - models: List all models")
-            print("  - endpoints: List all endpoints")
+            print("  - incoming_data: List the S3 Incoming Data Files")
+            print("  - glue_jobs: List all Glue Job")
+            print("  - data_sources: List all DataSources")
+            print("  - feature_sets: List all FeatureSets")
+            print("  - models: List all Models")
+            print("  - endpoints: List all Endpoints")
             return
+        elif arg == "incoming_data":
+            print(artifacts_text_view.incoming_data_summary())
+        elif arg == "glue_jobs":
+            print(artifacts_text_view.glue_jobs_summary())
         elif arg == "data_sources":
             print(artifacts_text_view.data_sources_summary())
         elif arg == "feature_sets":
@@ -111,6 +131,12 @@ class CommandHandler:
             print(artifacts_text_view.models_summary())
         if arg == "endpoints":
             print(artifacts_text_view.endpoints_summary())
+
+    def set_log_level(self, level):
+        if level == "debug":
+            logging.getLogger("sageworks").setLevel("DEBUG")
+        elif level == "important":
+            logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
 
     def handle_command(self, raw_text):
         # Check for custom commands first
