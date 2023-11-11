@@ -221,10 +221,10 @@ class ArtifactsTextView(View):
                 "Size(MB)": size,
                 "Created": self.datetime_string(group_info.get("CreationTime")),
                 "Num Columns": self.num_columns_fs(group_info),
-                "Athena Table": cat_config.get("TableName", "-"),
-                "Online": str(group_info.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
-                "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
+                "Tags": sageworks_meta.get("sageworks_tags", "-"),
+                "Online": str(group_info.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
+                "Athena Table": cat_config.get("TableName", "-"),
                 "_aws_url": self.aws_url(group_info, "FeatureSet"),  # Hidden Column
             }
             data_summary.append(summary)
@@ -236,12 +236,12 @@ class ArtifactsTextView(View):
             columns = [
                 "Feature Group",
                 "Size(MB)",
-                "Num Columns",
-                "Athena Table",
-                "Online",
                 "Created",
-                "Tags",
+                "Num Columns",
                 "Input",
+                "Tags",
+                "Online",
+                "Athena Table",
                 "_aws_url",
             ]
             return pd.DataFrame(columns=columns)
@@ -255,10 +255,12 @@ class ArtifactsTextView(View):
             if not model_list:
                 summary = {
                     "Model Group": model_group_name,
+                    "Created": "-",
                     "Version": "-",
+                    "Input": "-",
+                    "Tags": "-",
                     "Status": "No Models!",
                     "Description": "-",
-                    "Created": "-",
                 }
                 model_summary.append(summary)
                 continue
@@ -268,12 +270,12 @@ class ArtifactsTextView(View):
             sageworks_meta = latest_model.get("sageworks_meta", {})
             summary = {
                 "Model Group": latest_model["ModelPackageGroupName"],
+                "Created": self.datetime_string(latest_model.get("CreationTime")),
                 "Version": latest_model["ModelPackageVersion"],
+                "Input": sageworks_meta.get("sageworks_input", "-"),
+                "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Status": latest_model["ModelPackageStatus"],
                 "Description": latest_model["ModelPackageDescription"],
-                "Created": self.datetime_string(latest_model.get("CreationTime")),
-                "Tags": sageworks_meta.get("sageworks_tags", "-"),
-                "Input": sageworks_meta.get("sageworks_input", "-"),
             }
             model_summary.append(summary)
 
@@ -283,12 +285,12 @@ class ArtifactsTextView(View):
         else:
             columns = [
                 "Model Group",
+                "Created",
                 "Version",
+                "Input",
+                "Tags",
                 "Status",
                 "Description",
-                "Created",
-                "Tags",
-                "Input",
             ]
             return pd.DataFrame(columns=columns)
 
@@ -304,13 +306,13 @@ class ArtifactsTextView(View):
             summary = {
                 "Name": endpoint_info["EndpointName"],
                 "Instance": endpoint_info.get("InstanceType", "-"),
-                "Status": endpoint_info["EndpointStatus"],
-                "Variant": endpoint_info.get("ProductionVariants", [{}])[0].get("VariantName", "-"),
                 "Created": self.datetime_string(endpoint_info.get("CreationTime")),
-                "Capture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
-                "Samp(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
+                "Status": endpoint_info["EndpointStatus"],
+                "Variant": endpoint_info.get("ProductionVariants", [{}])[0].get("VariantName", "-"),
+                "Capture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
+                "Samp(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
             }
             data_summary.append(summary)
 
@@ -321,12 +323,14 @@ class ArtifactsTextView(View):
             columns = [
                 "Name",
                 "Instance",
-                "Status",
                 "Created",
-                "DataCapture",
-                "Sampling(%)",
                 "Tags",
                 "Input",
+                "Status",
+                "Variant",
+                "Capture",
+                "Samp(%)",
+
             ]
             return pd.DataFrame(columns=columns)
 
