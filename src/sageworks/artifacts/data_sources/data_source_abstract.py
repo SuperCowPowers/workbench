@@ -233,10 +233,10 @@ class DataSourceAbstract(Artifact):
 
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Artifact is ready"""
-        self.sample()
+        self.sample(recompute=True)
         self.column_stats()
         self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts
-        self.outliers()
+        self.outliers(recompute=True)
         self.details(recompute=True)
 
         # Lets check if the Artifact is ready
