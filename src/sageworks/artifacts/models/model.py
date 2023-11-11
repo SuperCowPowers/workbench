@@ -298,7 +298,7 @@ class Model(Artifact):
         Returns:
             bool: True if the Model is ready, False otherwise
         """
-        self._pull_training_job_metrics()
+        self._pull_training_job_metrics(force_pull=True)
         self.details(recompute=True)
         self.set_status("ready")
         if refresh_meta:
@@ -363,7 +363,6 @@ class Model(Artifact):
                     df = df.drop(columns=["timestamp"])
 
                 # Store and return the metrics in the SageWorks Metadata
-                df = df.round(3)
                 self.upsert_sageworks_meta({"sageworks_training_metrics": df.to_dict(), "sageworks_training_cm": None})
                 return
         except (KeyError, botocore.exceptions.ClientError):
@@ -377,8 +376,6 @@ class Model(Artifact):
             metrics_df, cm_df = self._process_classification_metrics(df)
 
             # Store and return the metrics in the SageWorks Metadata
-            metrics_df = metrics_df.round(3)
-            cm_df = cm_df.round(3)
             self.upsert_sageworks_meta(
                 {"sageworks_training_metrics": metrics_df.to_dict(), "sageworks_training_cm": cm_df.to_dict()}
             )
@@ -421,6 +418,9 @@ class Model(Artifact):
 
         # Pivot the DataFrame to create a form suitable for the heatmap
         cm_df = cm_df.pivot(index="row_class", columns="col_class", values="value")
+
+        # Convert the values in cm_df to integers
+        cm_df = cm_df.astype(int)
 
         return metrics_df, cm_df
 
