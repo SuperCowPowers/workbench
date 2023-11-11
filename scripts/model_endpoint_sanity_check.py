@@ -62,6 +62,7 @@ def run_sanity_checks(verbose: bool = False):
     endpoints_response = sagemaker_client.list_endpoints(MaxResults=100)
 
     # Check each endpoint to see if it uses any of the models from the model group
+    found_models = []
     log.important(f"Found {len(endpoints_response['Endpoints'])} Endpoints")
     for endpoint in endpoints_response["Endpoints"]:
         log.info(f"Endpoint: {endpoint['EndpointName']}")
@@ -74,6 +75,7 @@ def run_sanity_checks(verbose: bool = False):
         for variant in endpoint_config_desc["ProductionVariants"]:
             if variant["ModelName"] in model_names:
                 log.debug(f"\t{endpoint['EndpointName']} --> {variant['ModelName']}")
+                found_models.append(variant["ModelName"])
             else:
                 log.warning(
                     f"\t{endpoint['EndpointName']} --> Model not found: {variant['ModelName']}"
@@ -81,6 +83,13 @@ def run_sanity_checks(verbose: bool = False):
                 log.warning(
                     "Recommendation: This endpoint may no longer work, test it!"
                 )
+
+    # Now report on the models that are not used by any endpoint (orphans)
+    unused_models = model_set - set(found_models)
+    log.important(f"Found {len(unused_models)} Model Resources without an Endpoint (Orphans) ")
+    for model in unused_models:
+        log.important(f"\t{model}")
+    log.important("Recommendation: Delete these Model Resources")
 
 
 if __name__ == "__main__":
