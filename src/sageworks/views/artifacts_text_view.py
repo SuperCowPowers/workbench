@@ -330,7 +330,6 @@ class ArtifactsTextView(View):
                 "Variant",
                 "Capture",
                 "Samp(%)",
-
             ]
             return pd.DataFrame(columns=columns)
 
