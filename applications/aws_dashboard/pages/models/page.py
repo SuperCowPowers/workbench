@@ -31,6 +31,7 @@ models_table = table.Table().create_component(
     "models_table",
     header_color="rgb(60, 100, 60)",
     row_select="single",
+    max_height=250
 )
 
 # Create a Markdown component to display the model details

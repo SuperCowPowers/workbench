@@ -19,7 +19,7 @@ class Table(ComponentInterface):
         component_id: str,
         header_color="rgb(60, 60, 60)",
         row_select=False,
-        max_height: str = "200px",
+        max_height: int = 200,
         fixed_headers: bool = True,
     ) -> dash_table.DataTable:
         """Create a DataTable Component without any data.
@@ -55,14 +55,15 @@ class Table(ComponentInterface):
             style_header={
                 "className": "dash-table-header",
                 "textAlign": "left",
-                "fontSize": 16,
-                "padding": "8px 8px 8px 8px",
+                "fontSize": 14,
+                "padding": "5px 5px 5px 5px",
                 "backgroundColor": header_color,
                 "backgroundImage": f"linear-gradient(to bottom, {header_color}, rgba(0, 0, 0, 0.5))",
                 "color": "rgb(200, 200, 200)",
+                "border": "0px",
             },
             style_data={
-                "fontSize": 14,
+                "fontSize": 13,
                 "backgroundColor": "rgba(60, 60, 60, 0.5)",
                 "color": "rgb(200, 200, 200)",
                 "border": "0px",

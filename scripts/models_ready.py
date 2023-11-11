@@ -12,7 +12,7 @@ log = logging.getLogger("sageworks")
 # Create a instance of the ArtifactsTextView
 artifacts_text_view = ArtifactsTextView()
 
-# Get all the endpoints
+# Get all the models
 models = artifacts_text_view.models_summary()
 for model_name in models["Model Group"]:
     m = Model(model_name)

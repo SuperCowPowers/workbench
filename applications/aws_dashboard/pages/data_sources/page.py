@@ -36,7 +36,7 @@ smart_sample_rows = data_source_broker.data_source_smart_sample(0)
 data_source_sample_rows = table.Table().create_component(
     "data_source_sample_rows",
     header_color="rgb(70, 70, 110)",
-    max_height="300px",
+    max_height=250,
 )
 
 # Data Source Details

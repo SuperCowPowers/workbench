@@ -53,9 +53,9 @@ class Outliers:
         outlier_df = outlier_df.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
 
         # Make sure the dataframe isn't too big, if it's too big sample it down
-        if len(outlier_df) > 200:
-            log.warning(f"Outliers DataFrame is too large {len(outlier_df)}, sampling down to 200 rows")
-            outlier_df = outlier_df.sample(200)
+        if len(outlier_df) > 300:
+            log.warning(f"Outliers DataFrame is too large {len(outlier_df)}, sampling down to 300 rows")
+            outlier_df = outlier_df.sample(300)
 
         # Sort by outlier_group and reset the index
         outlier_df = outlier_df.sort_values("outlier_group").reset_index(drop=True)

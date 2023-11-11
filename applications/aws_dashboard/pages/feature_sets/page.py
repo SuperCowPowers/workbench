@@ -32,7 +32,7 @@ feature_sets_table = table.Table().create_component(
 feature_set_sample_rows = table.Table().create_component(
     "feature_set_sample_rows",
     header_color="rgb(70, 70, 110)",
-    max_height="300px",
+    max_height=250,
 )
 
 # Feature Set Details

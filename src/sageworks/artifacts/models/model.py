@@ -249,6 +249,7 @@ class Model(Artifact):
         details["model_package_arn"] = self.model_package_arn()
         aws_meta = self.aws_meta()
         details["description"] = aws_meta["ModelPackageDescription"]
+        details["version"] = aws_meta["ModelPackageVersion"]
         details["status"] = aws_meta["ModelPackageStatus"]
         details["approval_status"] = aws_meta["ModelApprovalStatus"]
         package_details = aws_meta["ModelPackageDetails"]

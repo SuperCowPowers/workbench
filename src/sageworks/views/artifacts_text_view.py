@@ -250,26 +250,32 @@ class ArtifactsTextView(View):
         """Get summary data about the SageWorks Models"""
         data = ArtifactsTextView.aws_artifact_data[ServiceCategory.MODELS]
         model_summary = []
-        for model_group_info, model_list in data.items():
+        for model_group_name, model_list in data.items():
             # Special Case for Model Groups without any Models
             if not model_list:
-                summary = {"Model Group": model_group_info}
+                summary = {
+                    "Model Group": model_group_name,
+                    "Version": "-",
+                    "Status": "No Models!",
+                    "Description": "-",
+                    "Created": "-",
+                }
                 model_summary.append(summary)
                 continue
 
-            # Get Summary information for each model in the model_list
-            for model in model_list:
-                # Get the SageWorks metadata for this Model Group
-                sageworks_meta = model.get("sageworks_meta", {})
-                summary = {
-                    "Model Group": model["ModelPackageGroupName"],
-                    "Status": model["ModelPackageStatus"],
-                    "Description": model["ModelPackageDescription"],
-                    "Created": self.datetime_string(model.get("CreationTime")),
-                    "Tags": sageworks_meta.get("sageworks_tags", "-"),
-                    "Input": sageworks_meta.get("sageworks_input", "-"),
-                }
-                model_summary.append(summary)
+            # Get Summary information for the 'latest' model in the model_list
+            latest_model = model_list[0]
+            sageworks_meta = latest_model.get("sageworks_meta", {})
+            summary = {
+                "Model Group": latest_model["ModelPackageGroupName"],
+                "Version": latest_model["ModelPackageVersion"],
+                "Status": latest_model["ModelPackageStatus"],
+                "Description": latest_model["ModelPackageDescription"],
+                "Created": self.datetime_string(latest_model.get("CreationTime")),
+                "Tags": sageworks_meta.get("sageworks_tags", "-"),
+                "Input": sageworks_meta.get("sageworks_input", "-"),
+            }
+            model_summary.append(summary)
 
         # Make sure we have data else return just the column names
         if model_summary:
@@ -277,6 +283,7 @@ class ArtifactsTextView(View):
         else:
             columns = [
                 "Model Group",
+                "Version",
                 "Status",
                 "Description",
                 "Created",
