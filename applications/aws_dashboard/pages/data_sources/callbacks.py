@@ -10,6 +10,10 @@ from sageworks.views.data_source_web_view import DataSourceWebView
 from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
+import logging
+log = logging.getLogger("sageworks")
+
+
 # Cheese Sauce
 smart_sample_rows = []
 
@@ -71,9 +75,9 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
         # Get the selected row data and grab the uuid
         selected_row_data = table_data[selected_rows[0]]
         data_source_uuid = selected_row_data["uuid"]
-        print(f"DataSource UUID: {data_source_uuid}")
+        log.debug(f"DataSource UUID: {data_source_uuid}")
 
-        print("Calling DataSource Details...")
+        log.info("Calling DataSource Details...")
         data_details = data_source_web_view.data_source_details(data_source_uuid)
         details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(data_details)
 
@@ -108,9 +112,9 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
         # Get the selected row data and grab the uuid
         selected_row_data = table_data[selected_rows[0]]
         data_source_uuid = selected_row_data["uuid"]
-        print(f"DataSource UUID: {data_source_uuid}")
+        log.critical(f"DataSource UUID: {data_source_uuid}")
 
-        print("Calling DataSource Sample Rows...")
+        log.info("Calling DataSource Smart Sample Rows...")
         smart_sample_rows = data_source_web_view.data_source_smart_sample(data_source_uuid)
 
         # Header Text
@@ -165,8 +169,8 @@ def violin_plot_selection(app: Dash):
             selected_indices = []
         else:
             selected_indices = [point["pointIndex"] for point in selected_data["points"]]
-        print("Selected Indices")
-        print(selected_indices)
+        log.info("Selected Indices")
+        log.info(selected_indices)
 
         # Create a figure object so that we can use nice methods like update_traces
         figure = go.Figure(current_figure)
@@ -183,9 +187,9 @@ def get_selection_indices(click_data, df: pd.DataFrame):
     first_column = click_data["points"][0]["y"].split(":")[0]
     second_column = click_data["points"][0]["x"].split(":")[0]
     correlation = click_data["points"][0]["z"]
-    print(f"First Column: {first_column}")
-    print(f"Second Column: {second_column}")
-    print(f"Correlation: {correlation}")
+    log.info(f"First Column: {first_column}")
+    log.info(f"Second Column: {second_column}")
+    log.info(f"Correlation: {correlation}")
 
     # Now grab the indexes for the top 10 value from the first column
     selection_indices = set(df[first_column].nlargest(10).index.tolist())
@@ -209,8 +213,8 @@ def select_row_column(figure, click_data):
     # Get the columns index from the click_data
     first_column_index = int(click_data["points"][0]["x"].split(":")[1])
     second_column_index = int(click_data["points"][0]["y"].split(":")[1])
-    print(f"First Column Index: {first_column_index}")
-    print(f"Second Column Index: {second_column_index}")
+    log.info(f"First Column Index: {first_column_index}")
+    log.info(f"Second Column Index: {second_column_index}")
 
     # Clear any existing shapes (highlights)
     figure["layout"]["shapes"] = ()
