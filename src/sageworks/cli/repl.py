@@ -45,6 +45,7 @@ class CommandHandler:
         self.preload_imports()
 
         # Add custom helper functions to the session globals
+        self.session_globals["broker_refresh"] = self.broker_refresh
         self.session_globals["incoming_data"] = self.incoming_data
         self.session_globals["get_glue_jobs"] = self.get_glue_jobs
         self.session_globals["get_data_sources"] = self.get_data_sources
@@ -62,6 +63,11 @@ class CommandHandler:
         self.session_globals["FeatureSet"] = FeatureSet
         self.session_globals["Model"] = Model
         self.session_globals["Endpoint"] = Endpoint
+
+    @staticmethod
+    def broker_refresh():
+        """Force a refresh of the AWS broker data"""
+        return artifacts_text_view.refresh(force_refresh=True)
 
     @staticmethod
     def incoming_data():
@@ -107,6 +113,7 @@ class CommandHandler:
         print("  - get_models(): Get a dataframe of the Models")
         print("  - get_endpoints(): Get a dataframe of the Endpoints")
         print("  - set_log_level <level>: Set the log level to debug or important")
+        print("  - broker_refresh: Force a refresh of the AWS broker data")
         print("  - exit: Exit SageWorks REPL")
 
     def list(self, arg=None):
