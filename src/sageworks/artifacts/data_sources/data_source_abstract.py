@@ -1,6 +1,7 @@
 """DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, JSONL, Parquet, RDS, etc)"""
 from abc import abstractmethod
 import pandas as pd
+import json
 from io import StringIO
 
 # SageWorks Imports
@@ -43,8 +44,45 @@ class DataSourceAbstract(Artifact):
 
     def column_tags(self) -> dict:
         """Return the column tags for this Data Source"""
-        column_tags = self.sageworks_meta().get("sageworks_column_tags", None)
-        return column_tags.split(":") if column_tags is not None else []
+        column_tags_json = self.sageworks_meta().get("sageworks_column_tags", None)
+        return json.loads(column_tags_json) if column_tags_json else {}
+
+    def add_column_tag(self, column: str, tag: str):
+        """Add a tag for the given column, ensuring no duplicates
+        Args:
+            column (str): Column to add tag for
+            tag (str): Tag to add for the given column
+        """
+        current_tags = self.column_tags()
+        if column not in current_tags:
+            current_tags[column] = [tag]
+            self.store_column_tags(current_tags)
+        elif tag not in current_tags[column]:
+            current_tags[column].append(tag)
+            self.store_column_tags(current_tags)
+
+    def remove_column_tag(self, column: str, tag: str):
+        """Remove a tag from the given column if it exists.
+        Args:
+            column (str): Column to remove tag from
+            tag (str): Tag to remove from the given column
+        """
+        current_tags = self.column_tags()
+        if column not in current_tags:
+            return
+        if tag in current_tags[column]:
+            current_tags[column].remove(tag)
+            self.store_column_tags(current_tags)
+
+    def store_column_tags(self, column_tags: dict):
+        """Set the column tags for this Data Source
+        Args:
+            column_tags(dict): The column tags for this Data Source
+        Notes:
+            The column_tag data should be in the form:
+            {'col1': ['tag1', 'tag2', 'tag3'], 'col2': ['tag1', 'tag2']}
+        """
+        self.upsert_sageworks_meta({"sageworks_column_tags": column_tags})
 
     def get_display_columns(self) -> list[str]:
         """Set the display columns for this Data Source

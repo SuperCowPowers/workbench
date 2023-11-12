@@ -174,10 +174,6 @@ class AthenaSource(DataSourceAbstract):
         """Return the column types of the internal AthenaSource"""
         return [item["Type"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
 
-    def column_tags(self) -> list[str]:
-        """Return the column types of the internal AthenaSource"""
-        return [item["Comment"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
-
     def query(self, query: str) -> pd.DataFrame:
         """Query the AthenaSource"""
         df = wr.athena.read_sql_query(
