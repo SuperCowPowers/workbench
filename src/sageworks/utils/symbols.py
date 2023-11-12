@@ -1,10 +1,16 @@
 """Unicode Symbols for Sageworks"""
 
 # A Dictionary of Unicode Symbols
-symbols = {"red_circle": "🔴", "blue_circle": "🔵",
-           "green_circle": "🟢", "yellow_circle": "🟡",
-           "purple_circle": "🟣", "white_circle": "⚪",
-           "black_circle": "⚫", "orange_circle": "🟠"}
+symbols = {
+    "red_circle": "🔴",
+    "blue_circle": "🔵",
+    "green_circle": "🟢",
+    "yellow_circle": "🟡",
+    "purple_circle": "🟣",
+    "white_circle": "⚪",
+    "black_circle": "⚫",
+    "orange_circle": "🟠",
+}
 
 
 # Tag Symbols

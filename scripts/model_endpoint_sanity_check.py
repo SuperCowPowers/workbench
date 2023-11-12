@@ -15,7 +15,6 @@ log = logging.getLogger("sageworks")
 
 
 def run_sanity_checks(verbose: bool = False, tag: bool = False):
-
     # Set the log level based on the verbose flag
     if verbose:
         log.setLevel(logging.DEBUG)
@@ -25,16 +24,12 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
     # Get all the model groups
     response = sagemaker_client.list_model_package_groups(MaxResults=100)
     model_group_names = [
-        model_group["ModelPackageGroupName"]
-        for model_group in response["ModelPackageGroupSummaryList"]
+        model_group["ModelPackageGroupName"] for model_group in response["ModelPackageGroupSummaryList"]
     ]
     log.important(f"Found {len(model_group_names)} Model Groups")
     for model_group_name in model_group_names:
-
         # For each model group report the number of model packages in the group
-        package_response = sagemaker_client.list_model_packages(
-            ModelPackageGroupName=model_group_name
-        )
+        package_response = sagemaker_client.list_model_packages(ModelPackageGroupName=model_group_name)
         num_packages = len(package_response["ModelPackageSummaryList"])
         log.debug(f"Model Group: {model_group_name} ({num_packages} packages)")
 
@@ -43,9 +38,9 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
 
     # Figure out with model packages are NOT part of a model package group
     standalone_model_packages = []
-    for package in all_model_packages['ModelPackageSummaryList']:
-        if 'ModelPackageGroupName' in package:
-            if package['ModelPackageGroupName'] not in model_group_names:
+    for package in all_model_packages["ModelPackageSummaryList"]:
+        if "ModelPackageGroupName" in package:
+            if package["ModelPackageGroupName"] not in model_group_names:
                 standalone_model_packages.append(package)
         else:
             standalone_model_packages.append(package)
@@ -79,9 +74,7 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
         if tag:
             m = Model(model_group)
             m.add_sageworks_tag("orphan")
-    log.important(
-        "Recommendation: Delete these Models Groups or create an Endpoint for them"
-    )
+    log.important("Recommendation: Delete these Models Groups or create an Endpoint for them")
 
     # List all endpoints
     endpoints_response = sagemaker_client.list_endpoints(MaxResults=100)
@@ -91,9 +84,7 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
     log.important(f"Found {len(endpoints_response['Endpoints'])} Endpoints")
     for endpoint in endpoints_response["Endpoints"]:
         log.info(f"Endpoint: {endpoint['EndpointName']}")
-        endpoint_desc = sagemaker_client.describe_endpoint(
-            EndpointName=endpoint["EndpointName"]
-        )
+        endpoint_desc = sagemaker_client.describe_endpoint(EndpointName=endpoint["EndpointName"])
         endpoint_config_desc = sagemaker_client.describe_endpoint_config(
             EndpointConfigName=endpoint_desc["EndpointConfigName"]
         )
@@ -102,14 +93,10 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
                 log.debug(f"\t{endpoint['EndpointName']} --> {variant['ModelName']}")
                 found_models.append(variant["ModelName"])
             else:
-                log.warning(
-                    f"\t{endpoint['EndpointName']} --> Model not found: {variant['ModelName']}"
-                )
-                log.warning(
-                    "Recommendation: This endpoint may no longer work, test it!"
-                )
+                log.warning(f"\t{endpoint['EndpointName']} --> Model not found: {variant['ModelName']}")
+                log.warning("Recommendation: This endpoint may no longer work, test it!")
                 if tag:
-                    e = Endpoint(endpoint['EndpointName'])
+                    e = Endpoint(endpoint["EndpointName"])
                     e.add_sageworks_tag("broken")
 
     # Now report on the models that are not used by any endpoint (orphans)
