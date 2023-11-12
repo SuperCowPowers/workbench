@@ -3,6 +3,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.artifacts_text_view import ArtifactsTextView
+from sageworks.utils.symbols import tag_symbol
 
 
 class ArtifactsWebView(ArtifactsTextView):
@@ -79,13 +80,18 @@ class ArtifactsWebView(ArtifactsTextView):
         feature_df.drop(columns=["_aws_url"], inplace=True)
         return feature_df
 
-    def models_summary(self, concise=False) -> pd.DataFrame:
+    def models_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Models"""
 
         # We get the dataframe from the ArtifactsTextView and hyperlink the Model Group column
         model_df = super().models_summary()
         model_df["uuid"] = model_df["Model Group"]
         model_df["Model Group"] = model_df["Model Group"].map(lambda x: self.hyperlinks(x, "models", ""))
+
+        # Add Symbols for certain tags
+        if "Tags" in model_df.columns:
+            model_df["Model Group"] = model_df["Tags"].map(lambda x: tag_symbol(x)) + " " + model_df["Model Group"]
+
         return model_df
 
     def endpoints_summary(self) -> pd.DataFrame:
@@ -95,6 +101,11 @@ class ArtifactsWebView(ArtifactsTextView):
         endpoint_df = super().endpoints_summary()
         endpoint_df["uuid"] = endpoint_df["Name"]
         endpoint_df["Name"] = endpoint_df["Name"].map(lambda x: self.hyperlinks(x, "endpoints", ""))
+
+        # Add Symbols for certain tags
+        if "Tags" in endpoint_df.columns:
+            endpoint_df["Name"] = endpoint_df["Tags"].map(lambda x: tag_symbol(x)) + " " + endpoint_df["Name"]
+
         return endpoint_df
 
     def hyperlinks(self, name, detail_type, aws_url):

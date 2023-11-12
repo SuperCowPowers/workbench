@@ -41,6 +41,10 @@ class DataSourceAbstract(Artifact):
         """Return the column details for this Data Source"""
         return {name: type_ for name, type_ in zip(self.column_names(), self.column_types())}
 
+    def column_tags(self) -> dict:
+        """Return the column tags for this Data Source"""
+        pass
+
     def get_display_columns(self) -> list[str]:
         """Set the display columns for this Data Source
         Returns:

@@ -154,3 +154,29 @@ class Table(ComponentInterface):
             ]
 
         return style_cells
+
+
+if __name__ == "__main__":
+    from dash import Dash, html
+    from sageworks.artifacts.data_sources.data_source import DataSource
+
+    # Get a smart sample from a test data source
+    ds = DataSource("abalone_data")
+    df = ds.smart_sample()
+
+    app = Dash(__name__)
+    my_table = Table()
+    table_comp = my_table.create_component("test-table")
+
+    # Testing HTML Links
+    columns = df.columns.to_list()
+    df["Name"] = df.index
+    df = df[["Name"] + columns]
+    df["Name"] = df["Name"].map(lambda x: f"<a href='https://www.google.com' target='_blank'>{x}</a>")
+
+    table_comp.columns = my_table.column_setup(df, markdown_columns=["Name"])
+    table_comp.data = df.to_dict("records")
+    app.layout = html.Div([table_comp])
+
+    if __name__ == "__main__":
+        app.run(debug=True)
