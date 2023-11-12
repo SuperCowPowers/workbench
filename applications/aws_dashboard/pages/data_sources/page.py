@@ -31,16 +31,14 @@ data_sources_table = table.Table().create_component(
     row_select="single",
 )
 
-# Grab sample rows from the first data source
-smart_sample_rows = data_source_broker.data_source_smart_sample(0)
+# Create a table that sample rows from the currently selected  data source
 data_source_sample_rows = table.Table().create_component(
     "data_source_sample_rows",
     header_color="rgb(70, 70, 110)",
     max_height=250,
 )
 
-# Data Source Details
-details = data_source_broker.data_source_details(0)
+# Data Source Details Markdown PANEL
 data_details = data_details_markdown.DataDetailsMarkdown().create_component("data_source_details")
 
 # Create a violin plot of all the numeric columns in the Data Source
