@@ -19,6 +19,7 @@ def test():
     to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
 
 
+@pytest.mark.slow
 def test_caps():
     """Tests for the Features to Model Transforms"""
 
