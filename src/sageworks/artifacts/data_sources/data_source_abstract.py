@@ -43,7 +43,8 @@ class DataSourceAbstract(Artifact):
 
     def column_tags(self) -> dict:
         """Return the column tags for this Data Source"""
-        pass
+        column_tags = self.sageworks_meta().get("sageworks_column_tags", None)
+        return column_tags.split(":") if column_tags is not None else []
 
     def get_display_columns(self) -> list[str]:
         """Set the display columns for this Data Source

@@ -245,8 +245,9 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # First check if we have already computed the descriptive stats
-        if self.sageworks_meta().get("sageworks_descriptive_stats") and not recompute:
-            return json.loads(self.sageworks_meta()["sageworks_descriptive_stats"])
+        stat_dict_json = self.sageworks_meta().get("sageworks_descriptive_stats")
+        if stat_dict_json and not recompute:
+            return json.loads(stat_dict_json)
 
         # Call the SQL function to compute descriptive stats
         stat_dict = descriptive_stats.descriptive_stats(self)
@@ -305,8 +306,9 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # First check if we have already computed the correlations
-        if self.sageworks_meta().get("sageworks_correlations") and not recompute:
-            return json.loads(self.sageworks_meta()["sageworks_correlations"])
+        corr_json = self.sageworks_meta().get("sageworks_correlations")
+        if corr_json and not recompute:
+            return json.loads(corr_json)
 
         # Call the SQL function to compute correlations
         correlations_dict = correlations.correlations(self)
@@ -331,8 +333,9 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # First check if we have already computed the column stats
-        if self.sageworks_meta().get("sageworks_column_stats") and not recompute:
-            return json.loads(self.sageworks_meta()["sageworks_column_stats"])
+        columns_stats_json = self.sageworks_meta().get("sageworks_column_stats")
+        if columns_stats_json and not recompute:
+            return json.loads(columns_stats_json)
 
         # Call the SQL function to compute column stats
         column_stats_dict = column_stats.column_stats(self)
@@ -354,8 +357,9 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # First check if we have already computed the value counts
-        if self.sageworks_meta().get("sageworks_value_counts") and not recompute:
-            return json.loads(self.sageworks_meta()["sageworks_value_counts"])
+        value_counts_json = self.sageworks_meta().get("sageworks_value_counts")
+        if value_counts_json and not recompute:
+            return json.loads(value_counts_json)
 
         # Call the SQL function to compute value_counts
         value_count_dict = value_counts.value_counts(self)
