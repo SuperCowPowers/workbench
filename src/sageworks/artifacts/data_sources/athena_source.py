@@ -40,10 +40,6 @@ class AthenaSource(DataSourceAbstract):
             database (str): Athena Database Name (default: sageworks)
             force_refresh (bool): Force refresh of AWS Metadata (default: False)
         """
-
-        # Call superclass init
-        super().__init__(data_uuid)
-
         self.data_catalog_db = database
         self.table_name = data_uuid
 
@@ -55,6 +51,9 @@ class AthenaSource(DataSourceAbstract):
             self.log.critical(f"Unable to find {self.data_catalog_db} in Catalogs...")
             self.log.critical("You must run the sageworks/aws_setup/aws_account_check.py script")
             raise RuntimeError("Unable to find {self.data_catalog_db} in Catalogs...")
+
+        # Call superclass init
+        super().__init__(data_uuid)
 
         # All done
         self.log.debug(f"AthenaSource Initialized: {self.data_catalog_db}.{self.table_name}")
@@ -147,7 +146,7 @@ class AthenaSource(DataSourceAbstract):
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        return self.details().get("aws_url", "unknown")
+        return self.sageworks_meta().get("aws_url", "unknown")
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
@@ -381,6 +380,7 @@ class AthenaSource(DataSourceAbstract):
             return cached_details
 
         self.log.info(f"Recomputing DataSource Details ({self.uuid})...")
+
         # Get the details from the base class
         details = super().details()
 
