@@ -4,6 +4,8 @@ import logging
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
+from sageworks.artifacts.models.model import Model
+from sageworks.artifacts.endpoints.endpoint import Endpoint
 
 # Assuming AWSAccountClamp().sagemaker_client() gives you a SageMaker client
 sagemaker_client = AWSAccountClamp().sagemaker_client()
@@ -12,7 +14,7 @@ sagemaker_client = AWSAccountClamp().sagemaker_client()
 log = logging.getLogger("sageworks")
 
 
-def run_sanity_checks(verbose: bool = False):
+def run_sanity_checks(verbose: bool = False, tag: bool = False):
 
     # Set the log level based on the verbose flag
     if verbose:
@@ -36,6 +38,21 @@ def run_sanity_checks(verbose: bool = False):
         num_packages = len(package_response["ModelPackageSummaryList"])
         log.debug(f"Model Group: {model_group_name} ({num_packages} packages)")
 
+    # Get all the model packages
+    all_model_packages = sagemaker_client.list_model_packages()
+
+    # Figure out with model packages are NOT part of a model package group
+    standalone_model_packages = []
+    for package in all_model_packages['ModelPackageSummaryList']:
+        if 'ModelPackageGroupName' in package:
+            if package['ModelPackageGroupName'] not in model_group_names:
+                standalone_model_packages.append(package)
+        else:
+            standalone_model_packages.append(package)
+    log.important(f"Found {len(standalone_model_packages)} Standalone Model Packages")
+    for package in standalone_model_packages:
+        log.important(f"\t{package['ModelPackageArn']}")
+
     # Get all the model resources (models not in a model group)
     response = sagemaker_client.list_models(MaxResults=100)
     model_names = [model["ModelName"] for model in response["Models"]]
@@ -48,12 +65,20 @@ def run_sanity_checks(verbose: bool = False):
     # a Model Resource, then we have an ModelGroup without an endpoint
     model_group_set = set(model_group_names)
     model_set = set(model_names)
-    model_group_without_model = model_group_set - model_set
+    model_group_without_model = []
+
+    # Check if the model group name is a substring of any model name
+    for model_group in model_group_set:
+        if not any(model_group in model_name for model_name in model_set):
+            model_group_without_model.append(model_group)
     log.important(
-        f"({len(model_group_without_model)}) Model Groups without an Endpoint: "
+        f"({len(model_group_without_model)}) Possible Model Groups without an Endpoint (Heuristic/substring): "
     )
     for model_group in model_group_without_model:
         log.important(f"\t{model_group}")
+        if tag:
+            m = Model(model_group)
+            m.add_sageworks_tag("orphan")
     log.important(
         "Recommendation: Delete these Models Groups or create an Endpoint for them"
     )
@@ -83,6 +108,9 @@ def run_sanity_checks(verbose: bool = False):
                 log.warning(
                     "Recommendation: This endpoint may no longer work, test it!"
                 )
+                if tag:
+                    e = Endpoint(endpoint['EndpointName'])
+                    e.add_sageworks_tag("broken")
 
     # Now report on the models that are not used by any endpoint (orphans)
     unused_models = model_set - set(found_models)
@@ -98,8 +126,8 @@ if __name__ == "__main__":
     # We're going to have a --verbose flag and that's it
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--tag", action="store_true")
     args, commands = parser.parse_known_args()
-    verbose_arg = args.verbose
 
     # Call the sanity checks
-    run_sanity_checks(verbose=verbose_arg)
+    run_sanity_checks(verbose=args.verbose, tag=args.tag)

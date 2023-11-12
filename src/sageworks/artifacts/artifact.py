@@ -170,9 +170,30 @@ class Artifact(ABC):
 
     def sageworks_tags(self) -> list:
         """Get the tags for this artifact"""
-        combined_tags = self.sageworks_meta().get("sageworks_tags", "")
-        tags = combined_tags.split(":")
-        return tags
+        combined_tags = self.sageworks_meta().get("sageworks_tags", None)
+        return combined_tags.split(":") if combined_tags is not None else []
+
+    def add_sageworks_tag(self, tag):
+        """Add a tag for this artifact, ensuring no duplicates and maintaining order.
+        Args:
+            tag (str): Tag to add for this artifact
+        """
+        current_tags = self.sageworks_tags()
+        if tag not in current_tags:
+            current_tags.append(tag)
+            combined_tags = ":".join(current_tags)
+            self.upsert_sageworks_meta({"sageworks_tags": combined_tags})
+
+    def remove_sageworks_tag(self, tag):
+        """Remove a tag from this artifact if it exists.
+        Args:
+            tag (str): Tag to remove from this artifact
+        """
+        current_tags = self.sageworks_tags()
+        if tag in current_tags:
+            current_tags.remove(tag)
+            combined_tags = ":".join(current_tags)
+            self.upsert_sageworks_meta({"sageworks_tags": combined_tags})
 
     def get_input(self) -> str:
         """Get the input data for this artifact"""
