@@ -55,12 +55,21 @@ class Artifact(ABC):
         self.uuid = uuid
         self.log = logging.getLogger("sageworks")
 
-        # Run a health check on myself
+    def __post_init__(self):
+        """Artifact Post Initialization"""
+
+        # Do I exist? (very metaphysical)
+        if not self.exists():
+            self.log.warning(f"Artifact {self.uuid} does not exist!")
+            return
+
+        # Conduct a Health Check on this Artifact
         health_issues = self.health_check()
         if health_issues:
-            self.log.warning(f"Health Check Failed: {health_issues}")
+            self.log.warning("Health Check Failed!")
             for issue in health_issues:
-                self.add_sageworks_tag(issue)
+                self.log.warning(f"Health Issue: {issue}")
+                self.add_sageworks_health_tag(issue)
 
     @abstractmethod
     def exists(self) -> bool:
@@ -223,14 +232,13 @@ class Artifact(ABC):
             list[str]: List of health issues
         """
         health_issues = []
-        if not self.exists():
-            health_issues.append("does_not_exist")
         if not self.ready():
             health_issues.append("not_ready")
         if self.get_status() != "ready":
             health_issues.append(f"status_{self.get_status()}")
         if "unknown" in self.aws_url():
             health_issues.append("aws_url_unknown")
+        return health_issues
 
     def summary(self) -> dict:
         """This is generic summary information for all Artifacts. If you
