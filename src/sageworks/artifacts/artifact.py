@@ -193,7 +193,7 @@ class Artifact(ABC):
             list[str]: List of tags for this artifact
         """
         if tag_type == "user":
-            combined_tags = self.sageworks_meta().get("sageworks_tags", [])
+            combined_tags = self.sageworks_meta().get("sageworks_tags", "")
             return combined_tags.split(":")
 
         # Make sure the health tags exist
