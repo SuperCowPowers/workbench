@@ -255,11 +255,12 @@ class ArtifactsTextView(View):
             if not model_list:
                 summary = {
                     "Model Group": model_group_name,
+                    "Health": "No Models!",
                     "Created": "-",
-                    "Version": "-",
+                    "Ver": "-",
                     "Tags": "-",
                     "Input": "-",
-                    "Status": "No Models!",
+                    "Status": "Empty",
                     "Description": "-",
                 }
                 model_summary.append(summary)
@@ -268,10 +269,15 @@ class ArtifactsTextView(View):
             # Get Summary information for the 'latest' model in the model_list
             latest_model = model_list[0]
             sageworks_meta = latest_model.get("sageworks_meta", {})
+
+            # If the sageworks_health_tags have nothing in them, then the model is healthy
+            health_tags = sageworks_meta.get("sageworks_health_tags", "-")
+            health_tags = health_tags if health_tags else "AOK"
             summary = {
                 "Model Group": latest_model["ModelPackageGroupName"],
+                "Health": health_tags,
                 "Created": self.datetime_string(latest_model.get("CreationTime")),
-                "Version": latest_model["ModelPackageVersion"],
+                "Ver": latest_model["ModelPackageVersion"],
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
                 "Status": latest_model["ModelPackageStatus"],
@@ -285,8 +291,9 @@ class ArtifactsTextView(View):
         else:
             columns = [
                 "Model Group",
+                "Health",
                 "Created",
-                "Version",
+                "Ver",
                 "Tags",
                 "Input",
                 "Status",
@@ -303,8 +310,13 @@ class ArtifactsTextView(View):
         for endpoint, endpoint_info in data.items():
             # Get the SageWorks metadata for this Endpoint
             sageworks_meta = endpoint_info.get("sageworks_meta", {})
+
+            # If the sageworks_health_tags have nothing in them, then the endpoint is healthy
+            health_tags = sageworks_meta.get("sageworks_health_tags", "-")
+            health_tags = health_tags if health_tags else "AOK"
             summary = {
                 "Name": endpoint_info["EndpointName"],
+                "Health": health_tags,
                 "Instance": endpoint_info.get("InstanceType", "-"),
                 "Created": self.datetime_string(endpoint_info.get("CreationTime")),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
@@ -322,6 +334,7 @@ class ArtifactsTextView(View):
         else:
             columns = [
                 "Name",
+                "Health",
                 "Instance",
                 "Created",
                 "Tags",

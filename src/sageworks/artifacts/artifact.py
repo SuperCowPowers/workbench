@@ -66,10 +66,11 @@ class Artifact(ABC):
         # Conduct a Health Check on this Artifact
         health_issues = self.health_check()
         if health_issues:
-            self.log.warning("Health Check Failed!")
+            self.log.warning(f"Health Check Failed {self.uuid}: {health_issues}")
             for issue in health_issues:
-                self.log.warning(f"Health Issue: {issue}")
                 self.add_sageworks_health_tag(issue)
+        else:
+            self.log.info(f"Health Check AOK {self.uuid}")
 
     @abstractmethod
     def exists(self) -> bool:
@@ -184,32 +185,69 @@ class Artifact(ABC):
         aws_tags = self._dict_to_aws_tags(new_meta)
         self.sm_client.add_tags(ResourceArn=aws_arn, Tags=aws_tags)
 
-    def sageworks_tags(self) -> list:
-        """Get the tags for this artifact"""
-        combined_tags = self.sageworks_meta().get("sageworks_tags", None)
-        return combined_tags.split(":") if combined_tags is not None else []
+    def sageworks_tags(self, tag_type="user") -> list:
+        """Get the tags for this artifact
+        Args:
+            tag_type (str): Type of tags to return (user or health)
+        Returns:
+            list[str]: List of tags for this artifact
+        """
+        if tag_type == "user":
+            combined_tags = self.sageworks_meta().get("sageworks_tags", [])
+            return combined_tags.split(":")
 
-    def add_sageworks_tag(self, tag):
+        # Make sure the health tags exist
+        try:
+            combined_tags = self.sageworks_meta()["sageworks_health_tags"]
+            return combined_tags.split(":")
+        except KeyError:
+            # If the health tags don't exist, create storage for them and return empty list
+            self.log.important(f"{self.uuid } creating sageworks_health_tags storage...")
+            self.upsert_sageworks_meta({"sageworks_health_tags": ""})
+            return []
+
+    def add_sageworks_tag(self, tag, tag_type="user"):
         """Add a tag for this artifact, ensuring no duplicates and maintaining order.
         Args:
             tag (str): Tag to add for this artifact
+            tag_type (str): Type of tag to add (user or health)
         """
-        current_tags = self.sageworks_tags()
+        current_tags = self.sageworks_tags(tag_type)
         if tag not in current_tags:
             current_tags.append(tag)
             combined_tags = ":".join(current_tags)
-            self.upsert_sageworks_meta({"sageworks_tags": combined_tags})
+            if tag_type == "user":
+                self.upsert_sageworks_meta({"sageworks_tags": combined_tags})
+            elif tag_type == "health":
+                self.upsert_sageworks_meta({"sageworks_health_tags": combined_tags})
 
-    def remove_sageworks_tag(self, tag):
+    def remove_sageworks_tag(self, tag, tag_type="user"):
         """Remove a tag from this artifact if it exists.
         Args:
             tag (str): Tag to remove from this artifact
+            tag_type (str): Type of tag to remove (user or health)
         """
         current_tags = self.sageworks_tags()
         if tag in current_tags:
             current_tags.remove(tag)
             combined_tags = ":".join(current_tags)
-            self.upsert_sageworks_meta({"sageworks_tags": combined_tags})
+            if tag_type == "user":
+                self.upsert_sageworks_meta({"sageworks_tags": combined_tags})
+            elif tag_type == "health":
+                self.upsert_sageworks_meta({"sageworks_health_tags": combined_tags})
+
+    # Syntactic sugar for health tags
+    def sageworks_health_tags(self):
+        return self.sageworks_tags(tag_type="health")
+
+    def set_sageworks_health_tags(self, tags):
+        self.upsert_sageworks_meta({"sageworks_health_tags": ":".join(tags)})
+
+    def add_sageworks_health_tag(self, tag):
+        self.add_sageworks_tag(tag, tag_type="health")
+
+    def remove_sageworks_health_tag(self, tag):
+        self.remove_sageworks_tag(tag, tag_type="health")
 
     def get_input(self) -> str:
         """Get the input data for this artifact"""

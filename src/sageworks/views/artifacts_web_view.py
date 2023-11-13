@@ -3,7 +3,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.artifacts_text_view import ArtifactsTextView
-from sageworks.utils.symbols import tag_symbol
+from sageworks.utils.symbols import tag_symbols
 
 
 class ArtifactsWebView(ArtifactsTextView):
@@ -88,9 +88,9 @@ class ArtifactsWebView(ArtifactsTextView):
         model_df["uuid"] = model_df["Model Group"]
         model_df["Model Group"] = model_df["Model Group"].map(lambda x: self.hyperlinks(x, "models", ""))
 
-        # Add Symbols for certain tags
-        if "Tags" in model_df.columns:
-            model_df["Model Group"] = model_df["Tags"].map(lambda x: tag_symbol(x)) + " " + model_df["Model Group"]
+        # Add Health Symbols to the Model Group Name
+        if "Health" in model_df.columns:
+            model_df["Health"] = model_df["Health"].map(lambda x: tag_symbols(x))
 
         return model_df
 
@@ -102,9 +102,9 @@ class ArtifactsWebView(ArtifactsTextView):
         endpoint_df["uuid"] = endpoint_df["Name"]
         endpoint_df["Name"] = endpoint_df["Name"].map(lambda x: self.hyperlinks(x, "endpoints", ""))
 
-        # Add Symbols for certain tags
-        if "Tags" in endpoint_df.columns:
-            endpoint_df["Name"] = endpoint_df["Tags"].map(lambda x: tag_symbol(x)) + " " + endpoint_df["Name"]
+        # Add Health Symbols to the Endpoint Name
+        if "Health" in endpoint_df.columns:
+            endpoint_df["Health"] = endpoint_df["Health"].map(lambda x: tag_symbols(x))
 
         return endpoint_df
 

@@ -1,21 +1,22 @@
 """Unicode Symbols for Sageworks"""
 
-# A Dictionary of Unicode Symbols
-symbols = {
-    "red_circle": "🔴",
-    "blue_circle": "🔵",
-    "green_circle": "🟢",
-    "yellow_circle": "🟡",
-    "purple_circle": "🟣",
-    "white_circle": "⚪",
-    "black_circle": "⚫",
-    "orange_circle": "🟠",
+# A Dictionary/Map of Health Tags to Symbols
+health_icons = {
+    "failed": "🔴",
+    "broken": "🔴",
+    "no_model": "🟠",
+    "no_endpoint": "🟡",
+    "orphan": "🟡",
+    "mtype_unknown": "🟣",
+    "not_ready": "🔵",
+    "AOK": "🟢",
+    "white": "⚪",
+    "black": "⚫",
 }
 
 
-# Tag Symbols
-def tag_symbol(tag_list: str) -> str:
-    """Return the symbol for the given tag"
+def tag_symbols(tag_list: str) -> str:
+    """Return the symbols for the given list of tags"
     Args:
         tag_list (str): A string of tags separated by :
     Returns:
@@ -23,10 +24,8 @@ def tag_symbol(tag_list: str) -> str:
     """
 
     # Split the tag list and return the symbol
+    symbol_list = []
     tag_list = tag_list.split(":")
-    if "broken" in tag_list:
-        return symbols["red_circle"]
-    elif "orphan" in tag_list:
-        return symbols["yellow_circle"]
-    else:
-        return ""
+    for tag in tag_list:
+        symbol_list.append(health_icons.get(tag, ""))
+    return "".join(symbol_list)

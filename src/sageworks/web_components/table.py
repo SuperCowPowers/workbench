@@ -48,7 +48,7 @@ class Table(ComponentInterface):
                 "padding": "5px",
                 "overflow": "hidden",
                 "textOverflow": "ellipsis",
-                "minWidth": 100,
+                "minWidth": 80,
                 "maxWidth": 250,
                 "textAlign": "left",
             },
