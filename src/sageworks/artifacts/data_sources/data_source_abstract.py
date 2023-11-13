@@ -12,11 +12,14 @@ class DataSourceAbstract(Artifact):
     def __init__(self, uuid):
         """DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, JSONL, Parquet, RDS, etc)"""
 
+        # Call superclass init
+        super().__init__(uuid)
+
         # Set up our instance attributes
         self._display_columns = None
 
-        # Call superclass init
-        super().__init__(uuid)
+        # Call superclass post_init
+        super().__post_init__(uuid)
 
     @abstractmethod
     def num_rows(self) -> int:

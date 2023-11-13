@@ -257,8 +257,8 @@ class ArtifactsTextView(View):
                     "Model Group": model_group_name,
                     "Created": "-",
                     "Version": "-",
-                    "Input": "-",
                     "Tags": "-",
+                    "Input": "-",
                     "Status": "No Models!",
                     "Description": "-",
                 }
@@ -272,8 +272,8 @@ class ArtifactsTextView(View):
                 "Model Group": latest_model["ModelPackageGroupName"],
                 "Created": self.datetime_string(latest_model.get("CreationTime")),
                 "Version": latest_model["ModelPackageVersion"],
-                "Input": sageworks_meta.get("sageworks_input", "-"),
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
+                "Input": sageworks_meta.get("sageworks_input", "-"),
                 "Status": latest_model["ModelPackageStatus"],
                 "Description": latest_model["ModelPackageDescription"],
             }
@@ -287,8 +287,8 @@ class ArtifactsTextView(View):
                 "Model Group",
                 "Created",
                 "Version",
-                "Input",
                 "Tags",
+                "Input",
                 "Status",
                 "Description",
             ]

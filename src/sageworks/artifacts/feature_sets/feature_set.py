@@ -32,6 +32,7 @@ class FeatureSet(Artifact):
             feature_set_uuid (str): Name of Feature Set in SageWorks Metadata
             force_refresh (bool): Force a refresh of the Feature Set metadata (default: False)
         """
+
         # Call superclass init
         super().__init__(feature_set_uuid)
 
@@ -68,6 +69,9 @@ class FeatureSet(Artifact):
 
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
+
+        # Call superclass post_init
+        super().__post_init__()
 
         # All done
         self.log.info(f"FeatureSet Initialized: {self.uuid}")

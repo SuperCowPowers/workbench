@@ -112,7 +112,7 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
         # Get the selected row data and grab the uuid
         selected_row_data = table_data[selected_rows[0]]
         data_source_uuid = selected_row_data["uuid"]
-        log.critical(f"DataSource UUID: {data_source_uuid}")
+        log.debug(f"DataSource UUID: {data_source_uuid}")
 
         log.info("Calling DataSource Smart Sample Rows...")
         smart_sample_rows = data_source_web_view.data_source_smart_sample(data_source_uuid)

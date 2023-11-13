@@ -71,6 +71,9 @@ class Model(Artifact):
                 self.latest_model = None
                 self.model_type = ModelType.UNKNOWN
 
+        # Call SuperClass Post Initialization
+        super().__post_init__()
+
         # All done
         self.log.info(f"Model Initialized: {self.model_name}")
 
@@ -105,8 +108,21 @@ class Model(Artifact):
         if model_type and model_type != "unknown":
             return ModelType(model_type)
         else:
-            self.log.critical(f"Could not determine model type for {self.model_name}!")
+            self.log.error(f"Could not determine model type for {self.model_name}!")
             return ModelType.UNKNOWN
+
+    def health_check(self) -> list[str]:
+        """Perform a health check on this model
+        Returns:
+            list[str]: List of health issues
+        """
+        # Call the base class health check
+        health_issues = super().health_check()
+        if self._get_model_type() == ModelType.UNKNOWN:
+            health_issues.append(f"model_type_unknown")
+        return health_issues
+
+
 
     def model_metrics(self) -> Union[pd.DataFrame, None]:
         """Retrieve the training metrics for this model

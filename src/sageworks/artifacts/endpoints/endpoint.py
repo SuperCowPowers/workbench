@@ -72,6 +72,9 @@ class Endpoint(Artifact):
         self.model_training_path = self.models_s3_path + "/training"
         self.model_inference_path = self.models_s3_path + "/inference"
 
+        # Call SuperClass Post Initialization
+        super().__post_init__()
+
         # All done
         self.log.info(f"Endpoint Initialized: {self.endpoint_name}")
 
