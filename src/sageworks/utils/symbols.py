@@ -7,11 +7,12 @@ health_icons = {
     "no_model": "🟠",
     "no_endpoint": "🟡",
     "orphan": "🟡",
+    "model_type_unknown": "🟣",
     "mtype_unknown": "🟣",
     "not_ready": "🔵",
     "AOK": "🟢",
     "white": "⚪",
-    "black": "⚫",
+    "black": "⚫"
 }
 
 

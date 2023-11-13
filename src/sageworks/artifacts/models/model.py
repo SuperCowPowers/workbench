@@ -119,7 +119,7 @@ class Model(Artifact):
         # Call the base class health check
         health_issues = super().health_check()
         if self._get_model_type() == ModelType.UNKNOWN:
-            health_issues.append("mtype_unknown")
+            health_issues.append("model_type_unknown")
         return health_issues
 
     def model_metrics(self) -> Union[pd.DataFrame, None]:

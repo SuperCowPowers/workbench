@@ -212,13 +212,13 @@ class Artifact(ABC):
             tag (str): Tag to add for this artifact
             tag_type (str): Type of tag to add (user or health)
         """
-        current_tags = self.sageworks_tags(tag_type)
+        current_tags = self.sageworks_tags(tag_type) if tag_type == "user" else self.sageworks_health_tags()
         if tag not in current_tags:
             current_tags.append(tag)
             combined_tags = ":".join(current_tags)
             if tag_type == "user":
                 self.upsert_sageworks_meta({"sageworks_tags": combined_tags})
-            elif tag_type == "health":
+            else:
                 self.upsert_sageworks_meta({"sageworks_health_tags": combined_tags})
 
     def remove_sageworks_tag(self, tag, tag_type="user"):
@@ -227,7 +227,7 @@ class Artifact(ABC):
             tag (str): Tag to remove from this artifact
             tag_type (str): Type of tag to remove (user or health)
         """
-        current_tags = self.sageworks_tags()
+        current_tags = self.sageworks_tags(tag_type) if tag_type == "user" else self.sageworks_health_tags()
         if tag in current_tags:
             current_tags.remove(tag)
             combined_tags = ":".join(current_tags)
