@@ -15,7 +15,6 @@ log = logging.getLogger("sageworks")
 
 
 def ensure_health_tags():
-
     # Get all the model groups
     response = sagemaker_client.list_model_package_groups(MaxResults=100)
     model_group_names = [
@@ -30,7 +29,7 @@ def ensure_health_tags():
     # For each endpoint ensure the health tag storage is present
     endpoints_response = sagemaker_client.list_endpoints(MaxResults=100)
     for endpoint in endpoints_response["Endpoints"]:
-        e = Endpoint(endpoint['EndpointName'])
+        e = Endpoint(endpoint["EndpointName"])
         e.sageworks_health_tags()
 
 

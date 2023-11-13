@@ -11,6 +11,7 @@ from sageworks.web_components import table, data_details_markdown, violin_plots,
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 import logging
+
 log = logging.getLogger("sageworks")
 
 

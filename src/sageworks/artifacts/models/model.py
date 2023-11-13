@@ -122,7 +122,6 @@ class Model(Artifact):
             health_issues.append(f"mtype_unknown")
         return health_issues
 
-
     def model_metrics(self) -> Union[pd.DataFrame, None]:
         """Retrieve the training metrics for this model
         Returns:
