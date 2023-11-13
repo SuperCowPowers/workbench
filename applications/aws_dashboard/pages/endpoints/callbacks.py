@@ -43,11 +43,7 @@ def table_row_select(app: Dash, table_name: str):
             for i in selected_rows
         ]
         # Style for symbols
-        symbol_style = {
-            'if': {'column_id': 'Health'},
-            'fontSize': 18,
-            'textAlign': 'left'
-        }
+        symbol_style = {"if": {"column_id": "Health"}, "fontSize": 18, "textAlign": "left"}
 
         # Append the symbol style to the row style
         row_style.append(symbol_style)

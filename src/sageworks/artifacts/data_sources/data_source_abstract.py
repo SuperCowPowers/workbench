@@ -19,7 +19,7 @@ class DataSourceAbstract(Artifact):
         self._display_columns = None
 
         # Call superclass post_init
-        super().__post_init__(uuid)
+        super().__post_init__()
 
     @abstractmethod
     def num_rows(self) -> int:
