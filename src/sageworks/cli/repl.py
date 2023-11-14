@@ -1,10 +1,12 @@
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit import HTML
 from prompt_toolkit.styles import Style
 from prompt_toolkit.completion import Completer, Completion
 from pprint import pprint
 import pandas as pd
 import logging
+import os
 
 # SageWorks is currently quite verbose so lets set the logs to warning
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
@@ -184,12 +186,20 @@ class CommandHandler:
 def repl():
     handler = CommandHandler()
     completer = SageWorksCompleter(handler.session_globals)  # Use the updated globals for the completer
-    session = PromptSession(completer=completer, history=history)
+    session = PromptSession(completer=completer, history=history, style=Style.from_dict({
+        'aws_profile': 'fg:yellow',
+        'main_prompt': 'fg:#ff69b4'  # Pink color
+    }))
 
     while True:
         try:
-            # The 'prompt' parameter defines the text to display for the prompt
-            text = session.prompt("🍺  SageWorks> ", style=Style.from_dict({"prompt": "hotpink"}))
+            # Retrieve the current AWS_PROFILE
+            aws_profile = os.getenv('AWS_PROFILE', 'default')
+
+            # Update the prompt text to include the AWS_PROFILE with styled formatting
+            prompt_text = HTML('🍺  <main_prompt>SageWorks</main_prompt>(<aws_profile>{}</aws_profile>)> '.format(aws_profile))
+
+            text = session.prompt(prompt_text)
             if handler.handle_command(text):
                 break  # Exit the REPL loop if the command handler returns True
         except KeyboardInterrupt:
