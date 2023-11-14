@@ -52,6 +52,13 @@ class AthenaSource(DataSourceAbstract):
             self.log.critical("You must run the sageworks/aws_setup/aws_account_check.py script")
             raise RuntimeError("Unable to find {self.data_catalog_db} in Catalogs...")
 
+        # Get our Display View (create if it doesn't exist)
+        display_view_name = f"{self.table_name}_display"
+        self.display_view = AthenaSource(display_view_name, self.athena_database)
+        if not self.display_view.exists():
+            self.log.important(f"Creating Display View {display_view_name}...")
+            self.display_view = self.create_default_display_view()
+
         # Call superclass init
         super().__init__(data_uuid)
 
@@ -421,6 +428,11 @@ class AthenaSource(DataSourceAbstract):
         # Delete Data Catalog Table
         self.log.info(f"Deleting DataCatalog Table: {self.data_catalog_db}.{self.table_name}...")
         wr.catalog.delete_table_if_exists(self.data_catalog_db, self.table_name, boto3_session=self.boto_session)
+
+        # If we have a display view, delete it
+        if self.display_view:
+            self.log.info(f"Deleting Display View {self.display_view.uuid}")
+            self.display_view.delete()
 
         # Delete S3 Storage Objects (if they exist)
         try:
