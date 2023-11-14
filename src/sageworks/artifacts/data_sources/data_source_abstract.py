@@ -297,3 +297,23 @@ class DataSourceAbstract(Artifact):
             self.log.critical(f"DataSource {self.uuid} is not ready")
             self.set_status("error")
             return False
+
+    def create_default_display_view(self, columns: list = None):
+        """Create a default view in Athena that manages which columns are displayed"""
+
+        # Create the view name
+        view_name = f"{self.table_name}_display"
+        self.log.important(f"Creating default Display View {view_name}...")
+
+        # If the user doesn't specify columns, then we'll use the first 40 columns
+        if columns is None:
+            columns = self.column_names()[:40]
+
+        # Create the view query
+        create_view_query = f"""
+        CREATE OR REPLACE VIEW {view_name} AS
+        SELECT {', '.join(columns)} FROM {self.table_name}
+        """
+
+        # Execute the CREATE VIEW query
+        self.execute_statement(create_view_query)

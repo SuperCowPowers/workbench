@@ -69,6 +69,9 @@ class DataToFeaturesLight(Transform):
         fs = FeatureSet(self.output_uuid, force_refresh=True)
         fs.create_default_training_view()
 
+        # Also create a display view for the underlying data_source
+        fs.data_source.create_default_display_view()
+
 
 if __name__ == "__main__":
     """Exercise the DataToFeaturesLight Class"""
