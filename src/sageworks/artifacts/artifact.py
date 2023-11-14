@@ -193,18 +193,18 @@ class Artifact(ABC):
             list[str]: List of tags for this artifact
         """
         if tag_type == "user":
-            combined_tags = self.sageworks_meta().get("sageworks_tags", "")
-            return combined_tags.split(":")
+            user_tags = self.sageworks_meta().get("sageworks_tags")
+            return user_tags.split(":") if user_tags else []
 
-        # Make sure the health tags exist
-        try:
-            combined_tags = self.sageworks_meta()["sageworks_health_tags"]
-            return combined_tags.split(":")
-        except KeyError:
-            # If the health tags don't exist, create storage for them and return empty list
-            self.log.important(f"{self.uuid } creating sageworks_health_tags storage...")
-            self.upsert_sageworks_meta({"sageworks_health_tags": ""})
-            return []
+        # Grab our health tags
+        health_tags = self.sageworks_meta().get("sageworks_health_tags")
+        if health_tags:
+            return health_tags.split(":")
+
+        # If we don't have health tags, create the storage and return an empty list
+        self.log.important(f"{self.uuid} creating sageworks_health_tags storage...")
+        self.upsert_sageworks_meta({"sageworks_health_tags": ""})
+        return []
 
     def add_sageworks_tag(self, tag, tag_type="user"):
         """Add a tag for this artifact, ensuring no duplicates and maintaining order.
