@@ -246,7 +246,7 @@ class Endpoint(Artifact):
         # Do we have it cached?
         metrics_key = f"endpoint:{self.uuid}:endpoint_metrics"
         endpoint_metrics = self.temp_storage.get(metrics_key)
-        if endpoint_metrics:
+        if endpoint_metrics is not None:
             return endpoint_metrics
 
         # We don't have it cached so let's get it from CloudWatch
@@ -295,8 +295,7 @@ class Endpoint(Artifact):
         details["inference_meta"] = model_details.get("inference_meta")
 
         # Add endpoint metrics from CloudWatch
-        details["endpoint_metrics"] = EndpointMetrics().get_metrics(self.uuid, variant=details["variant"])
-        self.temp_storage.set(metrics_key, details["endpoint_metrics"])
+        details["endpoint_metrics"] = self.endpoint_metrics()
 
         # Cache the details
         self.data_storage.set(details_key, details)

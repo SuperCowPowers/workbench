@@ -284,6 +284,7 @@ class Artifact(ABC):
         which is implemented by the specific Artifact class"""
         return {
             "uuid": self.uuid,
+            "health": self.health_check(),
             "aws_arn": self.arn(),
             "size": self.size(),
             "created": self.created(),
