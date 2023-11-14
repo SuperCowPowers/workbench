@@ -312,6 +312,7 @@ class Endpoint(Artifact):
         """
         self.details(recompute=True)
         self.set_status("ready")
+        self.remove_sageworks_health_tag("not_ready")
         if refresh_meta:
             self.refresh_meta()
         return True

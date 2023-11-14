@@ -272,7 +272,7 @@ class ArtifactsTextView(View):
 
             # If the sageworks_health_tags have nothing in them, then the model is healthy
             health_tags = sageworks_meta.get("sageworks_health_tags", "-")
-            health_tags = health_tags if health_tags else "AOK"
+            health_tags = health_tags if health_tags else "healthy"
             summary = {
                 "Model Group": latest_model["ModelPackageGroupName"],
                 "Health": health_tags,
@@ -313,7 +313,7 @@ class ArtifactsTextView(View):
 
             # If the sageworks_health_tags have nothing in them, then the endpoint is healthy
             health_tags = sageworks_meta.get("sageworks_health_tags", "-")
-            health_tags = health_tags if health_tags else "AOK"
+            health_tags = health_tags if health_tags else "healthy"
             summary = {
                 "Name": endpoint_info["EndpointName"],
                 "Health": health_tags,

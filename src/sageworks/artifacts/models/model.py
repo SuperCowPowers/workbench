@@ -315,6 +315,7 @@ class Model(Artifact):
         self._pull_training_job_metrics(force_pull=True)
         self.details(recompute=True)
         self.set_status("ready")
+        self.remove_sageworks_health_tag("not_ready")
         if refresh_meta:
             self.refresh_meta()
         return True

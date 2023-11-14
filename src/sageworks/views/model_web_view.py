@@ -39,7 +39,7 @@ class ModelWebView(ArtifactsWebView):
         if not model.exists():
             return {"Status": "Not Found"}
         elif not model.ready():
-            return {"Status": "Call SageWorks make_ready()"}
+            return {"health_tags":  model.sageworks_health_tags()}
 
         # Return the Model Details
         return model.details()

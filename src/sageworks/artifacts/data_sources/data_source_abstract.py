@@ -290,6 +290,7 @@ class DataSourceAbstract(Artifact):
         ready = self.ready()
         if ready:
             self.set_status("ready")
+            self.remove_sageworks_health_tag("not_ready")
             self.refresh_meta()
             return True
         else:

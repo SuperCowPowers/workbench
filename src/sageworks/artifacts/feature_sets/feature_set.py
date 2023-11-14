@@ -504,6 +504,7 @@ class FeatureSet(Artifact):
 
         # Set ourselves to ready
         self.set_status("ready")
+        self.remove_sageworks_health_tag("not_ready")
         self.refresh_meta()
         return True
 

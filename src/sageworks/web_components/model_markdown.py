@@ -4,6 +4,7 @@ from dash import dcc
 
 # SageWorks Imports
 from sageworks.web_components.component_interface import ComponentInterface
+from sageworks.utils.symbols import health_icons
 
 
 class ModelMarkdown(ComponentInterface):
@@ -52,9 +53,14 @@ class ModelMarkdown(ComponentInterface):
         # Construct the markdown string
         markdown = ""
         for key, value in top_level_details.items():
-            # Escape square brackets
+            # Special case for the health tags
+            if key == "health_tags":
+                markdown += self._health_tag_markdown(value)
+                continue
+
+            # If the value is list or tuple, join with a comma
             if isinstance(value, (list, tuple)):
-                value_str = str(value).replace("[", r"\[").replace("]", r"\]")
+                value_str = ", ".join(value)
             else:
                 value_str = str(value)
 
@@ -91,6 +97,23 @@ class ModelMarkdown(ComponentInterface):
             metrics = metrics.round(3)
             markdown += metrics.to_markdown(index=False)
 
+        return markdown
+
+    @staticmethod
+    def _health_tag_markdown(health_tags: list[str]) -> str:
+        """Internal method to generate the health tag markdown
+        Args:
+            health_tags (list[str]): A list of health tags
+        Returns:
+            str: A markdown string
+        """
+        # If we have no health tags, then add a bullet for healthy
+        markdown = "**Health Checks**\n"  # Header for Health Checks
+        if not health_tags:
+            markdown += f"* Healthy: {health_icons.get('healthy')}\n\n"
+        else:
+            markdown += "\n".join(f"* {tag}: {health_icons.get(tag, '')}" for tag in health_tags)
+            markdown += "\n\n"  # Add newlines for separation
         return markdown
 
 

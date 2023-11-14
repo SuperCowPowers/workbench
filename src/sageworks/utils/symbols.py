@@ -11,7 +11,7 @@ health_icons = {
     "training_needed": "🟣",
     "inference_needed": "🔵",
     "not_ready": "🔵",
-    "AOK": "🟢",
+    "healthy": "🟢",
     "white": "⚪",
     "black": "⚫",
     "no_activity": "➖",
@@ -32,7 +32,7 @@ def tag_symbols(tag_list: str) -> str:
 
     # Special case for no_activity with no other tags
     if len(tag_list) == 1 and tag_list[0] == "no_activity":
-        return health_icons["AOK"]+health_icons["no_activity"]
+        return health_icons["healthy"]+health_icons["no_activity"]
 
     # Loop through tags, get the symbol, and add it to the list
     for tag in tag_list:

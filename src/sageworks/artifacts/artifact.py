@@ -70,7 +70,7 @@ class Artifact(ABC):
             for issue in health_issues:
                 self.add_sageworks_health_tag(issue)
         else:
-            self.log.info(f"Health Check AOK {self.uuid}")
+            self.log.info(f"Health Check Passed {self.uuid}")
 
     @abstractmethod
     def exists(self) -> bool:
@@ -272,8 +272,6 @@ class Artifact(ABC):
         health_issues = []
         if not self.ready():
             health_issues.append("not_ready")
-        if self.get_status() != "ready":
-            health_issues.append(f"status_{self.get_status()}")
         if "unknown" in self.aws_url():
             health_issues.append("aws_url_unknown")
         return health_issues
@@ -284,7 +282,7 @@ class Artifact(ABC):
         which is implemented by the specific Artifact class"""
         return {
             "uuid": self.uuid,
-            "health": self.health_check(),
+            "health_tags": self.sageworks_health_tags(),
             "aws_arn": self.arn(),
             "size": self.size(),
             "created": self.created(),

@@ -39,7 +39,7 @@ class EndpointWebView(ArtifactsWebView):
         if not endpoint.exists():
             return {"Status": "Not Found"}
         elif not endpoint.ready():
-            return {"Status": "Call SageWorks make_ready()"}
+            return {"health_tags": endpoint.sageworks_health_tags()}
 
         # Return the Endpoint Details
         return endpoint.details()
