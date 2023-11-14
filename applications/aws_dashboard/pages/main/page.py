@@ -39,12 +39,12 @@ tables["FEATURE_SETS"] = table.Table().create_component(
 tables["MODELS"] = table.Table().create_component(
     "MODELS",
     header_color="rgb(60, 100, 60)",
-    max_height=250,
+    max_height=235,
 )
 tables["ENDPOINTS"] = table.Table().create_component(
     "ENDPOINTS",
     header_color="rgb(100, 60, 100)",
-    max_height=250
+    max_height=235
 )
 
 # Set up our components

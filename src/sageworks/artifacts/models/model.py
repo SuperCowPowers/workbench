@@ -95,6 +95,7 @@ class Model(Artifact):
         """Internal: Set the Model Type for this Model"""
         self.model_type = model_type
         self.upsert_sageworks_meta({"sageworks_model_type": self.model_type.value})
+        self.remove_sageworks_health_tag("model_type_unknown")
 
     def _get_model_type(self) -> ModelType:
         """Internal: Query the SageWorks Metadata to get the model type
@@ -120,6 +121,10 @@ class Model(Artifact):
         health_issues = super().health_check()
         if self._get_model_type() == ModelType.UNKNOWN:
             health_issues.append("model_type_unknown")
+        if self.model_metrics() is None:
+            health_issues.append("metrics_needed")
+        else:
+            self.remove_sageworks_health_tag("metrics_needed")
         return health_issues
 
     def model_metrics(self) -> Union[pd.DataFrame, None]:

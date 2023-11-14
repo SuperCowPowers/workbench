@@ -7,13 +7,11 @@ health_icons = {
     "no_model": "🔴",
     "5xx_errors_min": "🟠",
     "no_endpoint": "🟡",
-    "model_type_unknown": "🟣",
-    "training_needed": "🟣",
-    "inference_needed": "🔵",
+    "model_type_unknown": "⚪",
+    "metrics_needed": "🟣",
     "not_ready": "🔵",
     "healthy": "🟢",
-    "white": "⚪",
-    "black": "⚫",
+    "unknown_error": "⚫",
     "no_activity": "➖",
 }
 

@@ -109,11 +109,21 @@ class ModelMarkdown(ComponentInterface):
         """
         # If we have no health tags, then add a bullet for healthy
         markdown = "**Health Checks**\n"  # Header for Health Checks
+
+        # If we have no health tags, then add a bullet for healthy
         if not health_tags:
             markdown += f"* Healthy: {health_icons.get('healthy')}\n\n"
-        else:
-            markdown += "\n".join(f"* {tag}: {health_icons.get(tag, '')}" for tag in health_tags)
-            markdown += "\n\n"  # Add newlines for separation
+            return markdown
+
+        # Special case for no_activity with no other tags
+        if len(health_tags) == 1 and health_tags[0] == "no_activity":
+            markdown += f"* Healthy: {health_icons.get('healthy')}\n"
+            markdown += f"* No Activity: {health_icons.get('no_activity')}\n\n"
+            return markdown
+
+        # If we have health tags, then add a bullet for each tag
+        markdown += "\n".join(f"* {tag}: {health_icons.get(tag, '')}" for tag in health_tags)
+        markdown += "\n\n"  # Add newlines for separation
         return markdown
 
 
