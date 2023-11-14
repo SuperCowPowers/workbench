@@ -3,12 +3,13 @@
 # A Dictionary/Map of Health Tags to Symbols
 health_icons = {
     "failed": "🔴",
-    "broken": "🔴",
-    "no_model": "🟠",
+    "5xx_errors": "🔴",
+    "no_model": "🔴",
+    "5xx_errors_min": "🟠",
     "no_endpoint": "🟡",
-    "orphan": "🟡",
     "model_type_unknown": "🟣",
-    "mtype_unknown": "🟣",
+    "training_needed": "🟣",
+    "inference_needed": "🔵",
     "not_ready": "🔵",
     "AOK": "🟢",
     "white": "⚪",
