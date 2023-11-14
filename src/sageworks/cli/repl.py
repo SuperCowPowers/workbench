@@ -186,18 +186,21 @@ class CommandHandler:
 def repl():
     handler = CommandHandler()
     completer = SageWorksCompleter(handler.session_globals)  # Use the updated globals for the completer
-    session = PromptSession(completer=completer, history=history, style=Style.from_dict({
-        'aws_profile': 'fg:yellow',
-        'main_prompt': 'fg:#ff69b4'  # Pink color
-    }))
+    session = PromptSession(
+        completer=completer,
+        history=history,
+        style=Style.from_dict({"aws_profile": "fg:yellow", "main_prompt": "fg:#ff69b4"}),  # Pink color
+    )
 
     while True:
         try:
             # Retrieve the current AWS_PROFILE
-            aws_profile = os.getenv('AWS_PROFILE', 'default')
+            aws_profile = os.getenv("AWS_PROFILE", "default")
 
             # Update the prompt text to include the AWS_PROFILE with styled formatting
-            prompt_text = HTML('🍺  <main_prompt>SageWorks</main_prompt>(<aws_profile>{}</aws_profile>)> '.format(aws_profile))
+            prompt_text = HTML(
+                "🍺  <main_prompt>SageWorks</main_prompt>(<aws_profile>{}</aws_profile>)> ".format(aws_profile)
+            )
 
             text = session.prompt(prompt_text)
             if handler.handle_command(text):
