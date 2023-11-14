@@ -101,14 +101,23 @@ class Endpoint(Artifact):
 
         # We're going to check for 5xx errors and no activity
         endpoint_metrics = self.endpoint_metrics()
+
+        # Check for 5xx errors
         num_errors = endpoint_metrics["Invocation5XXErrors"].sum()
         if num_errors > 5:
             health_issues.append("5xx_errors")
         elif num_errors > 0:
             health_issues.append("5xx_errors_min")
+        else:
+            self.remove_sageworks_health_tag("5xx_errors")
+            self.remove_sageworks_health_tag("5xx_errors_min")
+
+        # Check for Endpoint activity
         num_invocations = endpoint_metrics["Invocations"].sum()
         if num_invocations == 0:
             health_issues.append("no_activity")
+        else:
+            self.remove_sageworks_health_tag("no_activity")
         return health_issues
 
     def predict(self, feature_df: pd.DataFrame) -> pd.DataFrame:
