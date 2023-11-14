@@ -59,10 +59,14 @@ class CommandHandler:
         from sageworks.artifacts.models.model import Model, ModelType
         from sageworks.artifacts.endpoints.endpoint import Endpoint
 
+        # Add the imports to the session globals
         self.session_globals["DataSource"] = DataSource
         self.session_globals["FeatureSet"] = FeatureSet
         self.session_globals["Model"] = Model
         self.session_globals["Endpoint"] = Endpoint
+
+        # Add the model types to the session globals
+        self.session_globals["ModelType"] = ModelType
 
     @staticmethod
     def broker_refresh():
