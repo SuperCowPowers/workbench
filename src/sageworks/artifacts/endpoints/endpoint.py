@@ -99,12 +99,16 @@ class Endpoint(Artifact):
         # Call the base class health check
         health_issues = super().health_check()
 
-        # Peek if we have Endpoint Metrics in the details
-        details = self.details(only_cached=True)
-        if details and details.get("endpoint_metrics") is not None:
-            num_invocations = details["endpoint_metrics"]["Invocations"].sum()
-            if num_invocations == 0:
-                health_issues.append("no_activity")
+        # We're going to check for 5xx errors and no activity
+        endpoint_metrics = self.endpoint_metrics()
+        num_errors = endpoint_metrics["Invocation5XXErrors"].sum()
+        if num_errors > 5:
+            health_issues.append("5xx_errors")
+        elif num_errors > 0:
+            health_issues.append("5xx_errors_min")
+        num_invocations = endpoint_metrics["Invocations"].sum()
+        if num_invocations == 0:
+            health_issues.append("no_activity")
         return health_issues
 
     def predict(self, feature_df: pd.DataFrame) -> pd.DataFrame:
@@ -233,31 +237,40 @@ class Endpoint(Artifact):
         """Return the datetime when this artifact was last modified"""
         return self.endpoint_meta["LastModifiedTime"]
 
-    def details(self, recompute: bool = False, only_cached: bool = False) -> dict:
+    def endpoint_metrics(self) -> pd.DataFrame:
+        """Return the metrics for this endpoint
+        Returns:
+            pd.DataFrame: DataFrame with the metrics for this endpoint
+        """
+
+        # Do we have it cached?
+        metrics_key = f"endpoint:{self.uuid}:endpoint_metrics"
+        endpoint_metrics = self.temp_storage.get(metrics_key)
+        if endpoint_metrics:
+            return endpoint_metrics
+
+        # We don't have it cached so let's get it from CloudWatch
+        self.log.important("Updating endpoint metrics...")
+        variant = self.endpoint_meta["ProductionVariants"][0]["VariantName"]
+        endpoint_metrics = EndpointMetrics().get_metrics(self.uuid, variant=variant)
+        self.temp_storage.set(metrics_key, endpoint_metrics)
+        return endpoint_metrics
+
+    def details(self, recompute: bool = False) -> dict:
         """Additional Details about this Endpoint
         Args:
             recompute(bool): Recompute the details (default: False)
-            only_cached(bool): Only return cached details (default: False)
         Returns:
             dict(dict): A dictionary of details about this Endpoint
         """
         # Check if we have cached version of the FeatureSet Details
         details_key = f"endpoint:{self.uuid}:details"
-        metrics_key = f"endpoint:{self.uuid}:endpoint_metrics"
+
         cached_details = self.data_storage.get(details_key)
-        if only_cached:
-            return cached_details
         if cached_details and not recompute:
-            # Return the cached details but first check if we need to update the endpoint metrics
-            endpoint_metrics = self.temp_storage.get(metrics_key)
-            if endpoint_metrics is None:
-                self.log.important("Updating endpoint metrics...")
-                variant = self.endpoint_meta["ProductionVariants"][0]["VariantName"]
-                endpoint_metrics = EndpointMetrics().get_metrics(self.uuid, variant=variant)
-                cached_details["endpoint_metrics"] = endpoint_metrics
-                self.temp_storage.set(metrics_key, endpoint_metrics)
-            else:
-                cached_details["endpoint_metrics"] = endpoint_metrics
+            # Update the endpoint metrics before returning cached details
+            endpoint_metrics = self.endpoint_metrics()
+            cached_details["endpoint_metrics"] = endpoint_metrics
             return cached_details
 
         # Fill in all the details about this Endpoint
