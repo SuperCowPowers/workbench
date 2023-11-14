@@ -68,7 +68,7 @@ class Table(ComponentInterface):
                 "color": "rgb(200, 200, 200)",
                 "border": "0px",
             },
-            style_data_conditional=[{"if": {"column_id": "Health"}, "fontSize": 18, "textAlign": "left"}],
+            style_data_conditional=[{"if": {"column_id": "Health"}, "fontSize": 16, "textAlign": "left"}],
             markdown_options={"html": True},
         )
         return table
