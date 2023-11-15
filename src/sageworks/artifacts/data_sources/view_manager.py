@@ -1,40 +1,113 @@
-"""View: Used by DataSource to manage 'views' of the data"""
+"""ViewManager: Used by DataSource to manage 'views' of the data
+   Note: This is probably Athena specific, so we may need to refactor this
+"""
+import logging
 
 
 class View:
-    def __init__(self, name: str, database: str, table: str):
-        """View: A Helper Class for the ViewManager
+    def __init__(self, name: str, data_source):
+        """View: A View Class to be used by the ViewManager
         Args:
             name(str): The name of the view
-            database(str): The name of the database
-            table(str): The name of the table
+            data_source: The DataSource that this view is created from
         """
 
         # Set up our instance attributes
+        self.log = logging.getLogger("sageworks")
         self.name = name
-        self.database = database
-        self.table = table
+        self.data_source = data_source
+        self.database = data_source.get_database()
+        self.base_table = data_source.get_base_table_name()
+        self.view_table = f"{self.base_table}_{self.name}"
+
+        # A View object should be instantiated quickly, so
+        # they don't really exist on creation.
+        self._exists = False
+
+    def exists(self):
+        """Check if the view exists in the database
+        Returns:
+            bool: True if the view exists, False otherwise.
+        """
+        # Have we already checked if the view exists?
+        if self._exists:
+            return True
+
+        # Query to check if the view exists
+        check_view_query = f"""
+        SELECT count(*) as view_count FROM information_schema.views
+        WHERE table_schema = '{self.database}' AND table_name = '{self.view_table}'
+        """
+
+        # Execute the query
+        result = self.data_source.query(check_view_query)
+
+        # Check if the view count is greater than 0
+        view_exists = result["view_count"][0] > 0
+        self._exists = view_exists
+        return view_exists
+
+    def create(self, columns: list = None, column_limit: int = None, recreate: bool = False):
+        """Create a database view that manages which columns are used
+        Args:
+            columns(list): The columns to include in the view (default: None)
+            column_limit(int): Max number of columns in the view (default: None)
+            recreate(bool): Drop and recreate the view (default: False)
+        Returns:
+            View: The View object for this view
+        """
+
+        # Check if the view already exists
+        if self.exists() and not recreate:
+            self.log.info(f"View {self.view_table} already exists")
+            return
+
+        # Create a new view
+        self.log.important(f"Creating View {self.view_table}...")
+
+        # If the user doesn't specify columns, then we'll limit the columns
+        if columns is None and column_limit is not None:
+            columns = self.data_source.column_names()[:column_limit]
+
+        # Create the view query
+        create_view_query = f"""
+        CREATE OR REPLACE VIEW {self.view_table} AS
+        SELECT {', '.join(columns)} FROM {self.base_table}
+        """
+
+        # Execute the CREATE VIEW query
+        self.data_source.execute_statement(create_view_query)
+
+        # Update the _exists attribute
+        self._exists = True
 
     def __repr__(self):
         """Return a string representation of this object"""
-        return f"View(name={self.name}, database={self.database}, table={self.table})"
+        return f"View(name={self.name}, database={self.database}, table={self.base_table})"
 
 
 class ViewManager:
-    def __init__(self, base_view: View, display_view: View, training_view: View):
-        """ViewManager: Used by DataSource to manage 'views' of the data"""
+    def __init__(self, data_source):
+        """ViewManager: Used by DataSource to manage 'views' of the data
+        Args:
+            data_source(DataSource): The DataSource that this ViewManager is for
+        """
 
         # Set up our instance attributes
-        self.base_view = base_view
-        self.display_view = display_view
-        self.training_view = training_view
+        self.data_source = data_source
+        self.database = data_source.get_database()
+        self.base_table = data_source.get_base_table_name()
+        self.display_view = None
+        self.training_view = None
 
-    def get_base_view(self) -> View:
-        """Get the base view
-        Returns:
-            View: The base/default view for this data source
-        """
-        return self.base_view
+    def create_default_views(self):
+        """Create the default views for this data source"""
+
+        # Create the display and training views
+        self.display_view = View("display", self.data_source)
+        self.display_view.create(column_limit=40)
+        self.training_view = View("training", self.data_source)
+        self.training_view.create()
 
     def get_display_view(self) -> View:
         """Get the display view
@@ -60,30 +133,23 @@ class ViewManager:
 
 
 if __name__ == "__main__":
-    """Exercise the AthenaSource Class"""
+    """Exercise the ViewManager Class"""
     from sageworks.artifacts.data_sources.athena_source import AthenaSource
 
-    # Set up our ViewManager
-    database = 'fake_db'
-    data_uuid = 'fake_data_uuid'
-    view_manager = ViewManager(
-        base_view=View(name="base", database=database, table=data_uuid),
-        display_view=View(name="display", database=database, table=f"{data_uuid}_display"),
-        training_view=View(name="training", database=database, table=f"{data_uuid}_training"),
-    )
+    # Create a DataSource (which will create a ViewManager)
+    data_source = AthenaSource("test_data")
 
-    # Get the base/default view
-    my_view = view_manager.get_base_view()
-    print(my_view)
+    # Now create the default views
+    data_source.view_manager.create_default_views()
 
     # Get the display view
-    my_view = view_manager.get_display_view()
+    my_view = data_source.get_display_view()
     print(my_view)
 
     # Get the computation view
-    my_view = view_manager.get_computation_view()
+    my_view = data_source.get_computation_view()
     print(my_view)
 
     # Get the training view
-    my_view = view_manager.get_training_view()
+    my_view = data_source.get_training_view()
     print(my_view)
