@@ -6,20 +6,55 @@ from io import StringIO
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
+from sageworks.artifacts.data_sources.view_manager import View, ViewManager
 
 
 class DataSourceAbstract(Artifact):
-    def __init__(self, uuid):
-        """DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, JSONL, Parquet, RDS, etc)"""
+    def __init__(self, data_uuid: str, database: str = "sageworks"):
+        """DataSourceAbstract: Abstract Base Class for all data sources
+        Args:
+            data_uuid(str): The UUID for this Data Source
+            database(str): The database to use for this Data Source (default: sageworks)
+        """
 
         # Call superclass init
-        super().__init__(uuid)
+        super().__init__(data_uuid)
+
+        # Set up our ViewManager
+        self.view_manager = ViewManager(
+            base_view=View(name="base", database=database, table=data_uuid),
+            display_view=View(name="display", database=database, table=f"{data_uuid}_display"),
+            training_view=View(name="training", database=database, table=f"{data_uuid}_training"),
+        )
 
         # Set up our instance attributes
+        base_view = self.view_manager.get_base_view()
+        self._database = base_view.database
         self._display_columns = None
 
+    def __post_init__(self):
         # Call superclass post_init
         super().__post_init__()
+
+    def get_database(self) -> str:
+        """Get the database for this Data Source"""
+        return self._database
+
+    def get_base_table_name(self) -> str:
+        """Get the default table name for this Data Source"""
+        return self.view_manager.get_base_view().table
+
+    def get_display_table_name(self) -> str:
+        """Get the display table name for this Data Source"""
+        return self.view_manager.get_display_view().table
+
+    def get_computation_table_name(self) -> str:
+        """Get the display table name for this Data Source"""
+        return self.view_manager.get_computation_view().table
+
+    def get_training_table_name(self) -> str:
+        """Get the training table name for this Data Source"""
+        return self.view_manager.get_training_view().table
 
     @abstractmethod
     def num_rows(self) -> int:
@@ -124,6 +159,20 @@ class DataSourceAbstract(Artifact):
             query(str): The SQL query to execute
         """
         pass
+
+    def get_display_view(self) -> View:
+        """A view that manages which columns/rows are displayed
+        Returns:
+            View: The display view for this data source
+        """
+        return self.view_manager.get_display_view()
+
+    def get_training_view(self) -> View:
+        """A view that manages used for training models
+        Returns:
+            View: The training view for this data source
+        """
+        return self.view_manager.get_training_view()
 
     def sample(self, recompute: bool = False) -> pd.DataFrame:
         """Return a sample DataFrame from this DataSource
@@ -297,23 +346,3 @@ class DataSourceAbstract(Artifact):
             self.log.critical(f"DataSource {self.uuid} is not ready")
             self.set_status("error")
             return False
-
-    def create_default_display_view(self, columns: list = None):
-        """Create a default view in Athena that manages which columns are displayed"""
-
-        # Create the view name
-        view_name = f"{self.table_name}_display"
-        self.log.important(f"Creating default Display View {view_name}...")
-
-        # If the user doesn't specify columns, then we'll use the first 40 columns
-        if columns is None:
-            columns = self.column_names()[:40]
-
-        # Create the view query
-        create_view_query = f"""
-        CREATE OR REPLACE VIEW {view_name} AS
-        SELECT {', '.join(columns)} FROM {self.table_name}
-        """
-
-        # Execute the CREATE VIEW query
-        self.execute_statement(create_view_query)
