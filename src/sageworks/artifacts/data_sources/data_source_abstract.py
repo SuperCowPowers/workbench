@@ -28,6 +28,9 @@ class DataSourceAbstract(Artifact):
         # Set up our ViewManager
         self.view_manager = ViewManager(self)
 
+        # Note: This will change when our ViewManager is ready
+        self.table_name = data_uuid
+
     def __post_init__(self):
         # Call superclass post_init
         super().__post_init__()
@@ -37,20 +40,8 @@ class DataSourceAbstract(Artifact):
         return self._database
 
     def get_base_table_name(self) -> str:
-        """Get the default table name for this Data Source"""
+        """Get the base table name for this Data Source"""
         return self._base_table_name
-
-    def get_display_table_name(self) -> str:
-        """Get the display table name for this Data Source"""
-        return self.view_manager.get_display_view().table
-
-    def get_computation_table_name(self) -> str:
-        """Get the display table name for this Data Source"""
-        return self.view_manager.get_computation_view().table
-
-    def get_training_table_name(self) -> str:
-        """Get the training table name for this Data Source"""
-        return self.view_manager.get_training_view().table
 
     @abstractmethod
     def num_rows(self) -> int:
@@ -161,6 +152,8 @@ class DataSourceAbstract(Artifact):
         Returns:
             View: The display view for this data source
         """
+        if not self.view_manager.get_display_view():
+            self.view_manager.create_display_view()
         return self.view_manager.get_display_view()
 
     def get_computation_view(self) -> View:
@@ -168,6 +161,8 @@ class DataSourceAbstract(Artifact):
         Returns:
             View: The display view for this data source
         """
+        if not self.view_manager.get_computation_view():
+            self.view_manager.get_computation_view()
         return self.view_manager.get_computation_view()
 
     def get_training_view(self) -> View:
@@ -175,6 +170,8 @@ class DataSourceAbstract(Artifact):
         Returns:
             View: The training view for this data source
         """
+        if not self.view_manager.get_training_view():
+            self.view_manager.get_training_view()
         return self.view_manager.get_training_view()
 
     def sample(self, recompute: bool = False) -> pd.DataFrame:

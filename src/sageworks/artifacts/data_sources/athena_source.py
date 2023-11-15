@@ -160,9 +160,7 @@ class AthenaSource(DataSourceAbstract):
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
-        count_df = self.query(
-            f'select count(*) AS count from "{self.get_database()}"."{self.get_base_table_name()}"'
-        )
+        count_df = self.query(f'select count(*) AS count from "{self.get_database()}"."{self.get_base_table_name()}"')
         return count_df["count"][0]
 
     def num_columns(self) -> int:

@@ -47,11 +47,11 @@ class View:
         self._exists = view_exists
         return view_exists
 
-    def create(self, columns: list = None, column_limit: int = None, recreate: bool = False):
-        """Create a database view that manages which columns are used
+    def create_display(self, columns: list = None, column_limit: int = 30, recreate: bool = False):
+        """Create a database view that manages which columns are used for display
         Args:
             columns(list): The columns to include in the view (default: None)
-            column_limit(int): Max number of columns in the view (default: None)
+            column_limit(int): Max number of columns in the view (default: 30)
             recreate(bool): Drop and recreate the view (default: False)
         Returns:
             View: The View object for this view
@@ -63,10 +63,10 @@ class View:
             return
 
         # Create a new view
-        self.log.important(f"Creating View {self.view_table}...")
+        self.log.important(f"Creating Display View {self.view_table}...")
 
         # If the user doesn't specify columns, then we'll limit the columns
-        if columns is None and column_limit is not None:
+        if columns is None:
             columns = self.data_source.column_names()[:column_limit]
 
         # Create the view query
@@ -81,9 +81,56 @@ class View:
         # Update the _exists attribute
         self._exists = True
 
+    def create_computation(self, columns: list = None, column_limit: int = 30, recreate: bool = False):
+        """Create a database view that manages which columns are used for computation"""
+        self.create_display(columns=columns, column_limit=column_limit, recreate=recreate)
+
+    def create_training(self, id_column: str, columns: list = None, recreate: bool = False):
+        """Create a database view that manages which columns are used
+        Args:
+            id_column(str): The name of the ID column
+            columns(list): The columns to include in the view (default: None)
+            recreate(bool): Drop and recreate the view (default: False)
+        Returns:
+            View: The View object for this view
+        """
+
+        # Check if the view already exists
+        if self.exists() and not recreate:
+            self.log.info(f"View {self.view_table} already exists")
+            return
+
+        # Create a new view
+        self.log.important(f"Creating Training View {self.view_table}...")
+
+        # If the user doesn't specify columns, then we'll use ALL the columns
+        if columns is None:
+            columns = self.data_source.column_names()
+        sql_columns = ", ".join(columns)
+
+        # Logic to 'hash' the ID column from 1 to 10
+        # We use this assign roughly 80% to training and 20% to hold-out
+        hash_logic = f"from_big_endian_64(xxhash64(cast(cast({id_column} AS varchar) AS varbinary))) % 10"
+
+        # Construct the CREATE VIEW query with consistent assignment based on hashed string ID
+        create_view_query = f"""
+        CREATE OR REPLACE VIEW {self.view_table} AS
+        SELECT {sql_columns}, CASE
+            WHEN {hash_logic} < 8 THEN 1  -- Assign roughly 80% to training
+            ELSE 0  -- Assign roughly 20% to hold-out
+        END AS training
+        FROM {self.base_table}
+        """
+
+        # Execute the CREATE VIEW query
+        self.data_source.execute_statement(create_view_query)
+
+        # Update the _exists attribute
+        self._exists = True
+
     def __repr__(self):
         """Return a string representation of this object"""
-        return f"View(name={self.name}, database={self.database}, table={self.base_table})"
+        return f"View: {self.database}:{self.view_table} (DataSource({self.data_source.uuid}) Exists: {self.exists()})"
 
 
 class ViewManager:
@@ -98,16 +145,34 @@ class ViewManager:
         self.database = data_source.get_database()
         self.base_table = data_source.get_base_table_name()
         self.display_view = None
+        self.computation_view = None
         self.training_view = None
 
-    def create_default_views(self):
-        """Create the default views for this data source"""
-
-        # Create the display and training views
+    def create_display_view(self, recreate: bool = False):
+        """Create the display view for this data source
+        Args:
+            recreate(bool): Drop and recreate the view (default: False)
+        """
         self.display_view = View("display", self.data_source)
-        self.display_view.create(column_limit=40)
+        self.display_view.create_display(recreate=recreate)
+
+    def create_computation_view(self, recreate: bool = False):
+        """Create the computation view for this data source
+        Args:
+            recreate(bool): Drop and recreate the view (default: False)
+        Note: This just returns the display view for now
+        """
+        self.computation_view = View("computation", self.data_source)
+        self.computation_view.create_computation(recreate=recreate)
+
+    def create_training_view(self, id_column: str, recreate: bool = False):
+        """Create the training view for this data source
+        Args:
+            id_column(str): The name of the ID column
+            recreate(bool): Drop and recreate the view (default: False)
+        """
         self.training_view = View("training", self.data_source)
-        self.training_view.create()
+        self.training_view.create_training(id_column, recreate=recreate)
 
     def get_display_view(self) -> View:
         """Get the display view
@@ -122,7 +187,7 @@ class ViewManager:
             View: The computation view for this data source
         Note: This just returns the display view for now
         """
-        return self.display_view
+        return self.computation_view
 
     def get_training_view(self) -> View:
         """Get the training view
@@ -134,13 +199,15 @@ class ViewManager:
 
 if __name__ == "__main__":
     """Exercise the ViewManager Class"""
-    from sageworks.artifacts.data_sources.athena_source import AthenaSource
+    from sageworks.artifacts.data_sources.data_source import DataSource
 
     # Create a DataSource (which will create a ViewManager)
-    data_source = AthenaSource("test_data")
+    data_source = DataSource("test_data")
 
     # Now create the default views
-    data_source.view_manager.create_default_views()
+    data_source.view_manager.create_display_view()  # recreate=True for testing
+    data_source.view_manager.create_computation_view()
+    data_source.view_manager.create_training_view("id")
 
     # Get the display view
     my_view = data_source.get_display_view()
