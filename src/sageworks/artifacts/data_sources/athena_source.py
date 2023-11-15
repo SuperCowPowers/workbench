@@ -420,16 +420,14 @@ class AthenaSource(DataSourceAbstract):
         if not self.exists():
             self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.get_base_table_name()}")
 
+        # If we have views, delete them
+        self.view_manager.delete_all_views()
+
         # Delete Data Catalog Table
         self.log.info(f"Deleting DataCatalog Table: {self.get_database()}.{self.get_base_table_name()}...")
         wr.catalog.delete_table_if_exists(
             self.get_database(), self.get_base_table_name(), boto3_session=self.boto_session
         )
-
-        # If we have a display view, delete it
-        if self.display_view:
-            self.log.info(f"Deleting Display View {self.display_view.uuid}")
-            self.display_view.delete()
 
         # Delete S3 Storage Objects (if they exist)
         try:

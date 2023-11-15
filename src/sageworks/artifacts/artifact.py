@@ -160,6 +160,8 @@ class Artifact(ABC):
         self.log.debug(f"Calling list_tags AWS request {aws_arn}...")
         try:
             aws_tags = self.sm_session.list_tags(aws_arn)
+            meta = self._aws_tags_to_dict(aws_tags)
+            return meta
         except botocore.exceptions.ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code == "ThrottlingException":
@@ -169,8 +171,7 @@ class Artifact(ABC):
             else:
                 # Handle other ClientErrors that may occur
                 self.log.error(f"Caught a different ClientError: {error_code}")
-        meta = self._aws_tags_to_dict(aws_tags)
-        return meta
+                raise e
 
     def upsert_sageworks_meta(self, new_meta: dict):
         """Add SageWorks specific metadata to this Artifact

@@ -37,7 +37,7 @@ if __name__ == "__main__":
         print("Deleting abalone_feature_set...")
         fs.delete()
 
-    # Delete the abalone_feature_set FeatureSet
+    # Delete the wine_feature FeatureSet
     fs = FeatureSet("wine_features")
     if fs.exists():
         print("Deleting wine_features...")

@@ -128,6 +128,23 @@ class View:
         # Update the _exists attribute
         self._exists = True
 
+    def delete(self):
+        """Delete the database view if it exists."""
+        # Check if the view exists
+        if not self.exists():
+            self.log.info(f"View {self.view_table} does not exist, nothing to delete.")
+            return
+
+        # If the view exists, drop it
+        self.log.important(f"Dropping View {self.view_table}...")
+        drop_view_query = f"DROP VIEW {self.view_table}"
+
+        # Execute the DROP VIEW query
+        self.data_source.execute_statement(drop_view_query)
+
+        # Update the _exists attribute
+        self._exists = False
+
     def __repr__(self):
         """Return a string representation of this object"""
         return f"View: {self.database}:{self.view_table} (DataSource({self.data_source.uuid}) Exists: {self.exists()})"
@@ -196,6 +213,15 @@ class ViewManager:
         """
         return self.training_view
 
+    def delete_all_views(self):
+        """Delete all views for this data source"""
+        if self.display_view:
+            self.display_view.delete()
+        if self.computation_view:
+            self.computation_view.delete()
+        if self.training_view:
+            self.training_view.delete()
+
 
 if __name__ == "__main__":
     """Exercise the ViewManager Class"""
@@ -220,3 +246,6 @@ if __name__ == "__main__":
     # Get the training view
     my_view = data_source.get_training_view()
     print(my_view)
+
+    # Delete the training view
+    my_view.delete()
