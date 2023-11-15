@@ -20,17 +20,13 @@ class DataSourceAbstract(Artifact):
         # Call superclass init
         super().__init__(data_uuid)
 
-        # Set up our ViewManager
-        self.view_manager = ViewManager(
-            base_view=View(name="base", database=database, table=data_uuid),
-            display_view=View(name="display", database=database, table=f"{data_uuid}_display"),
-            training_view=View(name="training", database=database, table=f"{data_uuid}_training"),
-        )
-
         # Set up our instance attributes
-        base_view = self.view_manager.get_base_view()
-        self._database = base_view.database
+        self._database = database
+        self._base_table_name = data_uuid
         self._display_columns = None
+
+        # Set up our ViewManager
+        self.view_manager = ViewManager(self)
 
     def __post_init__(self):
         # Call superclass post_init
@@ -42,7 +38,7 @@ class DataSourceAbstract(Artifact):
 
     def get_base_table_name(self) -> str:
         """Get the default table name for this Data Source"""
-        return self.view_manager.get_base_view().table
+        return self._base_table_name
 
     def get_display_table_name(self) -> str:
         """Get the display table name for this Data Source"""
@@ -166,6 +162,13 @@ class DataSourceAbstract(Artifact):
             View: The display view for this data source
         """
         return self.view_manager.get_display_view()
+
+    def get_computation_view(self) -> View:
+        """A view that manages which columns/rows are displayed
+        Returns:
+            View: The display view for this data source
+        """
+        return self.view_manager.get_computation_view()
 
     def get_training_view(self) -> View:
         """A view that manages used for training models
