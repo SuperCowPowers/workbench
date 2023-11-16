@@ -4,9 +4,14 @@ from sageworks.artifacts.data_sources.data_source import DataSource
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 from sageworks.artifacts.models.model import Model
 from sageworks.artifacts.endpoints.endpoint import Endpoint
+from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 
 if __name__ == "__main__":
+
+    # This forces a refresh on all the data we get from the AWs Broker
+    AWSServiceBroker().get_all_metadata(force_refresh=True)
+
     # Delete the test_data DataSource
     ds = DataSource("test_data")
     if ds.exists():
