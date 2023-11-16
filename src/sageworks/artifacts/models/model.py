@@ -87,7 +87,7 @@ class Model(Artifact):
     def exists(self) -> bool:
         """Does the model metadata exist in the AWS Metadata?"""
         if self.model_meta is None:
-            self.log.info(f"Model {self.model_name} not found in AWS Metadata!")
+            self.log.debug(f"Model {self.model_name} not found in AWS Metadata!")
             return False
         return True
 
@@ -117,9 +117,9 @@ class Model(Artifact):
             list[str]: List of health issues
         """
         # Call the base class health check
+        health_issues = super().health_check()
 
         # Model Type
-        health_issues = super().health_check()
         if self._get_model_type() == ModelType.UNKNOWN:
             health_issues.append("model_type_unknown")
         else:

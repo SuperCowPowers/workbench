@@ -87,7 +87,7 @@ class Endpoint(Artifact):
     def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.endpoint_meta is None:
-            self.log.info(f"Endpoint {self.endpoint_name} not found in AWS Metadata!")
+            self.log.debug(f"Endpoint {self.endpoint_name} not found in AWS Metadata")
             return False
         return True
 

@@ -2,6 +2,16 @@
    Note: This is probably Athena specific, so we may need to refactor this
 """
 import logging
+from enum import Enum
+
+
+# Enumerated View Types
+class ViewType(Enum):
+    """Enumerated Types for SageWorks View Types"""
+    BASE = "base"
+    DISPLAY = "display"
+    COMPUTATION = "computation"
+    TRAINING = "training"
 
 
 class View:
@@ -18,11 +28,16 @@ class View:
         self.data_source = data_source
         self.database = data_source.get_database()
         self.base_table = data_source.get_base_table_name()
-        self.view_table = f"{self.base_table}_{self.name}"
 
-        # A View object should be instantiated quickly, so
-        # they don't really exist on creation.
-        self._exists = False
+        # Special case for the base view
+        if self.name == "base":
+            self.view_table = self.base_table
+            self._exists = True
+
+        # We'll set up the view but it doesn't exist yet until a create method is called
+        else:
+            self.view_table = f"{self.base_table}_{self.name}"
+            self._exists = False
 
     def exists(self):
         """Check if the view exists in the database
@@ -165,6 +180,9 @@ class ViewManager:
         self.computation_view = None
         self.training_view = None
 
+        # We have an internal 'base view' that's just the data source base table
+        self.base_view = View("base", self.data_source)
+
     def create_display_view(self, recreate: bool = False):
         """Create the display view for this data source
         Args:
@@ -191,11 +209,15 @@ class ViewManager:
         self.training_view = View("training", self.data_source)
         self.training_view.create_training(id_column, recreate=recreate)
 
-    def get_display_view(self) -> View:
+    def get_view(self, view_type: ViewType) -> View:
         """Get the display view
+        Args:
+            view_type(ViewType): The type of view to return
         Returns:
             View: The display view for this data source
         """
+        if view_type == ViewType.BASE:
+            return self.data_source.get_base_table_name()
         return self.display_view
 
     def get_computation_view(self) -> View:

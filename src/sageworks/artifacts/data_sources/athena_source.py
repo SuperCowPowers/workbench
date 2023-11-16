@@ -69,7 +69,7 @@ class AthenaSource(DataSourceAbstract):
 
         # We're we able to pull AWS Metadata for this table_name?"""
         if self.catalog_table_meta is None:
-            self.log.info(f"AthenaSource {self.get_base_table_name()} not found in SageWorks Metadata...")
+            self.log.debug(f"AthenaSource {self.get_base_table_name()} not found in SageWorks Metadata...")
             return False
         return True
 

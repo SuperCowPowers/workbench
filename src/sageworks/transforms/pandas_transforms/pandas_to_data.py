@@ -145,7 +145,7 @@ class PandasToData(Transform):
         """Post-Transform: Calling make_ready() on the DataSource"""
         self.log.info("Post-Transform: Calling make_ready() on the DataSource...")
 
-        # Okay, lets wait just a bit for the
+        # Okay grab the output DataSource
         output_data_source = DataSource(self.output_uuid, force_refresh=True)
         output_data_source.set_status("initializing")
 

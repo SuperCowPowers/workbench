@@ -6,7 +6,7 @@ from io import StringIO
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
-from sageworks.artifacts.data_sources.view_manager import View, ViewManager
+from sageworks.artifacts.data_sources.view_manager import View, ViewType, ViewManager
 
 
 class DataSourceAbstract(Artifact):
@@ -28,9 +28,6 @@ class DataSourceAbstract(Artifact):
         # Set up our ViewManager
         self.view_manager = ViewManager(self)
 
-        # Note: This will change when our ViewManager is ready
-        self.table_name = data_uuid
-
     def __post_init__(self):
         # Call superclass post_init
         super().__post_init__()
@@ -42,6 +39,14 @@ class DataSourceAbstract(Artifact):
     def get_base_table_name(self) -> str:
         """Get the base table name for this Data Source"""
         return self._base_table_name
+
+    def get_computation_view_table_name(self) -> str:
+        """Get the active view table name for this Data Source"""
+        return self.get_computation_view().view_table
+
+    def get_display_view_table_name(self) -> str:
+        """Get the active view table name for this Data Source"""
+        return self.get_display_view().view_table
 
     @abstractmethod
     def num_rows(self) -> int:
