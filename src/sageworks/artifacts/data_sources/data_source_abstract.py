@@ -260,17 +260,7 @@ class DataSourceAbstract(Artifact):
         self.column_stats()
         self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts
         self.outliers(recompute=True)
+        self.set_status("ready")
+        self.remove_sageworks_health_tag("not_ready")
         self.details(recompute=True)
-
-        # Lets check if the Artifact is ready
-        self.refresh_meta()
-        ready = self.ready()
-        if ready:
-            self.set_status("ready")
-            self.remove_sageworks_health_tag("not_ready")
-            self.refresh_meta()
-            return True
-        else:
-            self.log.critical(f"DataSource {self.uuid} is not ready")
-            self.set_status("error")
-            return False
+        return True

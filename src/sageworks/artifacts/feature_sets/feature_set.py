@@ -511,13 +511,10 @@ class FeatureSet(Artifact):
         if not self.data_source.ready():
             self.data_source.make_ready()
 
-        # Make sure the FeatureSet Details are computed
-        self.details(recompute=True)
-
         # Set ourselves to ready
         self.set_status("ready")
         self.remove_sageworks_health_tag("not_ready")
-        self.refresh_meta()
+        self.details(recompute=True)
         return True
 
 

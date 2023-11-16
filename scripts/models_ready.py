@@ -20,4 +20,4 @@ for model_name in models["Model Group"]:
         log.debug(f"Model {model_name} is ready!")
     else:
         log.important(f"Model {model_name} is not ready...Calling make_ready.... ")
-        m.make_ready(refresh_meta=False)
+        m.make_ready()

@@ -19,4 +19,4 @@ for end_name in endpoints["Name"]:
         log.debug(f"Endpoint {end_name} is ready!")
     else:
         log.important(f"Endpoint {end_name} is not ready...Calling make_ready.... ")
-        end.make_ready(refresh_meta=False)
+        end.make_ready()
