@@ -22,7 +22,6 @@ from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 if __name__ == "__main__":
-
     # This forces a refresh on all the data we get from the AWs Broker
     AWSServiceBroker().get_all_metadata(force_refresh=True)
 

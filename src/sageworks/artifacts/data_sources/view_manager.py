@@ -8,6 +8,7 @@ from enum import Enum
 # Enumerated View Types
 class ViewType(Enum):
     """Enumerated Types for SageWorks View Types"""
+
     BASE = "base"
     DISPLAY = "display"
     COMPUTATION = "computation"
