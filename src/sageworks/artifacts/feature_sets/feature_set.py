@@ -84,16 +84,28 @@ class FeatureSet(Artifact):
     def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.feature_meta is None:
-            self.log.info(f"FeatureSet.exists() {self.uuid} not found in AWS Metadata!")
+            self.log.debug(f"FeatureSet {self.uuid} not found in AWS Metadata!")
             return False
-        else:  # Also check our Data Source
-            if not self.data_source.exists():
-                self.log.critical(f"Data Source check failed for {self.uuid}")
-                self.log.critical("Delete this Feature Set and recreate it to fix this issue")
-                # Note: This True is 'interesting' the Artifact DOES exist and should be deleted
-                return True
-        # AOK
         return True
+
+    def health_check(self) -> list[str]:
+        """Perform a health check on this model
+        Returns:
+            list[str]: List of health issues
+        """
+        # Call the base class health check
+        health_issues = super().health_check()
+
+        # If we have a 'not_ready' in the health check then just return
+        if "not_ready" in health_issues:
+            return health_issues
+
+        # Check our DataSource
+        if not self.data_source.exists():
+            self.log.critical(f"Data Source check failed for {self.uuid}")
+            self.log.critical("Delete this Feature Set and recreate it to fix this issue")
+            health_issues.append("data_source_missing")
+        return health_issues
 
     def aws_meta(self) -> dict:
         """Get ALL the AWS metadata for this artifact"""
