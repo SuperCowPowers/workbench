@@ -381,8 +381,9 @@ class Endpoint(Artifact):
             raise ValueError(f"Unknown Model Type: {model_type}")
         
         # Generate shap values for the prediction df, for both model types
-        X_pred = prediction_df.drop(columns=[target_column, 'prediction'])
         model_artifact = ExtractModelArtifact(self.endpoint_name, self.model_artifact_uri).get_model_artifact()
+        model_features = model_artifact.get_booster().feature_names
+        X_pred = prediction_df[model_features]
         shap_vals = self.shap_values(model_artifact, X_pred)
         
         # Write shap vals to S3 Model Inference Folder
@@ -430,7 +431,7 @@ class Endpoint(Artifact):
     def shap_values(model, X: pd.DataFrame) -> pd.DataFrame:
         explainer = shap.TreeExplainer(model)
         shap_vals = explainer.shap_values(X)
-        return pd.DataFrame(shap_vals)
+        return pd.DataFrame(shap_vals, columns = X.columns)
 
     @staticmethod
     def regression_metrics(target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
