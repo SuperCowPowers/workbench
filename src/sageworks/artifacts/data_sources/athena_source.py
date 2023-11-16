@@ -47,7 +47,7 @@ class AthenaSource(DataSourceAbstract):
         # Setup our AWS Broker catalog metadata
         _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=force_refresh)
         try:
-            self.catalog_table_meta = _catalog_meta[self.get_database()].get(self.get_base_table_name())
+            self.catalog_table_meta = _catalog_meta[self.get_database()].get(self.get_table_name())
         except KeyError:
             self.log.critical(f"Unable to find {self.get_database()} in Catalogs...")
             self.log.critical("You must run the sageworks/aws_setup/aws_account_check.py script")
@@ -57,19 +57,19 @@ class AthenaSource(DataSourceAbstract):
         super().__post_init__()
 
         # All done
-        self.log.debug(f"AthenaSource Initialized: {self.get_database()}.{self.get_base_table_name()}")
+        self.log.debug(f"AthenaSource Initialized: {self.get_database()}.{self.get_table_name()}")
 
     def refresh_meta(self):
         """Refresh our internal AWS Broker catalog metadata"""
         _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=True)
-        self.catalog_table_meta = _catalog_meta[self.get_database()].get(self.get_base_table_name())
+        self.catalog_table_meta = _catalog_meta[self.get_database()].get(self.get_table_name())
 
     def exists(self) -> bool:
         """Validation Checks for this Data Source"""
 
         # We're we able to pull AWS Metadata for this table_name?"""
         if self.catalog_table_meta is None:
-            self.log.debug(f"AthenaSource {self.get_base_table_name()} not found in SageWorks Metadata...")
+            self.log.debug(f"AthenaSource {self.get_table_name()} not found in SageWorks Metadata...")
             return False
         return True
 
@@ -78,7 +78,7 @@ class AthenaSource(DataSourceAbstract):
         # Grab our SageWorks Role Manager, get our AWS account id, and region for ARN creation
         account_id = self.aws_account_clamp.account_id
         region = self.aws_account_clamp.region
-        arn = f"arn:aws:glue:{region}:{account_id}:table/{self.get_database()}/{self.get_base_table_name()}"
+        arn = f"arn:aws:glue:{region}:{account_id}:table/{self.get_database()}/{self.get_table_name()}"
         return arn
 
     @trace_calls
@@ -87,7 +87,7 @@ class AthenaSource(DataSourceAbstract):
         # Sanity Check if we have invalid AWS Metadata
         self.log.info(f"Retrieving SageWorks Metadata for Artifact: {self.uuid}...")
         if self.aws_meta() is None:
-            self.log.critical(f"Unable to get AWS Metadata for {self.get_base_table_name()}")
+            self.log.critical(f"Unable to get AWS Metadata for {self.get_table_name()}")
             self.log.critical("Malformed Artifact! Delete this Artifact and recreate it!")
             return {}
         params = self.aws_meta().get("Parameters", {})
@@ -114,13 +114,13 @@ class AthenaSource(DataSourceAbstract):
             wr.catalog.upsert_table_parameters(
                 parameters=new_meta,
                 database=self.get_database(),
-                table=self.get_base_table_name(),
+                table=self.get_table_name(),
                 boto3_session=self.boto_session,
             )
         except botocore.exceptions.ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code == "InvalidInputException":
-                self.log.error(f"Unable to upsert metadata for {self.get_base_table_name()}")
+                self.log.error(f"Unable to upsert metadata for {self.get_table_name()}")
                 self.log.error("Probably because the metadata is too large")
                 self.log.error(new_meta)
             elif error_code == "ConcurrentModificationException":
@@ -129,7 +129,7 @@ class AthenaSource(DataSourceAbstract):
                 wr.catalog.upsert_table_parameters(
                     parameters=new_meta,
                     database=self.get_database(),
-                    table=self.get_base_table_name(),
+                    table=self.get_table_name(),
                     boto3_session=self.boto_session,
                 )
             else:
@@ -160,7 +160,7 @@ class AthenaSource(DataSourceAbstract):
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
-        count_df = self.query(f'select count(*) AS count from "{self.get_database()}"."{self.get_base_table_name()}"')
+        count_df = self.query(f'select count(*) AS count from "{self.get_database()}"."{self.get_table_name()}"')
         return count_df["count"][0]
 
     def num_columns(self) -> int:
@@ -212,7 +212,7 @@ class AthenaSource(DataSourceAbstract):
 
     def athena_test_query(self):
         """Validate that Athena Queries are working"""
-        query = f"select count(*) as count from {self.get_base_table_name()}"
+        query = f"select count(*) as count from {self.get_table_name()}"
         df = wr.athena.read_sql_query(
             sql=query,
             database=self.get_database(),
@@ -391,7 +391,7 @@ class AthenaSource(DataSourceAbstract):
         details["storage_type"] = "athena"
 
         # Compute our AWS URL
-        query = f"select * from {self.get_database()}.{self.get_base_table_name()} limit 10"
+        query = f"select * from {self.get_database()}.{self.get_table_name()} limit 10"
         query_exec_id = wr.athena.start_query_execution(
             sql=query, database=self.get_database(), boto3_session=self.boto_session
         )
@@ -418,16 +418,11 @@ class AthenaSource(DataSourceAbstract):
 
         # Make sure the Feature Group exists
         if not self.exists():
-            self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.get_base_table_name()}")
-
-        # If we have views, delete them
-        self.view_manager.delete_all_views()
+            self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.get_table_name()}")
 
         # Delete Data Catalog Table
-        self.log.info(f"Deleting DataCatalog Table: {self.get_database()}.{self.get_base_table_name()}...")
-        wr.catalog.delete_table_if_exists(
-            self.get_database(), self.get_base_table_name(), boto3_session=self.boto_session
-        )
+        self.log.info(f"Deleting DataCatalog Table: {self.get_database()}.{self.get_table_name()}...")
+        wr.catalog.delete_table_if_exists(self.get_database(), self.get_table_name(), boto3_session=self.boto_session)
 
         # Delete S3 Storage Objects (if they exist)
         try:

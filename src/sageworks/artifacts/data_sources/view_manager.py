@@ -28,7 +28,7 @@ class View:
         self.name = name
         self.data_source = data_source
         self.database = data_source.get_database()
-        self.base_table = data_source.get_base_table_name()
+        self.base_table = data_source.get_table_name()
         self.base_columns_details = data_source.column_details()
         self.view_columns_details = None
 
@@ -189,7 +189,7 @@ class ViewManager:
         # Set up our instance attributes
         self.data_source = data_source
         self.database = data_source.get_database()
-        self.base_table = data_source.get_base_table_name()
+        self.base_table = data_source.get_table_name()
         self.display_view = None
         self.computation_view = None
         self.training_view = None
@@ -231,7 +231,7 @@ class ViewManager:
             View: The display view for this data source
         """
         if view_type == ViewType.BASE:
-            return self.data_source.get_base_table_name()
+            return self.data_source.get_table_name()
         return self.display_view
 
     def get_computation_view(self) -> View:

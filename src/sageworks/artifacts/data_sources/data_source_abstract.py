@@ -6,7 +6,6 @@ from io import StringIO
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
-from sageworks.artifacts.data_sources.view_manager import View, ViewManager
 
 
 class DataSourceAbstract(Artifact):
@@ -22,11 +21,8 @@ class DataSourceAbstract(Artifact):
 
         # Set up our instance attributes
         self._database = database
-        self._base_table_name = data_uuid
+        self._table_name = data_uuid
         self._display_columns = None
-
-        # Set up our ViewManager
-        self.view_manager = ViewManager(self)
 
     def __post_init__(self):
         # Call superclass post_init
@@ -36,17 +32,9 @@ class DataSourceAbstract(Artifact):
         """Get the database for this Data Source"""
         return self._database
 
-    def get_base_table_name(self) -> str:
+    def get_table_name(self) -> str:
         """Get the base table name for this Data Source"""
-        return self._base_table_name
-
-    def get_computation_view_table_name(self) -> str:
-        """Get the active view table name for this Data Source"""
-        return self.get_computation_view().view_table
-
-    def get_display_view_table_name(self) -> str:
-        """Get the active view table name for this Data Source"""
-        return self.get_display_view().view_table
+        return self._table_name
 
     @abstractmethod
     def num_rows(self) -> int:
@@ -76,48 +64,6 @@ class DataSourceAbstract(Artifact):
             dict: The column details for this Data Source
         """
         return {name: type_ for name, type_ in zip(self.column_names(), self.column_types())}
-
-    def column_tags(self) -> dict:
-        """Return the column tags for this Data Source"""
-        column_tags_json = self.sageworks_meta().get("sageworks_column_tags", None)
-        return json.loads(column_tags_json) if column_tags_json else {}
-
-    def add_column_tag(self, column: str, tag: str):
-        """Add a tag for the given column, ensuring no duplicates
-        Args:
-            column (str): Column to add tag for
-            tag (str): Tag to add for the given column
-        """
-        current_tags = self.column_tags()
-        if column not in current_tags:
-            current_tags[column] = [tag]
-            self.store_column_tags(current_tags)
-        elif tag not in current_tags[column]:
-            current_tags[column].append(tag)
-            self.store_column_tags(current_tags)
-
-    def remove_column_tag(self, column: str, tag: str):
-        """Remove a tag from the given column if it exists.
-        Args:
-            column (str): Column to remove tag from
-            tag (str): Tag to remove from the given column
-        """
-        current_tags = self.column_tags()
-        if column not in current_tags:
-            return
-        if tag in current_tags[column]:
-            current_tags[column].remove(tag)
-            self.store_column_tags(current_tags)
-
-    def store_column_tags(self, column_tags: dict):
-        """Set the column tags for this Data Source
-        Args:
-            column_tags(dict): The column tags for this Data Source
-        Notes:
-            The column_tag data should be in the form:
-            {'col1': ['tag1', 'tag2', 'tag3'], 'col2': ['tag1', 'tag2']}
-        """
-        self.upsert_sageworks_meta({"sageworks_column_tags": column_tags})
 
     def get_display_columns(self) -> list[str]:
         """Set the display columns for this Data Source
@@ -156,33 +102,6 @@ class DataSourceAbstract(Artifact):
             query(str): The SQL query to execute
         """
         pass
-
-    def get_display_view(self) -> View:
-        """A view that manages which columns/rows are displayed
-        Returns:
-            View: The display view for this data source
-        """
-        if not self.view_manager.get_display_view():
-            self.view_manager.create_display_view()
-        return self.view_manager.get_display_view()
-
-    def get_computation_view(self) -> View:
-        """A view that manages which columns/rows are displayed
-        Returns:
-            View: The display view for this data source
-        """
-        if not self.view_manager.get_computation_view():
-            self.view_manager.create_computation_view()
-        return self.view_manager.get_computation_view()
-
-    def get_training_view(self) -> View:
-        """A view that manages used for training models
-        Returns:
-            View: The training view for this data source
-        """
-        if not self.view_manager.get_training_view():
-            self.view_manager.create_training_view()
-        return self.view_manager.get_training_view()
 
     def sample(self, recompute: bool = False) -> pd.DataFrame:
         """Return a sample DataFrame from this DataSource
