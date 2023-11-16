@@ -46,14 +46,13 @@ def descriptive_stats(data_source: DataSourceAbstract) -> dict[dict]:
              {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4, 'mean': 2.5, 'stddev': 1.5},
               'col2': ...}
     """
+    # Grab the computation view table name
+    view_table = data_source.get_computation_view_table_name()
 
     # Figure out which columns are numeric
     num_type = ["double", "float", "int", "bigint", "smallint", "tinyint"]
     details = data_source.column_details()
     numeric = [column for column, data_type in details.items() if data_type in num_type]
-
-    # Grab the computation view table name
-    view_table = data_source.get_computation_view_table_name()
 
     # Build the query
     query = descriptive_stats_query(numeric, view_table)

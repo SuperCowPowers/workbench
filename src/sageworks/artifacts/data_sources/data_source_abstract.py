@@ -68,8 +68,13 @@ class DataSourceAbstract(Artifact):
         """Return the column types for this Data Source"""
         pass
 
-    def column_details(self) -> dict:
-        """Return the column details for this Data Source"""
+    def column_details(self, view: str = "base") -> dict:
+        """Return the column details for this Data Source
+        Args:
+            view(str): The view to get column details for (default: base)
+        Returns:
+            dict: The column details for this Data Source
+        """
         return {name: type_ for name, type_ in zip(self.column_names(), self.column_types())}
 
     def column_tags(self) -> dict:

@@ -29,6 +29,8 @@ class View:
         self.data_source = data_source
         self.database = data_source.get_database()
         self.base_table = data_source.get_base_table_name()
+        self.base_columns_details = data_source.column_details()
+        self.view_columns_details = None
 
         # Special case for the base view
         if self.name == "base":
@@ -85,10 +87,16 @@ class View:
         if columns is None:
             columns = self.data_source.column_names()[:column_limit]
 
+        # Set the view columns details
+        self.view_columns_details = {column: self.base_columns_details[column] for column in columns}
+
+        # Enclose each column name in double quotes
+        sql_columns = ", ".join([f'"{column}"' for column in columns])
+
         # Create the view query
         create_view_query = f"""
         CREATE OR REPLACE VIEW {self.view_table} AS
-        SELECT {', '.join(columns)} FROM {self.base_table}
+        SELECT {sql_columns} FROM {self.base_table}
         """
 
         # Execute the CREATE VIEW query
@@ -122,7 +130,12 @@ class View:
         # If the user doesn't specify columns, then we'll use ALL the columns
         if columns is None:
             columns = self.data_source.column_names()
-        sql_columns = ", ".join(columns)
+
+        # Set the view columns details
+        self.view_columns_details = {column: self.base_columns_details[column] for column in columns}
+
+        # Enclose each column name in double quotes
+        sql_columns = ", ".join([f'"{column}"' for column in columns])
 
         # Logic to 'hash' the ID column from 1 to 10
         # We use this assign roughly 80% to training and 20% to hold-out
@@ -248,10 +261,11 @@ class ViewManager:
 
 if __name__ == "__main__":
     """Exercise the ViewManager Class"""
+    from pprint import pprint
     from sageworks.artifacts.data_sources.data_source import DataSource
 
     # Create a DataSource (which will create a ViewManager)
-    data_source = DataSource("test_data")
+    data_source = DataSource("test_data", force_refresh=True)
 
     # Now create the default views
     data_source.view_manager.create_display_view()  # recreate=True for testing
@@ -269,6 +283,9 @@ if __name__ == "__main__":
     # Get the training view
     my_view = data_source.get_training_view()
     print(my_view)
+
+    # Get the column details for the training view
+    pprint(my_view.view_columns_details)
 
     # Delete the training view
     my_view.delete()
