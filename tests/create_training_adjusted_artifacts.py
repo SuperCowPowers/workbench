@@ -9,15 +9,24 @@ Endpoints:
 """
 import sys
 import time
+import logging
 from pathlib import Path
 from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 from sageworks.artifacts.models.model import Model, ModelType
 from sageworks.artifacts.endpoints.endpoint import Endpoint
 from sageworks.transforms.features_to_model.features_to_model import FeaturesToModel
 from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
+from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
+
+# Setup the logger
+log = logging.getLogger("sageworks")
 
 
 if __name__ == "__main__":
+
+    # This forces a refresh on all the data we get from the AWs Broker
+    AWSServiceBroker().get_all_metadata(force_refresh=True)
+
     # Get the path to the dataset in the repository data directory
     abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
 
@@ -25,7 +34,7 @@ if __name__ == "__main__":
     recreate = False
 
     # Create a training view of the test_feature_set
-    print("Creating training view for abalone_feature_set...")
+    log.important("Creating training view for abalone_feature_set...")
     fs = FeatureSet("abalone_feature_set")
     fs.create_training_view("id", hold_out_ids=range(100))  # Just the first 100 ids
 
@@ -38,7 +47,7 @@ if __name__ == "__main__":
         features_to_model.transform(
             target_column="class_number_of_rings", description="Abalone Regression Model", train_all_data=True
         )
-        print("Waiting for the Model to be created...")
+        log.info("Waiting for the Model to be created...")
         time.sleep(10)
 
     # Create the abalone_regression Endpoint

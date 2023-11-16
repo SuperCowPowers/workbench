@@ -21,8 +21,13 @@ from sageworks.transforms.data_loaders.light.csv_to_data_source import CSVToData
 from sageworks.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
 from sageworks.transforms.features_to_model.features_to_model import FeaturesToModel
 from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
+from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
+
 
 if __name__ == "__main__":
+    # This forces a refresh on all the data we get from the AWs Broker
+    AWSServiceBroker().get_all_metadata(force_refresh=True)
+
     # Get the path to the dataset in the repository data directory
     wine_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "wine_dataset.csv"
 

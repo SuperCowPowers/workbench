@@ -19,8 +19,13 @@ from sageworks.transforms.data_to_features.light.data_to_features_light import D
 from sageworks.transforms.data_to_features.light.rdkit_descriptors import RDKitDescriptors
 from sageworks.transforms.features_to_model.features_to_model import FeaturesToModel
 from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
+from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 if __name__ == "__main__":
+
+    # This forces a refresh on all the data we get from the AWs Broker
+    AWSServiceBroker().get_all_metadata(force_refresh=True)
+
     # Get the path to the dataset in S3
     s3_path = "s3://sageworks-public-data/comp_chem/aqsol_public_data.csv"
 
