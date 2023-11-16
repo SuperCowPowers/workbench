@@ -8,39 +8,29 @@ import shutil
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.artifacts.endpoints.endpoint import Endpoint
-from sageworks.artifacts.models.model import Model
 
 class ExtractModelArtifact:
-    def __init__(self, endpoint):
+    def __init__(self, endpoint_name, model_artifact_uri):
         """
         ExtractModelArtifact Class
         """
         self.aws_account_clamp = AWSAccountClamp()
         self.boto_session = self.aws_account_clamp.boto_session()
-        self.endpoint = Endpoint(endpoint)
-        self.model_artifact_uri = self.set_model_artifact_uri()
+        self.endpoint_name = endpoint_name
+        self.model_artifact_uri = model_artifact_uri
         self.local_dir = self.set_local_dir()
         self.artifact_tar_path = self.set_artifact_tar()
         self.joblib_file_path = self.set_joblib_file()
         self.model_artifact = self.set_model_artifact()
 
     # Setterinos
-        
-    def set_model_artifact_uri(self):
-        model_name = Model(self.endpoint.model_name)
-        model_package_details = model_name.latest_model.get('ModelPackageDetails')
-        inf_spec = model_package_details.get('InferenceSpecification')
-        container = inf_spec.get('Containers')[0]
-        model_artifact_uri = container.get('ModelDataUrl')
-        return model_artifact_uri
     
     def set_local_dir(self):
-        local_dir = os.path.join(os.getcwd(),f"{self.endpoint.endpoint_name}_{self.model_artifact_uri.split('/')[-3]}")
+        local_dir = os.path.join(os.getcwd(),f"{self.endpoint_name}_{self.model_artifact_uri.split('/')[-3]}")
         return local_dir
     
     def set_artifact_tar(self):
-        local_tar_name = f"{self.endpoint.endpoint_name}_{self.model_artifact_uri.split('/')[-3]}_model.tar.gz"
+        local_tar_name = f"{self.endpoint_name}_{self.model_artifact_uri.split('/')[-3]}_model.tar.gz"
         local_tar_path = os.path.join(self.local_dir, local_tar_name)
         if not os.path.exists(self.local_dir):
             _ = os.mkdir(self.local_dir)
@@ -107,17 +97,16 @@ if __name__ == "__main__":
     """Exercise the ExtractModelArtifact class"""
     from pprint import pprint
 
-    endpoint = "solubility-test-regression-end"
+    model_artifact_uri = 's3://sagemaker-us-east-1-116553368710/sagemaker-scikit-learn-2023-11-03-15-49-20-424/output/model.tar.gz'
+    endpoint_name = 'solubility-test-regression-end'
 
     # Create the Class and query for metrics
-    ema = ExtractModelArtifact(endpoint)
-    ep = ema.get_endpoint()
+    ema = ExtractModelArtifact(endpoint_name, model_artifact_uri)
     art_uri = ema.get_model_artifact_uri()
     art_tar_path = ema.get_artifact_tar_path()
     jb_path = ema.get_joblib_file_path()
     model_artifact = ema.get_model_artifact()
 
-    print(ep)
     print(art_uri)
     print(art_tar_path)
     print(jb_path)
