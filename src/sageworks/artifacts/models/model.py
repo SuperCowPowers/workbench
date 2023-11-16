@@ -143,6 +143,13 @@ class Model(Artifact):
             return metrics
         metrics = self.sageworks_meta().get("sageworks_training_metrics")
         return pd.DataFrame.from_dict(metrics) if metrics else None
+    
+    def model_shapley_values(self) -> Union[pd.DataFrame, None]:
+        # Shapley only available from inference at the moment, training may come later
+        df_shap = self._pull_shapley_values()
+        if df_shap is not None:
+            return df_shap
+        return None
 
     def confusion_matrix(self) -> Union[pd.DataFrame, None]:
         """Retrieve the confusion_matrix for this model
@@ -185,6 +192,14 @@ class Model(Artifact):
         except NoFilesFound:
             self.log.info(f"Could not find model artifact at {s3_path}...")
             return None
+        
+    def _pull_shapley_values(self) -> Union[pd.DataFrame, None]:
+        """Internal: Retrieve the inference Shapely values for this model
+        Returns:
+            pd.DataFrame: Dataframe of the shapley values for the prediction dataframe
+        """
+        s3_path = f"{self.model_inference_path}/{self.model_name}/inference_shap_values.csv"
+        return self._pull_s3_model_artifacts(s3_path, embedded_index=False)
 
     def _pull_inference_metrics(self) -> Union[pd.DataFrame, None]:
         """Internal: Retrieve the inference model metrics for this model
@@ -296,6 +311,9 @@ class Model(Artifact):
         else:
             details["confusion_matrix"] = None
             details["regression_predictions"] = self.regression_predictions()
+
+        # Set Shapley values
+        details['shapley_values'] = self.model_shapley_values()
 
         # Grab the inference metadata
         details["inference_meta"] = self._pull_inference_metadata()
