@@ -6,7 +6,7 @@ from io import StringIO
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
-from sageworks.artifacts.data_sources.view_manager import View, ViewType, ViewManager
+from sageworks.artifacts.data_sources.view_manager import View, ViewManager
 
 
 class DataSourceAbstract(Artifact):

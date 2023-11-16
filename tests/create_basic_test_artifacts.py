@@ -12,7 +12,6 @@ Endpoints:
     - abalone-regression-end
 """
 import sys
-import time
 import logging
 from pathlib import Path
 from sageworks.artifacts.data_sources.data_source import DataSource
