@@ -162,7 +162,7 @@ class DataSourceAbstract(Artifact):
             View: The display view for this data source
         """
         if not self.view_manager.get_computation_view():
-            self.view_manager.get_computation_view()
+            self.view_manager.create_computation_view()
         return self.view_manager.get_computation_view()
 
     def get_training_view(self) -> View:
@@ -171,7 +171,7 @@ class DataSourceAbstract(Artifact):
             View: The training view for this data source
         """
         if not self.view_manager.get_training_view():
-            self.view_manager.get_training_view()
+            self.view_manager.create_training_view()
         return self.view_manager.get_training_view()
 
     def sample(self, recompute: bool = False) -> pd.DataFrame:
