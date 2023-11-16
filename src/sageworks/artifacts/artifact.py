@@ -60,7 +60,7 @@ class Artifact(ABC):
 
         # Do I exist? (very metaphysical)
         if not self.exists():
-            self.log.warning(f"Artifact {self.uuid} does not exist!")
+            self.log.debug(f"Artifact {self.uuid} does not exist")
             return
 
         # Conduct a Health Check on this Artifact
@@ -272,7 +272,7 @@ class Artifact(ABC):
         """
         health_issues = []
         if not self.ready():
-            health_issues.append("not_ready")
+            return ["not_ready"]
         if "unknown" in self.aws_url():
             health_issues.append("aws_url_unknown")
         return health_issues
@@ -423,3 +423,31 @@ class Artifact(ABC):
             regular_tags[base_key] = stitched_dict
 
         return regular_tags
+
+
+if __name__ == "__main__":
+    """Exercise the ViewManager Class"""
+    from sageworks.artifacts.data_sources.data_source import DataSource
+
+    # Create a DataSource (which will create a ViewManager)
+    data_source = DataSource("test_data")
+
+    # Now create the default views
+    data_source.view_manager.create_display_view()  # recreate=True for testing
+    data_source.view_manager.create_computation_view()
+    data_source.view_manager.create_training_view("id")
+
+    # Get the display view
+    my_view = data_source.get_display_view()
+    print(my_view)
+
+    # Get the computation view
+    my_view = data_source.get_computation_view()
+    print(my_view)
+
+    # Get the training view
+    my_view = data_source.get_training_view()
+    print(my_view)
+
+    # Delete the training view
+    my_view.delete()
