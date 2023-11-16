@@ -144,7 +144,10 @@ class Outliers:
         Returns:
             str: A SQL query to compute outliers for multiple columns
         """
-        query = f"SELECT * FROM {data_source.table_name} WHERE "
+        # Grab the computation view table name
+        view_table = data_source.get_computation_view_table_name()
+
+        query = f"SELECT * FROM {view_table} WHERE "
         for col, lb, ub in zip(columns, lower_bounds, upper_bounds):
             query += f"({col} < {lb} OR {col} > {ub}) OR "
         query = query[:-4]

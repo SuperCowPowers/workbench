@@ -95,13 +95,16 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
     non_numeric = [column for column, data_type in details.items() if data_type not in num_type]
     all_columns = numeric + non_numeric
 
+    # Grab the computation view table name
+    view_table = data_source.get_computation_view_table_name()
+
     # Now call the queries to compute the counts of distinct, nulls, and zeros
     data_source.log.info("Computing Unique values...")
-    distinct_counts = data_source.query(count_distinct_query(all_columns, data_source.table_name))
+    distinct_counts = data_source.query(count_distinct_query(all_columns, view_table))
     data_source.log.info("Computing Null values...")
-    null_counts = data_source.query(count_nulls_query(all_columns, data_source.table_name))
+    null_counts = data_source.query(count_nulls_query(all_columns, view_table))
     data_source.log.info("Computing Zero values...")
-    zero_counts = data_source.query(count_zeros_query(numeric, data_source.table_name))
+    zero_counts = data_source.query(count_zeros_query(numeric, view_table))
 
     # Okay now we take the results of the queries and add them to the column_data
     for column in all_columns:

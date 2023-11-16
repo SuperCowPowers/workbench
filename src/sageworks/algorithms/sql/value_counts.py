@@ -22,6 +22,9 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
               'col2': ...}
     """
 
+    # Grab the computation view table name
+    view_table = data_source.get_computation_view_table_name()
+
     # For every column in the table that is string, compute the value_counts
     data_source.log.info("Computing value_counts for all string columns...")
     value_count_dict = dict()
@@ -30,11 +33,11 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
             # Combined query to get both top and bottom counts
             query = (
                 f'(SELECT "{column}", count(*) as count '
-                f"FROM {data_source.table_name} "
+                f"FROM {view_table} "
                 f'GROUP BY "{column}" ORDER BY count DESC LIMIT 20) '
                 f"UNION ALL "
                 f'(SELECT "{column}", count(*) as count '
-                f"FROM {data_source.table_name} "
+                f"FROM {view_table} "
                 f'GROUP BY "{column}" ORDER BY count ASC LIMIT 20)'
             )
             result_df = data_source.query(query)

@@ -54,8 +54,11 @@ def correlations(data_source: DataSourceAbstract) -> dict[dict]:
     if len(numeric) < 2:
         return {}
 
+    # Grab the computation view table name
+    view_table = data_source.get_computation_view_table_name()
+
     # Build the query
-    query = correlation_query(numeric, data_source.table_name)
+    query = correlation_query(numeric, view_table)
 
     # Run the query
     result_df = data_source.query(query)

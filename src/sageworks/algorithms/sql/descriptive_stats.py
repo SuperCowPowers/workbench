@@ -52,8 +52,11 @@ def descriptive_stats(data_source: DataSourceAbstract) -> dict[dict]:
     details = data_source.column_details()
     numeric = [column for column, data_type in details.items() if data_type in num_type]
 
+    # Grab the computation view table name
+    view_table = data_source.get_computation_view_table_name()
+
     # Build the query
-    query = descriptive_stats_query(numeric, data_source.table_name)
+    query = descriptive_stats_query(numeric, view_table)
 
     # Run the query
     result_df = data_source.query(query)

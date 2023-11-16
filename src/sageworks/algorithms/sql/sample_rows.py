@@ -20,6 +20,9 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
         pd.DataFrame: A sample DataFrame from this DataSource
     """
 
+    # Grab the computation view table name
+    view_table = data_source.get_computation_view_table_name()
+
     # Note: Hardcoded to 100 rows so that metadata storage is consistent
     sample_rows = 100
     num_rows = data_source.num_rows()
@@ -28,9 +31,9 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
         # sample percentage and then simply clamp it to 100 rows
         percentage = round(sample_rows * 100.0 / num_rows) + 1
         data_source.log.info(f"DataSource has {num_rows} rows.. sampling down to {sample_rows}...")
-        query = f"SELECT * FROM {data_source.table_name} TABLESAMPLE BERNOULLI({percentage})"
+        query = f"SELECT * FROM {view_table} TABLESAMPLE BERNOULLI({percentage})"
     else:
-        query = f"SELECT * FROM {data_source.table_name}"
+        query = f"SELECT * FROM {view_table}"
     sample_df = data_source.query(query).head(sample_rows)
 
     # Shorten any long string values
