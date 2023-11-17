@@ -7,6 +7,7 @@ import numpy as np
 from io import StringIO
 import awswrangler as wr
 import ast
+import shap
 
 # Model Performance Scores
 from sklearn.metrics import (
@@ -30,6 +31,7 @@ from sageworks.artifacts.artifact import Artifact
 from sageworks.artifacts.models.model import Model, ModelType
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.endpoint_metrics import EndpointMetrics
+from sageworks.utils.extract_model_artifact import ExtractModelArtifact
 
 
 class Endpoint(Artifact):
@@ -69,6 +71,7 @@ class Endpoint(Artifact):
 
         # Set the Model Training and Inference S3 Paths
         self.model_name = self.get_input()
+        self.model_artifact_uri = self.get_model_artifact_uri()
         self.model_training_path = self.models_s3_path + "/training"
         self.model_inference_path = self.models_s3_path + "/inference"
 
@@ -337,6 +340,14 @@ class Endpoint(Artifact):
         """Return the type of model used in this Endpoint"""
         return self.details().get("model_type", "unknown")
 
+    def get_model_artifact_uri(self) -> str:
+        latest_model = Model(self.model_name).latest_model
+        model_package_details = latest_model.get("ModelPackageDetails")
+        inf_spec = model_package_details.get("InferenceSpecification")
+        container = inf_spec.get("Containers")[0]
+        model_artifact_uri = container.get("ModelDataUrl")
+        return model_artifact_uri
+
     def capture_performance_metrics(
         self, feature_df: pd.DataFrame, target_column: str, data_name: str, data_hash: str, description: str
     ) -> None:
@@ -364,6 +375,15 @@ class Endpoint(Artifact):
             metrics = self.classification_metrics(target_column, prediction_df)
         else:
             raise ValueError(f"Unknown Model Type: {model_type}")
+
+        # Generate shap values for the prediction df, for both model types
+        model_artifact = ExtractModelArtifact(self.endpoint_name, self.model_artifact_uri).get_model_artifact()
+        model_features = model_artifact.get_booster().feature_names
+        X_pred = prediction_df[model_features]
+        shap_vals = self.shap_values(model_artifact, X_pred)
+
+        # Write shap vals to S3 Model Inference Folder
+        wr.s3.to_csv(shap_vals, f"{self.model_inference_path}/{self.model_name}/inference_shap_values.csv", index=False)
 
         # Metadata for the model inference
         inference_meta = {
@@ -402,6 +422,12 @@ class Endpoint(Artifact):
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
         model = Model(self.model_name)
         model.details(recompute=True)
+
+    @staticmethod
+    def shap_values(model, X: pd.DataFrame) -> pd.DataFrame:
+        explainer = shap.TreeExplainer(model)
+        shap_vals = explainer.shap_values(X)
+        return pd.DataFrame(shap_vals, columns=X.columns)
 
     @staticmethod
     def regression_metrics(target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
