@@ -55,23 +55,31 @@ class DataSourceAbstract(Artifact):
         """Return the column types for this Data Source"""
         pass
 
-    def column_details(self, view: str = "base") -> dict:
+    def column_details(self, view: str = None) -> dict:
         """Return the column details for this Data Source
         Args:
-            view(str): The view to get column details for (default: base)
+            view(str): The view to get column details for (default: None)
         Returns:
             dict: The column details for this Data Source
         """
-        return {name: type_ for name, type_ in zip(self.column_names(), self.column_types())}
+        names = self.column_names()
+        types = self.column_types()
+        if view == "display":
+            return {name: type_ for name, type_ in zip(names, types) if name in self.get_display_columns()}
+        elif view == "computation":
+            return {name: type_ for name, type_ in zip(names, types) if name in self.get_computation_columns()}
+        else:
+            # Return the full column details
+            return {name: type_ for name, type_ in zip(names, types)}
 
     def get_display_columns(self) -> list[str]:
         """Set the display columns for this Data Source
         Returns:
             list[str]: The display columns for this Data Source
         """
-        if self._display_columns is None and self.num_columns() > 20:
-            self.log.important(f"Setting display columns for {self.uuid} to 20 columns...")
-            self._display_columns = self.column_names()[:20]
+        if self._display_columns is None and self.num_columns() > 30:
+            self.log.important(f"Setting display columns for {self.uuid} to 30 columns...")
+            self._display_columns = self.column_names()[:30]
             self._display_columns.append("outlier_group")
         return self._display_columns
 
@@ -85,6 +93,15 @@ class DataSourceAbstract(Artifact):
     def num_display_columns(self) -> int:
         """Return the number of display columns for this Data Source"""
         return len(self._display_columns) if self._display_columns else 0
+
+    def get_computation_columns(self) -> list[str]:
+        return self.get_display_columns()
+
+    def set_computation_columns(self, computation_columns: list[str]):
+        self.set_display_columns(computation_columns)
+
+    def num_computation_columns(self) -> int:
+        return self.num_display_columns()
 
     @abstractmethod
     def query(self, query: str) -> pd.DataFrame:
