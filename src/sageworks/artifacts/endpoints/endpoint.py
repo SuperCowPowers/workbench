@@ -343,13 +343,13 @@ class Endpoint(Artifact):
     def model_type(self) -> str:
         """Return the type of model used in this Endpoint"""
         return self.details().get("model_type", "unknown")
-    
+
     def get_model_artifact_uri(self) -> str:
         latest_model = Model(self.model_name).latest_model
-        model_package_details = latest_model.get('ModelPackageDetails')
-        inf_spec = model_package_details.get('InferenceSpecification')
-        container = inf_spec.get('Containers')[0]
-        model_artifact_uri = container.get('ModelDataUrl')
+        model_package_details = latest_model.get("ModelPackageDetails")
+        inf_spec = model_package_details.get("InferenceSpecification")
+        container = inf_spec.get("Containers")[0]
+        model_artifact_uri = container.get("ModelDataUrl")
         return model_artifact_uri
 
     def capture_performance_metrics(
@@ -379,13 +379,13 @@ class Endpoint(Artifact):
             metrics = self.classification_metrics(target_column, prediction_df)
         else:
             raise ValueError(f"Unknown Model Type: {model_type}")
-        
+
         # Generate shap values for the prediction df, for both model types
         model_artifact = ExtractModelArtifact(self.endpoint_name, self.model_artifact_uri).get_model_artifact()
         model_features = model_artifact.get_booster().feature_names
         X_pred = prediction_df[model_features]
         shap_vals = self.shap_values(model_artifact, X_pred)
-        
+
         # Write shap vals to S3 Model Inference Folder
         wr.s3.to_csv(shap_vals, f"{self.model_inference_path}/{self.model_name}/inference_shap_values.csv", index=False)
 
@@ -431,7 +431,7 @@ class Endpoint(Artifact):
     def shap_values(model, X: pd.DataFrame) -> pd.DataFrame:
         explainer = shap.TreeExplainer(model)
         shap_vals = explainer.shap_values(X)
-        return pd.DataFrame(shap_vals, columns = X.columns)
+        return pd.DataFrame(shap_vals, columns=X.columns)
 
     @staticmethod
     def regression_metrics(target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:

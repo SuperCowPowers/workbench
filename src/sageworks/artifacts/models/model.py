@@ -143,7 +143,7 @@ class Model(Artifact):
             return metrics
         metrics = self.sageworks_meta().get("sageworks_training_metrics")
         return pd.DataFrame.from_dict(metrics) if metrics else None
-    
+
     def model_shapley_values(self) -> Union[pd.DataFrame, None]:
         # Shapley only available from inference at the moment, training may come later
         df_shap = self._pull_shapley_values()
@@ -192,7 +192,7 @@ class Model(Artifact):
         except NoFilesFound:
             self.log.info(f"Could not find model artifact at {s3_path}...")
             return None
-        
+
     def _pull_shapley_values(self) -> Union[pd.DataFrame, None]:
         """Internal: Retrieve the inference Shapely values for this model
         Returns:
@@ -313,7 +313,7 @@ class Model(Artifact):
             details["regression_predictions"] = self.regression_predictions()
 
         # Set Shapley values
-        details['shapley_values'] = self.model_shapley_values()
+        details["shapley_values"] = self.model_shapley_values()
 
         # Grab the inference metadata
         details["inference_meta"] = self._pull_inference_metadata()
