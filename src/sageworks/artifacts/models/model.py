@@ -315,7 +315,7 @@ class Model(Artifact):
         # If an artifact has additional expected metadata override this method
         return ["sageworks_status", "sageworks_training_metrics", "sageworks_training_cm"]
 
-    def make_ready(self,) -> bool:
+    def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Model is ready
         Returns:
             bool: True if the Model is ready, False otherwise
