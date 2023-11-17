@@ -67,7 +67,8 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
     #
 
     # Get the column names and types from the DataSource
-    column_data = {name: {"dtype": dtype} for name, dtype in data_source.column_details().items()}
+    column_details = data_source.column_details(view="computation")
+    column_data = {name: {"dtype": dtype} for name, dtype in column_details.items()}
 
     # Now add descriptive stats to the column stats
     descriptive_stats = data_source.descriptive_stats()
@@ -90,7 +91,7 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
 
     # Figure out which columns are numeric
     num_type = ["double", "float", "int", "bigint", "smallint", "tinyint"]
-    details = data_source.column_details()
+    details = data_source.column_details(view="computation")
     numeric = [column for column, data_type in details.items() if data_type in num_type]
     non_numeric = [column for column, data_type in details.items() if data_type not in num_type]
     all_columns = numeric + non_numeric

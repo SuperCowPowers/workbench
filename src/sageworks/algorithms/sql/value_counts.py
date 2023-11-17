@@ -28,7 +28,8 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
     # For every column in the table that is string, compute the value_counts
     data_source.log.info("Computing value_counts for all string columns...")
     value_count_dict = dict()
-    for column, data_type in data_source.column_details().items():
+    column_details = data_source.column_details(view="computation")
+    for column, data_type in column_details.items():
         if data_type in ["string", "boolean"]:
             # Combined query to get both top and bottom counts
             query = (

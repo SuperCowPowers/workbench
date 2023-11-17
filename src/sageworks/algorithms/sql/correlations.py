@@ -44,7 +44,7 @@ def correlations(data_source: DataSourceAbstract) -> dict[dict]:
 
     # Figure out which columns are numeric
     num_type = ["double", "float", "int", "bigint", "smallint", "tinyint"]
-    details = data_source.column_details()
+    details = data_source.column_details(view="computation")
 
     # Get the numeric columns, if there are more than 20, cut them off
     # TODO: Column Limit
