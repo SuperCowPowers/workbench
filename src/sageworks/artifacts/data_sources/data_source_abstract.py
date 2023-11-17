@@ -55,10 +55,10 @@ class DataSourceAbstract(Artifact):
         """Return the column types for this Data Source"""
         pass
 
-    def column_details(self, view: str = None) -> dict:
+    def column_details(self, view: str = "all") -> dict:
         """Return the column details for this Data Source
         Args:
-            view(str): The view to get column details for (default: None)
+            view(str): The view to get column details for (default: "all")
         Returns:
             dict: The column details for this Data Source
         """
@@ -68,9 +68,10 @@ class DataSourceAbstract(Artifact):
             return {name: type_ for name, type_ in zip(names, types) if name in self.get_display_columns()}
         elif view == "computation":
             return {name: type_ for name, type_ in zip(names, types) if name in self.get_computation_columns()}
+        elif view == "all":
+            return {name: type_ for name, type_ in zip(names, types)}  # Return the full column details
         else:
-            # Return the full column details
-            return {name: type_ for name, type_ in zip(names, types)}
+            raise ValueError(f"Unknown column details view: {view}")
 
     def get_display_columns(self) -> list[str]:
         """Set the display columns for this Data Source
