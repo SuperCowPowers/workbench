@@ -78,7 +78,7 @@ class ExtractModelArtifact:
                 tar.extractall(path=tmpdir)
 
             # Find the .joblib file in the extracted directory
-            model_files = glob.glob(os.path.join(tmpdir, '*.joblib'))
+            model_files = glob.glob(os.path.join(tmpdir, "*.joblib"))
             if not model_files:
                 raise FileNotFoundError("No .joblib file found in the extracted model artifact.")
             model_file_path = model_files[0]

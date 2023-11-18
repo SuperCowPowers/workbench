@@ -268,7 +268,13 @@ class DataSourceAbstract(Artifact):
         storage_key = f"data_source:{self.uuid}:outliers"
         if not self.data_storage.get(storage_key):
             self.log.warning(f"DataSource {self.uuid} doesn't have outliers() calling it...")
-            self.outliers()
+            try:
+                self.outliers()
+            except KeyError:
+                self.log.error("DataSource outliers() failed...recomputing columns stats and trying again...")
+                self.column_stats(recompute=True)
+                self.refresh_meta()
+                self.outliers()
 
         # Okay so we have the samples and outliers, so we are ready
         return True
