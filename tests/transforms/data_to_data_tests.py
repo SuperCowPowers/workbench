@@ -5,7 +5,7 @@ import pytest
 from sageworks.transforms.data_to_data.light.data_to_data_light import DataToDataLight
 
 
-@pytest.mark.slow
+@pytest.mark.long
 def test():
     """Tests for the Data to Data (light) Transforms"""
 

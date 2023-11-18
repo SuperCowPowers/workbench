@@ -6,7 +6,7 @@ from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndp
 
 
 # Simple test of the ModelToEndpoint functionality
-@pytest.mark.slow
+@pytest.mark.long
 def test():
     """Tests for the Model to Endpoint Transforms"""
 

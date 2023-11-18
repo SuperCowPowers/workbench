@@ -8,7 +8,7 @@ from sageworks.transforms.data_to_features.light.data_to_features_light import (
 
 
 # Simple test of the DataToFeaturesLight functionality
-@pytest.mark.slow
+@pytest.mark.long
 def test():
     """Tests for the Data to Features (light) Transforms"""
 
