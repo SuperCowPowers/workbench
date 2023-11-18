@@ -143,9 +143,10 @@ class FeatureSet(Artifact):
         Returns:
             list[str]: The display columns for this Data Source
         """
-        if self._display_columns is None and self.num_columns() > 20:
-            self.log.important(f"Setting display columns for {self.uuid} to 20 columns...")
-            self._display_columns = self.column_names()[:20]
+        if self._display_columns is None:
+            if self.num_columns() > 30:
+                self.log.important(f"Setting display columns for {self.uuid} to 30 columns...")
+            self._display_columns = self.column_names()[:30]
             self._display_columns.append("outlier_group")
         return self._display_columns
 

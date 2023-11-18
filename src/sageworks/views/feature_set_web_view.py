@@ -45,11 +45,6 @@ class FeatureSetWebView(ArtifactsWebView):
             # Grab the Smart Sample
             smart_sample = fs.smart_sample()
 
-            # Does the DataSource have display_columns set?
-            display_columns = fs.get_display_columns()
-            if display_columns is not None:
-                smart_sample = smart_sample[display_columns]
-
             # Return the Smart Sample (max 100 rows)
             return smart_sample[:100]
 

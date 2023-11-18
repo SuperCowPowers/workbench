@@ -141,7 +141,11 @@ class Outliers:
         # Grab the  DataSource table name
         table = data_source.get_table_name()
 
-        query = f"SELECT * FROM {table} WHERE "
+        # Get the column names and types from the DataSource
+        column_details = data_source.column_details(view="computation")
+        sql_columns = ", ".join([f'"{col}"' for col in column_details.keys()])
+
+        query = f"SELECT {sql_columns} FROM {table} WHERE "
         for col, lb, ub in zip(columns, lower_bounds, upper_bounds):
             query += f"({col} < {lb} OR {col} > {ub}) OR "
         query = query[:-4]
@@ -221,6 +225,10 @@ if __name__ == "__main__":
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
+
+    # Set computation view columns
+    computation_cols = my_data.column_names()[:5]
+    my_data.set_computation_columns(computation_cols)
 
     # Create the class and Compute outliers
     my_outliers = Outliers()
