@@ -1,7 +1,6 @@
 """ExtractModelArtifact is a utility class that reanimates a model joblib file."""
 import tarfile
 import joblib
-import xgboost
 import awswrangler as wr
 import os
 import shutil
@@ -25,7 +24,6 @@ class ExtractModelArtifact:
         self.model_artifact = self.set_model_artifact()
 
     # Setterinos
-
     def set_local_dir(self):
         local_dir = os.path.join(os.getcwd(), f"{self.endpoint_name}_{self.model_artifact_uri.split('/')[-3]}")
         return local_dir
@@ -63,7 +61,6 @@ class ExtractModelArtifact:
         return model_artifact
 
     # Getterinos
-
     def get_boto_session(self):
         return self.boto_session
 

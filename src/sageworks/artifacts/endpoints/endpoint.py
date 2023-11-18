@@ -376,15 +376,6 @@ class Endpoint(Artifact):
         else:
             raise ValueError(f"Unknown Model Type: {model_type}")
 
-        # Generate shap values for the prediction df, for both model types
-        model_artifact = ExtractModelArtifact(self.endpoint_name, self.model_artifact_uri).get_model_artifact()
-        model_features = model_artifact.get_booster().feature_names
-        X_pred = prediction_df[model_features]
-        shap_vals = self.shap_values(model_artifact, X_pred)
-
-        # Write shap vals to S3 Model Inference Folder
-        wr.s3.to_csv(shap_vals, f"{self.model_inference_path}/{self.model_name}/inference_shap_values.csv", index=False)
-
         # Metadata for the model inference
         inference_meta = {
             "test_data": data_name,
@@ -414,6 +405,21 @@ class Endpoint(Artifact):
                 pred_df, f"{self.model_inference_path}/{self.model_name}/inference_predictions.csv", index=False
             )
 
+        #
+        # Generate SHAP values for our Prediction Dataframe
+        #
+
+        # Grab the model artifact from AWS
+        model_artifact = ExtractModelArtifact(self.endpoint_name, self.model_artifact_uri).get_model_artifact()
+
+        # Get the exact features used to train the model (note this is XGBoost specific)
+        model_features = model_artifact.get_booster().feature_names
+        X_pred = prediction_df[model_features]
+        shap_vals = self.shap_values(model_artifact, X_pred)
+
+        # Write shap vals to S3 Model Inference Folder
+        wr.s3.to_csv(shap_vals, f"{self.model_inference_path}/{self.model_name}/inference_shap_values.csv", index=False)
+
         # Recompute the details so that inference model metrics are updated
         self.log.important(f"Recomputing Details for {self.uuid} to show latest Inference Results...")
         self.details(recompute=True)
@@ -425,6 +431,14 @@ class Endpoint(Artifact):
 
     @staticmethod
     def shap_values(model, X: pd.DataFrame) -> pd.DataFrame:
+        """Compute the SHAP values for this Model
+        Args:
+            model (Model): Model object
+            X (pd.DataFrame): DataFrame with the prediction results
+        Returns:
+            pd.DataFrame: DataFrame with the SHAP values
+        """
+        # Note: For Tree-based models like decision trees, random forests, XGBoost, LightGBM,
         explainer = shap.TreeExplainer(model)
         shap_vals = explainer.shap_values(X)
         return pd.DataFrame(shap_vals, columns=X.columns)
@@ -596,6 +610,7 @@ if __name__ == "__main__":
 
     #
     # This section is all about INFERENCE TESTING
+    #
     INFERENCE_TESTING = False
     if INFERENCE_TESTING:
         REGRESSION = False
