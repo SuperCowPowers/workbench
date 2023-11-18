@@ -7,7 +7,7 @@ from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
 from sageworks.artifacts.models.model import Model
 from sageworks.artifacts.endpoints.endpoint import Endpoint
 
-# Assuming AWSAccountClamp().sagemaker_client() gives you a SageMaker client
+# Get a sagemaker_client from the AWSAccountClamp()
 sagemaker_client = AWSAccountClamp().sagemaker_client()
 
 # Setup logging

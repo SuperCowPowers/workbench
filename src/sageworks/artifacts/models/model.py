@@ -505,6 +505,10 @@ if __name__ == "__main__":
     print("Regression Predictions: (might be None)")
     print(my_model.regression_predictions())
 
+    # Grab our Shapley values from S3
+    print("Shapley Values: (might be None)")
+    print(my_model.model_shapley_values())
+
     # Test Large Metadata
     # my_model.upsert_sageworks_meta({"sageworks_large_meta": {"large_x": "x" * 200, "large_y": "y" * 200}})
 

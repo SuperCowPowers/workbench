@@ -71,7 +71,6 @@ class Endpoint(Artifact):
 
         # Set the Model Training and Inference S3 Paths
         self.model_name = self.get_input()
-        self.model_artifact_uri = self.get_model_artifact_uri()
         self.model_training_path = self.models_s3_path + "/training"
         self.model_inference_path = self.models_s3_path + "/inference"
 
@@ -340,14 +339,6 @@ class Endpoint(Artifact):
         """Return the type of model used in this Endpoint"""
         return self.details().get("model_type", "unknown")
 
-    def get_model_artifact_uri(self) -> str:
-        latest_model = Model(self.model_name).latest_model
-        model_package_details = latest_model.get("ModelPackageDetails")
-        inf_spec = model_package_details.get("InferenceSpecification")
-        container = inf_spec.get("Containers")[0]
-        model_artifact_uri = container.get("ModelDataUrl")
-        return model_artifact_uri
-
     def capture_performance_metrics(
         self, feature_df: pd.DataFrame, target_column: str, data_name: str, data_hash: str, description: str
     ) -> None:
@@ -390,17 +381,20 @@ class Endpoint(Artifact):
             f"{self.model_inference_path}/{self.model_name}/inference_meta.json",
             index=False,
         )
+        self.log.debug(f"Writing metrics to {self.model_inference_path}/{self.model_name}/inference_metrics.csv")
         wr.s3.to_csv(metrics, f"{self.model_inference_path}/{self.model_name}/inference_metrics.csv", index=False)
 
         # Write the confusion matrix to our S3 Model Inference Folder
         if model_type == ModelType.CLASSIFIER.value:
             conf_mtx = self.confusion_matrix(target_column, prediction_df)
+            self.log.debug(f"Writing confusion matrix to {self.model_inference_path}/{self.model_name}/inference_cm.csv")
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
             wr.s3.to_csv(conf_mtx, f"{self.model_inference_path}/{self.model_name}/inference_cm.csv", index=True)
 
         # Write the regression predictions to our S3 Model Inference Folder
         if model_type == ModelType.REGRESSOR.value:
             pred_df = self.regression_predictions(target_column, prediction_df)
+            self.log.debug(f"Writing regression predictions to {self.model_inference_path}/{self.model_name}/inference_predictions.csv")
             wr.s3.to_csv(
                 pred_df, f"{self.model_inference_path}/{self.model_name}/inference_predictions.csv", index=False
             )
@@ -410,14 +404,17 @@ class Endpoint(Artifact):
         #
 
         # Grab the model artifact from AWS
-        model_artifact = ExtractModelArtifact(self.endpoint_name, self.model_artifact_uri).get_model_artifact()
+        model_artifact = ExtractModelArtifact(self.endpoint_name).get_model_artifact()
 
-        # Get the exact features used to train the model (note this is XGBoost specific)
-        model_features = model_artifact.get_booster().feature_names
+        # Get the exact features used to train the model
+        model_features = model_artifact.feature_names_in_
         X_pred = prediction_df[model_features]
+
+        # Compute the SHAP values
         shap_vals = self.shap_values(model_artifact, X_pred)
 
         # Write shap vals to S3 Model Inference Folder
+        self.log.debug(f"Writing SHAP values to {self.model_inference_path}/{self.model_name}/inference_shap_values.csv")
         wr.s3.to_csv(shap_vals, f"{self.model_inference_path}/{self.model_name}/inference_shap_values.csv", index=False)
 
         # Recompute the details so that inference model metrics are updated
@@ -611,9 +608,9 @@ if __name__ == "__main__":
     #
     # This section is all about INFERENCE TESTING
     #
-    INFERENCE_TESTING = False
+    INFERENCE_TESTING = True
     if INFERENCE_TESTING:
-        REGRESSION = False
+        REGRESSION = True
         if REGRESSION:
             my_endpoint = Endpoint("abalone-regression-end")
             feature_to_pandas = FeaturesToPandas("abalone_feature_set")

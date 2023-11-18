@@ -15,3 +15,5 @@ termcolor
 tabulate
 prompt_toolkit
 shap
+xgboost
+joblib
