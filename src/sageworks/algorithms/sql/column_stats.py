@@ -49,10 +49,11 @@ def count_zeros_query(columns: list[str], table_name: str) -> str:
     return sql_query
 
 
-def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
+def column_stats(data_source: DataSourceAbstract, recompute: bool = False) -> dict[dict]:
     """SQL based Column Statistics: Compute Column Statistics for a DataSource using SQL
     Args:
         data_source(DataSource): The DataSource that we're computing column stats on
+        recompute(bool): Whether or not to recompute the column stats (default: False)
     Returns:
         dict(dict): A dictionary of stats for each column this format
         NB: String columns will have value_counts but NOT have num_zeros and descriptive stats
@@ -60,7 +61,6 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
               'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'descriptive_stats': {...}},
               ...}
     """
-    data_source.log.info("Computing Column Statistics for all columns...")
 
     #
     # This first section is just aggregating data that we've already computed
@@ -69,19 +69,20 @@ def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
     # Get the column names and types from the DataSource
     column_details = data_source.column_details(view="computation")
     column_data = {name: {"dtype": dtype} for name, dtype in column_details.items()}
+    data_source.log.info(f"Computing Column Statistics for {column_data.keys()} columns...")
 
     # Now add descriptive stats to the column stats
-    descriptive_stats = data_source.descriptive_stats()
+    descriptive_stats = data_source.descriptive_stats(recompute=recompute)
     for column, stat_info in descriptive_stats.items():
         column_data[column]["descriptive_stats"] = stat_info
 
     # Now add value_counts to the column stats
-    value_counts = data_source.value_counts()
+    value_counts = data_source.value_counts(recompute=recompute)
     for column, count_info in value_counts.items():
         column_data[column]["value_counts"] = count_info
 
     # Now add correlations to the column stats
-    correlations = data_source.correlations()
+    correlations = data_source.correlations(recompute=recompute)
     for column, correlation_info in correlations.items():
         column_data[column]["correlations"] = correlation_info
 
@@ -129,7 +130,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("aqsol_data")
+    my_data = DataSource("test_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
@@ -137,7 +138,11 @@ if __name__ == "__main__":
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")
 
-    # Get column stats for all columns
+    # Set computation view columns
+    computation_cols = my_data.column_names()[:5]
+    my_data.set_computation_columns(computation_cols)
+
+    # Get column stats for computation columns
     my_column_stats = column_stats(my_data)
     print("\nColumn Stats:")
     pprint(my_column_stats)

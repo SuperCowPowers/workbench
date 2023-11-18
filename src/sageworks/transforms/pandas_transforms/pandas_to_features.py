@@ -336,7 +336,6 @@ class PandasToFeatures(Transform):
         self.wait_for_rows(self.expected_rows)
 
         # Call the FeatureSet make_ready method to compute a bunch of EDA stuff
-        self.output_feature_set = FeatureSet(self.output_uuid, force_refresh=True)
         self.output_feature_set.make_ready()
 
     def ensure_feature_group_created(self, feature_group):

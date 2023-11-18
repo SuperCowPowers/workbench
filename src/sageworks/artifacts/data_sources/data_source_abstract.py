@@ -78,8 +78,9 @@ class DataSourceAbstract(Artifact):
         Returns:
             list[str]: The display columns for this Data Source
         """
-        if self._display_columns is None and self.num_columns() > 30:
-            self.log.important(f"Setting display columns for {self.uuid} to 30 columns...")
+        if self._display_columns is None:
+            if self.num_columns() > 30:
+                self.log.important(f"Setting display columns for {self.uuid} to 30 columns...")
             self._display_columns = self.column_names()[:30]
             self._display_columns.append("outlier_group")
         return self._display_columns
@@ -275,7 +276,7 @@ class DataSourceAbstract(Artifact):
     def make_ready(self) -> bool:
         """This is a BLOCKING method that will wait until the Artifact is ready"""
         self.sample(recompute=True)
-        self.column_stats()
+        self.column_stats(recompute=True)
         self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts
         self.outliers(recompute=True)
         self.set_status("ready")

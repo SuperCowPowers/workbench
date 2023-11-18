@@ -32,7 +32,6 @@ class Outliers:
             Uses the IQR * 1.5 (~= 2.5 Sigma) (use 1.7 for ~= 3 Sigma)
             The scale parameter can be adjusted to change the IQR multiplier
         """
-        data_source.log.info("Computing Outliers for numeric columns...")
 
         # Note: If use_stddev is True, then the scale parameter needs to be adjusted
         if use_stddev and scale == 1.5:  # If the default scale is used, adjust it
@@ -78,14 +77,17 @@ class Outliers:
         column_stats = data_source.column_stats()
         descriptive_stats = data_source.descriptive_stats()
 
+        # Get the column names and types from the DataSource
+        column_details = data_source.column_details(view="computation")
+
         # For every column in the data_source that is numeric get the outliers
         # This loop computes the columns, lower bounds, and upper bounds for the SQL query
-        log.info("Computing outliers for numeric columns...")
+        log.info("Computing Outliers for numeric columns...")
         numeric = ["tinyint", "smallint", "int", "bigint", "float", "double", "decimal"]
         columns = []
         lower_bounds = []
         upper_bounds = []
-        for column, data_type in zip(data_source.column_names(), data_source.column_types()):
+        for column, data_type in column_details.items():
             if data_type in numeric:
                 # Skip columns that just have one value (or are all nans)
                 if column_stats[column]["unique"] <= 1:
@@ -114,14 +116,6 @@ class Outliers:
                 columns.append(column)
                 lower_bounds.append(lower_bound)
                 upper_bounds.append(upper_bound)
-
-        # Limit the number of columns to 40
-        # TODO: Column Limit
-        if len(columns) > 40:
-            log.warning(f"Too many columns ({len(columns)}), limiting to 40")
-            columns = columns[:40]
-            lower_bounds = lower_bounds[:40]
-            upper_bounds = upper_bounds[:40]
 
         # Compute the SQL query
         query = self._multi_column_outlier_query(data_source, columns, lower_bounds, upper_bounds)
@@ -223,7 +217,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("abalone_data")
+    my_data = DataSource("test_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()

@@ -432,22 +432,9 @@ if __name__ == "__main__":
     # Create a DataSource (which will create a ViewManager)
     data_source = DataSource("test_data")
 
-    # Now create the default views
-    data_source.view_manager.create_display_view()  # recreate=True for testing
-    data_source.view_manager.create_computation_view()
-    data_source.view_manager.create_training_view("id")
+    # Just some random tests
+    assert data_source.exists()
 
-    # Get the display view
-    my_view = data_source.get_display_view()
-    print(my_view)
-
-    # Get the computation view
-    my_view = data_source.get_computation_view()
-    print(my_view)
-
-    # Get the training view
-    my_view = data_source.get_training_view()
-    print(my_view)
-
-    # Delete the training view
-    my_view.delete()
+    print(f"UUID: {data_source.uuid}")
+    print(f"Ready: {data_source.ready()}")
+    print(f"Status: {data_source.get_status()}")

@@ -335,7 +335,7 @@ class AthenaSource(DataSourceAbstract):
             return json.loads(columns_stats_json)
 
         # Call the SQL function to compute column stats
-        column_stats_dict = column_stats.column_stats(self)
+        column_stats_dict = column_stats.column_stats(self, recompute=recompute)
 
         # Push the column stats data into our DataSource Metadata
         self.upsert_sageworks_meta({"sageworks_column_stats": column_stats_dict})
