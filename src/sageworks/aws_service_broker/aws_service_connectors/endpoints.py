@@ -63,6 +63,8 @@ class Endpoints(Connector):
         try:
             endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=details["EndpointConfigName"])
             instance_type = endpoint_config["ProductionVariants"][0].get("InstanceType")
+
+            # If the instance type is None, then it's a Serverless Endpoint
             if instance_type is None:
                 mem_size = endpoint_config["ProductionVariants"][0]["ServerlessConfig"]["MemorySizeInMB"]
                 concurrency = endpoint_config["ProductionVariants"][0]["ServerlessConfig"]["MaxConcurrency"]

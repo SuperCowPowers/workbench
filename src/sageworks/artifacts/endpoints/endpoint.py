@@ -167,6 +167,14 @@ class Endpoint(Artifact):
         # Return the Dataframe
         return converted_df
 
+    def is_serverless(self):
+        """
+        Check if the current endpoint is serverless.
+        Returns:
+            bool: True if the endpoint is serverless, False otherwise.
+        """
+        return "Serverless" in self.endpoint_meta["InstanceType"]
+
     def _endpoint_error_handling(self, predictor, feature_df):
         """Internal: Method that handles Errors, Retries, and Binary Search for Error Row(s)"""
 
@@ -611,6 +619,9 @@ if __name__ == "__main__":
 
     print("Details:")
     print(f"{my_endpoint.details(recompute=True)}")
+
+    # Serverless?
+    print(f"Serverless: {my_endpoint.is_serverless()}")
 
     #
     # This section is all about INFERENCE TESTING
