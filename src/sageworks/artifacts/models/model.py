@@ -45,7 +45,7 @@ class Model(Artifact):
         # Call SuperClass Initialization
         super().__init__(model_uuid)
 
-        # Set the Model Training and Inference S3 Paths
+        # Set the Model Training S3 Paths
         self.model_training_path = self.models_s3_path + "/training"
         self.model_inference_path = self.models_s3_path + "/inference"
 
@@ -171,7 +171,7 @@ class Model(Artifact):
         """
 
         # Pull the regression predictions, try first from inference, then from training
-        s3_path = f"{self.model_inference_path}/{self.model_name}/inference_predictions.csv"
+        s3_path = f"{self.model_inference_path}/inference_predictions.csv"
         df = self._pull_s3_model_artifacts(s3_path)
         if df is not None:
             return df
@@ -187,7 +187,7 @@ class Model(Artifact):
         Notes:
             Basically when the inference was run, name of the dataset, the MD5, etc
         """
-        s3_path = f"{self.model_inference_path}/{self.model_name}/inference_meta.json"
+        s3_path = f"{self.model_inference_path}/inference_meta.json"
         try:
             return wr.s3.read_json(s3_path)
         except NoFilesFound:
@@ -199,7 +199,7 @@ class Model(Artifact):
         Returns:
             pd.DataFrame: Dataframe of the shapley values for the prediction dataframe
         """
-        s3_path = f"{self.model_inference_path}/{self.model_name}/inference_shap_values.csv"
+        s3_path = f"{self.model_inference_path}/inference_shap_values.csv"
         return self._pull_s3_model_artifacts(s3_path, embedded_index=False)
 
     def _pull_inference_metrics(self) -> Union[pd.DataFrame, None]:
@@ -207,7 +207,7 @@ class Model(Artifact):
         Returns:
             pd.DataFrame: DataFrame of the inference model metrics (might be None)
         """
-        s3_path = f"{self.model_inference_path}/{self.model_name}/inference_metrics.csv"
+        s3_path = f"{self.model_inference_path}/inference_metrics.csv"
         return self._pull_s3_model_artifacts(s3_path)
 
     def _pull_inference_cm(self) -> Union[pd.DataFrame, None]:
@@ -215,7 +215,7 @@ class Model(Artifact):
         Returns:
             pd.DataFrame: DataFrame of the inference Confusion Matrix (might be None)
         """
-        s3_path = f"{self.model_inference_path}/{self.model_name}/inference_cm.csv"
+        s3_path = f"{self.model_inference_path}/inference_cm.csv"
         return self._pull_s3_model_artifacts(s3_path, embedded_index=True)
 
     def _pull_s3_model_artifacts(self, s3_path, embedded_index=False) -> Union[pd.DataFrame, None]:
@@ -396,7 +396,7 @@ class Model(Artifact):
         self.sm_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
 
         # Delete any inference artifacts
-        s3_delete_path = f"{self.model_inference_path}/{self.model_name}"
+        s3_delete_path = f"{self.model_inference_path}"
         self.log.info(f"Deleting Training S3 Objects {s3_delete_path}")
         wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
 

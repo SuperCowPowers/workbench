@@ -19,13 +19,8 @@ class ExtractModelArtifact:
         """
         self.endpoint_name = endpoint_name
 
-        """
-        self.model_artifact_uri = model_artifact_uri
-        self.local_dir = self.set_local_dir()
-        self.artifact_tar_path = self.set_artifact_tar()
-        self.joblib_file_path = self.set_joblib_file()
-        self.model_artifact = self.set_model_artifact()
-        """
+        # Initialize SageMaker client
+        self.sagemaker_client = AWSAccountClamp().sagemaker_client()
 
     def get_model_artifact(self):
         """Get the model artifact from the endpoint"""
@@ -38,12 +33,9 @@ class ExtractModelArtifact:
             str: URI (S3 Path) to the model artifact
         """
 
-        # Initialize SageMaker client
-        sagemaker_client = AWSAccountClamp().sagemaker_client()
-
         # Get the endpoint configuration
-        endpoint_desc = sagemaker_client.describe_endpoint(EndpointName=self.endpoint_name)
-        endpoint_config_desc = sagemaker_client.describe_endpoint_config(
+        endpoint_desc = self.sagemaker_client.describe_endpoint(EndpointName=self.endpoint_name)
+        endpoint_config_desc = self.sagemaker_client.describe_endpoint_config(
             EndpointConfigName=endpoint_desc["EndpointConfigName"]
         )
 
@@ -52,9 +44,9 @@ class ExtractModelArtifact:
         model_name = endpoint_config_desc["ProductionVariants"][0]["ModelName"]
 
         # Get the model description using the Model ARN
-        model_desc = sagemaker_client.describe_model(ModelName=model_name)
+        model_desc = self.sagemaker_client.describe_model(ModelName=model_name)
         model_package_arn = model_desc["PrimaryContainer"]["ModelPackageName"]
-        model_package_desc = sagemaker_client.describe_model_package(ModelPackageName=model_package_arn)
+        model_package_desc = self.sagemaker_client.describe_model_package(ModelPackageName=model_package_arn)
 
         # Now we have the model package description, we can get the model artifact URI
         inference_spec = model_package_desc.get("InferenceSpecification", {})
@@ -96,8 +88,11 @@ if __name__ == "__main__":
     # Create the Class and test it out
     my_endpoint = "abalone-regression-end"
     ema = ExtractModelArtifact(my_endpoint)
+
+    # Test the lower level methods
     model_data_uri = ema.get_model_data_uri()
     print(f"Model Data URI: {model_data_uri}")
+
     my_model = ema.download_and_extract_model(model_data_uri)
     print(my_model.feature_names_in_)
 
