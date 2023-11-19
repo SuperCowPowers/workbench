@@ -564,14 +564,22 @@ class Endpoint(Artifact):
         # Return the predictions
         return prediction_df[[target, "prediction"]]
 
+    def endpoint_config_name(self) -> str:
+        # Grab the Endpoint Config Name from the AWS
+        details = self.sm_client.describe_endpoint(EndpointName=self.endpoint_name)
+        return details["EndpointConfigName"]
+
     def delete(self):
         """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
         self.delete_endpoint_models()
+
+        # Grab the Endpoint Config Name from the AWS
+        endpoint_config_name = self.endpoint_config_name()
         try:
-            self.log.info(f"Deleting Endpoint Config {self.uuid}...")
-            self.sm_client.delete_endpoint_config(EndpointConfigName=self.uuid)
+            self.log.info(f"Deleting Endpoint Config {endpoint_config_name}...")
+            self.sm_client.delete_endpoint_config(EndpointConfigName=endpoint_config_name)
         except botocore.exceptions.ClientError:
-            self.log.info(f"Endpoint Config {self.uuid} doesn't exist...")
+            self.log.info(f"Endpoint Config {endpoint_config_name} doesn't exist...")
         try:
             self.log.info(f"Deleting Endpoint {self.uuid}...")
             self.sm_client.delete_endpoint(EndpointName=self.uuid)
@@ -586,9 +594,12 @@ class Endpoint(Artifact):
     def delete_endpoint_models(self):
         """Delete the underlying Model for an Endpoint"""
 
+        # Grab the Endpoint Config Name from the AWS
+        endpoint_config_name = self.endpoint_config_name()
+
         # Retrieve the Model Names from the Endpoint Config
         try:
-            endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=self.uuid)
+            endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
         except botocore.exceptions.ClientError:
             self.log.info(f"Endpoint Config {self.uuid} doesn't exist...")
             return
