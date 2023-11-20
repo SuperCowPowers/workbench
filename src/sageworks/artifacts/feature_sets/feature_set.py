@@ -398,8 +398,10 @@ class FeatureSet(Artifact):
             glue_client.get_table(DatabaseName=self.athena_database, Name=training_view_name)
             return training_view_name
         except glue_client.exceptions.EntityNotFoundException:
-            self.log.warning(f"Training View for {self.uuid} doesn't exist, create it.")
-            return None
+            self.log.warning(f"Training View for {self.uuid} doesn't exist, created a default one...")
+            self.create_default_training_view()
+            time.sleep(1)  # Give AWS a second to catch up
+            return training_view_name
 
     def delete_training_view(self):
         """Delete the training view for this FeatureSet"""
