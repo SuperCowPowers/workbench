@@ -44,8 +44,9 @@ class DataCatalog(Connector):
             self.log.debug(f"Reading Data Catalog Database: {database}...")
             all_tables = wr.catalog.get_tables(database=database, boto3_session=self.boto_session)
 
-            # Filter out views
-            table_list = [table for table in all_tables if table["TableType"] in ("EXTERNAL_TABLE", "MANAGED_TABLE")]
+            # Filter out views (disabled for now)
+            table_list = all_tables
+            # table_list = [table for table in all_tables if table["TableType"] in ("EXTERNAL_TABLE", "MANAGED_TABLE")]
 
             # Convert to a data structure with direct lookup
             self.data_catalog_metadata[database] = {table["Name"]: table for table in table_list}
