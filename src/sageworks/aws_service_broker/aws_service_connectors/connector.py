@@ -70,5 +70,6 @@ class Connector(ABC):
             else:
                 # Handle other ClientErrors that may occur
                 self.log.error(f"Caught a different ClientError: {error_code}")
+                raise e
         meta = self._aws_tags_to_dict(aws_tags)
         return meta
