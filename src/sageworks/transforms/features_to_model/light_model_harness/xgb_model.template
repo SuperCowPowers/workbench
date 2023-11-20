@@ -194,7 +194,7 @@ def input_fn(input_data, content_type):
 def output_fn(output_df, accept_type):
     """We only give CSV Output"""
     if accept_type == "text/csv":
-        return output_df.to_csv(index=False)
+        return output_df.to_csv(index=False), accept_type
     else:
         raise RuntimeError(
             f"{accept_type} accept type is not supported by this script."
