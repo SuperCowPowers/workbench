@@ -54,7 +54,9 @@ class ModelMonitoring:
         data_capture_config = DataCaptureConfig(
             enable_capture=True,
             sampling_percentage=capture_percentage,
-            destination_s3_uri=self.data_capture_path
+            destination_s3_uri=self.data_capture_path,
+            capture_options=["Input", "Output"],
+            csv_content_types=["text/csv"]
         )
 
         # Create a Predictor instance and update data capture configuration
@@ -63,7 +65,7 @@ class ModelMonitoring:
 
         # Give a message about deleting the old endpoint configuration
         self.log.important("After verifying that the updated endpoint is working properly")
-        self.log.important(f"You should manually deleting the old endpoint configuration: {current_endpoint_config_name}")
+        self.log.important(f"You should manually delete the old endpoint configuration: {current_endpoint_config_name}")
         # self.sagemaker_client.delete_endpoint_config(EndpointConfigName=current_endpoint_config_name)
 
     def is_data_capture_configured(self, capture_percentage):
@@ -106,7 +108,7 @@ class ModelMonitoring:
             return None
 
     @staticmethod
-    def process_captured_data(df):
+    def process_captured_data(df: pd.DataFrame) -> pd.DataFrame:
         """
         Process the captured data DataFrame to extract and flatten the nested data.
         Args:
@@ -117,18 +119,20 @@ class ModelMonitoring:
         processed_records = []
 
         for _, row in df.iterrows():
-            capture_data = row['captureData']
             # Extract data from captureData dictionary
+            capture_data = row['captureData']
             input_data = capture_data['endpointInput']
             output_data = capture_data['endpointOutput']
 
             # Process input and output data as needed
             # Here, we're extracting specific fields, but you might need to adjust this based on your data structure
             record = {
+                'input_content_type': input_data.get('observedContentType'),
+                'input_encoding': input_data.get('encoding'),
                 'input': input_data.get('data'),
-                'observedContentType': input_data.get('observedContentType'),
-                'output': output_data.get('data'),
-                # Add other fields as needed
+                'output_content_type': output_data.get('observedContentType'),
+                'output_encoding': output_data.get('encoding'),
+                'output': output_data.get('data')
             }
             processed_records.append(record)
 
@@ -202,6 +206,9 @@ if __name__ == "__main__":
     table = features.get_training_view_table()
     test_df = features.query(f"SELECT * FROM {table} where training = 0")
 
+    # Drop some columns
+    test_df.drop(["write_time", "api_invocation_time", "is_deleted"], axis=1, inplace=True)
+
     # Make predictions on the Endpoint
     pred_df = my_endpoint.predict(test_df[:10])
     print(pred_df.head())
@@ -209,7 +216,7 @@ if __name__ == "__main__":
     # Check that data capture is working
     check_df = mm.check_data_capture()
     if check_df is None:
-        print("No data capture files found.")
+        print("No data capture files found, for a new endpoint it may take a few minutes to start capturing data.")
     else:
         print(f"Found data capture files.")
         print(check_df.head())
