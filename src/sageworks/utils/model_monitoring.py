@@ -198,7 +198,7 @@ if __name__ == "__main__":
     # Check that data capture is working
     check_df = mm.check_data_capture()
     if check_df is None:
-        print("No data capture files found, for a new endpoint it may take a few minutes to start capturing data.")
+        print("No data capture files found, for a new endpoint it may take a few minutes to start capturing data")
     else:
-        print(f"Found data capture files.")
+        print("Found data capture files")
         print(check_df.head())
