@@ -21,6 +21,9 @@ features = FeatureSet(feature_set)
 table = features.get_training_view_table()
 test_df = features.query(f"SELECT * FROM {table} where training = 0")
 
+# Drop some columns
+test_df.drop(["write_time", "api_invocation_time", "is_deleted"], axis=1, inplace=True)
+
 # Make predictions on the Endpoint
 pred_df = my_endpoint.predict(test_df[:10])
 print(pred_df.head())
