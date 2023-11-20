@@ -1,6 +1,7 @@
 """FeatureSet: SageWorks Feature Set accessible through Athena"""
 import time
 from datetime import datetime, timezone
+from typing import Union
 
 import botocore.exceptions
 import pandas as pd
@@ -60,12 +61,6 @@ class FeatureSet(Artifact):
 
             # Create our internal DataSource (hardcoded to Athena for now)
             self.data_source = AthenaSource(self.athena_table, self.athena_database)
-
-            # Get our Training View (if it exists)
-            training_view_name = f"{self.athena_table}_training"
-            self.training_view = AthenaSource(training_view_name, self.athena_database)
-            if not self.training_view.exists():
-                self.training_view = None
 
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
@@ -206,9 +201,10 @@ class FeatureSet(Artifact):
         s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
 
         # Do we have a training view?
-        if self.training_view:
-            self.log.important(f"Creating S3 Training Data from Training View {self.training_view.uuid}...")
-            table_name = self.training_view.table_name
+        training_view = self.get_training_view_table()
+        if training_view:
+            self.log.important(f"Creating S3 Training Data from Training View {training_view}...")
+            table_name = training_view
         else:
             self.log.warning(f"No Training View found for {self.uuid}, using FeatureSet directly...")
             table_name = self.athena_table
@@ -391,6 +387,20 @@ class FeatureSet(Artifact):
 
         # Execute the CREATE VIEW query
         self.data_source.execute_statement(create_view_query)
+
+    def get_training_view_table(self) -> Union[str, None]:
+        """Get the name of the training view for this FeatureSet
+        Returns:
+            str: The name of the training view for this FeatureSet (or None if it doesn't exist)
+        """
+        training_view_name = f"{self.athena_table}_training"
+        glue_client = self.boto_session.client("glue")
+        try:
+            glue_client.get_table(DatabaseName=self.athena_database, Name=training_view_name)
+            return training_view_name
+        except glue_client.exceptions.EntityNotFoundException:
+            self.log.warning(f"Training View for {self.uuid} doesn't exist, create it.")
+            return None
 
     def descriptive_stats(self, recompute: bool = False) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource
@@ -579,9 +589,13 @@ if __name__ == "__main__":
     outlier_df = my_features.outliers()
     print(outlier_df)
 
+    # Test creating a default training view
+    print("Creating default training view...")
+    my_features.create_default_training_view()
+
     # Test the hold out set functionality with ints
     print("Setting hold out ids (ints)...")
-    table = my_features.data_source.table_name
+    table = my_features.get_training_view_table()
     df = my_features.query(f"SELECT id, name FROM {table}")
     my_hold_out_ids = [id for id in df["id"] if id < 20]
     my_features.create_training_view("id", my_hold_out_ids)
