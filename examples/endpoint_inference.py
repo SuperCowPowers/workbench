@@ -24,9 +24,7 @@ def run_inference(endpoint_name):
     test_df = features.query(f"SELECT * FROM {table} where training = 0")
 
     # Drop some columns
-    test_df.drop(
-        ["write_time", "api_invocation_time", "is_deleted"], axis=1, inplace=True
-    )
+    test_df.drop(["write_time", "api_invocation_time", "is_deleted"], axis=1, inplace=True)
 
     # Make predictions on the Endpoint
     pred_df = my_endpoint.predict(test_df[:10])
@@ -34,12 +32,8 @@ def run_inference(endpoint_name):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Run inference on a SageWorks Endpoint"
-    )
-    parser.add_argument(
-        "endpoint_name", type=str, help="Name of the SageWorks Endpoint"
-    )
+    parser = argparse.ArgumentParser(description="Run inference on a SageWorks Endpoint")
+    parser.add_argument("endpoint_name", type=str, help="Name of the SageWorks Endpoint")
     args = parser.parse_args()
 
     run_inference(args.endpoint_name)
