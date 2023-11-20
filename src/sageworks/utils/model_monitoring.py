@@ -35,7 +35,7 @@ class ModelMonitoring:
 
         # Check if this endpoint is a serverless endpoint
         if self.endpoint.is_serverless():
-            self.log.warning(f"Data capture is not currently supported for serverless endpoints.")
+            self.log.warning("Data capture is not currently supported for serverless endpoints.")
             return
 
         # Check if the endpoint already has data capture configured
@@ -48,7 +48,7 @@ class ModelMonitoring:
 
         # Log the data capture path
         self.log.important(f"Adding Data Capture to {self.endpoint_name} --> {self.data_capture_path}")
-        self.log.important(f"This normally redeploys the endpoint...")
+        self.log.important("This normally redeploys the endpoint...")
 
         # Setup data capture config
         data_capture_config = DataCaptureConfig(
@@ -56,7 +56,7 @@ class ModelMonitoring:
             sampling_percentage=capture_percentage,
             destination_s3_uri=self.data_capture_path,
             capture_options=["Input", "Output"],
-            csv_content_types=["text/csv"]
+            csv_content_types=["text/csv"],
         )
 
         # Create a Predictor instance and update data capture configuration
@@ -79,64 +79,15 @@ class ModelMonitoring:
         try:
             endpoint_config_name = self.endpoint.endpoint_config_name()
             endpoint_config = self.sagemaker_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
-            data_capture_config = endpoint_config.get('DataCaptureConfig', {})
+            data_capture_config = endpoint_config.get("DataCaptureConfig", {})
 
             # Check if data capture is enabled and the percentage matches
-            is_enabled = data_capture_config.get('EnableCapture', False)
-            current_percentage = data_capture_config.get('InitialSamplingPercentage', 0)
+            is_enabled = data_capture_config.get("EnableCapture", False)
+            current_percentage = data_capture_config.get("InitialSamplingPercentage", 0)
             return is_enabled and current_percentage == capture_percentage
         except Exception as e:
             self.log.error(f"Error checking data capture configuration: {e}")
             return False
-
-    def check_data_capture(self):
-        """
-        Check the data capture by reading the captured data from S3.
-        Returns:
-            DataFrame: The captured data as a Pandas DataFrame.
-        """
-        # List files in the specified S3 path
-        files = wr.s3.list_objects(self.data_capture_path)
-        if files:
-            print(f"Found {len(files)} files in {self.data_capture_path}. Reading the most recent file.")
-
-            # Read the most recent file into a DataFrame
-            df = self.read_data_capture_file(files[-1])  # Reads the last file assuming it's the most recent one
-            return df
-        else:
-            print(f"No data capture files found in {self.data_capture_path}.")
-            return None
-
-    @staticmethod
-    def process_captured_data(df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Process the captured data DataFrame to extract and flatten the nested data.
-        Args:
-            df (DataFrame): DataFrame with captured data.
-        Returns:
-            DataFrame: Flattened and processed DataFrame.
-        """
-        processed_records = []
-
-        for _, row in df.iterrows():
-            # Extract data from captureData dictionary
-            capture_data = row['captureData']
-            input_data = capture_data['endpointInput']
-            output_data = capture_data['endpointOutput']
-
-            # Process input and output data as needed
-            # Here, we're extracting specific fields, but you might need to adjust this based on your data structure
-            record = {
-                'input_content_type': input_data.get('observedContentType'),
-                'input_encoding': input_data.get('encoding'),
-                'input': input_data.get('data'),
-                'output_content_type': output_data.get('observedContentType'),
-                'output_encoding': output_data.get('encoding'),
-                'output': output_data.get('data')
-            }
-            processed_records.append(record)
-
-        return pd.DataFrame(processed_records)
 
     def check_data_capture(self):
         """
@@ -159,6 +110,37 @@ class ModelMonitoring:
         else:
             print(f"No data capture files found in {self.data_capture_path}.")
             return None
+
+    @staticmethod
+    def process_captured_data(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Process the captured data DataFrame to extract and flatten the nested data.
+        Args:
+            df (DataFrame): DataFrame with captured data.
+        Returns:
+            DataFrame: Flattened and processed DataFrame.
+        """
+        processed_records = []
+
+        for _, row in df.iterrows():
+            # Extract data from captureData dictionary
+            capture_data = row["captureData"]
+            input_data = capture_data["endpointInput"]
+            output_data = capture_data["endpointOutput"]
+
+            # Process input and output data as needed
+            # Here, we're extracting specific fields, but you might need to adjust this based on your data structure
+            record = {
+                "input_content_type": input_data.get("observedContentType"),
+                "input_encoding": input_data.get("encoding"),
+                "input": input_data.get("data"),
+                "output_content_type": output_data.get("observedContentType"),
+                "output_encoding": output_data.get("encoding"),
+                "output": output_data.get("data"),
+            }
+            processed_records.append(record)
+
+        return pd.DataFrame(processed_records)
 
     def create_baseline(self):
         """Code to create a baseline for monitoring"""
@@ -220,5 +202,3 @@ if __name__ == "__main__":
     else:
         print(f"Found data capture files.")
         print(check_df.head())
-
-

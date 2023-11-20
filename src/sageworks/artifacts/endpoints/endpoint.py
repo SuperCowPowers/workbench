@@ -396,21 +396,15 @@ class Endpoint(Artifact):
         # Write the confusion matrix to our S3 Model Inference Folder
         if model_type == ModelType.CLASSIFIER.value:
             conf_mtx = self.confusion_matrix(target_column, prediction_df)
-            self.log.debug(
-                f"Writing confusion matrix to {self.model_inference_path}/inference_cm.csv"
-            )
+            self.log.debug(f"Writing confusion matrix to {self.model_inference_path}/inference_cm.csv")
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
             wr.s3.to_csv(conf_mtx, f"{self.model_inference_path}/inference_cm.csv", index=True)
 
         # Write the regression predictions to our S3 Model Inference Folder
         if model_type == ModelType.REGRESSOR.value:
             pred_df = self.regression_predictions(target_column, prediction_df)
-            self.log.debug(
-                f"Writing reg predictions to {self.model_inference_path}/inference_predictions.csv"
-            )
-            wr.s3.to_csv(
-                pred_df, f"{self.model_inference_path}/inference_predictions.csv", index=False
-            )
+            self.log.debug(f"Writing reg predictions to {self.model_inference_path}/inference_predictions.csv")
+            wr.s3.to_csv(pred_df, f"{self.model_inference_path}/inference_predictions.csv", index=False)
 
         #
         # Generate SHAP values for our Prediction Dataframe
@@ -427,9 +421,7 @@ class Endpoint(Artifact):
         shap_vals = self.shap_values(model_artifact, X_pred)
 
         # Write shap vals to S3 Model Inference Folder
-        self.log.debug(
-            f"Writing SHAP values to {self.model_inference_path}/inference_shap_values.csv"
-        )
+        self.log.debug(f"Writing SHAP values to {self.model_inference_path}/inference_shap_values.csv")
         wr.s3.to_csv(shap_vals, f"{self.model_inference_path}/inference_shap_values.csv", index=False)
 
         # Recompute the details so that inference model metrics are updated
