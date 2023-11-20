@@ -308,9 +308,8 @@ class FeatureSet(Artifact):
         self.data_source.delete()
 
         # If we have a training view, delete it
-        if self.training_view:
-            self.log.info(f"Deleting Training View {self.training_view.uuid}")
-            self.training_view.delete()
+        if self.get_training_view_table():
+            self.delete_training_view()
 
         # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
         s3_delete_path = self.feature_sets_s3_path + f"/{self.uuid}"
@@ -401,6 +400,14 @@ class FeatureSet(Artifact):
         except glue_client.exceptions.EntityNotFoundException:
             self.log.warning(f"Training View for {self.uuid} doesn't exist, create it.")
             return None
+
+    def delete_training_view(self):
+        """Delete the training view for this FeatureSet"""
+        training_view_table = self.get_training_view_table()
+        if training_view_table is not None:
+            self.log.info(f"Deleting Training View {training_view_table} for {self.uuid}")
+            glue_client = self.boto_session.client("glue")
+            glue_client.delete_table(DatabaseName=self.athena_database, Name=training_view_table)
 
     def descriptive_stats(self, recompute: bool = False) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource
