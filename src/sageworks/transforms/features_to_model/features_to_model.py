@@ -40,7 +40,7 @@ class FeaturesToModel(Transform):
         self.estimator = None
         self.model_script_dir = None
         self.model_description = None
-        self.model_training_path = self.models_s3_path + "/training"
+        self.model_training_root = self.models_s3_path + "/training"
 
     def generate_model_script(
         self, target_column: str, feature_list: list[str], model_type: ModelType, train_all_data: bool
@@ -69,7 +69,7 @@ class FeaturesToModel(Transform):
         feature_list_str = json.dumps(feature_list)
         xgb_script = xgb_script.replace("{{feature_list}}", feature_list_str)
         xgb_script = xgb_script.replace("{{model_type}}", model_type)
-        metrics_s3_path = f"{self.model_training_path}/{self.output_uuid}"
+        metrics_s3_path = f"{self.model_training_root}/{self.output_uuid}"
         xgb_script = xgb_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
         xgb_script = xgb_script.replace("{{train_all_data}}", str(train_all_data))
 

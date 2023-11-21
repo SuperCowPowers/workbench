@@ -440,7 +440,6 @@ class Endpoint(Artifact):
         self.log.important(f"Recomputing Details for {self.uuid} to show latest Inference Results...")
         self.details(recompute=True)
 
-
     @staticmethod
     def shap_values(model, X: pd.DataFrame) -> pd.DataFrame:
         """Compute the SHAP values for this Model

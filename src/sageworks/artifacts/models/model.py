@@ -45,10 +45,6 @@ class Model(Artifact):
         # Call SuperClass Initialization
         super().__init__(model_uuid)
 
-        # Set the Model Training S3 Paths
-        self.model_training_path = self.models_s3_path + "/training"
-        self.model_inference_path = self.models_s3_path + "/inference"
-
         # Grab an AWS Metadata Broker object and pull information for Models
         self.model_name = model_uuid
         aws_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS, force_refresh=force_refresh)
@@ -70,6 +66,10 @@ class Model(Artifact):
                 self.log.critical(f"Model {self.model_name} appears to be malformed. Delete and recreate it!")
                 self.latest_model = None
                 self.model_type = ModelType.UNKNOWN
+
+        # Set the Model Training S3 Paths
+        self.model_training_path = self.models_s3_path + "/training" + self.model_name
+        self.model_inference_path = self.models_s3_path + "/inference/" + self.model_name
 
         # Call SuperClass Post Initialization
         super().__post_init__()
@@ -176,7 +176,7 @@ class Model(Artifact):
         if df is not None:
             return df
         else:
-            s3_path = f"{self.model_training_path}/{self.model_name}/validation_predictions.csv"
+            s3_path = f"{self.model_training_path}/validation_predictions.csv"
             df = self._pull_s3_model_artifacts(s3_path)
             return df
 
@@ -191,7 +191,7 @@ class Model(Artifact):
         try:
             return wr.s3.read_json(s3_path)
         except NoFilesFound:
-            self.log.info(f"Could not find model artifact at {s3_path}...")
+            self.log.info(f"Could not find model inference meta at {s3_path}...")
             return None
 
     def _pull_shapley_values(self) -> Union[pd.DataFrame, None]:
@@ -402,7 +402,7 @@ class Model(Artifact):
         wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
 
         # Delete any training artifacts
-        s3_delete_path = f"{self.model_training_path}/{self.model_name}"
+        s3_delete_path = f"{self.model_training_path}"
         self.log.info(f"Deleting Inference S3 Objects {s3_delete_path}")
         wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
 
