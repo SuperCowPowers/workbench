@@ -170,8 +170,6 @@ class Artifact(ABC):
         self.log.debug(f"Calling list_tags AWS request {aws_arn}...")
         try:
             aws_tags = self.sm_session.list_tags(aws_arn)
-            meta = self._aws_tags_to_dict(aws_tags)
-            return meta
         except botocore.exceptions.ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code == "ThrottlingException":
@@ -182,6 +180,8 @@ class Artifact(ABC):
                 # Handle other ClientErrors that may occur
                 self.log.error(f"Caught a different ClientError: {error_code}")
                 raise e
+        meta = self._aws_tags_to_dict(aws_tags)
+        return meta
 
     def upsert_sageworks_meta(self, new_meta: dict):
         """Add SageWorks specific metadata to this Artifact
@@ -209,13 +209,15 @@ class Artifact(ABC):
 
         # Grab our health tags
         health_tags = self.sageworks_meta().get("sageworks_health_tags")
-        if health_tags is not None:
-            return health_tags.split(":")
 
         # If we don't have health tags, create the storage and return an empty list
-        self.log.important(f"{self.uuid} creating sageworks_health_tags storage...")
-        self.upsert_sageworks_meta({"sageworks_health_tags": ""})
-        return []
+        if health_tags is None:
+            self.log.important(f"{self.uuid} creating sageworks_health_tags storage...")
+            self.upsert_sageworks_meta({"sageworks_health_tags": ""})
+            return []
+
+        # Otherwise, return the health tags
+        return health_tags.split(":") if health_tags else []
 
     def add_sageworks_tag(self, tag, tag_type="user"):
         """Add a tag for this artifact, ensuring no duplicates and maintaining order.
