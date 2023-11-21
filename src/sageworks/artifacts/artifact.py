@@ -209,7 +209,7 @@ class Artifact(ABC):
 
         # Grab our health tags
         health_tags = self.sageworks_meta().get("sageworks_health_tags")
-        if health_tags:
+        if health_tags is not None:
             return health_tags.split(":")
 
         # If we don't have health tags, create the storage and return an empty list
