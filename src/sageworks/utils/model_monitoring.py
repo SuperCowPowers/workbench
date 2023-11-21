@@ -63,10 +63,9 @@ class ModelMonitoring:
         predictor = Predictor(self.endpoint_name, sagemaker_session=self.sagemaker_session)
         predictor.update_data_capture_config(data_capture_config=data_capture_config)
 
-        # Give a message about deleting the old endpoint configuration
-        self.log.important("After verifying that the updated endpoint is working properly")
-        self.log.important(f"You should manually delete the old endpoint configuration: {current_endpoint_config_name}")
-        # self.sagemaker_client.delete_endpoint_config(EndpointConfigName=current_endpoint_config_name)
+        # Delete the old endpoint configuration
+        self.log.warning(f"Deleting old endpoint configuration: {current_endpoint_config_name}")
+        self.sagemaker_client.delete_endpoint_config(EndpointConfigName=current_endpoint_config_name)
 
     def is_data_capture_configured(self, capture_percentage):
         """
@@ -169,7 +168,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", None)
 
     # Create the Class and test it out
-    endpoint_name = "abalone-regression-end-rt"
+    endpoint_name = "aqsol-regression-end"
     my_endpoint = Endpoint(endpoint_name)
     if not my_endpoint.exists():
         print(f"Endpoint {endpoint_name} does not exist.")

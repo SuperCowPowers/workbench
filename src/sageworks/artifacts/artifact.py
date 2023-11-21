@@ -109,6 +109,16 @@ class Artifact(ABC):
         """Is the Artifact ready? Are the initial setup steps complete?"""
         pass
 
+    def onboard(self) -> bool:
+        """Onboard this Model into SageWorks
+        Returns:
+            bool: True if the Model was successfully onboarded, False otherwise
+        """
+        self.log.important(f"Onboarding {self.uuid}...")
+        self.set_status("onboarding")
+        self.make_ready()
+        return True
+
     @abstractmethod
     def details(self) -> dict:
         """Additional Details about this Artifact"""
@@ -272,7 +282,7 @@ class Artifact(ABC):
         """
         health_issues = []
         if not self.ready():
-            return ["not_ready"]
+            return ["needs_onboard"]
         if "unknown" in self.aws_url():
             health_issues.append("aws_url_unknown")
         return health_issues

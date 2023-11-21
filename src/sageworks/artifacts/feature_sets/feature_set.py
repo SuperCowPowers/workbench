@@ -91,8 +91,8 @@ class FeatureSet(Artifact):
         # Call the base class health check
         health_issues = super().health_check()
 
-        # If we have a 'not_ready' in the health check then just return
-        if "not_ready" in health_issues:
+        # If we have a 'needs_onboard' in the health check then just return
+        if "needs_onboard" in health_issues:
             return health_issues
 
         # Check our DataSource
@@ -533,7 +533,7 @@ class FeatureSet(Artifact):
 
         # Set ourselves to ready
         self.set_status("ready")
-        self.remove_sageworks_health_tag("not_ready")
+        self.remove_sageworks_health_tag("needs_onboard")
         self.details(recompute=True)
         return True
 

@@ -175,6 +175,13 @@ class Endpoint(Artifact):
         """
         return "Serverless" in self.endpoint_meta["InstanceType"]
 
+    def add_data_capture(self):
+        """Add data capture to the endpoint"""
+        from sageworks.utils.model_monitoring import ModelMonitoring
+
+        mm = ModelMonitoring(self.endpoint_name)
+        mm.add_data_capture()
+
     def _endpoint_error_handling(self, predictor, feature_df):
         """Internal: Method that handles Errors, Retries, and Binary Search for Error Row(s)"""
 
@@ -329,7 +336,7 @@ class Endpoint(Artifact):
             bool: True if the Endpoint is ready, False otherwise
         """
         self.set_status("ready")
-        self.remove_sageworks_health_tag("not_ready")
+        self.remove_sageworks_health_tag("needs_onboard")
         self.details(recompute=True)
         return True
 

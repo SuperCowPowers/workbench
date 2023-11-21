@@ -374,7 +374,8 @@ class Model(Artifact):
         """
         self._pull_training_job_metrics(force_pull=True)
         self.set_status("ready")
-        self.remove_sageworks_health_tag("not_ready")
+        self.remove_sageworks_health_tag("needs_onboard")
+        self.refresh_meta()
         self.details(recompute=True)
         return True
 

@@ -9,7 +9,7 @@ health_icons = {
     "no_endpoint": "🟡",
     "model_type_unknown": "⚪",
     "metrics_needed": "🟣",
-    "not_ready": "🔵",
+    "needs_onboard": "🔵",
     "healthy": "🟢",
     "unknown_error": "⚫",
     "no_activity": "➖",

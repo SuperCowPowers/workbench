@@ -286,6 +286,6 @@ class DataSourceAbstract(Artifact):
         self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts
         self.outliers(recompute=True)
         self.set_status("ready")
-        self.remove_sageworks_health_tag("not_ready")
+        self.remove_sageworks_health_tag("needs_onboard")
         self.details(recompute=True)
         return True
