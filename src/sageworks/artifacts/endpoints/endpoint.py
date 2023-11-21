@@ -431,14 +431,15 @@ class Endpoint(Artifact):
         self.log.debug(f"Writing SHAP values to {self.model_inference_path}/inference_shap_values.csv")
         wr.s3.to_csv(shap_vals, f"{self.model_inference_path}/inference_shap_values.csv", index=False)
 
-        # Recompute the details so that inference model metrics are updated
-        self.log.important(f"Recomputing Details for {self.uuid} to show latest Inference Results...")
-        self.details(recompute=True)
-
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
         model = Model(self.model_name)
         model.details(recompute=True)
+
+        # Recompute the details so that inference model metrics are updated
+        self.log.important(f"Recomputing Details for {self.uuid} to show latest Inference Results...")
+        self.details(recompute=True)
+
 
     @staticmethod
     def shap_values(model, X: pd.DataFrame) -> pd.DataFrame:
