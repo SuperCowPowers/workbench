@@ -18,15 +18,22 @@ import awswrangler as wr
 # S3_DATA_PATH = "s3://sageworks-data-science-dev/data-sources/abalone_holdout_2023_10_19.csv"
 S3_DATA_PATH = None
 
-# These should be filled in by the user
+# Just for Storage
 DATA_NAME = "abalone_feature_set (20)"
 DATA_HASH = "12345"
 DESCRIPTION = "Test Abalone Features"
 TARGET_COLUMN = "class_number_of_rings"
 
+# These should be filled in by the user
+DATA_NAME = "blah (20)"
+DATA_HASH = "12345"
+DESCRIPTION = "Test Solubility Features"
+TARGET_COLUMN = "log_s"
+
 
 # Spin up our Endpoint
-my_endpoint = Endpoint("abalone-regression-end", force_refresh=True)
+# my_endpoint = Endpoint("abalone-regression-end", force_refresh=True)
+my_endpoint = Endpoint("solubility-test-regression-end", force_refresh=True)
 
 if S3_DATA_PATH is not None:
     # Read the data from S3
