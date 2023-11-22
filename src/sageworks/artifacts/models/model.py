@@ -68,7 +68,7 @@ class Model(Artifact):
                 self.model_type = ModelType.UNKNOWN
 
         # Set the Model Training S3 Paths
-        self.model_training_path = self.models_s3_path + "/training" + self.model_name
+        self.model_training_path = self.models_s3_path + "/training/" + self.model_name
         self.model_inference_path = self.models_s3_path + "/inference/" + self.model_name
 
         # Call SuperClass Post Initialization
