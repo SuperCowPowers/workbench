@@ -66,7 +66,10 @@ class Artifact(ABC):
         # Conduct a Health Check on this Artifact
         health_issues = self.health_check()
         if health_issues:
-            self.log.warning(f"Health Check Failed {self.uuid}: {health_issues}")
+            if "needs_onboard" in health_issues:
+                self.log.important(f"Artifact {self.uuid} needs to be onboarded")
+            else:
+                self.log.warning(f"Health Check Failed {self.uuid}: {health_issues}")
             for issue in health_issues:
                 self.add_sageworks_health_tag(issue)
         else:

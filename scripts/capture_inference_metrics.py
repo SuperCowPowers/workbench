@@ -25,15 +25,15 @@ DESCRIPTION = "Test Abalone Features"
 TARGET_COLUMN = "class_number_of_rings"
 
 # These should be filled in by the user
-DATA_NAME = "blah (20)"
-DATA_HASH = "12345"
-DESCRIPTION = "Test Solubility Features"
-TARGET_COLUMN = "log_s"
+# DATA_NAME = "blah (20)"
+# DATA_HASH = "12345"
+# DESCRIPTION = "Test Solubility Features"
+# TARGET_COLUMN = "log_s"
 
 
 # Spin up our Endpoint
-# my_endpoint = Endpoint("abalone-regression-end", force_refresh=True)
-my_endpoint = Endpoint("solubility-test-regression-end", force_refresh=True)
+my_endpoint = Endpoint("abalone-regression-end")
+# my_endpoint = Endpoint("solubility-test-regression-end")
 
 if S3_DATA_PATH is not None:
     # Read the data from S3
