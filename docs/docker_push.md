@@ -9,7 +9,7 @@ The following instructions should work, but things change :)
 cd applications/aws_dashboard
 vi Dockerfile
 # Install Sageworks (changes often)
-RUN pip install --no-cache-dir sageworks==0.1.14
+RUN pip install --no-cache-dir sageworks==0.2.28 <-- change this
 ```
 
 ### Build the Docker Image
@@ -28,11 +28,20 @@ scp_sandbox_admin | docker login --username AWS \
 ```
 ### Tag/Push the Image to AWS ECR
 ```
-docker tag sageworks_dashboard:v0_1_9_amd64 \
-public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_1_9_amd64
+docker tag sageworks_dashboard:v0_2_28_amd64 \
+public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_2_28_amd64
 ```
 ```
-docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_1_9_amd64
+docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_2_28_amd64
+```
+
+### Update the 'latest' tag
+```
+docker tag public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_2_28_amd64 \
+public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
+```
+```
+docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
 ```
 
 ### Test the ECR Image
