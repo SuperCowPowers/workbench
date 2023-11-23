@@ -1,6 +1,7 @@
 """An abstract class that defines the web component interface for SageWorks"""
 from abc import abstractmethod
-import inspect
+from inspect import signature
+import typing
 from enum import Enum
 
 # Local Imports
@@ -45,12 +46,12 @@ class PluginInterface(ComponentInterface):
         pass
 
     @abstractmethod
-    def generate_component_figure(self, figure_input: PluginInputType) -> ComponentInterface.FigureTypes:
+    def generate_component_figure(self, details: dict) -> ComponentInterface.FigureTypes:
         """Generate a figure from the data in the given dataframe.
         Args:
-            figure_input (PluginInputType): The type of input data for the figure.
+            details (dict): The details dictionary for the plugin type
         Returns:
-            Union[dcc.Graph, dash_table.DataTable, html.Div] The Dash Web component
+            Union[go.Figure, str]: A Plotly Figure or a Markdown string
         """
         pass
 
@@ -72,6 +73,7 @@ class PluginInterface(ComponentInterface):
     @classmethod
     def __subclasshook__(cls, subclass):
         if cls is PluginInterface:
+
             # Check if the subclass has all the required attributes
             if not all(hasattr(subclass, attr) for attr in ("plugin_type", "plugin_input_type")):
                 cls.log.warning(f"Subclass {subclass.__name__} is missing required attributes")
@@ -86,15 +88,23 @@ class PluginInterface(ComponentInterface):
                     return False
 
                 # Check if the method is different from the base class (i.e., it's been implemented)
-                if getattr(subclass, method) is getattr(PluginInterface, method):
+                subclass_method = getattr(subclass, method)
+                if subclass_method is getattr(PluginInterface, method):
                     cls.log.warning(f"Subclass {subclass.__name__} has not implemented the method {method}")
                     return False
 
-                # Check for the correct signature
-                expected_signature = inspect.signature(getattr(cls, method))
-                actual_signature = inspect.signature(getattr(subclass, method))
-                if expected_signature != actual_signature:
-                    cls.log.warning(f"Subclass {subclass.__name__} has incorrect signature for method {method}")
+                # Retrieve the expected return types from the abstract method (there's a set of type Union[...])
+                base_class_method = getattr(cls, method)
+                return_annotation = base_class_method.__annotations__['return']
+                expected_return_types = typing.get_args(return_annotation)
+
+                # Retrieve the return type of the method in the subclass
+                subclass_method = getattr(subclass, method)
+                return_type = signature(subclass_method).return_annotation
+
+                # Check if the return type of the subclass method is ONE of the expected return types
+                if return_type not in expected_return_types:
+                    cls.log.warning(f"Subclass {subclass.__name__} has incorrect return type for method {method}")
                     return False
 
             # If all checks pass, return True

@@ -14,7 +14,7 @@ class Turbo(PluginInterface):
     plugin_type = PluginType.MODEL
     plugin_input_type = PluginInputType.MODEL_DETAILS
 
-    def create_component(self, component_id: str) -> PluginInterface.ComponentTypes:
+    def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Turbo Component without any data.
         Args:
             component_id (str): The ID of the web component
@@ -23,12 +23,12 @@ class Turbo(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, figure_input: PluginInputType) -> PluginInterface.FigureTypes:
+    def generate_component_figure(self, model_details: dict) -> go.Figure:
         """Create a Turbo Figure for the numeric columns in the dataframe.
         Args:
-            figure_input (PluginInputType.MODEL_DETAILS): Input data for generating the figure.
+            model_details (dict): The model details dictionary (see Model.details())
         Returns:
-            plotly.graph_objs.Figure: A Figure object containing the confusion matrix.
+            go.Figure: A Figure object containing the confusion matrix.
         """
 
         data = [  # Portfolio (inner donut)
@@ -88,13 +88,13 @@ if __name__ == "__main__":
     from sageworks.artifacts.models.model import Model
 
     m = Model("wine-classification")
-    model_details = m.details()
+    my_model_details = m.details()
 
     # Instantiate the Turbo class
-    pie = Turbo()
+    turbo = Turbo()
 
     # Generate the figure
-    fig = pie.generate_component_figure(model_details)
+    fig = turbo.generate_component_figure(my_model_details)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

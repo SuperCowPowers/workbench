@@ -19,7 +19,7 @@ class ComponentInterface(ABC):
     log = logging.getLogger("sageworks")
 
     ComponentTypes = Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]
-    FigureTypes = Union[go.Figure]
+    FigureTypes = Union[go.Figure, str]  # str is used for dcc.Markdown
 
     @abstractmethod
     def create_component(self, component_id: str, **kwargs: Any) -> ComponentTypes:
