@@ -14,7 +14,7 @@ class CorrectPlugin(PluginInterface):
     plugin_type = PluginType.MODEL
     plugin_input_type = PluginInputType.MODEL_DETAILS
 
-    def create_component(self, component_id: str) -> PluginInterface.ComponentTypes:
+    def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.
         Args:
             component_id (str): The ID of the web component
@@ -23,14 +23,13 @@ class CorrectPlugin(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def generate_component_figure(self, figure_input: PluginInputType) -> PluginInterface.FigureTypes:
+    def generate_component_figure(self, model_details: dict) -> go.Figure:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
-            figure_input (PluginInputType.MODEL_DETAILS): Model class details attribute
+            model_details (dict):  The model details dictionary (see Model.details())
         Returns:
-            plotly.graph_objs.Figure: A Figure object containing the confusion matrix.
+             go.Figure: A Plotly Figure object
         """
-
         return PluginInterface.message_figure("I'm a good plugin...")
 
 
@@ -79,8 +78,8 @@ class IncorrectNamedInputs(PluginInterface):
         return PluginInterface.message_figure("I'm a bad plugin...")
 
 
-class IncorrectTypedInputs(PluginInterface):
-    """Subclass of PluginInterface with incorrectly typed inputs."""
+class IncorrectTypedReturns(PluginInterface):
+    """Subclass of PluginInterface with incorrectly typed return values."""
 
     """Initialize this Plugin Component Class with required attributes"""
     plugin_type = PluginType.MODEL
@@ -96,14 +95,14 @@ class IncorrectTypedInputs(PluginInterface):
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
     # figure_input: dict is incorrectly typed (PluginInputType)
-    def generate_component_figure(self, figure_input: dict) -> go.Figure:
+    def generate_component_figure(self, figure_input: dict) -> list:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
             figure_input (dict): Model class details attribute
         Returns:
-            plotly.graph_objs.Figure: A Figure object containing the confusion matrix.
+            list: An incorrect return type
         """
-        return PluginInterface.message_figure("I'm a bad plugin...")
+        return [1, 2, 3]  # Incorrect return type
 
 
 def test_incorrect_methods():
@@ -124,8 +123,8 @@ def test_incorrect_names():
 
 def test_incorrect_types():
     """Test if incorrect types are caught by the PluginInterface"""
-    subclass_cond = issubclass(IncorrectTypedInputs, PluginInterface)
-    print(f"Incorrect types is a subclass of PluginInterface?: {subclass_cond}")
+    subclass_cond = issubclass(IncorrectTypedReturns, PluginInterface)
+    print(f"Incorrect return types is a subclass of PluginInterface?: {subclass_cond}")
     print("\n")
     assert subclass_cond is False
 

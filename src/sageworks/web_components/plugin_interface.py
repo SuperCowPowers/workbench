@@ -73,7 +73,6 @@ class PluginInterface(ComponentInterface):
     @classmethod
     def __subclasshook__(cls, subclass):
         if cls is PluginInterface:
-
             # Check if the subclass has all the required attributes
             if not all(hasattr(subclass, attr) for attr in ("plugin_type", "plugin_input_type")):
                 cls.log.warning(f"Subclass {subclass.__name__} is missing required attributes")
@@ -95,7 +94,7 @@ class PluginInterface(ComponentInterface):
 
                 # Retrieve the expected return types from the abstract method (there's a set of type Union[...])
                 base_class_method = getattr(cls, method)
-                return_annotation = base_class_method.__annotations__['return']
+                return_annotation = base_class_method.__annotations__["return"]
                 expected_return_types = typing.get_args(return_annotation)
 
                 # Retrieve the return type of the method in the subclass

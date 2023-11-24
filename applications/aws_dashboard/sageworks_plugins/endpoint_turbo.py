@@ -23,10 +23,10 @@ class EndpointTurbo(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, figure_input: PluginInputType) -> go.Figure:
+    def generate_component_figure(self, model_details: dict) -> go.Figure:
         """Create a EndpointTurbo Figure for the numeric columns in the dataframe.
         Args:
-            figure_input (PluginInputType): Input data for generating the figure.
+            model_details (dict): The model details dictionary (see Model.details())
         Returns:
             go.Figure: A Plotly Figure object
         """
