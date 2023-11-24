@@ -41,7 +41,7 @@ class IncorrectMethods(PluginInterface):
     plugin_type = PluginType.MODEL
     plugin_input_type = PluginInputType.MODEL_DETAILS
 
-    def create_component(self, component_id: str) -> PluginInterface.ComponentTypes:
+    def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.
         Args:
             component_id (str): The ID of the web component
@@ -51,35 +51,35 @@ class IncorrectMethods(PluginInterface):
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
 
-class IncorrectNamedInputs(PluginInterface):
-    """Subclass of PluginInterface with incorrectly named inputs."""
+class IncorrectArgTypes(PluginInterface):
+    """Subclass of PluginInterface with an incorrectly typed argument."""
 
     """Initialize this Plugin Component Class with required attributes"""
     plugin_type = PluginType.MODEL
     plugin_input_type = PluginInputType.MODEL_DETAILS
 
     # Component is an incorrectly named keyword argument
-    def create_component(self, bleh_component: str) -> PluginInterface.ComponentTypes:
+    def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.
         Args:
-            bleh_component (str): The ID of the web component
+            component_id (str): The ID of the web component
         Returns:
             dcc.Graph: The Confusion Matrix Component
         """
-        return dcc.Graph(id=bleh_component, figure=self.waiting_figure())
+        return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def generate_component_figure(self, bleh_figure_input: PluginInputType) -> PluginInterface.FigureTypes:
+    def generate_component_figure(self, model_details: list) -> go.Figure:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
-            bleh_figure_input (PluginInputType): Model class details attribute
+            model_details (list): An incorrect argument type
         Returns:
-            plotly.graph_objs.Figure: A Figure object containing the confusion matrix.
+            go.Figure: A Figure object containing the confusion matrix.
         """
         return PluginInterface.message_figure("I'm a bad plugin...")
 
 
-class IncorrectTypedReturns(PluginInterface):
-    """Subclass of PluginInterface with incorrectly typed return values."""
+class IncorrectReturnType(PluginInterface):
+    """Subclass of PluginInterface with incorrect return type."""
 
     """Initialize this Plugin Component Class with required attributes"""
     plugin_type = PluginType.MODEL
@@ -94,11 +94,10 @@ class IncorrectTypedReturns(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    # figure_input: dict is incorrectly typed (PluginInputType)
-    def generate_component_figure(self, figure_input: dict) -> list:
-        """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
+    def generate_component_figure(self, model_details: dict) -> list:
+        """Create a Figure but give the wrong return type.
         Args:
-            figure_input (dict): Model class details attribute
+            model_details (dict): Model class details attribute
         Returns:
             list: An incorrect return type
         """
@@ -113,23 +112,23 @@ def test_incorrect_methods():
     assert subclass_cond is False
 
 
-def test_incorrect_names():
-    """Test if incorrect names are caught by the PluginInterface"""
-    subclass_cond = issubclass(IncorrectNamedInputs, PluginInterface)
+def test_incorrect_args():
+    """Test if incorrect args are caught by the PluginInterface"""
+    subclass_cond = issubclass(IncorrectArgTypes, PluginInterface)
     print(f"Incorrect names is a subclass of PluginInterface?: {subclass_cond}")
     print("\n")
     assert subclass_cond is False
 
 
-def test_incorrect_types():
+def test_incorrect_return_type():
     """Test if incorrect types are caught by the PluginInterface"""
-    subclass_cond = issubclass(IncorrectTypedReturns, PluginInterface)
-    print(f"Incorrect return types is a subclass of PluginInterface?: {subclass_cond}")
+    subclass_cond = issubclass(IncorrectReturnType, PluginInterface)
+    print(f"Incorrect return type is a subclass of PluginInterface?: {subclass_cond}")
     print("\n")
     assert subclass_cond is False
 
 
-def test_proper_subclass():
+def test_correct_plugin():
     """Test if a proper subclass of PluginInterface returns True"""
     subclass_cond = issubclass(CorrectPlugin, PluginInterface)
     print(f"Correct is a subclass of PluginInterface?: {subclass_cond}")
@@ -140,6 +139,6 @@ def test_proper_subclass():
 if __name__ == "__main__":
     # Run the tests
     test_incorrect_methods()
-    test_incorrect_names()
-    test_incorrect_types()
-    test_proper_subclass()
+    test_incorrect_args()
+    test_incorrect_return_type()
+    test_correct_plugin()

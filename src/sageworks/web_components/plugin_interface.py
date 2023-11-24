@@ -87,25 +87,47 @@ class PluginInterface(ComponentInterface):
                     return False
 
                 # Check if the method is different from the base class (i.e., it's been implemented)
+                base_class_method = getattr(cls, method)
                 subclass_method = getattr(subclass, method)
                 if subclass_method is getattr(PluginInterface, method):
                     cls.log.warning(f"Subclass {subclass.__name__} has not implemented the method {method}")
                     return False
 
-                # Retrieve the expected return types from the abstract method (there's a set of type Union[...])
-                base_class_method = getattr(cls, method)
-                return_annotation = base_class_method.__annotations__["return"]
-                expected_return_types = typing.get_args(return_annotation)
+                # Check argument types
+                arg_type_error = cls._check_argument_types(base_class_method, subclass_method)
+                if arg_type_error:
+                    cls.log.warning(f"Subclass {subclass.__name__} error in method '{method}': {arg_type_error}")
+                    return False
 
-                # Retrieve the return type of the method in the subclass
-                subclass_method = getattr(subclass, method)
-                return_type = signature(subclass_method).return_annotation
-
-                # Check if the return type of the subclass method is ONE of the expected return types
-                if return_type not in expected_return_types:
-                    cls.log.warning(f"Subclass {subclass.__name__} has incorrect return type for method {method}")
+                # Check return type
+                return_type_error = cls._check_return_type(base_class_method, subclass_method)
+                if return_type_error:
+                    cls.log.warning(f"Subclass {subclass.__name__} error in method '{method}': {return_type_error}")
                     return False
 
             # If all checks pass, return True
             return True
         return NotImplemented
+
+    @classmethod
+    def _check_argument_types(cls, base_class_method, subclass_method):
+        # Extract argument types, excluding 'self'
+        expected_arg_types = [v for k, v in base_class_method.__annotations__.items() if k != "return" and k != "self"]
+        actual_arg_types = [
+            param.annotation for param in signature(subclass_method).parameters.values() if param.name != "self"
+        ]
+
+        # Directly compare the lists of argument types
+        if expected_arg_types != actual_arg_types:
+            return f"Expected argument types {expected_arg_types} do not match actual argument types {actual_arg_types}"
+        return None
+
+    @classmethod
+    def _check_return_type(cls, base_class_method, subclass_method):
+        return_annotation = base_class_method.__annotations__["return"]
+        expected_return_types = typing.get_args(return_annotation)
+        return_type = signature(subclass_method).return_annotation
+
+        if return_type not in expected_return_types:
+            return f"Incorrect return type (expected one of {expected_return_types}, got {return_type})"
+        return None
