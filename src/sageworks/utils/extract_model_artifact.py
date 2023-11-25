@@ -47,15 +47,15 @@ class ExtractModelArtifact:
         model_desc = self.sagemaker_client.describe_model(ModelName=model_name)
 
         # Check if 'Containers' (real-time) or 'PrimaryContainer' (serverless) is used
-        if 'Containers' in model_desc:
+        if "Containers" in model_desc:
             # Real-time model
-            model_package_arn = model_desc['Containers'][0].get('ModelPackageName', '')
-        elif 'PrimaryContainer' in model_desc:
+            model_package_arn = model_desc["Containers"][0].get("ModelPackageName")
+        elif "PrimaryContainer" in model_desc:
             # Serverless model
-            model_package_arn = model_desc['PrimaryContainer'].get('ModelPackageName', '')
+            model_package_arn = model_desc["PrimaryContainer"].get("ModelPackageName")
 
         # Throw an error if the model package ARN is not found
-        if not model_package_arn:
+        if model_package_arn is None:
             raise ValueError("ModelPackageName not found in the model description")
 
         # Now get the model package description and from that the model artifact URI
@@ -104,10 +104,7 @@ if __name__ == "__main__":
     # Test the lower level methods
     model_data_uri = ema.get_model_data_uri()
     print(f"Model Data URI: {model_data_uri}")
-
     my_model = ema.download_and_extract_model(model_data_uri)
-    print(my_model.feature_names_in_)
 
     # Test the higher level method
     my_model = ema.get_model_artifact()
-    print(my_model.feature_names_in_)
