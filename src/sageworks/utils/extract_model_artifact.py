@@ -45,10 +45,21 @@ class ExtractModelArtifact:
 
         # Get the model description using the Model ARN
         model_desc = self.sagemaker_client.describe_model(ModelName=model_name)
-        model_package_arn = model_desc["PrimaryContainer"]["ModelPackageName"]
-        model_package_desc = self.sagemaker_client.describe_model_package(ModelPackageName=model_package_arn)
 
-        # Now we have the model package description, we can get the model artifact URI
+        # Check if 'Containers' (real-time) or 'PrimaryContainer' (serverless) is used
+        if 'Containers' in model_desc:
+            # Real-time model
+            model_package_arn = model_desc['Containers'][0].get('ModelPackageName', '')
+        elif 'PrimaryContainer' in model_desc:
+            # Serverless model
+            model_package_arn = model_desc['PrimaryContainer'].get('ModelPackageName', '')
+
+        # Throw an error if the model package ARN is not found
+        if not model_package_arn:
+            raise ValueError("ModelPackageName not found in the model description")
+
+        # Now get the model package description and from that the model artifact URI
+        model_package_desc = self.sagemaker_client.describe_model_package(ModelPackageName=model_package_arn)
         inference_spec = model_package_desc.get("InferenceSpecification", {})
         containers = inference_spec.get("Containers", [])
         if containers:
@@ -87,6 +98,7 @@ if __name__ == "__main__":
 
     # Create the Class and test it out
     my_endpoint = "abalone-regression-end"
+    # my_endpoint = "hlm-phase2-class-0-230831-100-monitor"
     ema = ExtractModelArtifact(my_endpoint)
 
     # Test the lower level methods
