@@ -336,7 +336,7 @@ class Artifact(ABC):
             self.log.info(f"No Metadata found: {key_to_delete}...")
 
     def _dict_to_aws_tags(self, meta_data: dict) -> list:
-        """Internal: AWS Tags are in an odd format, so we need to dictionary
+        """Internal: AWS Tags are in an odd format, so we need to convert dictionary
         Args:
             meta_data (dict): Dictionary of metadata to convert to AWS Tags
         """
@@ -358,6 +358,7 @@ class Artifact(ABC):
 
                 # If the encoded value is too long, split it into chunks
                 elif len(encoded_value) < 4096:
+                    self.log.important(f"Chunking metadata for key {key} with length {len(encoded_value)}...")
                     chunked_keys.append(key)
                     chunks = self._chunk_dict_to_aws_tags(key, value)
                     for chunk in chunks:
