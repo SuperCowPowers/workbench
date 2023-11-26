@@ -68,6 +68,8 @@ class Artifact(ABC):
         if health_issues:
             if "needs_onboard" in health_issues:
                 self.log.important(f"Artifact {self.uuid} needs to be onboarded")
+            elif health_issues == ["no_activity"]:
+                self.log.debug(f"Artifact {self.uuid} has no activity")
             else:
                 self.log.warning(f"Health Check Failed {self.uuid}: {health_issues}")
             for issue in health_issues:

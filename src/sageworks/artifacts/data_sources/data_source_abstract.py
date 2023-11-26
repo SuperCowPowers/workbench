@@ -263,11 +263,11 @@ class DataSourceAbstract(Artifact):
         # Check if the samples and outliers have been computed
         storage_key = f"data_source:{self.uuid}:sample"
         if not self.data_storage.get(storage_key):
-            self.log.warning(f"DataSource {self.uuid} doesn't have sample() calling it...")
+            self.log.important(f"DataSource {self.uuid} doesn't have sample() calling it...")
             self.sample()
         storage_key = f"data_source:{self.uuid}:outliers"
         if not self.data_storage.get(storage_key):
-            self.log.warning(f"DataSource {self.uuid} doesn't have outliers() calling it...")
+            self.log.important(f"DataSource {self.uuid} doesn't have outliers() calling it...")
             try:
                 self.outliers()
             except KeyError:
