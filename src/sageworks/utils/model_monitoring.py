@@ -1,19 +1,23 @@
 """ModelMonitoring class for monitoring SageMaker endpoints"""
 import logging
+import json
 import pandas as pd
-import awswrangler as wr
 from sagemaker import Predictor
-from sagemaker.model_monitor import DataCaptureConfig
+from sagemaker.model_monitor import CronExpressionGenerator, DataCaptureConfig, DefaultModelMonitor, DatasetFormat, MonitoringOutput
 
 # SageWorks Imports
 from sageworks.artifacts.endpoints.endpoint import Endpoint
+from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.utils.s3_utils import read_s3_file
 
 
 class ModelMonitoring:
-    def __init__(self, endpoint_name):
+    def __init__(self, endpoint_name, instance_type="ml.t3.large"):
         """ExtractModelArtifact Class
         Args:
             endpoint_name (str): Name of the endpoint to set up monitoring for
+            instance_type (str): Instance type to use for monitoring. Defaults to "ml.m5.large".
+                                 Other options: ml.m5.large, ml.m5.xlarge, ml.m5.2xlarge, ml.m5.4xlarge, ...
         """
         self.log = logging.getLogger("sageworks")
         self.endpoint_name = endpoint_name
@@ -24,6 +28,16 @@ class ModelMonitoring:
         self.sagemaker_client = self.endpoint.sm_client
         self.data_capture_path = self.endpoint.model_data_capture_path
         self.monitoring_path = self.endpoint.model_monitoring_path
+        self.baseline_path = f"{self.monitoring_path}/baseline"
+        self.instance_type = instance_type
+        self.monitoring_schedule_name = f"{self.endpoint_name}-monitoring-schedule"
+        self.monitoring_output_path = f"{self.monitoring_path}/monitoring_reports"
+        self.constraints_json_file = None
+        self.statistics_json_file = None
+
+        # Initialize the DefaultModelMonitor
+        self.sageworks_role = AWSAccountClamp().sageworks_execution_role_arn()
+        self.model_monitor = DefaultModelMonitor(role=self.sageworks_role, instance_type=self.instance_type)
 
     def add_data_capture(self, capture_percentage=100):
         """
@@ -141,34 +155,124 @@ class ModelMonitoring:
 
         return pd.DataFrame(processed_records)
 
-    def create_baseline(self):
-        """Code to create a baseline for monitoring"""
-        pass
+    def baseline_exists(self):
+        """
+        Check if baseline files exist in S3.
+        """
+        baseline_files = wr.s3.list_objects(self.baseline_path)
+        required_files = {'constraints.json', 'statistics.json'}
+        return all(any(file_key.endswith(req_file) for file_key in baseline_files) for req_file in required_files)
 
-    def setup_monitoring_schedule(self):
-        """Code to set up the monitoring schedule"""
-        pass
+    def create_baseline(self, baseline_s3_data_path: str, recreate: bool = False):
+        """Code to create a baseline for monitoring
+        Args:
+            baseline_s3_data_path (str): S3 Path to the baseline data
+            recreate (bool): If True, recreate the baseline even if it already exists
+        Notes:
+            This will write two files to the baseline_path:
+            - constraints.json
+            - statistics.json
+
+            These files/locations are given to the monitoring schedule vis these two method calls
+            - my_monitor.baseline_statistics()
+            - my_monitor.suggested_constraints()
+        """
+        if not self.baseline_exists() or recreate:
+            self.log.important(f"Creating baseline for {self.endpoint_name} --> {baseline_s3_data_path}")
+            self.model_monitor.suggest_baseline(
+                baseline_dataset=baseline_s3_data_path,
+                dataset_format=DatasetFormat.csv(header=True),
+                output_s3_uri=self.baseline_path,
+            )
+        else:
+            self.log.important(f"Baseline already exists for {self.endpoint_name}")
+
+    def check_baseline_outputs(self):
+        """Code to check the outputs of the baseline
+        Notes:
+            This will read two files from the baseline_path:
+            - constraints.json
+            - statistics.json
+        """
+        self.constraints_json_file = f"{self.baseline_path}/constraints.json"
+        self.statistics_json_file = f"{self.baseline_path}/statistics.json"
+
+        # Read the constraint file from S3
+        if not wr.s3.does_object_exist(path=self.constraints_json_file):
+            self.log.warning("Constraints file does not exist in S3.")
+        else:
+            raw_json = read_s3_file(s3_path=self.constraints_json_file)
+            constraints_data = json.loads(raw_json)
+            constraints_df = pd.json_normalize(constraints_data["features"])
+            print("Constraints:")
+            print(constraints_df.head(20))
+
+        # Read the statistics file from S3
+        if not wr.s3.does_object_exist(path=self.statistics_json_file):
+            self.log.warning("Statistics file does not exist in S3.")
+        else:
+            raw_json = read_s3_file(s3_path=self.statistics_json_file)
+            statistics_data = json.loads(raw_json)
+            statistics_df = pd.json_normalize(statistics_data["features"])
+            print("Statistics:")
+            print(statistics_df.head(20))
+
+    def setup_monitoring_schedule(self, schedule: str = 'hourly', recreate: bool = False):
+        """
+        Sets up the monitoring schedule for the model endpoint.
+        Args:
+            schedule (str): The schedule for the monitoring job (hourly or daily, defaults to hourly).
+            recreate (bool): If True, recreate the monitoring schedule even if it already exists.
+        """
+
+        # Set up the monitoring schedule, name, and output path
+        if schedule == 'daily':
+            schedule = CronExpressionGenerator.daily()
+        else:
+            schedule = CronExpressionGenerator.hourly()
+
+        # Check if monitoring schedule already exists
+        if self.monitoring_schedule_exists() and not recreate:
+            return
+
+        # Setup monitoring schedule
+        self.model_monitor.create_monitoring_schedule(
+            monitor_schedule_name=self.monitoring_schedule_name,
+            endpoint_input=self.endpoint_name,
+            output_s3_uri=self.monitoring_output_path,
+            statistics=self.statistics_json_file,
+            constraints=self.constraints_json_file,
+            schedule_cron_expression=schedule,
+        )
+        self.log.important(f"Monitoring schedule created for {self.endpoint_name}.")
 
     def setup_alerts(self):
         """Code to set up alerts based on monitoring results"""
         pass
 
-    def get_monitoring_schedule_status(self):
+    def monitoring_schedule_exists(self):
         """Code to get the status of the monitoring schedule"""
-        pass
+        existing_schedules = self.sagemaker_client.list_monitoring_schedules(MaxResults=100).get('MonitoringScheduleSummaries', [])
+        if any(schedule['MonitoringScheduleName'] == self.monitoring_schedule_name for schedule in existing_schedules):
+            self.log.info(f"Monitoring schedule already exists for {self.endpoint_name}.")
+            return True
+        else:
+            self.log.info(f"Could not find a Monitoring schedule for {self.endpoint_name}.")
+            return False
 
 
 if __name__ == "__main__":
     """Exercise the ModelMonitoring class"""
     from sageworks.artifacts.feature_sets.feature_set import FeatureSet
     from sageworks.artifacts.models.model import Model
+    import awswrangler as wr
 
     # Set options for actually seeing the dataframe
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", None)
 
     # Create the Class and test it out
-    endpoint_name = "aqsol-regression-end"
+    endpoint_name = "abalone-regression-end-rt"
     my_endpoint = Endpoint(endpoint_name)
     if not my_endpoint.exists():
         print(f"Endpoint {endpoint_name} does not exist.")
@@ -176,21 +280,32 @@ if __name__ == "__main__":
     mm = ModelMonitoring(endpoint_name)
     mm.add_data_capture()
 
-    #
-    # Test the data capture by running some predictions
-    #
-
     # Grab the FeatureSet by backtracking from the Endpoint
     model = my_endpoint.get_input()
     feature_set = Model(model).get_input()
     features = FeatureSet(feature_set)
     table = features.get_training_view_table()
-    test_df = features.query(f"SELECT * FROM {table} where training = 0")
 
-    # Drop some columns
-    test_df.drop(["write_time", "api_invocation_time", "is_deleted"], axis=1, inplace=True)
+    # Create a baseline for monitoring
+    my_baseline_s3_path = f"{mm.baseline_path}/baseline.csv"
+    baseline_df = features.query(f"SELECT * FROM {table} where training = 1")
+    wr.s3.to_csv(baseline_df, my_baseline_s3_path, index=False)
+
+    # Now create the baseline (if it doesn't already exist)
+    mm.create_baseline(my_baseline_s3_path)
+
+    # Check the baseline outputs
+    mm.check_baseline_outputs()
+
+    # Setup the monitoring schedule
+    mm.setup_monitoring_schedule()
+
+    #
+    # Test the data capture by running some predictions
+    #
 
     # Make predictions on the Endpoint
+    test_df = features.query(f"SELECT * FROM {table} where training = 0")
     pred_df = my_endpoint.predict(test_df[:10])
     print(pred_df.head())
 
