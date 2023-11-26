@@ -3,7 +3,12 @@ import logging
 import json
 import pandas as pd
 from sagemaker import Predictor
-from sagemaker.model_monitor import CronExpressionGenerator, DataCaptureConfig, DefaultModelMonitor, DatasetFormat, MonitoringOutput
+from sagemaker.model_monitor import (
+    CronExpressionGenerator,
+    DataCaptureConfig,
+    DefaultModelMonitor,
+    DatasetFormat,
+)
 
 # SageWorks Imports
 from sageworks.artifacts.endpoints.endpoint import Endpoint
@@ -160,7 +165,7 @@ class ModelMonitoring:
         Check if baseline files exist in S3.
         """
         baseline_files = wr.s3.list_objects(self.baseline_path)
-        required_files = {'constraints.json', 'statistics.json'}
+        required_files = {"constraints.json", "statistics.json"}
         return all(any(file_key.endswith(req_file) for file_key in baseline_files) for req_file in required_files)
 
     def create_baseline(self, baseline_s3_data_path: str, recreate: bool = False):
@@ -217,7 +222,7 @@ class ModelMonitoring:
             print("Statistics:")
             print(statistics_df.head(20))
 
-    def setup_monitoring_schedule(self, schedule: str = 'hourly', recreate: bool = False):
+    def setup_monitoring_schedule(self, schedule: str = "hourly", recreate: bool = False):
         """
         Sets up the monitoring schedule for the model endpoint.
         Args:
@@ -226,7 +231,7 @@ class ModelMonitoring:
         """
 
         # Set up the monitoring schedule, name, and output path
-        if schedule == 'daily':
+        if schedule == "daily":
             schedule = CronExpressionGenerator.daily()
         else:
             schedule = CronExpressionGenerator.hourly()
@@ -252,8 +257,10 @@ class ModelMonitoring:
 
     def monitoring_schedule_exists(self):
         """Code to get the status of the monitoring schedule"""
-        existing_schedules = self.sagemaker_client.list_monitoring_schedules(MaxResults=100).get('MonitoringScheduleSummaries', [])
-        if any(schedule['MonitoringScheduleName'] == self.monitoring_schedule_name for schedule in existing_schedules):
+        existing_schedules = self.sagemaker_client.list_monitoring_schedules(MaxResults=100).get(
+            "MonitoringScheduleSummaries", []
+        )
+        if any(schedule["MonitoringScheduleName"] == self.monitoring_schedule_name for schedule in existing_schedules):
             self.log.info(f"Monitoring schedule already exists for {self.endpoint_name}.")
             return True
         else:

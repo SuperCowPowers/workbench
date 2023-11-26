@@ -9,7 +9,7 @@ def read_s3_file(s3_path: str) -> str:
     Returns:
         str: Contents of the file as a string
     """
-    s3_client = boto3.client('s3')
+    s3_client = boto3.client("s3")
     bucket, key = s3_path.replace("s3://", "").split("/", 1)
     response = s3_client.get_object(Bucket=bucket, Key=key)
-    return response['Body'].read().decode('utf-8')
+    return response["Body"].read().decode("utf-8")
