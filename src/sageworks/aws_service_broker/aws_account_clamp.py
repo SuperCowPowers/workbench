@@ -87,7 +87,7 @@ class AWSAccountClamp:
 
     @classmethod
     def sageworks_execution_role_arn(cls):
-        """Get the SageWorks Execution Role"""
+        """Get the SageWorks Execution Role ARN"""
         iam = boto3.client("iam")
         try:
             role_arn = iam.get_role(RoleName=cls.role_name)["Role"]["Arn"]
