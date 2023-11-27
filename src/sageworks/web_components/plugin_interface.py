@@ -41,7 +41,7 @@ class PluginInterface(ComponentInterface):
         Args:
             component_id (str): The ID of the web component
         Returns:
-            Union[dcc.Graph, dash_table.DataTable, html.Div] The Dash Web component
+            Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div] The Dash Web component
         """
         pass
 
