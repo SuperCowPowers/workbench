@@ -60,7 +60,10 @@ class ModelMarkdown(ComponentInterface):
 
             # If the value is list or tuple, join with a comma
             if isinstance(value, (list, tuple)):
-                value_str = ", ".join(value)
+                try:
+                    value_str = ", ".join(value)
+                except TypeError:
+                    value_str = "-"
             else:
                 value_str = str(value)
 
