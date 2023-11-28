@@ -27,16 +27,6 @@ class PluginInputType(Enum):
     ENDPOINT_DETAILS = "endpoint_details"
 
 
-def plugin_error_decorator(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            return ComponentInterface.message_figure(str(e))
-    return wrapper
-
-
 class PluginInterface(ComponentInterface):
     """A Web Plugin Interface
     Notes:
@@ -153,4 +143,5 @@ def plugin_error_decorator(func):
         except Exception as e:
             error_info = f"Plugin Crashed: {e.__class__.__name__}: {e}"
             return ComponentInterface.message_figure(error_info)
+
     return wrapper
