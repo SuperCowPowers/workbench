@@ -202,16 +202,16 @@ class Model(Artifact):
 
         # Multiple CSV if classifier
         if self.model_type == ModelType.CLASSIFIER:
-            
             # CSVs for shap values are indexed by prediction class
             # Because we don't know how many classes there are, we need to search through
             # a list of S3 objects in the parent folder
             s3_paths = wr.s3.list_objects(self.model_inference_path)
-            return [self._pull_s3_model_artifacts(f, embedded_index=False) for f in s3_paths if "inference_shap_values" in f]
-        
+            return [
+                self._pull_s3_model_artifacts(f, embedded_index=False) for f in s3_paths if "inference_shap_values" in f
+            ]
+
         # One CSV if regressor
         if self.model_type == ModelType.REGRESSOR:
-
             s3_path = f"{self.model_inference_path}/inference_shap_values.csv"
             return self._pull_s3_model_artifacts(s3_path, embedded_index=False)
 

@@ -85,13 +85,12 @@ class ExtractModelArtifact:
             model_files = glob.glob(os.path.join(tmpdir, "*.joblib"))
             if not model_files:
                 raise FileNotFoundError("No .joblib file found in the extracted model artifact.")
-            
+
             # Instantiate return model
             model_return = None
 
             # Check each model_file for an XGBModel object
             for model_file in model_files:
-
                 # Load the model
                 model_object = joblib.load(model_file)
 

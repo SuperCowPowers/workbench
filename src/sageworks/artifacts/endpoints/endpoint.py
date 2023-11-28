@@ -429,18 +429,16 @@ class Endpoint(Artifact):
 
         # Multiple shap vals CSV for classifiers
         if model_type == ModelType.CLASSIFIER.value:
-
             # Need a separate shapley values CSV for each class
-            for i,class_shap_vals in enumerate(shap_vals):
+            for i, class_shap_vals in enumerate(shap_vals):
                 df_shap = pd.DataFrame(class_shap_vals, columns=X_pred.columns)
-            
+
                 # Write shap vals to S3 Model Inference Folder
                 self.log.debug(f"Writing SHAP values to {self.model_inference_path}/inference_shap_values.csv")
                 wr.s3.to_csv(df_shap, f"{self.model_inference_path}/inference_shap_values_class_{i}.csv", index=False)
 
         # Single shap vals CSV for regressors
         if model_type == ModelType.REGRESSOR.value:
-
             # Format shap values into single dataframe
             df_shap = pd.DataFrame(shap_vals, columns=X_pred.columns)
 
