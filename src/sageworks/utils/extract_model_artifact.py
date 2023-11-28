@@ -6,6 +6,7 @@ import awswrangler as wr
 import os
 import glob
 import xgboost  # noqa: F401
+from xgboost import XGBModel
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
@@ -84,13 +85,27 @@ class ExtractModelArtifact:
             model_files = glob.glob(os.path.join(tmpdir, "*.joblib"))
             if not model_files:
                 raise FileNotFoundError("No .joblib file found in the extracted model artifact.")
-            model_file_path = model_files[0]
+            
+            # Instantiate return model
+            model_return = None
 
-            # Load the model
-            model = joblib.load(model_file_path)
+            # Check each model_file for an XGBModel object
+            for model_file in model_files:
+
+                # Load the model
+                model_object = joblib.load(model_file)
+
+                # Check type
+                if isinstance(model_object, XGBModel):
+                    print(f"{model_file} is a model object.")
+
+                    # Set return if type check passes
+                    model_return = model_object
+                else:
+                    print(f"{model_file} is NOT a model object.")
 
         # Return the model after exiting the temporary directory context
-        return model
+        return model_return
 
 
 if __name__ == "__main__":
@@ -98,7 +113,6 @@ if __name__ == "__main__":
 
     # Create the Class and test it out
     my_endpoint = "abalone-regression-end"
-    # my_endpoint = "hlm-phase2-class-0-230831-100-monitor"
     ema = ExtractModelArtifact(my_endpoint)
 
     # Test the lower level methods
@@ -108,3 +122,4 @@ if __name__ == "__main__":
 
     # Test the higher level method
     my_model = ema.get_model_artifact()
+    print(my_model)
