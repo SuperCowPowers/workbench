@@ -427,9 +427,26 @@ class Endpoint(Artifact):
         # Compute the SHAP values
         shap_vals = self.shap_values(model_artifact, X_pred)
 
-        # Write shap vals to S3 Model Inference Folder
-        self.log.debug(f"Writing SHAP values to {self.model_inference_path}/inference_shap_values.csv")
-        wr.s3.to_csv(shap_vals, f"{self.model_inference_path}/inference_shap_values.csv", index=False)
+        # Multiple shap vals CSV for classifiers
+        if model_type == ModelType.CLASSIFIER.value:
+
+            # Need a separate shapley values CSV for each class
+            for i,class_shap_vals in enumerate(shap_vals):
+                df_shap = pd.DataFrame(class_shap_vals, columns=X_pred.columns)
+            
+                # Write shap vals to S3 Model Inference Folder
+                self.log.debug(f"Writing SHAP values to {self.model_inference_path}/inference_shap_values.csv")
+                wr.s3.to_csv(shap_vals, f"{self.model_inference_path}/inference_shap_values_class_{i}.csv", index=False)
+
+        # Single shap vals CSV for regressors
+        if model_type == ModelType.REGRESSOR.value:
+
+            # Format shap values into single dataframe
+            df_shap = pd.DataFrame(shap_vals, columns=X_pred.columns)
+
+            # Write shap vals to S3 Model Inference Folder
+            self.log.debug(f"Writing SHAP values to {self.model_inference_path}/inference_shap_values.csv")
+            wr.s3.to_csv(df_shap, f"{self.model_inference_path}/inference_shap_values.csv", index=False)
 
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
@@ -452,7 +469,7 @@ class Endpoint(Artifact):
         # Note: For Tree-based models like decision trees, random forests, XGBoost, LightGBM,
         explainer = shap.TreeExplainer(model)
         shap_vals = explainer.shap_values(X)
-        return pd.DataFrame(shap_vals, columns=X.columns)
+        return shap_vals
 
     @staticmethod
     def regression_metrics(target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
