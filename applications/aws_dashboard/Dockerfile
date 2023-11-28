@@ -29,8 +29,7 @@ COPY nginx.conf /etc/nginx/sites-available/default
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Install Sageworks (changes often)
-RUN pip install --no-cache-dir sageworks==0.2.28
-# RUN pip install git+https://github.com/SuperCowPowers/sageworks.git@4300c48
+RUN pip install --no-cache-dir sageworks==0.3.2
 
 # Copy the current directory contents into the container at /app
 COPY . /app

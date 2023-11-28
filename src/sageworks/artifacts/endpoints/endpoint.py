@@ -633,6 +633,24 @@ if __name__ == "__main__":
     # Serverless?
     print(f"Serverless: {my_endpoint.is_serverless()}")
 
+    # Temp Testing
+    from sageworks.artifacts.feature_sets.feature_set import FeatureSet
+    end = Endpoint("hlm-phase2-class-0-230831-sagewx-80-monitor")
+    model = end.get_input()
+    feature_set = Model(model).get_input()
+    features = FeatureSet(feature_set)
+    table = features.get_training_view_table()
+    df = features.query(f"SELECT * FROM {table} where training = 0")
+    DATA_NAME = "Test Data (20) 2023_08_31"
+    DATA_HASH = "12345"
+    DESCRIPTION = "Test Phase 2 Stability Features"
+    TARGET_COLUMN = "class"
+
+    # Capture the performance metrics for this Endpoint
+    end.capture_performance_metrics(
+        df, TARGET_COLUMN, data_name=DATA_NAME, data_hash=DATA_HASH, description=DESCRIPTION
+    )
+
     #
     # This section is all about INFERENCE TESTING
     #

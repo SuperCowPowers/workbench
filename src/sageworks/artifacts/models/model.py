@@ -242,21 +242,21 @@ class Model(Artifact):
         """Return the size of this data in MegaBytes"""
         return 0.0
 
-    def aws_meta(self) -> dict:
+    def aws_meta(self) -> Union[dict, None]:
         """Get ALL the AWS metadata for this artifact"""
-        return self.latest_model
+        return self.latest_model if self.latest_model else None
 
-    def arn(self) -> str:
+    def arn(self) -> Union[str, None]:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
         return self.group_arn()
 
-    def group_arn(self) -> str:
+    def group_arn(self) -> Union[str, None]:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
-        return self.latest_model["ModelPackageGroupArn"]
+        return self.latest_model["ModelPackageGroupArn"] if self.latest_model else None
 
-    def model_package_arn(self) -> str:
+    def model_package_arn(self) -> Union[str, None]:
         """AWS ARN (Amazon Resource Name) for the Model Package (within the Group)"""
-        return self.latest_model["ModelPackageArn"]
+        return self.latest_model["ModelPackageArn"] if self.latest_model else None
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
@@ -264,11 +264,11 @@ class Model(Artifact):
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
-        return self.latest_model["CreationTime"]
+        return self.latest_model["CreationTime"] if self.latest_model else datetime.now()
 
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
-        return self.latest_model["CreationTime"]
+        return self.latest_model["CreationTime"] if self.latest_model else datetime.now()
 
     def details(self, recompute=False) -> dict:
         """Additional Details about this Model

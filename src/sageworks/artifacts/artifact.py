@@ -99,14 +99,19 @@ class Artifact(ABC):
     def ready(self) -> bool:
         """Is the Artifact ready? Is initial setup complete and expected metadata populated?"""
 
-        # Check for the expected metadata
-        expected_meta = self.expected_meta()
-        existing_meta = self.sageworks_meta()
-        ready = set(existing_meta.keys()).issuperset(expected_meta)
-        if ready:
-            return True
-        else:
-            self.log.info("Artifact is not ready!")
+        # If anything goes wrong, assume the artifact is not ready
+        try:
+            # Check for the expected metadata
+            expected_meta = self.expected_meta()
+            existing_meta = self.sageworks_meta()
+            ready = set(existing_meta.keys()).issuperset(expected_meta)
+            if ready:
+                return True
+            else:
+                self.log.info("Artifact is not ready!")
+                return False
+        except Exception as e:
+            self.log.error(f"Artifact malformed: {e}")
             return False
 
     @abstractmethod
@@ -172,6 +177,11 @@ class Artifact(ABC):
         """
         # Note: AWS List Tags can get grumpy if called too often
         aws_arn = self.arn()
+
+        # Sanity check
+        if aws_arn is None:
+            self.log.error(f"ARN is None for {self.uuid}!")
+            return {}
         self.log.debug(f"Calling list_tags AWS request {aws_arn}...")
         try:
             aws_tags = self.sm_session.list_tags(aws_arn)
@@ -197,6 +207,10 @@ class Artifact(ABC):
             but not for DataSources. The DataSource class overrides this method.
         """
         aws_arn = self.arn()
+        # Sanity check
+        if aws_arn is None:
+            self.log.error(f"ARN is None for {self.uuid}!")
+            return
         self.log.info(f"Upserting SageWorks Metadata for Artifact: {aws_arn}...")
         aws_tags = self._dict_to_aws_tags(new_meta)
         self.sm_client.add_tags(ResourceArn=aws_arn, Tags=aws_tags)
