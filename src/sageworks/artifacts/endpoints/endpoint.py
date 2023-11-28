@@ -458,7 +458,7 @@ class Endpoint(Artifact):
         self.details(recompute=True)
 
     @staticmethod
-    def shap_values(model, X: pd.DataFrame) -> pd.DataFrame:
+    def shap_values(model, X: pd.DataFrame) -> np.array:
         """Compute the SHAP values for this Model
         Args:
             model (Model): Model object
