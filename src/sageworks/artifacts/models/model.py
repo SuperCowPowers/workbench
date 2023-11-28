@@ -145,7 +145,7 @@ class Model(Artifact):
         metrics = self.sageworks_meta().get("sageworks_training_metrics")
         return pd.DataFrame.from_dict(metrics) if metrics else None
 
-    def model_shapley_values(self) -> Union[pd.DataFrame, None]:
+    def model_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
         # Shapley only available from inference at the moment, training may come later
         df_shap = self._pull_shapley_values()
         if df_shap is not None:
@@ -194,13 +194,26 @@ class Model(Artifact):
             self.log.info(f"Could not find model inference meta at {s3_path}...")
             return None
 
-    def _pull_shapley_values(self) -> Union[pd.DataFrame, None]:
+    def _pull_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
         """Internal: Retrieve the inference Shapely values for this model
         Returns:
             pd.DataFrame: Dataframe of the shapley values for the prediction dataframe
         """
-        s3_path = f"{self.model_inference_path}/inference_shap_values.csv"
-        return self._pull_s3_model_artifacts(s3_path, embedded_index=False)
+
+        # Multiple CSV if classifier
+        if self.model_type == ModelType.CLASSIFIER.value:
+            
+            # CSVs for shap values are indexed by prediction class
+            # Because we don't know how many classes there are, we need to search through
+            # a list of S3 objects in the parent folder
+            s3_paths = wr.s3.list_objects(self.model_inference_path)
+            return [self._pull_s3_model_artifacts(f, embedded_index=False) for f in s3_paths if "inference_shap_values" in f]
+        
+        # One CSV if regressor
+        if self.model_type == ModelType.REGRESSOR.value:
+
+            s3_path = f"{self.model_inference_path}/inference_shap_values.csv"
+            return self._pull_s3_model_artifacts(s3_path, embedded_index=False)
 
     def _pull_inference_metrics(self) -> Union[pd.DataFrame, None]:
         """Internal: Retrieve the inference model metrics for this model
