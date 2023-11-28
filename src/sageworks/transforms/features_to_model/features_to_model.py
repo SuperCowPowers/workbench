@@ -159,7 +159,7 @@ class FeaturesToModel(Transform):
         else:
             # We need to get creative with the Classification Metrics
             # Grab all the target column class values
-            table = feature_set.data_source.table_name
+            table = feature_set.data_source.get_table_name()
             targets = feature_set.query(f"select DISTINCT {target_column} FROM {table}")[target_column].to_list()
             metrics = ["precision", "recall", "fscore"]
 

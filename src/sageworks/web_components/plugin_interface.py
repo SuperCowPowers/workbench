@@ -3,6 +3,7 @@ from abc import abstractmethod
 from inspect import signature
 import typing
 from enum import Enum
+from functools import wraps
 
 # Local Imports
 from sageworks.web_components.component_interface import ComponentInterface
@@ -41,7 +42,7 @@ class PluginInterface(ComponentInterface):
         Args:
             component_id (str): The ID of the web component
         Returns:
-            Union[dcc.Graph, dash_table.DataTable, html.Div] The Dash Web component
+            Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div] The Dash Web component
         """
         pass
 
@@ -131,3 +132,16 @@ class PluginInterface(ComponentInterface):
         if return_type not in expected_return_types:
             return f"Incorrect return type (expected one of {expected_return_types}, got {return_type})"
         return None
+
+
+# This is a helper decorator to catch errors in plugin methods and return a message figure
+def plugin_error_decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            error_info = f"Plugin Crashed: {e.__class__.__name__}: {e}"
+            return ComponentInterface.message_figure(error_info)
+
+    return wrapper

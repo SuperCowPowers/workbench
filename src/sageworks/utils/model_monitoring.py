@@ -304,7 +304,7 @@ if __name__ == "__main__":
     # Check the baseline outputs
     mm.check_baseline_outputs()
 
-    # Setup the monitoring schedule
+    # Set up the monitoring schedule (if it doesn't already exist)
     mm.setup_monitoring_schedule()
 
     #

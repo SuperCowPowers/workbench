@@ -281,7 +281,7 @@ class ArtifactsTextView(View):
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
                 "Input": sageworks_meta.get("sageworks_input", "-"),
                 "Status": latest_model["ModelPackageStatus"],
-                "Description": latest_model["ModelPackageDescription"],
+                "Description": latest_model.get("ModelPackageDescription", "-"),
             }
             model_summary.append(summary)
 
