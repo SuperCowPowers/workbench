@@ -45,11 +45,6 @@ class ModelMarkdown(ComponentInterface):
         prefixed_model_info = {f"model_{k}": v for k, v in model_info.items()}
         top_level_details.update(prefixed_model_info)
 
-        # Exclude dataframe values
-        top_level_details = {
-            key: value for key, value in top_level_details.items() if not isinstance(value, pd.DataFrame)
-        }
-
         # Construct the markdown string
         markdown = ""
         for key, value in top_level_details.items():
@@ -58,14 +53,17 @@ class ModelMarkdown(ComponentInterface):
                 markdown += self._health_tag_markdown(value)
                 continue
 
-            # If the value is list or tuple, join with a comma
-            if isinstance(value, (list, tuple)):
-                try:
-                    value_str = ", ".join(value)
-                except TypeError:
-                    value_str = "-"
+            # Special case for dataframes
+            if isinstance(value, pd.DataFrame):
+                value_str = "Dataframe"
+
             else:
-                value_str = str(value)
+                # Not sure why str() conversion might fail, but we'll catch it
+                try:
+                    value_str = str(value)[:100]
+                except Exception as e:
+                    self.log.error(f"Error converting {key} to string: {e}")
+                    value_str = "*"
 
             # Add to markdown string
             markdown += f"**{key}:** {value_str}  \n"
