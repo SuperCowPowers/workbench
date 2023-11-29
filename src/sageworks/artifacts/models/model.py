@@ -56,7 +56,7 @@ class Model(Artifact):
         else:
             try:
                 self.latest_model = self.model_meta[0]
-                self.description = self.latest_model["ModelPackageDescription"]
+                self.description = self.latest_model.get("ModelPackageDescription", "-")
                 self.training_job_name = self._extract_training_job_name()
                 if model_type:
                     self._set_model_type(model_type)
@@ -81,7 +81,7 @@ class Model(Artifact):
         """Refresh the Artifact's metadata"""
         self.model_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS, force_refresh=True).get(self.model_name)
         self.latest_model = self.model_meta[0]
-        self.description = self.latest_model["ModelPackageDescription"]
+        self.description = self.latest_model.get("ModelPackageDescription", "-")
         self.training_job_name = self._extract_training_job_name()
 
     def exists(self) -> bool:
@@ -255,21 +255,21 @@ class Model(Artifact):
         """Return the size of this data in MegaBytes"""
         return 0.0
 
-    def aws_meta(self) -> Union[dict, None]:
+    def aws_meta(self) -> dict:
         """Get ALL the AWS metadata for this artifact"""
-        return self.latest_model if self.latest_model else None
+        return self.latest_model
 
-    def arn(self) -> Union[str, None]:
+    def arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
         return self.group_arn()
 
-    def group_arn(self) -> Union[str, None]:
+    def group_arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
-        return self.latest_model["ModelPackageGroupArn"] if self.latest_model else None
+        return self.latest_model["ModelPackageGroupArn"]
 
-    def model_package_arn(self) -> Union[str, None]:
+    def model_package_arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for the Model Package (within the Group)"""
-        return self.latest_model["ModelPackageArn"] if self.latest_model else None
+        return self.latest_model["ModelPackageArn"]
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
@@ -277,11 +277,11 @@ class Model(Artifact):
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
-        return self.latest_model["CreationTime"] if self.latest_model else datetime.now()
+        return self.latest_model["CreationTime"]
 
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
-        return self.latest_model["CreationTime"] if self.latest_model else datetime.now()
+        return self.latest_model["CreationTime"]
 
     def details(self, recompute=False) -> dict:
         """Additional Details about this Model
@@ -303,7 +303,7 @@ class Model(Artifact):
         details["model_package_group_arn"] = self.group_arn()
         details["model_package_arn"] = self.model_package_arn()
         aws_meta = self.aws_meta()
-        details["description"] = aws_meta["ModelPackageDescription"]
+        details["description"] = aws_meta.get("ModelPackageDescription", "-")
         details["version"] = aws_meta["ModelPackageVersion"]
         details["status"] = aws_meta["ModelPackageStatus"]
         details["approval_status"] = aws_meta["ModelApprovalStatus"]
@@ -517,7 +517,7 @@ if __name__ == "__main__":
     """Exercise the Model Class"""
 
     # Grab a Model object and pull some information from it
-    my_model = Model("abalone-regression")
+    my_model = Model("Ivaylo-test-Pipeline-p-5gvwgztoyhad")
 
     # Call the various methods
 
