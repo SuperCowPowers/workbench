@@ -31,7 +31,9 @@ class AWSAccountClamp:
                 cls.account_id = boto3.client("sts").get_caller_identity()["Account"]
                 cls.region = boto3.session.Session().region_name
             except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
-                msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+                msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...\n"
+                msg += "Docker: Make sure either TEMP credentials are correct set\n"
+                msg += "        or EC2 Execution ROLE is correctly set up...\n "
                 cls.log.critical(msg)
                 raise RuntimeError(msg)
 
