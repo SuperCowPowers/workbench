@@ -5,14 +5,14 @@ import boto3
 
 def lambda_handler(event, context):
     # Environment vars
-    DOCKER_REPO = os.environ["DOCKER_REPO"]
     TASK_DEFINITION = os.environ["TASK_DEFINITION"]
     FARGATE_CLUSTER = os.environ["FARGATE_CLUSTER"]
     FARGATE_SERVICE = os.environ["FARGATE_SERVICE"]
 
     # Pull docker image from event
+    docker_repo = event['detail']["repository-name"][0]
     docker_image_tag = event["detail"]["image-tag"][0]
-    docker_image = f"{DOCKER_REPO}:{docker_image_tag}"
+    docker_image = f"{docker_repo}:{docker_image_tag}"
 
     # Connect to client
     ecs = boto3.client("ecs")
