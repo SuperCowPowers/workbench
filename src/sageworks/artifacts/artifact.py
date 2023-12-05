@@ -116,7 +116,7 @@ class Artifact(ABC):
 
     @abstractmethod
     def make_ready(self) -> bool:
-        """Is the Artifact ready? Are the initial setup steps complete?"""
+        """Make the Artifact ready. Perform any initial setup steps"""
         pass
 
     def onboard(self) -> bool:
