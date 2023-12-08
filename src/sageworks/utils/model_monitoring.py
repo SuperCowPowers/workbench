@@ -83,7 +83,7 @@ class ModelMonitoring:
         predictor.update_data_capture_config(data_capture_config=data_capture_config)
 
         # Delete the old endpoint configuration
-        self.log.warning(f"Deleting old endpoint configuration: {current_endpoint_config_name}")
+        self.log.important(f"Deleting old endpoint configuration: {current_endpoint_config_name}")
         self.sagemaker_client.delete_endpoint_config(EndpointConfigName=current_endpoint_config_name)
 
     def is_data_capture_configured(self, capture_percentage):
