@@ -60,7 +60,7 @@ class LicenseManager:
 
         # Check if the API license is expired
         if cls.is_license_expired(cls.api_license_info):
-            msg = "API License expired on {cls.api_license_data.expires} Please contact SageWorks support."
+            msg = f"API License expired on {cls.api_license_info.get('expires')} Please contact SageWorks support."
             log.critical(msg)
             return None
 
