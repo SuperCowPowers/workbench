@@ -17,3 +17,4 @@ prompt_toolkit
 shap
 xgboost
 joblib
+cryptography

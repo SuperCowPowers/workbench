@@ -23,6 +23,9 @@ setup(
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     include_package_data=True,
+    package_data={
+        "sageworks": ["resources/signature_verify_pub.pem"],
+    },
     install_requires=install_requires,
     license="MIT",
     keywords="SageMaker, Machine Learning, AWS, Python, Utilities",

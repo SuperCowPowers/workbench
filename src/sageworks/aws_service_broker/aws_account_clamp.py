@@ -13,6 +13,9 @@ from sagemaker.session import Session as SageSession
 from datetime import timedelta
 import logging
 
+# SageWorks Imports
+from sageworks.utils.license_manager import LicenseManager
+
 
 class AWSAccountClamp:
     def __new__(cls):
@@ -36,6 +39,11 @@ class AWSAccountClamp:
                 msg += "        EC2 Execution ROLE is using the SageWorks Execution Role...\n "
                 cls.log.critical(msg)
                 raise RuntimeError(msg)
+
+            # Check our SageWorks API Key and Load the License
+            cls.log.info("Checking SageWorks API License...")
+            cls.license_info = LicenseManager.load_api_license(cls.account_id)
+            LicenseManager.print_license_info()
 
             # Initialize the boto3 session (this is a refreshable session)
             cls.session_time_delta = timedelta(minutes=50)

@@ -10,7 +10,7 @@ def lambda_handler(event, context):
     FARGATE_SERVICE = os.environ["FARGATE_SERVICE"]
 
     # Pull docker image from event
-    docker_repo = event['detail']["repository-name"][0]
+    docker_repo = event["detail"]["repository-name"][0]
     docker_image_tag = event["detail"]["image-tag"][0]
     docker_image = f"{docker_repo}:{docker_image_tag}"
 
