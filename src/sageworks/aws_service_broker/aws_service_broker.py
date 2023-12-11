@@ -96,7 +96,7 @@ class AWSServiceBroker:
         cls.fresh_cache = SageWorksCache(expire=60, postfix=":fresh")
 
         # Thread Pool for Refreshes
-        cls.thread_pool = ThreadPoolExecutor(max_workers=1)  # 1 thread to do data refreshes, bunch of threads = AWS Throttling
+        cls.thread_pool = ThreadPoolExecutor(max_workers=1)  # 1 thread for data refreshes, bunch of threads = AWS Throttling
 
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler
