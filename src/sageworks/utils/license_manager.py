@@ -30,7 +30,7 @@ class LicenseManager:
 
         api_key = os.getenv(cls.API_ENV_VAR)
         if not api_key:
-            cls.log.important(f"Could not find ENV var for {cls.API_ENV_VAR}, using Open Source API Key.")
+            cls.log.important(f"Could not find ENV var for {cls.API_ENV_VAR}, using Open Source API Key...")
             cls.set_open_source_api_key()
             api_key = os.getenv(cls.API_ENV_VAR)
             if not api_key:
@@ -62,7 +62,6 @@ class LicenseManager:
 
         # Open Source License has no AWS Account ID
         if api_account_id is None:
-            cls.log.important("Using Open Source API Key...")
             return cls.api_license_info
 
         # Check if the API License is valid for this AWS Account
