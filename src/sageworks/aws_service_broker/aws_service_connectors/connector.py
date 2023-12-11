@@ -62,6 +62,7 @@ class Connector(ABC):
         # Note: AWS List Tags can get grumpy if called too often
         self.log.debug(f"Calling list_tags AWS request {arn}...")
         try:
+            time.sleep(1)
             aws_tags = self.sm_session.list_tags(arn)
         except botocore.exceptions.ClientError as e:
             error_code = e.response["Error"]["Code"]

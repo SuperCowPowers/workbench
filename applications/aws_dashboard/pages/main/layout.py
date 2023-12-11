@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 import sageworks
 from sageworks.utils.license_manager import LicenseManager
 
-sageworks_version = sageworks.__version__
+sageworks_version = sageworks.__version__.split("+")[0].strip()
 sageworks_license = LicenseManager.get_license_id()
 
 
