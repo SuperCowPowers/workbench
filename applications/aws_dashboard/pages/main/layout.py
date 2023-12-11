@@ -2,10 +2,12 @@
 from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 
-# Get the SageWorks Version
+# Get the SageWorks Version and License ID
 import sageworks
+from sageworks.utils.license_manager import LicenseManager
 
 sageworks_version = sageworks.__version__
+sageworks_license = LicenseManager.get_license_id()
 
 
 def main_layout(
@@ -29,6 +31,13 @@ def main_layout(
                                 f" v {sageworks_version}",
                                 style={
                                     "color": "rgb(200, 140, 200)",
+                                    "fontSize": 15,
+                                },
+                            ),
+                            html.Span(
+                                f" ({sageworks_license})",
+                                style={
+                                    "color": "rgb(140, 140, 200)",
                                     "fontSize": 15,
                                 },
                             ),

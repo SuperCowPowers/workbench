@@ -24,7 +24,7 @@ setup(
     packages=find_packages(where="src"),
     include_package_data=True,
     package_data={
-        "sageworks": ["resources/signature_verify_pub.pem"],
+        "sageworks": ["resources/signature_verify_pub.pem", "resources/open_source_api.key"],
     },
     install_requires=install_requires,
     license="MIT",
