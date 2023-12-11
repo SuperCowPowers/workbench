@@ -19,7 +19,7 @@ app = Dash(
 
 # Add the component and a timer to the layout
 app.layout = html.Div(
-    [markdown_component, dcc.Interval(id="interval-component", interval=5 * 1000, n_intervals=0)]  # in milliseconds
+    [markdown_component, dcc.Interval(id="interval-component", interval=2 * 1000, n_intervals=0)]  # in milliseconds
 )
 
 # Create a DataSourceWebView

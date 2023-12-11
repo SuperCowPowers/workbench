@@ -21,7 +21,7 @@ def main_layout(
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
         children=[
-            dcc.Interval(id="broker-update-timer", interval=10000, n_intervals=0),
+            dcc.Interval(id="broker-update-timer", interval=30000, n_intervals=0),
             dbc.Row(
                 [
                     html.H2(

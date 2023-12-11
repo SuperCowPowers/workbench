@@ -5,7 +5,7 @@ import time
 import argparse
 from enum import Enum, auto
 import logging
-from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 from botocore.exceptions import ClientError
 
 # SageWorks Imports
@@ -93,7 +93,10 @@ class AWSServiceBroker:
 
         # Caches for Metadata
         cls.meta_cache = SageWorksCache()
-        cls.fresh_cache = SageWorksCache(expire=30, postfix=":fresh")
+        cls.fresh_cache = SageWorksCache(expire=60, postfix=":fresh")
+
+        # Thread Pool for Refreshes
+        cls.thread_pool = ThreadPoolExecutor(max_workers=1)  # 1 thread to do data refreshes, bunch of threads = AWS Throttling
 
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler
@@ -153,8 +156,11 @@ class AWSServiceBroker:
         if cls.fresh_cache.get(category) is None:
             cls.log.debug(f"Async: Metadata for {category} is stale, launching refresh thread...")
             cls.fresh_cache.set(category, True)
-            thread = Thread(target=cls.refresh_aws_data, args=(category,))
-            thread.start()
+
+            # Submit the data refresh task to the thread pool
+            cls.thread_pool.submit(cls.refresh_aws_data, category)
+
+            # Return the stale data
             return cls.meta_cache.get(category)
 
         # If the metadata is fresh, just return it
@@ -172,14 +178,9 @@ class AWSServiceBroker:
         return {_category: cls.get_metadata(_category, force_refresh) for _category in ServiceCategory}
 
     @classmethod
-    def wait_for_refreshes(cls) -> None:
-        """Wait for any open threads to finish"""
-        # FIXME: We need to circle back to this, right now we just wait for a second
-        """
-        for thread in cls.open_threads:
-            thread.join()
-        """
-        time.sleep(1)
+    def shutdown(cls) -> None:
+        """Wait for any open threads in our thread pool to finish"""
+        cls.thread_pool.shutdown(wait=True)
 
     @classmethod
     def get_s3_object_sizes(cls, category: ServiceCategory, prefix: str = "") -> int:
@@ -239,4 +240,4 @@ if __name__ == "__main__":
     print(f"Abalone Size: {abalone_size} Bytes")
 
     # Wait for any open threads to finish
-    aws_broker.wait_for_refreshes()
+    aws_broker.shutdown()
