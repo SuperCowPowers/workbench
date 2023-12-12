@@ -8,7 +8,7 @@ from typing import final
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.trace_calls import trace_calls
+from sageworks.utils.aws_utils import sagemaker_list_tags
 
 
 class Connector(ABC):
@@ -53,26 +53,11 @@ class Connector(ABC):
         """Internal: AWS Tags are in an odd format, so convert to regular dictionary"""
         return {item["Key"]: item["Value"] for item in aws_tags}
 
-    @trace_calls
     def sageworks_meta_via_arn(self, arn: str) -> dict:
         """Helper: Get the SageWorks specific metadata for this ARN
-        Note: This functionality is a helper for Feature Store, Models, and Endpoints.
-              The Data Catalog and Glue Jobs class have their own methods/logic
+        Args:
+            arn (str): The ARN of the SageMaker resource
+        Returns:
+            dict: A dictionary of SageWorks specific metadata
         """
-        # Note: AWS List Tags can get grumpy if called too often
-        self.log.debug(f"Calling list_tags AWS request {arn}...")
-        try:
-            time.sleep(0.25)  # Sleep for 0.25 seconds to avoid throttling
-            aws_tags = self.sm_session.list_tags(arn)
-        except botocore.exceptions.ClientError as e:
-            error_code = e.response["Error"]["Code"]
-            if error_code == "ThrottlingException":
-                self.log.warning(f"ThrottlingException: list_tags on {arn}")
-                time.sleep(5)
-                aws_tags = self.sm_session.list_tags(arn)
-            else:
-                # Handle other ClientErrors that may occur
-                self.log.error(f"Caught a different ClientError: {error_code}")
-                raise e
-        meta = self._aws_tags_to_dict(aws_tags)
-        return meta
+        return sagemaker_list_tags(arn, self.sm_session)

@@ -5,7 +5,7 @@ import botocore
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
-from sageworks.utils.boto_error_info import client_error_info
+from sageworks.utils.aws_utils import client_error_info
 
 
 class Endpoints(Connector):

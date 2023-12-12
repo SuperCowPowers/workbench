@@ -5,16 +5,12 @@ from datetime import datetime
 import os
 import sys
 import logging
-import json
-import base64
-import time
-import botocore
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.utils.sageworks_cache import SageWorksCache
-from sageworks.utils.trace_calls import trace_calls
+from sageworks.utils.aws_utils import sagemaker_list_tags
 
 
 class Artifact(ABC):
@@ -81,6 +77,13 @@ class Artifact(ABC):
     def exists(self) -> bool:
         """Does the Artifact exist? Can we connect to it?"""
         pass
+
+    def sagework_meta(self) -> dict:
+        """Get the SageWorks specific metadata for this Artifact
+        Note: This functionality will work for FeatureSets, Models, and Endpoints
+              but not for DataSources. The DataSource class overrides this method.
+        """
+        return sagemaker_list_tags(self.arn(), self.sm_session)
 
     def expected_meta(self) -> list[str]:
         """Metadata we expect to see for this Artifact when it's ready
@@ -168,35 +171,6 @@ class Artifact(ABC):
     def delete(self):
         """Delete this artifact including all related AWS objects"""
         pass
-
-    @trace_calls
-    def sageworks_meta(self) -> dict:
-        """Get the SageWorks specific metadata for this Artifact
-        Note: This functionality will work for FeatureSets, Models, and Endpoints
-              but not for DataSources. The DataSource class overrides this method.
-        """
-        # Note: AWS List Tags can get grumpy if called too often
-        aws_arn = self.arn()
-
-        # Sanity check
-        if aws_arn is None:
-            self.log.error(f"ARN is None for {self.uuid}!")
-            return {}
-        self.log.debug(f"Calling list_tags AWS request {aws_arn}...")
-        try:
-            aws_tags = self.sm_session.list_tags(aws_arn)
-        except botocore.exceptions.ClientError as e:
-            error_code = e.response["Error"]["Code"]
-            if error_code == "ThrottlingException":
-                self.log.warning(f"ThrottlingException: list_tags on {aws_arn}")
-                time.sleep(5)
-                aws_tags = self.sm_session.list_tags(aws_arn)
-            else:
-                # Handle other ClientErrors that may occur
-                self.log.error(f"Caught a different ClientError: {error_code}")
-                raise e
-        meta = self._aws_tags_to_dict(aws_tags)
-        return meta
 
     def upsert_sageworks_meta(self, new_meta: dict):
         """Add SageWorks specific metadata to this Artifact
@@ -350,111 +324,6 @@ class Artifact(ABC):
             self.sm_client.delete_tags(ResourceArn=aws_arn, TagKeys=tag_list_to_delete)
         else:
             self.log.info(f"No Metadata found: {key_to_delete}...")
-
-    def _dict_to_aws_tags(self, meta_data: dict) -> list:
-        """Internal: AWS Tags are in an odd format, so we need to convert dictionary
-        Args:
-            meta_data (dict): Dictionary of metadata to convert to AWS Tags
-        """
-        chunked_data = {}  # Store any chunked data here
-        chunked_keys = []  # Store any keys to remove here
-
-        # First convert any non-string values to JSON strings
-        for key, value in meta_data.items():
-            if not isinstance(value, str):
-                # Convert dictionary to minified JSON string
-                json_str = json.dumps(value, separators=(",", ":"))
-
-                # Base64 encode the value
-                encoded_value = base64.b64encode(json_str.encode()).decode()
-
-                # Check if the encoded value will fit in the 256-character limit
-                if len(encoded_value) < 256:
-                    meta_data[key] = encoded_value
-
-                # If the encoded value is too long, split it into chunks
-                elif len(encoded_value) < 4096:
-                    self.log.important(f"Chunking metadata for key {key} with length {len(encoded_value)}...")
-                    chunked_keys.append(key)
-                    chunks = self._chunk_dict_to_aws_tags(key, value)
-                    for chunk in chunks:
-                        chunked_data[chunk] = chunks[chunk]
-
-                # Too long to store in AWS Tags
-                else:
-                    self.log.error(f"Metadata for key {key} is too long to store in AWS Tags!")
-
-        # Now remove any keys that were chunked and add the chunked data
-        for key in chunked_keys:
-            del meta_data[key]
-        meta_data.update(chunked_data)
-
-        # Now convert to AWS Tags format
-        aws_tags = []
-        for key, value in meta_data.items():
-            aws_tags.append({"Key": key, "Value": value})
-        return aws_tags
-
-    @staticmethod
-    def _chunk_dict_to_aws_tags(base_key: str, data: dict) -> dict:
-        # Convert dictionary to minified JSON string
-        json_str = json.dumps(data, separators=(",", ":"))
-
-        # Encode JSON string to base64
-        base64_str = base64.b64encode(json_str.encode()).decode()
-
-        # Initialize variables
-        chunk_size = 256  # Max size for AWS tag value
-        chunks = {}
-
-        # Split base64 string into chunks and create tags
-        for i in range(0, len(base64_str), chunk_size):
-            chunk = base64_str[i : i + chunk_size]
-            chunks[f"{base_key}_chunk_{i // chunk_size + 1}"] = chunk
-
-        return chunks
-
-    @staticmethod
-    def _aws_tags_to_dict(aws_tags) -> dict:
-        """Internal: AWS Tags are in an odd format, so convert to regular dictionary"""
-
-        def decode_value(value):
-            try:
-                return json.loads(base64.b64decode(value).decode("utf-8"))
-            except Exception:
-                return value
-
-        stitched_data = {}
-        regular_tags = {}
-
-        for item in aws_tags:
-            key = item["Key"]
-            value = item["Value"]
-
-            # Check if this key is a chunk
-            if "_chunk_" in key:
-                base_key, chunk_num = key.rsplit("_chunk_", 1)
-
-                if base_key not in stitched_data:
-                    stitched_data[base_key] = {}
-
-                stitched_data[base_key][int(chunk_num)] = value
-            else:
-                regular_tags[key] = decode_value(value)
-
-        # Stitch chunks back together and decode
-        for base_key, chunks in stitched_data.items():
-            # Sort by chunk number and concatenate
-            sorted_chunks = [chunks[i] for i in sorted(chunks.keys())]
-            stitched_base64_str = "".join(sorted_chunks)
-
-            # Decode the stitched base64 string
-            stitched_json_str = base64.b64decode(stitched_base64_str).decode("utf-8")
-            stitched_dict = json.loads(stitched_json_str)
-
-            regular_tags[base_key] = stitched_dict
-
-        return regular_tags
 
 
 if __name__ == "__main__":

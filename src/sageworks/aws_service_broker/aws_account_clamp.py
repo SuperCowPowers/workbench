@@ -154,7 +154,7 @@ class AWSAccountClamp:
         return cls.boto3_session
 
     @classmethod
-    def sagemaker_session(cls, session: boto3.Session = None):
+    def sagemaker_session(cls, session: boto3.Session = None) -> SageSession:
         """Create a sageworks SageMaker session (using our boto3 refreshable session)"""
         session = session or cls.boto_session()
         return SageSession(boto_session=session)
