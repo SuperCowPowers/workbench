@@ -18,6 +18,7 @@ class SageworksDashboardStackProps(StackProps):
     def __init__(
         self,
         sageworks_bucket: str,
+        sageworks_api_key: str,
         existing_vpc_id: Optional[str] = None,
         existing_subnet_ids: Optional[List[str]] = None,
         whitelist_ips: Optional[List[str]] = None,
@@ -25,6 +26,7 @@ class SageworksDashboardStackProps(StackProps):
         certificate_arn: Optional[str] = None,
     ):
         self.sageworks_bucket = sageworks_bucket
+        self.sageworks_api_key = sageworks_api_key
         self.existing_vpc_id = existing_vpc_id
         self.existing_subnet_ids = existing_subnet_ids
         self.whitelist_ips = whitelist_ips
@@ -101,12 +103,12 @@ class SageworksDashboardStack(Stack):
             memory_limit_mib=4096,
             cpu=2048,
         )
-        dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_3_6_amd64"
+        dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_3_8_amd64"
         container = task_definition.add_container(
             "SageworksContainer",
             image=ecs.ContainerImage.from_registry(dashboard_image),
             memory_limit_mib=4096,
-            environment={"REDIS_HOST": redis_endpoint, "SAGEWORKS_BUCKET": props.sageworks_bucket},
+            environment={"REDIS_HOST": redis_endpoint, "SAGEWORKS_BUCKET": props.sageworks_bucket, "SAGEWORKS_API_KEY": props.sageworks_api_key},
             logging=ecs.LogDriver.aws_logs(stream_prefix="SageWorksDashboard", log_group=log_group),
         )
         container.add_port_mappings(ecs.PortMapping(container_port=8000))

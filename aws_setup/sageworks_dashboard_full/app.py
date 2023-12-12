@@ -13,6 +13,7 @@ print(f"Region: {aws_region}")
 
 # We'd like to set up our parameters here
 sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
+sageworks_api_key = os.environ.get("SAGEWORKS_API_KEY")
 existing_vpc_id = os.environ.get("SAGEWORKS_VPC_ID")
 existing_subnet_ids = os.environ.get("SAGEWORKS_SUBNET_IDS")
 whitelist_ips = [ip.strip() for ip in os.environ.get("SAGEWORKS_WHITELIST", "").split(",") if ip.strip()]
@@ -29,6 +30,7 @@ SageworksDashboardStack(
     env={"account": aws_account, "region": aws_region},
     props=SageworksDashboardStackProps(
         sageworks_bucket=sageworks_bucket,
+        sageworks_api_key=sageworks_api_key,
         existing_vpc_id=existing_vpc_id,
         existing_subnet_ids=existing_subnet_ids,
         whitelist_ips=whitelist_ips,
