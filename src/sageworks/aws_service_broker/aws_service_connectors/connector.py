@@ -1,14 +1,12 @@
 """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
 from abc import ABC, abstractmethod
-import botocore
-import time
 
 import logging
 from typing import final
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.aws_utils import sagemaker_list_tags
+from sageworks.utils.aws_utils import sagemaker_retrieve_tags
 
 
 class Connector(ABC):
@@ -60,4 +58,4 @@ class Connector(ABC):
         Returns:
             dict: A dictionary of SageWorks specific metadata
         """
-        return sagemaker_list_tags(arn, self.sm_session)
+        return sagemaker_retrieve_tags(arn, self.sm_session)

@@ -1,7 +1,6 @@
 """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
 import os
 import sys
-import time
 import argparse
 from enum import Enum, auto
 import logging
@@ -13,12 +12,8 @@ from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_broker.aws_service_connectors.glue_jobs import GlueJobs
 from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog
-from sageworks.aws_service_broker.aws_service_connectors.feature_store import (
-    FeatureStore,
-)
-from sageworks.aws_service_broker.aws_service_connectors.model_registry import (
-    ModelRegistry,
-)
+from sageworks.aws_service_broker.aws_service_connectors.feature_store import FeatureStore
+from sageworks.aws_service_broker.aws_service_connectors.model_registry import ModelRegistry
 from sageworks.aws_service_broker.aws_service_connectors.endpoints import Endpoints
 
 
@@ -96,7 +91,8 @@ class AWSServiceBroker:
         cls.fresh_cache = SageWorksCache(expire=60, postfix=":fresh")
 
         # Thread Pool for Refreshes
-        cls.thread_pool = ThreadPoolExecutor(max_workers=1)  # 1 thread for data refreshes, bunch of threads = AWS Throttling
+        # Note: We only need 1 thread for data refreshes, a bunch of threads = AWS Throttling
+        cls.thread_pool = ThreadPoolExecutor(max_workers=1)
 
         # This connection map sets up the connector objects for each category of metadata
         # Note: Even though this seems confusing, it makes other code WAY simpler

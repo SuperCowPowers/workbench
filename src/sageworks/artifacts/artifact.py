@@ -10,7 +10,7 @@ import logging
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.utils.sageworks_cache import SageWorksCache
-from sageworks.utils.aws_utils import sagemaker_list_tags
+from sageworks.utils.aws_utils import sagemaker_retrieve_tags
 
 
 class Artifact(ABC):
@@ -78,12 +78,12 @@ class Artifact(ABC):
         """Does the Artifact exist? Can we connect to it?"""
         pass
 
-    def sagework_meta(self) -> dict:
+    def sageworks_meta(self) -> dict:
         """Get the SageWorks specific metadata for this Artifact
         Note: This functionality will work for FeatureSets, Models, and Endpoints
               but not for DataSources. The DataSource class overrides this method.
         """
-        return sagemaker_list_tags(self.arn(), self.sm_session)
+        return sagemaker_retrieve_tags(self.arn(), self.sm_session)
 
     def expected_meta(self) -> list[str]:
         """Metadata we expect to see for this Artifact when it's ready

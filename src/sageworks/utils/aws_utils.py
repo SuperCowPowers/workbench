@@ -6,7 +6,7 @@ import base64
 from sagemaker.session import Session as SageSession
 
 # SageWorks Imports
-from sageworks.utils import trace_calls
+from sageworks.utils.trace_calls import trace_calls
 
 # SageWorks Logger
 log = logging.getLogger("sageworks")
@@ -29,14 +29,14 @@ def client_error_info(err: botocore.exceptions.ClientError):
 
 
 @trace_calls
-def sagemaker_list_tags(arn: str, sm_session: SageSession) -> dict:
+def sagemaker_retrieve_tags(arn: str, sm_session: SageSession) -> dict:
     """A Wrapper around SageMaker's list_tags method that handles throttling
     Args:
         arn (str): The ARN of the SageMaker resource
         sm_session (SageSession): A SageMaker session object
     Returns:
         dict: A dictionary of tags
-        
+
     Note: AWS List Tags can get grumpy if called too often
     """
 
@@ -47,8 +47,11 @@ def sagemaker_list_tags(arn: str, sm_session: SageSession) -> dict:
     # Loop 4 times with exponential backoff
     for i in range(4):
         try:
+            # Call the AWS List Tags method
             aws_tags = sm_session.list_tags(arn)
-            break
+            meta = _aws_tags_to_dict(aws_tags)  # Convert the AWS Tags to a dictionary
+            return meta
+
         except botocore.exceptions.ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code == "ThrottlingException":
@@ -59,10 +62,6 @@ def sagemaker_list_tags(arn: str, sm_session: SageSession) -> dict:
                 # Handle other ClientErrors that may occur
                 log.error(f"Unexpected ClientError: {error_code}")
                 raise e
-
-        # Convert the AWS Tags to a dictionary
-        meta = _aws_tags_to_dict(aws_tags)
-        return meta
 
 
 def _aws_tags_to_dict(aws_tags) -> dict:
@@ -124,3 +123,13 @@ def _chunk_dict_to_aws_tags(base_key: str, data: dict) -> dict:
         chunks[f"{base_key}_chunk_{i // chunk_size + 1}"] = chunk
 
     return chunks
+
+
+if __name__ == "__main__":
+    """Exercise the AWS Utils"""
+    from pprint import pprint
+    from sageworks.artifacts.feature_sets.feature_set import FeatureSet
+
+    my_features = FeatureSet("test_feature_set")
+    my_meta = my_features.sageworks_meta()
+    pprint(my_meta)
