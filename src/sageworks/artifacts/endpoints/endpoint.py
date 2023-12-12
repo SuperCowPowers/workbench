@@ -45,7 +45,7 @@ class Endpoint(Artifact):
             print(f"{metric}: {value:0.3f}")
     """
 
-    def __init__(self, endpoint_uuid, force_refresh: bool = False, exit_on_error=True):
+    def __init__(self, endpoint_uuid, force_refresh: bool = False):
         """Endpoint Initialization
 
         Args:
@@ -67,7 +67,6 @@ class Endpoint(Artifact):
             return
 
         self.endpoint_return_columns = None
-        self.exit_on_error = exit_on_error
 
         # Set the Inference, Capture, and Monitoring S3 Paths
         self.model_name = self.get_input()
@@ -205,10 +204,9 @@ class Endpoint(Artifact):
 
         except botocore.exceptions.ClientError as err:
             if err.response["Error"]["Code"] == "ModelError":  # Model Error
-                # Report the error
+                # Report the error and raise an exception
                 self.log.critical(f"Endpoint prediction error: {err.response.get('Message')}")
-                if self.exit_on_error:
-                    sys.exit(1)
+                raise err
 
                 # Base case: DataFrame with 1 Row
                 if len(feature_df) == 1:
@@ -651,7 +649,7 @@ if __name__ == "__main__":
     # Temp Testing
     from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
-    end = Endpoint("hlm-phase2-class-0-230831-sagewx-80-monitor")
+    end = Endpoint("abalone-regression-end")
     model = end.get_input()
     feature_set = Model(model).get_input()
     features = FeatureSet(feature_set)
@@ -659,8 +657,8 @@ if __name__ == "__main__":
     df = features.query(f"SELECT * FROM {table} where training = 0")
     DATA_NAME = "Test Data (20) 2023_08_31"
     DATA_HASH = "12345"
-    DESCRIPTION = "Test Phase 2 Stability Features"
-    TARGET_COLUMN = "class"
+    DESCRIPTION = "Test Features"
+    TARGET_COLUMN = "class_number_of_rings"
 
     # Capture the performance metrics for this Endpoint
     end.capture_performance_metrics(

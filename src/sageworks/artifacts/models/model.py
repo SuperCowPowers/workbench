@@ -143,7 +143,7 @@ class Model(Artifact):
         if metrics is not None:
             return metrics
         metrics = self.sageworks_meta().get("sageworks_training_metrics")
-        return pd.DataFrame.from_dict(metrics) if metrics else None
+        return pd.DataFrame.from_dict(metrics) if isinstance(metrics, dict) else None
 
     def model_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
         # Shapley only available from inference at the moment, training may come later

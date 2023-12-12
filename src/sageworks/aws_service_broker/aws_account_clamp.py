@@ -7,6 +7,7 @@ from botocore.exceptions import (
     UnauthorizedSSOTokenError,
     TokenRetrievalError,
 )
+from botocore.client import BaseClient
 from botocore.credentials import RefreshableCredentials
 from botocore.session import get_session
 from sagemaker.session import Session as SageSession
@@ -155,13 +156,23 @@ class AWSAccountClamp:
 
     @classmethod
     def sagemaker_session(cls, session: boto3.Session = None) -> SageSession:
-        """Create a sageworks SageMaker session (using our boto3 refreshable session)"""
+        """Create a sageworks SageMaker session (using our boto3 refreshable session)
+        Args:
+            session (boto3.Session, optional): A boto3 session to use. Defaults to None.
+        Returns:
+            SageSession: A SageMaker session object
+            """
         session = session or cls.boto_session()
         return SageSession(boto_session=session)
 
     @classmethod
-    def sagemaker_client(cls, session: boto3.Session = None):
-        """Create a sageworks SageMaker client (using our boto3 refreshable session)"""
+    def sagemaker_client(cls, session: boto3.Session = None) -> BaseClient:
+        """Create a sageworks SageMaker client (using our boto3 refreshable session)
+        Args:
+            session (boto3.Session, optional): A boto3 session to use. Defaults to None.
+        Returns:
+            BaseClient: A SageMaker client object
+            """
         session = session or cls.boto_session()
         return session.client("sagemaker")
 

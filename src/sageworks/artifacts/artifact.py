@@ -10,7 +10,7 @@ import logging
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.utils.sageworks_cache import SageWorksCache
-from sageworks.utils.aws_utils import sagemaker_retrieve_tags
+from sageworks.utils.aws_utils import sagemaker_retrieve_tags, dict_to_aws_tags, sagemaker_delete_tag
 
 
 class Artifact(ABC):
@@ -186,8 +186,24 @@ class Artifact(ABC):
             self.log.error(f"ARN is None for {self.uuid}!")
             return
         self.log.info(f"Upserting SageWorks Metadata for Artifact: {aws_arn}...")
-        aws_tags = self._dict_to_aws_tags(new_meta)
+        aws_tags = dict_to_aws_tags(new_meta)
         self.sm_client.add_tags(ResourceArn=aws_arn, Tags=aws_tags)
+
+    def remove_sageworks_meta(self, key_to_remove: str):
+        """Remove SageWorks specific metadata from this Artifact
+        Args:
+            key_to_remove (str): The metadata key to remove
+        Note:
+            This functionality will work for FeatureSets, Models, and Endpoints
+            but not for DataSources. The DataSource class overrides this method.
+        """
+        aws_arn = self.arn()
+        # Sanity check
+        if aws_arn is None:
+            self.log.error(f"ARN is None for {self.uuid}!")
+            return
+        self.log.info(f"Removing SageWorks Metadata {key_to_remove} for Artifact: {aws_arn}...")
+        sagemaker_delete_tag(aws_arn, self.sm_session, key_to_remove)
 
     def sageworks_tags(self, tag_type="user") -> list:
         """Get the tags for this artifact

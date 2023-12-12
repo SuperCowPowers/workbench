@@ -3,6 +3,7 @@ import logging
 import time
 import json
 import base64
+import re
 from sagemaker.session import Session as SageSession
 
 # SageWorks Imports
@@ -63,15 +64,59 @@ def sagemaker_retrieve_tags(arn: str, sm_session: SageSession) -> dict:
                 log.error(f"Unexpected ClientError: {error_code}")
                 raise e
 
+    # If we get here, we've failed to retrieve the tags
+    log.error(f"Failed to retrieve tags for {arn}!")
+    return {}
+
+
+def sagemaker_delete_tag(arn: str, sm_session: SageSession, key_to_remove: str):
+    """Delete a tag from a SageMaker resource
+    Args:
+        arn (str): The ARN of the SageMaker resource
+        sm_session (SageSession): A SageMaker session object
+        key_to_remove (str): The metadata key to remove
+    
+    Note:
+        Some tags might be 'chunked' into multiple tags, so we need to remove all of them
+    """
+    # Get the current tag keys
+    current_keys = [tag['Key'] for tag in sm_session.list_tags(arn)]
+
+    # Grab the client from our SageMaker session
+    sm_client = sm_session.sagemaker_client
+
+    # Check if this key is a regular tag
+    if key_to_remove in current_keys:
+        sm_client.delete_tags(ResourceArn=arn, TagKeys=[key_to_remove])
+
+    # Check if this key is split into chunks
+    else:
+        keys_to_remove = []
+        for key in current_keys:
+            if key.startswith(f"{key_to_remove}_chunk_"):
+                keys_to_remove.append(key)
+        if keys_to_remove:
+            log.info(f"Removing chunked tags {keys_to_remove}...")
+            sm_client.delete_tags(ResourceArn=arn, TagKeys=keys_to_remove)
+
 
 def _aws_tags_to_dict(aws_tags) -> dict:
     """Internal: AWS Tags are in an odd format, so convert to regular dictionary"""
 
     def decode_value(value):
+        # Try to base64 decode the value
         try:
-            return json.loads(base64.b64decode(value).decode("utf-8"))
+            value = base64.b64decode(value).decode("utf-8")
         except Exception:
-            return value
+            pass
+        # Try to JSON decode the value
+        try:
+            value = json.loads(value)
+        except Exception:
+            pass
+
+        # Okay, just return whatever we have
+        return value
 
     stitched_data = {}
     regular_tags = {}
@@ -98,28 +143,82 @@ def _aws_tags_to_dict(aws_tags) -> dict:
         stitched_base64_str = "".join(sorted_chunks)
 
         # Decode the stitched base64 string
-        stitched_json_str = base64.b64decode(stitched_base64_str).decode("utf-8")
-        stitched_dict = json.loads(stitched_json_str)
+        try:
+            stitched_json_str = base64.b64decode(stitched_base64_str).decode("utf-8")
+        except UnicodeDecodeError:
+            stitched_json_str = stitched_base64_str
+        try:
+            stitched_dict = json.loads(stitched_json_str)
+        except json.decoder.JSONDecodeError:
+            stitched_dict = stitched_json_str
 
         regular_tags[base_key] = stitched_dict
 
     return regular_tags
 
 
-def _chunk_dict_to_aws_tags(base_key: str, data: dict) -> dict:
-    # Internal: Convert dictionary to minified JSON string
-    json_str = json.dumps(data, separators=(",", ":"))
+def is_valid_tag(tag):
+    pattern = r"^([a-zA-Z0-9_.:/=+\-@]*)$"
+    return re.match(pattern, tag) is not None
 
-    # Encode JSON string to base64
-    base64_str = base64.b64encode(json_str.encode()).decode()
+
+def dict_to_aws_tags(meta_data: dict) -> list:
+    """AWS Tags are in an odd format, so we need to convert data into the AWS Tag format
+    Args:
+        meta_data (dict): Dictionary of metadata to convert to AWS Tags
+    """
+    chunked_data = {}  # Store any chunked data here
+    chunked_keys = []  # Store any keys to remove here
+
+    # Loop through the data: Convert non-string values to JSON strings, and chunk large data
+    for key, value in meta_data.items():
+
+        # Convert data to JSON string
+        if not isinstance(value, str):
+            value = json.dumps(value, separators=(",", ":"))
+
+        # Make sure the value is valid
+        if not is_valid_tag(value):
+            log.important("Base64 encoding metadata...")
+            value = base64.b64encode(value.encode()).decode()
+
+        # Check if the value will fit in the 256-character limit
+        if len(value) < 256:
+            meta_data[key] = value
+
+        # If the value is longer than 256 but less than 4096, split it into chunks
+        elif len(value) < 4096:
+            log.important(f"Chunking metadata for key {key} with length {len(value)}...")
+            chunked_keys.append(key)
+            chunks = _chunk_data(key, value)
+            for chunk in chunks:
+                chunked_data[chunk] = chunks[chunk]
+
+        # Too long to store in AWS Tags
+        else:
+            log.error(f"Metadata for key {key} is too long to store in AWS Tags!")
+
+    # Now remove any keys that were chunked and add the chunked data
+    for key in chunked_keys:
+        del meta_data[key]
+    meta_data.update(chunked_data)
+
+    # Now convert to AWS Tags format
+    aws_tags = []
+    for key, value in meta_data.items():
+        aws_tags.append({"Key": key, "Value": value})
+    return aws_tags
+
+
+def _chunk_data(base_key: str, data: str) -> dict:
 
     # Initialize variables
     chunk_size = 256  # Max size for AWS tag value
     chunks = {}
 
-    # Split base64 string into chunks and create tags
-    for i in range(0, len(base64_str), chunk_size):
-        chunk = base64_str[i : i + chunk_size]
+    # Split the data into chunks with numbered 'chunk_' keys
+    for i in range(0, len(data), chunk_size):
+        chunk = data[i : i + chunk_size]
         chunks[f"{base_key}_chunk_{i // chunk_size + 1}"] = chunk
 
     return chunks
@@ -131,5 +230,51 @@ if __name__ == "__main__":
     from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
     my_features = FeatureSet("test_feature_set")
+    my_meta = my_features.sageworks_meta()
+    pprint(my_meta)
+
+    # Add a health tag
+    my_features.add_sageworks_health_tag("needs_onboard")
+    print(my_features.sageworks_health_tags())
+
+    # Add a user tag
+    my_features.add_sageworks_tag("test_tag")
+    my_tags = my_features.sageworks_tags()
+    pprint(my_tags)
+
+    # Add sageworks meta data
+    my_features.upsert_sageworks_meta({"test_meta": "test_value"})
+    my_meta = my_features.sageworks_meta()
+    pprint(my_meta)
+
+    # Test adding a None value
+    my_features.upsert_sageworks_meta({"test_meta": None})
+    my_meta = my_features.sageworks_meta()
+    pprint(my_meta)
+
+    # Add sageworks meta data (testing regular expression constraints)
+    my_features.upsert_sageworks_meta({"test_meta": "test_{:value"})
+    my_meta = my_features.sageworks_meta()
+    pprint(my_meta)
+
+    # Add non-string sageworks meta data
+    my_features.upsert_sageworks_meta({"test_meta": {"foo": "bar"}})
+    my_meta = my_features.sageworks_meta()
+    pprint(my_meta)
+
+    # Add some large sageworks meta data (string)
+    large_data = "x" * 512
+    my_features.upsert_sageworks_meta({"large_meta": large_data})
+    my_meta = my_features.sageworks_meta()
+    pprint(my_meta)
+
+    # Add some large sageworks meta data (dict)
+    large_data = {"data": "x" * 512, "more_data": "y" * 512}
+    my_features.upsert_sageworks_meta({"large_meta": large_data})
+    my_meta = my_features.sageworks_meta()
+    pprint(my_meta)
+
+    # Remove the tag
+    my_features.remove_sageworks_meta("large_meta")
     my_meta = my_features.sageworks_meta()
     pprint(my_meta)
