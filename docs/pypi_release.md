@@ -66,17 +66,17 @@ twine upload dist/* -r testpypi
 ### Install the TEST PyPI Release
 
 ``` {.bash}
-$ pip install --index-url https://test.pypi.org/simple sageworks
+pip install --index-url https://test.pypi.org/simple sageworks
 ```
 
 ### Create the REAL PyPI Release
 
 ``` {.bash}
-$ twine upload dist/* -r pypi
+twine upload dist/* -r pypi
 ```
 
 ### Push any possible changes to Github
 
 ``` {.bash}
-$ git push
+git push
 ```
