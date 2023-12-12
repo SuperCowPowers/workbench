@@ -75,12 +75,12 @@ def sagemaker_delete_tag(arn: str, sm_session: SageSession, key_to_remove: str):
         arn (str): The ARN of the SageMaker resource
         sm_session (SageSession): A SageMaker session object
         key_to_remove (str): The metadata key to remove
-    
+
     Note:
         Some tags might be 'chunked' into multiple tags, so we need to remove all of them
     """
     # Get the current tag keys
-    current_keys = [tag['Key'] for tag in sm_session.list_tags(arn)]
+    current_keys = [tag["Key"] for tag in sm_session.list_tags(arn)]
 
     # Grab the client from our SageMaker session
     sm_client = sm_session.sagemaker_client
@@ -172,7 +172,6 @@ def dict_to_aws_tags(meta_data: dict) -> list:
 
     # Loop through the data: Convert non-string values to JSON strings, and chunk large data
     for key, value in meta_data.items():
-
         # Convert data to JSON string
         if not isinstance(value, str):
             value = json.dumps(value, separators=(",", ":"))
@@ -211,7 +210,6 @@ def dict_to_aws_tags(meta_data: dict) -> list:
 
 
 def _chunk_data(base_key: str, data: str) -> dict:
-
     # Initialize variables
     chunk_size = 256  # Max size for AWS tag value
     chunks = {}

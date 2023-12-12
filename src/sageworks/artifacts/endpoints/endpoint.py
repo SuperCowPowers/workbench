@@ -1,5 +1,4 @@
 """Endpoint: SageWorks Endpoint Class"""
-import sys
 from datetime import datetime
 import botocore
 import pandas as pd

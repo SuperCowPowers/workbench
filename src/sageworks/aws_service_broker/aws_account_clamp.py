@@ -161,7 +161,7 @@ class AWSAccountClamp:
             session (boto3.Session, optional): A boto3 session to use. Defaults to None.
         Returns:
             SageSession: A SageMaker session object
-            """
+        """
         session = session or cls.boto_session()
         return SageSession(boto_session=session)
 
@@ -172,7 +172,7 @@ class AWSAccountClamp:
             session (boto3.Session, optional): A boto3 session to use. Defaults to None.
         Returns:
             BaseClient: A SageMaker client object
-            """
+        """
         session = session or cls.boto_session()
         return session.client("sagemaker")
 
