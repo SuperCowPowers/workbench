@@ -109,7 +109,7 @@ class Model(Artifact):
         if model_type and model_type != "unknown":
             return ModelType(model_type)
         else:
-            self.log.error(f"Could not determine model type for {self.model_name}!")
+            self.log.warning(f"Could not determine model type for {self.model_name}!")
             return ModelType.UNKNOWN
 
     def health_check(self) -> list[str]:
