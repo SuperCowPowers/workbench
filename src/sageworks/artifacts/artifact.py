@@ -185,6 +185,8 @@ class Artifact(ABC):
         if aws_arn is None:
             self.log.error(f"ARN is None for {self.uuid}!")
             return
+
+        # Add the new metadata to the existing metadata
         self.log.info(f"Upserting SageWorks Metadata for Artifact: {aws_arn}...")
         aws_tags = dict_to_aws_tags(new_meta)
         self.sm_client.add_tags(ResourceArn=aws_arn, Tags=aws_tags)

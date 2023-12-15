@@ -99,10 +99,10 @@ class AthenaSource(DataSourceAbstract):
             new_meta (dict): Dictionary of new metadata to add
         """
 
-        # Make sure the new data has keys that are valid
+        # Give a warning message for keys that don't start with sageworks_
         for key in new_meta.keys():
             if not key.startswith("sageworks_"):
-                new_meta[f"sageworks_{key}"] = new_meta.pop(key)
+                self.log.warning(f"Append 'sageworks_' to key names to avoid overwriting AWS meta data")
 
         # Now convert any non-string values to JSON strings
         for key, value in new_meta.items():
@@ -461,9 +461,6 @@ if __name__ == "__main__":
     print(f"Column Names: {my_data.column_names()}")
     print(f"Column Types: {my_data.column_types()}")
     print(f"Column Details: {my_data.column_details()}")
-
-    # Column Tags
-    print(f"Column Tags: {my_data.column_tags()}")
 
     # Get the input for this Artifact
     print(f"Input: {my_data.get_input()}")

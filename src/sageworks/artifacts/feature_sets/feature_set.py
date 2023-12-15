@@ -41,9 +41,6 @@ class FeatureSet(Artifact):
         _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=force_refresh)
         self.feature_meta = _catalog_meta.get(self.uuid)
 
-        # Set up our instance attributes
-        self._display_columns = None
-
         # Sanity check and then set up our FeatureSet attributes
         if self.feature_meta is None:
             self.log.important(f"Could not find feature set {self.uuid} within current visibility scope")
@@ -57,7 +54,6 @@ class FeatureSet(Artifact):
             self.athena_database = self.feature_meta["sageworks_meta"].get("athena_database")
             self.athena_table = self.feature_meta["sageworks_meta"].get("athena_table")
             self.s3_storage = self.feature_meta["sageworks_meta"].get("s3_storage")
-            self._display_columns = self.feature_meta["sageworks_meta"].get("display_columns")
 
             # Create our internal DataSource (hardcoded to Athena for now)
             self.data_source = AthenaSource(self.athena_table, self.athena_database)
@@ -122,15 +118,26 @@ class FeatureSet(Artifact):
         """Return the column types of the Feature Set"""
         return list(self.column_details().values())
 
-    def column_details(self) -> dict:
+    def column_details(self, view: str = "all") -> dict:
         """Return the column details of the Feature Set
         Returns:
             dict: The column details of the Feature Set
+        Args:
+            view(str): The view to get column details for (default: "all")
         Notes:
-            We can't call self.data_source.column_details() because FeatureSets have different
-            types, so we need to query that type information from the AWS metadata
+            We can't call just call self.data_source.column_details() because FeatureSets have different
+            types, so we need to overlay that type information on top of the DataSource type information
         """
-        details = {item["FeatureName"]: item["FeatureType"] for item in self.feature_meta["FeatureDefinitions"]}
+        fs_details = {item["FeatureName"]: item["FeatureType"] for item in self.feature_meta["FeatureDefinitions"]}
+        ds_details = self.data_source.column_details(view)
+
+        # Overlay the FeatureSet type information on top of the DataSource type information
+        for col, dtype in ds_details.items():
+            ds_details[col] = fs_details.get(col, dtype)
+        return ds_details
+
+        # Not going to use these for now
+        """
         internal = {
             "write_time": "Timestamp",
             "api_invocation_time": "Timestamp",
@@ -138,25 +145,25 @@ class FeatureSet(Artifact):
         }
         details.update(internal)
         return details
+        """
 
     def get_display_columns(self) -> list[str]:
-        """Set the display columns for this Data Source
+        """Get the display columns for this FeatureSet
         Returns:
-            list[str]: The display columns for this Data Source
+            list[str]: The display columns for this FeatureSet
+        Notes:
+            This just pulls the display columns from the underlying DataSource
         """
-        if self._display_columns is None:
-            if self.num_columns() > 30:
-                self.log.important(f"Setting display columns for {self.uuid} to 30 columns...")
-            self._display_columns = self.column_names()[:30]
-            self._display_columns.append("outlier_group")
-        return self._display_columns
+        return self.data_source.get_display_columns()
 
     def set_display_columns(self, display_columns: list[str]):
-        """Set the display columns for this Data Source
+        """Set the display columns for this FeatureSet
         Args:
-            display_columns(list[str]): The display columns for this Data Source
+            display_columns(list[str]): The display columns for this FeatureSet
+        Notes:
+            This just sets the display columns for the underlying DataSource
         """
-        self._display_columns = display_columns
+        self.data_source.set_display_columns(display_columns)
 
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""

@@ -74,15 +74,33 @@ class DataSourceAbstract(Artifact):
             raise ValueError(f"Unknown column details view: {view}")
 
     def get_display_columns(self) -> list[str]:
-        """Set the display columns for this Data Source
+        """Get the display columns for this Data Source
         Returns:
             list[str]: The display columns for this Data Source
         """
+        # Check if we have the display columns in our metadata
         if self._display_columns is None:
-            if self.num_columns() > 30:
+            self._display_columns = self.sageworks_meta().get("sageworks_display_columns")
+
+        # If we still don't have display columns, try to set them
+        if self._display_columns is None:
+            # If we have less than 30 columns, just use all of them
+            if self.num_columns() < 30:
+                self._display_columns = self.column_names()
+
+            # Otherwise, use the first 30 columns as the display columns
+            else:
                 self.log.important(f"Setting display columns for {self.uuid} to 30 columns...")
-            self._display_columns = self.column_names()[:30]
-            self._display_columns.append("outlier_group")
+                self._display_columns = self.column_names()[:30]
+
+                # Add the outlier_group column if it exists and isn't already in the display columns
+                if "outlier_group" in self.column_names():
+                    self._display_columns = list(set(self._display_columns)+set(["outlier_group"]))
+
+            # Set the display columns in the metadata
+            self.set_display_columns(self._display_columns)
+
+        # Return the display columns
         return self._display_columns
 
     def set_display_columns(self, display_columns: list[str]):
@@ -91,6 +109,7 @@ class DataSourceAbstract(Artifact):
             display_columns(list[str]): The display columns for this Data Source
         """
         self._display_columns = display_columns
+        self.upsert_sageworks_meta("sageworks_display_columns", self._display_columns)
 
     def num_display_columns(self) -> int:
         """Return the number of display columns for this Data Source"""
