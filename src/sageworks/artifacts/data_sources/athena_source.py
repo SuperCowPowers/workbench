@@ -102,7 +102,7 @@ class AthenaSource(DataSourceAbstract):
         # Give a warning message for keys that don't start with sageworks_
         for key in new_meta.keys():
             if not key.startswith("sageworks_"):
-                self.log.warning(f"Append 'sageworks_' to key names to avoid overwriting AWS meta data")
+                self.log.warning("Append 'sageworks_' to key names to avoid overwriting AWS meta data")
 
         # Now convert any non-string values to JSON strings
         for key, value in new_meta.items():

@@ -95,7 +95,7 @@ class DataSourceAbstract(Artifact):
 
                 # Add the outlier_group column if it exists and isn't already in the display columns
                 if "outlier_group" in self.column_names():
-                    self._display_columns = list(set(self._display_columns)+set(["outlier_group"]))
+                    self._display_columns = list(set(self._display_columns) + set(["outlier_group"]))
 
             # Set the display columns in the metadata
             self.set_display_columns(self._display_columns)
@@ -109,7 +109,7 @@ class DataSourceAbstract(Artifact):
             display_columns(list[str]): The display columns for this Data Source
         """
         self._display_columns = display_columns
-        self.upsert_sageworks_meta("sageworks_display_columns", self._display_columns)
+        self.upsert_sageworks_meta({"sageworks_display_columns": self._display_columns})
 
     def num_display_columns(self) -> int:
         """Return the number of display columns for this Data Source"""
