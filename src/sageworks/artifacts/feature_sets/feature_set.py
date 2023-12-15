@@ -123,7 +123,13 @@ class FeatureSet(Artifact):
         return list(self.column_details().values())
 
     def column_details(self) -> dict:
-        """Return the column details of the Feature Set"""
+        """Return the column details of the Feature Set
+        Returns:
+            dict: The column details of the Feature Set
+        Notes:
+            We can't call self.data_source.column_details() because FeatureSets have different
+            types, so we need to query that type information from the AWS metadata
+        """
         details = {item["FeatureName"]: item["FeatureType"] for item in self.feature_meta["FeatureDefinitions"]}
         internal = {
             "write_time": "Timestamp",
