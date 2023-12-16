@@ -164,6 +164,7 @@ class FeatureSet(Artifact):
             This just sets the display columns for the underlying DataSource
         """
         self.data_source.set_display_columns(display_columns)
+        self.onboard()
 
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""

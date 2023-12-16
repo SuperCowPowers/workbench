@@ -110,6 +110,7 @@ class DataSourceAbstract(Artifact):
         """
         self._display_columns = display_columns
         self.upsert_sageworks_meta({"sageworks_display_columns": self._display_columns})
+        self.onboard()
 
     def num_display_columns(self) -> int:
         """Return the number of display columns for this Data Source"""
