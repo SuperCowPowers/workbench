@@ -6,7 +6,7 @@ from typing import final
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.aws_utils import sagemaker_retrieve_tags
+from sageworks.utils.aws_utils import list_tags_with_throttle
 
 
 class Connector(ABC):
@@ -46,11 +46,6 @@ class Connector(ABC):
         """Return ALL the AWS metadata for this AWS Service"""
         pass
 
-    @staticmethod
-    def _aws_tags_to_dict(aws_tags) -> dict:
-        """Internal: AWS Tags are in an odd format, so convert to regular dictionary"""
-        return {item["Key"]: item["Value"] for item in aws_tags}
-
     def sageworks_meta_via_arn(self, arn: str) -> dict:
         """Helper: Get the SageWorks specific metadata for this ARN
         Args:
@@ -58,4 +53,4 @@ class Connector(ABC):
         Returns:
             dict: A dictionary of SageWorks specific metadata
         """
-        return sagemaker_retrieve_tags(arn, self.sm_session)
+        return list_tags_with_throttle(arn, self.sm_session)

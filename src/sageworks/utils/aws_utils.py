@@ -30,7 +30,7 @@ def client_error_info(err: botocore.exceptions.ClientError):
 
 
 @trace_calls
-def sagemaker_retrieve_tags(arn: str, sm_session: SageSession) -> dict:
+def list_tags_with_throttle(arn: str, sm_session: SageSession) -> dict:
     """A Wrapper around SageMaker's list_tags method that handles throttling
     Args:
         arn (str): The ARN of the SageMaker resource
@@ -100,24 +100,26 @@ def sagemaker_delete_tag(arn: str, sm_session: SageSession, key_to_remove: str):
             sm_client.delete_tags(ResourceArn=arn, TagKeys=keys_to_remove)
 
 
+def decode_value(value):
+    # Try to base64 decode the value
+    try:
+        value = base64.b64decode(value).decode("utf-8")
+    except Exception:
+        pass
+    # Try to JSON decode the value
+    try:
+        value = json.loads(value)
+    except Exception:
+        pass
+
+    # Okay, just return whatever we have
+    return value
+
+
 def _aws_tags_to_dict(aws_tags) -> dict:
     """Internal: AWS Tags are in an odd format, so convert to regular dictionary"""
 
-    def decode_value(value):
-        # Try to base64 decode the value
-        try:
-            value = base64.b64decode(value).decode("utf-8")
-        except Exception:
-            pass
-        # Try to JSON decode the value
-        try:
-            value = json.loads(value)
-        except Exception:
-            pass
-
-        # Okay, just return whatever we have
-        return value
-
+    # Stitch together any chunked data
     stitched_data = {}
     regular_tags = {}
 
