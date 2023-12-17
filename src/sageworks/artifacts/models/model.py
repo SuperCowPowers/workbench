@@ -9,6 +9,7 @@ import pandas as pd
 import awswrangler as wr
 from awswrangler.exceptions import NoFilesFound
 from sagemaker import TrainingJobAnalytics
+from sagemaker.model import Model as Sagemaker_Model
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
@@ -148,9 +149,7 @@ class Model(Artifact):
     def model_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
         # Shapley only available from inference at the moment, training may come later
         df_shap = self._pull_shapley_values()
-        if df_shap is not None:
-            return df_shap
-        return None
+        return df_shap
 
     def confusion_matrix(self) -> Union[pd.DataFrame, None]:
         """Retrieve the confusion_matrix for this model
@@ -339,12 +338,11 @@ class Model(Artifact):
         return details
 
     def expected_meta(self) -> list[str]:
-        """Metadata we expect to see for this Artifact when it's ready
+        """Metadata we expect to see for this Model when it's ready
         Returns:
             list[str]: List of expected metadata keys
         """
-
-        # If an artifact has additional expected metadata override this method
+        # Our current list of expected metadata, we can add to this as needed
         return ["sageworks_status", "sageworks_training_metrics", "sageworks_training_cm"]
 
     def onboard(self) -> bool:
@@ -517,7 +515,7 @@ if __name__ == "__main__":
     """Exercise the Model Class"""
 
     # Grab a Model object and pull some information from it
-    my_model = Model("Ivaylo-test-Pipeline-p-5gvwgztoyhad")
+    my_model = Model("abalone-regression")
 
     # Call the various methods
 
@@ -557,12 +555,6 @@ if __name__ == "__main__":
     # Grab our Shapley values from S3
     print("Shapley Values: (might be None)")
     print(my_model.model_shapley_values())
-
-    # Test Large Metadata
-    # my_model.upsert_sageworks_meta({"sageworks_large_meta": {"large_x": "x" * 200, "large_y": "y" * 200}})
-
-    # Test Deleting specific metadata
-    # my_model.delete_metadata(["sageworks_large_meta"])
 
     # Get the SageWorks metadata associated with this Model
     print(f"SageWorks Meta: {my_model.sageworks_meta()}")

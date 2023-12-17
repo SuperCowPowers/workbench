@@ -45,6 +45,7 @@ class Artifact(ABC):
     # Data Cache for Artifacts
     data_storage = SageWorksCache(prefix="data_storage")
     temp_storage = SageWorksCache(prefix="temp_storage", expire=300)  # 5 minutes
+    ephemeral_storage = SageWorksCache(prefix="ephemeral_storage", expire=10)  # 10 seconds
 
     def __init__(self, uuid: str):
         """Artifact Initialization"""
@@ -83,7 +84,16 @@ class Artifact(ABC):
         Note: This functionality will work for FeatureSets, Models, and Endpoints
               but not for DataSources. The DataSource (or child) class overrides this method.
         """
-        return list_tags_with_throttle(self.arn(), self.sm_session)
+        # First, check our cache
+        meta_data_key = f"{self.uuid}_sageworks_meta"
+        meta_data = self.ephemeral_storage.get(meta_data_key)
+        if meta_data is not None:
+            return meta_data
+
+        # Otherwise, fetch the metadata from AWS, store it in the cache, and return it
+        meta_data = list_tags_with_throttle(self.arn(), self.sm_session)
+        self.ephemeral_storage.set(meta_data_key, meta_data)
+        return meta_data
 
     def expected_meta(self) -> list[str]:
         """Metadata we expect to see for this Artifact when it's ready
@@ -180,8 +190,8 @@ class Artifact(ABC):
             This functionality will work for FeatureSets, Models, and Endpoints
             but not for DataSources. The DataSource class overrides this method.
         """
-        aws_arn = self.arn()
         # Sanity check
+        aws_arn = self.arn()
         if aws_arn is None:
             self.log.error(f"ARN is None for {self.uuid}!")
             return
@@ -345,10 +355,11 @@ class Artifact(ABC):
 
 
 if __name__ == "__main__":
-    """Exercise the ViewManager Class"""
+    """Exercise the Artifact Class"""
     from sageworks.artifacts.data_sources.data_source import DataSource
+    from sageworks.artifacts.feature_sets.feature_set import FeatureSet
 
-    # Create a DataSource (which will create a ViewManager)
+    # Create a DataSource (which is a subclass of Artifact)
     data_source = DataSource("test_data")
 
     # Just some random tests
@@ -357,3 +368,15 @@ if __name__ == "__main__":
     print(f"UUID: {data_source.uuid}")
     print(f"Ready: {data_source.ready()}")
     print(f"Status: {data_source.get_status()}")
+    print(f"Input: {data_source.get_input()}")
+
+    # Create a FeatureSet (which is a subclass of Artifact)
+    fs = FeatureSet("test_feature_set")
+
+    # Just some random tests
+    assert fs.exists()
+
+    print(f"UUID: {fs.uuid}")
+    print(f"Ready: {fs.ready()}")
+    print(f"Status: {fs.get_status()}")
+    print(f"Input: {fs.get_input()}")
