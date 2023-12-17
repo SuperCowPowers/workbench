@@ -53,7 +53,7 @@ class Outliers:
 
         # Make sure the dataframe isn't too big, if it's too big sample it down
         if len(outlier_df) > 300:
-            log.warning(f"Outliers DataFrame is too large {len(outlier_df)}, sampling down to 300 rows")
+            log.important(f"Outliers DataFrame is too large {len(outlier_df)}, sampling down to 300 rows")
             outlier_df = outlier_df.sample(300)
 
         # Sort by outlier_group and reset the index

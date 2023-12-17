@@ -116,6 +116,18 @@ def decode_value(value):
     return value
 
 
+def sageworks_meta_from_catalog_table_meta(table_meta: dict) -> dict:
+    """Retrieve the SageWorks metadata from AWS Data Catalog table metadata
+    Args:
+        table_meta (dict): The AWS Data Catalog table metadata
+    Returns:
+        dict: The SageWorks metadata that's stored in the Parameters field
+    """
+    # Get the Parameters field from the table metadata
+    params = table_meta.get("Parameters", {})
+    return {key: decode_value(value) for key, value in params.items() if "sageworks" in key}
+
+
 def _aws_tags_to_dict(aws_tags) -> dict:
     """Internal: AWS Tags are in an odd format, so convert to regular dictionary"""
 

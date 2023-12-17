@@ -21,6 +21,7 @@ from sageworks.algorithms.sql import (
 )
 from sageworks.utils.redis_cache import CustomEncoder
 from sageworks.utils.trace_calls import trace_calls
+from sageworks.utils.aws_utils import sageworks_meta_from_catalog_table_meta
 
 
 class AthenaSource(DataSourceAbstract):
@@ -84,14 +85,16 @@ class AthenaSource(DataSourceAbstract):
     @trace_calls
     def sageworks_meta(self) -> dict:
         """Get the SageWorks specific metadata for this Artifact"""
+
         # Sanity Check if we have invalid AWS Metadata
         self.log.info(f"Retrieving SageWorks Metadata for Artifact: {self.uuid}...")
-        if self.aws_meta() is None:
+        if self.catalog_table_meta is None:
             self.log.critical(f"Unable to get AWS Metadata for {self.get_table_name()}")
             self.log.critical("Malformed Artifact! Delete this Artifact and recreate it!")
             return {}
-        params = self.aws_meta().get("Parameters", {})
-        return {key: value for key, value in params.items() if "sageworks" in key}
+
+        # Get the SageWorks Metadata from the Catalog Table Metadata
+        return sageworks_meta_from_catalog_table_meta(self.catalog_table_meta)
 
     def upsert_sageworks_meta(self, new_meta: dict):
         """Add SageWorks specific metadata to this Artifact
@@ -147,7 +150,7 @@ class AthenaSource(DataSourceAbstract):
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        sageworks_details = json.loads(self.sageworks_meta().get("sageworks_details", "{}"))
+        sageworks_details = self.sageworks_meta().get("sageworks_details", "{}")
         return sageworks_details.get("aws_url", "unknown")
 
     def created(self) -> datetime:
@@ -244,7 +247,7 @@ class AthenaSource(DataSourceAbstract):
         # First check if we have already computed the descriptive stats
         stat_dict_json = self.sageworks_meta().get("sageworks_descriptive_stats")
         if stat_dict_json and not recompute:
-            return json.loads(stat_dict_json)
+            return stat_dict_json
 
         # Call the SQL function to compute descriptive stats
         stat_dict = descriptive_stats.descriptive_stats(self)
@@ -303,9 +306,9 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # First check if we have already computed the correlations
-        corr_json = self.sageworks_meta().get("sageworks_correlations")
-        if corr_json and not recompute:
-            return json.loads(corr_json)
+        correlations_dict = self.sageworks_meta().get("sageworks_correlations")
+        if correlations_dict and not recompute:
+            return correlations_dict
 
         # Call the SQL function to compute correlations
         correlations_dict = correlations.correlations(self)
@@ -330,9 +333,9 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # First check if we have already computed the column stats
-        columns_stats_json = self.sageworks_meta().get("sageworks_column_stats")
-        if columns_stats_json and not recompute:
-            return json.loads(columns_stats_json)
+        columns_stats_dict = self.sageworks_meta().get("sageworks_column_stats")
+        if columns_stats_dict and not recompute:
+            return columns_stats_dict
 
         # Call the SQL function to compute column stats
         column_stats_dict = column_stats.column_stats(self, recompute=recompute)
@@ -354,9 +357,9 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # First check if we have already computed the value counts
-        value_counts_json = self.sageworks_meta().get("sageworks_value_counts")
-        if value_counts_json and not recompute:
-            return json.loads(value_counts_json)
+        value_counts_dict = self.sageworks_meta().get("sageworks_value_counts")
+        if value_counts_dict and not recompute:
+            return value_counts_dict
 
         # Call the SQL function to compute value_counts
         value_count_dict = value_counts.value_counts(self)
