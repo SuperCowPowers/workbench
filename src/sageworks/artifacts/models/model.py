@@ -92,27 +92,6 @@ class Model(Artifact):
             return False
         return True
 
-    def _set_model_type(self, model_type: ModelType):
-        """Internal: Set the Model Type for this Model"""
-        self.model_type = model_type
-        self.upsert_sageworks_meta({"sageworks_model_type": self.model_type.value})
-        self.remove_sageworks_health_tag("model_type_unknown")
-
-    def _get_model_type(self) -> ModelType:
-        """Internal: Query the SageWorks Metadata to get the model type
-        Returns:
-            ModelType: The ModelType of this Model
-        Notes:
-            This is an internal method that should not be called directly
-            Use the model_type attribute instead
-        """
-        model_type = self.sageworks_meta().get("sageworks_model_type")
-        if model_type and model_type != "unknown":
-            return ModelType(model_type)
-        else:
-            self.log.warning(f"Could not determine model type for {self.model_name}!")
-            return ModelType.UNKNOWN
-
     def health_check(self) -> list[str]:
         """Perform a health check on this model
         Returns:
@@ -178,77 +157,6 @@ class Model(Artifact):
             s3_path = f"{self.model_training_path}/validation_predictions.csv"
             df = self._pull_s3_model_artifacts(s3_path)
             return df
-
-    def _pull_inference_metadata(self) -> Union[pd.DataFrame, None]:
-        """Internal: Retrieve the inference metadata for this model
-        Returns:
-            dict: Dictionary of the inference metadata (might be None)
-        Notes:
-            Basically when the inference was run, name of the dataset, the MD5, etc
-        """
-        s3_path = f"{self.model_inference_path}/inference_meta.json"
-        try:
-            return wr.s3.read_json(s3_path)
-        except NoFilesFound:
-            self.log.info(f"Could not find model inference meta at {s3_path}...")
-            return None
-
-    def _pull_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
-        """Internal: Retrieve the inference Shapely values for this model
-        Returns:
-            pd.DataFrame: Dataframe of the shapley values for the prediction dataframe
-        """
-
-        # Multiple CSV if classifier
-        if self.model_type == ModelType.CLASSIFIER:
-            # CSVs for shap values are indexed by prediction class
-            # Because we don't know how many classes there are, we need to search through
-            # a list of S3 objects in the parent folder
-            s3_paths = wr.s3.list_objects(self.model_inference_path)
-            return [
-                self._pull_s3_model_artifacts(f, embedded_index=False) for f in s3_paths if "inference_shap_values" in f
-            ]
-
-        # One CSV if regressor
-        if self.model_type == ModelType.REGRESSOR:
-            s3_path = f"{self.model_inference_path}/inference_shap_values.csv"
-            return self._pull_s3_model_artifacts(s3_path, embedded_index=False)
-
-    def _pull_inference_metrics(self) -> Union[pd.DataFrame, None]:
-        """Internal: Retrieve the inference model metrics for this model
-        Returns:
-            pd.DataFrame: DataFrame of the inference model metrics (might be None)
-        """
-        s3_path = f"{self.model_inference_path}/inference_metrics.csv"
-        return self._pull_s3_model_artifacts(s3_path)
-
-    def _pull_inference_cm(self) -> Union[pd.DataFrame, None]:
-        """Internal: Retrieve the inference Confusion Matrix for this model
-        Returns:
-            pd.DataFrame: DataFrame of the inference Confusion Matrix (might be None)
-        """
-        s3_path = f"{self.model_inference_path}/inference_cm.csv"
-        return self._pull_s3_model_artifacts(s3_path, embedded_index=True)
-
-    def _pull_s3_model_artifacts(self, s3_path, embedded_index=False) -> Union[pd.DataFrame, None]:
-        """Internal: Helper method to pull Model Artifact data from S3 storage
-        Args:
-            s3_path (str): S3 Path to the Model Artifact
-            embedded_index (bool, optional): Is the index embedded in the CSV? Defaults to False.
-        Returns:
-            pd.DataFrame: DataFrame of the Model Artifact (metrics, CM, regression_preds) (might be None)
-        """
-
-        # Pull the CSV file from S3
-        try:
-            if embedded_index:
-                df = wr.s3.read_csv(s3_path, index_col=0)
-            else:
-                df = wr.s3.read_csv(s3_path)
-            return df
-        except NoFilesFound:
-            self.log.info(f"Could not find model artifact at {s3_path}...")
-            return None
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -422,6 +330,98 @@ class Model(Artifact):
         for key in self.data_storage.list_subkeys(f"model:{self.uuid}"):
             self.log.info(f"Deleting Cache Key {key}...")
             self.data_storage.delete(key)
+
+    def _set_model_type(self, model_type: ModelType):
+        """Internal: Set the Model Type for this Model"""
+        self.model_type = model_type
+        self.upsert_sageworks_meta({"sageworks_model_type": self.model_type.value})
+        self.remove_sageworks_health_tag("model_type_unknown")
+
+    def _get_model_type(self) -> ModelType:
+        """Internal: Query the SageWorks Metadata to get the model type
+        Returns:
+            ModelType: The ModelType of this Model
+        Notes:
+            This is an internal method that should not be called directly
+            Use the model_type attribute instead
+        """
+        model_type = self.sageworks_meta().get("sageworks_model_type")
+        if model_type and model_type != "unknown":
+            return ModelType(model_type)
+        else:
+            self.log.warning(f"Could not determine model type for {self.model_name}!")
+            return ModelType.UNKNOWN
+
+    def _pull_inference_metadata(self) -> Union[pd.DataFrame, None]:
+        """Internal: Retrieve the inference metadata for this model
+        Returns:
+            dict: Dictionary of the inference metadata (might be None)
+        Notes:
+            Basically when the inference was run, name of the dataset, the MD5, etc
+        """
+        s3_path = f"{self.model_inference_path}/inference_meta.json"
+        try:
+            return wr.s3.read_json(s3_path)
+        except NoFilesFound:
+            self.log.info(f"Could not find model inference meta at {s3_path}...")
+            return None
+
+    def _pull_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
+        """Internal: Retrieve the inference Shapely values for this model
+        Returns:
+            pd.DataFrame: Dataframe of the shapley values for the prediction dataframe
+        """
+
+        # Multiple CSV if classifier
+        if self.model_type == ModelType.CLASSIFIER:
+            # CSVs for shap values are indexed by prediction class
+            # Because we don't know how many classes there are, we need to search through
+            # a list of S3 objects in the parent folder
+            s3_paths = wr.s3.list_objects(self.model_inference_path)
+            return [
+                self._pull_s3_model_artifacts(f, embedded_index=False) for f in s3_paths if "inference_shap_values" in f
+            ]
+
+        # One CSV if regressor
+        if self.model_type == ModelType.REGRESSOR:
+            s3_path = f"{self.model_inference_path}/inference_shap_values.csv"
+            return self._pull_s3_model_artifacts(s3_path, embedded_index=False)
+
+    def _pull_inference_metrics(self) -> Union[pd.DataFrame, None]:
+        """Internal: Retrieve the inference model metrics for this model
+        Returns:
+            pd.DataFrame: DataFrame of the inference model metrics (might be None)
+        """
+        s3_path = f"{self.model_inference_path}/inference_metrics.csv"
+        return self._pull_s3_model_artifacts(s3_path)
+
+    def _pull_inference_cm(self) -> Union[pd.DataFrame, None]:
+        """Internal: Retrieve the inference Confusion Matrix for this model
+        Returns:
+            pd.DataFrame: DataFrame of the inference Confusion Matrix (might be None)
+        """
+        s3_path = f"{self.model_inference_path}/inference_cm.csv"
+        return self._pull_s3_model_artifacts(s3_path, embedded_index=True)
+
+    def _pull_s3_model_artifacts(self, s3_path, embedded_index=False) -> Union[pd.DataFrame, None]:
+        """Internal: Helper method to pull Model Artifact data from S3 storage
+        Args:
+            s3_path (str): S3 Path to the Model Artifact
+            embedded_index (bool, optional): Is the index embedded in the CSV? Defaults to False.
+        Returns:
+            pd.DataFrame: DataFrame of the Model Artifact (metrics, CM, regression_preds) (might be None)
+        """
+
+        # Pull the CSV file from S3
+        try:
+            if embedded_index:
+                df = wr.s3.read_csv(s3_path, index_col=0)
+            else:
+                df = wr.s3.read_csv(s3_path)
+            return df
+        except NoFilesFound:
+            self.log.info(f"Could not find model artifact at {s3_path}...")
+            return None
 
     def _pull_training_job_metrics(self, force_pull=False):
         """Internal: Grab any captured metrics from the training job for this model
