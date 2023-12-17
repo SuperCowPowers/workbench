@@ -118,7 +118,9 @@ class Model(Artifact):
         Returns:
            sagemaker.model.Model: AWS Sagemaker Model object
         """
-        return SagemakerModel(model_data=self.model_package_arn(), sagemaker_session=self.sm_session, image_uri=self.model_image())
+        return SagemakerModel(
+            model_data=self.model_package_arn(), sagemaker_session=self.sm_session, image_uri=self.model_image()
+        )
 
     def model_metrics(self) -> Union[pd.DataFrame, None]:
         """Retrieve the training metrics for this model
