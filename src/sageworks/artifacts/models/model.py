@@ -9,7 +9,7 @@ import pandas as pd
 import awswrangler as wr
 from awswrangler.exceptions import NoFilesFound
 from sagemaker import TrainingJobAnalytics
-from sagemaker.model import Model as Sagemaker_Model
+from sagemaker.model import Model as SagemakerModel
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
@@ -113,6 +113,13 @@ class Model(Artifact):
             self.remove_sageworks_health_tag("metrics_needed")
         return health_issues
 
+    def latest_model_object(self) -> SagemakerModel:
+        """Return the latest AWS Sagemaker Model object for this SageWorks Model
+        Returns:
+           sagemaker.model.Model: AWS Sagemaker Model object
+        """
+        return SagemakerModel(model_data=self.model_package_arn(), sagemaker_session=self.sm_session, image_uri=self.model_image())
+
     def model_metrics(self) -> Union[pd.DataFrame, None]:
         """Retrieve the training metrics for this model
         Returns:
@@ -178,6 +185,14 @@ class Model(Artifact):
         """AWS ARN (Amazon Resource Name) for the Model Package (within the Group)"""
         return self.latest_model["ModelPackageArn"]
 
+    def model_container_info(self) -> dict:
+        """Containiner Info for the Latest Model Package"""
+        return self.latest_model["ModelPackageDetails"]["InferenceSpecification"]["Containers"][0]
+
+    def model_image(self) -> str:
+        """Containiner Image for the Latest Model Package"""
+        return self.model_container_info()["Image"]
+
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
         return f"https://{self.aws_region}.console.aws.amazon.com/athena/home"
@@ -214,13 +229,14 @@ class Model(Artifact):
         details["version"] = aws_meta["ModelPackageVersion"]
         details["status"] = aws_meta["ModelPackageStatus"]
         details["approval_status"] = aws_meta["ModelApprovalStatus"]
+        details["image"] = self.model_image().split("/")[-1]  # Shorten the image uri
+
+        # Grab the inference and container info
         package_details = aws_meta["ModelPackageDetails"]
         inference_spec = package_details["InferenceSpecification"]
-        container = inference_spec["Containers"][0]
-        image_short = container["Image"].split("/")[-1]
-        details["image"] = image_short
-        details["framework"] = container.get("Framework", "unknown")
-        details["framework_version"] = container.get("FrameworkVersion", "unknown")
+        container_info = self.model_container_info()
+        details["framework"] = container_info.get("Framework", "unknown")
+        details["framework_version"] = container_info.get("FrameworkVersion", "unknown")
         details["inference_types"] = inference_spec["SupportedRealtimeInferenceInstanceTypes"]
         details["transform_types"] = inference_spec["SupportedTransformInstanceTypes"]
         details["content_types"] = inference_spec["SupportedContentTypes"]
@@ -469,8 +485,7 @@ class Model(Artifact):
     def _extract_training_job_name(self) -> Union[str, None]:
         """Internal: Extract the training job name from the ModelDataUrl"""
         try:
-            container = self.latest_model["ModelPackageDetails"]["InferenceSpecification"]["Containers"][0]
-            model_data_url = container["ModelDataUrl"]
+            model_data_url = self.model_container_info()["ModelDataUrl"]
             parsed_url = urllib.parse.urlparse(model_data_url)
             training_job_name = parsed_url.path.lstrip("/").split("/")[0]
             return training_job_name
@@ -558,6 +573,10 @@ if __name__ == "__main__":
 
     # Get the SageWorks metadata associated with this Model
     print(f"SageWorks Meta: {my_model.sageworks_meta()}")
+
+    # Get the latest model object (sagemaker.model.Model)
+    sagemaker_model = my_model.latest_model_object()
+    print(f"Latest Model Object: {my_model.latest_model_object()}")
 
     # Delete the Model
     # my_model.delete()
