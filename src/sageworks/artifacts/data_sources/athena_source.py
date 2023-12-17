@@ -512,6 +512,18 @@ if __name__ == "__main__":
     print("\n\nALL Meta")
     pprint(my_data.aws_meta())
 
+    # Get the display columns
+    print("\n\nDisplay Columns")
+    print(my_data.get_display_columns())
+
+    # Set the display columns
+    print("\n\nDisplay Columns")
+    print(my_data.set_display_columns(my_data.column_names()[:5]))
+
+    # Get the display columns
+    print("\n\nDisplay Columns")
+    print(my_data.get_display_columns())
+
     # Test an Data Source that doesn't exist
     # The rest of the tests are Disabled for now
     """

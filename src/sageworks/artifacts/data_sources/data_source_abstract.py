@@ -2,6 +2,7 @@
 from abc import abstractmethod
 import pandas as pd
 from io import StringIO
+import json
 
 # SageWorks Imports
 from sageworks.artifacts.artifact import Artifact
@@ -80,7 +81,7 @@ class DataSourceAbstract(Artifact):
         """
         # Check if we have the display columns in our metadata
         if self._display_columns is None:
-            self._display_columns = self.sageworks_meta().get("sageworks_display_columns")
+            self._display_columns = json.loads(self.sageworks_meta().get("sageworks_display_columns"))
 
         # If we still don't have display columns, try to set them
         if self._display_columns is None:
