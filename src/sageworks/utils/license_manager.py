@@ -1,5 +1,6 @@
 """SageWorks API License Manager"""
 import os
+import sys
 import base64
 import json
 import logging
@@ -69,7 +70,7 @@ class LicenseManager:
             cls.log.critical("SageWorks API Key is not valid for this AWS Account!")
             cls.log.critical(f"Connected AWS Account ID: {aws_account_id}")
             cls.log.critical(f"API License AWS Account ID: {api_account_id}")
-            return None
+            sys.exit(1)
 
         # Return the license information
         return cls.api_license_info
