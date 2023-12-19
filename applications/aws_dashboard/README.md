@@ -5,7 +5,7 @@ You can run the Dashboard on a local environment:
 ```bash 
 $ cd applications/aws_dashboard
 $ pip install -r requirements.txt
-$ python app.py
+$ python app.py  (or ./dashboard)
 ``` 
 
 ## Docker and Getting SSO Token
