@@ -82,8 +82,6 @@ def logging_setup(color_logs=True):
     log = logging.getLogger("sageworks")
     if not log.hasHandlers():
         handler = logging.StreamHandler(stream=sys.stdout)
-        throttle_filter = ThrottlingFilter(rate_seconds=5)
-        handler.addFilter(throttle_filter)
         formatter = (
             ColoredFormatter(
                 "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
@@ -105,6 +103,8 @@ def logging_setup(color_logs=True):
             log.debug("Debugging enabled via SAGEWORKS_DEBUG environment variable.")
         else:
             log.setLevel(logging.INFO)
+            throttle_filter = ThrottlingFilter(rate_seconds=5)
+            handler.addFilter(throttle_filter)
 
         # Sagemaker continuously complains about config, so we'll suppress it
         logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
