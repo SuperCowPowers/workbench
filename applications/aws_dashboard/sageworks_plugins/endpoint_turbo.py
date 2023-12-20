@@ -85,7 +85,7 @@ class EndpointTurbo(PluginInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a EndpointTurbo
-    from sageworks.artifacts.models.model import Model
+    from sageworks.core.artifacts.model import Model
 
     m = Model("wine-classification")
     endpoint_details = m.details()

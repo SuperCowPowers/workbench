@@ -1,7 +1,7 @@
 """Tests for the Model functionality"""
 
 # SageWorks Imports
-from sageworks.artifacts.models.model import Model
+from sageworks.core.artifacts.model import Model
 
 
 def test():

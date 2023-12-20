@@ -1,7 +1,7 @@
 """Tests for the DataSource/AthenaSource functionality"""
 
 # SageWorks Imports
-from sageworks.artifacts.data_sources.athena_source import AthenaSource
+from sageworks.core.artifacts.athena_source import AthenaSource
 
 
 def test():

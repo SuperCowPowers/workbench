@@ -4,9 +4,9 @@
 # - Run inference on an Endpoint
 # - Capture performance metrics in S3 SageWorks Model Bucket
 
-from sageworks.artifacts.feature_sets.feature_set import FeatureSet
-from sageworks.artifacts.models.model import Model
-from sageworks.artifacts.endpoints.endpoint import Endpoint
+from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.model import Model
+from sageworks.core.artifacts.endpoint import Endpoint
 import awswrangler as wr
 
 # Test DatsSet

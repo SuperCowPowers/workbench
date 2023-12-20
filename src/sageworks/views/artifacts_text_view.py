@@ -8,10 +8,10 @@ from typing import Dict
 # SageWorks Imports
 from sageworks.views.view import View
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.artifacts.data_sources.data_source import DataSource
-from sageworks.artifacts.feature_sets.feature_set import FeatureSet
-from sageworks.artifacts.models.model import Model
-from sageworks.artifacts.endpoints.endpoint import Endpoint
+from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.model import Model
+from sageworks.core.artifacts.endpoint import Endpoint
 from sageworks.utils.iso_8601 import iso8601_to_datetime
 
 

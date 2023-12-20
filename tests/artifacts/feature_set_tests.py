@@ -1,7 +1,7 @@
 """Tests for the FeatureSet functionality"""
 
 # SageWorks Imports
-from sageworks.artifacts.feature_sets.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set import FeatureSet
 
 
 def test():

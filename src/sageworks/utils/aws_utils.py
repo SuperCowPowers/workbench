@@ -239,7 +239,7 @@ def _chunk_data(base_key: str, data: str) -> dict:
 if __name__ == "__main__":
     """Exercise the AWS Utils"""
     from pprint import pprint
-    from sageworks.artifacts.feature_sets.feature_set import FeatureSet
+    from sageworks.core.artifacts.feature_set import FeatureSet
 
     my_features = FeatureSet("test_feature_set")
     my_meta = my_features.sageworks_meta()

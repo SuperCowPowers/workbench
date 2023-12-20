@@ -1,7 +1,7 @@
 """Tests for the Pandas DataFrame to Data Transforms"""
 
 # Local imports
-from sageworks.transforms.data_to_data.light.data_to_data_light import DataToDataLight
+from sageworks.core.transforms.data_to_data.light.data_to_data_light import DataToDataLight
 
 
 def test():

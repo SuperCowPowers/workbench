@@ -4,7 +4,7 @@ import time
 
 # SageWorks Imports
 from sageworks.views.artifacts_text_view import ArtifactsTextView
-from sageworks.artifacts.models.model import Model
+from sageworks.core.artifacts.model import Model
 
 # Setup logging
 log = logging.getLogger("sageworks")

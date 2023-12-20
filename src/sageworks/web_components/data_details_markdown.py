@@ -218,7 +218,7 @@ if __name__ == "__main__":
     import dash
     from dash import dcc
     from dash import html
-    from sageworks.artifacts.data_sources.data_source import DataSource
+    from sageworks.core.artifacts.data_source import DataSource
 
     # Create the class and get the AWS FeatureSet details
     ds = DataSource("wine_data")

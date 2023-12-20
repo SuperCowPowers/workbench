@@ -131,7 +131,7 @@ class CorrelationMatrix(ComponentInterface):
 
 if __name__ == "__main__":
     # This class takes in data details and generates a Correlation Matrix
-    from sageworks.artifacts.data_sources.data_source import DataSource
+    from sageworks.core.artifacts.data_source import DataSource
 
     ds = DataSource("logs_test_data")
     ds_details = ds.details()

@@ -12,15 +12,15 @@ Endpoints:
 import sys
 
 from pathlib import Path
-from sageworks.artifacts.data_sources.data_source import DataSource
-from sageworks.artifacts.feature_sets.feature_set import FeatureSet
-from sageworks.artifacts.models.model import Model, ModelType
-from sageworks.artifacts.endpoints.endpoint import Endpoint
+from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.model import Model, ModelType
+from sageworks.core.artifacts.endpoint import Endpoint
 
-from sageworks.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
-from sageworks.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
-from sageworks.transforms.features_to_model.features_to_model import FeaturesToModel
-from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
+from sageworks.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
+from sageworks.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
+from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
+from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 

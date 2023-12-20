@@ -2,7 +2,7 @@
 import pytest
 
 # Local imports
-from sageworks.transforms.data_to_features.light.data_to_features_light import (
+from sageworks.core.transforms.data_to_features.light.data_to_features_light import (
     DataToFeaturesLight,
 )
 

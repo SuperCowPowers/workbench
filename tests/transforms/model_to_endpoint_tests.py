@@ -2,7 +2,7 @@
 import pytest
 
 # Local Imports
-from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
+from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 
 
 # Simple test of the ModelToEndpoint functionality

@@ -133,7 +133,7 @@ if __name__ == "__main__":
     import dash
     from dash import dcc, html
     import dash_bootstrap_components as dbc
-    from sageworks.artifacts.models.model import Model
+    from sageworks.core.artifacts.model import Model
 
     # Create the class and get the AWS FeatureSet details
     m = Model("abalone-regression")

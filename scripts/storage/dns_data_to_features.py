@@ -2,7 +2,7 @@
    This is a custom script that knows about DNS data specifics"""
 
 # SageWorks Imports
-from sageworks.transforms.data_to_features.heavy.chunk.data_to_features_chunk import (
+from sageworks.core.transforms.data_to_features.heavy.chunk.data_to_features_chunk import (
     DataToFeaturesChunk,
 )
 

@@ -11,7 +11,7 @@ from sagemaker.model_monitor import (
 )
 
 # SageWorks Imports
-from sageworks.artifacts.endpoints.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint import Endpoint
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.s3_utils import read_s3_file
 
@@ -270,8 +270,8 @@ class ModelMonitoring:
 
 if __name__ == "__main__":
     """Exercise the ModelMonitoring class"""
-    from sageworks.artifacts.feature_sets.feature_set import FeatureSet
-    from sageworks.artifacts.models.model import Model
+    from sageworks.core.artifacts.feature_set import FeatureSet
+    from sageworks.core.artifacts.model import Model
     import awswrangler as wr
 
     # Set options for actually seeing the dataframe

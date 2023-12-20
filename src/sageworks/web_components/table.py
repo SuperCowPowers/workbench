@@ -159,7 +159,7 @@ class Table(ComponentInterface):
 
 if __name__ == "__main__":
     from dash import Dash, html
-    from sageworks.artifacts.data_sources.data_source import DataSource
+    from sageworks.core.artifacts.data_source import DataSource
 
     # Get a smart sample from a test data source
     ds = DataSource("abalone_data")

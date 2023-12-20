@@ -15,11 +15,11 @@ SageWorks Main Classes
   - ModelToEndpoint
 
   For help on particular classes you can do this
-  - from sageworks.transforms.data_loaders.light.json_to_data_source import JSONToDataSource
+  - from sageworks.core.transforms.data_loaders.light.json_to_data_source import JSONToDataSource
   - help(JSONToDataSource)
 
 
-      class JSONToDataSource(sageworks.transforms.transform.Transform)
+      class JSONToDataSource(sageworks.core.transforms.transform.Transform)
      |  JSONToDataSource(json_file_path: str, data_uuid: str)
      |
      |  JSONToDataSource: Class to move local JSON Files into a SageWorks DataSource

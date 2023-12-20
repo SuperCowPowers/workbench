@@ -5,7 +5,7 @@ import logging
 
 # Local Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.transforms.transform import TransformOutput as ArtifactType
+from sageworks.core.transforms.transform import TransformOutput as ArtifactType
 
 
 class SageWorksEventBridge:

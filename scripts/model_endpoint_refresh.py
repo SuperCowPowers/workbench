@@ -3,8 +3,8 @@ import logging
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.artifacts.models.model import Model
-from sageworks.artifacts.endpoints.endpoint import Endpoint
+from sageworks.core.artifacts.model import Model
+from sageworks.core.artifacts.endpoint import Endpoint
 
 # Assuming AWSAccountClamp().sagemaker_client() gives you a SageMaker client
 sagemaker_client = AWSAccountClamp().sagemaker_client()

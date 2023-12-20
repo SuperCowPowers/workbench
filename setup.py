@@ -24,17 +24,23 @@ setup(
     packages=find_packages(where="src"),
     include_package_data=True,
     package_data={
-        "sageworks": ["resources/signature_verify_pub.pem", "resources/open_source_api.key"],
+        "sageworks": [
+            "resources/signature_verify_pub.pem",
+            "resources/open_source_api.key",
+            "core/transforms/features_to_model/light_model_harness/xgb_model.template",
+            "core/transforms/features_to_model/light_model_harness/requirements.txt",
+        ]
     },
     install_requires=install_requires,
     license="MIT",
     keywords="SageMaker, Machine Learning, AWS, Python, Utilities",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Programming Language :: Python :: 3.12",
+        "Topic :: Scientific/Engineering :: Machine Learning",
     ],
     setup_requires=["setuptools_scm"],
     entry_points={

@@ -3,7 +3,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.artifacts_web_view import ArtifactsWebView
-from sageworks.artifacts.models.model import Model
+from sageworks.core.artifacts.model import Model
 
 
 class ModelWebView(ArtifactsWebView):

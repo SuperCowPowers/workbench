@@ -39,7 +39,7 @@ class ModelMetrics(ComponentInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
-    from sageworks.artifacts.models.model import Model
+    from sageworks.core.artifacts.model import Model
 
     # m = Model("abalone-regression")
     m = Model("wine-classification")

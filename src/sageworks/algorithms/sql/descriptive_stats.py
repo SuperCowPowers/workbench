@@ -4,7 +4,7 @@ import pandas as pd
 from collections import defaultdict
 
 # SageWorks Imports
-from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
+from sageworks.core.artifacts.data_source_abstract import DataSourceAbstract
 
 
 # SageWorks Logger
@@ -78,7 +78,7 @@ def descriptive_stats(data_source: DataSourceAbstract) -> dict[dict]:
 if __name__ == "__main__":
     """Exercise the SQL Descriptive Stats Functionality"""
     from pprint import pprint
-    from sageworks.artifacts.data_sources.data_source import DataSource
+    from sageworks.core.artifacts.data_source import DataSource
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 50)

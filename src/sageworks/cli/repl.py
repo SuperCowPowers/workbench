@@ -56,10 +56,10 @@ class CommandHandler:
         self.session_globals["get_endpoints"] = self.get_endpoints
 
     def preload_imports(self):
-        from sageworks.artifacts.data_sources.data_source import DataSource
-        from sageworks.artifacts.feature_sets.feature_set import FeatureSet
-        from sageworks.artifacts.models.model import Model, ModelType
-        from sageworks.artifacts.endpoints.endpoint import Endpoint
+        from sageworks.core.artifacts.data_source import DataSource
+        from sageworks.core.artifacts.feature_set import FeatureSet
+        from sageworks.core.artifacts.model import Model, ModelType
+        from sageworks.core.artifacts.endpoint import Endpoint
 
         # Add the imports to the session globals
         self.session_globals["DataSource"] = DataSource

@@ -6,8 +6,8 @@ Endpoints:
 import logging
 
 # Sageworks Imports
-from sageworks.artifacts.endpoints.endpoint import Endpoint
-from sageworks.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
+from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 # Setup the logger

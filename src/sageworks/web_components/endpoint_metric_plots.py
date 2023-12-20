@@ -65,7 +65,7 @@ class EndpointMetricPlots(ComponentInterface):
 
 if __name__ == "__main__":
     # This class plots out Endpoint Metrics
-    from sageworks.artifacts.endpoints.endpoint import Endpoint
+    from sageworks.core.artifacts.endpoint import Endpoint
 
     # Grab the endpoint details
     end = Endpoint("abalone-regression-end-rt")

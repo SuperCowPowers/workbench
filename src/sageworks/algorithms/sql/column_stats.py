@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.artifacts.data_sources.data_source_abstract import DataSourceAbstract
+from sageworks.core.artifacts.data_source_abstract import DataSourceAbstract
 
 
 # SageWorks Logger
@@ -122,7 +122,7 @@ def column_stats(data_source: DataSourceAbstract, recompute: bool = False) -> di
 if __name__ == "__main__":
     """Exercise the SQL Column Details Functionality"""
     from pprint import pprint
-    from sageworks.artifacts.data_sources.data_source import DataSource
+    from sageworks.core.artifacts.data_source import DataSource
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 50)

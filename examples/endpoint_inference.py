@@ -3,9 +3,9 @@ import argparse
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.artifacts.feature_sets.feature_set import FeatureSet
-from sageworks.artifacts.models.model import Model
-from sageworks.artifacts.endpoints.endpoint import Endpoint
+from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.model import Model
+from sageworks.core.artifacts.endpoint import Endpoint
 
 
 def run_inference(endpoint_name):

@@ -1,12 +1,12 @@
 """Tests for the Endpoint functionality"""
 
 # SageWorks Imports
-from sageworks.artifacts.endpoints.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint import Endpoint
 
 
 def test():
     """Simple test of the Endpoint functionality"""
-    from sageworks.transforms.pandas_transforms.features_to_pandas import FeaturesToPandas
+    from sageworks.core.transforms.pandas_transforms.features_to_pandas import FeaturesToPandas
 
     # Grab an Endpoint object and pull some information from it
     my_endpoint = Endpoint("abalone-regression-end")

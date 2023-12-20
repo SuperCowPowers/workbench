@@ -3,7 +3,7 @@ import pandas as pd
 import logging
 
 # Local Imports
-from sageworks.transforms.pandas_transforms.data_to_pandas import DataToPandas
+from sageworks.core.transforms.pandas_transforms.data_to_pandas import DataToPandas
 from sageworks.utils import pandas_utils
 
 

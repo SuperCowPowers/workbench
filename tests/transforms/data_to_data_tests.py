@@ -2,7 +2,7 @@
 import pytest
 
 # Local imports
-from sageworks.transforms.data_to_data.light.data_to_data_light import DataToDataLight
+from sageworks.core.transforms.data_to_data.light.data_to_data_light import DataToDataLight
 
 
 @pytest.mark.long
