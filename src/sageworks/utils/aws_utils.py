@@ -192,7 +192,7 @@ def dict_to_aws_tags(meta_data: dict) -> list:
 
         # Make sure the value is valid
         if not is_valid_tag(value):
-            log.important("Base64 encoding metadata...")
+            log.important(f"Base64 encoding metadata: {value}")
             value = base64.b64encode(value.encode()).decode()
 
         # Check if the value will fit in the 256-character limit
