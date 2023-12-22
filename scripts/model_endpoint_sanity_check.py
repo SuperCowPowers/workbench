@@ -5,7 +5,7 @@ import logging
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
 from sageworks.core.artifacts.model import Model
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 # Get a sagemaker_client from the AWSAccountClamp()
 sagemaker_client = AWSAccountClamp().sagemaker_client()
@@ -96,7 +96,7 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
                 log.warning(f"\t{endpoint['EndpointName']} --> Model not found: {variant['ModelName']}")
                 log.warning("Recommendation: This endpoint may no longer work, test it!")
                 if tag:
-                    e = Endpoint(endpoint["EndpointName"])
+                    e = EndpointCore(endpoint["EndpointName"])
                     e.add_sageworks_health_tag("no_model")
 
     # Now report on the models that are not used by any endpoint (orphans)

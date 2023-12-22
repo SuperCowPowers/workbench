@@ -5,7 +5,7 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 
 def run_inference(endpoint_name):
@@ -14,7 +14,7 @@ def run_inference(endpoint_name):
     pd.set_option("display.width", None)
 
     # Grab the Endpoint
-    my_endpoint = Endpoint(endpoint_name)
+    my_endpoint = EndpointCore(endpoint_name)
 
     # Grab the FeatureSet by backtracking from the Endpoint
     model = my_endpoint.get_input()

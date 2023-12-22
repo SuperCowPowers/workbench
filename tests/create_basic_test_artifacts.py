@@ -17,7 +17,7 @@ from pathlib import Path
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model, ModelType
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 from sageworks.utils.test_data_generator import TestDataGenerator
 from sageworks.core.transforms.pandas_transforms.pandas_to_data import PandasToData
@@ -77,7 +77,7 @@ if __name__ == "__main__":
         features_to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")
 
     # Create the abalone_regression Endpoint
-    if recreate or not Endpoint("abalone-regression-end").exists():
+    if recreate or not EndpointCore("abalone-regression-end").exists():
         model_to_endpoint = ModelToEndpoint("abalone-regression", "abalone-regression-end")
         model_to_endpoint.set_output_tags(["abalone", "regression"])
         model_to_endpoint.transform()

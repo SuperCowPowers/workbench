@@ -3,7 +3,7 @@ import time
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 
@@ -54,7 +54,7 @@ if __name__ == "__main__":
         m.delete()
 
     # Delete the abalone_regression Endpoint
-    end = Endpoint("abalone-regression-end")
+    end = EndpointCore("abalone-regression-end")
     if end.exists():
         print("Deleting abalone-regression-end endpoint...")
         end.delete()
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     if m.exists():
         print("Deleting abalone-classification model...")
         m.delete()
-    end = Endpoint("abalone-classification-end")
+    end = EndpointCore("abalone-classification-end")
     if end.exists():
         print("Deleting abalone-classification-end endpoint...")
         end.delete()
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     if m.exists():
         print("Deleting wine-classification model...")
         m.delete()
-    end = Endpoint("wine-classification-end")
+    end = EndpointCore("wine-classification-end")
     if end.exists():
         print("Deleting wine-classification-end endpoint...")
         end.delete()
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     if m.exists():
         print("Deleting aqsol-regression model...")
         m.delete()
-    end = Endpoint("aqsol-regression-end")
+    end = EndpointCore("aqsol-regression-end")
     if end.exists():
         print("Deleting aqsol-regression-end endpoint...")
         end.delete()
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     if m.exists():
         print("Deleting aqsol-rdkit-regression model...")
         m.delete()
-    end = Endpoint("aqsol-rdkit-regression-end")
+    end = EndpointCore("aqsol-rdkit-regression-end")
     if end.exists():
         print("Deleting aqsol-rdkit-regression-end endpoint...")
         end.delete()

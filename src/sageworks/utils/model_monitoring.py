@@ -11,7 +11,7 @@ from sagemaker.model_monitor import (
 )
 
 # SageWorks Imports
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.s3_utils import read_s3_file
 
@@ -26,7 +26,7 @@ class ModelMonitoring:
         """
         self.log = logging.getLogger("sageworks")
         self.endpoint_name = endpoint_name
-        self.endpoint = Endpoint(self.endpoint_name)
+        self.endpoint = EndpointCore(self.endpoint_name)
 
         # Initialize Class Attributes
         self.sagemaker_session = self.endpoint.sm_session
@@ -280,7 +280,7 @@ if __name__ == "__main__":
 
     # Create the Class and test it out
     endpoint_name = "abalone-regression-end-rt"
-    my_endpoint = Endpoint(endpoint_name)
+    my_endpoint = EndpointCore(endpoint_name)
     if not my_endpoint.exists():
         print(f"Endpoint {endpoint_name} does not exist.")
         exit(1)

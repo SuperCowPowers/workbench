@@ -1,4 +1,4 @@
-"""Endpoint: SageWorks Endpoint Class"""
+"""EndpointCore: SageWorks EndpointCore Class"""
 from datetime import datetime
 import botocore
 import pandas as pd
@@ -33,11 +33,11 @@ from sageworks.utils.endpoint_metrics import EndpointMetrics
 from sageworks.utils.extract_model_artifact import ExtractModelArtifact
 
 
-class Endpoint(Artifact):
-    """Endpoint: SageWorks Endpoint Class
+class EndpointCore(Artifact):
+    """EndpointCore: SageWorks EndpointCore Class
 
     Common Usage:
-        my_endpoint = Endpoint(endpoint_uuid)
+        my_endpoint = EndpointCore(endpoint_uuid)
         prediction_df = my_endpoint.predict(test_df)
         metrics = my_endpoint.regression_metrics(target_column, prediction_df)
         for metric, value in metrics.items():
@@ -45,7 +45,7 @@ class Endpoint(Artifact):
     """
 
     def __init__(self, endpoint_uuid, force_refresh: bool = False):
-        """Endpoint Initialization
+        """EndpointCore Initialization
 
         Args:
             endpoint_uuid (str): Name of Endpoint in SageWorks
@@ -77,7 +77,7 @@ class Endpoint(Artifact):
         super().__post_init__()
 
         # All done
-        self.log.info(f"Endpoint Initialized: {self.endpoint_name}")
+        self.log.info(f"EndpointCore Initialized: {self.endpoint_name}")
 
     def refresh_meta(self):
         """Refresh the Artifact's metadata"""
@@ -207,26 +207,22 @@ class Endpoint(Artifact):
                 self.log.critical(f"Endpoint prediction error: {err.response.get('Message')}")
                 raise err
 
-                # Base case: DataFrame with 1 Row
-                if len(feature_df) == 1:
-                    # If we don't have ANY known good results we're kinda screwed
-                    if not self.endpoint_return_columns:
-                        raise err
+            # Base case: DataFrame with 1 Row
+            if len(feature_df) == 1:
+                # If we don't have ANY known good results we're kinda screwed
+                if not self.endpoint_return_columns:
+                    raise err
 
-                    # Construct an Error DataFrame (one row of NaNs in the return columns)
-                    results_df = self._error_df(feature_df, self.endpoint_return_columns)
-                    return results_df
+                # Construct an Error DataFrame (one row of NaNs in the return columns)
+                results_df = self._error_df(feature_df, self.endpoint_return_columns)
+                return results_df
 
-                # Recurse on binary splits of the dataframe
-                num_rows = len(feature_df)
-                split = int(num_rows / 2)
-                first_half = self._endpoint_error_handling(predictor, feature_df[0:split])
-                second_half = self._endpoint_error_handling(predictor, feature_df[split:num_rows])
-                return pd.concat([first_half, second_half], ignore_index=True)
-
-            else:
-                print("Unknown Error from Prediction Endpoint")
-                raise err
+            # Recurse on binary splits of the dataframe
+            num_rows = len(feature_df)
+            split = int(num_rows / 2)
+            first_half = self._endpoint_error_handling(predictor, feature_df[0:split])
+            second_half = self._endpoint_error_handling(predictor, feature_df[split:num_rows])
+            return pd.concat([first_half, second_half], ignore_index=True)
 
     def _error_df(self, df, all_columns):
         """Internal: Method to construct an Error DataFrame (a Pandas DataFrame with one row of NaNs)"""
@@ -626,8 +622,8 @@ if __name__ == "__main__":
         FeaturesToPandas,
     )
 
-    # Grab an Endpoint object and pull some information from it
-    my_endpoint = Endpoint("abalone-regression-end")
+    # Grab an EndpointCore object and pull some information from it
+    my_endpoint = EndpointCore("abalone-regression-end")
 
     # Let's do a check/validation of the Endpoint
     assert my_endpoint.exists()
@@ -648,7 +644,7 @@ if __name__ == "__main__":
     # Temp Testing
     from sageworks.core.artifacts.feature_set import FeatureSet
 
-    end = Endpoint("abalone-regression-end")
+    end = EndpointCore("abalone-regression-end")
     model = end.get_input()
     feature_set = Model(model).get_input()
     features = FeatureSet(feature_set)
@@ -671,14 +667,14 @@ if __name__ == "__main__":
     if INFERENCE_TESTING:
         REGRESSION = True
         if REGRESSION:
-            my_endpoint = Endpoint("abalone-regression-end")
+            my_endpoint = EndpointCore("abalone-regression-end")
             feature_to_pandas = FeaturesToPandas("abalone_feature_set")
             my_target_column = "class_number_of_rings"
             data_name = ("abalone_holdout_2023_10_19",)
             data_hash = ("12345",)
             description = "Test Abalone Data"
         else:
-            my_endpoint = Endpoint("wine-classification-end")
+            my_endpoint = EndpointCore("wine-classification-end")
             feature_to_pandas = FeaturesToPandas("wine_features")
             my_target_column = "wine_class"
             data_name = ("wine_holdout_2023_10_19",)

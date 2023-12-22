@@ -6,7 +6,7 @@
 
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 import awswrangler as wr
 
 # Test DatsSet
@@ -32,8 +32,8 @@ TARGET_COLUMN = "class_number_of_rings"
 
 
 # Spin up our Endpoint
-my_endpoint = Endpoint("abalone-regression-end")
-# my_endpoint = Endpoint("solubility-test-regression-end")
+my_endpoint = EndpointCore("abalone-regression-end")
+# my_endpoint = EndpointCore("solubility-test-regression-end")
 
 if S3_DATA_PATH is not None:
     # Read the data from S3

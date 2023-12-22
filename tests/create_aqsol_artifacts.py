@@ -12,7 +12,7 @@ Endpoints:
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model, ModelType
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 from sageworks.core.transforms.data_loaders.light.s3_to_data_source_light import S3ToDataSourceLight
 from sageworks.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
@@ -77,7 +77,7 @@ if __name__ == "__main__":
         )
 
     # Create the aqsol regression Endpoint
-    if recreate or not Endpoint("aqsol-regression-end").exists():
+    if recreate or not EndpointCore("aqsol-regression-end").exists():
         model_to_endpoint = ModelToEndpoint("aqsol-regression", "aqsol-regression-end")
         model_to_endpoint.set_output_tags(["aqsol", "regression"])
         model_to_endpoint.transform()
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         )
 
     # Create the aqsol regression Endpoint
-    if recreate or not Endpoint("aqsol-rdkit-regression-end").exists():
+    if recreate or not EndpointCore("aqsol-rdkit-regression-end").exists():
         model_to_endpoint = ModelToEndpoint("aqsol-rdkit-regression", "aqsol-rdkit-regression-end")
         model_to_endpoint.set_output_tags(["aqsol", "rdkit", "regression"])
         model_to_endpoint.transform()

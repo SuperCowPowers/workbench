@@ -18,7 +18,7 @@ from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model, ModelType
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 from sageworks.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
 from sageworks.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
 from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         features_to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")
 
     # Create the abalone_regression Endpoint
-    if not Endpoint("abalone-regression-end").exists():
+    if not EndpointCore("abalone-regression-end").exists():
         model_to_endpoint = ModelToEndpoint("abalone-regression", "abalone-regression-end")
         model_to_endpoint.set_output_tags(["abalone", "regression"])
         model_to_endpoint.transform()

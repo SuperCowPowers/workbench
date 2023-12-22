@@ -13,7 +13,7 @@ import logging
 from pathlib import Path
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model, ModelType
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
 from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
@@ -50,7 +50,7 @@ if __name__ == "__main__":
         time.sleep(10)
 
     # Create the abalone_regression Endpoint
-    if recreate or not Endpoint("abalone-regression-end-100").exists():
+    if recreate or not EndpointCore("abalone-regression-end-100").exists():
         model_to_endpoint = ModelToEndpoint("abalone-regression-100", "abalone-regression-end-100")
         model_to_endpoint.set_output_tags(["abalone", "regression"])
         model_to_endpoint.transform()

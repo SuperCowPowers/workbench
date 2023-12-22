@@ -3,7 +3,7 @@ import logging
 
 # SageWorks Imports
 from sageworks.views.artifacts_text_view import ArtifactsTextView
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 # Setup logging
 log = logging.getLogger("sageworks")
@@ -14,7 +14,7 @@ artifacts_text_view = ArtifactsTextView()
 # Get all the endpoints
 endpoints = artifacts_text_view.endpoints_summary()
 for end_name in endpoints["Name"]:
-    end = Endpoint(end_name)
+    end = EndpointCore(end_name)
     if end.ready():
         log.debug(f"Endpoint {end_name} is ready!")
     else:

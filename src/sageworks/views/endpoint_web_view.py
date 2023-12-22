@@ -3,7 +3,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.artifacts_web_view import ArtifactsWebView
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 
 class EndpointWebView(ArtifactsWebView):
@@ -35,7 +35,7 @@ class EndpointWebView(ArtifactsWebView):
         Returns:
             dict: The details for the given Model (or None if not found)
         """
-        endpoint = Endpoint(endpoint_uuid)
+        endpoint = EndpointCore(endpoint_uuid)
         if not endpoint.exists():
             return {"Status": "Not Found"}
         elif not endpoint.ready():

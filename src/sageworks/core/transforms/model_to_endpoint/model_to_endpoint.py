@@ -8,7 +8,7 @@ from sagemaker.deserializers import CSVDeserializer
 # Local Imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.artifacts.model import Model
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 
 class ModelToEndpoint(Transform):
@@ -40,7 +40,7 @@ class ModelToEndpoint(Transform):
         """Compute a Feature Set based on RDKit Descriptors"""
 
         # Delete endpoint (if it already exists)
-        existing_endpoint = Endpoint(self.output_uuid)
+        existing_endpoint = EndpointCore(self.output_uuid)
         if existing_endpoint.exists():
             existing_endpoint.delete()
 
@@ -130,7 +130,7 @@ class ModelToEndpoint(Transform):
         self.log.info("Post-Transform: Calling make_ready() on the Endpoint...")
 
         # Okay, lets get our output model and set it to initializing
-        output_endpoint = Endpoint(self.output_uuid, force_refresh=True)
+        output_endpoint = EndpointCore(self.output_uuid, force_refresh=True)
         output_endpoint.set_status("initializing")
 
         # Call the Model make_ready method and set status to ready

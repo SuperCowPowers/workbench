@@ -15,7 +15,7 @@ from pathlib import Path
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model, ModelType
-from sageworks.core.artifacts.endpoint import Endpoint
+from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 from sageworks.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
 from sageworks.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         features_to_model.transform(target_column="wine_class", description="Wine Classification Model")
 
     # Create the wine classification Endpoint
-    if recreate or not Endpoint("wine-classification-end").exists():
+    if recreate or not EndpointCore("wine-classification-end").exists():
         model_to_endpoint = ModelToEndpoint("wine-classification", "wine-classification-end")
         model_to_endpoint.set_output_tags(["wine", "classification"])
         model_to_endpoint.transform()
