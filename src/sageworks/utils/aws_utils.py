@@ -4,6 +4,9 @@ import time
 import json
 import base64
 import re
+import os
+from pathlib import Path
+import posixpath
 from sagemaker.session import Session as SageSession
 
 # SageWorks Imports
@@ -234,6 +237,34 @@ def _chunk_data(base_key: str, data: str) -> dict:
         chunks[f"{base_key}_chunk_{i // chunk_size + 1}"] = chunk
 
     return chunks
+
+
+def extract_data_source_basename(source: str) -> str:
+    """Extract the basename from a data source
+    Args:
+        source (str): The data source
+    Returns:
+        str: The basename of the data source
+    """
+    # Convert PosixPath to string if necessary
+    if isinstance(source, Path):
+        source = str(source)
+
+    # Check if the source is an S3 path
+    if source.startswith("s3://"):
+        basename = posixpath.basename(source)
+        name_without_extension = os.path.splitext(basename)[0]
+        return name_without_extension + "_data"
+
+    # Check if the source is a local file path
+    elif os.path.isfile(source):
+        basename = os.path.basename(source)
+        name_without_extension = os.path.splitext(basename)[0]
+        return name_without_extension + "_data"
+
+    # If it's neither, assume it's already a data source name
+    else:
+        return source
 
 
 if __name__ == "__main__":
