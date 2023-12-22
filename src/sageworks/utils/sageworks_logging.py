@@ -123,11 +123,10 @@ if __name__ == "__main__":
     my_log.debug("You should see me only if SAGEWORKS_DEBUG is True")
     logging.getLogger("sageworks").setLevel(logging.WARNING)
     my_log.info("You should NOT see me")
-    my_log.warning("You should see me")
+    my_log.warning("You should see this warning")
 
     # Test out ALL the colors
     logging.getLogger("sageworks").setLevel(logging.DEBUG)
-    my_log.debug("\n\nColorized Logging...")
     my_log.debug("This should be a muted color")
     my_log.trace("Trace color should stand out from debug")
     my_log.info("This should be a nice color")
