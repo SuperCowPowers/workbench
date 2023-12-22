@@ -11,7 +11,7 @@ Endpoints:
 """
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model import Model, ModelType
+from sageworks.core.artifacts.model_core import ModelCore, ModelType
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 from sageworks.core.transforms.data_loaders.light.s3_to_data_source_light import S3ToDataSourceLight
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         data_to_features.transform(id_column="id", target_column="solubility")
 
     # Create the aqsol solubility regression Model
-    if recreate or not Model("aqsol-regression").exists():
+    if recreate or not ModelCore("aqsol-regression").exists():
         # Compute our features
         feature_set = FeatureSetCore("aqsol_features")
         feature_list = [
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         rdkit_features.transform(target_column="solubility", id_column="udm_mol_bat_id", query=query)
 
     # Create the RDKIT based  regression Model
-    if recreate or not Model("aqsol-rdkit-regression").exists():
+    if recreate or not ModelCore("aqsol-rdkit-regression").exists():
         # Compute our features
         feature_set = FeatureSetCore("aqsol_rdkit_features")
         exclude = ["id", "smiles", "solubility"]

@@ -1,14 +1,14 @@
 """Tests for the Model functionality"""
 
 # SageWorks Imports
-from sageworks.core.artifacts.model import Model
+from sageworks.core.artifacts.model_core import ModelCore
 
 
 def test():
     """Simple test of the Model functionality"""
 
     # Grab a Model object and pull some information from it
-    my_model = Model("abalone-regression")
+    my_model = ModelCore("abalone-regression")
 
     # Call the various methods
 

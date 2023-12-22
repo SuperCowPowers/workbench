@@ -85,9 +85,9 @@ class Turbo(PluginInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a Turbo
-    from sageworks.core.artifacts.model import Model
+    from sageworks.core.artifacts.model_core import ModelCore
 
-    m = Model("wine-classification")
+    m = ModelCore("wine-classification")
     my_model_details = m.details()
 
     # Instantiate the Turbo class

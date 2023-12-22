@@ -8,7 +8,7 @@ import awswrangler as wr
 # Local Imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model import Model, ModelType
+from sageworks.core.artifacts.model_core import ModelCore, ModelType
 
 
 class FeaturesToModel(Transform):
@@ -89,7 +89,7 @@ class FeaturesToModel(Transform):
         """
         # Delete the existing model (if it exists)
         self.log.important("Trying to delete existing model...")
-        delete_model = Model(self.output_uuid, force_refresh=True)
+        delete_model = ModelCore(self.output_uuid, force_refresh=True)
         delete_model.delete()
 
         # Set our model description
@@ -206,7 +206,7 @@ class FeaturesToModel(Transform):
         self.log.info("Post-Transform: Calling make_ready() on the Model...")
 
         # Okay, lets get our output model and set it to initializing
-        output_model = Model(self.output_uuid, model_type=self.model_type, force_refresh=True)
+        output_model = ModelCore(self.output_uuid, model_type=self.model_type, force_refresh=True)
         output_model.set_status("initializing")
 
         # Call the Model make_ready method

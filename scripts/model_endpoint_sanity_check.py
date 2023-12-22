@@ -4,7 +4,7 @@ import logging
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
-from sageworks.core.artifacts.model import Model
+from sageworks.core.artifacts.model_core import ModelCore
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 # Get a sagemaker_client from the AWSAccountClamp()
@@ -72,7 +72,7 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
     for model_group in model_group_without_model:
         log.important(f"{model_group}")
         if tag:
-            m = Model(model_group)
+            m = ModelCore(model_group)
             m.add_sageworks_health_tag("no_endpoint")
     log.important("Recommendation: Delete these Models Groups or create an Endpoint for them")
 

@@ -4,7 +4,7 @@ import time
 
 # SageWorks Imports
 from sageworks.views.artifacts_text_view import ArtifactsTextView
-from sageworks.core.artifacts.model import Model
+from sageworks.core.artifacts.model_core import ModelCore
 
 # Setup logging
 log = logging.getLogger("sageworks")
@@ -15,7 +15,7 @@ artifacts_text_view = ArtifactsTextView()
 # Get all the models
 models = artifacts_text_view.models_summary()
 for model_name in models["Model Group"]:
-    m = Model(model_name)
+    m = ModelCore(model_name)
     if m.ready():
         log.debug(f"Model {model_name} is ready!")
     else:

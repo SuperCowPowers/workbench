@@ -271,7 +271,7 @@ class ModelMonitoring:
 if __name__ == "__main__":
     """Exercise the ModelMonitoring class"""
     from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-    from sageworks.core.artifacts.model import Model
+    from sageworks.core.artifacts.model_core import ModelCore
     import awswrangler as wr
 
     # Set options for actually seeing the dataframe
@@ -289,7 +289,7 @@ if __name__ == "__main__":
 
     # Grab the FeatureSet by backtracking from the Endpoint
     model = my_endpoint.get_input()
-    feature_set = Model(model).get_input()
+    feature_set = ModelCore(model).get_input()
     features = FeatureSetCore(feature_set)
     table = features.get_training_view_table()
 

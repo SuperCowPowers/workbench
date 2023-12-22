@@ -3,7 +3,7 @@ import logging
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.core.artifacts.model import Model
+from sageworks.core.artifacts.model_core import ModelCore
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 # Assuming AWSAccountClamp().sagemaker_client() gives you a SageMaker client
@@ -22,7 +22,7 @@ def ensure_health_tags():
     log.important(f"Found {len(model_group_names)} Model Groups")
     # For each model group ensure the health tag storage is present
     for model_group_name in model_group_names:
-        m = Model(model_group_name)
+        m = ModelCore(model_group_name)
         m.sageworks_health_tags()
         m.details(recompute=True)
 

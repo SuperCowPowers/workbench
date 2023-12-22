@@ -2,7 +2,7 @@
 import time
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model import Model
+from sageworks.core.artifacts.model_core import ModelCore
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         fs.delete()
 
     # Delete the abalone_regression Model
-    m = Model("abalone-regression")
+    m = ModelCore("abalone-regression")
     if m.exists():
         print("Deleting abalone-regression model...")
         m.delete()
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     if fs.exists():
         print("Deleting abalone_classification...")
         fs.delete()
-    m = Model("abalone-classification")
+    m = ModelCore("abalone-classification")
     if m.exists():
         print("Deleting abalone-classification model...")
         m.delete()
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     if fs.exists():
         print("Deleting wine_features...")
         fs.delete()
-    m = Model("wine-classification")
+    m = ModelCore("wine-classification")
     if m.exists():
         print("Deleting wine-classification model...")
         m.delete()
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     if fs.exists():
         print("Deleting aqsol_features...")
         fs.delete()
-    m = Model("aqsol-regression")
+    m = ModelCore("aqsol-regression")
     if m.exists():
         print("Deleting aqsol-regression model...")
         m.delete()
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     if fs.exists():
         print("Deleting aqsol_rdkit_features...")
         fs.delete()
-    m = Model("aqsol-rdkit-regression")
+    m = ModelCore("aqsol-rdkit-regression")
     if m.exists():
         print("Deleting aqsol-rdkit-regression model...")
         m.delete()

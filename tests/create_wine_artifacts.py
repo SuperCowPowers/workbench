@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model import Model, ModelType
+from sageworks.core.artifacts.model_core import ModelCore, ModelType
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 from sageworks.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         data_to_features.transform(target_column="wine_class", description="Wine Classification Features")
 
     # Create the wine classification Model
-    if recreate or not Model("wine-classification").exists():
+    if recreate or not ModelCore("wine-classification").exists():
         features_to_model = FeaturesToModel("wine_features", "wine-classification", model_type=ModelType.CLASSIFIER)
         features_to_model.set_output_tags(["wine", "classification"])
         features_to_model.transform(target_column="wine_class", description="Wine Classification Model")

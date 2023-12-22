@@ -7,7 +7,7 @@ from sagemaker.deserializers import CSVDeserializer
 
 # Local Imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.core.artifacts.model import Model
+from sageworks.core.artifacts.model_core import ModelCore
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 
@@ -45,7 +45,7 @@ class ModelToEndpoint(Transform):
             existing_endpoint.delete()
 
         # Get the Model Package ARN for our input model
-        model_package_arn = Model(self.input_uuid).model_package_arn()
+        model_package_arn = ModelCore(self.input_uuid).model_package_arn()
 
         # Will this be a Serverless Endpoint?
         if self.instance_type == "serverless":

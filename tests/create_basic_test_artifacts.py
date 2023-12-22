@@ -16,7 +16,7 @@ import logging
 from pathlib import Path
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model import Model, ModelType
+from sageworks.core.artifacts.model_core import ModelCore, ModelType
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 from sageworks.utils.test_data_generator import TestDataGenerator
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         data_to_features.transform(target_column="class_number_of_rings")
 
     # Create the abalone_regression Model
-    if recreate or not Model("abalone-regression").exists():
+    if recreate or not ModelCore("abalone-regression").exists():
         features_to_model = FeaturesToModel("abalone_feature_set", "abalone-regression", model_type=ModelType.REGRESSOR)
         features_to_model.set_output_tags(["abalone", "regression"])
         features_to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")

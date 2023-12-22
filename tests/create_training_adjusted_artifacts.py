@@ -12,7 +12,7 @@ import time
 import logging
 from pathlib import Path
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model import Model, ModelType
+from sageworks.core.artifacts.model_core import ModelCore, ModelType
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
 from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     fs.create_training_view("id", hold_out_ids=range(100))  # Just the first 100 ids
 
     # Create the abalone_regression Model
-    if recreate or not Model("abalone-regression-100").exists():
+    if recreate or not ModelCore("abalone-regression-100").exists():
         features_to_model = FeaturesToModel(
             "abalone_feature_set", "abalone-regression-100", model_type=ModelType.REGRESSOR
         )

@@ -133,10 +133,10 @@ if __name__ == "__main__":
     import dash
     from dash import dcc, html
     import dash_bootstrap_components as dbc
-    from sageworks.core.artifacts.model import Model
+    from sageworks.core.artifacts.model_core import ModelCore
 
     # Create the class and get the AWS FeatureSet details
-    m = Model("abalone-regression")
+    m = ModelCore("abalone-regression")
     model_details = m.details()
 
     # Instantiate the DataDetailsMarkdown class

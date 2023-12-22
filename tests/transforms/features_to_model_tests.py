@@ -3,7 +3,7 @@ import pytest
 
 # Local Imports
 from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
-from sageworks.core.artifacts.model import ModelType
+from sageworks.core.artifacts.model_core import ModelType
 
 
 # Simple test of the FeaturesToModel functionality

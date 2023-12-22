@@ -3,7 +3,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.artifacts_web_view import ArtifactsWebView
-from sageworks.core.artifacts.model import Model
+from sageworks.core.artifacts.model_core import ModelCore
 
 
 class ModelWebView(ArtifactsWebView):
@@ -35,7 +35,7 @@ class ModelWebView(ArtifactsWebView):
         Returns:
             dict: The details for the given Model (or None if not found)
         """
-        model = Model(model_uuid)
+        model = ModelCore(model_uuid)
         if not model.exists():
             return {"Status": "Not Found"}
         elif not model.ready():

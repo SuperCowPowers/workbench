@@ -1,4 +1,4 @@
-"""Model: SageWorks Model Class"""
+"""ModelCore: SageWorks ModelCore Class"""
 from datetime import datetime
 import urllib.parse
 from typing import Union
@@ -27,17 +27,17 @@ class ModelType(Enum):
     UNKNOWN = "unknown"
 
 
-class Model(Artifact):
-    """Model: SageWorks Model Class
+class ModelCore(Artifact):
+    """ModelCore: SageWorks ModelCore Class
 
     Common Usage:
-        my_model = Model(model_uuid)
+        my_model = ModelCore(model_uuid)
         my_model.summary()
         my_model.details()
     """
 
     def __init__(self, model_uuid: str, force_refresh: bool = False, model_type: ModelType = None):
-        """Model Initialization
+        """ModelCore Initialization
         Args:
             model_uuid (str): Name of Model in SageWorks.
             force_refresh (bool, optional): Force a refresh of the AWS Broker. Defaults to False.
@@ -529,10 +529,10 @@ class Model(Artifact):
 
 
 if __name__ == "__main__":
-    """Exercise the Model Class"""
+    """Exercise the ModelCore Class"""
 
-    # Grab a Model object and pull some information from it
-    my_model = Model("abalone-regression")
+    # Grab a ModelCore object and pull some information from it
+    my_model = ModelCore("abalone-regression")
 
     # Call the various methods
 

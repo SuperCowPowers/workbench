@@ -27,7 +27,7 @@ from sagemaker import Predictor
 
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
-from sageworks.core.artifacts.model import Model, ModelType
+from sageworks.core.artifacts.model_core import ModelCore, ModelType
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.endpoint_metrics import EndpointMetrics
 from sageworks.utils.extract_model_artifact import ExtractModelArtifact
@@ -338,7 +338,7 @@ class EndpointCore(Artifact):
         if self.model_name == "unknown":
             return {}
         else:
-            model = Model(self.model_name)
+            model = ModelCore(self.model_name)
             if model.exists():
                 return model.details()
             else:
@@ -441,7 +441,7 @@ class EndpointCore(Artifact):
 
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
-        model = Model(self.model_name)
+        model = ModelCore(self.model_name)
         model.details(recompute=True)
 
         # Recompute the details so that inference model metrics are updated
@@ -646,7 +646,7 @@ if __name__ == "__main__":
 
     end = EndpointCore("abalone-regression-end")
     model = end.get_input()
-    feature_set = Model(model).get_input()
+    feature_set = ModelCore(model).get_input()
     features = FeatureSetCore(feature_set)
     table = features.get_training_view_table()
     df = features.query(f"SELECT * FROM {table} where training = 0")

@@ -72,10 +72,10 @@ class RegressionPlot(ComponentInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
-    from sageworks.core.artifacts.model import Model
+    from sageworks.core.artifacts.model_core import ModelCore
 
-    m = Model("abalone-regression")
-    # m = Model("wine-classification")
+    m = ModelCore("abalone-regression")
+    # m = ModelCore("wine-classification")
     model_details = m.details()
 
     # Instantiate the ConfusionMatrix class
