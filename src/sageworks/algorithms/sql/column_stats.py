@@ -122,7 +122,7 @@ def column_stats(data_source: DataSourceAbstract, recompute: bool = False) -> di
 if __name__ == "__main__":
     """Exercise the SQL Column Details Functionality"""
     from pprint import pprint
-    from sageworks.core.artifacts.data_source import DataSource
+    from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 50)
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("test_data")
+    my_data = DataSourceFactory("test_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()

@@ -6,7 +6,7 @@ from pandas.errors import ParserError
 # Local imports
 from sageworks.utils.iso_8601 import datetime_to_iso8601
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 
 
 class PandasToData(Transform):
@@ -146,7 +146,7 @@ class PandasToData(Transform):
         self.log.info("Post-Transform: Calling make_ready() on the DataSource...")
 
         # Okay grab the output DataSource
-        output_data_source = DataSource(self.output_uuid, force_refresh=True)
+        output_data_source = DataSourceFactory(self.output_uuid, force_refresh=True)
         output_data_source.set_status("initializing")
 
         # Call the DataSource make_ready method to compute a bunch of EDA stuff

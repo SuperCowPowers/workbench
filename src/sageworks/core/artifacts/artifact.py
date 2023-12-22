@@ -356,11 +356,11 @@ class Artifact(ABC):
 
 if __name__ == "__main__":
     """Exercise the Artifact Class"""
-    from sageworks.core.artifacts.data_source import DataSource
+    from sageworks.core.artifacts.data_source_factory import DataSourceFactory
     from sageworks.core.artifacts.feature_set import FeatureSet
 
     # Create a DataSource (which is a subclass of Artifact)
-    data_source = DataSource("test_data")
+    data_source = DataSourceFactory("test_data")
 
     # Just some random tests
     assert data_source.exists()

@@ -85,7 +85,7 @@ def correlations(data_source: DataSourceAbstract) -> dict[dict]:
 
 if __name__ == "__main__":
     """Exercise the SQL Correlations Functionality"""
-    from sageworks.core.artifacts.data_source import DataSource
+    from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 50)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("dns_queries")
+    my_data = DataSourceFactory("dns_queries")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()

@@ -369,7 +369,7 @@ class PandasToFeatures(Transform):
 
 if __name__ == "__main__":
     """Exercise the PandasToFeatures Class"""
-    from sageworks.core.artifacts.data_source import DataSource
+    from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 15)
@@ -377,7 +377,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Crab the test_data DataSource
-    ds = DataSource("test_data")
+    ds = DataSourceFactory("test_data")
     data_df = ds.sample()
 
     # Create my DF to Feature Set Transform

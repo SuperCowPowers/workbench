@@ -218,10 +218,10 @@ if __name__ == "__main__":
     import dash
     from dash import dcc
     from dash import html
-    from sageworks.core.artifacts.data_source import DataSource
+    from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 
     # Create the class and get the AWS FeatureSet details
-    ds = DataSource("wine_data")
+    ds = DataSourceFactory("wine_data")
     data_details = ds.details()
 
     # Instantiate the DataDetailsMarkdown class

@@ -1,6 +1,6 @@
 """This Script Deletes the SageWorks Artifacts in AWS used for the tests"""
 import time
-from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model
 from sageworks.core.artifacts.endpoint import Endpoint
@@ -12,19 +12,19 @@ if __name__ == "__main__":
     AWSServiceBroker().get_all_metadata(force_refresh=True)
 
     # Delete the test_data DataSource
-    ds = DataSource("test_data")
+    ds = DataSourceFactory("test_data")
     if ds.exists():
         print("Deleting test_data...")
         ds.delete()
 
     # Delete the abalone_data DataSource
-    ds = DataSource("abalone_data")
+    ds = DataSourceFactory("abalone_data")
     if ds.exists():
         print("Deleting abalone_data...")
         ds.delete()
 
     # Delete the abalone_data_copy DataSource
-    ds = DataSource("abalone_data_copy")
+    ds = DataSourceFactory("abalone_data_copy")
     if ds.exists():
         print("Deleting abalone_data_copy...")
         ds.delete()
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         end.delete()
 
     # Wine Artifacts
-    ds = DataSource("wine_data")
+    ds = DataSourceFactory("wine_data")
     if ds.exists():
         print("Deleting wine_data...")
         ds.delete()
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         end.delete()
 
     # AQSol Artifacts
-    ds = DataSource("aqsol_data")
+    ds = DataSourceFactory("aqsol_data")
     if ds.exists():
         print("Deleting aqsol_data...")
         ds.delete()

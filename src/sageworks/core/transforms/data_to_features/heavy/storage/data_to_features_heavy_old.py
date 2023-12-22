@@ -8,7 +8,7 @@ from sagemaker.feature_store.inputs import DataCatalogConfig
 
 # Local imports
 from sageworks.core.transforms.transform import Transform
-from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set import FeatureSet
 
 
@@ -30,7 +30,7 @@ class DataToFeaturesHeavy(Transform):
         # Set up all my instance attributes
         self.id_column = None
         self.event_time_column = None
-        self.input_data_source = DataSource(input_uuid)
+        self.input_data_source = DataSourceFactory(input_uuid)
         self.output_database = "sagemaker_featurestore"
 
     @staticmethod

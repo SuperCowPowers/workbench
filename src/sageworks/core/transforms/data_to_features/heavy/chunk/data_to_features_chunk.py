@@ -6,7 +6,7 @@ from sageworks.core.transforms.transform import Transform
 from sageworks.core.transforms.pandas_transforms.pandas_to_features_chunked import (
     PandasToFeaturesChunked,
 )
-from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 
 
 class DataToFeaturesChunk(Transform):
@@ -28,7 +28,7 @@ class DataToFeaturesChunk(Transform):
         self.id_column = None
         self.event_time_column = None
         self.chunk_size = chunk_size
-        self.input_data_source = DataSource(input_uuid)
+        self.input_data_source = DataSourceFactory(input_uuid)
         self.ds_database = "sageworks"
         self.cat_column_info = {}
         self.chunked_to_features = None

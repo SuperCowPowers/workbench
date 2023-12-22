@@ -12,7 +12,7 @@ Endpoints:
 import sys
 
 from pathlib import Path
-from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model, ModelType
 from sageworks.core.artifacts.endpoint import Endpoint
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     recreate = False
 
     # Create the wine_data DataSource
-    if recreate or not DataSource("wine_data").exists():
+    if recreate or not DataSourceFactory("wine_data").exists():
         my_loader = CSVToDataSource(wine_data_path, "wine_data")
         my_loader.set_output_tags("wine:classification")
         my_loader.transform()

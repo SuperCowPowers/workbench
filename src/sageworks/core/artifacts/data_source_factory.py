@@ -1,37 +1,14 @@
-"""DataSource: A Factory for DataSources (Athena, RDS, etc)"""
+"""DataSourceFactory: A Factory for DataSources (Athena, RDS, etc)"""
 
 # Local imports
 from sageworks.core.artifacts.athena_source import AthenaSource
 
 
-class DataSource:
-    """DataSource: SageWorks DataSource is the best source for your data
-
-    Common Usage:
-        my_data = DataSource(data_uuid)
-        my_data.summary()
-        my_data.details()
-        df = my_data.query(f"select * from {data_uuid} limit 5")
-
-    Methods: (implemented by subclasses)
-        num_rows(): Return the number of rows for this DataSource
-        num_columns(): Return the number of columns
-        column_names(): Return the column names
-        column_types(): Return the column types
-        column_details(): Return the column details
-        query(query: str): Returns a pd.DataFrame with the query results
-        sample(): Returns a SAMPLED pd.DataFrame from this DataSource
-        summary(): Returns a summary of this DataSource
-        details(): Returns additional details about this DataSource
-        descriptive_stats(): Returns the descriptive stats for each numeric column in this DataSource
-        value_counts(): Returns the value counts for each string column in this DataSource
-        sageworks_meta(): Returns the SageWorks Metadata for this DataSource
-        sageworks_tags(): Returns the SageWorks Tags for this DataSource
-        aws_meta(): Returns ALL AWS Metadata for this DataSource
-    """
+class DataSourceFactory:
+    """DataSourceFactory: SageWorks DataSource is the best source for your data"""
 
     def __new__(cls, uuid, data_source_type: str = "athena", force_refresh: bool = False):
-        """DataSource: A Factory for DataSources (Athena, RDS, etc)
+        """DataSourceFactory: A Factory for DataSources (Athena, RDS, etc)
         Args:
             uuid: The UUID of the DataSource
             data_source_type: The type of DataSource (athena, rds, etc)
@@ -52,11 +29,11 @@ class DataSource:
 
 
 if __name__ == "__main__":
-    """Exercise the DataSource Factory Class"""
+    """Exercise the DataSourceFactory Class"""
     from pprint import pprint
 
-    # Retrieve a DataSource
-    my_data = DataSource("abalone_data")
+    # Retrieve a DataSourceFactory
+    my_data = DataSourceFactory("abalone_data")
 
     # Verify that the Athena DataSource exists
     assert my_data.exists()

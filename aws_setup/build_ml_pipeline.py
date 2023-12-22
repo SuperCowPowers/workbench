@@ -15,7 +15,7 @@ import sys
 import time
 from pathlib import Path
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model, ModelType
 from sageworks.core.artifacts.endpoint import Endpoint
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     redis_check()
 
     # Create the test_data DataSource
-    if not DataSource("test_data", force_refresh=True).exists():
+    if not DataSourceFactory("test_data", force_refresh=True).exists():
         my_loader = CSVToDataSource(test_data_path, "test_data")
         my_loader.set_output_tags("test:small")
         my_loader.transform()
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         time.sleep(10)
 
     # Create the abalone_data DataSource
-    if not DataSource("abalone_data").exists():
+    if not DataSourceFactory("abalone_data").exists():
         my_loader = CSVToDataSource(abalone_data_path, "abalone_data")
         my_loader.set_output_tags("abalone:public")
         my_loader.transform()

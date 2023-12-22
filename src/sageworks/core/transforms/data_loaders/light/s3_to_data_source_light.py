@@ -4,7 +4,7 @@ import awswrangler as wr
 # Local imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.transforms.pandas_transforms.pandas_to_data import PandasToData
-from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.utils.pandas_utils import convert_object_columns
 
 
@@ -78,7 +78,7 @@ class S3ToDataSourceLight(Transform):
         self.log.info("Post-Transform: Calling make_ready() on the DataSource...")
 
         # Okay, lets wait just a bit for the
-        output_data_source = DataSource(self.output_uuid, force_refresh=True)
+        output_data_source = DataSourceFactory(self.output_uuid, force_refresh=True)
         output_data_source.set_status("initializing")
 
         # Call the FeatureSet make_ready method to compute a bunch of EDA stuff

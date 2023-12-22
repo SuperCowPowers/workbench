@@ -3,7 +3,7 @@ import pandas as pd
 
 # Local imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 
 
 class DataToPandas(Transform):
@@ -37,7 +37,7 @@ class DataToPandas(Transform):
         """
 
         # Grab the Input (Data Source)
-        input_data = DataSource(self.input_uuid)
+        input_data = DataSourceFactory(self.input_uuid)
         if not input_data.exists():
             self.log.critical(f"Data Check on {self.input_uuid} failed!")
             return

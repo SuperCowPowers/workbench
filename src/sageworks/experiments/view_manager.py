@@ -262,10 +262,10 @@ class ViewManager:
 if __name__ == "__main__":
     """Exercise the ViewManager Class"""
     from pprint import pprint
-    from sageworks.core.artifacts.data_source import DataSource
+    from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 
     # Create a DataSource (which will create a ViewManager)
-    data_source = DataSource("test_data", force_refresh=True)
+    data_source = DataSourceFactory("test_data", force_refresh=True)
 
     # Now create the default views
     data_source.view_manager.create_display_view()  # recreate=True for testing

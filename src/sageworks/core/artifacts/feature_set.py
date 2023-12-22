@@ -13,7 +13,7 @@ from sagemaker.feature_store.feature_store import FeatureStore
 
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
-from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
@@ -191,7 +191,7 @@ class FeatureSet(Artifact):
         # Note: We can't currently figure out how to this from AWS Metadata
         return self.feature_meta["CreationTime"]
 
-    def get_data_source(self) -> DataSource:
+    def get_data_source(self) -> DataSourceFactory:
         """Return the underlying DataSource object"""
         return self.data_source
 

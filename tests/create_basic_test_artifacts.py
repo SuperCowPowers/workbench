@@ -14,7 +14,7 @@ Endpoints:
 import sys
 import logging
 from pathlib import Path
-from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model, ModelType
 from sageworks.core.artifacts.endpoint import Endpoint
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     recreate = False
 
     # Create the test_data DataSource
-    if recreate or not DataSource("test_data").exists():
+    if recreate or not DataSourceFactory("test_data").exists():
         # Create a small test data set
         test_data = TestDataGenerator()
         df = test_data.person_data()
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         df_to_data.transform()
 
     # Create the abalone_data DataSource
-    if recreate or not DataSource("abalone_data").exists():
+    if recreate or not DataSourceFactory("abalone_data").exists():
         my_loader = CSVToDataSource(abalone_data_path, "abalone_data")
         my_loader.set_output_tags("abalone:public")
         my_loader.transform()

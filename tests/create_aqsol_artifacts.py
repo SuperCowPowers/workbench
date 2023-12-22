@@ -9,7 +9,7 @@ Models:
 Endpoints:
     - aqsol-regression-end
 """
-from sageworks.core.artifacts.data_source import DataSource
+from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.feature_set import FeatureSet
 from sageworks.core.artifacts.model import Model, ModelType
 from sageworks.core.artifacts.endpoint import Endpoint
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     recreate = False
 
     # Create the aqsol_data DataSource
-    if recreate or not DataSource("aqsol_data").exists():
+    if recreate or not DataSourceFactory("aqsol_data").exists():
         to_data_source = S3ToDataSourceLight(s3_path, "aqsol_data")
         to_data_source.set_output_tags(["aqsol", "public"])
         to_data_source.transform()

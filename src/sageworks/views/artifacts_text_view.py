@@ -8,10 +8,6 @@ from typing import Dict
 # SageWorks Imports
 from sageworks.views.view import View
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.core.artifacts.data_source import DataSource
-from sageworks.core.artifacts.feature_set import FeatureSet
-from sageworks.core.artifacts.model import Model
-from sageworks.core.artifacts.endpoint import Endpoint
 from sageworks.utils.iso_8601 import iso8601_to_datetime
 
 
@@ -412,25 +408,6 @@ class ArtifactsTextView(View):
             aws_url = artifact_info.get("sageworks_meta", {}).get("aws_url", "unknown")
             # Hack for constraints on the SageMaker Feature Group Tags
             return aws_url.replace("__question__", "?").replace("__pound__", "#")
-
-    @staticmethod
-    def delete_artifact(artifact_uuid: str):
-        """Delete a SageWorks Artifact
-        Args:
-            artifact_uuid (str): The UUID of the SageWorks Artifact to delete
-        """
-        # Note: This logic can certainly be improved, right now
-        # we are simply searching for the artifact_uuid in each
-        # of the artifact types and deleting it if found.
-        # This is not ideal because it is possible to have
-        # multiple artifacts with the same UUID.
-        for artifact_class in [Endpoint, Model, FeatureSet, DataSource]:
-            print(f"Checking {artifact_class.__name__} {artifact_uuid}...")
-            artifact = artifact_class(artifact_uuid)
-            if artifact.exists():
-                print(f"Deleting {artifact_class.__name__} {artifact_uuid}...")
-                artifact.delete()
-                return
 
 
 if __name__ == "__main__":
