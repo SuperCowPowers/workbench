@@ -9,7 +9,7 @@ from sagemaker.feature_store.inputs import TableFormatEnum
 # Local imports
 from sageworks.utils.iso_8601 import datetime_to_iso8601
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 
 
 class PandasToFeatures(Transform):
@@ -69,7 +69,7 @@ class PandasToFeatures(Transform):
     def delete_existing(self):
         # Delete the existing FeatureSet if it exists
         try:
-            delete_fs = FeatureSet(self.output_uuid)
+            delete_fs = FeatureSetCore(self.output_uuid)
             if delete_fs.exists():
                 self.log.info(f"Deleting the {self.output_uuid} FeatureSet...")
                 delete_fs.delete()
@@ -327,7 +327,7 @@ class PandasToFeatures(Transform):
         self.log.info("Post-Transform: Populating Offline Storage and make_ready()...")
 
         # Feature Group Ingestion takes a while, so we need to wait for it to finish
-        self.output_feature_set = FeatureSet(self.output_uuid, force_refresh=True)
+        self.output_feature_set = FeatureSetCore(self.output_uuid, force_refresh=True)
         self.output_feature_set.set_status("initializing")
 
         # Wait for offline storage of the Feature Group to be ready

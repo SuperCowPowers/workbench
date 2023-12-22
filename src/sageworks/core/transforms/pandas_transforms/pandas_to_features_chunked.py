@@ -5,7 +5,7 @@ from pandas.api.types import CategoricalDtype
 # Local imports
 from sageworks.core.transforms.transform import Transform
 from sageworks.core.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
-from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 
 
 class PandasToFeaturesChunked(Transform):
@@ -67,7 +67,7 @@ class PandasToFeaturesChunked(Transform):
         """Pre-Transform: Create the Feature Group with Chunked Data"""
 
         # Loading data into a Feature Group takes a while, so set status to loading
-        FeatureSet(self.output_uuid).set_status("loading")
+        FeatureSetCore(self.output_uuid).set_status("loading")
 
     def transform_impl(self):
         """Required implementation of the Transform interface"""

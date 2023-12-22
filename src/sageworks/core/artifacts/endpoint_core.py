@@ -642,12 +642,12 @@ if __name__ == "__main__":
     print(f"Serverless: {my_endpoint.is_serverless()}")
 
     # Temp Testing
-    from sageworks.core.artifacts.feature_set import FeatureSet
+    from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 
     end = EndpointCore("abalone-regression-end")
     model = end.get_input()
     feature_set = Model(model).get_input()
-    features = FeatureSet(feature_set)
+    features = FeatureSetCore(feature_set)
     table = features.get_training_view_table()
     df = features.query(f"SELECT * FROM {table} where training = 0")
     DATA_NAME = "Test Data (20) 2023_08_31"

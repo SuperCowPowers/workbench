@@ -13,7 +13,7 @@ import sys
 
 from pathlib import Path
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
-from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.artifacts.model import Model, ModelType
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         my_loader.transform()
 
     # Create the wine_features FeatureSet
-    if recreate or not FeatureSet("wine_features").exists():
+    if recreate or not FeatureSetCore("wine_features").exists():
         data_to_features = DataToFeaturesLight("wine_data", "wine_features")
         data_to_features.set_output_tags(["wine", "classification"])
         data_to_features.transform(target_column="wine_class", description="Wine Classification Features")

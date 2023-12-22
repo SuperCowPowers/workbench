@@ -4,7 +4,7 @@
 # - Run inference on an Endpoint
 # - Capture performance metrics in S3 SageWorks Model Bucket
 
-from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.artifacts.model import Model
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 import awswrangler as wr
@@ -42,7 +42,7 @@ else:
     # Grab the FeatureSet by backtracking from the Endpoint
     model = my_endpoint.get_input()
     feature_set = Model(model).get_input()
-    features = FeatureSet(feature_set)
+    features = FeatureSetCore(feature_set)
     table = features.get_training_view_table()
     df = features.query(f"SELECT * FROM {table} where training = 0")
 

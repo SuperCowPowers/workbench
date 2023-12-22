@@ -4,7 +4,7 @@
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.transforms.pandas_transforms.data_to_pandas import DataToPandas
 from sageworks.core.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
-from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 
 
 class DataToFeaturesLight(Transform):
@@ -66,7 +66,7 @@ class DataToFeaturesLight(Transform):
         output_features.transform()
 
         # Create a default training_view for this FeatureSet
-        fs = FeatureSet(self.output_uuid, force_refresh=True)
+        fs = FeatureSetCore(self.output_uuid, force_refresh=True)
         fs.create_default_training_view()
 
 

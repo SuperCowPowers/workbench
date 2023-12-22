@@ -7,7 +7,7 @@ import awswrangler as wr
 
 # Local Imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.artifacts.model import Model, ModelType
 
 
@@ -96,7 +96,7 @@ class FeaturesToModel(Transform):
         self.model_description = description
 
         # Get our Feature Set and create an S3 CSV Training dataset
-        feature_set = FeatureSet(self.input_uuid)
+        feature_set = FeatureSetCore(self.input_uuid)
         s3_training_path = feature_set.create_s3_training_data()
         self.log.info(f"Created new training data {s3_training_path}...")
 

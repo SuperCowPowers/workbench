@@ -9,7 +9,7 @@ from sagemaker.feature_store.inputs import DataCatalogConfig
 # Local imports
 from sageworks.core.transforms.transform import Transform
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
-from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 
 
 class DataToFeaturesHeavy(Transform):
@@ -52,7 +52,7 @@ class DataToFeaturesHeavy(Transform):
 
         # Do we want to delete the existing FeatureSet?
         try:
-            delete_fs = FeatureSet(self.output_uuid)
+            delete_fs = FeatureSetCore(self.output_uuid)
             if delete_fs.exists():
                 delete_fs.delete()
                 time.sleep(5)
@@ -123,7 +123,7 @@ class DataToFeaturesHeavy(Transform):
 
         # Create the FeatureSet Object
         self.log.info(f"Creating FeatureSet Object: {self.output_uuid}")
-        my_feature_set = FeatureSet(self.output_uuid)
+        my_feature_set = FeatureSetCore(self.output_uuid)
 
         # Compute Details, Descriptive Stats, and SampleDF from the Feature Group
         my_feature_set.details()

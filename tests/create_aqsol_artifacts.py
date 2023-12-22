@@ -10,7 +10,7 @@ Endpoints:
     - aqsol-regression-end
 """
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
-from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.artifacts.model import Model, ModelType
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         to_data_source.transform()
 
     # Create the aqsol_features FeatureSet
-    if recreate or not FeatureSet("aqsol_features").exists():
+    if recreate or not FeatureSetCore("aqsol_features").exists():
         data_to_features = DataToFeaturesLight("aqsol_data", "aqsol_features")
         data_to_features.set_output_tags(["aqsol", "public"])
         data_to_features.transform(id_column="id", target_column="solubility")
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     # Create the aqsol solubility regression Model
     if recreate or not Model("aqsol-regression").exists():
         # Compute our features
-        feature_set = FeatureSet("aqsol_features")
+        feature_set = FeatureSetCore("aqsol_features")
         feature_list = [
             "sd",
             "ocurrences",
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     # RDKIT Descriptor Artifacts
     #
     # Create the rdkit FeatureSet
-    if recreate or not FeatureSet("aqsol_rdkit_features").exists():
+    if recreate or not FeatureSetCore("aqsol_rdkit_features").exists():
         rdkit_features = RDKitDescriptors("aqsol_data", "aqsol_rdkit_features")
         rdkit_features.set_output_tags(["aqsol", "public", "rdkit"])
         query = "SELECT id, solubility, smiles FROM aqsol_data"
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     # Create the RDKIT based  regression Model
     if recreate or not Model("aqsol-rdkit-regression").exists():
         # Compute our features
-        feature_set = FeatureSet("aqsol_rdkit_features")
+        feature_set = FeatureSetCore("aqsol_rdkit_features")
         exclude = ["id", "smiles", "solubility"]
         feature_list = [f for f in feature_set.column_names() if f not in exclude]
         features_to_model = FeaturesToModel(

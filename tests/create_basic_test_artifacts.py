@@ -15,7 +15,7 @@ import sys
 import logging
 from pathlib import Path
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
-from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.artifacts.model import Model, ModelType
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 
@@ -59,13 +59,13 @@ if __name__ == "__main__":
         my_loader.transform()
 
     # Create the test_feature_set FeatureSet
-    if recreate or not FeatureSet("test_feature_set").exists():
+    if recreate or not FeatureSetCore("test_feature_set").exists():
         data_to_features = DataToFeaturesLight("test_data", "test_feature_set")
         data_to_features.set_output_tags(["test", "small"])
         data_to_features.transform(id_column="id", event_time_column="date")
 
     # Create the abalone_feature_set FeatureSet
-    if recreate or not FeatureSet("abalone_feature_set").exists():
+    if recreate or not FeatureSetCore("abalone_feature_set").exists():
         data_to_features = DataToFeaturesLight("abalone_data", "abalone_feature_set")
         data_to_features.set_output_tags(["abalone", "public"])
         data_to_features.transform(target_column="class_number_of_rings")

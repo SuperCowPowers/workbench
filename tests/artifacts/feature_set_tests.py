@@ -1,7 +1,7 @@
 """Tests for the FeatureSet functionality"""
 
 # SageWorks Imports
-from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 
 
 def test():
@@ -9,7 +9,7 @@ def test():
     from pprint import pprint
 
     # Grab a FeatureSet object and pull some information from it
-    my_features = FeatureSet("test_feature_set")
+    my_features = FeatureSetCore("test_feature_set")
 
     # Call the various methods
 

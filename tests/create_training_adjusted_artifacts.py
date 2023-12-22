@@ -11,7 +11,7 @@ import sys
 import time
 import logging
 from pathlib import Path
-from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.artifacts.model import Model, ModelType
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # Create a training view of the test_feature_set
     log.important("Creating training view for abalone_feature_set...")
-    fs = FeatureSet("abalone_feature_set")
+    fs = FeatureSetCore("abalone_feature_set")
     fs.create_training_view("id", hold_out_ids=range(100))  # Just the first 100 ids
 
     # Create the abalone_regression Model

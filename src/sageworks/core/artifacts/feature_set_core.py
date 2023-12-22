@@ -18,19 +18,19 @@ from sageworks.core.artifacts.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 
-class FeatureSet(Artifact):
-    """FeatureSet: SageWorks Feature Set accessible through Athena
+class FeatureSetCore(Artifact):
+    """FeatureSetCore: SageWorks FeatureSetCore Class
 
     Common Usage:
-        my_features = FeatureSet(feature_uuid)
+        my_features = FeatureSetCore(feature_uuid)
         my_features.summary()
         my_features.details()
     """
 
     def __init__(self, feature_set_uuid: str, force_refresh: bool = False):
-        """FeatureSet Initialization
+        """FeatureSetCore Initialization
         Args:
-            feature_set_uuid (str): Name of Feature Set in SageWorks Metadata
+            feature_set_uuid (str): Name of Feature Set
             force_refresh (bool): Force a refresh of the Feature Set metadata (default: False)
         """
 
@@ -562,7 +562,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Grab a FeatureSet object and pull some information from it
-    my_features = FeatureSet("test_feature_set")
+    my_features = FeatureSetCore("test_feature_set")
 
     # Call the various methods
     # What's my AWS ARN and URL

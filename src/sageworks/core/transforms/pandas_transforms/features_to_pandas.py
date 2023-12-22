@@ -3,7 +3,7 @@ import pandas as pd
 
 # Local imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
-from sageworks.core.artifacts.feature_set import FeatureSet
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 
 
 class FeaturesToPandas(Transform):
@@ -31,7 +31,7 @@ class FeaturesToPandas(Transform):
         """Convert the FeatureSet into a Pandas DataFrame"""
 
         # Grab the Input (Feature Set)
-        input_data = FeatureSet(self.input_uuid)
+        input_data = FeatureSetCore(self.input_uuid)
         if not input_data.exists():
             self.log.critical(f"Feature Set Check on {self.input_uuid} failed!")
             return
