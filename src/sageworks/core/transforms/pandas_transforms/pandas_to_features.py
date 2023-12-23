@@ -102,14 +102,14 @@ class PandasToFeatures(Transform):
             self.log.info(f"Converting {self.event_time_column} to DateTime...")
             time_column = pd.to_datetime(time_column)
 
-        # so lets make sure it the right type for Feature Store
+        # Let's make sure it the right type for Feature Store
         if pd.api.types.is_datetime64_any_dtype(time_column):
             self.log.info(f"Converting {self.event_time_column} to ISOFormat Date String before FeatureSet Creation...")
 
             # Convert the datetime DType to ISO-8601 string
             # TableFormat=ICEBERG does not support alternate formats for event_time field, it only supports String type.
             time_column = time_column.map(datetime_to_iso8601)
-            self.output_df[self.event_time_column] = time_column.astype(pd.StringDtype())
+            self.output_df[self.event_time_column] = time_column.astype("string")
 
     def _convert_objs_to_string(self):
         """Internal: AWS Feature Store doesn't know how to store object dtypes, so convert to String"""
@@ -222,10 +222,12 @@ class PandasToFeatures(Transform):
             df[column] = df[column].astype("int32")
         for column in list(df.select_dtypes(include="category").columns):
             df[column] = df[column].astype("str")
-        """FIXME Not sure we need any of these conversions
-        datetime_type = ["datetime", "datetime64", "datetime64[ns]", "datetimetz"]
-        for column in df.select_dtypes(include=datetime_type).columns:
-            df[column] = df[column].astype("string")
+
+        # Special case for datetime types
+        for column in df.select_dtypes(include=["datetime"]).columns:
+            df[column] = df[column].map(datetime_to_iso8601).astype("string")
+
+        """FIXME Not sure we need these conversions
         for column in list(df.select_dtypes(include="object").columns):
             df[column] = df[column].astype("string")
         for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
@@ -381,7 +383,7 @@ if __name__ == "__main__":
     data_df = ds.sample()
 
     # Create my DF to Feature Set Transform
-    df_to_features = PandasToFeatures("test_feature_set")
+    df_to_features = PandasToFeatures("test_features")
     df_to_features.set_input(data_df, id_column="id", event_time_column="date")
     df_to_features.set_output_tags(["test", "small"])
 
