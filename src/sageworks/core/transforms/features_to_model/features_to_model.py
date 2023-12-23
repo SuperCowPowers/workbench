@@ -78,12 +78,12 @@ class FeaturesToModel(Transform):
             fp.write(xgb_script)
         return script_name
 
-    def transform_impl(self, target_column: str, description: str, feature_list=None, train_all_data=False):
+    def transform_impl(self, target_column: str, description: str = None, feature_list: list = None, train_all_data=False):
         """Generic Features to Model: Note you should create a new class and inherit from
         this one to include specific logic for your Feature Set/Model
         Args:
             target_column (str): Column name of the target variable
-            description (str): Description of the model
+            description (str): Description of the model (optional)
             feature_list (list[str]): A list of columns for the features (default None, will try to guess)
             train_all_data (bool): Train on ALL (100%) of the data (default False)
         """
@@ -93,7 +93,7 @@ class FeaturesToModel(Transform):
         delete_model.delete()
 
         # Set our model description
-        self.model_description = description
+        self.model_description = description if description is not None else f"Model created from {self.input_uuid}"
 
         # Get our Feature Set and create an S3 CSV Training dataset
         feature_set = FeatureSetCore(self.input_uuid)
@@ -203,14 +203,14 @@ class FeaturesToModel(Transform):
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling make_ready() on the Model"""
-        self.log.info("Post-Transform: Calling make_ready() on the Model...")
+        self.log.info("Post-Transform: Calling onboard() on the Model...")
 
         # Okay, lets get our output model and set it to initializing
         output_model = ModelCore(self.output_uuid, model_type=self.model_type, force_refresh=True)
         output_model.set_status("initializing")
 
         # Call the Model make_ready method
-        output_model.make_ready()
+        output_model.onboard()
 
     def create_and_register_model(self):
         """Create and Register the Model"""
