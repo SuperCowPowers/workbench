@@ -19,34 +19,38 @@ class DataSource(AthenaSource):
         my_data.to_features()
     """
 
-    def __init__(self, source, name=None):
+    def __init__(self, source, name=None, tags: list = None):
         """DataSource Initialization
         Args:
             source (str): The source of the data (S3, File, or Existing DataSource)
             name (str): Set the name of the data source (optional)
+            tags (list): Set the tags for the data source (optional)
         """
         self.log = logging.getLogger("sageworks")
 
         # Load the source (S3, File, or Existing DataSource)
         ds_name = extract_data_source_basename(source) if name is None else name
-        self._load_source(source, ds_name)
+        tags = [ds_name] if tags is None else tags
+        self._load_source(source, ds_name, tags)
 
         # Call superclass init
         super().__init__(ds_name)
 
-    def _load_source(self, source: str, name: str):
+    def _load_source(self, source: str, name: str, tags: list):
         """Load the source of the data"""
         self.log.info(f"Loading source: {source}...")
 
-        # Handle S3 path
+        # S3 Source
         source = source if isinstance(source, str) else str(source)
         if source.startswith("s3://"):
             my_loader = S3ToDataSourceLight(source, name)
-            my_loader.set_output_tags([name])
+            my_loader.set_output_tags(tags)
             my_loader.transform()
+
+        # File Source
         elif os.path.isfile(source):
             my_loader = CSVToDataSource(source, name)
-            my_loader.set_output_tags([name])
+            my_loader.set_output_tags(tags)
             my_loader.transform()
 
 
