@@ -45,7 +45,7 @@ class Artifact(ABC):
     # Data Cache for Artifacts
     data_storage = SageWorksCache(prefix="data_storage")
     temp_storage = SageWorksCache(prefix="temp_storage", expire=300)  # 5 minutes
-    ephemeral_storage = SageWorksCache(prefix="ephemeral_storage", expire=10)  # 10 seconds
+    ephemeral_storage = SageWorksCache(prefix="ephemeral_storage", expire=1)  # 1 second
 
     def __init__(self, uuid: str):
         """Artifact Initialization"""
@@ -371,7 +371,7 @@ if __name__ == "__main__":
     print(f"Input: {data_source.get_input()}")
 
     # Create a FeatureSet (which is a subclass of Artifact)
-    fs = FeatureSetCore("test_feature_set")
+    fs = FeatureSetCore("test_features")
 
     # Just some random tests
     assert fs.exists()
