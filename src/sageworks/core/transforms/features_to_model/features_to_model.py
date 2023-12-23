@@ -209,7 +209,7 @@ class FeaturesToModel(Transform):
         output_model = ModelCore(self.output_uuid, model_type=self.model_type, force_refresh=True)
         output_model.set_status("initializing")
 
-        # Call the Model make_ready method
+        # Call the Model onboard method
         output_model.onboard()
 
     def create_and_register_model(self):

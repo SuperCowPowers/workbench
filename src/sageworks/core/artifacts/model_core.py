@@ -1,4 +1,5 @@
 """ModelCore: SageWorks ModelCore Class"""
+import time
 from datetime import datetime
 import urllib.parse
 from typing import Union
@@ -276,13 +277,13 @@ class ModelCore(Artifact):
         Returns:
             bool: True if the Model was successfully onboarded, False otherwise
         """
-        self.log.important(f"Onboarding Model {self.model_name}...")
-        self.set_status("onboarding")
 
         # Determine the Model Type
         while self.is_model_unknown():
             self._determine_model_type()
-        self.make_ready()
+
+        # Call the superclass onboard
+        super().onboard()
         return True
 
     def is_model_unknown(self) -> bool:
@@ -312,6 +313,7 @@ class ModelCore(Artifact):
         self._pull_training_job_metrics(force_pull=True)
         self.set_status("ready")
         self.remove_sageworks_health_tag("needs_onboard")
+        time.sleep(1)  # Give the AWS Metadata a chance to update
         self.health_check()
         self.refresh_meta()
         self.details(recompute=True)
