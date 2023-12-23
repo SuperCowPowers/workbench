@@ -327,13 +327,16 @@ class FeatureSetCore(Artifact):
 
         # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
         s3_delete_path = self.feature_sets_s3_path + f"/{self.uuid}"
-        self.log.info(f"Deleting S3 Storage Objects {s3_delete_path}")
+        self.log.info(f"Deleting All FeatureSet S3 Storage Objects {s3_delete_path}")
         wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
 
         # Now delete any data in the Cache
         for key in self.data_storage.list_subkeys(f"feature_set:{self.uuid}"):
             self.log.info(f"Deleting Cache Key: {key}")
             self.data_storage.delete(key)
+
+        # Force a refresh of the AWS Metadata (to make sure references to deleted artifacts are gone)
+        self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=True)
 
     def ensure_feature_group_deleted(self, feature_group):
         status = "Deleting"
@@ -342,8 +345,8 @@ class FeatureSetCore(Artifact):
             try:
                 status = feature_group.describe().get("FeatureGroupStatus")
             except botocore.exceptions.ClientError as error:
-                # If the exception is a ResourceNotFound, this is fine, otherwise raise all other exceptions
-                if error.response["Error"]["Code"] == "ResourceNotFound":
+                # For ResourceNotFound/ValidationException, this is fine, otherwise raise all other exceptions
+                if error.response["Error"]["Code"] in ["ResourceNotFound", "ValidationException"]:
                     break
                 else:
                     raise error
@@ -412,7 +415,7 @@ class FeatureSetCore(Artifact):
             glue_client.get_table(DatabaseName=self.athena_database, Name=training_view_name)
             return training_view_name
         except glue_client.exceptions.EntityNotFoundException:
-            self.log.warning(f"Training View for {self.uuid} doesn't exist, created a default one...")
+            self.log.warning(f"Training View for {self.uuid} doesn't exist, creating a default one...")
             self.create_default_training_view()
             time.sleep(1)  # Give AWS a second to catch up
             return training_view_name
@@ -562,7 +565,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Grab a FeatureSet object and pull some information from it
-    my_features = FeatureSetCore("test_feature_set")
+    my_features = FeatureSetCore("test_features")
 
     # Call the various methods
     # What's my AWS ARN and URL
