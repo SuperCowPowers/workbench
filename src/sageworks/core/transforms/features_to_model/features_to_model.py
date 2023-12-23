@@ -243,7 +243,7 @@ if __name__ == "__main__":
     """Exercise the FeaturesToModel Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "abalone_feature_set"
+    input_uuid = "abalone_features"
     output_uuid = "abalone-regression"
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.REGRESSOR)
     to_model.set_output_tags(["abalone", "public"])

@@ -668,7 +668,7 @@ if __name__ == "__main__":
         REGRESSION = True
         if REGRESSION:
             my_endpoint = EndpointCore("abalone-regression-end")
-            feature_to_pandas = FeaturesToPandas("abalone_feature_set")
+            feature_to_pandas = FeaturesToPandas("abalone_features")
             my_target_column = "class_number_of_rings"
             data_name = ("abalone_holdout_2023_10_19",)
             data_hash = ("12345",)

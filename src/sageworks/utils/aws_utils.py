@@ -5,6 +5,7 @@ import json
 import base64
 import re
 import os
+import pandas as pd
 from pathlib import Path
 import posixpath
 from sagemaker.session import Session as SageSession
@@ -246,6 +247,11 @@ def extract_data_source_basename(source: str) -> str:
     Returns:
         str: The basename of the data source
     """
+
+    # If the source is a Pandas DataFrame, return 'dataframe'
+    if isinstance(source, pd.DataFrame):
+        return "dataframe"
+
     # Convert PosixPath to string if necessary
     if isinstance(source, Path):
         source = str(source)
@@ -272,7 +278,7 @@ if __name__ == "__main__":
     from pprint import pprint
     from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 
-    my_features = FeatureSetCore("test_feature_set")
+    my_features = FeatureSetCore("test_features")
     my_meta = my_features.sageworks_meta()
     pprint(my_meta)
 

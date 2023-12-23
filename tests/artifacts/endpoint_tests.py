@@ -24,7 +24,7 @@ def test():
     print(f"Tags: {my_endpoint.sageworks_tags()}")
 
     # Create the FeatureSet to DF Transform
-    feature_to_pandas = FeaturesToPandas("abalone_feature_set")
+    feature_to_pandas = FeaturesToPandas("abalone_features")
 
     # Transform the DataSource into a Pandas DataFrame (with max_rows = 100)
     feature_to_pandas.transform(max_rows=100)

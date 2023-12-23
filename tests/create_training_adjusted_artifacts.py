@@ -1,7 +1,7 @@
 """This Script creates the 'Training Adjusted' Artifacts in AWS needed for the tests
 
 FeatureSets:
-    - Create a training view for abalone_feature_set
+    - Create a training view for abalone_features
 Models:
     - abalone-regression-100
 Endpoints:
@@ -32,15 +32,15 @@ if __name__ == "__main__":
     # Recreate Flag in case you want to recreate the artifacts
     recreate = False
 
-    # Create a training view of the test_feature_set
-    log.important("Creating training view for abalone_feature_set...")
-    fs = FeatureSetCore("abalone_feature_set")
+    # Create a training view of the test_features
+    log.important("Creating training view for abalone_features...")
+    fs = FeatureSetCore("abalone_features")
     fs.create_training_view("id", hold_out_ids=range(100))  # Just the first 100 ids
 
     # Create the abalone_regression Model
     if recreate or not ModelCore("abalone-regression-100").exists():
         features_to_model = FeaturesToModel(
-            "abalone_feature_set", "abalone-regression-100", model_type=ModelType.REGRESSOR
+            "abalone_features", "abalone-regression-100", model_type=ModelType.REGRESSOR
         )
         features_to_model.set_output_tags(["abalone", "regression"])
         features_to_model.transform(

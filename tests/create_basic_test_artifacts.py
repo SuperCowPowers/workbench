@@ -4,8 +4,8 @@ DataSources:
     - test_data
     - abalone_data
 FeatureSets:
-    - test_feature_set
-    - abalone_feature_set
+    - test_features
+    - abalone_features
 Models:
     - abalone-regression
 Endpoints:
@@ -58,21 +58,21 @@ if __name__ == "__main__":
         my_loader.set_output_tags("abalone:public")
         my_loader.transform()
 
-    # Create the test_feature_set FeatureSet
-    if recreate or not FeatureSetCore("test_feature_set").exists():
-        data_to_features = DataToFeaturesLight("test_data", "test_feature_set")
+    # Create the test_features FeatureSet
+    if recreate or not FeatureSetCore("test_features").exists():
+        data_to_features = DataToFeaturesLight("test_data", "test_features")
         data_to_features.set_output_tags(["test", "small"])
         data_to_features.transform(id_column="id", event_time_column="date")
 
-    # Create the abalone_feature_set FeatureSet
-    if recreate or not FeatureSetCore("abalone_feature_set").exists():
-        data_to_features = DataToFeaturesLight("abalone_data", "abalone_feature_set")
+    # Create the abalone_features FeatureSet
+    if recreate or not FeatureSetCore("abalone_features").exists():
+        data_to_features = DataToFeaturesLight("abalone_data", "abalone_features")
         data_to_features.set_output_tags(["abalone", "public"])
         data_to_features.transform(target_column="class_number_of_rings")
 
     # Create the abalone_regression Model
     if recreate or not ModelCore("abalone-regression").exists():
-        features_to_model = FeaturesToModel("abalone_feature_set", "abalone-regression", model_type=ModelType.REGRESSOR)
+        features_to_model = FeaturesToModel("abalone_features", "abalone-regression", model_type=ModelType.REGRESSOR)
         features_to_model.set_output_tags(["abalone", "regression"])
         features_to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")
 

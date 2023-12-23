@@ -9,7 +9,7 @@ def test():
     from pprint import pprint
 
     # Grab a FeatureSet object and pull some information from it
-    my_features = FeatureSetCore("test_feature_set")
+    my_features = FeatureSetCore("test_features")
 
     # Call the various methods
 

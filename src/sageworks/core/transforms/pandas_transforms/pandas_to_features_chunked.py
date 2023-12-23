@@ -92,7 +92,7 @@ if __name__ == "__main__":
     chunks = [df[i : i + chunk_size] for i in range(0, df.shape[0], chunk_size)]
 
     # Create our PandasToFeaturesChunked class
-    to_features = PandasToFeaturesChunked("abalone_feature_set")
+    to_features = PandasToFeaturesChunked("abalone_features")
 
     # Manually set the Categorical Columns
     categorical_column_info = {"sex": ["M", "F", "I"]}

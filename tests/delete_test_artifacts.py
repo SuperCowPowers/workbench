@@ -29,16 +29,16 @@ if __name__ == "__main__":
         print("Deleting abalone_data_copy...")
         ds.delete()
 
-    # Delete the test_feature_set FeatureSet
-    fs = FeatureSetCore("test_feature_set")
+    # Delete the test_features FeatureSet
+    fs = FeatureSetCore("test_features")
     if fs.exists():
-        print("Deleting test_feature_set...")
+        print("Deleting test_features...")
         fs.delete()
 
-    # Delete the abalone_feature_set FeatureSet
-    fs = FeatureSetCore("abalone_feature_set")
+    # Delete the abalone_features FeatureSet
+    fs = FeatureSetCore("abalone_features")
     if fs.exists():
-        print("Deleting abalone_feature_set...")
+        print("Deleting abalone_features...")
         fs.delete()
 
     # Delete the wine_feature FeatureSet
