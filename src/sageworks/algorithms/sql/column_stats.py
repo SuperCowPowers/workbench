@@ -69,7 +69,7 @@ def column_stats(data_source: DataSourceAbstract, recompute: bool = False) -> di
     # Get the column names and types from the DataSource
     column_details = data_source.column_details(view="computation")
     column_data = {name: {"dtype": dtype} for name, dtype in column_details.items()}
-    data_source.log.info(f"Computing Column Statistics for {column_data.keys()} columns...")
+    data_source.log.info(f"Computing Column Statistics for {list(column_data.keys())} columns...")
 
     # Now add descriptive stats to the column stats
     descriptive_stats = data_source.descriptive_stats(recompute=recompute)

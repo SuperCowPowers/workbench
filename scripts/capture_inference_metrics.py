@@ -19,7 +19,7 @@ import awswrangler as wr
 S3_DATA_PATH = None
 
 # Just for Storage
-DATA_NAME = "abalone_feature_set (20)"
+DATA_NAME = "abalone_features (20)"
 DATA_HASH = "12345"
 DESCRIPTION = "Test Abalone Features"
 TARGET_COLUMN = "class_number_of_rings"
