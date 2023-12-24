@@ -16,19 +16,24 @@ from sageworks.utils.aws_utils import extract_data_source_basename
 class DataSource(AthenaSource):
     """DataSource: SageWorks DataSource API Class
 
-    Common Usage:
+    **Common Usage:**
+    ```
         my_data = DataSource(name_of_source)
         my_data.summary()
         my_data.details()
-        my_data.to_features()
+        my_features = my_data.to_features()
+    ```
     """
 
     def __init__(self, source, name: str = None, tags: list = None):
-        """DataSource Initialization
+        """
+        Initializes a new DataSource object.
+
         Args:
-            source (str): The source of the data (S3, File, Dataframe or Existing DataSource)
-            name (str): Set the name of the data source (optional)
-            tags (list): Set the tags for the data source (optional)
+            source (str): The source of the data. This can be an S3 bucket, file path,
+                          DataFrame object, or an existing DataSource object.
+            name (str): The name of the data source. If not specified, an automatic name will be generated.
+            tags (list of str): A list of tags associated with the data source. If not specified automatic tags will be generated.
         """
         self.log = logging.getLogger("sageworks")
 
@@ -47,12 +52,15 @@ class DataSource(AthenaSource):
     def to_features(
         self, name: str = None, tags: list = None, id_column: str = None, event_time_column: str = None
     ) -> FeatureSet:
-        """Convert the DataSource to a FeatureSet
+        """
+        Convert the DataSource to a FeatureSet
+
         Args:
-            name (str): Set the name for feature set (optional)
-            tags (list): Set the tags for the feature set (optional)
-            id_column (str): Set the id column for the feature set (optional)
-            event_time_column (str): Set the event time column for the feature set (optional)
+            name (str): Set the name for feature set. If not specified, an automatic name will be generated
+            tags (list): Set the tags for the feature set. If not specified automatic tags will be generated.
+            id_column (str): Set the id column for the feature set. If not specified one will be generated.
+            event_time_column (str): Set the event time column for the feature set. If not specified one will be generated.
+
         Returns:
             FeatureSet: The FeatureSet created from the DataSource
         """

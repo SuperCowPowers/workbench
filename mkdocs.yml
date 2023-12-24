@@ -1,3 +1,9 @@
 site_name: SageWorks
 theme:
   name: material
+plugins:
+- search
+- mkdocstrings:
+    handlers:
+      python:
+        paths: [src]
