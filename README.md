@@ -15,7 +15,7 @@ SageWorks is a medium granularity framework that manages and aggregates AWS® Se
 </p>
 
 ### SageWorks Documentation
-[SageWorks Documentation(https://supercowpowers.github.io/sageworks/)
+For[SageWorks Documentation](https://supercowpowers.github.io/sageworks/)
 
 ### Full SageWorks OverView
 [SageWorks Architected FrameWork](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing)
