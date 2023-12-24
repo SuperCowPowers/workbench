@@ -16,7 +16,7 @@ from sageworks.utils.aws_utils import extract_data_source_basename
 class DataSource(AthenaSource):
     """DataSource: SageWorks DataSource API Class
 
-    **Common Usage:**
+    **Common Usage**
     ```
         my_data = DataSource(name_of_source)
         my_data.summary()
@@ -33,7 +33,7 @@ class DataSource(AthenaSource):
             source (str): The source of the data. This can be an S3 bucket, file path,
                           DataFrame object, or an existing DataSource object.
             name (str): The name of the data source. If not specified, an automatic name will be generated.
-            tags (list of str): A list of tags associated with the data source. If not specified automatic tags will be generated.
+            tags (list[str]): A list of tags associated with the data source. If not specified automatic tags will be generated.
         """
         self.log = logging.getLogger("sageworks")
 

@@ -9,11 +9,13 @@ from sageworks.api.endpoint import Endpoint
 class Model(ModelCore):
     """Model: SageWorks Model API Class
 
-    Common Usage:
+    **Common Usage**
+    ```
         my_features = Model(name)
         my_features.summary()
         my_features.details()
-        my_features.to_model()
+        my_features.to_endpoint()
+    ```
     """
 
     def __init__(self, name):
@@ -24,12 +26,14 @@ class Model(ModelCore):
         # Call superclass init
         super().__init__(name)
 
-    def to_endpoint(self, name: str = None, tags: list = None, serverless: bool = True):
+    def to_endpoint(self, name: str = None, tags: list = None, serverless: bool = True) -> Endpoint:
         """Create an Endpoint from the Model
+
         Args:
-            name (str): Set the name for the endpoint (optional)
-            tags (list): Set the tags for the endpoint (optional)
-            serverless (bool): Set the endpoint to be serverless (optional)
+            name (str): Set the name for the endpoint. If not specified, an automatic name will be generated
+            tags (list): Set the tags for the endpoint. If not specified automatic tags will be generated.
+            serverless (bool): Set the endpoint to be serverless (default: True)
+
         Returns:
             Endpoint: The Endpoint created from the Model
         """

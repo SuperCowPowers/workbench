@@ -7,15 +7,18 @@ from sageworks.core.artifacts.endpoint_core import EndpointCore
 class Endpoint(EndpointCore):
     """Endpoint: SageWorks Endpoint API Class
 
-    Common Usage:
-        my_features = Endpoint(name)
-        my_features.summary()
-        my_features.details()
-        my_features.to_endpoint()
+    **Common Usage**
+    ```
+        my_endpoint = Endpoint(name)
+        my_endpoint.summary()
+        my_endpoint.details()
+        my_endpoint.predict(df)
+    ```
     """
 
     def __init__(self, name):
         """Endpoint Initialization
+
         Args:
             name (str): The name of the Endpoint
         """

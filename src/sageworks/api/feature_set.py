@@ -10,15 +10,18 @@ from sageworks.api.model import Model
 class FeatureSet(FeatureSetCore):
     """FeatureSet: SageWorks FeatureSet API Class
 
-    Common Usage
+    **Common Usage**
+    ```
         my_features = FeatureSet(name)
         my_features.summary()
         my_features.details()
         my_features.to_model()
+    ```
     """
 
     def __init__(self, name):
         """FeatureSet Initialization
+
         Args:
             name (str): The name of the FeatureSet
         """
@@ -28,18 +31,20 @@ class FeatureSet(FeatureSetCore):
     def to_model(
         self,
         model_type: ModelType,
-        target_column: str = None,
+        target_column: str,
         name: str = None,
         tags: list = None,
         description: str = None,
-    ):
+    ) -> Model:
         """Create a Model from the FeatureSet
+
         Args:
-            model_type (ModelType): The type of model to create (See ModelType)
-            target_column (str): The target column for the model (optional)
-            name (str): Set the name for the model (optional)
-            tags (list): Set the tags for the model (optional)
-            description (str): Set the description for the model (optional)
+            model_type (ModelType): The type of model to create (See sageworks.model.ModelType)
+            target_column (str): The target column for the model (use None for unsupervised model)
+            name (str): Set the name for the model. If not specified, an automatic name will be generated
+            tags (list): Set the tags for the model.  If not specified automatic tags will be generated.
+            description (str): Set the description for the model. If not specified an automatic description will be generated.
+
         Returns:
             Model: The Model created from the FeatureSet
         """

@@ -1,6 +1,11 @@
-"""Welcome to the sageworks.api module.
+"""Welcome to the SageWorks API Classes
 
-This module provides high-level APIs for the SageWorks package, offering easy access to its core classes: data_source, feature_set, model, and endpoint.
+These class provide high-level APIs for the SageWorks package, offering easy access to its core classes: 
+
+- DataSource: Manages AWS Data Catalog and Athena
+- FeatureSet: Manages AWS Feature Store and Feature Groups
+- Model: Manages the training and deployment of AWS Model Groups and Packages
+- Endpoint: Manages the deployment and invocations/inference on AWS Endpoints
 """
 from .data_source import DataSource
 from .feature_set import FeatureSet
