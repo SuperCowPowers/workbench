@@ -4,6 +4,7 @@
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
 from sageworks.core.artifacts.model_core import ModelType
+from sageworks.api.model import Model
 
 
 class FeatureSet(FeatureSetCore):
@@ -25,7 +26,7 @@ class FeatureSet(FeatureSetCore):
         super().__init__(name)
 
     def to_model(self, model_type: ModelType, target_column: str = None, name: str = None, tags: list = None, description: str = None):
-        """Convert the FeatureSet to a FeatureSet
+        """Create a Model from the FeatureSet
         Args:
             model_type (ModelType): The type of model to create (See ModelType)
             target_column (str): The target column for the model (optional)
@@ -45,8 +46,8 @@ class FeatureSet(FeatureSetCore):
         features_to_model.set_output_tags(tags)
         features_to_model.transform(target_column=target_column, description=description)
 
-        # Return the FeatureSet
-        return None  # Model(model_name)
+        # Return the Model
+        return Model(model_name)
 
 
 if __name__ == "__main__":
@@ -58,5 +59,5 @@ if __name__ == "__main__":
     pprint(my_features.summary())
     pprint(my_features.details())
 
-    # Convert the FeatureSet to a Model
+    # Create a Model from the FeatureSet
     my_model = my_features.to_model(model_type=ModelType.REGRESSOR, target_column="iq_score")
