@@ -1,4 +1,5 @@
 """EndpointCore: SageWorks EndpointCore Class"""
+import time
 from datetime import datetime
 import botocore
 import pandas as pd
@@ -587,11 +588,22 @@ class EndpointCore(Artifact):
             self.sm_client.delete_endpoint_config(EndpointConfigName=endpoint_config_name)
         except botocore.exceptions.ClientError:
             self.log.info(f"Endpoint Config {endpoint_config_name} doesn't exist...")
+
+        # Check for any monitoring schedules
+        response = self.sm_client.list_monitoring_schedules(EndpointName=self.uuid)
+        monitoring_schedules = response['MonitoringScheduleSummaries']
+        for schedule in monitoring_schedules:
+            self.log.info(f"Deleting Endpoint Monitoring Schedule {schedule['MonitoringScheduleName']}...")
+            self.sm_client.delete_monitoring_schedule(MonitoringScheduleName=schedule['MonitoringScheduleName'])
+
+        # Okay now delete the Endpoint
         try:
+            time.sleep(1)  # Let AWS catch up with any deletions performed above
             self.log.info(f"Deleting Endpoint {self.uuid}...")
             self.sm_client.delete_endpoint(EndpointName=self.uuid)
-        except botocore.exceptions.ClientError:
-            self.log.info(f"Endpoint {self.uuid} doesn't exist...")
+        except botocore.exceptions.ClientError as e:
+            self.log.info(f"Endpoint ClientError...")
+            raise e
 
         # Now delete any data in the Cache
         for key in self.data_storage.list_subkeys(f"endpoint:{self.uuid}"):
