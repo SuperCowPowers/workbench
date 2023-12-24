@@ -56,7 +56,7 @@ if __name__ == "__main__":
     # Delete the abalone_regression Endpoint
     end = EndpointCore("abalone-regression-end")
     if end.exists():
-        print("Deleting abalone-regression-end endpoint...")
+        print("Deleting abalone-regression-end...")
         end.delete()
 
     # Classification Artifacts

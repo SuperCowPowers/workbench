@@ -12,7 +12,7 @@ def test():
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = "abalone-regression"
-    output_uuid = "abalone-regression-endpoint"
+    output_uuid = "abalone-regression-end"
     to_endpoint = ModelToEndpoint(input_uuid, output_uuid)
     to_endpoint.set_output_tags(["abalone", "public"])
     to_endpoint.transform()
