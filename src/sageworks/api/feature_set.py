@@ -25,7 +25,14 @@ class FeatureSet(FeatureSetCore):
         # Call superclass init
         super().__init__(name)
 
-    def to_model(self, model_type: ModelType, target_column: str = None, name: str = None, tags: list = None, description: str = None):
+    def to_model(
+        self,
+        model_type: ModelType,
+        target_column: str = None,
+        name: str = None,
+        tags: list = None,
+        description: str = None,
+    ):
         """Create a Model from the FeatureSet
         Args:
             model_type (ModelType): The type of model to create (See ModelType)

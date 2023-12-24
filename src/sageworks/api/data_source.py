@@ -44,7 +44,9 @@ class DataSource(AthenaSource):
         # Call superclass init
         super().__init__(ds_name)
 
-    def to_features(self, name: str = None, tags: list = None, id_column: str = None, event_time_column: str = None) -> FeatureSet:
+    def to_features(
+        self, name: str = None, tags: list = None, id_column: str = None, event_time_column: str = None
+    ) -> FeatureSet:
         """Convert the DataSource to a FeatureSet
         Args:
             name (str): Set the name for feature set (optional)

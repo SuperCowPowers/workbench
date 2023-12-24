@@ -591,10 +591,10 @@ class EndpointCore(Artifact):
 
         # Check for any monitoring schedules
         response = self.sm_client.list_monitoring_schedules(EndpointName=self.uuid)
-        monitoring_schedules = response['MonitoringScheduleSummaries']
+        monitoring_schedules = response["MonitoringScheduleSummaries"]
         for schedule in monitoring_schedules:
             self.log.info(f"Deleting Endpoint Monitoring Schedule {schedule['MonitoringScheduleName']}...")
-            self.sm_client.delete_monitoring_schedule(MonitoringScheduleName=schedule['MonitoringScheduleName'])
+            self.sm_client.delete_monitoring_schedule(MonitoringScheduleName=schedule["MonitoringScheduleName"])
 
         # Okay now delete the Endpoint
         try:
@@ -602,7 +602,7 @@ class EndpointCore(Artifact):
             self.log.info(f"Deleting Endpoint {self.uuid}...")
             self.sm_client.delete_endpoint(EndpointName=self.uuid)
         except botocore.exceptions.ClientError as e:
-            self.log.info(f"Endpoint ClientError...")
+            self.log.info("Endpoint ClientError...")
             raise e
 
         # Now delete any data in the Cache

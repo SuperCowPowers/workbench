@@ -78,7 +78,9 @@ class FeaturesToModel(Transform):
             fp.write(xgb_script)
         return script_name
 
-    def transform_impl(self, target_column: str, description: str = None, feature_list: list = None, train_all_data=False):
+    def transform_impl(
+        self, target_column: str, description: str = None, feature_list: list = None, train_all_data=False
+    ):
         """Generic Features to Model: Note you should create a new class and inherit from
         this one to include specific logic for your Feature Set/Model
         Args:

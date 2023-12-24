@@ -321,9 +321,8 @@ class FeatureSetCore(Artifact):
         # Delete our underlying DataSource (Data Catalog Table and S3 Storage Objects)
         self.data_source.delete()
 
-        # If we have a training view, delete it
-        if self.get_training_view_table():
-            self.delete_training_view()
+        # Delete the training view
+        self.delete_training_view()
 
         # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
         s3_delete_path = self.feature_sets_s3_path + f"/{self.uuid}"
@@ -404,8 +403,10 @@ class FeatureSetCore(Artifact):
         # Execute the CREATE VIEW query
         self.data_source.execute_statement(create_view_query)
 
-    def get_training_view_table(self) -> Union[str, None]:
+    def get_training_view_table(self, create: bool = True) -> Union[str, None]:
         """Get the name of the training view for this FeatureSet
+        Args:
+            create (bool): Create the training view if it doesn't exist (default=True)
         Returns:
             str: The name of the training view for this FeatureSet (or None if it doesn't exist)
         """
@@ -415,6 +416,8 @@ class FeatureSetCore(Artifact):
             glue_client.get_table(DatabaseName=self.athena_database, Name=training_view_name)
             return training_view_name
         except glue_client.exceptions.EntityNotFoundException:
+            if not create:
+                return None
             self.log.warning(f"Training View for {self.uuid} doesn't exist, creating a default one...")
             self.create_default_training_view()
             time.sleep(1)  # Give AWS a second to catch up
