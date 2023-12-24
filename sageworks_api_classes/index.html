@@ -26,6 +26,9 @@
     
       <link rel="stylesheet" href="../assets/stylesheets/main.50c56a3b.min.css">
       
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
       
 
 
@@ -55,7 +58,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,6 +116,32 @@
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -259,134 +295,101 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#sageworks.api" class="md-nav__link">
+  <a href="#sageworks.api.data_source.DataSource" class="md-nav__link">
     <span class="md-ellipsis">
-      api
+      DataSource
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#sageworks.api.DataSource" class="md-nav__link">
-    <span class="md-ellipsis">
-      DataSource
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="DataSource">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.DataSource.__init__" class="md-nav__link">
+  <a href="#sageworks.api.data_source.DataSource.__init__" class="md-nav__link">
     <span class="md-ellipsis">
       __init__()
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.DataSource.to_features" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.data_source.DataSource.to_features" class="md-nav__link">
     <span class="md-ellipsis">
       to_features()
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
       
         <li class="md-nav__item">
-  <a href="#sageworks.api.Endpoint" class="md-nav__link">
-    <span class="md-ellipsis">
-      Endpoint
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Endpoint">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.Endpoint.__init__" class="md-nav__link">
-    <span class="md-ellipsis">
-      __init__()
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sageworks.api.FeatureSet" class="md-nav__link">
+  <a href="#sageworks.api.feature_set.FeatureSet" class="md-nav__link">
     <span class="md-ellipsis">
       FeatureSet
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="FeatureSet">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.FeatureSet.__init__" class="md-nav__link">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.feature_set.FeatureSet.__init__" class="md-nav__link">
     <span class="md-ellipsis">
       __init__()
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.FeatureSet.to_model" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.feature_set.FeatureSet.to_model" class="md-nav__link">
     <span class="md-ellipsis">
       to_model()
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
       
         <li class="md-nav__item">
-  <a href="#sageworks.api.Model" class="md-nav__link">
+  <a href="#sageworks.api.model.Model" class="md-nav__link">
     <span class="md-ellipsis">
       Model
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Model">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.Model.__init__" class="md-nav__link">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.model.Model.__init__" class="md-nav__link">
     <span class="md-ellipsis">
       __init__()
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.Model.to_endpoint" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.model.Model.to_endpoint" class="md-nav__link">
     <span class="md-ellipsis">
       to_endpoint()
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.endpoint.Endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      Endpoint
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.endpoint.Endpoint.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
   
 </li>
       
@@ -597,134 +600,101 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#sageworks.api" class="md-nav__link">
+  <a href="#sageworks.api.data_source.DataSource" class="md-nav__link">
     <span class="md-ellipsis">
-      api
+      DataSource
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#sageworks.api.DataSource" class="md-nav__link">
-    <span class="md-ellipsis">
-      DataSource
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="DataSource">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.DataSource.__init__" class="md-nav__link">
+  <a href="#sageworks.api.data_source.DataSource.__init__" class="md-nav__link">
     <span class="md-ellipsis">
       __init__()
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.DataSource.to_features" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.data_source.DataSource.to_features" class="md-nav__link">
     <span class="md-ellipsis">
       to_features()
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
       
         <li class="md-nav__item">
-  <a href="#sageworks.api.Endpoint" class="md-nav__link">
-    <span class="md-ellipsis">
-      Endpoint
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Endpoint">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.Endpoint.__init__" class="md-nav__link">
-    <span class="md-ellipsis">
-      __init__()
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sageworks.api.FeatureSet" class="md-nav__link">
+  <a href="#sageworks.api.feature_set.FeatureSet" class="md-nav__link">
     <span class="md-ellipsis">
       FeatureSet
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="FeatureSet">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.FeatureSet.__init__" class="md-nav__link">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.feature_set.FeatureSet.__init__" class="md-nav__link">
     <span class="md-ellipsis">
       __init__()
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.FeatureSet.to_model" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.feature_set.FeatureSet.to_model" class="md-nav__link">
     <span class="md-ellipsis">
       to_model()
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
       
         <li class="md-nav__item">
-  <a href="#sageworks.api.Model" class="md-nav__link">
+  <a href="#sageworks.api.model.Model" class="md-nav__link">
     <span class="md-ellipsis">
       Model
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Model">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.Model.__init__" class="md-nav__link">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.model.Model.__init__" class="md-nav__link">
     <span class="md-ellipsis">
       __init__()
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.api.Model.to_endpoint" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.model.Model.to_endpoint" class="md-nav__link">
     <span class="md-ellipsis">
       to_endpoint()
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.endpoint.Endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      Endpoint
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.endpoint.Endpoint.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
   
 </li>
       
@@ -744,48 +714,33 @@
 
 
 <h1 id="sageworks-api-classes">SageWorks API Classes</h1>
-
-
-<div class="doc doc-object doc-module">
-
-
-
-<a id="sageworks.api"></a>
-  <div class="doc doc-contents first">
-  
-      <p>Welcome to the sageworks.api module.</p>
-<p>This module provides high-level APIs for the SageWorks package, offering easy access to its core classes: data_source, feature_set, model, and endpoint.</p>
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
+<div class="admonition tip">
+<p class="admonition-title">Just Getting Started?</p>
+<p>You're in the right place, the SageWorks API Classes are the best way to get started with SageWorks!</p>
+</div>
+<p>Welcome to the SageWorks API Classes</p>
+<p>These class provide high-level APIs for the SageWorks package, offering easy access to its core classes:</p>
+<ul>
+<li><strong>DataSource:</strong> Manages AWS Data Catalog and Athena</li>
+<li><strong>FeatureSet:</strong> Manages AWS Feature Store and Feature Groups</li>
+<li><strong>Model:</strong> Manages the training and deployment of AWS Model Groups and Packages</li>
+<li><strong>Endpoint:</strong> Manages the deployment and invocations/inference on AWS Endpoints</li>
+</ul>
+<h2>DataSource</h2>
 
 
 <div class="doc doc-object doc-class">
 
 
 
-
-<h2 id="sageworks.api.DataSource" class="doc doc-heading">
-          <code>DataSource</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
+<a id="sageworks.api.data_source.DataSource"></a>
+  <div class="doc doc-contents first">
           <p class="doc doc-class-bases">
             Bases: <code><span title="sageworks.core.artifacts.athena_source.AthenaSource">AthenaSource</span></code></p>
 
   
       <p>DataSource: SageWorks DataSource API Class</p>
-<p><strong>Common Usage:</strong></p>
+<p><strong>Common Usage</strong></p>
 <pre><code>    my_data = DataSource(name_of_source)
     my_data.summary()
     my_data.details()
@@ -883,7 +838,7 @@
 <span class="normal">102</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">DataSource</span><span class="p">(</span><span class="n">AthenaSource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;DataSource: SageWorks DataSource API Class</span>
 
-<span class="sd">    **Common Usage:**</span>
+<span class="sd">    **Common Usage**</span>
 <span class="sd">    ```</span>
 <span class="sd">        my_data = DataSource(name_of_source)</span>
 <span class="sd">        my_data.summary()</span>
@@ -900,7 +855,7 @@
 <span class="sd">            source (str): The source of the data. This can be an S3 bucket, file path,</span>
 <span class="sd">                          DataFrame object, or an existing DataSource object.</span>
 <span class="sd">            name (str): The name of the data source. If not specified, an automatic name will be generated.</span>
-<span class="sd">            tags (list of str): A list of tags associated with the data source. If not specified automatic tags will be generated.</span>
+<span class="sd">            tags (list[str]): A list of tags associated with the data source. If not specified automatic tags will be generated.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;sageworks&quot;</span><span class="p">)</span>
 
@@ -988,10 +943,10 @@
 
 
 
-<h3 id="sageworks.api.DataSource.__init__" class="doc doc-heading">
+<h2 id="sageworks.api.data_source.DataSource.__init__" class="doc doc-heading">
           <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
-</h3>
+</h2>
 
 
   <div class="doc doc-contents ">
@@ -1043,7 +998,7 @@
         <tr>
           <td><code>tags</code></td>
           <td>
-                <code>list of str</code>
+                <code>list[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1089,7 +1044,7 @@
 <span class="sd">        source (str): The source of the data. This can be an S3 bucket, file path,</span>
 <span class="sd">                      DataFrame object, or an existing DataSource object.</span>
 <span class="sd">        name (str): The name of the data source. If not specified, an automatic name will be generated.</span>
-<span class="sd">        tags (list of str): A list of tags associated with the data source. If not specified automatic tags will be generated.</span>
+<span class="sd">        tags (list[str]): A list of tags associated with the data source. If not specified automatic tags will be generated.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;sageworks&quot;</span><span class="p">)</span>
 
@@ -1116,10 +1071,10 @@
 
 
 
-<h3 id="sageworks.api.DataSource.to_features" class="doc doc-heading">
+<h2 id="sageworks.api.data_source.DataSource.to_features" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">to_features</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
-</h3>
+</h2>
 
 
   <div class="doc doc-contents ">
@@ -1211,7 +1166,7 @@
     <tbody>
         <tr>
 <td><code>FeatureSet</code></td>          <td>
-                <code><a class="autorefs autorefs-internal" title="sageworks.api.feature_set.FeatureSet" href="#sageworks.api.FeatureSet">FeatureSet</a></code>
+                <code><a class="autorefs autorefs-internal" title="sageworks.api.feature_set.FeatureSet" href="#sageworks.api.feature_set.FeatureSet">FeatureSet</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1289,154 +1244,27 @@
 
   </div>
 
-</div>
+</div><p><br></p>
+<h2>FeatureSet</h2>
+
 
 <div class="doc doc-object doc-class">
 
 
 
-
-<h2 id="sageworks.api.Endpoint" class="doc doc-heading">
-          <code>Endpoint</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="sageworks.core.artifacts.endpoint_core.EndpointCore">EndpointCore</span></code></p>
-
-  
-      <p>Endpoint: SageWorks Endpoint API Class</p>
-
-<details class="common-usage" open>
-  <summary>Common Usage</summary>
-  <p>my_features = Endpoint(name)
-my_features.summary()
-my_features.details()
-my_features.to_endpoint()</p>
-</details>
-            <details class="quote">
-              <summary>Source code in <code>src/sageworks/api/endpoint.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Endpoint</span><span class="p">(</span><span class="n">EndpointCore</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Endpoint: SageWorks Endpoint API Class</span>
-
-<span class="sd">    Common Usage:</span>
-<span class="sd">        my_features = Endpoint(name)</span>
-<span class="sd">        my_features.summary()</span>
-<span class="sd">        my_features.details()</span>
-<span class="sd">        my_features.to_endpoint()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Endpoint Initialization</span>
-<span class="sd">        Args:</span>
-<span class="sd">            name (str): The name of the Endpoint</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Call superclass init</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h3 id="sageworks.api.Endpoint.__init__" class="doc doc-heading">
-          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
-
-</h3>
-
-
-  <div class="doc doc-contents ">
-  
-      <p>Endpoint Initialization
-Args:
-    name (str): The name of the Endpoint</p>
-
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/api/endpoint.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Endpoint Initialization</span>
-<span class="sd">    Args:</span>
-<span class="sd">        name (str): The name of the Endpoint</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Call superclass init</span>
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-          </details>
-  </div>
-
-</div>
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-
-<h2 id="sageworks.api.FeatureSet" class="doc doc-heading">
-          <code>FeatureSet</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
+<a id="sageworks.api.feature_set.FeatureSet"></a>
+  <div class="doc doc-contents first">
           <p class="doc doc-class-bases">
             Bases: <code><span title="sageworks.core.artifacts.feature_set_core.FeatureSetCore">FeatureSetCore</span></code></p>
 
   
       <p>FeatureSet: SageWorks FeatureSet API Class</p>
-<p>Common Usage
-    my_features = FeatureSet(name)
+<p><strong>Common Usage</strong></p>
+<pre><code>    my_features = FeatureSet(name)
     my_features.summary()
     my_features.details()
-    my_features.to_model()</p>
+    my_features.to_model()
+</code></pre>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/api/feature_set.py</code></summary>
@@ -1487,18 +1315,26 @@ Args:
 <span class="normal">54</span>
 <span class="normal">55</span>
 <span class="normal">56</span>
-<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">FeatureSet</span><span class="p">(</span><span class="n">FeatureSetCore</span><span class="p">):</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">FeatureSet</span><span class="p">(</span><span class="n">FeatureSetCore</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;FeatureSet: SageWorks FeatureSet API Class</span>
 
-<span class="sd">    Common Usage</span>
+<span class="sd">    **Common Usage**</span>
+<span class="sd">    ```</span>
 <span class="sd">        my_features = FeatureSet(name)</span>
 <span class="sd">        my_features.summary()</span>
 <span class="sd">        my_features.details()</span>
 <span class="sd">        my_features.to_model()</span>
+<span class="sd">    ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;FeatureSet Initialization</span>
+
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): The name of the FeatureSet</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1508,18 +1344,20 @@ Args:
     <span class="k">def</span> <span class="nf">to_model</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model_type</span><span class="p">:</span> <span class="n">ModelType</span><span class="p">,</span>
-        <span class="n">target_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">target_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Model from the FeatureSet</span>
+
 <span class="sd">        Args:</span>
-<span class="sd">            model_type (ModelType): The type of model to create (See ModelType)</span>
-<span class="sd">            target_column (str): The target column for the model (optional)</span>
-<span class="sd">            name (str): Set the name for the model (optional)</span>
-<span class="sd">            tags (list): Set the tags for the model (optional)</span>
-<span class="sd">            description (str): Set the description for the model (optional)</span>
+<span class="sd">            model_type (ModelType): The type of model to create (See sageworks.model.ModelType)</span>
+<span class="sd">            target_column (str): The target column for the model (use None for unsupervised model)</span>
+<span class="sd">            name (str): Set the name for the model. If not specified, an automatic name will be generated</span>
+<span class="sd">            tags (list): Set the tags for the model.  If not specified automatic tags will be generated.</span>
+<span class="sd">            description (str): Set the description for the model. If not specified an automatic description will be generated.</span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">            Model: The Model created from the FeatureSet</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1556,28 +1394,58 @@ Args:
 
 
 
-<h3 id="sageworks.api.FeatureSet.__init__" class="doc doc-heading">
+<h2 id="sageworks.api.feature_set.FeatureSet.__init__" class="doc doc-heading">
           <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
 
-</h3>
+</h2>
 
 
   <div class="doc doc-contents ">
   
-      <p>FeatureSet Initialization
-Args:
-    name (str): The name of the FeatureSet</p>
+      <p>FeatureSet Initialization</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The name of the FeatureSet</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
           <details class="quote">
             <summary>Source code in <code>src/sageworks/api/feature_set.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">22</span>
 <span class="normal">23</span>
 <span class="normal">24</span>
 <span class="normal">25</span>
-<span class="normal">26</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;FeatureSet Initialization</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        name (str): The name of the FeatureSet</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1595,30 +1463,129 @@ Args:
 
 
 
-<h3 id="sageworks.api.FeatureSet.to_model" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">to_model</span><span class="p">(</span><span class="n">model_type</span><span class="p">,</span> <span class="n">target_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<h2 id="sageworks.api.feature_set.FeatureSet.to_model" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">to_model</span><span class="p">(</span><span class="n">model_type</span><span class="p">,</span> <span class="n">target_column</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
-</h3>
+</h2>
 
 
   <div class="doc doc-contents ">
   
-      <p>Create a Model from the FeatureSet
-Args:
-    model_type (ModelType): The type of model to create (See ModelType)
-    target_column (str): The target column for the model (optional)
-    name (str): Set the name for the model (optional)
-    tags (list): Set the tags for the model (optional)
-    description (str): Set the description for the model (optional)
-Returns:
-    Model: The Model created from the FeatureSet</p>
+      <p>Create a Model from the FeatureSet</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>model_type</code></td>
+          <td>
+                <code><span title="sageworks.core.artifacts.model_core.ModelType">ModelType</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The type of model to create (See sageworks.model.ModelType)</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>target_column</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The target column for the model (use None for unsupervised model)</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Set the name for the model. If not specified, an automatic name will be generated</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>tags</code></td>
+          <td>
+                <code>list</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Set the tags for the model.  If not specified automatic tags will be generated.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>description</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Set the description for the model. If not specified an automatic description will be generated.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>Model</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="sageworks.api.model.Model" href="#sageworks.api.model.Model">Model</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The Model created from the FeatureSet</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
           <details class="quote">
             <summary>Source code in <code>src/sageworks/api/feature_set.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">31</span>
 <span class="normal">32</span>
 <span class="normal">33</span>
 <span class="normal">34</span>
@@ -1644,21 +1611,28 @@ Returns:
 <span class="normal">54</span>
 <span class="normal">55</span>
 <span class="normal">56</span>
-<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_model</span><span class="p">(</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_model</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">model_type</span><span class="p">:</span> <span class="n">ModelType</span><span class="p">,</span>
-    <span class="n">target_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">):</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Model from the FeatureSet</span>
+
 <span class="sd">    Args:</span>
-<span class="sd">        model_type (ModelType): The type of model to create (See ModelType)</span>
-<span class="sd">        target_column (str): The target column for the model (optional)</span>
-<span class="sd">        name (str): Set the name for the model (optional)</span>
-<span class="sd">        tags (list): Set the tags for the model (optional)</span>
-<span class="sd">        description (str): Set the description for the model (optional)</span>
+<span class="sd">        model_type (ModelType): The type of model to create (See sageworks.model.ModelType)</span>
+<span class="sd">        target_column (str): The target column for the model (use None for unsupervised model)</span>
+<span class="sd">        name (str): Set the name for the model. If not specified, an automatic name will be generated</span>
+<span class="sd">        tags (list): Set the tags for the model.  If not specified automatic tags will be generated.</span>
+<span class="sd">        description (str): Set the description for the model. If not specified an automatic description will be generated.</span>
+
 <span class="sd">    Returns:</span>
 <span class="sd">        Model: The Model created from the FeatureSet</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1686,34 +1660,28 @@ Returns:
 
   </div>
 
-</div>
+</div><p><br></p>
+<h2>Model</h2>
+
 
 <div class="doc doc-object doc-class">
 
 
 
-
-<h2 id="sageworks.api.Model" class="doc doc-heading">
-          <code>Model</code>
-
-
-</h2>
-
-
-  <div class="doc doc-contents ">
+<a id="sageworks.api.model.Model"></a>
+  <div class="doc doc-contents first">
           <p class="doc doc-class-bases">
             Bases: <code><span title="sageworks.core.artifacts.model_core.ModelCore">ModelCore</span></code></p>
 
   
       <p>Model: SageWorks Model API Class</p>
+<p><strong>Common Usage</strong></p>
+<pre><code>    my_features = Model(name)
+    my_features.summary()
+    my_features.details()
+    my_features.to_endpoint()
+</code></pre>
 
-<details class="common-usage" open>
-  <summary>Common Usage</summary>
-  <p>my_features = Model(name)
-my_features.summary()
-my_features.details()
-my_features.to_model()</p>
-</details>
             <details class="quote">
               <summary>Source code in <code>src/sageworks/api/model.py</code></summary>
               <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 9</span>
@@ -1754,14 +1722,20 @@ my_features.to_model()</p>
 <span class="normal">44</span>
 <span class="normal">45</span>
 <span class="normal">46</span>
-<span class="normal">47</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">ModelCore</span><span class="p">):</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">ModelCore</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Model: SageWorks Model API Class</span>
 
-<span class="sd">    Common Usage:</span>
+<span class="sd">    **Common Usage**</span>
+<span class="sd">    ```</span>
 <span class="sd">        my_features = Model(name)</span>
 <span class="sd">        my_features.summary()</span>
 <span class="sd">        my_features.details()</span>
-<span class="sd">        my_features.to_model()</span>
+<span class="sd">        my_features.to_endpoint()</span>
+<span class="sd">    ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
@@ -1772,12 +1746,14 @@ my_features.to_model()</p>
         <span class="c1"># Call superclass init</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">to_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serverless</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">to_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serverless</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Endpoint</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an Endpoint from the Model</span>
+
 <span class="sd">        Args:</span>
-<span class="sd">            name (str): Set the name for the endpoint (optional)</span>
-<span class="sd">            tags (list): Set the tags for the endpoint (optional)</span>
-<span class="sd">            serverless (bool): Set the endpoint to be serverless (optional)</span>
+<span class="sd">            name (str): Set the name for the endpoint. If not specified, an automatic name will be generated</span>
+<span class="sd">            tags (list): Set the tags for the endpoint. If not specified automatic tags will be generated.</span>
+<span class="sd">            serverless (bool): Set the endpoint to be serverless (default: True)</span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">            Endpoint: The Endpoint created from the Model</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1814,10 +1790,10 @@ my_features.to_model()</p>
 
 
 
-<h3 id="sageworks.api.Model.__init__" class="doc doc-heading">
+<h2 id="sageworks.api.model.Model.__init__" class="doc doc-heading">
           <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
 
-</h3>
+</h2>
 
 
   <div class="doc doc-contents ">
@@ -1828,13 +1804,13 @@ Args:
 
           <details class="quote">
             <summary>Source code in <code>src/sageworks/api/model.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">21</span>
 <span class="normal">22</span>
 <span class="normal">23</span>
 <span class="normal">24</span>
-<span class="normal">25</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Model Initialization</span>
 <span class="sd">    Args:</span>
 <span class="sd">        name (str): The name of the Model</span>
@@ -1853,27 +1829,101 @@ Args:
 
 
 
-<h3 id="sageworks.api.Model.to_endpoint" class="doc doc-heading">
+<h2 id="sageworks.api.model.Model.to_endpoint" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">to_endpoint</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serverless</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
-</h3>
+</h2>
 
 
   <div class="doc doc-contents ">
   
-      <p>Create an Endpoint from the Model
-Args:
-    name (str): Set the name for the endpoint (optional)
-    tags (list): Set the tags for the endpoint (optional)
-    serverless (bool): Set the endpoint to be serverless (optional)
-Returns:
-    Endpoint: The Endpoint created from the Model</p>
+      <p>Create an Endpoint from the Model</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Set the name for the endpoint. If not specified, an automatic name will be generated</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>tags</code></td>
+          <td>
+                <code>list</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Set the tags for the endpoint. If not specified automatic tags will be generated.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>serverless</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Set the endpoint to be serverless (default: True)</p>
+            </div>
+          </td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>Endpoint</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="sageworks.api.endpoint.Endpoint" href="#sageworks.api.endpoint.Endpoint">Endpoint</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The Endpoint created from the Model</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
           <details class="quote">
             <summary>Source code in <code>src/sageworks/api/model.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">29</span>
 <span class="normal">30</span>
 <span class="normal">31</span>
 <span class="normal">32</span>
@@ -1891,12 +1941,18 @@ Returns:
 <span class="normal">44</span>
 <span class="normal">45</span>
 <span class="normal">46</span>
-<span class="normal">47</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serverless</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serverless</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Endpoint</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an Endpoint from the Model</span>
+
 <span class="sd">    Args:</span>
-<span class="sd">        name (str): Set the name for the endpoint (optional)</span>
-<span class="sd">        tags (list): Set the tags for the endpoint (optional)</span>
-<span class="sd">        serverless (bool): Set the endpoint to be serverless (optional)</span>
+<span class="sd">        name (str): Set the name for the endpoint. If not specified, an automatic name will be generated</span>
+<span class="sd">        tags (list): Set the tags for the endpoint. If not specified automatic tags will be generated.</span>
+<span class="sd">        serverless (bool): Set the endpoint to be serverless (default: True)</span>
+
 <span class="sd">    Returns:</span>
 <span class="sd">        Endpoint: The Endpoint created from the Model</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1924,15 +1980,162 @@ Returns:
 
   </div>
 
+</div><p><br></p>
+<h2>Endpoint</h2>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="sageworks.api.endpoint.Endpoint"></a>
+  <div class="doc doc-contents first">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="sageworks.core.artifacts.endpoint_core.EndpointCore">EndpointCore</span></code></p>
+
+  
+      <p>Endpoint: SageWorks Endpoint API Class</p>
+<p><strong>Common Usage</strong></p>
+<pre><code>    my_endpoint = Endpoint(name)
+    my_endpoint.summary()
+    my_endpoint.details()
+    my_endpoint.predict(df)
+</code></pre>
+
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/api/endpoint.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Endpoint</span><span class="p">(</span><span class="n">EndpointCore</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Endpoint: SageWorks Endpoint API Class</span>
+
+<span class="sd">    **Common Usage**</span>
+<span class="sd">    ```</span>
+<span class="sd">        my_endpoint = Endpoint(name)</span>
+<span class="sd">        my_endpoint.summary()</span>
+<span class="sd">        my_endpoint.details()</span>
+<span class="sd">        my_endpoint.predict(df)</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Endpoint Initialization</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the Endpoint</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Call superclass init</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h2 id="sageworks.api.endpoint.Endpoint.__init__" class="doc doc-heading">
+          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Endpoint Initialization</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The name of the Endpoint</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+          <details class="quote">
+            <summary>Source code in <code>src/sageworks/api/endpoint.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Endpoint Initialization</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (str): The name of the Endpoint</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Call superclass init</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
 </div>
 
 
 
-
   </div>
 
   </div>
 
+</div><div class="admonition note">
+<p class="admonition-title">Not Finding a particular method?</p>
+<p>The SageWorks API Classes use 'Core' Classes Internally. If you see a method used in an example that you can't find, look the method up in the Core Classes</p>
 </div>
 
 
