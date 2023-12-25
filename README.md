@@ -17,7 +17,7 @@ The SageWorks framework makes AWS® both easier to use and more powerful. SageWo
 - Endpoints
 
 ### SageWorks Documentation
-See our Python API and AWS documentation here: <a href="https://supercowpowers.github.io/sageworks/" target="_blank">SageWorks Documentation</a>
+See our Python API and AWS documentation here: [SageWorks Documentation](https://supercowpowers.github.io/sageworks/)
 
 ### Contributions
 If you'd like to contribute to the SageWorks project, you're more than welcome. All contributions will fall under the existing project [license](https://github.com/SuperCowPowers/sageworks/blob/main/LICENSE). If you are interested in contributing or have questions please feel free to contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com).
