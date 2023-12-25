@@ -2,10 +2,7 @@
 # Welcome to SageWorks
 The SageWorks framework makes AWS® both easier to use and more powerful. SageWorks handles all the details around updating and managing a complex set of AWS Services. With a simple-to-use Python API and a beautiful set of web interfaces, SageWorks makes creating AWS ML pipelines a snap. It also dramatically improves both the usability and visibility across the entire spectrum of services: Glue Job, Athena, Feature Store, Models, and Endpoints, SageWorks makes it easy to build production ready, AWS powered, machine learning pipelines.
 
-<figure style="float: right; width: 500px;">
-<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/ed2ed1bd-e2d8-49a1-b350-b2e19e2b7832">
-<figcaption>SageWorks Dashboard: AWS Pipelines in a Whole New Light!</figcaption>
-</figure>
+<img align="right" width="500" alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/ed2ed1bd-e2d8-49a1-b350-b2e19e2b7832">
 
 ### Full AWS ML OverView
 - Health Monitoring 🟢
