@@ -1,4 +1,28 @@
 site_name: SageWorks
+nav:
+  - Welcome: index.md
+  - API Classes: 
+    - OverView: api_classes/overview.md
+    - DataSource: api_classes/data_source.md
+    - FeatureSet: api_classes/feature_set.md
+    - Model: api_classes/model.md
+    - Endpoint: api_classes/endpoint.md
+  - Core Classes: 
+    - OverView: core_classes/overview.md
+    - Artifacts: core_classes/artifacts/artifacts.md
+    - Transforms: 
+      - OverView: core_classes/transforms/overview.md
+      - Data Loaders: core_classes/transforms/data_loaders.md
+      - Data To Features: core_classes/transforms/data_to_features.md
+      - Features To Model: core_classes/transforms/features_to_model.md
+      - Model to Endpoint: core_classes/transforms/model_to_endpoint.md
+      - Pandas Transforms: core_classes/transforms/pandas_transforms.md
+  - AWS Setup: 
+    - Initial Setup: aws_setup/initial_setup.md
+  - Admin: 
+    - PyPI Release:  admin/pypi_release.md
+    - Docker Push:  admin/docker_push.md
+
 theme:
   name: material
   palette:
