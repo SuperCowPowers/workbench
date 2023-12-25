@@ -1142,8 +1142,8 @@ Also viewable in the SageWorks Dashboard UI.</p>
 <span class="sd">        Args:</span>
 <span class="sd">            source (str): The source of the data. This can be an S3 bucket, file path,</span>
 <span class="sd">                          DataFrame object, or an existing DataSource object.</span>
-<span class="sd">            name (str): The name of the data source. If not specified, an automatic name will be generated.</span>
-<span class="sd">            tags (list[str]): A list of tags associated with the data source. If not specified automatic tags will be generated.</span>
+<span class="sd">            name (str): The name of the data source. If not specified, a name will be generated.</span>
+<span class="sd">            tags (list[str]): A list of tags associated with the data source. If not specified tags will be generated.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;sageworks&quot;</span><span class="p">)</span>
 
@@ -1166,10 +1166,10 @@ Also viewable in the SageWorks Dashboard UI.</p>
 <span class="sd">        Convert the DataSource to a FeatureSet</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            name (str): Set the name for feature set. If not specified, an automatic name will be generated</span>
-<span class="sd">            tags (list): Set the tags for the feature set. If not specified automatic tags will be generated.</span>
-<span class="sd">            id_column (str): Set the id column for the feature set. If not specified one will be generated.</span>
-<span class="sd">            event_time_column (str): Set the event time column for the feature set. If not specified one will be generated.</span>
+<span class="sd">            name (str): Set the name for feature set. If not specified, a name will be generated</span>
+<span class="sd">            tags (list): Set the tags for the feature set. If not specified tags will be generated.</span>
+<span class="sd">            id_column (str): Set the id column for the feature set. If not specified will be generated.</span>
+<span class="sd">            event_time_column (str): Set the event time for the feature set. If not specified will be generated.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            FeatureSet: The FeatureSet created from the DataSource</span>
@@ -1276,7 +1276,7 @@ Also viewable in the SageWorks Dashboard UI.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The name of the data source. If not specified, an automatic name will be generated.</p>
+              <p>The name of the data source. If not specified, a name will be generated.</p>
             </div>
           </td>
           <td>
@@ -1290,7 +1290,7 @@ Also viewable in the SageWorks Dashboard UI.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A list of tags associated with the data source. If not specified automatic tags will be generated.</p>
+              <p>A list of tags associated with the data source. If not specified tags will be generated.</p>
             </div>
           </td>
           <td>
@@ -1331,8 +1331,8 @@ Also viewable in the SageWorks Dashboard UI.</p>
 <span class="sd">    Args:</span>
 <span class="sd">        source (str): The source of the data. This can be an S3 bucket, file path,</span>
 <span class="sd">                      DataFrame object, or an existing DataSource object.</span>
-<span class="sd">        name (str): The name of the data source. If not specified, an automatic name will be generated.</span>
-<span class="sd">        tags (list[str]): A list of tags associated with the data source. If not specified automatic tags will be generated.</span>
+<span class="sd">        name (str): The name of the data source. If not specified, a name will be generated.</span>
+<span class="sd">        tags (list[str]): A list of tags associated with the data source. If not specified tags will be generated.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;sageworks&quot;</span><span class="p">)</span>
 
@@ -1389,7 +1389,7 @@ Also viewable in the SageWorks Dashboard UI.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Set the name for feature set. If not specified, an automatic name will be generated</p>
+              <p>Set the name for feature set. If not specified, a name will be generated</p>
             </div>
           </td>
           <td>
@@ -1403,7 +1403,7 @@ Also viewable in the SageWorks Dashboard UI.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Set the tags for the feature set. If not specified automatic tags will be generated.</p>
+              <p>Set the tags for the feature set. If not specified tags will be generated.</p>
             </div>
           </td>
           <td>
@@ -1417,7 +1417,7 @@ Also viewable in the SageWorks Dashboard UI.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Set the id column for the feature set. If not specified one will be generated.</p>
+              <p>Set the id column for the feature set. If not specified will be generated.</p>
             </div>
           </td>
           <td>
@@ -1431,7 +1431,7 @@ Also viewable in the SageWorks Dashboard UI.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Set the event time column for the feature set. If not specified one will be generated.</p>
+              <p>Set the event time for the feature set. If not specified will be generated.</p>
             </div>
           </td>
           <td>
@@ -1500,10 +1500,10 @@ Also viewable in the SageWorks Dashboard UI.</p>
 <span class="sd">    Convert the DataSource to a FeatureSet</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        name (str): Set the name for feature set. If not specified, an automatic name will be generated</span>
-<span class="sd">        tags (list): Set the tags for the feature set. If not specified automatic tags will be generated.</span>
-<span class="sd">        id_column (str): Set the id column for the feature set. If not specified one will be generated.</span>
-<span class="sd">        event_time_column (str): Set the event time column for the feature set. If not specified one will be generated.</span>
+<span class="sd">        name (str): Set the name for feature set. If not specified, a name will be generated</span>
+<span class="sd">        tags (list): Set the tags for the feature set. If not specified tags will be generated.</span>
+<span class="sd">        id_column (str): Set the id column for the feature set. If not specified will be generated.</span>
+<span class="sd">        event_time_column (str): Set the event time for the feature set. If not specified will be generated.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        FeatureSet: The FeatureSet created from the DataSource</span>
