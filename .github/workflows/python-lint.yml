@@ -1,0 +1,27 @@
+name: Python Linting
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        pip install flake8 black
+
+    - name: Run Black (Code Formatting)
+      run: |
+        black --line-length=120 --check src/sageworks applications tests
+
+    - name: Run Flake8 (Linting)
+      run: |
+        flake8 --exclude '*generated*' src/sageworks applications tests
+
