@@ -41,9 +41,9 @@ class FeatureSet(FeatureSetCore):
         Args:
             model_type (ModelType): The type of model to create (See sageworks.model.ModelType)
             target_column (str): The target column for the model (use None for unsupervised model)
-            name (str): Set the name for the model. If not specified, an automatic name will be generated
-            tags (list): Set the tags for the model.  If not specified automatic tags will be generated.
-            description (str): Set the description for the model. If not specified an automatic description will be generated.
+            name (str): Set the name for the model. If not specified, a name will be generated
+            tags (list): Set the tags for the model.  If not specified tags will be generated.
+            description (str): Set the description for the model. If not specified a description is generated.
 
         Returns:
             Model: The Model created from the FeatureSet

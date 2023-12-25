@@ -1,6 +1,6 @@
 """Welcome to the SageWorks API Classes
 
-These class provide high-level APIs for the SageWorks package, offering easy access to its core classes: 
+These class provide high-level APIs for the SageWorks package, offering easy access to its core classes:
 
 - DataSource: Manages AWS Data Catalog and Athena
 - FeatureSet: Manages AWS Feature Store and Feature Groups

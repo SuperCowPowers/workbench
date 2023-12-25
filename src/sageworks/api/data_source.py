@@ -35,8 +35,8 @@ class DataSource(AthenaSource):
         Args:
             source (str): The source of the data. This can be an S3 bucket, file path,
                           DataFrame object, or an existing DataSource object.
-            name (str): The name of the data source. If not specified, an automatic name will be generated.
-            tags (list[str]): A list of tags associated with the data source. If not specified automatic tags will be generated.
+            name (str): The name of the data source. If not specified, a name will be generated.
+            tags (list[str]): A list of tags associated with the data source. If not specified tags will be generated.
         """
         self.log = logging.getLogger("sageworks")
 
@@ -59,10 +59,10 @@ class DataSource(AthenaSource):
         Convert the DataSource to a FeatureSet
 
         Args:
-            name (str): Set the name for feature set. If not specified, an automatic name will be generated
-            tags (list): Set the tags for the feature set. If not specified automatic tags will be generated.
-            id_column (str): Set the id column for the feature set. If not specified one will be generated.
-            event_time_column (str): Set the event time column for the feature set. If not specified one will be generated.
+            name (str): Set the name for feature set. If not specified, a name will be generated
+            tags (list): Set the tags for the feature set. If not specified tags will be generated.
+            id_column (str): Set the id column for the feature set. If not specified will be generated.
+            event_time_column (str): Set the event time for the feature set. If not specified will be generated.
 
         Returns:
             FeatureSet: The FeatureSet created from the DataSource
