@@ -47,6 +47,12 @@ if __name__ == "__main__":
         print("Deleting wine_features...")
         fs.delete()
 
+    # Delete the test-model Model
+    m = ModelCore("test-model")
+    if m.exists():
+        print("Deleting test-model model...")
+        m.delete()
+
     # Delete the abalone_regression Model
     m = ModelCore("abalone-regression")
     if m.exists():

@@ -14,17 +14,12 @@ Endpoints:
 import sys
 import logging
 from pathlib import Path
-from sageworks.core.artifacts.data_source_factory import DataSourceFactory
-from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model_core import ModelCore, ModelType
-from sageworks.core.artifacts.endpoint_core import EndpointCore
+from sageworks.api.data_source import DataSource
+from sageworks.api.feature_set import FeatureSet
+from sageworks.api.model import Model, ModelType
+from sageworks.api.endpoint import Endpoint
 
 from sageworks.utils.test_data_generator import TestDataGenerator
-from sageworks.core.transforms.pandas_transforms.pandas_to_data import PandasToData
-from sageworks.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
-from sageworks.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
-from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
-from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 # Setup the logger
@@ -41,43 +36,37 @@ if __name__ == "__main__":
     recreate = False
 
     # Create the test_data DataSource
-    if recreate or not DataSourceFactory("test_data").exists():
-        # Create a small test data set
+    if recreate or not DataSource("test_data").exists():
+
+        # Create a new Data Source from a dataframe of test data
         test_data = TestDataGenerator()
         df = test_data.person_data()
-
-        # Create my DF to Data Source Transform
-        df_to_data = PandasToData("test_data")
-        df_to_data.set_input(df)
-        df_to_data.set_output_tags(["test", "small"])
-        df_to_data.transform()
+        DataSource(df, name="test_data")
 
     # Create the abalone_data DataSource
-    if recreate or not DataSourceFactory("abalone_data").exists():
-        my_loader = CSVToDataSource(abalone_data_path, "abalone_data")
-        my_loader.set_output_tags("abalone:public")
-        my_loader.transform()
+    if recreate or not DataSource("abalone_data").exists():
+        DataSource(abalone_data_path, name="abalone_data")
 
     # Create the test_features FeatureSet
-    if recreate or not FeatureSetCore("test_features").exists():
-        data_to_features = DataToFeaturesLight("test_data", "test_features")
-        data_to_features.set_output_tags(["test", "small"])
-        data_to_features.transform(id_column="id", event_time_column="date")
+    if recreate or not FeatureSet("test_features").exists():
+        ds = DataSource("test_data")
+        ds.to_features("test_features", id_column="id", event_time_column="date")
 
     # Create the abalone_features FeatureSet
-    if recreate or not FeatureSetCore("abalone_features").exists():
-        data_to_features = DataToFeaturesLight("abalone_data", "abalone_features")
-        data_to_features.set_output_tags(["abalone", "public"])
-        data_to_features.transform(target_column="class_number_of_rings")
+    if recreate or not FeatureSet("abalone_features").exists():
+        ds = DataSource("abalone_data")
+        ds.to_features("abalone_features", target_column="class_number_of_rings")
 
     # Create the abalone_regression Model
-    if recreate or not ModelCore("abalone-regression").exists():
-        features_to_model = FeaturesToModel("abalone_features", "abalone-regression", model_type=ModelType.REGRESSOR)
-        features_to_model.set_output_tags(["abalone", "regression"])
-        features_to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")
+    if recreate or not Model("abalone-regression").exists():
+        fs = FeatureSet("abalone_features")
+        fs.to_model(ModelType.REGRESSOR,
+                    name="abalone-regression",
+                    target_column="class_number_of_rings",
+                    tags=["abalone", "regression"],
+                    description="Abalone Regression Model")
 
     # Create the abalone_regression Endpoint
-    if recreate or not EndpointCore("abalone-regression-end").exists():
-        model_to_endpoint = ModelToEndpoint("abalone-regression", "abalone-regression-end")
-        model_to_endpoint.set_output_tags(["abalone", "regression"])
-        model_to_endpoint.transform()
+    if recreate or not Endpoint("abalone-regression-end").exists():
+        model = Model("abalone-regression")
+        model.to_endpoint(name="abalone-regression-end", tags=["abalone", "regression"])
