@@ -333,7 +333,7 @@ class PandasToFeatures(Transform):
         self.output_feature_set.set_status("initializing")
 
         # Wait for offline storage of the Feature Group to be ready
-        self.log.important("Waiting for Feature Group Offline storage to be ready...")
+        self.log.important("Waiting for AWS Feature Group Offline storage to be ready...")
         self.log.important("This will often take 10-20 minutes...go have coffee or lunch :)")
         self.wait_for_rows(self.expected_rows)
 

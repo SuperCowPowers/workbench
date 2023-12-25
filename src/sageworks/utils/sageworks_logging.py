@@ -12,13 +12,18 @@ class ThrottlingFilter(logging.Filter):
         self.last_log_times = defaultdict(lambda: 0)
 
     def filter(self, record):
-        last_log_time = self.last_log_times[record.msg]
-        current_time = time.time()
 
+        # Get the message and last log time for this message
+        message = str(record.msg)
+        last_log_time = self.last_log_times[message]
+
+        # Return True if this message should be logged (i.e. it's been long enough since the last time)
+        current_time = time.time()
         if current_time - last_log_time > self.rate_seconds:
-            self.last_log_times[record.msg] = current_time
+            self.last_log_times[message] = current_time
             return True
 
+        # Filter out this message
         return False
 
 

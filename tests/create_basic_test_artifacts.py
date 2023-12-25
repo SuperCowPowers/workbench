@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # Create the abalone_features FeatureSet
     if recreate or not FeatureSet("abalone_features").exists():
         ds = DataSource("abalone_data")
-        ds.to_features("abalone_features", target_column="class_number_of_rings")
+        ds.to_features("abalone_features")
 
     # Create the abalone_regression Model
     if recreate or not Model("abalone-regression").exists():
