@@ -1,7 +1,7 @@
 """Model: SageWorks Model API Class"""
 
 # SageWorks Imports
-from sageworks.core.artifacts.model_core import ModelCore
+from sageworks.core.artifacts.model_core import ModelCore, ModelType
 from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from sageworks.api.endpoint import Endpoint
 

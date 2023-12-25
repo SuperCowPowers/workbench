@@ -213,7 +213,7 @@ class Outliers:
 
 if __name__ == "__main__":
     """Exercise the SQL Outliers Functionality"""
-    from sageworks.core.artifacts.data_source_factory import DataSourceFactory
+    from sageworks.api.data_source import DataSource
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 50)
@@ -221,14 +221,10 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSourceFactory("test_data")
+    my_data = DataSource("test_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
-
-    # Set computation view columns
-    computation_cols = my_data.column_names()[:5]
-    my_data.set_computation_columns(computation_cols)
 
     # Create the class and Compute outliers
     my_outliers = Outliers()

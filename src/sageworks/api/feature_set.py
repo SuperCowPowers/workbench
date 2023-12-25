@@ -3,8 +3,7 @@
 # SageWorks Imports
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
-from sageworks.core.artifacts.model_core import ModelType
-from sageworks.api.model import Model
+from sageworks.api.model import Model, ModelType
 
 
 class FeatureSet(FeatureSetCore):
