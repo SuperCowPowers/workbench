@@ -1,9 +1,9 @@
-"""This Script Deletes the SageWorks Artifacts in AWS used for the tests"""
+"""This Script Deletes the SageWorks Artifacts used for the tests"""
 import time
-from sageworks.core.artifacts.data_source_factory import DataSourceFactory
-from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model_core import ModelCore
-from sageworks.core.artifacts.endpoint_core import EndpointCore
+from sageworks.api.data_source import DataSource
+from sageworks.api.feature_set import FeatureSet
+from sageworks.api.model import Model
+from sageworks.api.endpoint import Endpoint
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 
@@ -12,117 +12,117 @@ if __name__ == "__main__":
     AWSServiceBroker().get_all_metadata(force_refresh=True)
 
     # Delete the test_data DataSource
-    ds = DataSourceFactory("test_data")
+    ds = DataSource("test_data")
     if ds.exists():
         print("Deleting test_data...")
         ds.delete()
 
     # Delete the abalone_data DataSource
-    ds = DataSourceFactory("abalone_data")
+    ds = DataSource("abalone_data")
     if ds.exists():
         print("Deleting abalone_data...")
         ds.delete()
 
     # Delete the abalone_data_copy DataSource
-    ds = DataSourceFactory("abalone_data_copy")
+    ds = DataSource("abalone_data_copy")
     if ds.exists():
         print("Deleting abalone_data_copy...")
         ds.delete()
 
     # Delete the test_features FeatureSet
-    fs = FeatureSetCore("test_features")
+    fs = FeatureSet("test_features")
     if fs.exists():
         print("Deleting test_features...")
         fs.delete()
 
     # Delete the abalone_features FeatureSet
-    fs = FeatureSetCore("abalone_features")
+    fs = FeatureSet("abalone_features")
     if fs.exists():
         print("Deleting abalone_features...")
         fs.delete()
 
     # Delete the wine_feature FeatureSet
-    fs = FeatureSetCore("wine_features")
+    fs = FeatureSet("wine_features")
     if fs.exists():
         print("Deleting wine_features...")
         fs.delete()
 
     # Delete the test-model Model
-    m = ModelCore("test-model")
+    m = Model("test-model")
     if m.exists():
         print("Deleting test-model model...")
         m.delete()
 
-    # Delete the abalone_regression Model
-    m = ModelCore("abalone-regression")
+    # Delete the abalone-regression Model
+    m = Model("abalone-regression")
     if m.exists():
         print("Deleting abalone-regression model...")
         m.delete()
 
-    # Delete the abalone_regression Endpoint
-    end = EndpointCore("abalone-regression-end")
+    # Delete the abalone-regression Endpoint
+    end = Endpoint("abalone-regression-end")
     if end.exists():
         print("Deleting abalone-regression-end...")
         end.delete()
 
     # Classification Artifacts
-    fs = FeatureSetCore("abalone_classification")
+    fs = FeatureSet("abalone_classification")
     if fs.exists():
         print("Deleting abalone_classification...")
         fs.delete()
-    m = ModelCore("abalone-classification")
+    m = Model("abalone-classification")
     if m.exists():
         print("Deleting abalone-classification model...")
         m.delete()
-    end = EndpointCore("abalone-classification-end")
+    end = Endpoint("abalone-classification-end")
     if end.exists():
         print("Deleting abalone-classification-end endpoint...")
         end.delete()
 
     # Wine Artifacts
-    ds = DataSourceFactory("wine_data")
+    ds = DataSource("wine_data")
     if ds.exists():
         print("Deleting wine_data...")
         ds.delete()
-    fs = FeatureSetCore("wine_features")
+    fs = FeatureSet("wine_features")
     if fs.exists():
         print("Deleting wine_features...")
         fs.delete()
-    m = ModelCore("wine-classification")
+    m = Model("wine-classification")
     if m.exists():
         print("Deleting wine-classification model...")
         m.delete()
-    end = EndpointCore("wine-classification-end")
+    end = Endpoint("wine-classification-end")
     if end.exists():
         print("Deleting wine-classification-end endpoint...")
         end.delete()
 
     # AQSol Artifacts
-    ds = DataSourceFactory("aqsol_data")
+    ds = DataSource("aqsol_data")
     if ds.exists():
         print("Deleting aqsol_data...")
         ds.delete()
-    fs = FeatureSetCore("aqsol_features")
+    fs = FeatureSet("aqsol_features")
     if fs.exists():
         print("Deleting aqsol_features...")
         fs.delete()
-    m = ModelCore("aqsol-regression")
+    m = Model("aqsol-regression")
     if m.exists():
         print("Deleting aqsol-regression model...")
         m.delete()
-    end = EndpointCore("aqsol-regression-end")
+    end = Endpoint("aqsol-regression-end")
     if end.exists():
         print("Deleting aqsol-regression-end endpoint...")
         end.delete()
-    fs = FeatureSetCore("aqsol_rdkit_features")
+    fs = FeatureSet("aqsol_rdkit_features")
     if fs.exists():
         print("Deleting aqsol_rdkit_features...")
         fs.delete()
-    m = ModelCore("aqsol-rdkit-regression")
+    m = Model("aqsol-rdkit-regression")
     if m.exists():
         print("Deleting aqsol-rdkit-regression model...")
         m.delete()
-    end = EndpointCore("aqsol-rdkit-regression-end")
+    end = Endpoint("aqsol-rdkit-regression-end")
     if end.exists():
         print("Deleting aqsol-rdkit-regression-end endpoint...")
         end.delete()
