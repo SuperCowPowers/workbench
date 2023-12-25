@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../../core_classes/transforms/pandas_transforms/">
+        <link rel="prev" href="../feature_set/">
       
       
-        <link rel="next" href="../scp_consulting/">
+        <link rel="next" href="../overview/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>SageWorks Classes and Concepts - SageWorks</title>
+        <title>Model - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#sageworks-classes-and-concepts" class="md-skip">
+        <a href="#model" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              SageWorks Classes and Concepts
+              Model
             
           </span>
         </div>
@@ -332,19 +332,21 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -358,7 +360,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Api classes
@@ -372,7 +374,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/data_source/" class="md-nav__link">
+      <a href="../data_source/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -393,7 +395,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/endpoint/" class="md-nav__link">
+      <a href="../endpoint/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -414,7 +416,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/feature_set/" class="md-nav__link">
+      <a href="../feature_set/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -432,10 +434,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../api_classes/model/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Model
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -444,6 +466,77 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.model" class="md-nav__link">
+    <span class="md-ellipsis">
+      model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.model.Model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.api.model.Model.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.api.model.Model.to_endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      to_endpoint()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -456,7 +549,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/overview/" class="md-nav__link">
+      <a href="../overview/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -848,21 +941,19 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
           <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
@@ -876,7 +967,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             Misc
@@ -887,19 +978,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../misc/sageworks_classes_concepts/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -908,7 +990,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -921,7 +1002,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../scp_consulting/" class="md-nav__link">
+      <a href="../../misc/scp_consulting/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -962,6 +1043,65 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.model" class="md-nav__link">
+    <span class="md-ellipsis">
+      model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.model.Model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.api.model.Model.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.api.model.Model.to_endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      to_endpoint()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -975,46 +1115,372 @@
                   
 
 
-<h1 id="sageworks-classes-and-concepts">SageWorks Classes and Concepts</h1>
-<p>A flexible, rapid, and customizable AWS® ML Sandbox. Here's some of the classes and concepts we use in the SageWorks system:</p>
-<p><img src="images/sageworks_concepts.png"></p>
-<ul>
-<li>Artifacts</li>
-<li>DataLoader</li>
-<li>DataSource</li>
-<li>FeatureSet</li>
-<li>Model</li>
-<li>
-<p>Endpoint</p>
-</li>
-<li>
-<p>Transforms</p>
-</li>
-<li>DataSource to DataSource<ul>
-<li>Heavy <ul>
-<li>AWS Glue Jobs</li>
-<li>AWS EMR Serverless</li>
-</ul>
-</li>
-<li>Light<ul>
-<li>Local/Laptop</li>
-<li>Lambdas</li>
-<li>StepFunctions</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>DataSource to FeatureSet<ul>
-<li>Heavy/Light (see above breakout)</li>
-</ul>
-</li>
-<li>FeatureSet to FeatureSet<ul>
-<li>Heavy/Light (see above breakout)</li>
-</ul>
-</li>
-<li>FeatureSet to Model</li>
-<li>Model to Endpoint</li>
-</ul>
+<h1 id="model">Model</h1>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="sageworks.api.model"></a>
+  <div class="doc doc-contents first">
+  
+      <p>Model: SageWorks Model API Class</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h2 id="sageworks.api.model.Model" class="doc doc-heading">
+          <code>Model</code>
+
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="sageworks.core.artifacts.model_core.ModelCore">ModelCore</span></code></p>
+
+  
+      <p>Model: SageWorks Model API Class</p>
+<p><strong>Common Usage</strong></p>
+<pre><code>    my_features = Model(name)
+    my_features.summary()
+    my_features.details()
+    my_features.to_endpoint()
+</code></pre>
+
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/api/model.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">ModelCore</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Model: SageWorks Model API Class</span>
+
+<span class="sd">    **Common Usage**</span>
+<span class="sd">    ```</span>
+<span class="sd">        my_features = Model(name)</span>
+<span class="sd">        my_features.summary()</span>
+<span class="sd">        my_features.details()</span>
+<span class="sd">        my_features.to_endpoint()</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Model Initialization</span>
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the Model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Call superclass init</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">to_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serverless</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Endpoint</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an Endpoint from the Model</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): Set the name for the endpoint. If not specified, an automatic name will be generated</span>
+<span class="sd">            tags (list): Set the tags for the endpoint. If not specified automatic tags will be generated.</span>
+<span class="sd">            serverless (bool): Set the endpoint to be serverless (default: True)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Endpoint: The Endpoint created from the Model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Create the Endpoint Name and Tags</span>
+        <span class="n">endpoint_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-model&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;-end&quot;</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">name</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[</span><span class="n">endpoint_name</span><span class="p">]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+
+        <span class="c1"># Create an Endpoint from the Model</span>
+        <span class="n">model_to_endpoint</span> <span class="o">=</span> <span class="n">ModelToEndpoint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">endpoint_name</span><span class="p">,</span> <span class="n">serverless</span><span class="o">=</span><span class="n">serverless</span><span class="p">)</span>
+        <span class="n">model_to_endpoint</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
+        <span class="n">model_to_endpoint</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
+
+        <span class="c1"># Return the Endpoint</span>
+        <span class="k">return</span> <span class="n">Endpoint</span><span class="p">(</span><span class="n">endpoint_name</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="sageworks.api.model.Model.__init__" class="doc doc-heading">
+          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Model Initialization
+Args:
+    name (str): The name of the Model</p>
+
+          <details class="quote">
+            <summary>Source code in <code>src/sageworks/api/model.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Model Initialization</span>
+<span class="sd">    Args:</span>
+<span class="sd">        name (str): The name of the Model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Call superclass init</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="sageworks.api.model.Model.to_endpoint" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">to_endpoint</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serverless</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Create an Endpoint from the Model</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Set the name for the endpoint. If not specified, an automatic name will be generated</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>tags</code></td>
+          <td>
+                <code>list</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Set the tags for the endpoint. If not specified automatic tags will be generated.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>serverless</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Set the endpoint to be serverless (default: True)</p>
+            </div>
+          </td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>Endpoint</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="sageworks.api.endpoint.Endpoint" href="../endpoint/#sageworks.api.endpoint.Endpoint">Endpoint</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The Endpoint created from the Model</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+          <details class="quote">
+            <summary>Source code in <code>src/sageworks/api/model.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serverless</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Endpoint</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an Endpoint from the Model</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (str): Set the name for the endpoint. If not specified, an automatic name will be generated</span>
+<span class="sd">        tags (list): Set the tags for the endpoint. If not specified automatic tags will be generated.</span>
+<span class="sd">        serverless (bool): Set the endpoint to be serverless (default: True)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Endpoint: The Endpoint created from the Model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Create the Endpoint Name and Tags</span>
+    <span class="n">endpoint_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-model&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;-end&quot;</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">name</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[</span><span class="n">endpoint_name</span><span class="p">]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+
+    <span class="c1"># Create an Endpoint from the Model</span>
+    <span class="n">model_to_endpoint</span> <span class="o">=</span> <span class="n">ModelToEndpoint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">endpoint_name</span><span class="p">,</span> <span class="n">serverless</span><span class="o">=</span><span class="n">serverless</span><span class="p">)</span>
+    <span class="n">model_to_endpoint</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
+    <span class="n">model_to_endpoint</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
+
+    <span class="c1"># Return the Endpoint</span>
+    <span class="k">return</span> <span class="n">Endpoint</span><span class="p">(</span><span class="n">endpoint_name</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+  </div>
+
+  </div>
+
+</div><h2 id="examples">Examples</h2>
+<p>Example Description 1</p>
+<pre><code>example code 1
+</code></pre>
+<p>Example Description 2</p>
+<pre><code>example code 2
+</code></pre>
+<div class="admonition note">
+<p class="admonition-title">Not Finding a particular method?</p>
+<p>The SageWorks API Classes use 'Core' Classes Internally, so you can lookup all the methods in <a href="../../core_classes/overview/">SageWorks Core Classes</a></p>
+</div>
 
 
 

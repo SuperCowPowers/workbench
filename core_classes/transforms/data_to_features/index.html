@@ -1,0 +1,2252 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../data_loaders/">
+      
+      
+        <link rel="next" href="../features_to_model/">
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.3">
+    
+    
+      
+        <title>Data To Features - SageWorks</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.50c56a3b.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#data-to-features" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SageWorks
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Data To Features
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    SageWorks
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Welcome to SageWorks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Admin
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Admin
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/docker_push/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Docker Build and Push
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/pypi_release/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PyPI Release Notes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Api classes
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Api classes
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api_classes/data_source/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DataSource
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api_classes/endpoint/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Endpoint
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api_classes/feature_set/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FeatureSet
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api_classes/model/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api_classes/overview/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Aws setup
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Aws setup
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../aws_setup/initial_setup/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Initial AWS Setup
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Core classes
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Core classes
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../overview/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Core Classes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Artifacts
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            Artifacts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../artifacts/artifacts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    SageWorks Artifacts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Transforms
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            Transforms
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data_loaders/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DataLoaders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Data To Features
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Data To Features
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.data_to_features_light" class="md-nav__link">
+    <span class="md-ellipsis">
+      data_to_features_light
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight" class="md-nav__link">
+    <span class="md-ellipsis">
+      DataToFeaturesLight
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DataToFeaturesLight">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.post_transform" class="md-nav__link">
+    <span class="md-ellipsis">
+      post_transform()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.pre_transform" class="md-nav__link">
+    <span class="md-ellipsis">
+      pre_transform()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.transform_impl" class="md-nav__link">
+    <span class="md-ellipsis">
+      transform_impl()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.rdkit_descriptors" class="md-nav__link">
+    <span class="md-ellipsis">
+      rdkit_descriptors
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.rdkit_descriptors.RDKitDescriptors" class="md-nav__link">
+    <span class="md-ellipsis">
+      RDKitDescriptors
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RDKitDescriptors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.rdkit_descriptors.RDKitDescriptors.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.rdkit_descriptors.RDKitDescriptors.compute_rdkit_descriptors" class="md-nav__link">
+    <span class="md-ellipsis">
+      compute_rdkit_descriptors()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.rdkit_descriptors.RDKitDescriptors.transform_impl" class="md-nav__link">
+    <span class="md-ellipsis">
+      transform_impl()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features_to_model/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Features To Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_to_endpoint/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model to Endpoint
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transforms
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pandas_transforms/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pandas Transforms
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Misc
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Misc
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../misc/sageworks_classes_concepts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    SageWorks Classes and Concepts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../misc/scp_consulting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Scp consulting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.data_to_features_light" class="md-nav__link">
+    <span class="md-ellipsis">
+      data_to_features_light
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight" class="md-nav__link">
+    <span class="md-ellipsis">
+      DataToFeaturesLight
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DataToFeaturesLight">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.post_transform" class="md-nav__link">
+    <span class="md-ellipsis">
+      post_transform()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.pre_transform" class="md-nav__link">
+    <span class="md-ellipsis">
+      pre_transform()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.transform_impl" class="md-nav__link">
+    <span class="md-ellipsis">
+      transform_impl()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.rdkit_descriptors" class="md-nav__link">
+    <span class="md-ellipsis">
+      rdkit_descriptors
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.rdkit_descriptors.RDKitDescriptors" class="md-nav__link">
+    <span class="md-ellipsis">
+      RDKitDescriptors
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RDKitDescriptors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.rdkit_descriptors.RDKitDescriptors.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.rdkit_descriptors.RDKitDescriptors.compute_rdkit_descriptors" class="md-nav__link">
+    <span class="md-ellipsis">
+      compute_rdkit_descriptors()
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.transforms.data_to_features.light.rdkit_descriptors.RDKitDescriptors.transform_impl" class="md-nav__link">
+    <span class="md-ellipsis">
+      transform_impl()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="data-to-features">Data To Features</h1>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="sageworks.core.transforms.data_to_features.light.data_to_features_light"></a>
+  <div class="doc doc-contents first">
+  
+      <p>DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h2 id="sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight" class="doc doc-heading">
+          <code>DataToFeaturesLight</code>
+
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="sageworks.core.transforms.transform.Transform">Transform</span></code></p>
+
+  
+      <p>DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas</p>
+
+<details class="common-usage" open>
+  <summary>Common Usage</summary>
+  <p>to_features = DataToFeaturesLight(data_uuid, feature_uuid)
+to_features.set_output_tags(["abalone", "public", "whatever"])
+to_features.transform(target_column="target"/None, id_column="id"/None,
+                      event_time_column="date"/None, query=str/None)</p>
+</details>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/data_to_features_light.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">DataToFeaturesLight</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas</span>
+
+<span class="sd">    Common Usage:</span>
+<span class="sd">        to_features = DataToFeaturesLight(data_uuid, feature_uuid)</span>
+<span class="sd">        to_features.set_output_tags([&quot;abalone&quot;, &quot;public&quot;, &quot;whatever&quot;])</span>
+<span class="sd">        to_features.transform(target_column=&quot;target&quot;/None, id_column=&quot;id&quot;/None,</span>
+<span class="sd">                              event_time_column=&quot;date&quot;/None, query=str/None)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;DataToFeaturesLight Initialization&quot;&quot;&quot;</span>
+
+        <span class="c1"># Call superclass init</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">)</span>
+
+        <span class="c1"># Set up all my instance attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_type</span> <span class="o">=</span> <span class="n">TransformInput</span><span class="o">.</span><span class="n">DATA_SOURCE</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span> <span class="o">=</span> <span class="n">TransformOutput</span><span class="o">.</span><span class="n">FEATURE_SET</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">pre_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pull the input DataSource into our Input Pandas DataFrame</span>
+<span class="sd">        Args:</span>
+<span class="sd">            query(str): Optional query to filter the input DataFrame</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Grab the Input (Data Source)</span>
+        <span class="n">data_to_pandas</span> <span class="o">=</span> <span class="n">DataToPandas</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">)</span>
+        <span class="n">data_to_pandas</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="n">data_to_pandas</span><span class="o">.</span><span class="n">get_output</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">transform_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform the input DataFrame into a Feature Set&quot;&quot;&quot;</span>
+
+        <span class="c1"># This is a reference implementation that should be overridden by the subclass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span>
+
+    <span class="k">def</span> <span class="nf">post_transform</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">target_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">auto_categorize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;At this point the output DataFrame should be populated, so publish it as a Feature Set</span>
+<span class="sd">        Args:</span>
+<span class="sd">            target_column(str): The name of the target column in the output DataFrame (default: None)</span>
+<span class="sd">            id_column(str): The name of the id column in the output DataFrame (default: None)</span>
+<span class="sd">            event_time_column(str): The name of the event time column in the output DataFrame (default: None)</span>
+<span class="sd">            auto_categorize(bool): Whether to auto categorize the output DataFrame (default: True)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Now publish to the output location</span>
+        <span class="n">output_features</span> <span class="o">=</span> <span class="n">PandasToFeatures</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">auto_categorize</span><span class="o">=</span><span class="n">auto_categorize</span><span class="p">)</span>
+        <span class="n">output_features</span><span class="o">.</span><span class="n">set_input</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span><span class="p">,</span> <span class="n">target_column</span><span class="o">=</span><span class="n">target_column</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="n">id_column</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="n">event_time_column</span>
+        <span class="p">)</span>
+        <span class="n">output_features</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_tags</span><span class="p">)</span>
+        <span class="n">output_features</span><span class="o">.</span><span class="n">add_output_meta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_meta</span><span class="p">)</span>
+        <span class="n">output_features</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
+
+        <span class="c1"># Create a default training_view for this FeatureSet</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureSetCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">fs</span><span class="o">.</span><span class="n">create_default_training_view</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.__init__" class="doc doc-heading">
+          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>DataToFeaturesLight Initialization</p>
+
+          <details class="quote">
+            <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/data_to_features_light.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;DataToFeaturesLight Initialization&quot;&quot;&quot;</span>
+
+    <span class="c1"># Call superclass init</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">)</span>
+
+    <span class="c1"># Set up all my instance attributes</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">input_type</span> <span class="o">=</span> <span class="n">TransformInput</span><span class="o">.</span><span class="n">DATA_SOURCE</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span> <span class="o">=</span> <span class="n">TransformOutput</span><span class="o">.</span><span class="n">FEATURE_SET</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.post_transform" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">auto_categorize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>At this point the output DataFrame should be populated, so publish it as a Feature Set
+Args:
+    target_column(str): The name of the target column in the output DataFrame (default: None)
+    id_column(str): The name of the id column in the output DataFrame (default: None)
+    event_time_column(str): The name of the event time column in the output DataFrame (default: None)
+    auto_categorize(bool): Whether to auto categorize the output DataFrame (default: True)</p>
+
+          <details class="quote">
+            <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/data_to_features_light.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">post_transform</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">target_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">auto_categorize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;At this point the output DataFrame should be populated, so publish it as a Feature Set</span>
+<span class="sd">    Args:</span>
+<span class="sd">        target_column(str): The name of the target column in the output DataFrame (default: None)</span>
+<span class="sd">        id_column(str): The name of the id column in the output DataFrame (default: None)</span>
+<span class="sd">        event_time_column(str): The name of the event time column in the output DataFrame (default: None)</span>
+<span class="sd">        auto_categorize(bool): Whether to auto categorize the output DataFrame (default: True)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Now publish to the output location</span>
+    <span class="n">output_features</span> <span class="o">=</span> <span class="n">PandasToFeatures</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">auto_categorize</span><span class="o">=</span><span class="n">auto_categorize</span><span class="p">)</span>
+    <span class="n">output_features</span><span class="o">.</span><span class="n">set_input</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span><span class="p">,</span> <span class="n">target_column</span><span class="o">=</span><span class="n">target_column</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="n">id_column</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="n">event_time_column</span>
+    <span class="p">)</span>
+    <span class="n">output_features</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_tags</span><span class="p">)</span>
+    <span class="n">output_features</span><span class="o">.</span><span class="n">add_output_meta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_meta</span><span class="p">)</span>
+    <span class="n">output_features</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
+
+    <span class="c1"># Create a default training_view for this FeatureSet</span>
+    <span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureSetCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">create_default_training_view</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.pre_transform" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">pre_transform</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Pull the input DataSource into our Input Pandas DataFrame
+Args:
+    query(str): Optional query to filter the input DataFrame</p>
+
+          <details class="quote">
+            <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/data_to_features_light.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">pre_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pull the input DataSource into our Input Pandas DataFrame</span>
+<span class="sd">    Args:</span>
+<span class="sd">        query(str): Optional query to filter the input DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Grab the Input (Data Source)</span>
+    <span class="n">data_to_pandas</span> <span class="o">=</span> <span class="n">DataToPandas</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">)</span>
+    <span class="n">data_to_pandas</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="n">data_to_pandas</span><span class="o">.</span><span class="n">get_output</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.transform_impl" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Transform the input DataFrame into a Feature Set</p>
+
+          <details class="quote">
+            <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/data_to_features_light.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">transform_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform the input DataFrame into a Feature Set&quot;&quot;&quot;</span>
+
+    <span class="c1"># This is a reference implementation that should be overridden by the subclass</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="sageworks.core.transforms.data_to_features.light.rdkit_descriptors"></a>
+  <div class="doc doc-contents first">
+  
+      <p>RDKitDescriptors: Compute a Feature Set based on RDKit Descriptors</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h2 id="sageworks.core.transforms.data_to_features.light.rdkit_descriptors.RDKitDescriptors" class="doc doc-heading">
+          <code>RDKitDescriptors</code>
+
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight" href="#sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight">DataToFeaturesLight</a></code></p>
+
+  
+      <p>RDKitDescriptors: Create a FeatureSet (RDKit Descriptors) from a DataSource</p>
+
+<details class="common-usage" open>
+  <summary>Common Usage</summary>
+  <p>to_features = RDKitDescriptors(data_uuid, feature_uuid)
+to_features.set_output_tags(["aqsol", "rdkit", "whatever"])
+to_features.transform()</p>
+</details>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/rdkit_descriptors.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">RDKitDescriptors</span><span class="p">(</span><span class="n">DataToFeaturesLight</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;RDKitDescriptors: Create a FeatureSet (RDKit Descriptors) from a DataSource</span>
+
+<span class="sd">    Common Usage:</span>
+<span class="sd">        to_features = RDKitDescriptors(data_uuid, feature_uuid)</span>
+<span class="sd">        to_features.set_output_tags([&quot;aqsol&quot;, &quot;rdkit&quot;, &quot;whatever&quot;])</span>
+<span class="sd">        to_features.transform()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;RDKitDescriptors Initialization&quot;&quot;&quot;</span>
+
+        <span class="c1"># Call superclass init</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">)</span>
+
+        <span class="c1"># Turn off warnings for RDKIT (revisit this)</span>
+        <span class="n">RDLogger</span><span class="o">.</span><span class="n">DisableLog</span><span class="p">(</span><span class="s2">&quot;rdApp.*&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">transform_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute a Feature Set based on RDKit Descriptors&quot;&quot;&quot;</span>
+
+        <span class="c1"># Check the input DataFrame has the required columns</span>
+        <span class="k">if</span> <span class="s2">&quot;smiles&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input DataFrame must have a &#39;smiles&#39; column&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Compute/add all the RDKIT Descriptors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_rdkit_descriptors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
+
+        <span class="c1"># Drop any NaNs (and INFs)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="n">pandas_utils</span><span class="o">.</span><span class="n">drop_nans</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_df</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">compute_rdkit_descriptors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">process_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute and add all the RDKit Descriptors</span>
+<span class="sd">        Args:</span>
+<span class="sd">            process_df(pd.DataFrame): The DataFrame to process and generate RDKit Descriptors</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: The input DataFrame with all the RDKit Descriptors added</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="s2">&quot;Computing RDKit Descriptors...&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Conversion to Molecules</span>
+        <span class="n">molecules</span> <span class="o">=</span> <span class="p">[</span><span class="n">Chem</span><span class="o">.</span><span class="n">MolFromSmiles</span><span class="p">(</span><span class="n">smile</span><span class="p">)</span> <span class="k">for</span> <span class="n">smile</span> <span class="ow">in</span> <span class="n">process_df</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]]</span>
+
+        <span class="c1"># Now get all the RDKIT Descriptors</span>
+        <span class="c1"># all_descriptors = [x[0] for x in Descriptors._descList]</span>
+
+        <span class="c1"># There&#39;s an overflow issue that happens with the IPC descriptor, so we&#39;ll remove it</span>
+        <span class="c1"># See: https://github.com/rdkit/rdkit/issues/1527</span>
+        <span class="c1"># if &quot;Ipc&quot; in all_descriptors:</span>
+        <span class="c1">#    all_descriptors.remove(&quot;Ipc&quot;)</span>
+
+        <span class="c1"># Get the descriptors that are most useful for Solubility</span>
+        <span class="n">best_descriptors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;MolLogP&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;MolWt&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;TPSA&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NumHDonors&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NumHAcceptors&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NumRotatableBonds&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NumAromaticRings&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NumSaturatedRings&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NumAliphaticRings&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NumAromaticCarbocycles&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="n">best_20_descriptors</span> <span class="o">=</span> <span class="n">best_descriptors</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="s2">&quot;HeavyAtomCount&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;RingCount&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Chi0&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Chi1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Kappa1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Kappa2&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Kappa3&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;LabuteASA&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;FractionCSP3&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;HallKierAlpha&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="n">best_30_descriptors</span> <span class="o">=</span> <span class="n">best_20_descriptors</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="s2">&quot;SMR_VSA1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;SlogP_VSA1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EState_VSA1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;VSA_EState1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;PEOE_VSA1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NumValenceElectrons&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NumRadicalElectrons&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;MaxPartialCharge&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;MinPartialCharge&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;MaxAbsPartialCharge&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="n">best_40_descriptors</span> <span class="o">=</span> <span class="n">best_30_descriptors</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="s2">&quot;MolMR&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ExactMolWt&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NOCount&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NumHeteroatoms&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NumAmideBonds&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;FpDensityMorgan1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;FpDensityMorgan2&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;FpDensityMorgan3&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;MaxEStateIndex&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;MinEStateIndex&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Super useful Molecular Descriptor Calculator Class</span>
+        <span class="n">calc</span> <span class="o">=</span> <span class="n">MoleculeDescriptors</span><span class="o">.</span><span class="n">MolecularDescriptorCalculator</span><span class="p">(</span><span class="n">best_40_descriptors</span><span class="p">)</span>
+        <span class="n">column_names</span> <span class="o">=</span> <span class="n">calc</span><span class="o">.</span><span class="n">GetDescriptorNames</span><span class="p">()</span>
+
+        <span class="n">descriptor_values</span> <span class="o">=</span> <span class="p">[</span><span class="n">calc</span><span class="o">.</span><span class="n">CalcDescriptors</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">molecules</span><span class="p">]</span>
+        <span class="n">df_features</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">descriptor_values</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">column_names</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">process_df</span><span class="p">,</span> <span class="n">df_features</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="sageworks.core.transforms.data_to_features.light.rdkit_descriptors.RDKitDescriptors.__init__" class="doc doc-heading">
+          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>RDKitDescriptors Initialization</p>
+
+          <details class="quote">
+            <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/rdkit_descriptors.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;RDKitDescriptors Initialization&quot;&quot;&quot;</span>
+
+    <span class="c1"># Call superclass init</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">)</span>
+
+    <span class="c1"># Turn off warnings for RDKIT (revisit this)</span>
+    <span class="n">RDLogger</span><span class="o">.</span><span class="n">DisableLog</span><span class="p">(</span><span class="s2">&quot;rdApp.*&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="sageworks.core.transforms.data_to_features.light.rdkit_descriptors.RDKitDescriptors.compute_rdkit_descriptors" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">compute_rdkit_descriptors</span><span class="p">(</span><span class="n">process_df</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute and add all the RDKit Descriptors
+Args:
+    process_df(pd.DataFrame): The DataFrame to process and generate RDKit Descriptors
+Returns:
+    pd.DataFrame: The input DataFrame with all the RDKit Descriptors added</p>
+
+          <details class="quote">
+            <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/rdkit_descriptors.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">compute_rdkit_descriptors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">process_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute and add all the RDKit Descriptors</span>
+<span class="sd">    Args:</span>
+<span class="sd">        process_df(pd.DataFrame): The DataFrame to process and generate RDKit Descriptors</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: The input DataFrame with all the RDKit Descriptors added</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="s2">&quot;Computing RDKit Descriptors...&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Conversion to Molecules</span>
+    <span class="n">molecules</span> <span class="o">=</span> <span class="p">[</span><span class="n">Chem</span><span class="o">.</span><span class="n">MolFromSmiles</span><span class="p">(</span><span class="n">smile</span><span class="p">)</span> <span class="k">for</span> <span class="n">smile</span> <span class="ow">in</span> <span class="n">process_df</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]]</span>
+
+    <span class="c1"># Now get all the RDKIT Descriptors</span>
+    <span class="c1"># all_descriptors = [x[0] for x in Descriptors._descList]</span>
+
+    <span class="c1"># There&#39;s an overflow issue that happens with the IPC descriptor, so we&#39;ll remove it</span>
+    <span class="c1"># See: https://github.com/rdkit/rdkit/issues/1527</span>
+    <span class="c1"># if &quot;Ipc&quot; in all_descriptors:</span>
+    <span class="c1">#    all_descriptors.remove(&quot;Ipc&quot;)</span>
+
+    <span class="c1"># Get the descriptors that are most useful for Solubility</span>
+    <span class="n">best_descriptors</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;MolLogP&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MolWt&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;TPSA&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NumHDonors&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NumHAcceptors&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NumRotatableBonds&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NumAromaticRings&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NumSaturatedRings&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NumAliphaticRings&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NumAromaticCarbocycles&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">best_20_descriptors</span> <span class="o">=</span> <span class="n">best_descriptors</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="s2">&quot;HeavyAtomCount&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;RingCount&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Chi0&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Chi1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Kappa1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Kappa2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Kappa3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;LabuteASA&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;FractionCSP3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;HallKierAlpha&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">best_30_descriptors</span> <span class="o">=</span> <span class="n">best_20_descriptors</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="s2">&quot;SMR_VSA1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;SlogP_VSA1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;EState_VSA1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;VSA_EState1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;PEOE_VSA1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NumValenceElectrons&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NumRadicalElectrons&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MaxPartialCharge&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MinPartialCharge&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MaxAbsPartialCharge&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">best_40_descriptors</span> <span class="o">=</span> <span class="n">best_30_descriptors</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="s2">&quot;MolMR&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ExactMolWt&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NOCount&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NumHeteroatoms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NumAmideBonds&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;FpDensityMorgan1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;FpDensityMorgan2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;FpDensityMorgan3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MaxEStateIndex&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MinEStateIndex&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Super useful Molecular Descriptor Calculator Class</span>
+    <span class="n">calc</span> <span class="o">=</span> <span class="n">MoleculeDescriptors</span><span class="o">.</span><span class="n">MolecularDescriptorCalculator</span><span class="p">(</span><span class="n">best_40_descriptors</span><span class="p">)</span>
+    <span class="n">column_names</span> <span class="o">=</span> <span class="n">calc</span><span class="o">.</span><span class="n">GetDescriptorNames</span><span class="p">()</span>
+
+    <span class="n">descriptor_values</span> <span class="o">=</span> <span class="p">[</span><span class="n">calc</span><span class="o">.</span><span class="n">CalcDescriptors</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">molecules</span><span class="p">]</span>
+    <span class="n">df_features</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">descriptor_values</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">column_names</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">process_df</span><span class="p">,</span> <span class="n">df_features</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="sageworks.core.transforms.data_to_features.light.rdkit_descriptors.RDKitDescriptors.transform_impl" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute a Feature Set based on RDKit Descriptors</p>
+
+          <details class="quote">
+            <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/rdkit_descriptors.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">transform_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute a Feature Set based on RDKit Descriptors&quot;&quot;&quot;</span>
+
+    <span class="c1"># Check the input DataFrame has the required columns</span>
+    <span class="k">if</span> <span class="s2">&quot;smiles&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input DataFrame must have a &#39;smiles&#39; column&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Compute/add all the RDKIT Descriptors</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_rdkit_descriptors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
+
+    <span class="c1"># Drop any NaNs (and INFs)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="n">pandas_utils</span><span class="o">.</span><span class="n">drop_nans</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_df</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7c377c4.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../../core_classes/transforms/pandas_transforms/">
+        <link rel="prev" href="../data_source/">
       
       
-        <link rel="next" href="../scp_consulting/">
+        <link rel="next" href="../feature_set/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>SageWorks Classes and Concepts - SageWorks</title>
+        <title>Endpoint - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#sageworks-classes-and-concepts" class="md-skip">
+        <a href="#endpoint" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              SageWorks Classes and Concepts
+              Endpoint
             
           </span>
         </div>
@@ -332,19 +332,21 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -358,7 +360,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Api classes
@@ -372,7 +374,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/data_source/" class="md-nav__link">
+      <a href="../data_source/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -390,10 +392,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../api_classes/endpoint/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Endpoint
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -402,6 +424,68 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      endpoint
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.endpoint.Endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      Endpoint
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Endpoint">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.api.endpoint.Endpoint.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -414,7 +498,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/feature_set/" class="md-nav__link">
+      <a href="../feature_set/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -435,7 +519,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/model/" class="md-nav__link">
+      <a href="../model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -456,7 +540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/overview/" class="md-nav__link">
+      <a href="../overview/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -848,21 +932,19 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
           <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
@@ -876,7 +958,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             Misc
@@ -887,19 +969,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../misc/sageworks_classes_concepts/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -908,7 +981,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -921,7 +993,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../scp_consulting/" class="md-nav__link">
+      <a href="../../misc/scp_consulting/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -962,6 +1034,56 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      endpoint
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks.api.endpoint.Endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      Endpoint
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Endpoint">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.api.endpoint.Endpoint.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -975,46 +1097,206 @@
                   
 
 
-<h1 id="sageworks-classes-and-concepts">SageWorks Classes and Concepts</h1>
-<p>A flexible, rapid, and customizable AWS® ML Sandbox. Here's some of the classes and concepts we use in the SageWorks system:</p>
-<p><img src="images/sageworks_concepts.png"></p>
-<ul>
-<li>Artifacts</li>
-<li>DataLoader</li>
-<li>DataSource</li>
-<li>FeatureSet</li>
-<li>Model</li>
-<li>
-<p>Endpoint</p>
-</li>
-<li>
-<p>Transforms</p>
-</li>
-<li>DataSource to DataSource<ul>
-<li>Heavy <ul>
-<li>AWS Glue Jobs</li>
-<li>AWS EMR Serverless</li>
-</ul>
-</li>
-<li>Light<ul>
-<li>Local/Laptop</li>
-<li>Lambdas</li>
-<li>StepFunctions</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>DataSource to FeatureSet<ul>
-<li>Heavy/Light (see above breakout)</li>
-</ul>
-</li>
-<li>FeatureSet to FeatureSet<ul>
-<li>Heavy/Light (see above breakout)</li>
-</ul>
-</li>
-<li>FeatureSet to Model</li>
-<li>Model to Endpoint</li>
-</ul>
+<h1 id="endpoint">Endpoint</h1>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="sageworks.api.endpoint"></a>
+  <div class="doc doc-contents first">
+  
+      <p>Endpoint: SageWorks Endpoint API Class</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h2 id="sageworks.api.endpoint.Endpoint" class="doc doc-heading">
+          <code>Endpoint</code>
+
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="sageworks.core.artifacts.endpoint_core.EndpointCore">EndpointCore</span></code></p>
+
+  
+      <p>Endpoint: SageWorks Endpoint API Class</p>
+<p><strong>Common Usage</strong></p>
+<pre><code>    my_endpoint = Endpoint(name)
+    my_endpoint.summary()
+    my_endpoint.details()
+    my_endpoint.predict(df)
+</code></pre>
+
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/api/endpoint.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Endpoint</span><span class="p">(</span><span class="n">EndpointCore</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Endpoint: SageWorks Endpoint API Class</span>
+
+<span class="sd">    **Common Usage**</span>
+<span class="sd">    ```</span>
+<span class="sd">        my_endpoint = Endpoint(name)</span>
+<span class="sd">        my_endpoint.summary()</span>
+<span class="sd">        my_endpoint.details()</span>
+<span class="sd">        my_endpoint.predict(df)</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Endpoint Initialization</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the Endpoint</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Call superclass init</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="sageworks.api.endpoint.Endpoint.__init__" class="doc doc-heading">
+          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Endpoint Initialization</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The name of the Endpoint</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+          <details class="quote">
+            <summary>Source code in <code>src/sageworks/api/endpoint.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Endpoint Initialization</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (str): The name of the Endpoint</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Call superclass init</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+  </div>
+
+  </div>
+
+</div><h2 id="examples">Examples</h2>
+<p>Example Description 1</p>
+<pre><code>example code 1
+</code></pre>
+<p>Example Description 2</p>
+<pre><code>example code 2
+</code></pre>
+<div class="admonition note">
+<p class="admonition-title">Not Finding a particular method?</p>
+<p>The SageWorks API Classes use 'Core' Classes Internally, so you can lookup all the methods in</p>
+</div>
+<p><a href="../../core_classes/overview/">SageWorks Core Classes</a></p>
 
 
 
