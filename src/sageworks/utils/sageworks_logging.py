@@ -12,7 +12,6 @@ class ThrottlingFilter(logging.Filter):
         self.last_log_times = defaultdict(lambda: 0)
 
     def filter(self, record):
-
         # Get the message and last log time for this message
         message = str(record.msg)
         last_log_time = self.last_log_times[message]

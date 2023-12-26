@@ -37,7 +37,6 @@ if __name__ == "__main__":
 
     # Create the test_data DataSource
     if recreate or not DataSource("test_data").exists():
-
         # Create a new Data Source from a dataframe of test data
         test_data = TestDataGenerator()
         df = test_data.person_data()
@@ -60,11 +59,13 @@ if __name__ == "__main__":
     # Create the abalone_regression Model
     if recreate or not Model("abalone-regression").exists():
         fs = FeatureSet("abalone_features")
-        fs.to_model(ModelType.REGRESSOR,
-                    name="abalone-regression",
-                    target_column="class_number_of_rings",
-                    tags=["abalone", "regression"],
-                    description="Abalone Regression Model")
+        fs.to_model(
+            ModelType.REGRESSOR,
+            name="abalone-regression",
+            target_column="class_number_of_rings",
+            tags=["abalone", "regression"],
+            description="Abalone Regression Model",
+        )
 
     # Create the abalone_regression Endpoint
     if recreate or not Endpoint("abalone-regression-end").exists():
