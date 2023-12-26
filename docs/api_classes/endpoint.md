@@ -1,4 +1,8 @@
 # Endpoint
+
+!!! tip inline end "Endpoint Examples"
+    Examples of using the Endpoint class are listed at the bottom of this page [Examples](#examples).
+    
 ::: sageworks.api.endpoint
 
 

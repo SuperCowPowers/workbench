@@ -1,4 +1,8 @@
 # Model
+
+!!! tip inline end "Model Examples"
+    Examples of using the Model class are listed at the bottom of this page [Examples](#examples).
+
 ::: sageworks.api.model
 
 

@@ -1,5 +1,4 @@
 # Overview
-
 !!! tip inline end "Just Getting Started?"
     You're in the right place, the SageWorks API Classes are the best way to get started with SageWorks!
 

@@ -1,7 +1,8 @@
 """DataSource: Manages AWS Data Catalog creation and management.
-Sets up the data so that you can easily query it with AWS Athena.
-Viewable in the SageWorks Data Catalog in the SageMaker Studio UI.
-Also viewable in the SageWorks Dashboard UI."""
+It also sets up the data so that you can easily query it with AWS Athena.
+DataSources are run through a full set of Exploratory Data Analysis (EDA)
+techniques (data quality, distributions, stats, outliers, etc.) DataSources
+can be viewed and explored within the SageWorks Dashboard UI."""
 import os
 import pandas as pd
 import logging

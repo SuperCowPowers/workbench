@@ -1,4 +1,7 @@
 # FeatureSet
+!!! tip inline end "FeatureSet Examples"
+    Examples of using the FeatureSet class are listed at the bottom of this page [Examples](#examples).
+    
 ::: sageworks.api.feature_set
 
 
