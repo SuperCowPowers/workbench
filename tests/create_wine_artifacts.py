@@ -12,15 +12,10 @@ Endpoints:
 import sys
 
 from pathlib import Path
-from sageworks.core.artifacts.data_source_factory import DataSourceFactory
-from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model_core import ModelCore, ModelType
-from sageworks.core.artifacts.endpoint_core import EndpointCore
-
-from sageworks.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
-from sageworks.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
-from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
-from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
+from sageworks.api.data_source import DataSource
+from sageworks.api.feature_set import FeatureSet
+from sageworks.api.model import Model, ModelType
+from sageworks.api.endpoint import Endpoint
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 
@@ -35,25 +30,26 @@ if __name__ == "__main__":
     recreate = False
 
     # Create the wine_data DataSource
-    if recreate or not DataSourceFactory("wine_data").exists():
-        my_loader = CSVToDataSource(wine_data_path, "wine_data")
-        my_loader.set_output_tags("wine:classification")
-        my_loader.transform()
+    if recreate or not DataSource("wine_data").exists():
+        DataSource(wine_data_path, name="wine_data")
 
     # Create the wine_features FeatureSet
-    if recreate or not FeatureSetCore("wine_features").exists():
-        data_to_features = DataToFeaturesLight("wine_data", "wine_features")
-        data_to_features.set_output_tags(["wine", "classification"])
-        data_to_features.transform(target_column="wine_class", description="Wine Classification Features")
+    if recreate or not FeatureSet("wine_features").exists():
+        ds = DataSource("wine_data")
+        ds.to_features("wine_features", id_column="wine_class", tags=["wine", "classification"])
 
     # Create the wine classification Model
-    if recreate or not ModelCore("wine-classification").exists():
-        features_to_model = FeaturesToModel("wine_features", "wine-classification", model_type=ModelType.CLASSIFIER)
-        features_to_model.set_output_tags(["wine", "classification"])
-        features_to_model.transform(target_column="wine_class", description="Wine Classification Model")
+    if recreate or not Model("wine-classification").exists():
+        fs = FeatureSet("wine_features")
+        fs.to_model(model_type=ModelType.CLASSIFIER,
+                    name="wine-classification",
+                    target_column="wine_class",
+                    tags=["wine", "classification"],
+                    description="Wine Classification Model")
 
     # Create the wine classification Endpoint
-    if recreate or not EndpointCore("wine-classification-end").exists():
-        model_to_endpoint = ModelToEndpoint("wine-classification", "wine-classification-end")
-        model_to_endpoint.set_output_tags(["wine", "classification"])
-        model_to_endpoint.transform()
+    if recreate or not Endpoint("wine-classification-end").exists():
+        m = Model("wine-classification")
+        m.to_endpoint("wine-classification-end",
+                      tags=["wine", "classification"],
+                      description="Wine Classification Endpoint")
