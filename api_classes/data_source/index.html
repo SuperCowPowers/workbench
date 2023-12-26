@@ -985,6 +985,10 @@
 
 
 <h1 id="datasource">DataSource</h1>
+<div class="admonition tip inline end">
+<p class="admonition-title">DataSource Examples</p>
+<p>Examples of using the DataSource class are listed at the bottom of this page <a href="#examples">Examples</a>.</p>
+</div>
 
 
 <div class="doc doc-object doc-module">
@@ -995,9 +999,10 @@
   <div class="doc doc-contents first">
   
       <p>DataSource: Manages AWS Data Catalog creation and management.
-Sets up the data so that you can easily query it with AWS Athena.
-Viewable in the SageWorks Data Catalog in the SageMaker Studio UI.
-Also viewable in the SageWorks Dashboard UI.</p>
+It also sets up the data so that you can easily query it with AWS Athena.
+DataSources are run through a full set of Exploratory Data Analysis (EDA)
+techniques (data quality, distributions, stats, outliers, etc.) DataSources
+can be viewed and explored within the SageWorks Dashboard UI.</p>
 
   
 
@@ -1037,8 +1042,7 @@ Also viewable in the SageWorks Dashboard UI.</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/api/data_source.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 19</span>
-<span class="normal"> 20</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 20</span>
 <span class="normal"> 21</span>
 <span class="normal"> 22</span>
 <span class="normal"> 23</span>
@@ -1123,7 +1127,8 @@ Also viewable in the SageWorks Dashboard UI.</p>
 <span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
-<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">DataSource</span><span class="p">(</span><span class="n">AthenaSource</span><span class="p">):</span>
+<span class="normal">105</span>
+<span class="normal">106</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">DataSource</span><span class="p">(</span><span class="n">AthenaSource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;DataSource: SageWorks DataSource API Class</span>
 
 <span class="sd">    **Common Usage**</span>
@@ -1302,8 +1307,7 @@ Also viewable in the SageWorks Dashboard UI.</p>
 
           <details class="quote">
             <summary>Source code in <code>src/sageworks/api/data_source.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">31</span>
-<span class="normal">32</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">32</span>
 <span class="normal">33</span>
 <span class="normal">34</span>
 <span class="normal">35</span>
@@ -1324,7 +1328,8 @@ Also viewable in the SageWorks Dashboard UI.</p>
 <span class="normal">50</span>
 <span class="normal">51</span>
 <span class="normal">52</span>
-<span class="normal">53</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="normal">53</span>
+<span class="normal">54</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Initializes a new DataSource object.</span>
 
@@ -1467,8 +1472,7 @@ Also viewable in the SageWorks Dashboard UI.</p>
 
           <details class="quote">
             <summary>Source code in <code>src/sageworks/api/data_source.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">55</span>
-<span class="normal">56</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">56</span>
 <span class="normal">57</span>
 <span class="normal">58</span>
 <span class="normal">59</span>
@@ -1493,7 +1497,8 @@ Also viewable in the SageWorks Dashboard UI.</p>
 <span class="normal">78</span>
 <span class="normal">79</span>
 <span class="normal">80</span>
-<span class="normal">81</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_features</span><span class="p">(</span>
+<span class="normal">81</span>
+<span class="normal">82</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_features</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FeatureSet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
