@@ -1090,7 +1090,9 @@
 <span class="normal">58</span>
 <span class="normal">59</span>
 <span class="normal">60</span>
-<span class="normal">61</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">FeatureSet</span><span class="p">(</span><span class="n">FeatureSetCore</span><span class="p">):</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">FeatureSet</span><span class="p">(</span><span class="n">FeatureSetCore</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;FeatureSet: SageWorks FeatureSet API Class</span>
 
 <span class="sd">    **Common Usage**</span>
@@ -1118,6 +1120,7 @@
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">feature_list</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Model from the FeatureSet</span>
 
@@ -1127,6 +1130,7 @@
 <span class="sd">            name (str): Set the name for the model. If not specified, a name will be generated</span>
 <span class="sd">            tags (list): Set the tags for the model.  If not specified tags will be generated.</span>
 <span class="sd">            description (str): Set the description for the model. If not specified a description is generated.</span>
+<span class="sd">            feature_list (list): Set the feature list for the model. If not specified a feature list is generated.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Model: The Model created from the FeatureSet</span>
@@ -1139,7 +1143,7 @@
         <span class="c1"># Transform the FeatureSet into a Model</span>
         <span class="n">features_to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="n">model_type</span><span class="p">)</span>
         <span class="n">features_to_model</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
-        <span class="n">features_to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="n">target_column</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
+        <span class="n">features_to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="n">target_column</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span> <span class="n">feature_list</span><span class="o">=</span><span class="n">feature_list</span><span class="p">)</span>
 
         <span class="c1"># Return the Model</span>
         <span class="k">return</span> <span class="n">Model</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span>
@@ -1234,7 +1238,7 @@
 
 
 <h3 id="sageworks.api.feature_set.FeatureSet.to_model" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">to_model</span><span class="p">(</span><span class="n">model_type</span><span class="p">,</span> <span class="n">target_column</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">to_model</span><span class="p">(</span><span class="n">model_type</span><span class="p">,</span> <span class="n">target_column</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">feature_list</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h3>
 
@@ -1326,6 +1330,20 @@
                 <code>None</code>
           </td>
         </tr>
+        <tr>
+          <td><code>feature_list</code></td>
+          <td>
+                <code>list</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Set the feature list for the model. If not specified a feature list is generated.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
     </tbody>
   </table>
 
@@ -1386,13 +1404,16 @@
 <span class="normal">58</span>
 <span class="normal">59</span>
 <span class="normal">60</span>
-<span class="normal">61</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_model</span><span class="p">(</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_model</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">model_type</span><span class="p">:</span> <span class="n">ModelType</span><span class="p">,</span>
     <span class="n">target_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">feature_list</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Model from the FeatureSet</span>
 
@@ -1402,6 +1423,7 @@
 <span class="sd">        name (str): Set the name for the model. If not specified, a name will be generated</span>
 <span class="sd">        tags (list): Set the tags for the model.  If not specified tags will be generated.</span>
 <span class="sd">        description (str): Set the description for the model. If not specified a description is generated.</span>
+<span class="sd">        feature_list (list): Set the feature list for the model. If not specified a feature list is generated.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Model: The Model created from the FeatureSet</span>
@@ -1414,7 +1436,7 @@
     <span class="c1"># Transform the FeatureSet into a Model</span>
     <span class="n">features_to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="n">model_type</span><span class="p">)</span>
     <span class="n">features_to_model</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
-    <span class="n">features_to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="n">target_column</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
+    <span class="n">features_to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="n">target_column</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span> <span class="n">feature_list</span><span class="o">=</span><span class="n">feature_list</span><span class="p">)</span>
 
     <span class="c1"># Return the Model</span>
     <span class="k">return</span> <span class="n">Model</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span>
