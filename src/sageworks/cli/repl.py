@@ -10,9 +10,10 @@ import os
 
 # SageWorks is currently quite verbose so lets set the logs to warning
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
+logging.getLogger("sageworks").setLevel(logging.WARNING)
 
 # SageWorks Imports
-from sageworks.views.artifacts_text_view import ArtifactsTextView
+from sageworks.views.artifacts_text_view import ArtifactsTextView  # noqa: E402
 
 # Create a global instance of the ArtifactsTextView
 artifacts_text_view = ArtifactsTextView()
@@ -43,6 +44,9 @@ class CommandHandler:
         # This dictionary will hold all the variables and functions defined during the REPL session.
         self.session_globals = globals().copy()  # Copy the current global namespace
 
+        # Set the log level to warning, the user can always change it
+        logging.getLogger("sageworks").setLevel(logging.WARNING)
+
         # Add the necessary imports to the session globals
         self.preload_imports()
 
@@ -56,16 +60,16 @@ class CommandHandler:
         self.session_globals["get_endpoints"] = self.get_endpoints
 
     def preload_imports(self):
-        from sageworks.core.artifacts.data_source_factory import DataSourceFactory
-        from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-        from sageworks.core.artifacts.model_core import ModelCore, ModelType
-        from sageworks.core.artifacts.endpoint_core import EndpointCore
+        from sageworks.api.data_source import DataSource
+        from sageworks.api.feature_set import FeatureSet
+        from sageworks.api.model import Model, ModelType
+        from sageworks.api.endpoint import Endpoint
 
         # Add the imports to the session globals
-        self.session_globals["DataSource"] = DataSourceFactory
-        self.session_globals["FeatureSet"] = FeatureSetCore
-        self.session_globals["Model"] = ModelCore
-        self.session_globals["Endpoint"] = EndpointCore
+        self.session_globals["DataSource"] = DataSource
+        self.session_globals["FeatureSet"] = FeatureSet
+        self.session_globals["Model"] = Model
+        self.session_globals["Endpoint"] = Endpoint
 
         # Add the model types to the session globals
         self.session_globals["ModelType"] = ModelType
@@ -146,10 +150,10 @@ class CommandHandler:
             print(artifacts_text_view.endpoints_summary())
 
     def set_log_level(self, level):
-        if level == "debug":
-            logging.getLogger("sageworks").setLevel("DEBUG")
-        elif level == "important":
+        if level == "important":
             logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
+        else:
+            logging.getLogger("sageworks").setLevel(level.upper())
 
     def handle_command(self, raw_text):
         # Check for custom commands first
