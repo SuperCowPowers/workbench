@@ -1,7 +1,4 @@
-<img align="left" src="docs/images/scp.png" width="180">
-
-# SageWorks<sup><i>TM</i></sup>
-
+## General Info
 <p align="center">
 <img width="720" alt="DataSource_EDA" aligh="right" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/a5b063f7-a291-4dba-a766-b2e906920066">
 </p>
@@ -10,9 +7,7 @@
 
 SageWorks is a medium granularity framework that manages and aggregates AWS® Services into classes and concepts. When you use SageWorks you think about **DataSources**, **FeatureSets**, **Models**, and **Endpoints**. Underneath the hood those classes handle all the details around updating and managing a **complex set of AWS Services**. All the power and none of the pain so that your team can **Do Science Faster!**
 
-<p align="center">
-<img width="800" src="docs/images/sageworks_concepts.png">
-</p>
+
 
 ### SageWorks Documentation
 See our Python API and AWS documentation here: [SageWorks Documentation](https://supercowpowers.github.io/sageworks/)
@@ -22,7 +17,6 @@ See our Python API and AWS documentation here: [SageWorks Documentation](https:/
 
 
 ## Why SageWorks?
-<img align="right" src="docs/images/graph_representation.png" width="300">
 
 - The AWS SageMaker® ecosystem is **awesome** but has a large number of services with significant complexity
 - SageWorks provides **rapid prototyping** through easy to use **classes** and **transforms**
@@ -36,9 +30,7 @@ See our Python API and AWS documentation here: [SageWorks Documentation](https:/
 ### Single Pane of Glass
 Visibility into the AWS Services that underpin the SageWorks Classes. We can see that SageWorks automatically tags and tracks the inputs of all artifacts providing 'data provenance' for all steps in the AWS modeling pipeline.
 
-<p align="center">
-<img width="800" alt="Top Dashboard" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/c4a7f054-e640-407c-9e5c-f9d3ea1bd717.png">
-</p>
+Image TBD
 
 <i><b> Clearly illustrated:</b> SageWorks provides intuitive and transparent visibility into the full pipeline of your AWS Sagemaker Deployments.</i>
 
@@ -60,7 +52,7 @@ Visibility into the AWS Services that underpin the SageWorks Classes. We can see
 - **Quick prototypes** are typically built with the **light path** and then flipped to the **heavy path** as the system matures and usage grows.
 
 ### Classes and Concepts
-The SageWorks Classes are organized to work in concert with AWS Services. For more details on the current classes and class hierarchies see [SageWorks Classes and Concepts](docs/sageworks_classes_concepts.md).
+The SageWorks Classes are organized to work in concert with AWS Services. For more details on the current classes and class hierarchies see [SageWorks Classes and Concepts](sageworks_classes_concepts.md).
 
 ### Contributions
 If you'd like to contribute to the SageWorks project, you're more than welcome. All contributions will fall under the existing project [license](https://github.com/SuperCowPowers/sageworks/blob/main/LICENSE). If you are interested in contributing or have questions please feel free to contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com).
