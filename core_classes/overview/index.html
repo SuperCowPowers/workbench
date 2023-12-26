@@ -919,16 +919,21 @@
 
 
 <h1 id="core-classes">Core Classes</h1>
-<div class="admonition warning">
-<p class="admonition-title">The SageWorks Core Classes provide more control but are more complex</p>
-<p>These classes interact with many of the AWS service details. They try to balance usablility while maintaining a level of control and refinement over the AWS ML Pipline. For user oriented classes please see <a href="../../api_classes/overview/">SageWorks API Classes</a></p>
+<div class="admonition warning inline end">
+<p class="admonition-title">SageWorks Core Classes</p>
+<p>These classes interact with many of the AWS service details and are therefore more complex. They try to balance usablility while maintaining a level of control and refinement over the AWS ML Pipline.</p>
 </div>
 <p>Welcome to the SageWorks Core Classes</p>
-<p>These class provide low-level APIs for the SageWorks package, these classes directly interface with the AWS Sagemaker Pipeline interfaces and have a large number of methods with some complexity.</p>
+<p>The Core Classes provide low-level APIs for the SageWorks package, these classes directly interface with the AWS Sagemaker Pipeline interfaces and have a large number of methods with reasonable complexity.</p>
+<p>For most users the <a href="../../api_classes/overview/">API Classes</a> should provide the general functionality of creating a full AWS ML Pipeline but if you need more control feel free to investigate and use the Core Classes.</p>
 <h2 id="artifacts">Artifacts</h2>
-<p><a href="../artifacts/artifacts/">SageWorks Artifact Classes</a></p>
+<p>Artifacts classes provide object oriented interfaces to sets of AWS Services. For instance the <a href="../artifacts/artifacts/#sageworks.core.artifacts.FeatureSetCore">FeatureSetCore</a> encapsulates and interacts with AWS Feature Store, Feature Groups, Athena, and Data Catalogs.</p>
+<p>For a full overview of the Artifact Core Class see
+<a href="../artifacts/artifacts/">Artifact Classes</a></p>
 <h2 id="transforms">Transforms</h2>
-<p><a href="../transforms/overview/">SageWorks Artifact Classes</a></p>
+<p>Transforms are a set of classes that <strong>transform</strong> one type of <code>Artifact</code> to another type. For instance <code>DataToFeatureSet</code> takes a <code>DataSource</code> artifact and creates a <code>FeatureSet</code> artifact.</p>
+<p>For a full overview of the Transform Core Class see
+<a href="../transforms/overview/">Transform Classes</a></p>
 
 
 
