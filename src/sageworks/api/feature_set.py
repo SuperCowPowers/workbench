@@ -34,6 +34,7 @@ class FeatureSet(FeatureSetCore):
         name: str = None,
         tags: list = None,
         description: str = None,
+        feature_list: list = None,
     ) -> Model:
         """Create a Model from the FeatureSet
 
@@ -43,6 +44,7 @@ class FeatureSet(FeatureSetCore):
             name (str): Set the name for the model. If not specified, a name will be generated
             tags (list): Set the tags for the model.  If not specified tags will be generated.
             description (str): Set the description for the model. If not specified a description is generated.
+            feature_list (list): Set the feature list for the model. If not specified a feature list is generated.
 
         Returns:
             Model: The Model created from the FeatureSet
@@ -55,7 +57,7 @@ class FeatureSet(FeatureSetCore):
         # Transform the FeatureSet into a Model
         features_to_model = FeaturesToModel(self.uuid, model_name, model_type=model_type)
         features_to_model.set_output_tags(tags)
-        features_to_model.transform(target_column=target_column, description=description)
+        features_to_model.transform(target_column=target_column, description=description, feature_list=feature_list)
 
         # Return the Model
         return Model(model_name)

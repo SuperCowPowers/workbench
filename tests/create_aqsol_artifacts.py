@@ -9,16 +9,12 @@ Models:
 Endpoints:
     - aqsol-regression-end
 """
-from sageworks.core.artifacts.data_source_factory import DataSourceFactory
-from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model_core import ModelCore, ModelType
-from sageworks.core.artifacts.endpoint_core import EndpointCore
+from sageworks.api.data_source import DataSource
+from sageworks.api.feature_set import FeatureSet
+from sageworks.api.model import Model, ModelType
+from sageworks.api.endpoint import Endpoint
 
-from sageworks.core.transforms.data_loaders.light.s3_to_data_source_light import S3ToDataSourceLight
-from sageworks.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
 from sageworks.core.transforms.data_to_features.light.rdkit_descriptors import RDKitDescriptors
-from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
-from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 if __name__ == "__main__":
@@ -32,21 +28,18 @@ if __name__ == "__main__":
     recreate = False
 
     # Create the aqsol_data DataSource
-    if recreate or not DataSourceFactory("aqsol_data").exists():
-        to_data_source = S3ToDataSourceLight(s3_path, "aqsol_data")
-        to_data_source.set_output_tags(["aqsol", "public"])
-        to_data_source.transform()
+    if recreate or not DataSource("aqsol_data").exists():
+        DataSource(s3_path, name="aqsol_data")
 
     # Create the aqsol_features FeatureSet
-    if recreate or not FeatureSetCore("aqsol_features").exists():
-        data_to_features = DataToFeaturesLight("aqsol_data", "aqsol_features")
-        data_to_features.set_output_tags(["aqsol", "public"])
-        data_to_features.transform(id_column="id", target_column="solubility")
+    if recreate or not FeatureSet("aqsol_features").exists():
+        ds = DataSource("aqsol_data")
+        ds.to_features("aqsol_features", id_column="id")
 
     # Create the aqsol solubility regression Model
-    if recreate or not ModelCore("aqsol-regression").exists():
+    if recreate or not Model("aqsol-regression").exists():
         # Compute our features
-        feature_set = FeatureSetCore("aqsol_features")
+        feature_set = FeatureSet("aqsol_features")
         feature_list = [
             "sd",
             "ocurrences",
@@ -68,46 +61,42 @@ if __name__ == "__main__":
             "balabanj",
             "bertzct",
         ]
-        # exclude = ["id", "name", "inchi", "inchikey", "smiles", "solubility", "group"]
-        # feature_list = [f for f in feature_set.column_names() if f not in exclude]
-        features_to_model = FeaturesToModel("aqsol_features", "aqsol-regression", model_type=ModelType.REGRESSOR)
-        features_to_model.set_output_tags(["aqsol", "regression"])
-        features_to_model.transform(
-            target_column="solubility", description="AQSol Regression Model", feature_list=feature_list
-        )
+        feature_set.to_model(ModelType.REGRESSOR,
+                             target_column="solubility",
+                             name="aqsol-regression",
+                             feature_list=feature_list,
+                             description="AQSol Regression Model",
+                             tags=["aqsol", "regression"])
 
     # Create the aqsol regression Endpoint
-    if recreate or not EndpointCore("aqsol-regression-end").exists():
-        model_to_endpoint = ModelToEndpoint("aqsol-regression", "aqsol-regression-end")
-        model_to_endpoint.set_output_tags(["aqsol", "regression"])
-        model_to_endpoint.transform()
+    if recreate or not Endpoint("aqsol-regression-end").exists():
+        m = Model("aqsol-regression")
+        m.to_endpoint(name="aqsol-regression-end", tags=["aqsol", "regression"])
 
     #
     # RDKIT Descriptor Artifacts
     #
-    # Create the rdkit FeatureSet
-    if recreate or not FeatureSetCore("aqsol_rdkit_features").exists():
+    # Create the rdkit FeatureSet (this is an example of using lower level classes)
+    if recreate or not FeatureSet("aqsol_rdkit_features").exists():
         rdkit_features = RDKitDescriptors("aqsol_data", "aqsol_rdkit_features")
         rdkit_features.set_output_tags(["aqsol", "public", "rdkit"])
         query = "SELECT id, solubility, smiles FROM aqsol_data"
         rdkit_features.transform(target_column="solubility", id_column="udm_mol_bat_id", query=query)
 
     # Create the RDKIT based  regression Model
-    if recreate or not ModelCore("aqsol-rdkit-regression").exists():
+    if recreate or not Model("aqsol-rdkit-regression").exists():
         # Compute our features
-        feature_set = FeatureSetCore("aqsol_rdkit_features")
+        feature_set = FeatureSet("aqsol_rdkit_features")
         exclude = ["id", "smiles", "solubility"]
         feature_list = [f for f in feature_set.column_names() if f not in exclude]
-        features_to_model = FeaturesToModel(
-            "aqsol_rdkit_features", "aqsol-rdkit-regression", model_type=ModelType.REGRESSOR
-        )
-        features_to_model.set_output_tags(["aqsol", "regression", "rdkit"])
-        features_to_model.transform(
-            target_column="solubility", description="AQSol/RDKit Regression Model", feature_list=feature_list
-        )
+        feature_set.to_model(ModelType.REGRESSOR,
+                             target_column="solubility",
+                             name="aqsol-rdkit-regression",
+                             feature_list=feature_list,
+                             description="AQSol/RDKit Regression Model",
+                             tags=["aqsol", "regression", "rdkit"])
 
     # Create the aqsol regression Endpoint
-    if recreate or not EndpointCore("aqsol-rdkit-regression-end").exists():
-        model_to_endpoint = ModelToEndpoint("aqsol-rdkit-regression", "aqsol-rdkit-regression-end")
-        model_to_endpoint.set_output_tags(["aqsol", "rdkit", "regression"])
-        model_to_endpoint.transform()
+    if recreate or not Endpoint("aqsol-rdkit-regression-end").exists():
+        m = Model("aqsol-rdkit-regression")
+        m.to_endpoint(name="aqsol-rdkit-regression-end", tags=["aqsol", "regression", "rdkit"])
