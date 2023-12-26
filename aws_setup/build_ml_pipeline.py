@@ -15,14 +15,11 @@ import sys
 import time
 from pathlib import Path
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.core.artifacts.data_source_factory import DataSourceFactory
-from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model_core import ModelCore, ModelType
-from sageworks.core.artifacts.endpoint_core import EndpointCore
-from sageworks.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
-from sageworks.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
-from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
-from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
+from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
+from sageworks.api.data_source import DataSource
+from sageworks.api.feature_set import FeatureSet
+from sageworks.api.model import Model, ModelType
+from sageworks.api.endpoint import Endpoint
 
 
 def redis_check():
@@ -49,48 +46,30 @@ if __name__ == "__main__":
     # Check that the Redis Database is available
     redis_check()
 
-    # Create the test_data DataSource
-    if not DataSourceFactory("test_data", force_refresh=True).exists():
-        my_loader = CSVToDataSource(test_data_path, "test_data")
-        my_loader.set_output_tags("test:small")
-        my_loader.transform()
-        print("Waiting for the test_data to be created...")
-        time.sleep(10)
+    # This forces a refresh on all the data we get from the AWS Broker
+    AWSServiceBroker().get_all_metadata(force_refresh=True)
 
     # Create the abalone_data DataSource
-    if not DataSourceFactory("abalone_data").exists():
-        my_loader = CSVToDataSource(abalone_data_path, "abalone_data")
-        my_loader.set_output_tags("abalone:public")
-        my_loader.transform()
-        print("Waiting for the abalone_data to be created...")
-        time.sleep(10)
-
-    # Give user a warning about how long the rest of the script will take
-    print("\n******************************************************************************")
-    print("Note: The rest of this script takes about 20 minutes (AWS finalize/wait times)")
-    print("******************************************************************************\n")
-    time.sleep(5)
-
-    # Create the test_features FeatureSet
-    if not FeatureSetCore("test_features").exists():
-        data_to_features = DataToFeaturesLight("test_data", "test_features")
-        data_to_features.set_output_tags(["test", "small"])
-        data_to_features.transform(id_column="id", event_time_column="date")
+    if not DataSource("abalone_data").exists():
+        DataSource(abalone_data_path, name="abalone_data")
 
     # Create the abalone_features FeatureSet
-    if not FeatureSetCore("abalone_features").exists():
-        data_to_features = DataToFeaturesLight("abalone_data", "abalone_features")
-        data_to_features.set_output_tags(["abalone", "public"])
-        data_to_features.transform()
+    if not FeatureSet("abalone_features").exists():
+        ds = DataSource("abalone_data")
+        ds.to_features("abalone_features")
 
     # Create the abalone_regression Model
-    if not ModelCore("abalone-regression").exists():
-        features_to_model = FeaturesToModel("abalone_features", "abalone-regression", ModelType.REGRESSOR)
-        features_to_model.set_output_tags(["abalone", "regression"])
-        features_to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")
+    if not Model("abalone-regression").exists():
+        fs = FeatureSet("abalone_features")
+        fs.to_model(
+            ModelType.REGRESSOR,
+            name="abalone-regression",
+            target_column="class_number_of_rings",
+            tags=["abalone", "regression"],
+            description="Abalone Regression Model",
+        )
 
     # Create the abalone_regression Endpoint
-    if not EndpointCore("abalone-regression-end").exists():
-        model_to_endpoint = ModelToEndpoint("abalone-regression", "abalone-regression-end")
-        model_to_endpoint.set_output_tags(["abalone", "regression"])
-        model_to_endpoint.transform()
+    if not Endpoint("abalone-regression-end").exists():
+        model = Model("abalone-regression")
+        model.to_endpoint(name="abalone-regression-end", tags=["abalone", "regression"])

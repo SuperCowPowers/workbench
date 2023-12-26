@@ -3,7 +3,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.artifacts_web_view import ArtifactsWebView
-from sageworks.core.artifacts.data_source_factory import DataSourceFactory
+from sageworks.api.data_source import DataSource
 
 
 class DataSourceWebView(ArtifactsWebView):
@@ -36,7 +36,7 @@ class DataSourceWebView(ArtifactsWebView):
         Returns:
             pd.DataFrame: The smart-sample DataFrame
         """
-        ds = DataSourceFactory(data_uuid)
+        ds = DataSource(data_uuid)
         if not ds.exists():
             return pd.DataFrame({"uuid": [data_uuid], "status": ["NOT FOUND"]})
         if not ds.ready():
@@ -58,7 +58,7 @@ class DataSourceWebView(ArtifactsWebView):
             dict: The details for the given DataSource (or None if not found)
         """
         # Grab the DataSource, if it exists and is ready
-        ds = DataSourceFactory(data_uuid)
+        ds = DataSource(data_uuid)
         if not ds.exists() or not ds.ready():
             return None
 
