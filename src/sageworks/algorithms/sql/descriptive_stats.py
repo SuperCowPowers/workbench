@@ -78,7 +78,7 @@ def descriptive_stats(data_source: DataSourceAbstract) -> dict[dict]:
 if __name__ == "__main__":
     """Exercise the SQL Descriptive Stats Functionality"""
     from pprint import pprint
-    from sageworks.core.artifacts.data_source_factory import DataSourceFactory
+    from sageworks.api.data_source import DataSource
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 50)
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSourceFactory("ssh_features_1693265450")
+    my_data = DataSource("test_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()

@@ -10,6 +10,7 @@ import os
 
 # SageWorks is currently quite verbose so lets set the logs to warning
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
+
 logging.getLogger("sageworks").setLevel(logging.WARNING)
 
 # SageWorks Imports

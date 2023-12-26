@@ -61,12 +61,14 @@ if __name__ == "__main__":
             "balabanj",
             "bertzct",
         ]
-        feature_set.to_model(ModelType.REGRESSOR,
-                             target_column="solubility",
-                             name="aqsol-regression",
-                             feature_list=feature_list,
-                             description="AQSol Regression Model",
-                             tags=["aqsol", "regression"])
+        feature_set.to_model(
+            ModelType.REGRESSOR,
+            target_column="solubility",
+            name="aqsol-regression",
+            feature_list=feature_list,
+            description="AQSol Regression Model",
+            tags=["aqsol", "regression"],
+        )
 
     # Create the aqsol regression Endpoint
     if recreate or not Endpoint("aqsol-regression-end").exists():
@@ -89,12 +91,14 @@ if __name__ == "__main__":
         feature_set = FeatureSet("aqsol_rdkit_features")
         exclude = ["id", "smiles", "solubility"]
         feature_list = [f for f in feature_set.column_names() if f not in exclude]
-        feature_set.to_model(ModelType.REGRESSOR,
-                             target_column="solubility",
-                             name="aqsol-rdkit-regression",
-                             feature_list=feature_list,
-                             description="AQSol/RDKit Regression Model",
-                             tags=["aqsol", "regression", "rdkit"])
+        feature_set.to_model(
+            ModelType.REGRESSOR,
+            target_column="solubility",
+            name="aqsol-rdkit-regression",
+            feature_list=feature_list,
+            description="AQSol/RDKit Regression Model",
+            tags=["aqsol", "regression", "rdkit"],
+        )
 
     # Create the aqsol regression Endpoint
     if recreate or not Endpoint("aqsol-rdkit-regression-end").exists():

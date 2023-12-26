@@ -122,7 +122,7 @@ def column_stats(data_source: DataSourceAbstract, recompute: bool = False) -> di
 if __name__ == "__main__":
     """Exercise the SQL Column Details Functionality"""
     from pprint import pprint
-    from sageworks.core.artifacts.data_source_factory import DataSourceFactory
+    from sageworks.api.data_source import DataSource
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 50)
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSourceFactory("test_data")
+    my_data = DataSource("test_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
@@ -139,8 +139,8 @@ if __name__ == "__main__":
     print(f"UUID: {my_data.uuid}")
 
     # Set computation view columns
-    computation_cols = my_data.column_names()[:5]
-    my_data.set_computation_columns(computation_cols)
+    # computation_cols = my_data.column_names()
+    # my_data.set_computation_columns(computation_cols)
 
     # Get column stats for computation columns
     my_column_stats = column_stats(my_data)

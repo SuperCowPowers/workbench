@@ -49,7 +49,7 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
 
 if __name__ == "__main__":
     """Exercise the SQL Sample Rows Functionality"""
-    from sageworks.core.artifacts.data_source_factory import DataSourceFactory
+    from sageworks.api.data_source import DataSource
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 50)
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSourceFactory("test_data")
+    my_data = DataSource("test_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()

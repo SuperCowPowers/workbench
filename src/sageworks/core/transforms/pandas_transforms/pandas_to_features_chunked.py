@@ -80,10 +80,10 @@ class PandasToFeaturesChunked(Transform):
 
 if __name__ == "__main__":
     """Exercise the PandasToFeaturesChunked Class"""
-    from sageworks.core.artifacts.data_source_factory import DataSourceFactory
+    from sageworks.api.data_source import DataSource
 
     # Load in a DataFrame from a DataSource and split it into chunks
-    ds = DataSourceFactory("abalone_data")
+    ds = DataSource("abalone_data")
     df = ds.query("select * from abalone_data")
     print(f"df.shape: {df.shape}")
 
