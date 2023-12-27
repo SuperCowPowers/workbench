@@ -4,6 +4,8 @@
     Examples of using the DataSource class are listed at the bottom of this page [Examples](#examples).
 
 ::: sageworks.api.data_source
+    options:
+      show_root_heading: false
 
 
 ## Examples

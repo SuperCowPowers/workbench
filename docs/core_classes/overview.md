@@ -12,7 +12,7 @@ The Core Classes provide low-level APIs for the SageWorks package, these classes
 For most users the [API Classes](../api_classes/overview.md) should provide the general functionality of creating a full AWS ML Pipeline but if you need more control feel free to investigate and use the Core Classes.
 
 ## Artifacts
-Artifacts classes provide object oriented interfaces to sets of AWS Services. For instance the [FeatureSetCore](../artifacts/artifacts/#sageworks.core.artifacts.FeatureSetCore) encapsulates and interacts with AWS Feature Store, Feature Groups, Athena, and Data Catalogs.
+Artifacts classes provide object oriented interfaces to sets of AWS Services. For instance the [FeatureSetCore][sageworks.core.artifacts.FeatureSetCore] encapsulates and interacts with AWS Feature Store, Feature Groups, Athena, and Data Catalogs.
 
 For a full overview of the Artifact Core Class see
 [Artifact Classes](artifacts/artifacts.md)
