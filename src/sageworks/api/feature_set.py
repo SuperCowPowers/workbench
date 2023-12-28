@@ -71,7 +71,7 @@ if __name__ == "__main__":
     """Exercise the FeatureSet Class"""
     from pprint import pprint
 
-    # Retrieve an existing Data Source
+    # Retrieve an existing FeatureSet
     my_features = FeatureSet("test_features")
     pprint(my_features.summary())
     pprint(my_features.details())

@@ -63,6 +63,50 @@ iq_score   -0.295513    0.395378    0.076477   -0.435033    0.033364 -0.655210  
 <lots of EDA data and statistics>
 ```
 
+**Create a Model from a FeatureSet**
+
+```py title="featureset_to_model.py"
+from sageworks.api.feature_set import FeatureSet
+from sageworks.api.model import ModelType
+from pprint import pprint
+
+# Grab a FeatureSet
+my_features = FeatureSet('test_features')
+
+# Create a Model from the FeatureSet
+# Note: For categorical models use ModelType.CATEGORICAL
+my_model = my_features.to_model(model_type=ModelType.REGRESSOR, target_column="iq_score")
+pprint(my_model.details())
+```
+
+**Output**
+
+```data
+
+{'approval_status': 'Approved',
+ 'content_types': ['text/csv'],
+ ...
+ 'inference_types': ['ml.t2.medium'],
+ 'input': 'test_features',
+ 'model_metrics':   metric_name  value
+0        RMSE  7.924
+1         MAE  6.554,
+ 'regression_predictions':       iq_score  prediction
+0   136.519012  139.964460
+1   133.616974  130.819950
+2   122.495415  124.967834
+3   133.279510  121.010284
+4   127.881073  113.825005
+    ...
+ 'response_types': ['text/csv'],
+ 'sageworks_tags': ['test-model'],
+ 'shapley_values': None,
+ 'size': 0.0,
+ 'status': 'Completed',
+ 'transform_types': ['ml.m5.large'],
+ 'uuid': 'test-model',
+ 'version': 1}
+```
 
 ## SageWorks UI
 Running these few lines of code performs a comprehensive set of Exploratory Data Analysis techniques on your data, pushes the results into AWS, and provides a detailed web visualization of the results.
