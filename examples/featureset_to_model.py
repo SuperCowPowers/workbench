@@ -3,7 +3,7 @@ from sageworks.api.model import ModelType
 from pprint import pprint
 
 # Grab a FeatureSet
-my_features = FeatureSet('test_features')
+my_features = FeatureSet("test_features")
 
 # Create a Model from the FeatureSet
 # Note: For categorical models use ModelType.CATEGORICAL

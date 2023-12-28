@@ -8,7 +8,7 @@ pd.set_option("display.max_rows", None)
 pd.set_option("display.width", 1000)
 
 # Grab a FeatureSet and pull some of the EDA Stats
-my_features = FeatureSet('test_features')
+my_features = FeatureSet("test_features")
 
 # Grab some of the EDA Stats
 corr_data = my_features.correlations()

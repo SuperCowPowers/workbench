@@ -8,7 +8,7 @@ pd.set_option("display.max_rows", None)
 pd.set_option("display.width", 1000)
 
 # Grab a DataSource and pull some of the EDA Stats
-my_data = DataSource('test_data')
+my_data = DataSource("test_data")
 
 # Grab some of the EDA Stats
 corr_data = my_data.correlations()
