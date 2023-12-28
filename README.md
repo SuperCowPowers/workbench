@@ -16,9 +16,7 @@ The SageWorks framework makes AWS® both easier to use and more powerful. SageWo
 - Models
 - Endpoints
 
-<br><br>
-<img align="right" width="300" alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/bc8da045-b736-4fc7-9062-550b69742919">
-
+<img align="right" width="340" alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/bc8da045-b736-4fc7-9062-550b69742919">
 ### SageWorks Documentation
 We have detailed documentation on the SageWprks Python API here: [SageWorks Documentation](https://supercowpowers.github.io/sageworks/). The documentation contains examples from souce code in this repository under the examples/ directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
 
