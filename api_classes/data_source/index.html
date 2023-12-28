@@ -405,6 +405,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#sageworks-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      SageWorks UI
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -969,6 +978,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#sageworks-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      SageWorks UI
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -987,7 +1005,7 @@
 <h1 id="datasource">DataSource</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">DataSource Examples</p>
-<p>Examples of using the DataSource class are listed at the bottom of this page <a href="#examples">Examples</a>.</p>
+<p>Examples of using the DataSource class are in the <a href="#examples">Examples</a> section at the bottom of this page. S3 data, local files, and Pandas dataframes, DataSource can read data from many different sources.</p>
 </div>
 
 
@@ -1547,12 +1565,42 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
   </div>
 
 </div><h2 id="examples">Examples</h2>
-<p>Example Description 1</p>
-<pre><code>example code 1
+<p><strong>Create a DataSource from an S3 Path or File Path</strong> (see <a href="https://github.com/SuperCowPowers/sageworks/blob/main/examples/datasource_from_s3.py">examples/datasource_from_s3.py</a>)</p>
+<pre><code class="language-python">from sageworks.api.data_source import DataSource
+
+# Create a DataSource from an S3 Path (or a local file)
+source_path = &quot;s3://sageworks-public-data/common/abalone.csv&quot;
+# source_path = &quot;/full/path/to/local/file.csv&quot;
+
+my_data = DataSource(source_path)
+print(my_data.details())
 </code></pre>
-<p>Example Description 2</p>
-<pre><code>example code 2
+<p><strong>Create a DataSource from a Pandas Dataframe</strong> (see <a href="https://github.com/SuperCowPowers/sageworks/blob/main/examples/datasource_from_df.py">examples/datasource_from_df.py</a>)</p>
+<pre><code class="language-python">from sageworks.utils.test_data_generator import TestDataGenerator
+from sageworks.api.data_source import DataSource
+
+# Create a DataSource from a Pandas DataFrame
+gen_data = TestDataGenerator()
+df = gen_data.person_data()
+
+test_data = DataSource(df, name=&quot;test_data&quot;)
+print(test_data.details())
 </code></pre>
+<p><strong>Create a FeatureSet from Datasource</strong> (see <a href="https://github.com/SuperCowPowers/sageworks/blob/main/examples/datasource_to_featureset.py.py">examples/datasource_to_featureset.py</a>)</p>
+<pre><code class="language-python">from sageworks.api.data_source import DataSource
+
+# Convert the Data Source to a Feature Set
+test_data = DataSource('test_data')
+my_features = test_data.to_features()
+print(my_features.details())
+</code></pre>
+<h2 id="sageworks-ui">SageWorks UI</h2>
+<p>Running these few lines of code performs a comprehensive set of Exploratory Data Analysis techniques on your data, pushes the results into AWS, and provides a detailed web visualization of the results.</p>
+<figure style="width: 700px;">
+<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/9126bbe7-902e-409e-9caa-570b054b69e6"">
+<figcaption>SageWorks Dashboard: DataSources</figcaption>
+</figure>
+
 <div class="admonition note">
 <p class="admonition-title">Not Finding a particular method?</p>
 <p>The SageWorks API Classes use 'Core' Classes Internally, so you can lookup all the methods in <a href="../../core_classes/overview/">SageWorks Core Classes</a></p>
