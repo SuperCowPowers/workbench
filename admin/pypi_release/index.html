@@ -1075,48 +1075,48 @@
 <h3 id="setup-pypirc">Setup pypirc</h3>
 <p>The easiest thing to do is setup a \~/.pypirc file with the following
 contents</p>
-<pre><code class="language-bash">[distutils]
-index-servers =
-  pypi
-  testpypi
-
-[pypi]
-repository=https://upload.pypi.org/legacy/
-username=&lt;pypi username&gt;
-password=&lt;pypi password&gt;
-
-[testpypi]
-repository=https://test.pypi.org/legacy/
-username=&lt;pypi username&gt;
-password=&lt;pypi password&gt;
-</code></pre>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="o">[</span>distutils<span class="o">]</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>index-servers<span class="w"> </span><span class="o">=</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>pypi
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span>testpypi
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="o">[</span>pypi<span class="o">]</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nv">repository</span><span class="o">=</span>https://upload.pypi.org/legacy/
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nv">username</span><span class="o">=</span>&lt;pypi<span class="w"> </span>username&gt;
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="nv">password</span><span class="o">=</span>&lt;pypi<span class="w"> </span>password&gt;
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="o">[</span>testpypi<span class="o">]</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="nv">repository</span><span class="o">=</span>https://test.pypi.org/legacy/
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="nv">username</span><span class="o">=</span>&lt;pypi<span class="w"> </span>username&gt;
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="nv">password</span><span class="o">=</span>&lt;pypi<span class="w"> </span>password&gt;
+</span></code></pre></div>
 <h3 id="tox-background">Tox Background</h3>
 <p>Tox will install the SageMaker Sandbox package into a blank virtualenv and then execute all the tests against the newly installed package. So if everything goes okay, you know the pypi package installed fine and the tests (which puls from the installed <code>sageworks</code> package) also ran okay.</p>
 <h3 id="make-sure-all-tests-pass">Make sure ALL tests pass</h3>
-<pre><code class="language-bash">$ cd sageworks
-$ tox 
-</code></pre>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>sageworks
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>$<span class="w"> </span>tox<span class="w"> </span>
+</span></code></pre></div>
 <p>If ALL the test above pass...</p>
 <h3 id="clean-any-previous-distribution-files">Clean any previous distribution files</h3>
-<pre><code>make clean
-</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>make clean
+</span></code></pre></div>
 <h3 id="tag-the-new-version">Tag the New Version</h3>
-<pre><code>git tag v0.1.8 (or whatever)
-git push --tags
-</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git tag v0.1.8 (or whatever)
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>git push --tags
+</span></code></pre></div>
 <h3 id="create-the-test-pypi-release">Create the TEST PyPI Release</h3>
-<pre><code class="language-bash">python setup.py sdist bdist_wheel
-twine upload dist/* -r testpypi
-</code></pre>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>setup.py<span class="w"> </span>sdist<span class="w"> </span>bdist_wheel
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>twine<span class="w"> </span>upload<span class="w"> </span>dist/*<span class="w"> </span>-r<span class="w"> </span>testpypi
+</span></code></pre></div>
 <h3 id="install-the-test-pypi-release">Install the TEST PyPI Release</h3>
-<pre><code class="language-bash">pip install --index-url https://test.pypi.org/simple sageworks
-</code></pre>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>--index-url<span class="w"> </span>https://test.pypi.org/simple<span class="w"> </span>sageworks
+</span></code></pre></div>
 <h3 id="create-the-real-pypi-release">Create the REAL PyPI Release</h3>
-<pre><code class="language-bash">twine upload dist/* -r pypi
-</code></pre>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>twine<span class="w"> </span>upload<span class="w"> </span>dist/*<span class="w"> </span>-r<span class="w"> </span>pypi
+</span></code></pre></div>
 <h3 id="push-any-possible-changes-to-github">Push any possible changes to Github</h3>
-<pre><code class="language-bash">git push
-</code></pre>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>git<span class="w"> </span>push
+</span></code></pre></div>
 
 
 
