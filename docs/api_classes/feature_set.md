@@ -19,9 +19,9 @@ my_features = test_data.to_features()
 print(my_features.details())
 ```
 
-**Use/Show some of the EDA Statistics**
+**FeatureSet EDA Statistics**
 
-```py title="featureset_stats.py"
+```py title="featureset_eda.py"
 from sageworks.api.feature_set import FeatureSet
 import pandas as pd
 
@@ -36,6 +36,10 @@ print(corr_df)
 # Get some outliers
 outliers = my_features.outliers()
 pprint(outliers.head())
+
+# Full set of EDA Stats
+eda_stats = my_features.column_stats()
+pprint(eda_stats)
 ```
 **Output**
 
@@ -55,6 +59,8 @@ iq_score   -0.295513    0.395378    0.076477   -0.435033    0.033364 -0.655210  
 1  Person 68  73.918663  189.527313  219994.000000   80  100.000000           0           0           0           1           0  iq_score_low
 2  Person 49  70.381790  261.237000  175633.703125   49  107.933998           0           0           0           1           0  iq_score_low
 3  Person 90  73.488739  193.840698  227760.000000   72  110.821541           1           0           0           0           0   salary_high
+
+<lots of EDA data and statistics>
 ```
 
 

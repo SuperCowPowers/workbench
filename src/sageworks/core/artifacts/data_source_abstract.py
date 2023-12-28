@@ -58,7 +58,7 @@ class DataSourceAbstract(Artifact):
     def column_details(self, view: str = "all") -> dict:
         """Return the column details for this Data Source
         Args:
-            view(str): The view to get column details for (default: "all")
+            view (str): The view to get column details for (default: "all")
         Returns:
             dict: The column details for this Data Source
         """
@@ -106,7 +106,7 @@ class DataSourceAbstract(Artifact):
     def set_display_columns(self, display_columns: list[str]):
         """Set the display columns for this Data Source
         Args:
-            display_columns(list[str]): The display columns for this Data Source
+            display_columns (list[str]): The display columns for this Data Source
         """
         self._display_columns = display_columns
         self.upsert_sageworks_meta({"sageworks_display_columns": self._display_columns})
@@ -144,7 +144,7 @@ class DataSourceAbstract(Artifact):
     def sample(self, recompute: bool = False) -> pd.DataFrame:
         """Return a sample DataFrame from this DataSource
         Args:
-            recompute(bool): Recompute the sample (default: False)
+            recompute (bool): Recompute the sample (default: False)
         Returns:
             pd.DataFrame: A sample DataFrame from this DataSource
         """
@@ -172,7 +172,7 @@ class DataSourceAbstract(Artifact):
     def descriptive_stats(self, recompute: bool = False) -> dict[dict]:
         """Compute Descriptive Stats for all the numeric columns in a DataSource
         Args:
-            recompute(bool): Recompute the descriptive stats (default: False)
+            recompute (bool): Recompute the descriptive stats (default: False)
         Returns:
             dict(dict): A dictionary of descriptive stats for each column in the form
                  {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},
@@ -183,8 +183,8 @@ class DataSourceAbstract(Artifact):
     def outliers(self, scale: float = 1.5, recompute: bool = False) -> pd.DataFrame:
         """Return a DataFrame of outliers from this DataSource
         Args:
-            scale(float): The scale to use for the IQR (default: 1.5)
-            recompute(bool): Recompute the outliers (default: False)
+            scale (float): The scale to use for the IQR (default: 1.5)
+            recompute (bool): Recompute the outliers (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
         Notes:
@@ -207,8 +207,8 @@ class DataSourceAbstract(Artifact):
     def outliers_impl(self, scale: float = 1.5, recompute: bool = False) -> pd.DataFrame:
         """Return a DataFrame of outliers from this DataSource
         Args:
-            scale(float): The scale to use for the IQR (default: 1.5)
-            recompute(bool): Recompute the outliers (default: False)
+            scale (float): The scale to use for the IQR (default: 1.5)
+            recompute (bool): Recompute the outliers (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
         Notes:
@@ -229,7 +229,7 @@ class DataSourceAbstract(Artifact):
     def value_counts(self, recompute: bool = False) -> dict[dict]:
         """Compute 'value_counts' for all the string columns in a DataSource
         Args:
-            recompute(bool): Recompute the value counts (default: False)
+            recompute (bool): Recompute the value counts (default: False)
         Returns:
             dict(dict): A dictionary of value counts for each column in the form
                  {'col1': {'value_1': X, 'value_2': Y, 'value_3': Z,...},
@@ -241,7 +241,7 @@ class DataSourceAbstract(Artifact):
     def column_stats(self, recompute: bool = False) -> dict[dict]:
         """Compute Column Stats for all the columns in a DataSource
         Args:
-            recompute(bool): Recompute the column stats (default: False)
+            recompute (bool): Recompute the column stats (default: False)
         Returns:
             dict(dict): A dictionary of stats for each column this format
             NB: String columns will NOT have num_zeros and descriptive stats

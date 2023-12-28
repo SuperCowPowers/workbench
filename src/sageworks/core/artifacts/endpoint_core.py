@@ -280,7 +280,7 @@ class EndpointCore(Artifact):
     def details(self, recompute: bool = False) -> dict:
         """Additional Details about this Endpoint
         Args:
-            recompute(bool): Recompute the details (default: False)
+            recompute (bool): Recompute the details (default: False)
         Returns:
             dict(dict): A dictionary of details about this Endpoint
         """

@@ -24,8 +24,8 @@ class Outliers:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
             data_source(DataSource): The DataSource that we're computing outliers on
-            scale(float): The scale to use for either the IQR or stddev outlier calculation (default: 1.5)
-            use_stddev(bool): Option to use the standard deviation for the outlier calculation (default: False)
+            scale (float): The scale to use for either the IQR or stddev outlier calculation (default: 1.5)
+            use_stddev (bool): Option to use the standard deviation for the outlier calculation (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers for this DataSource
         Notes:
@@ -67,8 +67,8 @@ class Outliers:
         """Internal method to compute outliers for all numeric columns
         Args:
             data_source(DataSource): The DataSource that we're computing outliers on
-            scale(float): The scale to use for the IQR outlier calculation
-            use_stddev(bool): Option to use the standard deviation for the outlier calculation (default: False)
+            scale (float): The scale to use for the IQR outlier calculation
+            use_stddev (bool): Option to use the standard deviation for the outlier calculation (default: False)
         Returns:
             pd.DataFrame: A DataFrame of all the outliers combined
         """

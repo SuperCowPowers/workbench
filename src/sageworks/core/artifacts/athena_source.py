@@ -244,7 +244,7 @@ class AthenaSource(DataSourceAbstract):
         """Compute Descriptive Stats for all the numeric columns in a DataSource
 
         Args:
-            recompute(bool): Recompute the descriptive stats (default: False)
+            recompute (bool): Recompute the descriptive stats (default: False)
 
         Returns:
             dict(dict): A dictionary of descriptive stats for each column in the form
@@ -270,9 +270,9 @@ class AthenaSource(DataSourceAbstract):
         """Compute outliers for all the numeric columns in a DataSource
 
         Args:
-            scale(float): The scale to use for the IQR (default: 1.5)
-            use_stddev(bool): Use Standard Deviation instead of IQR (default: False)
-            recompute(bool): Recompute the outliers (default: False)
+            scale (float): The scale to use for the IQR (default: 1.5)
+            use_stddev (bool): Use Standard Deviation instead of IQR (default: False)
+            recompute (bool): Recompute the outliers (default: False)
 
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
@@ -311,7 +311,7 @@ class AthenaSource(DataSourceAbstract):
         """Compute Correlations for all the numeric columns in a DataSource
 
         Args:
-            recompute(bool): Recompute the column stats (default: False)
+            recompute (bool): Recompute the column stats (default: False)
 
         Returns:
             dict(dict): A dictionary of correlations for each column in this format
@@ -337,15 +337,15 @@ class AthenaSource(DataSourceAbstract):
         """Compute Column Stats for all the columns in a DataSource
 
         Args:
-            recompute(bool): Recompute the column stats (default: False)
+            recompute (bool): Recompute the column stats (default: False)
 
         Returns:
             dict(dict): A dictionary of stats for each column this format
             NB: String columns will NOT have num_zeros, descriptive_stats or correlation data
-             {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
-              'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100,
-                       'descriptive_stats': {...}, 'correlations': {...}},
-              ...}
+                {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
+                 'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100,
+                          'descriptive_stats': {...}, 'correlations': {...}},
+                 ...}
         """
 
         # First check if we have already computed the column stats
@@ -366,7 +366,7 @@ class AthenaSource(DataSourceAbstract):
         """Compute 'value_counts' for all the string columns in a DataSource
 
         Args:
-            recompute(bool): Recompute the value counts (default: False)
+            recompute (bool): Recompute the value counts (default: False)
 
         Returns:
             dict(dict): A dictionary of value counts for each column in the form
@@ -392,7 +392,7 @@ class AthenaSource(DataSourceAbstract):
         """Additional Details about this AthenaSource Artifact
 
         Args:
-            recompute(bool): Recompute the details (default: False)
+            recompute (bool): Recompute the details (default: False)
 
         Returns:
             dict(dict): A dictionary of details about this AthenaSource

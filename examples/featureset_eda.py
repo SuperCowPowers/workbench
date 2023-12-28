@@ -22,3 +22,7 @@ print(corr_df)
 # Get some outliers
 outliers = my_features.outliers()
 pprint(outliers.head())
+
+# Full set of EDA Stats
+eda_stats = my_features.column_stats()
+pprint(eda_stats)

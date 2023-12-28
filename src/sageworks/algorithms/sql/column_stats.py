@@ -53,7 +53,7 @@ def column_stats(data_source: DataSourceAbstract, recompute: bool = False) -> di
     """SQL based Column Statistics: Compute Column Statistics for a DataSource using SQL
     Args:
         data_source(DataSource): The DataSource that we're computing column stats on
-        recompute(bool): Whether or not to recompute the column stats (default: False)
+        recompute (bool): Whether or not to recompute the column stats (default: False)
     Returns:
         dict(dict): A dictionary of stats for each column this format
         NB: String columns will have value_counts but NOT have num_zeros and descriptive stats

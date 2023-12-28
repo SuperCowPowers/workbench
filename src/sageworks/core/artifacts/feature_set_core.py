@@ -124,7 +124,7 @@ class FeatureSetCore(Artifact):
         """Return the column details of the Feature Set
 
         Args:
-            view(str): The view to get column details for (default: "all")
+            view (str): The view to get column details for (default: "all")
 
         Returns:
             dict: The column details of the Feature Set
@@ -167,7 +167,7 @@ class FeatureSetCore(Artifact):
         """Set the display columns for this FeatureSet
 
         Args:
-            display_columns(list[str]): The display columns for this FeatureSet
+            display_columns (list[str]): The display columns for this FeatureSet
 
         Notes:
             This just sets the display columns for the underlying DataSource
@@ -278,7 +278,7 @@ class FeatureSetCore(Artifact):
         """Additional Details about this FeatureSet Artifact
 
         Args:
-            recompute(bool): Recompute the details (default: False)
+            recompute (bool): Recompute the details (default: False)
 
         Returns:
             dict(dict): A dictionary of details about this FeatureSet
@@ -465,8 +465,8 @@ class FeatureSetCore(Artifact):
     def outliers(self, scale: float = 1.5, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
         Args:
-            scale(float): The scale to use for the IQR (default: 1.5)
-            recompute(bool): Recompute the outliers (default: False)
+            scale (float): The scale to use for the IQR (default: 1.5)
+            recompute (bool): Recompute the outliers (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
         Notes:
@@ -517,7 +517,7 @@ class FeatureSetCore(Artifact):
     def column_stats(self, recompute: bool = False) -> dict[dict]:
         """Compute Column Stats for all the columns in the FeatureSets underlying DataSource
         Args:
-            recompute(bool): Recompute the column stats (default: False)
+            recompute (bool): Recompute the column stats (default: False)
         Returns:
             dict(dict): A dictionary of stats for each column this format
             NB: String columns will NOT have num_zeros and descriptive_stats
