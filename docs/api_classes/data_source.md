@@ -1,7 +1,7 @@
 # DataSource
 
 !!! tip inline end "DataSource Examples"
-    Examples of using the DataSource class are listed at the bottom of this page [Examples](#examples).
+    Examples of using the DataSource class are in the [Examples](#examples) section at the bottom of this page. S3 data, local files, and Pandas dataframes, DataSource can read data from many different sources.
 
 ::: sageworks.api.data_source
     options:
@@ -9,17 +9,54 @@
 
 
 ## Examples
-Example Description 1
+**Create a DataSource from an S3 Path or File Path** (see [examples/datasource\_from\_s3.py](https://github.com/SuperCowPowers/sageworks/blob/main/examples/datasource_from_s3.py))
 
-```
-example code 1
+```python
+from sageworks.api.data_source import DataSource
+
+# Create a DataSource from an S3 Path (or a local file)
+source_path = "s3://sageworks-public-data/common/abalone.csv"
+# source_path = "/full/path/to/local/file.csv"
+
+my_data = DataSource(source_path)
+print(my_data.details())
 ```
 
-Example Description 2
+**Create a DataSource from a Pandas Dataframe** (see [examples/datasource\_from\_df.py](https://github.com/SuperCowPowers/sageworks/blob/main/examples/datasource_from_df.py))
 
+
+```python
+from sageworks.utils.test_data_generator import TestDataGenerator
+from sageworks.api.data_source import DataSource
+
+# Create a DataSource from a Pandas DataFrame
+gen_data = TestDataGenerator()
+df = gen_data.person_data()
+
+test_data = DataSource(df, name="test_data")
+print(test_data.details())
 ```
-example code 2
+
+**Create a FeatureSet from Datasource** (see [examples/datasource\_to\_featureset.py](https://github.com/SuperCowPowers/sageworks/blob/main/examples/datasource_to_featureset.py.py))
+
+
+```python
+from sageworks.api.data_source import DataSource
+
+# Convert the Data Source to a Feature Set
+test_data = DataSource('test_data')
+my_features = test_data.to_features()
+print(my_features.details())
 ```
+
+## SageWorks UI
+Running these few lines of code performs a comprehensive set of Exploratory Data Analysis techniques on your data, pushes the results into AWS, and provides a detailed web visualization of the results.
+
+<figure style="width: 700px;">
+<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/9126bbe7-902e-409e-9caa-570b054b69e6"">
+<figcaption>SageWorks Dashboard: DataSources</figcaption>
+</figure>
+
 
 !!! note "Not Finding a particular method?"
     The SageWorks API Classes use 'Core' Classes Internally, so you can lookup all the methods in [SageWorks Core Classes](../core_classes/overview.md)
