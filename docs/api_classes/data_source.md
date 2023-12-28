@@ -9,9 +9,11 @@
 
 
 ## Examples
-**Create a DataSource from an S3 Path or File Path** (see [examples/datasource\_from\_s3.py](https://github.com/SuperCowPowers/sageworks/blob/main/examples/datasource_from_s3.py))
+All of the SageWorks Examples are in the Sageworks Repository under the `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
 
-```python
+**Create a DataSource from an S3 Path or File Path**
+
+``` py title="datasource_from_s3.py"
 from sageworks.api.data_source import DataSource
 
 # Create a DataSource from an S3 Path (or a local file)
@@ -22,10 +24,9 @@ my_data = DataSource(source_path)
 print(my_data.details())
 ```
 
-**Create a DataSource from a Pandas Dataframe** (see [examples/datasource\_from\_df.py](https://github.com/SuperCowPowers/sageworks/blob/main/examples/datasource_from_df.py))
+**Create a DataSource from a Pandas Dataframe**
 
-
-```python
+``` py title="datasource_from_df.py"
 from sageworks.utils.test_data_generator import TestDataGenerator
 from sageworks.api.data_source import DataSource
 
@@ -37,10 +38,9 @@ test_data = DataSource(df, name="test_data")
 print(test_data.details())
 ```
 
-**Create a FeatureSet from Datasource** (see [examples/datasource\_to\_featureset.py](https://github.com/SuperCowPowers/sageworks/blob/main/examples/datasource_to_featureset.py.py))
+**Create a FeatureSet from a Datasource**
 
-
-```python
+```py title="datasource_to_featureset.py"
 from sageworks.api.data_source import DataSource
 
 # Convert the Data Source to a Feature Set

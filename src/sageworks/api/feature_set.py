@@ -1,4 +1,8 @@
-"""FeatureSet: SageWorks FeatureSet API Class"""
+"""FeatureSet: Manages AWS Feature Store/Group creation and management.
+FeatureSets are set up so they can easily be queried with AWS Athena.
+All FeatureSets are run through a full set of Exploratory Data Analysis (EDA)
+techniques (data quality, distributions, stats, outliers, etc.) FeatureSets
+can be viewed and explored within the SageWorks Dashboard UI."""
 
 # SageWorks Imports
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore

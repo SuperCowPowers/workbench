@@ -41,6 +41,13 @@ theme:
 
 markdown_extensions:
   - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
 
 plugins:
 - search
@@ -48,3 +55,5 @@ plugins:
     handlers:
       python:
         paths: [src]
+
+dev_addr: 127.0.0.1:8001

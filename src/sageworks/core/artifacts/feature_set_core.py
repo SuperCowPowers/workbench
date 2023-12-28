@@ -29,6 +29,7 @@ class FeatureSetCore(Artifact):
 
     def __init__(self, feature_set_uuid: str, force_refresh: bool = False):
         """FeatureSetCore Initialization
+
         Args:
             feature_set_uuid (str): Name of Feature Set
             force_refresh (bool): Force a refresh of the Feature Set metadata (default: False)
@@ -81,6 +82,7 @@ class FeatureSetCore(Artifact):
 
     def health_check(self) -> list[str]:
         """Perform a health check on this model
+
         Returns:
             list[str]: List of health issues
         """
@@ -120,10 +122,13 @@ class FeatureSetCore(Artifact):
 
     def column_details(self, view: str = "all") -> dict:
         """Return the column details of the Feature Set
-        Returns:
-            dict: The column details of the Feature Set
+
         Args:
             view(str): The view to get column details for (default: "all")
+
+        Returns:
+            dict: The column details of the Feature Set
+
         Notes:
             We can't call just call self.data_source.column_details() because FeatureSets have different
             types, so we need to overlay that type information on top of the DataSource type information
@@ -149,8 +154,10 @@ class FeatureSetCore(Artifact):
 
     def get_display_columns(self) -> list[str]:
         """Get the display columns for this FeatureSet
+
         Returns:
             list[str]: The display columns for this FeatureSet
+
         Notes:
             This just pulls the display columns from the underlying DataSource
         """
@@ -158,8 +165,10 @@ class FeatureSetCore(Artifact):
 
     def set_display_columns(self, display_columns: list[str]):
         """Set the display columns for this FeatureSet
+
         Args:
             display_columns(list[str]): The display columns for this FeatureSet
+
         Notes:
             This just sets the display columns for the underlying DataSource
         """
@@ -244,8 +253,10 @@ class FeatureSetCore(Artifact):
 
     def snapshot_query(self, table_name: str = None) -> str:
         """An Athena query to get the latest snapshot of features
+
         Args:
             table_name (str): The name of the table to query (default: None)
+
         Returns:
             str: The Athena query to get the latest snapshot of features
         """
@@ -265,8 +276,10 @@ class FeatureSetCore(Artifact):
 
     def details(self, recompute: bool = False) -> dict[dict]:
         """Additional Details about this FeatureSet Artifact
+
         Args:
             recompute(bool): Recompute the details (default: False)
+
         Returns:
             dict(dict): A dictionary of details about this FeatureSet
         """

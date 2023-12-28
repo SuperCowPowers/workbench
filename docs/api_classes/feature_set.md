@@ -1,22 +1,71 @@
 # FeatureSet
 !!! tip inline end "FeatureSet Examples"
-    Examples of using the FeatureSet class are listed at the bottom of this page [Examples](#examples).
+    Examples of using the FeatureSet are in the [Examples](#examples) section at the bottom of this page. AWS Feature Store and Feature Groups are quite complicated to set up manually but SageWorks FeatureSet makes it a breeze!
     
 ::: sageworks.api.feature_set
 
 
 ## Examples
-Example Description 1
+All of the SageWorks Examples are in the Sageworks Repository under the `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
 
-```
-example code 1
+**Create a FeatureSet from a Datasource**
+
+```py title="datasource_to_featureset.py"
+from sageworks.api.data_source import DataSource
+
+# Convert the Data Source to a Feature Set
+test_data = DataSource('test_data')
+my_features = test_data.to_features()
+print(my_features.details())
 ```
 
-Example Description 2
+**Use/Show some of the EDA Statistics**
 
+```py title="featureset_stats.py"
+from sageworks.api.feature_set import FeatureSet
+import pandas as pd
+
+# Grab a FeatureSet and pull some of the EDA Stats
+my_features = FeatureSet('test_features')
+
+# Grab some of the EDA Stats
+corr_data = my_features.correlations()
+corr_df = pd.DataFrame(corr_data)
+print(corr_df)
+
+# Get some outliers
+outliers = my_features.outliers()
+pprint(outliers.head())
 ```
-example code 2
+**Output**
+
+```data
+                 age  food_pizza  food_steak  food_sushi  food_tacos    height        id  iq_score
+age              NaN   -0.188645   -0.256356    0.263048    0.054211  0.439678 -0.054948 -0.295513
+food_pizza -0.188645         NaN   -0.288175   -0.229591   -0.196818 -0.494380  0.137282  0.395378
+food_steak -0.256356   -0.288175         NaN   -0.374920   -0.321403 -0.002542 -0.005199  0.076477
+food_sushi  0.263048   -0.229591   -0.374920         NaN   -0.256064  0.536396  0.038279 -0.435033
+food_tacos  0.054211   -0.196818   -0.321403   -0.256064         NaN -0.091493 -0.051398  0.033364
+height      0.439678   -0.494380   -0.002542    0.536396   -0.091493       NaN -0.117372 -0.655210
+id         -0.054948    0.137282   -0.005199    0.038279   -0.051398 -0.117372       NaN  0.106020
+iq_score   -0.295513    0.395378    0.076477   -0.435033    0.033364 -0.655210  0.106020       NaN
+
+        name     height      weight         salary  age    iq_score  likes_dogs  food_pizza  food_steak  food_sushi  food_tacos outlier_group
+0  Person 96  57.582840  148.461349   80000.000000   43  150.000000           1           0           0           0           0    height_low
+1  Person 68  73.918663  189.527313  219994.000000   80  100.000000           0           0           0           1           0  iq_score_low
+2  Person 49  70.381790  261.237000  175633.703125   49  107.933998           0           0           0           1           0  iq_score_low
+3  Person 90  73.488739  193.840698  227760.000000   72  110.821541           1           0           0           0           0   salary_high
 ```
+
+
+## SageWorks UI
+Running these few lines of code performs a comprehensive set of Exploratory Data Analysis techniques on your data, pushes the results into AWS, and provides a detailed web visualization of the results.
+
+<figure style="width: 700px;">
+<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/0b4103fe-2c33-4611-86df-ff659fad1a3b">
+<figcaption>SageWorks Dashboard: FeatureSets</figcaption>
+</figure>
+
 
 !!! note "Not Finding a particular method?"
     The SageWorks API Classes use 'Core' Classes Internally, so you can lookup all the methods in [SageWorks Core Classes](../core_classes/overview.md)

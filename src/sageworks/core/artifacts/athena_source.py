@@ -36,6 +36,7 @@ class AthenaSource(DataSourceAbstract):
 
     def __init__(self, data_uuid, database="sageworks", force_refresh: bool = False):
         """AthenaSource Initialization
+
         Args:
             data_uuid (str): Name of Athena Table
             database (str): Athena Database Name (default: sageworks)
@@ -101,6 +102,7 @@ class AthenaSource(DataSourceAbstract):
 
     def upsert_sageworks_meta(self, new_meta: dict):
         """Add SageWorks specific metadata to this Artifact
+
         Args:
             new_meta (dict): Dictionary of new metadata to add
         """
@@ -230,6 +232,7 @@ class AthenaSource(DataSourceAbstract):
 
     def sample_impl(self) -> pd.DataFrame:
         """Pull a sample of rows from the DataSource
+
         Returns:
             pd.DataFrame: A sample DataFrame for an Athena DataSource
         """
@@ -239,8 +242,10 @@ class AthenaSource(DataSourceAbstract):
 
     def descriptive_stats(self, recompute: bool = False) -> dict[dict]:
         """Compute Descriptive Stats for all the numeric columns in a DataSource
+
         Args:
             recompute(bool): Recompute the descriptive stats (default: False)
+
         Returns:
             dict(dict): A dictionary of descriptive stats for each column in the form
                  {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},
@@ -263,12 +268,15 @@ class AthenaSource(DataSourceAbstract):
 
     def outliers_impl(self, scale: float = 1.5, use_stddev=False, recompute: bool = False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
+
         Args:
             scale(float): The scale to use for the IQR (default: 1.5)
             use_stddev(bool): Use Standard Deviation instead of IQR (default: False)
             recompute(bool): Recompute the outliers (default: False)
+
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
+
         Notes:
             Uses the IQR * 1.5 (~= 2.5 Sigma) (use 1.7 for ~= 3 Sigma)
             The scale parameter can be adjusted to change the IQR multiplier
@@ -280,6 +288,7 @@ class AthenaSource(DataSourceAbstract):
 
     def smart_sample(self) -> pd.DataFrame:
         """Get a smart sample dataframe for this DataSource
+
         Note:
             smart = sample data + outliers for the DataSource"""
 
@@ -300,8 +309,10 @@ class AthenaSource(DataSourceAbstract):
 
     def correlations(self, recompute: bool = False) -> dict[dict]:
         """Compute Correlations for all the numeric columns in a DataSource
+
         Args:
             recompute(bool): Recompute the column stats (default: False)
+
         Returns:
             dict(dict): A dictionary of correlations for each column in this format
                  {'col1': {'col2': 0.5, 'col3': 0.9, 'col4': 0.4, ...},
@@ -324,8 +335,10 @@ class AthenaSource(DataSourceAbstract):
 
     def column_stats(self, recompute: bool = False) -> dict[dict]:
         """Compute Column Stats for all the columns in a DataSource
+
         Args:
             recompute(bool): Recompute the column stats (default: False)
+
         Returns:
             dict(dict): A dictionary of stats for each column this format
             NB: String columns will NOT have num_zeros, descriptive_stats or correlation data
@@ -351,8 +364,10 @@ class AthenaSource(DataSourceAbstract):
 
     def value_counts(self, recompute: bool = False) -> dict[dict]:
         """Compute 'value_counts' for all the string columns in a DataSource
+
         Args:
             recompute(bool): Recompute the value counts (default: False)
+
         Returns:
             dict(dict): A dictionary of value counts for each column in the form
                  {'col1': {'value_1': 42, 'value_2': 16, 'value_3': 9,...},
@@ -375,8 +390,10 @@ class AthenaSource(DataSourceAbstract):
 
     def details(self, recompute: bool = False) -> dict[dict]:
         """Additional Details about this AthenaSource Artifact
+
         Args:
             recompute(bool): Recompute the details (default: False)
+
         Returns:
             dict(dict): A dictionary of details about this AthenaSource
         """
