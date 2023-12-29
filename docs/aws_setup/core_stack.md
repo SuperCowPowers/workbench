@@ -84,16 +84,17 @@ This script will take a LONG TiME to run, most of the time is waiting on AWS to 
 ```
 After the script completes you will see that it's built out an AWS ML Pipeline and testing artifacts.
 
-## How to Start the SageWorks Dashboard (Locally)
+## Run the SageWorks Dashboard (Local)
+!!! tip inline end "Dashboard AWS Stack"
+    Deploying the Dashboard Stack is straight-forward and provides a robust AWS Web Server with Load Balancer, Elastic Container Service, VPC Networks, etc. (see [AWS Dashboard Stack](dashboard_stack.md))
 
-!!! tip inline end "Running Dashboard AWS Stack"
-   For testing it's nice to run the Dashboard locally, but the SageWorks Dashboard should be deployed as an AWS Stack, so that everyone in the company can use and interact with the AWS ML Pipeline Artifacts (see [AWS Dashboard Stack](dashboard_stack.md))
+For testing it's nice to run the Dashboard locally, but for longterm use the SageWorks Dashboard should be deployed as an AWS Stack. The deployed Stack allows everyone in the company to use, view, and interact withthe AWS Machine Learning Artifacts created with SageWorks.
 
 ```
 cd sageworks/application/aws_dashboard
 ./dashboard
 ```
-**Open browser to http://localhost:8080**
+**This will open a browser to http://localhost:8000**
 
 <figure">
 <img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4">
