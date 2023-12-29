@@ -8,7 +8,7 @@ Diagram/image of the classes here
 
 These class provide high-level APIs for the SageWorks package, offering easy access to its core classes:
 
-- **DataSource:** Manages AWS Data Catalog and Athena
-- **FeatureSet:** Manages AWS Feature Store and Feature Groups
-- **Model:** Manages the training and deployment of AWS Model Groups and Packages
-- **Endpoint:** Manages the deployment and invocations/inference on AWS Endpoints
+- **[DataSource](data_source.md):** Manages AWS Data Catalog and Athena
+- **[FeatureSet](feature_set.md):** Manages AWS Feature Store and Feature Groups
+- **[Model](model.md):** Manages the training and deployment of AWS Model Groups and Packages
+- **[Endpoint](endpoint.md):** Manages the deployment and invocations/inference on AWS Endpoints
