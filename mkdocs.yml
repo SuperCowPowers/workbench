@@ -18,7 +18,9 @@ nav:
       - Model to Endpoint: core_classes/transforms/model_to_endpoint.md
       - Pandas Transforms: core_classes/transforms/pandas_transforms.md
   - AWS Setup: 
-    - Initial Setup: aws_setup/initial_setup.md
+    - Initial Setup: aws_setup/core_stack.md
+    - Dashboard Setup: aws_setup/dashboard_stack.md
+    - AWS Tips and Tricks: aws_setup/aws_tips_and_tricks.md
   - Admin: 
     - PyPI Release:  admin/pypi_release.md
     - Docker Push:  admin/docker_push.md

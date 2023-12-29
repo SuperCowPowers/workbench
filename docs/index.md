@@ -21,7 +21,7 @@ The SageWorks framework makes AWS® both easier to use and more powerful. SageWo
 
 
 ## Getting Started
-- Setting up SageWorks on your AWS Account: [AWS Setup](aws_setup/initial_setup.md)
+- Setting up SageWorks on your AWS Account: [AWS Setup](aws_setup/core_stack.md)
 - Using SageWorks for ML Pipelines: [SageWorks API Classes](api_classes/overview.md)
 
 ## Additional Resources
