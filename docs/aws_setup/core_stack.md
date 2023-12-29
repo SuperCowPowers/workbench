@@ -1,5 +1,5 @@
 # Initial AWS Setup
-Welcome to the SageWorks AWS Setup Guide. SageWorks is deployed into AWS as an AWS **Stack** following the well architected system practices of AWS. 
+Welcome to the SageWorks AWS Setup Guide. SageWorks is deployed as an AWS **Stack** following the well architected system practices of AWS. 
 
 !!! warning "AWS Setup can be a bit complex"
     Setting up SageWorks with AWS can be a bit complex, but you only have to do it ONCE and SageWorks tries to make it straight forward. If you have any troubles at all feel free to contact us a [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on [Discord](https://discord.gg/WHAJuz8sw8) and we're happy to help you with AWS for FREE.
@@ -23,8 +23,8 @@ Pulling down the SageWorks Repo
   git clone https://github.com/SuperCowPowers/sageworks.git
   ```
 
-## SageWorks uses AWS Python CDK for Deployments into AWS
-If you don't have AWS cdk already installed you can do these steps:
+## SageWorks uses AWS Python CDK for Deployments
+If you don't have AWS CDK already installed you can do these steps:
 
 Mac
 
