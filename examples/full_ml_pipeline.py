@@ -19,7 +19,6 @@ from sageworks.api.endpoint import Endpoint
 log = logging.getLogger("sageworks")
 
 if __name__ == "__main__":
-
     # Create the abalone_data DataSource
     ds = DataSource("s3://sageworks-public-data/common/abalone.csv")
 
@@ -48,4 +47,3 @@ if __name__ == "__main__":
     df = fs.query(f"SELECT * FROM {athena_table} where training = 0")
     results = endpoint.predict(df)
     print(results[["class_number_of_rings", "prediction"]])
-
