@@ -22,7 +22,7 @@ from sageworks.api.model import Model, ModelType
 from sageworks.api.endpoint import Endpoint
 
 # Create the abalone_data DataSource
-DataSource("s3://sageworks-public-data/common/abalone.csv")
+ds = DataSource("s3://sageworks-public-data/common/abalone.csv")
 
 # Now create a FeatureSet
 ds.to_features("abalone_features")
