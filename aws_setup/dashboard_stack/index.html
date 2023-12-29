@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#initial-aws-setup" class="md-skip">
+        <a href="#deploy-the-sageworks-dashboard-stack" class="md-skip">
           Skip to content
         </a>
       
@@ -724,6 +724,17 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Dashboard Setup
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -733,6 +744,67 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-the-dashboard-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deploying the Dashboard Stack
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stack-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      Stack Details
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stack Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pros" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pros
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cons" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cons
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -873,6 +945,56 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-the-dashboard-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deploying the Dashboard Stack
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stack-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      Stack Details
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stack Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pros" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pros
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cons" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cons
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -886,11 +1008,52 @@
                   
 
 
-<h1 id="initial-aws-setup">Initial AWS Setup</h1>
-<div class="admonition warning">
-<p class="admonition-title">AWS Setup can be a bit complex</p>
-<p>Setting up SageWorks with AWS can be a bit complex, but you only have to do it once and SageWorks tries to make it straight forward. If you have any troubles at all feel free to contact us a <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> and we'll help you get started.</p>
+<h1 id="deploy-the-sageworks-dashboard-stack">Deploy the SageWorks Dashboard Stack</h1>
+<figure style="float: right; width: 300px;">
+<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4" style="padding-left: 10px; padding-top: -20px; ">
+</figure>
+
+<p>Deploying the Dashboard Stack is reasonably straight forward, it's the same approach as the <a href="../core_stack/">Core Stack</a> that you've already deployed.</p>
+<p>Please review the <a href="#stack-details">Stack Details</a> section to understand all the AWS components that are included and utilized in the SageWorks Dashboard Stack.</p>
+<h2 id="deploying-the-dashboard-stack">Deploying the Dashboard Stack</h2>
+<div class="admonition note">
+<p class="admonition-title">AWS Stuff</p>
+<p>Activate your AWS Account that's used for SageWorks deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)</p>
 </div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>sageworks/aws_setup/sageworks_dashboard_full
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_PROFLE</span><span class="o">=</span>&lt;aws_admin_account&gt;
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SAGEWORKS_BUCKET</span><span class="o">=</span>&lt;name<span class="w"> </span>of<span class="w"> </span>your<span class="w"> </span>S3<span class="w"> </span>bucket&gt;
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="o">(</span>optional<span class="o">)</span><span class="w"> </span><span class="nb">export</span><span class="w"> </span><span class="nv">SAGEWORKS_SSO_GROUP</span><span class="o">=</span>&lt;your<span class="w"> </span>SSO<span class="w"> </span>group&gt;
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>cdk<span class="w"> </span>bootstrap
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>cdk<span class="w"> </span>deploy
+</span></code></pre></div>
+<h2 id="stack-details">Stack Details</h2>
+<div class="admonition question inline end">
+<p class="admonition-title">AWS Questions?</p>
+<p>There's quite a bit to unpack when deploying an AWS powered Web Service. We're happy to help walk you through the details and options. Contact us anytime for a free consultation.</p>
+</div>
+<ul>
+<li>ECS Fargate</li>
+<li>Load Balancer</li>
+<li>2 Availability Zones</li>
+<li>4 VPC (2 public and 2 private)</li>
+<li>2 Nat Gateways</li>
+<li>ElasticCache Cluster (shared Redis Caching)</li>
+</ul>
+<h3 id="pros">Pros</h3>
+<ol>
+<li><strong>Scalability</strong>: Includes an Application Load Balancer and uses ECS with Fargate, and ElasticCache for more robust scaling options.</li>
+<li><strong>Higher Security</strong>: Utilizes security groups for both the ECS tasks, load balancer, plus VPC private subnets for Redis and the utilization of NAT Gateways.</li>
+</ol>
+<div class="admonition warning inline end">
+<p class="admonition-title">AWS Costs</p>
+<p>Deploying the SageWorks Dashboard does incur some monthly AWS costs. If you'd prefer a simpler, less costly, deployment please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
+</div>
+<h3 id="cons">Cons</h3>
+<ol>
+<li><strong>Cost</strong>: This setup uses additional AWS services like Elasticache, Load Balancer, and NAT Gateways.</li>
+</ol>
 
 
 

@@ -812,9 +812,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-to-start-the-sageworks-dashboard-locally" class="md-nav__link">
+  <a href="#run-the-sageworks-dashboard-local" class="md-nav__link">
     <span class="md-ellipsis">
-      How to Start the SageWorks Dashboard (Locally)
+      Run the SageWorks Dashboard (Local)
     </span>
   </a>
   
@@ -1072,9 +1072,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-to-start-the-sageworks-dashboard-locally" class="md-nav__link">
+  <a href="#run-the-sageworks-dashboard-local" class="md-nav__link">
     <span class="md-ellipsis">
-      How to Start the SageWorks Dashboard (Locally)
+      Run the SageWorks Dashboard (Local)
     </span>
   </a>
   
@@ -1171,15 +1171,16 @@ For more information on Linux installs see <a href="https://www.digitalocean.com
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>&lt;lot of building ML pipeline outputs&gt;
 </span></code></pre></div>
 After the script completes you will see that it's built out an AWS ML Pipeline and testing artifacts.</p>
-<h2 id="how-to-start-the-sageworks-dashboard-locally">How to Start the SageWorks Dashboard (Locally)</h2>
+<h2 id="run-the-sageworks-dashboard-local">Run the SageWorks Dashboard (Local)</h2>
 <div class="admonition tip inline end">
-<p class="admonition-title">Running Dashboard AWS Stack</p>
+<p class="admonition-title">Dashboard AWS Stack</p>
+<p>Deploying the Dashboard Stack is straight-forward and provides a robust AWS Web Server with Load Balancer, Elastic Container Service, VPC Networks, etc. (see <a href="../dashboard_stack/">AWS Dashboard Stack</a>)</p>
 </div>
-<p>For testing it's nice to run the Dashboard locally, but the SageWorks Dashboard should be deployed as an AWS Stack, so that everyone in the company can use and interact with the AWS ML Pipeline Artifacts (see <a href="../dashboard_stack/">AWS Dashboard Stack</a>)</p>
+<p>For testing it's nice to run the Dashboard locally, but for longterm use the SageWorks Dashboard should be deployed as an AWS Stack. The deployed Stack allows everyone in the company to use, view, and interact withthe AWS Machine Learning Artifacts created with SageWorks.</p>
 <p><div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>cd sageworks/application/aws_dashboard
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>./dashboard
 </span></code></pre></div>
-<strong>Open browser to http://localhost:8080</strong></p>
+<strong>This will open a browser to http://localhost:8000</strong></p>
 <p><figure">
 <img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4"></p>
 <figcaption>SageWorks Dashboard: AWS Pipelines in a Whole New Light!</figcaption>
