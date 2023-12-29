@@ -23,14 +23,13 @@ index-servers =
   testpypi
 
 [pypi]
-repository=https://upload.pypi.org/legacy/
-username=<pypi username>
-password=<pypi password>
+username = __token__
+password = pypi-AgEIcH...
 
 [testpypi]
-repository=https://test.pypi.org/legacy/
-username=<pypi username>
-password=<pypi password>
+username = __token__
+password = pypi-AgENdG...
+
 ```
 
 ### Tox Background
