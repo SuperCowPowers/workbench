@@ -88,7 +88,7 @@ After the script completes you will see that it's built out an AWS ML Pipeline a
 !!! tip inline end "Dashboard AWS Stack"
     Deploying the Dashboard Stack is straight-forward and provides a robust AWS Web Server with Load Balancer, Elastic Container Service, VPC Networks, etc. (see [AWS Dashboard Stack](dashboard_stack.md))
 
-For testing it's nice to run the Dashboard locally, but for longterm use the SageWorks Dashboard should be deployed as an AWS Stack. The deployed Stack allows everyone in the company to use, view, and interact withthe AWS Machine Learning Artifacts created with SageWorks.
+For testing it's nice to run the Dashboard locally, but for longterm use the SageWorks Dashboard should be deployed as an AWS Stack. The deployed Stack allows everyone in the company to use, view, and interact with the AWS Machine Learning Artifacts created with SageWorks.
 
 ```
 cd sageworks/application/aws_dashboard

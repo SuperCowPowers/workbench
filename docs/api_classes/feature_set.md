@@ -1,6 +1,6 @@
 # FeatureSet
 !!! tip inline end "FeatureSet Examples"
-    Examples of using the FeatureSet are in the [Examples](#examples) section at the bottom of this page. AWS Feature Store and Feature Groups are quite complicated to set up manually but SageWorks FeatureSet makes it a breeze!
+    Examples of using the FeatureSet Class are in the [Examples](#examples) section at the bottom of this page. AWS Feature Store and Feature Groups are quite complicated to set up manually but the SageWorks FeatureSet makes it a breeze!
     
 ::: sageworks.api.feature_set
 
@@ -81,22 +81,22 @@ pprint(my_model.details())
 
 **Output**
 
-```data
-
+```python
 {'approval_status': 'Approved',
  'content_types': ['text/csv'],
  ...
  'inference_types': ['ml.t2.medium'],
  'input': 'test_features',
  'model_metrics':   metric_name  value
-0        RMSE  7.924
-1         MAE  6.554,
+				0        RMSE  7.924
+				1         MAE  6.554,
+				2          R2  0.604,
  'regression_predictions':       iq_score  prediction
-0   136.519012  139.964460
-1   133.616974  130.819950
-2   122.495415  124.967834
-3   133.279510  121.010284
-4   127.881073  113.825005
+							0   136.519012  139.964460
+							1   133.616974  130.819950
+							2   122.495415  124.967834
+							3   133.279510  121.010284
+							4   127.881073  113.825005
     ...
  'response_types': ['text/csv'],
  'sageworks_tags': ['test-model'],
