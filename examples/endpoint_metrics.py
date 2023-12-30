@@ -1,18 +1,15 @@
-from sageworks.api.model import Model
+from sageworks.api.endpoint import Endpoint
+import pandas as pd
 
-# Grab the abalone-regression Model
-model = Model("abalone-regression")
+pd.set_option("display.max_columns", None)
+pd.set_option("display.max_rows", None)
+pd.set_option("display.width", 1000)
 
-# Perform a health check on the model
-# Note: The health_check() method returns 'issues' if there are any
-#       problems, so if there are no issues, the model is healthy
-health_issues = model.health_check()
-if not health_issues:
-    print("Model is Healthy")
-else:
-    print("Model has issues")
-    print(health_issues)
+# Grab an existing Endpoint
+endpoint = Endpoint("abalone-regression-end")
 
-# Get the model metrics and regression predictions
-print(model.model_metrics())
-print(model.regression_predictions())
+# SageWorks tracks both Model performance and Endpoint Metrics
+model_metrics = endpoint.details()["model_metrics"]
+endpoint_metrics = endpoint.endpoint_metrics()
+print(model_metrics)
+print(endpoint_metrics.iloc[:, 1:6])

@@ -28,6 +28,7 @@ nav:
 theme:
   name: material
   palette:
+  - scheme: slate  # Dark mode default
 
   # Palette toggle for light mode
   - scheme: default

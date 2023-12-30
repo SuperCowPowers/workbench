@@ -1,4 +1,7 @@
-"""Endpoint: SageWorks Endpoint API Class"""
+"""Endpoint: Manages AWS Endpoint creation and deployment.
+Endpoints are automatically set up and provisioned for deployment into AWS.
+Endpoints can be viewed in the AWS Sagemaker interfaces or in the SageWorks
+Dashboard UI, which provides additional model details and performance metrics"""
 
 # SageWorks Imports
 from sageworks.core.artifacts.endpoint_core import EndpointCore
