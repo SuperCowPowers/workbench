@@ -25,10 +25,6 @@ We have detailed documentation on the SageWprks Python API here: [SageWorks Docu
 
 
 ### SageWorks Beta Program
-If you'd like to try SageWorks our experienced team can provide development and consulting services to help you effectively use Amazon’s Machine Learning services within your organization.
-
-The popularity of cloud based Machine Learning services is booming. The problem many companies face is how that capability gets effectively used and harnessed to drive real business decisions and provide concrete value for their organization.
-
 Using SageWorks will minimize the time and manpower needed to incorporate AWS ML into your organization. If your company would like to be a SageWorks Beta Tester, contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com).
 
 ### Contributions
