@@ -1,4 +1,7 @@
-"""Model: SageWorks Model API Class"""
+"""Model: Manages AWS Model Package/Group creation and management.
+Models are automatically set up and provisioned for deployment into AWS.
+Models can be viewed in the AWS Sagemaker interfaces or in the SageWorks
+Dashboard UI, which provides additional model details and performance metrics"""
 
 # SageWorks Imports
 from sageworks.core.artifacts.model_core import ModelCore, ModelType  # noqa: F401
