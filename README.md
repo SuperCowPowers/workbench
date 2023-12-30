@@ -23,12 +23,11 @@ The SageWorks framework makes AWS® both easier to use and more powerful. SageWo
 - One time AWS Onboarding: [AWS Setup](https://supercowpowers.github.io/sageworks/aws_setup/core_stack/)
 - After that your development team can simply `pip install sageworks`
 
-<br>
 
-<img align="right" width="340" alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/01dc4aeb-b3f2-4ee5-bae4-2b1ea09037b3">
 ### SageWorks Documentation
+<img align="right" width="340" alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/01dc4aeb-b3f2-4ee5-bae4-2b1ea09037b3">
 
-We have detailed documentation on the SageWprks Python API here: [SageWorks Documentation](https://supercowpowers.github.io/sageworks/). The documentation contains examples from the SageWorks source code in this repository under the `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
+Please visit our detailed documentation here: [SageWorks Documentation](https://supercowpowers.github.io/sageworks/). The documentation contains examples from the SageWorks source code in this repository under the `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
 
 
 ### SageWorks Beta Program
