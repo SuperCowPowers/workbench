@@ -1,4 +1,3 @@
-
 from sageworks.api.model import Model
 
 # Grab the abalone-regression Model

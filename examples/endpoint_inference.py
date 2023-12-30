@@ -7,9 +7,7 @@ model = Model("abalone-regression")
 
 # By default, an Endpoint is serverless, but you can make it non-serverless
 serverless = True
-model.to_endpoint(name="abalone-regression-end",
-                  tags=["abalone", "regression"],
-                  serverless=serverless)
+model.to_endpoint(name="abalone-regression-end", tags=["abalone", "regression"], serverless=serverless)
 
 # Now we'll run inference on the endpoint
 endpoint = Endpoint("abalone-regression-end")
