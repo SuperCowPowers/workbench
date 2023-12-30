@@ -16,6 +16,7 @@ from pyspark.sql.functions import col, to_timestamp
 class S3HeavyToDataSource:
     def __init__(self, glue_context: GlueContext, input_uuid: str, output_uuid: str):
         """S3HeavyToDataSource: Class to move HEAVY S3 Files into a SageWorks DataSource
+
         Args:
             glue_context: GlueContext, AWS Glue Specific wrapper around SparkContext
             input_uuid (str): The S3 Path to the files to be loaded

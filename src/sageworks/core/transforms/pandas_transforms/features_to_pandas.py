@@ -10,9 +10,11 @@ class FeaturesToPandas(Transform):
     """FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame
 
     Common Usage:
+        ```
         feature_to_df = FeaturesToPandas(feature_set_uuid)
         feature_to_df.transform(max_rows=<optional max rows to sample>)
         my_df = feature_to_df.get_output()
+        ```
     """
 
     def __init__(self, feature_set_name: str):

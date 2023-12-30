@@ -9,10 +9,16 @@ nav:
     - Endpoint: api_classes/endpoint.md
   - Core Classes: 
     - OverView: core_classes/overview.md
-    - Artifacts: core_classes/artifacts/artifacts.md
+    - Artifacts: 
+      - OverView: core_classes/artifacts/overview.md
+      - AthenaSource: core_classes/artifacts/athena_source.md
+      - FeatureSetCore: core_classes/artifacts/feature_set_core.md
+      - ModelCore: core_classes/artifacts/model_core.md
+      - EndpointCore: core_classes/artifacts/endpoint_core.md
     - Transforms: 
       - OverView: core_classes/transforms/overview.md
-      - Data Loaders: core_classes/transforms/data_loaders.md
+      - Data Loaders Light: core_classes/transforms/data_loaders_light.md
+      - Data Loaders Heavy: core_classes/transforms/data_loaders_heavy.md
       - Data To Features: core_classes/transforms/data_to_features.md
       - Features To Model: core_classes/transforms/features_to_model.md
       - Model to Endpoint: core_classes/transforms/model_to_endpoint.md

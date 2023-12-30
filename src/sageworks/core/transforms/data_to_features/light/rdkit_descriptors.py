@@ -24,13 +24,20 @@ class RDKitDescriptors(DataToFeaturesLight):
     """RDKitDescriptors: Create a FeatureSet (RDKit Descriptors) from a DataSource
 
     Common Usage:
+        ```
         to_features = RDKitDescriptors(data_uuid, feature_uuid)
         to_features.set_output_tags(["aqsol", "rdkit", "whatever"])
         to_features.transform()
+        ```
     """
 
     def __init__(self, data_uuid: str, feature_uuid: str):
-        """RDKitDescriptors Initialization"""
+        """RDKitDescriptors Initialization
+
+        Args:
+            data_uuid (str): The UUID of the SageWorks DataSource to be transformed
+            feature_uuid (str): The UUID of the SageWorks FeatureSet to be created
+        """
 
         # Call superclass init
         super().__init__(data_uuid, feature_uuid)

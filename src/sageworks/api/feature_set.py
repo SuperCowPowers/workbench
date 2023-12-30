@@ -13,13 +13,13 @@ from sageworks.api.model import Model, ModelType
 class FeatureSet(FeatureSetCore):
     """FeatureSet: SageWorks FeatureSet API Class
 
-    **Common Usage**
-    ```
+    Common Usage:
+        ```
         my_features = FeatureSet(name)
         my_features.summary()
         my_features.details()
         my_features.to_model()
-    ```
+        ```
     """
 
     def __init__(self, name):

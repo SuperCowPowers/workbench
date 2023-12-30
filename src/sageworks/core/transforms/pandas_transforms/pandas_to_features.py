@@ -16,10 +16,12 @@ class PandasToFeatures(Transform):
     """PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet
 
     Common Usage:
+        ```
         to_features = PandasToFeatures(output_uuid)
         to_features.set_output_tags(["abalone", "public", "whatever"])
         to_features.set_input(df, id_column="id"/None, event_time_column="date"/None)
         to_features.transform()
+        ```
     """
 
     def __init__(self, output_uuid: str, auto_categorize=True):

@@ -11,14 +11,21 @@ class DataToFeaturesLight(Transform):
     """DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas
 
     Common Usage:
+        ```
         to_features = DataToFeaturesLight(data_uuid, feature_uuid)
         to_features.set_output_tags(["abalone", "public", "whatever"])
         to_features.transform(target_column="target"/None, id_column="id"/None,
                               event_time_column="date"/None, query=str/None)
+        ```
     """
 
     def __init__(self, data_uuid: str, feature_uuid: str):
-        """DataToFeaturesLight Initialization"""
+        """DataToFeaturesLight Initialization
+
+        Args:
+            data_uuid (str): The UUID of the SageWorks DataSource to be transformed
+            feature_uuid (str): The UUID of the SageWorks FeatureSet to be created
+        """
 
         # Call superclass init
         super().__init__(data_uuid, feature_uuid)

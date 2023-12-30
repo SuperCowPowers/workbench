@@ -12,6 +12,7 @@ class PandasToFeaturesChunked(Transform):
     """PandasToFeaturesChunked:  Class to manage a bunch of chunked Pandas DataFrames into a FeatureSet
 
     Common Usage:
+        ```
         to_features = PandasToFeaturesChunked(output_uuid, id_column="id"/None, event_time_column="date"/None)
         to_features.set_output_tags(["abalone", "public", "whatever"])
         cat_column_info = {"sex": ["M", "F", "I"]}
@@ -20,6 +21,7 @@ class PandasToFeaturesChunked(Transform):
         to_features.add_chunk(df)
         ...
         to_features.finalize()
+        ```
     """
 
     def __init__(self, output_uuid: str, id_column=None, event_time_column=None):

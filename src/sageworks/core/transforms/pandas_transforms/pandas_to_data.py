@@ -13,10 +13,12 @@ class PandasToData(Transform):
     """PandasToData: Class to publish a Pandas DataFrame as a DataSource
 
     Common Usage:
+        ```
         df_to_data = PandasToData(output_uuid)
         df_to_data.set_output_tags(["test", "small"])
         df_to_data.set_input(test_df)
         df_to_data.transform()
+        ```
     """
 
     def __init__(self, output_uuid: str, output_format: str = "parquet"):

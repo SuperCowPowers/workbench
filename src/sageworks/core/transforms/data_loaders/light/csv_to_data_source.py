@@ -13,13 +13,20 @@ class CSVToDataSource(Transform):
     """CSVToDataSource: Class to move local CSV Files into a SageWorks DataSource
 
     Common Usage:
+        ```
         csv_to_data = CSVToDataSource(csv_file_path, data_uuid)
         csv_to_data.set_output_tags(["abalone", "csv", "whatever"])
         csv_to_data.transform()
+        ```
     """
 
     def __init__(self, csv_file_path: str, data_uuid: str):
-        """CSVToDataSource: Class to move local CSV Files into a SageWorks DataSource"""
+        """CSVToDataSource: Class to move local CSV Files into a SageWorks DataSource
+
+        Args:
+            csv_file_path (str): The path to the CSV file to be transformed
+            data_uuid (str): The UUID of the SageWorks DataSource to be created
+        """
 
         # Call superclass init
         super().__init__(csv_file_path, data_uuid)

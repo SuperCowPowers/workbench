@@ -12,13 +12,13 @@ from sageworks.api.endpoint import Endpoint
 class Model(ModelCore):
     """Model: SageWorks Model API Class
 
-    **Common Usage**
-    ```
+    Common Usage:
+        ```
         my_features = Model(name)
         my_features.summary()
         my_features.details()
         my_features.to_endpoint()
-    ```
+        ```
     """
 
     def __init__(self, name):

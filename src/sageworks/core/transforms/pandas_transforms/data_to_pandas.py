@@ -10,12 +10,14 @@ class DataToPandas(Transform):
     """DataToPandas: Class to transform a Data Source into a Pandas DataFrame
 
     Common Usage:
+        ```
         data_to_df = DataToPandas(data_source_uuid)
         data_to_df.transform(query=<optional SQL query to filter/process data>)
         data_to_df.transform(max_rows=<optional max rows to sample>)
         my_df = data_to_df.get_output()
 
         Note: query is the best way to use this class, so use it :)
+        ```
     """
 
     def __init__(self, input_uuid: str):

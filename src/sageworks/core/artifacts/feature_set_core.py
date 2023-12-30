@@ -22,9 +22,11 @@ class FeatureSetCore(Artifact):
     """FeatureSetCore: SageWorks FeatureSetCore Class
 
     Common Usage:
+        ```
         my_features = FeatureSetCore(feature_uuid)
         my_features.summary()
         my_features.details()
+        ```
     """
 
     def __init__(self, feature_set_uuid: str, force_refresh: bool = False):

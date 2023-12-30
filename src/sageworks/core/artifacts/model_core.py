@@ -32,9 +32,11 @@ class ModelCore(Artifact):
     """ModelCore: SageWorks ModelCore Class
 
     Common Usage:
+        ```
         my_model = ModelCore(model_uuid)
         my_model.summary()
         my_model.details()
+        ```
     """
 
     def __init__(self, model_uuid: str, force_refresh: bool = False, model_type: ModelType = None):

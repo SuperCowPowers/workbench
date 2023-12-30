@@ -10,13 +10,13 @@ from sageworks.core.artifacts.endpoint_core import EndpointCore
 class Endpoint(EndpointCore):
     """Endpoint: SageWorks Endpoint API Class
 
-    **Common Usage**
-    ```
+    Common Usage:
+        ```
         my_endpoint = Endpoint(name)
         my_endpoint.summary()
         my_endpoint.details()
         my_endpoint.predict(df)
-    ```
+        ```
     """
 
     def __init__(self, name):

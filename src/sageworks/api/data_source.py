@@ -20,13 +20,13 @@ from sageworks.utils.aws_utils import extract_data_source_basename
 class DataSource(AthenaSource):
     """DataSource: SageWorks DataSource API Class
 
-    **Common Usage**
-    ```
+    Common Usage:
+        ```
         my_data = DataSource(name_of_source)
         my_data.summary()
         my_data.details()
         my_features = my_data.to_features()
-    ```
+        ```
     """
 
     def __init__(self, source, name: str = None, tags: list = None):

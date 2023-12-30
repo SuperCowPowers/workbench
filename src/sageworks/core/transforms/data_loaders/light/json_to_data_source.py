@@ -12,13 +12,20 @@ class JSONToDataSource(Transform):
     """JSONToDataSource: Class to move local JSON Files into a SageWorks DataSource
 
     Common Usage:
+        ```
         json_to_data = JSONToDataSource(json_file_path, data_uuid)
         json_to_data.set_output_tags(["abalone", "json", "whatever"])
         json_to_data.transform()
+        ```
     """
 
     def __init__(self, json_file_path: str, data_uuid: str):
-        """JSONToDataSource: Class to move local JSON Files into a SageWorks DataSource"""
+        """JSONToDataSource: Class to move local JSON Files into a SageWorks DataSource
+
+        Args:
+            json_file_path (str): The path to the JSON file to be transformed
+            data_uuid (str): The UUID of the SageWorks DataSource to be created
+        """
 
         # Call superclass init
         super().__init__(json_file_path, data_uuid)

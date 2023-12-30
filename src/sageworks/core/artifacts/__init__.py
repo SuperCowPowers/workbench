@@ -1,11 +1,14 @@
-"""Welcome to the SageWorks API Classes
+"""Welcome to the SageWorks Core Artifacts Classes
 
-These class provide high-level APIs for the SageWorks package, offering easy access to its core classes:
+These classes provide low-level APIs for interacting with the AWS services
 
-- DataSource: Manages AWS Data Catalog and Athena
-- FeatureSet: Manages AWS Feature Store and Feature Groups
-- Model: Manages the training and deployment of AWS Model Groups and Packages
-- Endpoint: Manages the deployment and invocations/inference on AWS Endpoints
+- Artifact: Base class for all artifacts
+- AthenaSource: Manages AWS Athena DataSources
+- DataSourceAbstract: Abstract Class for defining DataSource Interfaces
+- DataSourceFactory: A Factory Class that creates DataSource objects
+- FeatureSetCore: Manages AWS Feature Store and Feature Groups
+- ModelCore: Manages the training and deployment of AWS Model Groups and Packages
+- EndpointCore: Manages the deployment and invocations/inference on AWS Endpoints
 """
 from .artifact import Artifact
 from .athena_source import AthenaSource
