@@ -135,7 +135,7 @@ print(endpoint_metrics)
 Running these few lines of code creates and deploys an AWS Endpoint. The Endpoint artifacts can be viewed in the Sagemaker Console/Notebook interfaces or in the SageWorks Dashboard UI. SageWorks will monitor the endpoint, plot invocations, latencies, and tracks error metrics.
 
 <figure>
-<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/50687ae1-8a5b-4faa-b45e-18c9e6271af7">
+<img alt="sageworks_endpoints" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/b5eab741-2c23-4c5e-9495-15fd3ea8155c">
 <figcaption>SageWorks Dashboard: Endpoints</figcaption>
 </figure>
 
