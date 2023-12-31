@@ -1,6 +1,5 @@
 from IPython.terminal.embed import InteractiveShellEmbed
 from IPython.terminal.prompts import Prompts, Token
-from IPython.utils.coloransi import TermColors as color
 import os
 import logging
 
@@ -20,8 +19,6 @@ class SageWorksShell:
         # Set up the Prompt and the IPython shell
         config = InteractiveShellEmbed.instance().config
         config.TerminalInteractiveShell.autocall = 2
-        config.InteractiveShellEmbed.colors = 'Linux'
-        config.InteractiveShellEmbed.color_info = True
         config.TerminalInteractiveShell.prompts_class = self.SageWorksPrompt
         self.shell = InteractiveShellEmbed(config=config, banner1="Welcome to SageWorks", exit_msg="Goodbye from SageWorks!")
 
@@ -37,12 +34,17 @@ class SageWorksShell:
         self.commands["feature_sets"] = self.feature_sets
         self.commands["models"] = self.models
         self.commands["endpoints"] = self.endpoints
+        self.commands["log_debug"] = self.log_debug
+        self.commands["log_info"] = self.log_info
+        self.commands["log_important"] = self.log_important
+        self.commands["log_warning"] = self.log_warning
+        self.commands["broker_refresh"] = self.broker_refresh
 
     class SageWorksPrompt(Prompts):
         def in_prompt_tokens(self, cli=None):
             aws_profile = os.getenv("AWS_PROFILE", "default")
             return [
-                (Token, "🍺  "),
+                (Token.Prompt, "🍺  "),
                 (Token.Prompt, f"SageWorks({aws_profile})> ")
             ]
 
@@ -61,7 +63,6 @@ class SageWorksShell:
         print("  - feature_sets: List all the FeatureSets in AWS")
         print("  - models: List all the Models in AWS")
         print("  - endpoints: List all the Endpoints in AWS")
-        print("  - set_log_level <level>: Set the log level to debug or important")
         print("  - broker_refresh: Force a refresh of the AWS broker data")
         print("  - exit: Exit SageWorks REPL")
 
@@ -84,19 +85,19 @@ class SageWorksShell:
         print(self.artifacts_text_view.endpoints_summary())
 
     @staticmethod
-    def set_debug(self):
+    def log_debug(self):
         logging.getLogger("sageworks").setLevel(logging.DEBUG)
 
     @staticmethod
-    def set_info(self):
+    def log_info(self):
         logging.getLogger("sageworks").setLevel(logging.INFO)
 
     @staticmethod
-    def set_important(self):
+    def log_important(self):
         logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
 
     @staticmethod
-    def set_warning(self):
+    def log_warning(self):
         logging.getLogger("sageworks").setLevel(logging.WARNING)
 
     def broker_refresh(self):
