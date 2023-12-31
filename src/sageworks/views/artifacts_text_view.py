@@ -2,7 +2,6 @@
 import json
 import pandas as pd
 from datetime import datetime
-from termcolor import colored
 from typing import Dict
 
 # SageWorks Imports
@@ -53,24 +52,10 @@ class ArtifactsTextView(View):
         }
         return summary_data
 
-    @staticmethod
-    def header_text(header_text: str) -> str:
-        """Colorize text for the terminal"""
-        color_map = {
-            "INCOMING_DATA": "cyan",
-            "GLUE_JOBS": "cyan",
-            "DATA_SOURCES": "red",
-            "FEATURE_SETS": "yellow",
-            "MODELS": "green",
-            "ENDPOINTS": "magenta",
-        }
-        header = f"\n{'='*111}\n{header_text}\n{'='*111}"
-        return colored(header, color_map[header_text])
-
     def summary(self) -> None:
         """Give a summary of all the Artifact data to stdout"""
         for name, df in self.view_data().items():
-            print(self.header_text(name))
+            print(name)
             if df.empty:
                 print("\tNo Artifacts Found")
             else:

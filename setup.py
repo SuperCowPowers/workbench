@@ -44,6 +44,6 @@ setup(
     ],
     setup_requires=["setuptools_scm"],
     entry_points={
-        "console_scripts": "sageworks = sageworks.repl.repl:repl",
+        "console_scripts": "sageworks = sageworks.repl.sageworks_shell:launch_shell"
     },
 )
