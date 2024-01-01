@@ -12,7 +12,6 @@ Endpoints:
     - abalone-regression-end
 """
 import sys
-import time
 from pathlib import Path
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker

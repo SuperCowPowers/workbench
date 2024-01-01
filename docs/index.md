@@ -19,12 +19,14 @@ The SageWorks framework makes AWS® both easier to use and more powerful. SageWo
 - Endpoints
 
 
-
 ## Getting Started
 - Setting up SageWorks on your AWS Account: [AWS Setup](aws_setup/core_stack.md)
 - Using SageWorks for ML Pipelines: [SageWorks API Classes](api_classes/overview.md)
 
+
 ## Additional Resources
+
+<img align="right" src="images/scp.png" width="180">
+
 - SageWorks Core Classes: [Core Classes](core_classes/overview.md)
-- Visit our Wiki Pages: [SageWorks Wiki](https://github.com/SuperCowPowers/sageworks/wiki)
 - Consulting Available: [SuperCowPowers LLC](https://www.supercowpowers.com)
