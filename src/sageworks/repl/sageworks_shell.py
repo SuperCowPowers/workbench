@@ -1,5 +1,7 @@
 from IPython.terminal.embed import InteractiveShellEmbed
-from IPython.terminal.prompts import Prompts, Token
+from IPython.terminal.prompts import Prompts
+from pygments.style import Style
+from pygments.token import Token
 import os
 import sys
 import logging
@@ -7,10 +9,17 @@ import importlib
 import botocore
 
 # SageWorks Imports
+from sageworks.utils.repl_utils import cprint
 import sageworks  # noqa: F401
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
-
 logging.getLogger("sageworks").setLevel(logging.WARNING)
+
+
+class CustomPromptStyle(Style):
+    styles = {
+        Token.SageWorks: "#ff69b4",  # Pink color for SageWorks
+        Token.AWSProfile: "#ffd700",  # Yellow color for AWS Profile
+    }
 
 
 class SageWorksShell:
@@ -25,8 +34,8 @@ class SageWorksShell:
         config = InteractiveShellEmbed.instance().config
         config.TerminalInteractiveShell.autocall = 2
         config.TerminalInteractiveShell.prompts_class = self.SageWorksPrompt
-        banner = "Welcome to SageWorks\n" + self.help_txt()
-        self.shell = InteractiveShellEmbed(config=config, banner1=banner, exit_msg="Goodbye from SageWorks!")
+        config.TerminalInteractiveShell.highlighting_style = CustomPromptStyle
+        self.shell = InteractiveShellEmbed(config=config, banner1="", exit_msg="Goodbye from SageWorks!")
 
         # Register our custom commands
         self.commands["hey"] = self.hey
@@ -45,16 +54,22 @@ class SageWorksShell:
     class SageWorksPrompt(Prompts):
         def in_prompt_tokens(self, cli=None):
             aws_profile = os.getenv("AWS_PROFILE", "default")
-            return [(Token.Prompt, "🍺  "), (Token.Prompt, f"SageWorks({aws_profile})> ")]
+            # return [(Token.Prompt, "🍺  "), (Token.Prompt, f"SageWorks({aws_profile})> ")]
+            return [
+                (Token.SageWorks, "SageWorks"),
+                (Token.AWSProfile, f"({aws_profile})> ")
+            ]
 
     def start(self):
         """Start the SageWorks IPython shell"""
+        cprint("Welcome to SageWorks!", "magenta")
+        self.hey()
         self.shell(local_ns=self.commands)
 
     @staticmethod
     def check_aws_account():
         """Check if the AWS Account is Setup Correctly"""
-        print("Checking AWS Account Connection...")
+        cprint("Checking AWS Account Connection...", "lightpurple")
         try:
             try:
                 aws_clamp = importlib.import_module("sageworks.aws_service_broker.aws_account_clamp").AWSAccountClamp()
@@ -98,7 +113,7 @@ class SageWorksShell:
         return help_msg
 
     def hey(self):
-        print(self.help_txt())
+        cprint(self.help_txt(), "lightblue")
 
     def incoming_data(self):
         print(self.artifacts_text_view.incoming_data_summary())
