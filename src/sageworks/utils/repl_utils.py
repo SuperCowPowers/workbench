@@ -28,6 +28,5 @@ def cprint(text, color):
 
 
 if __name__ == "__main__":
-
     for color in colors.keys():
         cprint(f"Hello world! ({color})", color)

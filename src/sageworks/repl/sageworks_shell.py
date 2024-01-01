@@ -12,6 +12,7 @@ import botocore
 from sageworks.utils.repl_utils import cprint
 import sageworks  # noqa: F401
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
+
 logging.getLogger("sageworks").setLevel(logging.WARNING)
 
 
@@ -55,10 +56,7 @@ class SageWorksShell:
         def in_prompt_tokens(self, cli=None):
             aws_profile = os.getenv("AWS_PROFILE", "default")
             # return [(Token.Prompt, "🍺  "), (Token.Prompt, f"SageWorks({aws_profile})> ")]
-            return [
-                (Token.SageWorks, "SageWorks"),
-                (Token.AWSProfile, f"({aws_profile})> ")
-            ]
+            return [(Token.SageWorks, "SageWorks"), (Token.AWSProfile, f"({aws_profile})> ")]
 
     def start(self):
         """Start the SageWorks IPython shell"""
