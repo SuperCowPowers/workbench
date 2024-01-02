@@ -14,7 +14,7 @@ from sageworks.utils.repl_utils import cprint
 import sageworks  # noqa: F401
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
 
-logging.getLogger("sageworks").setLevel(logging.WARNING)
+logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
 
 
 class CustomPromptStyle(Style):
@@ -91,6 +91,7 @@ class SageWorksShell:
 
     def import_sageworks(self):
         # Import all the SageWorks modules
+        cprint("Pulling AWS Artifacts...", "lightpurple")
         self.artifacts_text_view = importlib.import_module("sageworks.views.artifacts_text_view").ArtifactsTextView()
 
         # These are the classes we want to expose to the REPL
@@ -103,18 +104,18 @@ class SageWorksShell:
     @staticmethod
     def help_txt():
         help_msg = """
-        Commands:
-            - hey: Show this help message
-            - docs: Open browser to show SageWorks Documentation
-            - summary: Show a summary of all the SageWorks artifacts
-            - incoming_data: List all the incoming S3 data
-            - glue_jobs: List all the Glue Jobs in AWS
-            - data_sources: List all the DataSources in AWS
-            - feature_sets: List all the FeatureSets in AWS
-            - models: List all the Models in AWS
-            - endpoints: List all the Endpoints in AWS
-            - broker_refresh: Force a refresh of the AWS broker data
-            - exit: Exit SageWorks REPL
+    Commands:
+        - hey: Show this help message
+        - docs: Open browser to show SageWorks Documentation
+        - summary: Show a summary of all the SageWorks artifacts
+        - incoming_data: List all the incoming S3 data
+        - glue_jobs: List all the Glue Jobs in AWS
+        - data_sources: List all the DataSources in AWS
+        - feature_sets: List all the FeatureSets in AWS
+        - models: List all the Models in AWS
+        - endpoints: List all the Endpoints in AWS
+        - broker_refresh: Force a refresh of the AWS broker data
+        - exit: Exit SageWorks REPL
         """
         return help_msg
 
@@ -154,19 +155,19 @@ class SageWorksShell:
         return self.artifacts_text_view.endpoints_summary()
 
     @staticmethod
-    def log_debug(self):
+    def log_debug():
         logging.getLogger("sageworks").setLevel(logging.DEBUG)
 
     @staticmethod
-    def log_info(self):
+    def log_info():
         logging.getLogger("sageworks").setLevel(logging.INFO)
 
     @staticmethod
-    def log_important(self):
+    def log_important():
         logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
 
     @staticmethod
-    def log_warning(self):
+    def log_warning():
         logging.getLogger("sageworks").setLevel(logging.WARNING)
 
     def broker_refresh(self):

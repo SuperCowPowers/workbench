@@ -191,10 +191,13 @@ class ArtifactsTextView(View):
             sageworks_meta = group_info.get("sageworks_meta", {})
 
             # Get the size of the S3 Storage Object(s)
+            """
             size = self.aws_broker.get_s3_object_sizes(
                 ServiceCategory.FEATURE_SETS_S3,
                 group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"],
             )
+            """
+            size = 0
             size = f"{size / 1_000_000:.2f}"
             cat_config = group_info["OfflineStoreConfig"].get("DataCatalogConfig", {})
             summary = {
