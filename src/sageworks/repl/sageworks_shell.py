@@ -7,6 +7,7 @@ import sys
 import logging
 import importlib
 import botocore
+import webbrowser
 
 # SageWorks Imports
 from sageworks.utils.repl_utils import cprint
@@ -40,6 +41,8 @@ class SageWorksShell:
 
         # Register our custom commands
         self.commands["hey"] = self.hey
+        self.commands["docs"] = self.doc_browser
+        self.commands["summary"] = self.summary
         self.commands["incoming_data"] = self.incoming_data
         self.commands["glue_jobs"] = self.glue_jobs
         self.commands["data_sources"] = self.data_sources
@@ -67,12 +70,15 @@ class SageWorksShell:
     @staticmethod
     def check_aws_account():
         """Check if the AWS Account is Setup Correctly"""
-        cprint("Checking AWS Account Connection...", "lightpurple")
+        cprint("Checking AWS Account Connection...", "yellow")
         try:
             try:
                 aws_clamp = importlib.import_module("sageworks.aws_service_broker.aws_account_clamp").AWSAccountClamp()
+                cprint("AWS Account Clamp Created...", "lightgreen")
                 aws_clamp.check_aws_identity()
+                cprint("AWS Identity Check...", "lightgreen")
                 aws_clamp.boto_session()
+                cprint("AWS Account Check AOK!", "lightgreen")
             except RuntimeError:
                 print("AWS Account Check Failed: Check AWS_PROFILE and/or Renew SSO Token...")
                 sys.exit(1)
@@ -99,6 +105,8 @@ class SageWorksShell:
         help_msg = """
         Commands:
             - hey: Show this help message
+            - docs: Open browser to show SageWorks Documentation
+            - summary: Show a summary of all the SageWorks artifacts
             - incoming_data: List all the incoming S3 data
             - glue_jobs: List all the Glue Jobs in AWS
             - data_sources: List all the DataSources in AWS
@@ -113,23 +121,37 @@ class SageWorksShell:
     def hey(self):
         cprint(self.help_txt(), "lightblue")
 
+    @staticmethod
+    def doc_browser():
+        """Open a browser and start the Dash app and open a browser."""
+        url = "https://supercowpowers.github.io/sageworks/"
+        webbrowser.open(url)
+
+    def summary(self):
+        view_data = self.artifacts_text_view.view_data()
+        for name, df in view_data.items():
+            if df.empty:
+                continue
+            cprint(name, "lightblue")
+            cprint("  " + ", ".join(df.iloc[:, 0].tolist()), "lightgreen")
+
     def incoming_data(self):
-        print(self.artifacts_text_view.incoming_data_summary())
+        return self.artifacts_text_view.incoming_data_summary()
 
     def glue_jobs(self):
-        print(self.artifacts_text_view.glue_jobs_summary())
+        return self.artifacts_text_view.glue_jobs_summary()
 
     def data_sources(self):
-        print(self.artifacts_text_view.data_sources_summary())
+        return self.artifacts_text_view.data_sources_summary()
 
     def feature_sets(self):
-        print(self.artifacts_text_view.feature_sets_summary())
+        return self.artifacts_text_view.feature_sets_summary()
 
     def models(self):
-        print(self.artifacts_text_view.models_summary())
+        return self.artifacts_text_view.models_summary()
 
     def endpoints(self):
-        print(self.artifacts_text_view.endpoints_summary())
+        return self.artifacts_text_view.endpoints_summary()
 
     @staticmethod
     def log_debug(self):
