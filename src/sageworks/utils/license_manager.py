@@ -5,7 +5,7 @@ import base64
 import json
 import logging
 from typing import Union
-import pkg_resources
+import importlib.resources as resources
 from datetime import datetime
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -126,22 +126,19 @@ class LicenseManager:
         Returns:
             The public key as an object.
         """
-        public_key_path = pkg_resources.resource_filename("sageworks", "resources/signature_verify_pub.pem")
-        with open(public_key_path, "rb") as key_file:
-            public_key_data = key_file.read()
+        with resources.path("sageworks.resources", "signature_verify_pub.pem") as public_key_path:
+            with open(public_key_path, "rb") as key_file:
+                public_key_data = key_file.read()
 
         public_key = serialization.load_pem_public_key(public_key_data, backend=default_backend())
         return public_key
 
     @classmethod
     def set_open_source_api_key(cls):
-        """Read the public key from the package.
-        Returns:
-            The public key as an object.
-        """
-        open_source_key_path = pkg_resources.resource_filename("sageworks", "resources/open_source_api.key")
-        with open(open_source_key_path, "rb") as key_file:
-            open_source_key = key_file.read().decode("utf-8").strip()
+        """Set the Open Source API Key as an environment variable"""
+        with resources.path("sageworks.resources", "open_source_api.key") as open_source_key_path:
+            with open(open_source_key_path, "rb") as key_file:
+                open_source_key = key_file.read().decode("utf-8").strip()
         os.environ[cls.API_ENV_VAR] = open_source_key
 
 
