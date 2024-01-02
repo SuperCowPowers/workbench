@@ -5,6 +5,7 @@ from sageworks.utils.cache import Cache
 from sageworks.utils.redis_cache import RedisCache
 
 import logging
+
 log = logging.getLogger("sageworks")
 
 

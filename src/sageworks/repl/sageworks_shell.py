@@ -13,6 +13,7 @@ import webbrowser
 from sageworks.utils.repl_utils import cprint
 import sageworks  # noqa: F401
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
+
 logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
 
 
@@ -71,6 +72,7 @@ class SageWorksShell:
     def check_redis():
         """Check the Redis Cache"""
         from sageworks.utils.sageworks_cache import SageWorksCache
+
         host = os.environ.get("REDIS_HOST", "localhost")
         port = os.environ.get("REDIS_PORT", "6379")
 
