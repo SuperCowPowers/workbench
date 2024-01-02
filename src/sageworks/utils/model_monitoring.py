@@ -1,6 +1,7 @@
 """ModelMonitoring class for monitoring SageMaker endpoints"""
 import logging
 import json
+from io import StringIO
 import pandas as pd
 from sagemaker import Predictor
 from sagemaker.model_monitor import (
@@ -9,6 +10,7 @@ from sagemaker.model_monitor import (
     DefaultModelMonitor,
     DatasetFormat,
 )
+import awswrangler as wr
 
 # SageWorks Imports
 from sageworks.core.artifacts.endpoint_core import EndpointCore
@@ -107,11 +109,12 @@ class ModelMonitoring:
             self.log.error(f"Error checking data capture configuration: {e}")
             return False
 
-    def check_data_capture(self):
+    def get_latest_data_capture(self) -> (pd.DataFrame, pd.DataFrame):
         """
-        Check the data capture by reading the captured data from S3.
+        Get the latest data capture from S3.
+
         Returns:
-            DataFrame: The captured data as a Pandas DataFrame.
+            DataFrame (input), DataFrame(output): Flattened and processed DataFrames for input and output data.
         """
         # List files in the specified S3 path
         files = wr.s3.list_objects(self.data_capture_path)
@@ -122,32 +125,33 @@ class ModelMonitoring:
             # Read the most recent file into a DataFrame
             df = wr.s3.read_json(path=files[-1], lines=True)  # Reads the last file assuming it's the most recent one
 
-            # Process the captured data
-            processed_df = self.process_captured_data(df)
-            return processed_df
+            # Process the captured data and return the input and output DataFrames
+            return self.process_captured_data(df)
         else:
             print(f"No data capture files found in {self.data_capture_path}.")
             return None
 
     @staticmethod
-    def process_captured_data(df: pd.DataFrame) -> pd.DataFrame:
+    def process_captured_data(df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
         """
         Process the captured data DataFrame to extract and flatten the nested data.
+
         Args:
             df (DataFrame): DataFrame with captured data.
+
         Returns:
-            DataFrame: Flattened and processed DataFrame.
+            DataFrame (input), DataFrame(output): Flattened and processed DataFrames for input and output data.
         """
         processed_records = []
 
+        # Phase1: Process the AWS Data Capture format into a flatter DataFrame
         for _, row in df.iterrows():
             # Extract data from captureData dictionary
             capture_data = row["captureData"]
             input_data = capture_data["endpointInput"]
             output_data = capture_data["endpointOutput"]
 
-            # Process input and output data as needed
-            # Here, we're extracting specific fields, but you might need to adjust this based on your data structure
+            # Process input and output, both meta and actual data
             record = {
                 "input_content_type": input_data.get("observedContentType"),
                 "input_encoding": input_data.get("encoding"),
@@ -157,8 +161,19 @@ class ModelMonitoring:
                 "output": output_data.get("data"),
             }
             processed_records.append(record)
+        processed_df = pd.DataFrame(processed_records)
 
-        return pd.DataFrame(processed_records)
+        # Phase2: Process the input and output 'data' columns into separate DataFrames
+        input_df_list = []
+        output_df_list = []
+        for _, row in processed_df.iterrows():
+            input_df = pd.read_csv(StringIO(row["input"]))
+            input_df_list.append(input_df)
+            output_df = pd.read_csv(StringIO(row["output"]))
+            output_df_list.append(output_df)
+
+        # Return the input and output DataFrames
+        return pd.concat(input_df_list), pd.concat(output_df_list)
 
     def baseline_exists(self):
         """
@@ -317,9 +332,12 @@ if __name__ == "__main__":
     print(pred_df.head())
 
     # Check that data capture is working
-    check_df = mm.check_data_capture()
-    if check_df is None:
+    input_df, output_df = mm.get_latest_data_capture()
+    if input_df is None:
         print("No data capture files found, for a new endpoint it may take a few minutes to start capturing data")
     else:
         print("Found data capture files")
-        print(check_df.head())
+        print("Input")
+        print(input_df.head())
+        print("Output")
+        print(output_df.head())
