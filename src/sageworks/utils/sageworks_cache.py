@@ -4,6 +4,9 @@ use RedisCache if it's available, and fall back to Cache if it's not.
 from sageworks.utils.cache import Cache
 from sageworks.utils.redis_cache import RedisCache
 
+import logging
+log = logging.getLogger("sageworks")
+
 
 class SageWorksCache:
     def __init__(self, expire=None, prefix="", postfix=""):
@@ -17,6 +20,7 @@ class SageWorksCache:
             self._actual_cache = RedisCache(expire=expire, prefix=prefix, postfix=postfix)
         else:
             # If Redis isn't available, fall back to an In-Memory Cache
+            log.important("Redis connect failed, using In-Memory Cache...")
             self._actual_cache = Cache(expire=expire, prefix=prefix, postfix=postfix)
 
     def set(self, key, value):

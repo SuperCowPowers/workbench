@@ -34,6 +34,11 @@ class Cache(object):
     def _get_prefixed_key(self, key):
         return f"{self.prefix}{key}{self.postfix}"
 
+    @staticmethod
+    def check():
+        """Check the status of this cache"""
+        True  # I'm doing great, thanks for asking
+
     def set(self, key, value):
         """Add an item to the cache
         Args:
