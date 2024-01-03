@@ -23,7 +23,7 @@ class ModelMonitoring:
         """ExtractModelArtifact Class
         Args:
             endpoint_name (str): Name of the endpoint to set up monitoring for
-            instance_type (str): Instance type to use for monitoring. Defaults to "ml.m5.large".
+            instance_type (str): Instance type to use for monitoring. Defaults to "ml.t3.large".
                                  Other options: ml.m5.large, ml.m5.xlarge, ml.m5.2xlarge, ml.m5.4xlarge, ...
         """
         self.log = logging.getLogger("sageworks")
@@ -129,7 +129,7 @@ class ModelMonitoring:
             return self.process_captured_data(df)
         else:
             print(f"No data capture files found in {self.data_capture_path}.")
-            return None
+            return None, None
 
     @staticmethod
     def process_captured_data(df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
@@ -287,7 +287,6 @@ if __name__ == "__main__":
     """Exercise the ModelMonitoring class"""
     from sageworks.core.artifacts.feature_set_core import FeatureSetCore
     from sageworks.core.artifacts.model_core import ModelCore
-    import awswrangler as wr
 
     # Set options for actually seeing the dataframe
     pd.set_option("display.max_columns", None)

@@ -42,6 +42,8 @@ class FeaturesToModel(Transform):
         self.model_script_dir = None
         self.model_description = None
         self.model_training_root = self.models_s3_path + "/training"
+        self.model_feature_list = None
+        self.target_column = None
 
     def generate_model_script(
         self, target_column: str, feature_list: list[str], model_type: ModelType, train_all_data: bool
@@ -104,7 +106,8 @@ class FeaturesToModel(Transform):
         self.log.info(f"Created new training data {s3_training_path}...")
 
         # Report the target column
-        self.log.info(f"Target column: {target_column}")
+        self.target_column = target_column
+        self.log.info(f"Target column: {self.target_column}")
 
         # Did they specify a feature list?
         if feature_list:
@@ -130,7 +133,7 @@ class FeaturesToModel(Transform):
                 "is_deleted",
                 "event_time",
                 "training",
-            ] + [target_column]
+            ] + [self.target_column]
             feature_list = [c for c in all_columns if c not in filter_list]
 
         # AWS Feature Store has 3 user column types (String, Integral, Fractional)
@@ -146,11 +149,11 @@ class FeaturesToModel(Transform):
                 remove_columns.append(column_name)
 
         # Remove the columns that are not Integral or Fractional
-        feature_list = [c for c in feature_list if c not in remove_columns]
-        self.log.important(f"Feature List for Modeling: {feature_list}")
+        self.model_feature_list = [c for c in feature_list if c not in remove_columns]
+        self.log.important(f"Feature List for Modeling: {self.model_feature_list}")
 
         # Generate our model script
-        script_path = self.generate_model_script(target_column, feature_list, self.model_type.value, train_all_data)
+        script_path = self.generate_model_script(self.target_column, self.model_feature_list, self.model_type.value, train_all_data)
 
         # Metric Definitions for Regression and Classification
         if self.model_type == ModelType.REGRESSOR:
@@ -163,7 +166,7 @@ class FeaturesToModel(Transform):
             # We need to get creative with the Classification Metrics
             # Grab all the target column class values
             table = feature_set.data_source.get_table_name()
-            targets = feature_set.query(f"select DISTINCT {target_column} FROM {table}")[target_column].to_list()
+            targets = feature_set.query(f"select DISTINCT {self.target_column} FROM {table}")[self.target_column].to_list()
             metrics = ["precision", "recall", "fscore"]
 
             # Dynamically create the metric definitions
@@ -211,6 +214,10 @@ class FeaturesToModel(Transform):
         # Okay, lets get our output model and set it to initializing
         output_model = ModelCore(self.output_uuid, model_type=self.model_type, force_refresh=True)
         output_model.set_status("initializing")
+
+        # Store the model feature_list and target_column in the sageworks_meta
+        output_model.upsert_sageworks_meta({"sageworks_model_features": self.model_feature_list})
+        output_model.upsert_sageworks_meta({"sageworks_model_target": self.target_column})
 
         # Call the Model onboard method
         output_model.onboard()
