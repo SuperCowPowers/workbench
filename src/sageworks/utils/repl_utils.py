@@ -38,7 +38,7 @@ def cprint(*args):
     for i in range(0, len(args), 2):
         color = args[i]
         text = args[i + 1]
-        print(f"{colors[color]}{text}{colors['reset']}", end=' ')
+        print(f"{colors[color]}{text}{colors['reset']}", end=" ")
 
     print()  # Newline at the end
 
@@ -47,4 +47,4 @@ if __name__ == "__main__":
     for color in colors.keys():
         cprint(color, f"Hello world! ({color})")
 
-    cprint(['red', 'Hello', 'green', 'World'])
+    cprint(["red", "Hello", "green", "World"])
