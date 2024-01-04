@@ -26,7 +26,6 @@ def plugin_layout(
             ),
             # A table that lists out all the Models
             dbc.Row(plugin_table),
-
             # Add the dynamically generated Plugin rows
             *plugin_rows,
         ],
