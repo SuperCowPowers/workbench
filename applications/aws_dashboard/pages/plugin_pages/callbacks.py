@@ -4,7 +4,7 @@ from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.model_web_view import ModelWebView
-from sageworks.web_components import table
+from sageworks.web_components import table, model_metrics, model_markdown
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 
@@ -30,9 +30,9 @@ def table_row_select(app: Dash, table_name: str):
         prevent_initial_call=True,
     )
     def style_selected_rows(selected_rows):
-        if not selected_rows or selected_rows[0] is None:
+        if not selected_rows or len(selected_rows) < 2 or len(selected_rows) > 2:
             return no_update
-        print(f"Selected Rows: {selected_rows}")
+        print(f"NEW PRINT ROWS: {selected_rows}")
         row_style = [
             {
                 "if": {"filter_query": "{{id}}={}".format(i)},
@@ -47,24 +47,40 @@ def table_row_select(app: Dash, table_name: str):
         row_style.append(symbol_style)
         return row_style
 
-
-# Updates the plugin component when a model row is selected
-def update_plugin(app: Dash, plugin, model_web_view: ModelWebView):
+# Updates the model metrics when a model row is selected
+#TODO Add abbreviated model details markdown
+def update_model_metrics_components(app: Dash, model_web_view: ModelWebView):
     @app.callback(
-        Output(plugin.component_id(), "figure"),
+        [
+            Output("model_metrics_1", "figure"),
+            Output("model_metrics_2", "figure")
+        ],
         Input("plugin_table", "derived_viewport_selected_row_ids"),
         State("plugin_table", "data"),
         prevent_initial_call=True,
     )
-    def update_plugin_figure(selected_rows, table_data):
+    def generate_model_metrics_figures(selected_rows, table_data):
         # Check for no selected rows
-        if not selected_rows or selected_rows[0] is None:
+        if not selected_rows or len(selected_rows) < 2 or len(selected_rows) > 2:
             return no_update
-
+        
+        print(f"Metrics Print Rows: {selected_rows}")
+        
+        # Metrics 1
         # Get the selected row data and grab the uuid
         selected_row_data = table_data[selected_rows[0]]
         model_uuid = selected_row_data["uuid"]
-
-        # Get the model details and send it to the plugin
+        print(f"Model UUID: {model_uuid}")
         model_details = model_web_view.model_details(model_uuid)
-        return plugin.generate_component_figure(model_details)
+        model_metrics_figure = model_metrics.ModelMetrics().generate_component_figure(model_details)
+
+        # Metrics 2
+        # Get the selected row data and grab the uuid
+        selected_row_data = table_data[selected_rows[1]]
+        model_uuid_2 = selected_row_data["uuid"]
+        print(f"Model UUID: {model_uuid_2}")
+        model_details_2 = model_web_view.model_details(model_uuid_2)
+        model_metrics_figure_2 = model_metrics.ModelMetrics().generate_component_figure(model_details_2)
+
+        # Return the metrics figures
+        return [model_metrics_figure, model_metrics_figure_2]
