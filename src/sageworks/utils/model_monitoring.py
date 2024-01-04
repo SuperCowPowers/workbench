@@ -16,6 +16,7 @@ import awswrangler as wr
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.s3_utils import read_s3_file
+from sageworks.utils import endpoint_utils
 
 
 class ModelMonitoring:
@@ -35,12 +36,13 @@ class ModelMonitoring:
         self.sagemaker_client = self.endpoint.sm_client
         self.data_capture_path = self.endpoint.model_data_capture_path
         self.monitoring_path = self.endpoint.model_monitoring_path
-        self.baseline_path = f"{self.monitoring_path}/baseline"
         self.instance_type = instance_type
         self.monitoring_schedule_name = f"{self.endpoint_name}-monitoring-schedule"
         self.monitoring_output_path = f"{self.monitoring_path}/monitoring_reports"
-        self.constraints_json_file = None
-        self.statistics_json_file = None
+        self.baseline_dir = f"{self.monitoring_path}/baseline"
+        self.baseline_csv_file = f"{self.baseline_dir}/baseline.csv"
+        self.constraints_json_file = f"{self.baseline_dir}/constraints.json"
+        self.statistics_json_file = f"{self.baseline_dir}/statistics.json"
 
         # Initialize the DefaultModelMonitor
         self.sageworks_role = AWSAccountClamp().sageworks_execution_role_arn()
@@ -175,67 +177,85 @@ class ModelMonitoring:
         # Return the input and output DataFrames
         return pd.concat(input_df_list), pd.concat(output_df_list)
 
-    def baseline_exists(self):
+    def baseline_exists(self) -> bool:
         """
         Check if baseline files exist in S3.
-        """
-        baseline_files = wr.s3.list_objects(self.baseline_path)
-        required_files = {"constraints.json", "statistics.json"}
-        return all(any(file_key.endswith(req_file) for file_key in baseline_files) for req_file in required_files)
 
-    def create_baseline(self, baseline_s3_data_path: str, recreate: bool = False):
+        Returns:
+            bool: True if all files exist, False otherwise.
+        """
+
+        files = [self.baseline_csv_file,  self.constraints_json_file, self.statistics_json_file]
+        return all(wr.s3.does_object_exist(file) for file in files)
+
+    def create_baseline(self, recreate: bool = False):
         """Code to create a baseline for monitoring
         Args:
-            baseline_s3_data_path (str): S3 Path to the baseline data
             recreate (bool): If True, recreate the baseline even if it already exists
         Notes:
-            This will write two files to the baseline_path:
+            This will create/write three files to the baseline_path:
+            - baseline.csv
             - constraints.json
             - statistics.json
-
-            These files/locations are given to the monitoring schedule vis these two method calls
-            - my_monitor.baseline_statistics()
-            - my_monitor.suggested_constraints()
         """
         if not self.baseline_exists() or recreate:
+
+            # Create a baseline for monitoring (training data from the FeatureSet)
+            baseline_df = endpoint_utils.fs_training_data(self.endpoint)
+            wr.s3.to_csv(baseline_df, self.baseline_csv_file, index=False)
+
             self.log.important(f"Creating baseline for {self.endpoint_name} --> {baseline_s3_data_path}")
             self.model_monitor.suggest_baseline(
-                baseline_dataset=baseline_s3_data_path,
+                baseline_dataset=self.baseline_csv_file,
                 dataset_format=DatasetFormat.csv(header=True),
-                output_s3_uri=self.baseline_path,
+                output_s3_uri=self.baseline_dir,
             )
         else:
             self.log.important(f"Baseline already exists for {self.endpoint_name}")
 
-    def check_baseline_outputs(self):
-        """Code to check the outputs of the baseline
-        Notes:
-            This will read two files from the baseline_path:
-            - constraints.json
-            - statistics.json
+    def get_baseline(self) -> pd.DataFrame:
+        """Code to get the baseline CSV from the S3 baseline directory
+
+        Returns:
+            pd.DataFrame: The baseline CSV from the baseline (baseline.csv)
         """
-        self.constraints_json_file = f"{self.baseline_path}/constraints.json"
-        self.statistics_json_file = f"{self.baseline_path}/statistics.json"
-
-        # Read the constraint file from S3
-        if not wr.s3.does_object_exist(path=self.constraints_json_file):
-            self.log.warning("Constraints file does not exist in S3.")
+        # Read the monitoring data from S3
+        if not wr.s3.does_object_exist(path=self.baseline_csv_file):
+            self.log.warning("baseline.csv data does not exist in S3.")
         else:
-            raw_json = read_s3_file(s3_path=self.constraints_json_file)
-            constraints_data = json.loads(raw_json)
-            constraints_df = pd.json_normalize(constraints_data["features"])
-            print("Constraints:")
-            print(constraints_df.head(20))
+            return wr.s3.read_csv(self.baseline_csv_file)
 
-        # Read the statistics file from S3
-        if not wr.s3.does_object_exist(path=self.statistics_json_file):
-            self.log.warning("Statistics file does not exist in S3.")
+    def get_constraints(self) -> pd.DataFrame:
+        """Code to get the constraints from the baseline
+
+        Returns:
+            pd.DataFrame: The constraints from the baseline (constraints.json)
+        """
+        return self._get_monitor_json_data(self.constraints_json_file)
+
+    def get_statistics(self) -> pd.DataFrame:
+        """Code to get the statistics from the baseline
+
+        Returns:
+            pd.DataFrame: The statistics from the baseline (statistics.json)
+        """
+        return self._get_monitor_json_data(self.statistics_json_file)
+
+    def _get_monitor_json_data(self, s3_path: str) -> pd.DataFrame:
+        """Internal: Convert the JSON monitoring data into a DataFrame
+        Args:
+            s3_path(str): The S3 path to the monitoring data
+        Returns:
+            pd.DataFrame: Monitoring data in DataFrame form
+        """
+        # Read the monitoring data from S3
+        if not wr.s3.does_object_exist(path=s3_path):
+            self.log.warning("Monitoring data does not exist in S3.")
         else:
-            raw_json = read_s3_file(s3_path=self.statistics_json_file)
-            statistics_data = json.loads(raw_json)
-            statistics_df = pd.json_normalize(statistics_data["features"])
-            print("Statistics:")
-            print(statistics_df.head(20))
+            raw_json = read_s3_file(s3_path=s3_path)
+            monitoring_data = json.loads(raw_json)
+            monitoring_df = pd.json_normalize(monitoring_data["features"])
+            return monitoring_df
 
     def setup_monitoring_schedule(self, schedule: str = "hourly", recreate: bool = False):
         """
@@ -301,22 +321,16 @@ if __name__ == "__main__":
     mm = ModelMonitoring(endpoint_name)
     mm.add_data_capture()
 
-    # Grab the FeatureSet by backtracking from the Endpoint
-    model = my_endpoint.get_input()
-    feature_set = ModelCore(model).get_input()
-    features = FeatureSetCore(feature_set)
-    table = features.get_training_view_table()
-
     # Create a baseline for monitoring
-    my_baseline_s3_path = f"{mm.baseline_path}/baseline.csv"
-    baseline_df = features.query(f"SELECT * FROM {table} where training = 1")
-    wr.s3.to_csv(baseline_df, my_baseline_s3_path, index=False)
-
-    # Now create the baseline (if it doesn't already exist)
-    mm.create_baseline(my_baseline_s3_path)
+    mm.create_baseline()
 
     # Check the baseline outputs
-    mm.check_baseline_outputs()
+    baseline_df = mm.get_baseline()
+    print(baseline_df.head())
+    constraints_df = mm.get_constraints()
+    print(constraints_df.head())
+    statistics_df = mm.get_statistics()
+    print(statistics_df.head())
 
     # Set up the monitoring schedule (if it doesn't already exist)
     mm.setup_monitoring_schedule()
@@ -326,8 +340,7 @@ if __name__ == "__main__":
     #
 
     # Make predictions on the Endpoint
-    test_df = features.query(f"SELECT * FROM {table} where training = 0")
-    pred_df = my_endpoint.predict(test_df[:10])
+    pred_df = endpoint_utils.fs_predictions(my_endpoint)
     print(pred_df.head())
 
     # Check that data capture is working
