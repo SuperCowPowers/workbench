@@ -185,7 +185,7 @@ class ModelMonitoring:
             bool: True if all files exist, False otherwise.
         """
 
-        files = [self.baseline_csv_file,  self.constraints_json_file, self.statistics_json_file]
+        files = [self.baseline_csv_file, self.constraints_json_file, self.statistics_json_file]
         return all(wr.s3.does_object_exist(file) for file in files)
 
     def create_baseline(self, recreate: bool = False):
@@ -193,18 +193,17 @@ class ModelMonitoring:
         Args:
             recreate (bool): If True, recreate the baseline even if it already exists
         Notes:
-            This will create/write three files to the baseline_path:
+            This will create/write three files to the baseline_dir:
             - baseline.csv
             - constraints.json
             - statistics.json
         """
         if not self.baseline_exists() or recreate:
-
             # Create a baseline for monitoring (training data from the FeatureSet)
             baseline_df = endpoint_utils.fs_training_data(self.endpoint)
             wr.s3.to_csv(baseline_df, self.baseline_csv_file, index=False)
 
-            self.log.important(f"Creating baseline for {self.endpoint_name} --> {baseline_s3_data_path}")
+            self.log.important(f"Creating baseline files for {self.endpoint_name} --> {self.baseline_dir}")
             self.model_monitor.suggest_baseline(
                 baseline_dataset=self.baseline_csv_file,
                 dataset_format=DatasetFormat.csv(header=True),
@@ -305,8 +304,6 @@ class ModelMonitoring:
 
 if __name__ == "__main__":
     """Exercise the ModelMonitoring class"""
-    from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-    from sageworks.core.artifacts.model_core import ModelCore
 
     # Set options for actually seeing the dataframe
     pd.set_option("display.max_columns", None)
@@ -325,8 +322,8 @@ if __name__ == "__main__":
     mm.create_baseline()
 
     # Check the baseline outputs
-    baseline_df = mm.get_baseline()
-    print(baseline_df.head())
+    base_df = mm.get_baseline()
+    print(base_df.head())
     constraints_df = mm.get_constraints()
     print(constraints_df.head())
     statistics_df = mm.get_statistics()

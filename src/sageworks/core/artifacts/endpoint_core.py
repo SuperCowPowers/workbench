@@ -183,6 +183,7 @@ class EndpointCore(Artifact):
     def get_monitor(self):
         """Get the ModelMonitoring class for this endpoint"""
         from sageworks.utils.model_monitoring import ModelMonitoring
+
         return ModelMonitoring(self.endpoint_name)
 
     def _endpoint_error_handling(self, predictor, feature_df):
