@@ -143,7 +143,7 @@ class SageWorksShell:
         webbrowser.open(url)
 
     def summary(self):
-        cprint("yellow", "AWS Artifacts Summary:")
+        cprint("yellow", "\nAWS Artifacts Summary:")
         view_data = self.artifacts_text_view.view_data()
         for name, df in view_data.items():
             name = (name + " " * 20)[:20]
