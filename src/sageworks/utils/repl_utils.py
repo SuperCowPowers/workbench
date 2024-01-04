@@ -23,10 +23,28 @@ colors = {
 }
 
 
-def cprint(text, color):
-    print(f"{colors[color]}{text}{colors['reset']}")
+def cprint(*args):
+    """
+    Print text in color. Supports either a single color and text or a list of color-text pairs.
+
+    :param args: A single color and text or a list of color-text pairs.
+                 For example: cprint('red', 'Hello') or cprint(['red', 'Hello', 'green', 'World'])
+    """
+    # If the first argument is a list, use it as the list of color-text pairs
+    if isinstance(args[0], list):
+        args = args[0]
+
+    # Iterate over the arguments in pairs
+    for i in range(0, len(args), 2):
+        color = args[i]
+        text = args[i + 1]
+        print(f"{colors[color]}{text}{colors['reset']}", end=' ')
+
+    print()  # Newline at the end
 
 
 if __name__ == "__main__":
     for color in colors.keys():
-        cprint(f"Hello world! ({color})", color)
+        cprint(color, f"Hello world! ({color})")
+
+    cprint(['red', 'Hello', 'green', 'World'])
