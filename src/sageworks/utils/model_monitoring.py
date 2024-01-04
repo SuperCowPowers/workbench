@@ -270,6 +270,11 @@ class ModelMonitoring:
         else:
             schedule = CronExpressionGenerator.hourly()
 
+        # Check if the baseline exists
+        if not self.baseline_exists():
+            self.log.warning(f"Baseline does not exist for {self.endpoint_name}. Call create_baseline() first...")
+            return
+
         # Check if monitoring schedule already exists
         if self.monitoring_schedule_exists() and not recreate:
             return

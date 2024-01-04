@@ -119,8 +119,7 @@ class SageWorksShell:
 
     @staticmethod
     def help_txt():
-        help_msg = """
-    Commands:
+        help_msg = """    Commands:
         - hey: Show this help message
         - docs: Open browser to show SageWorks Documentation
         - summary: Show a summary of all the SageWorks artifacts
@@ -131,8 +130,7 @@ class SageWorksShell:
         - models: List all the Models in AWS
         - endpoints: List all the Endpoints in AWS
         - broker_refresh: Force a refresh of the AWS broker data
-        - exit: Exit SageWorks REPL
-        """
+        - exit: Exit SageWorks REPL"""
         return help_msg
 
     def hey(self):
