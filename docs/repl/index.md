@@ -11,11 +11,10 @@ Just type `sageworks` at the command line and the SageWorks shell will spin up a
 
 At startup the SageWorks shell, will connect to your AWS Account and create a summary of the Machine Learning artifacts currently residing on the account.
 
-<figure style="float: right; width: 380px; padding-left: 10px;">
-<img alt="sageworks_repl" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/6569a0dd-ed25-4d44-8574-1be7a0ae5e4b">
-</figure>
+<img alt="sageworks_repl" style="float: right; width: 380px; padding-left: 5px;"
+src="https://github.com/SuperCowPowers/sageworks/assets/4806709/f7a12f04-11cf-451c-9afd-5dd388b50167">
 
-**Detailed listings:**
+**Available command:**
 
 - incoming_data
 - glue_jobs
@@ -23,9 +22,11 @@ At startup the SageWorks shell, will connect to your AWS Account and create a su
 - feature_sets
 - models
 - endpoints
+- broker_refresh
+- and more...
 
 
-All of the [API Classes](../api_classes/overview.md) are automatically loaded, so drilling down on an individual artifact is easy. The same Python API is provided so if you want additional info on a **model**, for instance, simply create a model object and use any of the documented API methods.
+All of the [API Classes](../api_classes/overview.md) are auto-loaded, so drilling down on an individual artifact is easy. The same Python API is provided so if you want additional info on a **model**, for instance, simply create a model object and use any of the documented API methods.
 
 ```
 m = Model("abalone-regression")
