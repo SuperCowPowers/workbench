@@ -153,7 +153,9 @@ class FeaturesToModel(Transform):
         self.log.important(f"Feature List for Modeling: {self.model_feature_list}")
 
         # Generate our model script
-        script_path = self.generate_model_script(self.target_column, self.model_feature_list, self.model_type.value, train_all_data)
+        script_path = self.generate_model_script(
+            self.target_column, self.model_feature_list, self.model_type.value, train_all_data
+        )
 
         # Metric Definitions for Regression and Classification
         if self.model_type == ModelType.REGRESSOR:
@@ -166,7 +168,9 @@ class FeaturesToModel(Transform):
             # We need to get creative with the Classification Metrics
             # Grab all the target column class values
             table = feature_set.data_source.get_table_name()
-            targets = feature_set.query(f"select DISTINCT {self.target_column} FROM {table}")[self.target_column].to_list()
+            targets = feature_set.query(f"select DISTINCT {self.target_column} FROM {table}")[
+                self.target_column
+            ].to_list()
             metrics = ["precision", "recall", "fscore"]
 
             # Dynamically create the metric definitions
