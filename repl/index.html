@@ -1152,11 +1152,9 @@
 <h3 id="usage">Usage</h3>
 <p>Just type <code>sageworks</code> at the command line and the SageWorks shell will spin up and provide a command view of your AWS Machine Learning Pipelines.</p>
 <p>At startup the SageWorks shell, will connect to your AWS Account and create a summary of the Machine Learning artifacts currently residing on the account.</p>
-<figure style="float: right; width: 380px; padding-left: 10px;">
-<img alt="sageworks_repl" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/6569a0dd-ed25-4d44-8574-1be7a0ae5e4b">
-</figure>
-
-<p><strong>Detailed listings:</strong></p>
+<p><img alt="sageworks_repl" style="float: right; width: 380px; padding-left: 5px;"
+src="https://github.com/SuperCowPowers/sageworks/assets/4806709/f7a12f04-11cf-451c-9afd-5dd388b50167"></p>
+<p><strong>Available command:</strong></p>
 <ul>
 <li>incoming_data</li>
 <li>glue_jobs</li>
@@ -1164,8 +1162,10 @@
 <li>feature_sets</li>
 <li>models</li>
 <li>endpoints</li>
+<li>broker_refresh</li>
+<li>and more...</li>
 </ul>
-<p>All of the <a href="../api_classes/overview/">API Classes</a> are automatically loaded, so drilling down on an individual artifact is easy. The same Python API is provided so if you want additional info on a <strong>model</strong>, for instance, simply create a model object and use any of the documented API methods.</p>
+<p>All of the <a href="../api_classes/overview/">API Classes</a> are auto-loaded, so drilling down on an individual artifact is easy. The same Python API is provided so if you want additional info on a <strong>model</strong>, for instance, simply create a model object and use any of the documented API methods.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>m = Model(&quot;abalone-regression&quot;)
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>m.details()
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>&lt;shows info about the model&gt;
