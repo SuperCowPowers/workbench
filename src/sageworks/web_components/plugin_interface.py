@@ -10,12 +10,13 @@ from sageworks.web_components.component_interface import ComponentInterface
 
 
 class PluginType(Enum):
-    """TBD: Nice Docstring here or link to docs"""
+    """Plugin Types: These are the types of plugins that can be loaded"""
 
     DATA_SOURCE = "data_source"
     FEATURE_SET = "feature_set"
     MODEL = "model"
     ENDPOINT = "endpoint"
+    CUSTOM = "custom"
 
 
 class PluginInputType(Enum):
