@@ -241,7 +241,7 @@ class PandasToFeatures(Transform):
 
     def prep_dataframe(self):
         """Prep the DataFrame for Feature Store Creation"""
-        self.log.info("Prep the output_df (cat_convert, convert types, lowercase columns, add training column)...")
+        self.log.info("Prep the output_df (cat_convert, convert types, and lowercase columns)...")
 
         # Make sure we have the required id and event_time columns
         self._ensure_id_column()
@@ -260,9 +260,12 @@ class PandasToFeatures(Transform):
         # - String (timestamp/datetime types need to be converted to string)
         self.output_df = self.convert_column_types(self.output_df)
 
-        # FeatureSet Internal Storage (Athena) will convert columns names to lowercase, so we need
-        # to make sure that the column names are lowercase to match and avoid downstream issues
-        self.output_df.columns = self.output_df.columns.str.lower()
+        # Convert columns names to lowercase, Athena will not work with uppercase column names
+        if str(self.output_df.columns) != str(self.output_df.columns.str.lower()):
+            for c in self.output_df.columns:
+                if c != c.lower():
+                    self.log.warning(f"Column name {c} converted to lowercase: {c.lower()}")
+            self.output_df.columns = self.output_df.columns.str.lower()
 
     def create_feature_group(self):
         """Create a Feature Group, load our Feature Definitions, and wait for it to be ready"""

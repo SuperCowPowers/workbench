@@ -14,7 +14,7 @@ At startup the SageWorks shell, will connect to your AWS Account and create a su
 <img alt="sageworks_repl" style="float: right; width: 380px; padding-left: 5px;"
 src="https://github.com/SuperCowPowers/sageworks/assets/4806709/f7a12f04-11cf-451c-9afd-5dd388b50167">
 
-**Available command:**
+**Available Commands:**
 
 - incoming_data
 - glue_jobs
