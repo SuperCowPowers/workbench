@@ -290,15 +290,15 @@ def most_recent_s3_subfolder(s3_path: str, sm_session: SageSession) -> Union[str
     bucket, prefix = s3_path.replace("s3://", "").split("/", 1)
 
     # Ensure the prefix ends with a '/'
-    if not prefix.endswith('/'):
-        prefix += '/'
+    if not prefix.endswith("/"):
+        prefix += "/"
 
     # Get the S3 client
-    s3_client = sm_session.boto_session.client('s3')
+    s3_client = sm_session.boto_session.client("s3")
 
     # Get the objects in the S3 path
-    paginator = s3_client.get_paginator('list_objects_v2')
-    page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter='/')
+    paginator = s3_client.get_paginator("list_objects_v2")
+    page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter="/")
 
     # Initialize variables to track the most recent folder
     most_recent = None
@@ -306,13 +306,13 @@ def most_recent_s3_subfolder(s3_path: str, sm_session: SageSession) -> Union[str
 
     # Iterate through the listed objects
     for page in page_iterator:
-        for prefix_info in page.get('CommonPrefixes', []):
-            folder_path = prefix_info['Prefix']
+        for prefix_info in page.get("CommonPrefixes", []):
+            folder_path = prefix_info["Prefix"]
             # Get the last modified time of the current folder
             response = s3_client.list_objects_v2(Bucket=bucket, Prefix=folder_path)
-            contents = response.get('Contents', [])
+            contents = response.get("Contents", [])
             if contents:
-                last_modified = max(obj['LastModified'] for obj in contents)
+                last_modified = max(obj["LastModified"] for obj in contents)
                 if most_recent is None or last_modified > latest_time:
                     most_recent = folder_path
                     latest_time = last_modified
@@ -322,7 +322,6 @@ def most_recent_s3_subfolder(s3_path: str, sm_session: SageSession) -> Union[str
         return f"s3://{bucket}/{most_recent}"[:-1]  # Remove the trailing '/'
     else:
         return None
-
 
 
 def pull_s3_data(s3_path: str, embedded_index=False) -> Union[pd.DataFrame, None]:

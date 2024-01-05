@@ -321,7 +321,7 @@ class Artifact(ABC):
             "size": self.size(),
             "created": self.created(),
             "modified": self.modified(),
-            "input": self.get_input()
+            "input": self.get_input(),
         }
         # Combine the sageworks metadata with the basic metadata
         return {**basic, **self.sageworks_meta()}

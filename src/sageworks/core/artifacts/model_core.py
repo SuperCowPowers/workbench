@@ -389,7 +389,8 @@ class ModelCore(Artifact):
 
         # Pull the inference metadata
         try:
-            return wr.s3.read_json(f"{self.endpoint_inference_path}/inference_meta.json")
+            s3_path = f"{self.endpoint_inference_path}/inference_meta.json"
+            return wr.s3.read_json(s3_path)
         except NoFilesFound:
             self.log.info(f"Could not find model inference meta at {s3_path}...")
             return None
