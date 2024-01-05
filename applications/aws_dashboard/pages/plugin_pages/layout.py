@@ -6,6 +6,10 @@ import dash_bootstrap_components as dbc
 
 def plugin_layout(
     plugin_table: dash_table.DataTable,
+    details_comparison_1: dcc.Markdown,
+    details_comparison_2: dcc.Markdown,
+    metrics_comparison_1: dcc.Markdown,
+    metrics_comparison_2: dcc.Markdown,
     model_metrics_1: dcc.Graph,
     model_metrics_2: dcc.Graph,
     **kwargs: Any,
@@ -21,41 +25,24 @@ def plugin_layout(
             # A table that lists out all the Models
             dbc.Row(plugin_table),
             # Model metrics
+            # Column 1: First model
+            #TODO Display abbreviated model details on the same row
             dbc.Row(
                 [
-                    # Column 1: First model
-                    #TODO Display abbreviated model details on the same row
-                    dbc.Col(
-                        [
-                            dbc.Row(
-                                html.H3("Model 1", id="model_1_header"),
-                                style={"padding": "30px 0px 10px 0px"}
-                            ),
-                            dbc.Row(
-                                model_metrics_1,
-                                style={"padding": "0px 0px 30px 0px"},
-                            )
-                        ],
-                        width=10,
-                    ),
-                    # Column 2: Second model
-                    #TODO Display abbreviated model details on the same row
-                    dbc.Col(
-                        [
-                            dbc.Row(
-                                html.H3("Model 2", id="model_2_header"),
-                                style={"padding": "30px 0px 10px 0px"}
-                            ),
-                            dbc.Row(
-                                model_metrics_2,
-                                style={"padding": "0px 0px 30px 0px"},
-                            )
-                        ],
-                        width=10,
-                    )
+                    dbc.Col(details_comparison_1, width=6),
+                    dbc.Col(metrics_comparison_1, width=6),
+                    model_metrics_1
+                ]
+            ),
+            # Column 2: Second model
+            #TODO Display abbreviated model details on the same row
+            dbc.Row(
+                [
+                    dbc.Col(details_comparison_2, width=6),
+                    dbc.Col(metrics_comparison_2, width=6),
+                    model_metrics_2
                 ]
             )
-        ],
-        style={"margin": "30px"},
-    )
+        ]
+        )
     return layout

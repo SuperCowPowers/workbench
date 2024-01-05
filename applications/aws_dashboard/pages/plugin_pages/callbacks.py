@@ -4,7 +4,7 @@ from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.model_web_view import ModelWebView
-from sageworks.web_components import table, model_metrics, model_markdown
+from sageworks.web_components import table, model_metrics, model_markdown, details_comparison_markdown, metrics_comparison_markdown
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 
@@ -52,7 +52,11 @@ def table_row_select(app: Dash, table_name: str):
 def update_model_metrics_components(app: Dash, model_web_view: ModelWebView):
     @app.callback(
         [
+            Output("details_comparison_1", "children"),
+            Output("metrics_comparison_1", "children"),
             Output("model_metrics_1", "figure"),
+            Output("details_comparison_2", "children"),
+            Output("metrics_comparison_2", "children"),
             Output("model_metrics_2", "figure")
         ],
         Input("plugin_table", "derived_viewport_selected_row_ids"),
@@ -72,6 +76,8 @@ def update_model_metrics_components(app: Dash, model_web_view: ModelWebView):
         model_uuid = selected_row_data["uuid"]
         print(f"Model UUID: {model_uuid}")
         model_details = model_web_view.model_details(model_uuid)
+        details_comp_md = details_comparison_markdown.ModelComparisonMarkdown().generate_markdown(model_details)
+        metrics_comp_md = metrics_comparison_markdown.MetricsComparisonMarkdown().generate_markdown(model_details)
         model_metrics_figure = model_metrics.ModelMetrics().generate_component_figure(model_details)
 
         # Metrics 2
@@ -80,7 +86,16 @@ def update_model_metrics_components(app: Dash, model_web_view: ModelWebView):
         model_uuid_2 = selected_row_data["uuid"]
         print(f"Model UUID: {model_uuid_2}")
         model_details_2 = model_web_view.model_details(model_uuid_2)
+        details_comp_md_2 = details_comparison_markdown.ModelComparisonMarkdown().generate_markdown(model_details_2)
+        metrics_comp_md_2 = metrics_comparison_markdown.MetricsComparisonMarkdown().generate_markdown(model_details_2)
         model_metrics_figure_2 = model_metrics.ModelMetrics().generate_component_figure(model_details_2)
 
         # Return the metrics figures
-        return [model_metrics_figure, model_metrics_figure_2]
+        return [
+            details_comp_md,
+            metrics_comp_md,
+            model_metrics_figure,
+            details_comp_md_2,
+            metrics_comp_md_2,
+            model_metrics_figure_2
+            ]
