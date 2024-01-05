@@ -179,7 +179,7 @@ if __name__ == "__main__":
     print(f"{test_uuid} stored as a SageWorks DataSource")
 
     # Test column names with uppercase
-    df.rename(columns={'iq_score': 'IQ_Score'}, inplace=True)
+    df.rename(columns={"iq_score": "IQ_Score"}, inplace=True)
     df_to_data.set_input(df)
     df_to_data.transform()
 
