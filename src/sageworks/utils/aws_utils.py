@@ -5,7 +5,10 @@ import json
 import base64
 import re
 import os
+from typing import Union
 import pandas as pd
+import awswrangler as wr
+from awswrangler.exceptions import NoFilesFound
 from pathlib import Path
 import posixpath
 from sagemaker.session import Session as SageSession
@@ -271,6 +274,61 @@ def extract_data_source_basename(source: str) -> str:
     # If it's neither, assume it's already a data source name
     else:
         return source
+
+
+def most_recent_s3_subfolder(s3_path: str, sm_session: SageSession,) -> Union[str, None]:
+    """Get the most recent subfolder in an S3 path
+    Args:
+        s3_path (str): The S3 path
+        sm_session (SageSession): A SageMaker session object
+    Returns:
+        str: The full S3 path to the most recent subfolder (or None if no subfolders exist)
+    """
+    # Get the S3 bucket and prefix
+    bucket, prefix = s3_path.replace("s3://", "").split("/", 1)
+
+    # Get the S3 client
+    s3_client = sm_session.boto_session.client("s3")
+
+    # Get the objects in the S3 path
+    objects = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+
+    # If there are no objects, return None
+    if not objects.get("Contents"):
+        return None
+
+    # Get the most recent subfolder
+    most_recent = max(objects["Contents"], key=lambda x: x["LastModified"])
+
+    # Return the full S3 path to the most recent subfolder
+    return most_recent["Key"]
+
+
+def pull_s3_data(s3_path: str, embedded_index=False) -> Union[pd.DataFrame, None]:
+    """Helper method to pull data from S3 storage
+
+    Args:
+        s3_path (str): S3 Path to the Artifact
+        embedded_index (bool, optional): Is the index embedded in the CSV? Defaults to False.
+
+    Returns:
+        pd.DataFrame: DataFrame of the Artifact (metrics, CM, regression_preds) (might be None)
+    """
+
+    # Sanity check for undefined S3 paths (None)
+    if s3_path.startswith("None"):
+        return None
+
+    # Pull the CSV file from S3
+    try:
+        if embedded_index:
+            df = wr.s3.read_csv(s3_path, index_col=0)
+        else:
+            df = wr.s3.read_csv(s3_path)
+        return df
+    except NoFilesFound:
+        self.log.info(f"Could not find S3 data at {s3_path}...")
+        return None
 
 
 if __name__ == "__main__":

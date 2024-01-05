@@ -71,10 +71,9 @@ class EndpointCore(Artifact):
         self.endpoint_return_columns = None
 
         # Set the Inference, Capture, and Monitoring S3 Paths
-        self.model_name = self.get_input()
-        self.model_inference_path = self.models_s3_path + "/inference/" + self.model_name
-        self.model_data_capture_path = self.models_s3_path + "/data_capture/" + self.model_name
-        self.model_monitoring_path = self.models_s3_path + "/monitoring/" + self.model_name
+        self.endpoint_inference_path = self.endpoints_s3_path + "/inference/" + self.uuid
+        self.endpoint_data_capture_path = self.endpoints_s3_path + "/data_capture/" + self.uuid
+        self.endpoint_monitoring_path = self.endpoints_s3_path + "/monitoring/" + self.uuid
 
         # Call SuperClass Post Initialization
         super().__post_init__()
@@ -393,24 +392,24 @@ class EndpointCore(Artifact):
         # Write the metadata dictionary, and metrics to our S3 Model Inference Folder
         wr.s3.to_json(
             pd.DataFrame([inference_meta]),
-            f"{self.model_inference_path}/inference_meta.json",
+            f"{self.endpoint_inference_path}/inference_meta.json",
             index=False,
         )
-        self.log.debug(f"Writing metrics to {self.model_inference_path}/inference_metrics.csv")
-        wr.s3.to_csv(metrics, f"{self.model_inference_path}/inference_metrics.csv", index=False)
+        self.log.debug(f"Writing metrics to {self.endpoint_inference_path}/inference_metrics.csv")
+        wr.s3.to_csv(metrics, f"{self.endpoint_inference_path}/inference_metrics.csv", index=False)
 
         # Write the confusion matrix to our S3 Model Inference Folder
         if model_type == ModelType.CLASSIFIER.value:
             conf_mtx = self.confusion_matrix(target_column, prediction_df)
-            self.log.debug(f"Writing confusion matrix to {self.model_inference_path}/inference_cm.csv")
+            self.log.debug(f"Writing confusion matrix to {self.endpoint_inference_path}/inference_cm.csv")
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
-            wr.s3.to_csv(conf_mtx, f"{self.model_inference_path}/inference_cm.csv", index=True)
+            wr.s3.to_csv(conf_mtx, f"{self.endpoint_inference_path}/inference_cm.csv", index=True)
 
         # Write the regression predictions to our S3 Model Inference Folder
         if model_type == ModelType.REGRESSOR.value:
             pred_df = self.regression_predictions(target_column, prediction_df)
-            self.log.debug(f"Writing reg predictions to {self.model_inference_path}/inference_predictions.csv")
-            wr.s3.to_csv(pred_df, f"{self.model_inference_path}/inference_predictions.csv", index=False)
+            self.log.debug(f"Writing reg predictions to {self.endpoint_inference_path}/inference_predictions.csv")
+            wr.s3.to_csv(pred_df, f"{self.endpoint_inference_path}/inference_predictions.csv", index=False)
 
         #
         # Generate SHAP values for our Prediction Dataframe
@@ -433,8 +432,8 @@ class EndpointCore(Artifact):
                 df_shap = pd.DataFrame(class_shap_vals, columns=X_pred.columns)
 
                 # Write shap vals to S3 Model Inference Folder
-                self.log.debug(f"Writing SHAP values to {self.model_inference_path}/inference_shap_values.csv")
-                wr.s3.to_csv(df_shap, f"{self.model_inference_path}/inference_shap_values_class_{i}.csv", index=False)
+                self.log.debug(f"Writing SHAP values to {self.endpoint_inference_path}/inference_shap_values.csv")
+                wr.s3.to_csv(df_shap, f"{self.endpoint_inference_path}/inference_shap_values_class_{i}.csv", index=False)
 
         # Single shap vals CSV for regressors
         if model_type == ModelType.REGRESSOR.value:
@@ -442,8 +441,8 @@ class EndpointCore(Artifact):
             df_shap = pd.DataFrame(shap_vals, columns=X_pred.columns)
 
             # Write shap vals to S3 Model Inference Folder
-            self.log.debug(f"Writing SHAP values to {self.model_inference_path}/inference_shap_values.csv")
-            wr.s3.to_csv(df_shap, f"{self.model_inference_path}/inference_shap_values.csv", index=False)
+            self.log.debug(f"Writing SHAP values to {self.endpoint_inference_path}/inference_shap_values.csv")
+            wr.s3.to_csv(df_shap, f"{self.endpoint_inference_path}/inference_shap_values.csv", index=False)
 
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
@@ -601,6 +600,16 @@ class EndpointCore(Artifact):
             self.log.info(f"Deleting Endpoint Monitoring Schedule {schedule['MonitoringScheduleName']}...")
             self.sm_client.delete_monitoring_schedule(MonitoringScheduleName=schedule["MonitoringScheduleName"])
 
+        # Delete any inference, data_capture or monitoring artifacts
+        for s3_path in [self.endpoint_inference_path, self.endpoint_data_capture_path, self.endpoint_monitoring_path]:
+            self.log.info(f"Deleting S3 Path {s3_path}...")
+            wr.s3.delete_objects(s3_path, boto3_session=self.boto_session)
+
+        # Now delete any data in the Cache
+        for key in self.data_storage.list_subkeys(f"endpoint:{self.uuid}"):
+            self.log.info(f"Deleting Cache Key: {key}")
+            self.data_storage.delete(key)
+
         # Okay now delete the Endpoint
         try:
             time.sleep(1)  # Let AWS catch up with any deletions performed above
@@ -609,11 +618,6 @@ class EndpointCore(Artifact):
         except botocore.exceptions.ClientError as e:
             self.log.info("Endpoint ClientError...")
             raise e
-
-        # Now delete any data in the Cache
-        for key in self.data_storage.list_subkeys(f"endpoint:{self.uuid}"):
-            self.log.info(f"Deleting Cache Key: {key}")
-            self.data_storage.delete(key)
 
     def delete_endpoint_models(self):
         """Delete the underlying Model for an Endpoint"""

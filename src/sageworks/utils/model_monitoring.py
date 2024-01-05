@@ -34,8 +34,8 @@ class ModelMonitoring:
         # Initialize Class Attributes
         self.sagemaker_session = self.endpoint.sm_session
         self.sagemaker_client = self.endpoint.sm_client
-        self.data_capture_path = self.endpoint.model_data_capture_path
-        self.monitoring_path = self.endpoint.model_monitoring_path
+        self.data_capture_path = self.endpoint.endpoint_data_capture_path
+        self.monitoring_path = self.endpoint.endpoint_monitoring_path
         self.instance_type = instance_type
         self.monitoring_schedule_name = f"{self.endpoint_name}-monitoring-schedule"
         self.monitoring_output_path = f"{self.monitoring_path}/monitoring_reports"
