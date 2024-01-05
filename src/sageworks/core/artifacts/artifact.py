@@ -314,16 +314,17 @@ class Artifact(ABC):
         """This is generic summary information for all Artifacts. If you
         want to get more detailed information, call the details() method
         which is implemented by the specific Artifact class"""
-        return {
+        basic = {
             "uuid": self.uuid,
             "health_tags": self.sageworks_health_tags(),
             "aws_arn": self.arn(),
             "size": self.size(),
             "created": self.created(),
             "modified": self.modified(),
-            "input": self.get_input(),
-            "sageworks_tags": self.sageworks_tags(),
+            "input": self.get_input()
         }
+        # Combine the sageworks metadata with the basic metadata
+        return {**basic, **self.sageworks_meta()}
 
     def delete_metadata(self, key_to_delete: str):
         """Delete specific metadata from this artifact

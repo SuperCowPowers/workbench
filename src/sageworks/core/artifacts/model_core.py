@@ -8,6 +8,7 @@ import botocore
 
 import pandas as pd
 import awswrangler as wr
+from awswrangler.exceptions import NoFilesFound
 from sagemaker import TrainingJobAnalytics
 from sagemaker.model import Model as SagemakerModel
 
@@ -382,8 +383,16 @@ class ModelCore(Artifact):
         Notes:
             Basically when Endpoint inference was run, name of the dataset, the MD5, etc
         """
-        s3_path = f"{self.endpoint_inference_path}/inference_meta.json"
-        return pull_s3_data(s3_path)
+        # Sanity check the inference path (which may or may not exist)
+        if self.endpoint_inference_path is None:
+            return None
+
+        # Pull the inference metadata
+        try:
+            return wr.s3.read_json(f"{self.endpoint_inference_path}/inference_meta.json")
+        except NoFilesFound:
+            self.log.info(f"Could not find model inference meta at {s3_path}...")
+            return None
 
     def _pull_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
         """Internal: Retrieve the inference Shapely values for this model
@@ -393,15 +402,17 @@ class ModelCore(Artifact):
             This may or may not exist based on whether an Endpoint ran Shapley
         """
 
+        # Sanity check the inference path (which may or may not exist)
+        if self.endpoint_inference_path is None:
+            return None
+
         # Multiple CSV if classifier
         if self.model_type == ModelType.CLASSIFIER:
             # CSVs for shap values are indexed by prediction class
             # Because we don't know how many classes there are, we need to search through
             # a list of S3 objects in the parent folder
             s3_paths = wr.s3.list_objects(self.endpoint_inference_path)
-            return [
-                pull_s3_data(f) for f in s3_paths if "inference_shap_values" in f
-            ]
+            return [pull_s3_data(f) for f in s3_paths if "inference_shap_values" in f]
 
         # One CSV if regressor
         if self.model_type == ModelType.REGRESSOR:

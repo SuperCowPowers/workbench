@@ -276,32 +276,53 @@ def extract_data_source_basename(source: str) -> str:
         return source
 
 
-def most_recent_s3_subfolder(s3_path: str, sm_session: SageSession,) -> Union[str, None]:
-    """Get the most recent subfolder in an S3 path
+def most_recent_s3_subfolder(s3_path: str, sm_session: SageSession) -> Union[str, None]:
+    """Get the most recent subfolder in an S3 path.
+
     Args:
-        s3_path (str): The S3 path
-        sm_session (SageSession): A SageMaker session object
+        s3_path (str): The S3 path.
+        sm_session (SageSession): A SageMaker session object.
+
     Returns:
-        str: The full S3 path to the most recent subfolder (or None if no subfolders exist)
+        str: The full S3 path to the most recent subfolder, or None if no subfolders exist.
     """
     # Get the S3 bucket and prefix
     bucket, prefix = s3_path.replace("s3://", "").split("/", 1)
 
+    # Ensure the prefix ends with a '/'
+    if not prefix.endswith('/'):
+        prefix += '/'
+
     # Get the S3 client
-    s3_client = sm_session.boto_session.client("s3")
+    s3_client = sm_session.boto_session.client('s3')
 
     # Get the objects in the S3 path
-    objects = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+    paginator = s3_client.get_paginator('list_objects_v2')
+    page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter='/')
 
-    # If there are no objects, return None
-    if not objects.get("Contents"):
-        return None
+    # Initialize variables to track the most recent folder
+    most_recent = None
+    latest_time = None
 
-    # Get the most recent subfolder
-    most_recent = max(objects["Contents"], key=lambda x: x["LastModified"])
+    # Iterate through the listed objects
+    for page in page_iterator:
+        for prefix_info in page.get('CommonPrefixes', []):
+            folder_path = prefix_info['Prefix']
+            # Get the last modified time of the current folder
+            response = s3_client.list_objects_v2(Bucket=bucket, Prefix=folder_path)
+            contents = response.get('Contents', [])
+            if contents:
+                last_modified = max(obj['LastModified'] for obj in contents)
+                if most_recent is None or last_modified > latest_time:
+                    most_recent = folder_path
+                    latest_time = last_modified
 
     # Return the full S3 path to the most recent subfolder
-    return most_recent["Key"]
+    if most_recent:
+        return f"s3://{bucket}/{most_recent}"[:-1]  # Remove the trailing '/'
+    else:
+        return None
+
 
 
 def pull_s3_data(s3_path: str, embedded_index=False) -> Union[pd.DataFrame, None]:
@@ -327,7 +348,7 @@ def pull_s3_data(s3_path: str, embedded_index=False) -> Union[pd.DataFrame, None
             df = wr.s3.read_csv(s3_path)
         return df
     except NoFilesFound:
-        self.log.info(f"Could not find S3 data at {s3_path}...")
+        log.info(f"Could not find S3 data at {s3_path}...")
         return None
 
 
@@ -339,6 +360,11 @@ if __name__ == "__main__":
     my_features = FeatureSetCore("test_features")
     my_meta = my_features.sageworks_meta()
     pprint(my_meta)
+
+    # Test the most_recent_s3_subfolder method
+    s3_path = "s3://sandbox-sageworks-artifacts/endpoints/inference"
+    sm_session = SageSession()
+    most_recent = most_recent_s3_subfolder(s3_path, sm_session)
 
     # Add a health tag
     my_features.add_sageworks_health_tag("needs_onboard")

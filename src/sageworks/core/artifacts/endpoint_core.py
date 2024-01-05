@@ -63,17 +63,21 @@ class EndpointCore(Artifact):
             self.endpoint_name
         )
 
-        # Sanity check and then set up our FeatureSet attributes
+        # Sanity check that we found the endpoint
         if self.endpoint_meta is None:
             self.log.important(f"Could not find endpoint {self.uuid} within current visibility scope")
             return
-
-        self.endpoint_return_columns = None
 
         # Set the Inference, Capture, and Monitoring S3 Paths
         self.endpoint_inference_path = self.endpoints_s3_path + "/inference/" + self.uuid
         self.endpoint_data_capture_path = self.endpoints_s3_path + "/data_capture/" + self.uuid
         self.endpoint_monitoring_path = self.endpoints_s3_path + "/monitoring/" + self.uuid
+
+        # Set the Model Name
+        self.model_name = self.get_input()
+
+        # This is for endpoint error handling later
+        self.endpoint_return_columns = None
 
         # Call SuperClass Post Initialization
         super().__post_init__()
@@ -357,16 +361,19 @@ class EndpointCore(Artifact):
         self, feature_df: pd.DataFrame, target_column: str, data_name: str, data_hash: str, description: str
     ) -> None:
         """Capture the performance metrics for this Endpoint
+
         Args:
             feature_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
             target_column (str): Name of the target column
             data_name (str): Name of the data used for inference
             data_hash (str): Hash of the data used for inference
             description (str): Description of the data used for inference
+
         Returns:
             None
+
         Note:
-            This method captures performance metrics and writes them to the S3 Model Inference Folder
+            This method captures performance metrics and writes them to the S3 Endpoint Inference Folder
         """
 
         # Run predictions on the feature_df
@@ -433,7 +440,9 @@ class EndpointCore(Artifact):
 
                 # Write shap vals to S3 Model Inference Folder
                 self.log.debug(f"Writing SHAP values to {self.endpoint_inference_path}/inference_shap_values.csv")
-                wr.s3.to_csv(df_shap, f"{self.endpoint_inference_path}/inference_shap_values_class_{i}.csv", index=False)
+                wr.s3.to_csv(
+                    df_shap, f"{self.endpoint_inference_path}/inference_shap_values_class_{i}.csv", index=False
+                )
 
         # Single shap vals CSV for regressors
         if model_type == ModelType.REGRESSOR.value:
