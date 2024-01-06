@@ -133,9 +133,9 @@ class Artifact(ABC):
         pass
 
     def onboard(self) -> bool:
-        """Onboard this Model into SageWorks
+        """Onboard this Artifact into SageWorks
         Returns:
-            bool: True if the Model was successfully onboarded, False otherwise
+            bool: True if the Artifact was successfully onboarded, False otherwise
         """
         self.log.important(f"Onboarding {self.uuid}...")
         self.set_status("onboarding")

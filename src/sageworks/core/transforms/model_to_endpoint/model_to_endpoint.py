@@ -151,8 +151,8 @@ class ModelToEndpoint(Transform):
         output_endpoint = EndpointCore(self.output_uuid, force_refresh=True)
         output_endpoint.set_status("initializing")
 
-        # Call the Model make_ready method and set status to ready
-        output_endpoint.make_ready()
+        # Call the Endpoint onboard method
+        output_endpoint.onboard()
 
 
 if __name__ == "__main__":
