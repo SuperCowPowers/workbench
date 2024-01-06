@@ -276,52 +276,37 @@ def extract_data_source_basename(source: str) -> str:
         return source
 
 
-def most_recent_s3_subfolder(s3_path: str, sm_session: SageSession) -> Union[str, None]:
-    """Get the most recent subfolder in an S3 path.
+def newest_files(s3_locations: list[str], sm_session: SageSession) -> Union[str, None]:
+    """Determine which full S3 bucket and prefix combination has the newest files.
 
     Args:
-        s3_path (str): The S3 path.
+        s3_locations (list[str]): A list of full S3 bucket and prefix combinations.
         sm_session (SageSession): A SageMaker session object.
 
     Returns:
-        str: The full S3 path to the most recent subfolder, or None if no subfolders exist.
+        str: The full S3 bucket and prefix combination with the newest files, or None if no files are found.
     """
-    # Get the S3 bucket and prefix
-    bucket, prefix = s3_path.replace("s3://", "").split("/", 1)
-
-    # Ensure the prefix ends with a '/'
-    if not prefix.endswith("/"):
-        prefix += "/"
-
     # Get the S3 client
-    s3_client = sm_session.boto_session.client("s3")
+    s3_client = sm_session.boto_session.client('s3')
 
-    # Get the objects in the S3 path
-    paginator = s3_client.get_paginator("list_objects_v2")
-    page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter="/")
-
-    # Initialize variables to track the most recent folder
-    most_recent = None
+    newest_location = None
     latest_time = None
 
-    # Iterate through the listed objects
-    for page in page_iterator:
-        for prefix_info in page.get("CommonPrefixes", []):
-            folder_path = prefix_info["Prefix"]
-            # Get the last modified time of the current folder
-            response = s3_client.list_objects_v2(Bucket=bucket, Prefix=folder_path)
-            contents = response.get("Contents", [])
-            if contents:
-                last_modified = max(obj["LastModified"] for obj in contents)
-                if most_recent is None or last_modified > latest_time:
-                    most_recent = folder_path
-                    latest_time = last_modified
+    for location in s3_locations:
+        # Extract bucket and prefix from the location
+        bucket, prefix = location.replace("s3://", "").split("/", 1)
 
-    # Return the full S3 path to the most recent subfolder
-    if most_recent:
-        return f"s3://{bucket}/{most_recent}"[:-1]  # Remove the trailing '/'
-    else:
-        return None
+        # List files under the current prefix
+        response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+        # Check if there are files
+        if 'Contents' in response:
+            # Find the latest file in the current location
+            for file in response['Contents']:
+                if newest_location is None or file['LastModified'] > latest_time:
+                    newest_location = location
+                    latest_time = file['LastModified']
+
+    return newest_location
 
 
 def pull_s3_data(s3_path: str, embedded_index=False) -> Union[pd.DataFrame, None]:

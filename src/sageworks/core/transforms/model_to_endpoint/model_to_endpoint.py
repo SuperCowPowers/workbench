@@ -39,7 +39,7 @@ class ModelToEndpoint(Transform):
         self.output_type = TransformOutput.ENDPOINT
 
     def transform_impl(self):
-        """Compute a Feature Set based on RDKit Descriptors"""
+        """Deploy an Endpoint for a Model"""
 
         # Delete endpoint (if it already exists)
         existing_endpoint = EndpointCore(self.output_uuid)
@@ -47,20 +47,35 @@ class ModelToEndpoint(Transform):
             existing_endpoint.delete()
 
         # Get the Model Package ARN for our input model
-        model_package_arn = ModelCore(self.input_uuid).model_package_arn()
+        input_model = ModelCore(self.input_uuid)
+        model_package_arn = input_model.model_package_arn()
 
         # Will this be a Serverless Endpoint?
         if self.instance_type == "serverless":
             self._serverless_deploy(model_package_arn)
-            return
+        else:
+            self._realtime_deploy(model_package_arn)
 
+        # Add this endpoint to the set of registered endpoints for the model
+        self.log.important(f"Registering Endpoint {self.output_uuid} with Model {self.input_uuid}...")
+        registered_endpoints = set(input_model.sageworks_meta().get("sageworks_registered_endpoints", []))
+        registered_endpoints.add(self.output_uuid)
+        input_model.upsert_sageworks_meta({"sageworks_registered_endpoints": list(registered_endpoints)})
+        input_model.details(recompute=True)
+
+    def _realtime_deploy(self, model_package_arn: str):
+        """Internal Method: Deploy the Realtime Endpoint
+
+        Args:
+            model_package_arn(str): The Model Package ARN used to deploy the Endpoint
+        """
         # Create a Model Package
         model_package = ModelPackage(role=self.sageworks_role_arn, model_package_arn=model_package_arn)
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
 
-        # Deploy an Endpoint
+        # Deploy a Realtime Endpoint
         model_package.deploy(
             initial_instance_count=1,
             instance_type=self.instance_type,
@@ -71,7 +86,8 @@ class ModelToEndpoint(Transform):
         )
 
     def _serverless_deploy(self, model_package_arn, mem_size=2048, max_concurrency=5, wait=True):
-        """Internal Method: Deploy the Endpoint in serverless mode
+        """Internal Method: Deploy a Serverless Endpoint
+
         Args:
             mem_size(int): Memory size in MB (default: 2048)
             max_concurrency(int): Max concurrency (default: 5)

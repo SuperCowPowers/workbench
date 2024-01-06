@@ -15,7 +15,7 @@ from sagemaker.model import Model as SagemakerModel
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.utils.aws_utils import most_recent_s3_subfolder, pull_s3_data
+from sageworks.utils.aws_utils import newest_files, pull_s3_data
 
 
 # Enumerated Model Types
@@ -75,10 +75,16 @@ class ModelCore(Artifact):
         # Set the Model Training S3 Path
         self.model_training_path = self.models_s3_path + "/training/" + self.model_name
 
-        # Endpoints might drop inference artifacts here
-        # Note: We may have 0 to N endpoints, so we need to search this path
-        endpoint_inference_base = self.endpoints_s3_path + "/inference/"
-        self.endpoint_inference_path = most_recent_s3_subfolder(endpoint_inference_base, self.sm_session)
+        # Look for any Registered Endpoints
+        registered_endpoints = self.sageworks_meta().get("sageworks_registered_endpoints")
+
+        # Note: We may have 0 to N endpoints, so we find the one with the most recent artifacts
+        if registered_endpoints:
+            endpoint_inference_base = self.endpoints_s3_path + "/inference/"
+            endpoint_inference_paths = [endpoint_inference_base + e for e in registered_endpoints]
+            self.endpoint_inference_path = newest_files(endpoint_inference_paths, self.sm_session)
+        else:
+            self.endpoint_inference_path = None
 
         # Call SuperClass Post Initialization
         super().__post_init__()
