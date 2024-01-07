@@ -103,6 +103,9 @@ class EndpointCore(Artifact):
         Returns:
             list[str]: List of health issues
         """
+        if not self.ready():
+            return ["needs_onboard"]
+
         # Call the base class health check
         health_issues = super().health_check()
 
