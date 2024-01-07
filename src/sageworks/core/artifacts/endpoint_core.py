@@ -100,6 +100,7 @@ class EndpointCore(Artifact):
 
     def health_check(self) -> list[str]:
         """Perform a health check on this model
+
         Returns:
             list[str]: List of health issues
         """
