@@ -628,7 +628,7 @@ class EndpointCore(Artifact):
 
         # Okay now delete the Endpoint
         try:
-            time.sleep(1)  # Let AWS catch up with any deletions performed above
+            time.sleep(2)  # Let AWS catch up with any deletions performed above
             self.log.info(f"Deleting Endpoint {self.uuid}...")
             self.sm_client.delete_endpoint(EndpointName=self.uuid)
         except botocore.exceptions.ClientError as e:

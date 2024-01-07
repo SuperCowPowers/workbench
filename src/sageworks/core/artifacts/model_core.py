@@ -58,6 +58,7 @@ class ModelCore(Artifact):
             self.log.important(f"Could not find model {self.model_name} within current visibility scope")
             self.latest_model = None
             self.model_type = ModelType.UNKNOWN
+            return
         else:
             try:
                 self.latest_model = self.model_meta[0]
@@ -71,6 +72,7 @@ class ModelCore(Artifact):
                 self.log.critical(f"Model {self.model_name} appears to be malformed. Delete and recreate it!")
                 self.latest_model = None
                 self.model_type = ModelType.UNKNOWN
+                return
 
         # Set the Model Training S3 Path
         self.model_training_path = self.models_s3_path + "/training/" + self.model_name

@@ -123,6 +123,7 @@ class SageWorksShell:
         help_msg = """    Commands:
         - hey: Show this help message
         - docs: Open browser to show SageWorks Documentation
+        - summary: Show a summary of all the AWS Artifacts
         - incoming_data: List all the incoming S3 data
         - glue_jobs: List all the Glue Jobs in AWS
         - data_sources: List all the DataSources in AWS
