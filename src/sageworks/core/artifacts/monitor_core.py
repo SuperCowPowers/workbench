@@ -49,11 +49,11 @@ class MonitorCore:
         self.sageworks_role = AWSAccountClamp().sageworks_execution_role_arn()
         self.model_monitor = DefaultModelMonitor(role=self.sageworks_role, instance_type=self.instance_type)
 
-    def status(self) -> dict:
-        """Return the status of the monitoring for the endpoint
+    def summary(self) -> dict:
+        """Return the summary of information about the endpoint monitor
 
         Returns:
-            dict: The status of the monitoring for the endpoint
+            dict: Summary of information about the endpoint monitor
         """
         if self.endpoint.is_serverless():
             return {
@@ -376,7 +376,7 @@ class MonitorCore:
         pass
 
     def monitoring_schedule_exists(self):
-        """Code to get the status of the monitoring schedule"""
+        """Code to figure out if a monitoring schedule already exists for this endpoint"""
         existing_schedules = self.sagemaker_client.list_monitoring_schedules(MaxResults=100).get(
             "MonitoringScheduleSummaries", []
         )
@@ -404,10 +404,10 @@ if __name__ == "__main__":
         exit(1)
     mm = MonitorCore(endpoint_name)
 
-    # Check the status of the monitoring
-    pprint(mm.status())
+    # Check the summary of the monitoring class
+    pprint(mm.summary())
 
-    # Check the details of the monitoring
+    # Check the details of the monitoring class
     pprint(mm.details())
 
     # Add data capture to the endpoint
