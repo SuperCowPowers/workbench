@@ -1,6 +1,7 @@
-"""ModelMonitoring class for monitoring SageMaker endpoints"""
+"""MonitorCore class for monitoring SageMaker endpoints"""
 import logging
 import json
+from typing import Union
 from io import StringIO
 import pandas as pd
 from sagemaker import Predictor
@@ -19,7 +20,7 @@ from sageworks.utils.s3_utils import read_s3_file
 from sageworks.utils import endpoint_utils
 
 
-class ModelMonitoring:
+class MonitorCore:
     def __init__(self, endpoint_name, instance_type="ml.t3.large"):
         """ExtractModelArtifact Class
         Args:
@@ -47,6 +48,69 @@ class ModelMonitoring:
         # Initialize the DefaultModelMonitor
         self.sageworks_role = AWSAccountClamp().sageworks_execution_role_arn()
         self.model_monitor = DefaultModelMonitor(role=self.sageworks_role, instance_type=self.instance_type)
+
+    def status(self) -> dict:
+        """Return the status of the monitoring for the endpoint
+
+        Returns:
+            dict: The status of the monitoring for the endpoint
+        """
+        if self.endpoint.is_serverless():
+            return {"endpoint_type": "serverless",
+                    "data_capture": "not supported",
+                    "baseline": "not supported",
+                    "monitoring_schedule": "not supported"}
+        else:
+            return {"endpoint_type": "realtime",
+                    "data_capture": self.is_data_capture_configured(capture_percentage=100),
+                    "baseline": self.baseline_exists(),
+                    "monitoring_schedule": self.monitoring_schedule_exists()}
+
+    def details(self) -> dict:
+        """Return the details of the monitoring for the endpoint
+
+        Returns:
+            dict: The details of the monitoring for the endpoint
+        """
+        # Check if we have data capture
+        if self.is_data_capture_configured(capture_percentage=100):
+            data_capture_path = self.data_capture_path
+        else:
+            data_capture_path = None
+
+        # Check if we have a baseline
+        if self.baseline_exists():
+            baseline_csv_file = self.baseline_csv_file
+            constraints_json_file = self.constraints_json_file
+            statistics_json_file = self.statistics_json_file
+        else:
+            baseline_csv_file = None
+            constraints_json_file = None
+            statistics_json_file = None
+
+        # Check if we have a monitoring schedule
+        if self.monitoring_schedule_exists():
+            schedule_details = self.sagemaker_client.describe_monitoring_schedule(
+                MonitoringScheduleName=self.monitoring_schedule_name
+            )
+            schedule_status = schedule_details.get("MonitoringScheduleStatus")
+            schedule_name = schedule_details.get("MonitoringScheduleName")
+            output_path = self.monitoring_output_path
+        else:
+            schedule_name = None
+            schedule_status = "Not Scheduled"
+            schedule_details = None
+            output_path = None
+        return {
+            "data_capture_path": data_capture_path,
+            "baseline_csv_file": baseline_csv_file,
+            "baseline_constraints_json_file": constraints_json_file,
+            "baseline_statistics_json_file": statistics_json_file,
+            "monitoring_schedule_name": schedule_name,
+            "monitoring_output_path": output_path,
+            "monitoring_schedule_status": schedule_status,
+            "monitoring_schedule_details": schedule_details,
+        }
 
     def add_data_capture(self, capture_percentage=100):
         """
@@ -198,6 +262,11 @@ class ModelMonitoring:
             - constraints.json
             - statistics.json
         """
+        # Check if this endpoint is a serverless endpoint
+        if self.endpoint.is_serverless():
+            self.log.warning("You can create a baseline but it can't be used/monitored for serverless endpoints, skipping...")
+            return
+
         if not self.baseline_exists() or recreate:
             # Create a baseline for monitoring (training data from the FeatureSet)
             baseline_df = endpoint_utils.fs_training_data(self.endpoint)
@@ -212,44 +281,46 @@ class ModelMonitoring:
         else:
             self.log.important(f"Baseline already exists for {self.endpoint_name}")
 
-    def get_baseline(self) -> pd.DataFrame:
+    def get_baseline(self) -> Union[pd.DataFrame, None]:
         """Code to get the baseline CSV from the S3 baseline directory
 
         Returns:
-            pd.DataFrame: The baseline CSV from the baseline (baseline.csv)
+            pd.DataFrame: The baseline CSV as a DataFrame (None if it doesn't exist)
         """
         # Read the monitoring data from S3
         if not wr.s3.does_object_exist(path=self.baseline_csv_file):
             self.log.warning("baseline.csv data does not exist in S3.")
+            return None
         else:
             return wr.s3.read_csv(self.baseline_csv_file)
 
-    def get_constraints(self) -> pd.DataFrame:
+    def get_constraints(self) ->  Union[pd.DataFrame, None]:
         """Code to get the constraints from the baseline
 
         Returns:
-            pd.DataFrame: The constraints from the baseline (constraints.json)
+           pd.DataFrame: The constraints from the baseline (constraints.json) (None if it doesn't exist)
         """
         return self._get_monitor_json_data(self.constraints_json_file)
 
-    def get_statistics(self) -> pd.DataFrame:
+    def get_statistics(self) ->  Union[pd.DataFrame, None]:
         """Code to get the statistics from the baseline
 
         Returns:
-            pd.DataFrame: The statistics from the baseline (statistics.json)
+            pd.DataFrame: The statistics from the baseline (statistics.json) (None if it doesn't exist)
         """
         return self._get_monitor_json_data(self.statistics_json_file)
 
-    def _get_monitor_json_data(self, s3_path: str) -> pd.DataFrame:
+    def _get_monitor_json_data(self, s3_path: str) -> Union[pd.DataFrame, None]:
         """Internal: Convert the JSON monitoring data into a DataFrame
         Args:
             s3_path(str): The S3 path to the monitoring data
         Returns:
-            pd.DataFrame: Monitoring data in DataFrame form
+            pd.DataFrame: Monitoring data in DataFrame form (None if it doesn't exist)
         """
         # Read the monitoring data from S3
         if not wr.s3.does_object_exist(path=s3_path):
             self.log.warning("Monitoring data does not exist in S3.")
+            return None
         else:
             raw_json = read_s3_file(s3_path=s3_path)
             monitoring_data = json.loads(raw_json)
@@ -263,6 +334,10 @@ class ModelMonitoring:
             schedule (str): The schedule for the monitoring job (hourly or daily, defaults to hourly).
             recreate (bool): If True, recreate the monitoring schedule even if it already exists.
         """
+        # Check if this endpoint is a serverless endpoint
+        if self.endpoint.is_serverless():
+            self.log.warning("Monitoring Schedule is not currently supported for serverless endpoints.")
+            return
 
         # Set up the monitoring schedule, name, and output path
         if schedule == "daily":
@@ -308,7 +383,8 @@ class ModelMonitoring:
 
 
 if __name__ == "__main__":
-    """Exercise the ModelMonitoring class"""
+    """Exercise the MonitorCore class"""
+    from pprint import pprint
 
     # Set options for actually seeing the dataframe
     pd.set_option("display.max_columns", None)
@@ -320,7 +396,15 @@ if __name__ == "__main__":
     if not my_endpoint.exists():
         print(f"Endpoint {endpoint_name} does not exist.")
         exit(1)
-    mm = ModelMonitoring(endpoint_name)
+    mm = MonitorCore(endpoint_name)
+
+    # Check the status of the monitoring
+    pprint(mm.status())
+
+    # Check the details of the monitoring
+    pprint(mm.details())
+
+    # Add data capture to the endpoint
     mm.add_data_capture()
 
     # Create a baseline for monitoring
@@ -328,11 +412,14 @@ if __name__ == "__main__":
 
     # Check the baseline outputs
     base_df = mm.get_baseline()
-    print(base_df.head())
+    if base_df is not None:
+        print(base_df.head())
     constraints_df = mm.get_constraints()
-    print(constraints_df.head())
+    if constraints_df is not None:
+        print(constraints_df.head())
     statistics_df = mm.get_statistics()
-    print(statistics_df.head())
+    if statistics_df is not None:
+        print(statistics_df.head())
 
     # Set up the monitoring schedule (if it doesn't already exist)
     mm.setup_monitoring_schedule()

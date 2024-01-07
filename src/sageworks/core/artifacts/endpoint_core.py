@@ -188,10 +188,10 @@ class EndpointCore(Artifact):
         self.get_monitor().add_data_capture()
 
     def get_monitor(self):
-        """Get the ModelMonitoring class for this endpoint"""
-        from sageworks.utils.model_monitoring import ModelMonitoring
+        """Get the MonitorCore class for this endpoint"""
+        from sageworks.core.artifacts.monitor_core import MonitorCore
 
-        return ModelMonitoring(self.endpoint_name)
+        return MonitorCore(self.endpoint_name)
 
     def _endpoint_error_handling(self, predictor, feature_df):
         """Internal: Method that handles Errors, Retries, and Binary Search for Error Row(s)"""
