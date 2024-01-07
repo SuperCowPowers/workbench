@@ -11,61 +11,51 @@ if __name__ == "__main__":
     # This forces a refresh on all the data we get from the AWs Broker
     AWSServiceBroker().get_all_metadata(force_refresh=True)
 
-    # Delete the test_data DataSource
+    # Delete the test_data Artifacts
     ds = DataSource("test_data")
     if ds.exists():
         print("Deleting test_data...")
         ds.delete()
-
-    # Delete the abalone_data DataSource
-    ds = DataSource("abalone_data")
-    if ds.exists():
-        print("Deleting abalone_data...")
-        ds.delete()
-
-    # Delete the abalone_data_copy DataSource
-    ds = DataSource("abalone_data_copy")
-    if ds.exists():
-        print("Deleting abalone_data_copy...")
-        ds.delete()
-
-    # Delete the test_features FeatureSet
     fs = FeatureSet("test_features")
     if fs.exists():
         print("Deleting test_features...")
         fs.delete()
-
-    # Delete the abalone_features FeatureSet
-    fs = FeatureSet("abalone_features")
-    if fs.exists():
-        print("Deleting abalone_features...")
-        fs.delete()
-
-    # Delete the wine_feature FeatureSet
-    fs = FeatureSet("wine_features")
-    if fs.exists():
-        print("Deleting wine_features...")
-        fs.delete()
-
-    # Delete the test-model Model
     m = Model("test-model")
     if m.exists():
         print("Deleting test-model model...")
         m.delete()
+    end = Endpoint("test-end")
+    if end.exists():
+        print("Deleting test-end endpoint...")
+        end.delete()
 
-    # Delete the abalone-regression Model
+    # Delete the abalone_data Artifacts
+    ds = DataSource("abalone_data")
+    if ds.exists():
+        print("Deleting abalone_data...")
+        ds.delete()
+    ds = DataSource("abalone_data_copy")
+    if ds.exists():
+        print("Deleting abalone_data_copy...")
+        ds.delete()
+    fs = FeatureSet("abalone_features")
+    if fs.exists():
+        print("Deleting abalone_features...")
+        fs.delete()
     m = Model("abalone-regression")
     if m.exists():
         print("Deleting abalone-regression model...")
         m.delete()
-
-    # Delete the abalone-regression Endpoint
     end = Endpoint("abalone-regression-end")
     if end.exists():
         print("Deleting abalone-regression-end...")
         end.delete()
+    end = Endpoint("abalone-regression-end-rt")
+    if end.exists():
+        print("Deleting abalone-regression-end-rt...")
+        end.delete()
 
-    # Classification Artifacts
+    # Delete abalone_classification Artifacts
     fs = FeatureSet("abalone_classification")
     if fs.exists():
         print("Deleting abalone_classification...")
@@ -79,7 +69,7 @@ if __name__ == "__main__":
         print("Deleting abalone-classification-end endpoint...")
         end.delete()
 
-    # Wine Artifacts
+    # Delete the wine_data Artifacts
     ds = DataSource("wine_data")
     if ds.exists():
         print("Deleting wine_data...")
