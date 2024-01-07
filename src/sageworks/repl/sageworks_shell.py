@@ -146,14 +146,13 @@ class SageWorksShell:
         cprint("yellow", "\nAWS Artifacts Summary:")
         view_data = self.artifacts_text_view.view_data()
         for name, df in view_data.items():
-
             # Pad the name to 15 characters
             name = (name + " " * 15)[:15]
 
             # Get the first three items in the first column
             examples = ", ".join(df.iloc[:, 0].tolist())
             if len(examples) > 70:
-                examples = examples[:70] + '...'
+                examples = examples[:70] + "..."
 
             # Print the summary
             cprint(["lightpurple", "\t" + name, "lightgreen", str(df.shape[0]) + "  ", "purple_blue", examples])
