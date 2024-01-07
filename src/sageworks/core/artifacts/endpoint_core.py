@@ -342,7 +342,7 @@ class EndpointCore(Artifact):
         self.remove_sageworks_health_tag("needs_onboard")
 
         # Run a health check and refresh the meta
-        time.sleep(1)  # Give the AWS Metadata a chance to update
+        time.sleep(2)  # Give the AWS Metadata a chance to update
         self.health_check()
         self.refresh_meta()
         self.details(recompute=True)

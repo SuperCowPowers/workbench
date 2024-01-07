@@ -326,7 +326,16 @@ class Artifact(ABC):
             str: String representation of this artifact
         """
         summary_dict = self.summary()
-        display_keys = ["aws_arn", "health_tags", "size", "created", "modified", "input", "sageworks_status", "sageworks_tags"]
+        display_keys = [
+            "aws_arn",
+            "health_tags",
+            "size",
+            "created",
+            "modified",
+            "input",
+            "sageworks_status",
+            "sageworks_tags",
+        ]
         summary_items = [f"  {repr(key)}: {repr(value)}" for key, value in summary_dict.items() if key in display_keys]
         summary_str = f"{self.__class__.__name__}: {self.uuid}\n" + ",\n".join(summary_items)
         return summary_str
