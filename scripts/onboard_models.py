@@ -1,6 +1,5 @@
 """Script that loops through all models and checks if they are ready"""
 import logging
-import time
 
 # SageWorks Imports
 from sageworks.views.artifacts_text_view import ArtifactsTextView
@@ -19,5 +18,5 @@ for model_name in models["Model Group"]:
     if m.ready():
         log.debug(f"Model {model_name} is ready!")
     else:
-        log.important(f"Model {model_name} is not ready...Calling make_ready.... ")
-        m.make_ready()
+        log.important(f"Model {model_name} is not ready...Calling onboard.... ")
+        m.onboard()

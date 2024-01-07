@@ -128,19 +128,12 @@ class Artifact(ABC):
             return False
 
     @abstractmethod
-    def make_ready(self) -> bool:
-        """Make the Artifact ready. Perform any initial setup steps"""
-        pass
-
     def onboard(self) -> bool:
         """Onboard this Artifact into SageWorks
         Returns:
             bool: True if the Artifact was successfully onboarded, False otherwise
         """
-        self.log.important(f"Onboarding {self.uuid}...")
-        self.set_status("onboarding")
-        self.make_ready()
-        return True
+        pass
 
     @abstractmethod
     def details(self) -> dict:

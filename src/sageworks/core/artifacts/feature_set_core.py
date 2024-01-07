@@ -554,22 +554,29 @@ class FeatureSetCore(Artifact):
         # Okay now call/return the DataSource ready() method
         return self.data_source.ready()
 
-    def make_ready(self) -> bool:
-        """This is a BLOCKING method that will wait until the FeatureSet is ready"""
+    def onboard(self) -> bool:
+        """This is a BLOCKING method that will onboard the FeatureSet (make it ready)"""
 
-        # Call our underlying DataSource make_ready method
+        # Set our status to onboarding
+        self.log.important(f"Onboarding {self.uuid}...")
+        self.set_status("onboarding")
+        self.remove_sageworks_health_tag("needs_onboard")
+
+        # Call our underlying DataSource onboard method
         self.data_source.refresh_meta()
         if not self.data_source.exists():
             self.log.critical(f"Data Source check failed for {self.uuid}")
             self.log.critical("Delete this Feature Set and recreate it to fix this issue")
             return False
         if not self.data_source.ready():
-            self.data_source.make_ready()
+            self.data_source.onboard()
 
-        # Set ourselves to ready
-        self.set_status("ready")
-        self.remove_sageworks_health_tag("needs_onboard")
+        # Run a health check and refresh the meta
+        time.sleep(1)  # Give the AWS Metadata a chance to update
+        self.health_check()
+        self.refresh_meta()
         self.details(recompute=True)
+        self.set_status("ready")
         return True
 
 

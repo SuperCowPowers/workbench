@@ -151,15 +151,12 @@ class PandasToData(Transform):
             raise ValueError(f"Unsupported file format: {self.output_format}")
 
     def post_transform(self, **kwargs):
-        """Post-Transform: Calling make_ready() on the DataSource"""
-        self.log.info("Post-Transform: Calling make_ready() on the DataSource...")
+        """Post-Transform: Calling onboard() fnr the DataSource"""
+        self.log.info("Post-Transform: Calling onboard() for the DataSource...")
 
-        # Okay grab the output DataSource
+        # Onboard the DataSource
         output_data_source = DataSourceFactory(self.output_uuid, force_refresh=True)
-        output_data_source.set_status("initializing")
-
-        # Call the DataSource make_ready method to compute a bunch of EDA stuff
-        output_data_source.make_ready()
+        output_data_source.onboard()
 
 
 if __name__ == "__main__":

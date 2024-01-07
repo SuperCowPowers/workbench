@@ -330,20 +330,18 @@ class PandasToFeatures(Transform):
         self.log.info(f"Total rows to be ingested: {self.expected_rows}")
 
     def post_transform(self, **kwargs):
-        """Post-Transform: Populating Offline Storage and make_ready()"""
-        self.log.info("Post-Transform: Populating Offline Storage and make_ready()...")
+        """Post-Transform: Populating Offline Storage and onboard()"""
+        self.log.info("Post-Transform: Populating Offline Storage and onboard()...")
 
         # Feature Group Ingestion takes a while, so we need to wait for it to finish
         self.output_feature_set = FeatureSetCore(self.output_uuid, force_refresh=True)
-        self.output_feature_set.set_status("initializing")
-
-        # Wait for offline storage of the Feature Group to be ready
         self.log.important("Waiting for AWS Feature Group Offline storage to be ready...")
         self.log.important("This will often take 10-20 minutes...go have coffee or lunch :)")
+        self.output_feature_set.set_status("initializing")
         self.wait_for_rows(self.expected_rows)
 
-        # Call the FeatureSet make_ready method to compute a bunch of EDA stuff
-        self.output_feature_set.make_ready()
+        # Call the FeatureSet onboard method to compute a bunch of EDA stuff
+        self.output_feature_set.onboard()
 
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")

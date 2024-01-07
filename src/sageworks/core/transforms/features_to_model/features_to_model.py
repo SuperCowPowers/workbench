@@ -212,14 +212,11 @@ class FeaturesToModel(Transform):
         self.create_and_register_model()
 
     def post_transform(self, **kwargs):
-        """Post-Transform: Calling make_ready() on the Model"""
+        """Post-Transform: Calling onboard() on the Model"""
         self.log.info("Post-Transform: Calling onboard() on the Model...")
 
-        # Okay, lets get our output model and set it to initializing
-        output_model = ModelCore(self.output_uuid, model_type=self.model_type, force_refresh=True)
-        output_model.set_status("initializing")
-
         # Store the model feature_list and target_column in the sageworks_meta
+        output_model = ModelCore(self.output_uuid, model_type=self.model_type, force_refresh=True)
         output_model.upsert_sageworks_meta({"sageworks_model_features": self.model_feature_list})
         output_model.upsert_sageworks_meta({"sageworks_model_target": self.target_column})
 

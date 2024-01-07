@@ -144,14 +144,11 @@ class ModelToEndpoint(Transform):
             self.log.important(f"Endpoint {endpoint_name} is now {status}...")
 
     def post_transform(self, **kwargs):
-        """Post-Transform: Calling make_ready() on the Model"""
-        self.log.info("Post-Transform: Calling make_ready() on the Endpoint...")
+        """Post-Transform: Calling onboard() for the Endpoint"""
+        self.log.info("Post-Transform: Calling onboard() for the Endpoint...")
 
-        # Okay, lets get our output model and set it to initializing
+        # Onboard the Endpoint
         output_endpoint = EndpointCore(self.output_uuid, force_refresh=True)
-        output_endpoint.set_status("initializing")
-
-        # Call the Endpoint onboard method
         output_endpoint.onboard()
 
 

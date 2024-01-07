@@ -287,20 +287,6 @@ class ModelCore(Artifact):
         # Our current list of expected metadata, we can add to this as needed
         return ["sageworks_status", "sageworks_training_metrics", "sageworks_training_cm"]
 
-    def onboard(self) -> bool:
-        """Onboard this Model into SageWorks
-        Returns:
-            bool: True if the Model was successfully onboarded, False otherwise
-        """
-
-        # Determine the Model Type
-        while self.is_model_unknown():
-            self._determine_model_type()
-
-        # Call the superclass onboard
-        super().onboard()
-        return True
-
     def is_model_unknown(self) -> bool:
         """Is the Model Type unknown?"""
         return self.model_type == ModelType.UNKNOWN
@@ -320,18 +306,26 @@ class ModelCore(Artifact):
             self.log.warning(f"Unknown Model Type {model_type}!")
             self._set_model_type(ModelType.UNKNOWN)
 
-    def make_ready(self) -> bool:
-        """This is a BLOCKING method that will wait until the Model is ready
+    def onboard(self) -> bool:
+        """This is a BLOCKING method that will onboard the Model (make it ready)
         Returns:
-            bool: True if the Model is ready, False otherwise
+            bool: True if the Model is successfully onboarded, False otherwise
         """
-        self._pull_training_job_metrics(force_pull=True)
-        self.set_status("ready")
+        # Determine the Model Type
+        while self.is_model_unknown():
+            self._determine_model_type()
+
+        # Set the status to onboarding
+        self.set_status("onboarding")
         self.remove_sageworks_health_tag("needs_onboard")
+        self._pull_training_job_metrics(force_pull=True)
+
+        # Run a health check and refresh the meta
         time.sleep(1)  # Give the AWS Metadata a chance to update
         self.health_check()
         self.refresh_meta()
         self.details(recompute=True)
+        self.set_status("ready")
         return True
 
     def delete(self):
@@ -549,7 +543,7 @@ if __name__ == "__main__":
     print(f"Model Check: {my_model.exists()}")
 
     # Make sure the model is 'ready'
-    my_model.make_ready()
+    my_model.onboard()
 
     # Get the ARN of the Model Group
     print(f"Model Group ARN: {my_model.group_arn()}")

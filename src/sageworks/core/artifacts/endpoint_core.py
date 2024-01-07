@@ -332,14 +332,21 @@ class EndpointCore(Artifact):
         # Return the details
         return details
 
-    def make_ready(self) -> bool:
-        """This is a BLOCKING method that will wait until the Endpoint is ready
+    def onboard(self) -> bool:
+        """This is a BLOCKING method that will onboard the Endpoint (make it ready)
         Returns:
-            bool: True if the Endpoint is ready, False otherwise
+            bool: True if the Endpoint is successfully onboarded, False otherwise
         """
-        self.set_status("ready")
+        self.log.important(f"Onboarding {self.uuid}...")
+        self.set_status("onboarding")
         self.remove_sageworks_health_tag("needs_onboard")
+
+        # Run a health check and refresh the meta
+        time.sleep(1)  # Give the AWS Metadata a chance to update
+        self.health_check()
+        self.refresh_meta()
         self.details(recompute=True)
+        self.set_status("ready")
         return True
 
     def model_details(self) -> dict:
