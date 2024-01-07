@@ -287,7 +287,7 @@ def newest_files(s3_locations: list[str], sm_session: SageSession) -> Union[str,
         str: The full S3 bucket and prefix combination with the newest files, or None if no files are found.
     """
     # Get the S3 client
-    s3_client = sm_session.boto_session.client('s3')
+    s3_client = sm_session.boto_session.client("s3")
 
     newest_location = None
     latest_time = None
@@ -299,12 +299,12 @@ def newest_files(s3_locations: list[str], sm_session: SageSession) -> Union[str,
         # List files under the current prefix
         response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
         # Check if there are files
-        if 'Contents' in response:
+        if "Contents" in response:
             # Find the latest file in the current location
-            for file in response['Contents']:
-                if newest_location is None or file['LastModified'] > latest_time:
+            for file in response["Contents"]:
+                if newest_location is None or file["LastModified"] > latest_time:
                     newest_location = location
-                    latest_time = file['LastModified']
+                    latest_time = file["LastModified"]
 
     return newest_location
 
@@ -346,9 +346,9 @@ if __name__ == "__main__":
     pprint(my_meta)
 
     # Test the most_recent_s3_subfolder method
-    s3_path = "s3://sandbox-sageworks-artifacts/endpoints/inference"
+    s3_path = "s3://sandbox-sageworks-artifacts/endpoints/inference/abalone-regression-end"
     sm_session = SageSession()
-    most_recent = most_recent_s3_subfolder(s3_path, sm_session)
+    most_recent = newest_files([s3_path], sm_session)
 
     # Add a health tag
     my_features.add_sageworks_health_tag("needs_onboard")
