@@ -56,15 +56,19 @@ class MonitorCore:
             dict: The status of the monitoring for the endpoint
         """
         if self.endpoint.is_serverless():
-            return {"endpoint_type": "serverless",
-                    "data_capture": "not supported",
-                    "baseline": "not supported",
-                    "monitoring_schedule": "not supported"}
+            return {
+                "endpoint_type": "serverless",
+                "data_capture": "not supported",
+                "baseline": "not supported",
+                "monitoring_schedule": "not supported",
+            }
         else:
-            return {"endpoint_type": "realtime",
-                    "data_capture": self.is_data_capture_configured(capture_percentage=100),
-                    "baseline": self.baseline_exists(),
-                    "monitoring_schedule": self.monitoring_schedule_exists()}
+            return {
+                "endpoint_type": "realtime",
+                "data_capture": self.is_data_capture_configured(capture_percentage=100),
+                "baseline": self.baseline_exists(),
+                "monitoring_schedule": self.monitoring_schedule_exists(),
+            }
 
     def details(self) -> dict:
         """Return the details of the monitoring for the endpoint
@@ -264,7 +268,9 @@ class MonitorCore:
         """
         # Check if this endpoint is a serverless endpoint
         if self.endpoint.is_serverless():
-            self.log.warning("You can create a baseline but it can't be used/monitored for serverless endpoints, skipping...")
+            self.log.warning(
+                "You can create a baseline but it can't be used/monitored for serverless endpoints, skipping..."
+            )
             return
 
         if not self.baseline_exists() or recreate:
@@ -294,7 +300,7 @@ class MonitorCore:
         else:
             return wr.s3.read_csv(self.baseline_csv_file)
 
-    def get_constraints(self) ->  Union[pd.DataFrame, None]:
+    def get_constraints(self) -> Union[pd.DataFrame, None]:
         """Code to get the constraints from the baseline
 
         Returns:
@@ -302,7 +308,7 @@ class MonitorCore:
         """
         return self._get_monitor_json_data(self.constraints_json_file)
 
-    def get_statistics(self) ->  Union[pd.DataFrame, None]:
+    def get_statistics(self) -> Union[pd.DataFrame, None]:
         """Code to get the statistics from the baseline
 
         Returns:
