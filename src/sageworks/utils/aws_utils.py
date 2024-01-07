@@ -345,7 +345,7 @@ if __name__ == "__main__":
     my_meta = my_features.sageworks_meta()
     pprint(my_meta)
 
-    # Test the most_recent_s3_subfolder method
+    # Test the newest files in an S3 folder method
     s3_path = "s3://sandbox-sageworks-artifacts/endpoints/inference/abalone-regression-end"
     sm_session = SageSession()
     most_recent = newest_files([s3_path], sm_session)
