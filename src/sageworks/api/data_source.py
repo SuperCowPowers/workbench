@@ -23,7 +23,6 @@ class DataSource(AthenaSource):
     Common Usage:
         ```
         my_data = DataSource(name_of_source)
-        my_data.summary()
         my_data.details()
         my_features = my_data.to_features()
         ```
@@ -52,6 +51,14 @@ class DataSource(AthenaSource):
 
         # Call superclass init
         super().__init__(ds_name)
+
+    def details(self, **kwargs) -> dict:
+        """DataSource Details
+
+        Returns:
+            dict: A dictionary of details about the DataSource
+        """
+        return super().details(**kwargs)
 
     def to_features(
         self, name: str = None, tags: list = None, id_column: str = None, event_time_column: str = None

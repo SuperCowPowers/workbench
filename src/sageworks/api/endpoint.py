@@ -3,6 +3,8 @@ Endpoints are automatically set up and provisioned for deployment into AWS.
 Endpoints can be viewed in the AWS Sagemaker interfaces or in the SageWorks
 Dashboard UI, which provides additional model details and performance metrics"""
 
+import pandas as pd
+
 # SageWorks Imports
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 
@@ -13,20 +15,29 @@ class Endpoint(EndpointCore):
     Common Usage:
         ```
         my_endpoint = Endpoint(name)
-        my_endpoint.summary()
         my_endpoint.details()
         my_endpoint.predict(df)
         ```
     """
 
-    def __init__(self, name):
-        """Endpoint Initialization
+    def details(self, **kwargs) -> dict:
+        """Endpoint Details
+
+        Returns:
+            dict: A dictionary of details about the Endpoint
+        """
+        return super().details(**kwargs)
+
+    def predict(self, df) -> pd.DataFrame:
+        """Run predictions on the Endpoint
 
         Args:
-            name (str): The name of the Endpoint
+            df (pd.DataFrame): The DataFrame to run predictions on
+
+        Returns:
+            pd.DataFrame: The DataFrame with predictions
         """
-        # Call superclass init
-        super().__init__(name)
+        return super().predict(df)
 
 
 if __name__ == "__main__":

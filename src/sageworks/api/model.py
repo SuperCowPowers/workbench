@@ -15,19 +15,18 @@ class Model(ModelCore):
     Common Usage:
         ```
         my_features = Model(name)
-        my_features.summary()
         my_features.details()
         my_features.to_endpoint()
         ```
     """
 
-    def __init__(self, name):
-        """Model Initialization
-        Args:
-            name (str): The name of the Model
+    def details(self, **kwargs) -> dict:
+        """Model Details
+
+        Returns:
+            dict: A dictionary of details about the Model
         """
-        # Call superclass init
-        super().__init__(name)
+        return super().details(**kwargs)
 
     def to_endpoint(self, name: str = None, tags: list = None, serverless: bool = True) -> Endpoint:
         """Create an Endpoint from the Model
