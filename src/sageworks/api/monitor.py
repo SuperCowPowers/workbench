@@ -11,27 +11,27 @@ from sageworks.core.artifacts.monitor_core import MonitorCore
 
 class Monitor(MonitorCore):
     """Monitor: SageWorks Monitor API Class
-    
-     Common Usage:
-        ```
-        mon = Endpoint(name).get_monitor()  # Pull from endpoint OR
-        mon = Monitor(name)                 # Create using Endpoint Name
-        mon.summary()
-        mon.details()
-        
-        # One time setup methods
-        mon.add_data_capture()
-        mon.create_baseline()
-        mon.create_monitoring_schedule()
-        
-        # Pull information from the monitor
-        baseline_df = mon.get_baseline()
-        constraints_df = mon.get_constraints()
-        stats_df = mon.get_statistics()
-        input_df, output_df = mon.get_latest_data_capture()
-        ```
+
+    Common Usage:
+       ```
+       mon = Endpoint(name).get_monitor()  # Pull from endpoint OR
+       mon = Monitor(name)                 # Create using Endpoint Name
+       mon.summary()
+       mon.details()
+
+       # One time setup methods
+       mon.add_data_capture()
+       mon.create_baseline()
+       mon.create_monitoring_schedule()
+
+       # Pull information from the monitor
+       baseline_df = mon.get_baseline()
+       constraints_df = mon.get_constraints()
+       stats_df = mon.get_statistics()
+       input_df, output_df = mon.get_latest_data_capture()
+       ```
     """
-    
+
     def summary(self) -> dict:
         """Monitor Summary
 
