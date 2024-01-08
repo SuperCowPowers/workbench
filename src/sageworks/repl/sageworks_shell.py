@@ -117,6 +117,7 @@ class SageWorksShell:
         self.commands["Model"] = importlib.import_module("sageworks.api.model").Model
         self.commands["ModelType"] = importlib.import_module("sageworks.api.model").ModelType
         self.commands["Endpoint"] = importlib.import_module("sageworks.api.endpoint").Endpoint
+        self.commands["Monitor"] = importlib.import_module("sageworks.api.monitor").Monitor
 
     @staticmethod
     def help_txt():

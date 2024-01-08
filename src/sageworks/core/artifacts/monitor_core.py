@@ -80,7 +80,7 @@ class MonitorCore:
         """
         summary_dict = self.summary()
         summary_items = [f"  {repr(key)}: {repr(value)}" for key, value in summary_dict.items()]
-        summary_str = f"{self.__class__.__name__}: {self.uuid}\n" + ",\n".join(summary_items)
+        summary_str = f"{self.__class__.__name__}: {self.endpoint_name}\n" + ",\n".join(summary_items)
         return summary_str
 
     def last_run_details(self) -> Union[dict, None]:
