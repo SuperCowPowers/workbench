@@ -32,12 +32,9 @@ class ModelComparisonMarkdown(ComponentInterface):
         if model_details is None:
             return "*No Data*"
 
-        # Create simple markdown by iterating through the model_details dictionary
-
-        # Excluded keys from the model_details dictionary (and any keys that end with '_arn')
-        exclude = ["size", "uuid", "inference_meta", "model_info"]
+        # Keys
         top_level_details = {
-            key: value for key, value in model_details.items() if key in ['input', 'sageworks_tags', 'model_type', 'version', 'description']
+            key: value for key, value in model_details.items() if key in ['uuid', 'input', 'sageworks_tags', 'model_type', 'version', 'description']
         }
 
         # FIXME: Remove this later: Add the model info to the top level details
@@ -67,6 +64,15 @@ class ModelComparisonMarkdown(ComponentInterface):
 
             # Add to markdown string
             markdown += f"**{key}:** {value_str}  \n"
+        
+        # Grab the Metrics from the model details
+        metrics = model_details.get("model_metrics")
+        if metrics is None:
+            markdown += "  \nNo Data  \n"
+        else:
+            markdown += "  \n"
+            metrics = metrics.round(3)
+            markdown += metrics.to_markdown(index=False)
 
         return markdown
 

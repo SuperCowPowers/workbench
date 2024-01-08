@@ -9,7 +9,7 @@ from .layout import plugin_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, plugin_loader, model_markdown, model_metrics, details_comparison_markdown, metrics_comparison_markdown
+from sageworks.web_components import table, plugin_loader, model_metrics, metrics_comparison_markdown
 from sageworks.web_components.plugin_interface import PluginType
 from sageworks.views.model_web_view import ModelWebView
 
@@ -31,10 +31,6 @@ models_table = table.Table().create_component(
     "plugin_table", header_color="rgb(60, 60, 60)", row_select="multi", max_height=400
 )
 
-#TODO Make abbreviated model details markdown web component
-details_comp_1 = details_comparison_markdown.ModelComparisonMarkdown().create_component("details_comparison_1")
-details_comp_2 = details_comparison_markdown.ModelComparisonMarkdown().create_component("details_comparison_2")
-
 #TODO Dynamic...
 metrics_comp_1 = metrics_comparison_markdown.MetricsComparisonMarkdown().create_component("metrics_comparison_1")
 metrics_comp_2 = metrics_comparison_markdown.MetricsComparisonMarkdown().create_component("metrics_comparison_2")
@@ -47,8 +43,6 @@ model_mets_2 = model_metrics.ModelMetrics().create_component("model_metrics_2")
 # Capture our components in a dictionary to send off to the layout
 components = {
     "plugin_table": models_table,
-    "details_comparison_1": details_comp_1,
-    "details_comparison_2": details_comp_2,
     "metrics_comparison_1": metrics_comp_1,
     "metrics_comparison_2": metrics_comp_2,
     "model_metrics_1": model_mets,

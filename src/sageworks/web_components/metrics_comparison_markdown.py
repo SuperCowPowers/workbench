@@ -32,27 +32,39 @@ class MetricsComparisonMarkdown(ComponentInterface):
         if model_details is None:
             return "*No Data*"
 
-        # Model Test Metrics
-        markdown = "### Metrics \n"
-        # meta_df = model_details.get("inference_meta")
-        # if meta_df is None:
-        #     test_data = "AWS Training Capture"
-        #     test_data_hash = " N/A "
-        #     test_rows = " - "
-        #     description = " - "
-        # else:
-        #     inference_meta = meta_df.to_dict(orient="records")[0]
-        #     test_data = inference_meta.get("test_data", " - ")
-        #     test_data_hash = inference_meta.get("test_data_hash", " - ")
-        #     test_rows = inference_meta.get("test_rows", " - ")
-        #     description = inference_meta.get("description", " - ")
+        # Keys
+        top_level_details = {
+            key: value for key, value in model_details.items() if key in ['uuid', 'input', 'sageworks_tags', 'model_type', 'version', 'description']
+        }
 
-        # # Add the markdown for the model test metrics
-        # markdown += f"**Test Data:** {test_data}  \n"
-        # markdown += f"**Data Hash:** {test_data_hash}  \n"
-        # markdown += f"**Test Rows:** {test_rows}  \n"
-        # markdown += f"**Description:** {description}  \n"
+        # FIXME: Remove this later: Add the model info to the top level details
+        model_info = model_details.get("model_info", {})
+        prefixed_model_info = {f"model_{k}": v for k, v in model_info.items()}
+        top_level_details.update(prefixed_model_info)
 
+        # Construct the markdown string
+        markdown = ""
+        for key, value in top_level_details.items():
+            # Special case for the health tags
+            if key == "health_tags":
+                markdown += self._health_tag_markdown(value)
+                continue
+
+            # Special case for dataframes
+            if isinstance(value, pd.DataFrame):
+                value_str = "Dataframe"
+
+            else:
+                # Not sure why str() conversion might fail, but we'll catch it
+                try:
+                    value_str = str(value)[:100]
+                except Exception as e:
+                    self.log.error(f"Error converting {key} to string: {e}")
+                    value_str = "*"
+
+            # Add to markdown string
+            markdown += f"**{key}:** {value_str}  \n"
+        
         # Grab the Metrics from the model details
         metrics = model_details.get("model_metrics")
         if metrics is None:

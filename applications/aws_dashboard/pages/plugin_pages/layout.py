@@ -6,8 +6,6 @@ import dash_bootstrap_components as dbc
 
 def plugin_layout(
     plugin_table: dash_table.DataTable,
-    details_comparison_1: dcc.Markdown,
-    details_comparison_2: dcc.Markdown,
     metrics_comparison_1: dcc.Markdown,
     metrics_comparison_2: dcc.Markdown,
     model_metrics_1: dcc.Graph,
@@ -27,20 +25,20 @@ def plugin_layout(
             # Model metrics
             # Column 1: First model
             #TODO Display abbreviated model details on the same row
+            dbc.Row(html.H2(id="model_header_1", style={'textAlign': 'center'})),
             dbc.Row(
                 [
-                    dbc.Col(details_comparison_1, width=6),
-                    dbc.Col(metrics_comparison_1, width=6),
-                    model_metrics_1
+                    dbc.Col([metrics_comparison_1], width=4),
+                    dbc.Col(model_metrics_1, width=8)
                 ]
             ),
             # Column 2: Second model
             #TODO Display abbreviated model details on the same row
+            dbc.Row(html.H2(id="model_header_2", style={'textAlign': 'center'})),
             dbc.Row(
                 [
-                    dbc.Col(details_comparison_2, width=6),
-                    dbc.Col(metrics_comparison_2, width=6),
-                    model_metrics_2
+                    dbc.Col([metrics_comparison_2], width=4),
+                    dbc.Col(model_metrics_2, width=8)
                 ]
             )
         ]
