@@ -1164,16 +1164,22 @@
 <p>On the first panel you can fill in the users information.</p>
 <p><img width="800" alt="Screenshot 2023-05-03 at 9 31 30 AM" src="https://user-images.githubusercontent.com/4806709/235965493-eaa5f879-df04-473b-b98d-03d422db7272.png"></p>
 <h2 id="groups">Groups</h2>
-<p>On the second panel we suggest that you have at LEAST two groups:
-- Admin group
-- DataScientists group</p>
+<p>On the second panel we suggest that you have at LEAST two groups:</p>
+<ul>
+<li>Admin group</li>
+<li>DataScientists group</li>
+</ul>
 <h3 id="setting-up-groups">Setting up Groups</h3>
 <p>This allows you to put most of the users into the DataScientists group that has AWS policies based on their job role. AWS uses 'permission sets' and you assign AWS Policies. This approach makes it easy to give a group of users a set of relevant policies for their tasks. </p>
-<p>Our standard setup is to have two permission sets with the following policies:
-- IAM Identity Center --&gt; Permission sets --&gt; DataScientist 
-   - Add Policy: arn:aws:iam::aws:policy/job-function/DataScientist</p>
+<p>Our standard setup is to have two permission sets with the following policies:</p>
 <ul>
-<li>IAM Identity Center --&gt; Permission sets --&gt; AdministratorAccess </li>
+<li>IAM Identity Center --&gt; Permission sets --&gt; DataScientist </li>
+<li>
+<p>Add Policy: arn:aws:iam::aws:policy/job-function/DataScientist</p>
+</li>
+<li>
+<p>IAM Identity Center --&gt; Permission sets --&gt; AdministratorAccess </p>
+</li>
 <li>Add Policy: arn:aws:iam::aws:policy/job-function/AdministratorAccess</li>
 </ul>
 <p>See: <a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/permissionsetsconcept.html">Permission Sets</a> for more details and instructions.</p>
@@ -1230,23 +1236,27 @@
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>export AWS_PROFILE=bob_sso
 </span></code></pre></div>
 <h2 id="testing-your-new-aws-profile">Testing your new AWS Profile</h2>
-<p>Make sure your profile is active/set
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>env | grep AWS
+<p>Make sure your profile is active/set</p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>env | grep AWS
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>AWS_PROFILE=&lt;bob_sso or whatever&gt;
 </span></code></pre></div>
-Now you can list the S3 buckets in the AWS Account
-<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>aws ls s3
+Now you can list the S3 buckets in the AWS Account</p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>aws ls s3
 </span></code></pre></div>
 If you get some message like this...</p>
-<p><code>The SSO session associated with this profile has expired or is otherwise invalid. To refresh this SSO session run aws sso login with the corresponding profile.</code></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>The SSO session associated with this profile has
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>expired or is otherwise invalid. To refresh this SSO
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>session run aws sso login with the corresponding
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>profile.
+</span></code></pre></div>
 <p>This is fine/good, a browser will open up and you can refresh your SSO Token.</p>
 <p>After that you should get a listing of the S3 buckets without needed to refresh your token.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>aws s3 ls
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>❯ aws s3 ls
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>2023-03-20 20:06:53 aws-athena-query-results-XXXYYY-us-west-2
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>2023-03-30 13:22:28 sagemaker-studio-XXXYYY-dbgyvq8ruka
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>2023-03-24 22:05:55 sagemaker-us-west-2-XXXYYY
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>2023-04-30 13:43:29 scp-sageworks-artifacts
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>aws s3 ls
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>❯ aws s3 ls
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>2023-03-20 20:06:53 aws-athena-query-results-XXXYYY-us-west-2
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>2023-03-30 13:22:28 sagemaker-studio-XXXYYY-dbgyvq8ruka
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>2023-03-24 22:05:55 sagemaker-us-west-2-XXXYYY
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>2023-04-30 13:43:29 scp-sageworks-artifacts
 </span></code></pre></div>
 <h2 id="aws-resources">AWS Resources</h2>
 <ul>
