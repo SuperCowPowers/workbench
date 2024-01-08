@@ -1,4 +1,7 @@
-"""Monitor class for monitoring SageMaker endpoints"""
+"""Monitor: Manages AWS Endpoint Monitor creation and deployment.
+Endpoints Monitors are set up and provisioned for deployment into AWS.
+Monitors can be viewed in the AWS Sagemaker interfaces or in the SageWorks
+Dashboard UI, which provides additional monitor details and performance metrics"""
 import pandas as pd
 from typing import Union
 
@@ -11,9 +14,8 @@ class Monitor(MonitorCore):
     
      Common Usage:
         ```
-        mon = Endpoint(name).get_monitor()
-        OR
-        mon = Monitor(name)
+        mon = Endpoint(name).get_monitor()  # Pull from endpoint OR
+        mon = Monitor(name)                 # Create using Endpoint Name
         mon.summary()
         mon.details()
         
@@ -27,6 +29,7 @@ class Monitor(MonitorCore):
         constraints_df = mon.get_constraints()
         stats_df = mon.get_statistics()
         input_df, output_df = mon.get_latest_data_capture()
+        ```
     """
     
     def summary(self) -> dict:
