@@ -28,7 +28,12 @@ model_broker = ModelWebView()
 
 # Create a table to display the models
 models_table = table.Table().create_component(
-    "plugin_table", header_color="rgb(60, 60, 60)", row_select="multi", max_height=400
+    "plugin_table",
+    header_color="rgb(60, 60, 60)",
+    row_select="multi",
+    max_height=400,
+    filter_action='native',
+    style_filter={'backgroundColor': 'rgb(60, 60, 60)', 'color': 'white'}
 )
 
 #TODO Dynamic...

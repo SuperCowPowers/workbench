@@ -57,6 +57,11 @@
   box-sizing: border-box;
 }
 
+/* Dash Table filter */
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner input:not([type=radio]):not([type=checkbox]){
+  color: white !important;
+}
+
 /* For devices larger than 400px */
 @media (min-width: 400px) {
   .container {
