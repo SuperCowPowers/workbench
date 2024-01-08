@@ -63,12 +63,37 @@ class MonitorCore:
                 "monitoring_schedule": "not supported",
             }
         else:
-            return {
+            summary = {
                 "endpoint_type": "realtime",
                 "data_capture": self.is_data_capture_configured(capture_percentage=100),
                 "baseline": self.baseline_exists(),
                 "monitoring_schedule": self.monitoring_schedule_exists(),
             }
+            summary.update(self.last_run_details() or {})
+            return summary
+
+    def last_run_details(self) -> Union[dict, None]:
+        """Return the details of the last monitoring run for the endpoint
+
+        Returns:
+            dict: The details of the last monitoring run for the endpoint (None if no monitoring schedule)
+        """
+        # Check if we have a monitoring schedule
+        if not self.monitoring_schedule_exists():
+            return None
+
+        # Get the details of the last monitoring run
+        schedule_details = self.sagemaker_client.describe_monitoring_schedule(
+            MonitoringScheduleName=self.monitoring_schedule_name
+        )
+        last_run_status = schedule_details.get("LastMonitoringExecutionSummary", {}).get("MonitoringExecutionStatus")
+        last_run_time = schedule_details.get("LastMonitoringExecutionSummary", {}).get("ScheduledTime")
+        failure_reason = schedule_details.get("LastMonitoringExecutionSummary", {}).get("FailureReason")
+        return {
+            "last_run_status": last_run_status,
+            "last_run_time": str(last_run_time),
+            "failure_reason": failure_reason,
+        }
 
     def details(self) -> dict:
         """Return the details of the monitoring for the endpoint
@@ -97,15 +122,21 @@ class MonitorCore:
             schedule_details = self.sagemaker_client.describe_monitoring_schedule(
                 MonitoringScheduleName=self.monitoring_schedule_name
             )
-            schedule_status = schedule_details.get("MonitoringScheduleStatus")
+
+            # General monitoring details
             schedule_name = schedule_details.get("MonitoringScheduleName")
+            schedule_status = schedule_details.get("MonitoringScheduleStatus")
             output_path = self.monitoring_output_path
+            last_run_details = self.last_run_details()
         else:
             schedule_name = None
             schedule_status = "Not Scheduled"
             schedule_details = None
             output_path = None
-        return {
+            last_run_details = None
+
+        # General monitoring details
+        general = {
             "data_capture_path": data_capture_path,
             "baseline_csv_file": baseline_csv_file,
             "baseline_constraints_json_file": constraints_json_file,
@@ -115,6 +146,9 @@ class MonitorCore:
             "monitoring_schedule_status": schedule_status,
             "monitoring_schedule_details": schedule_details,
         }
+        if last_run_details:
+            general.update(last_run_details)
+        return general
 
     def add_data_capture(self, capture_percentage=100):
         """
