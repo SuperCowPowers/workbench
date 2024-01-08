@@ -72,6 +72,17 @@ class MonitorCore:
             summary.update(self.last_run_details() or {})
             return summary
 
+    def __repr__(self) -> str:
+        """String representation of this MonitorCore object
+
+        Returns:
+            str: String representation of this MonitorCore object
+        """
+        summary_dict = self.summary()
+        summary_items = [f"  {repr(key)}: {repr(value)}" for key, value in summary_dict.items()]
+        summary_str = f"{self.__class__.__name__}: {self.uuid}\n" + ",\n".join(summary_items)
+        return summary_str
+
     def last_run_details(self) -> Union[dict, None]:
         """Return the details of the last monitoring run for the endpoint
 
@@ -367,7 +378,7 @@ class MonitorCore:
             monitoring_df = pd.json_normalize(monitoring_data["features"])
             return monitoring_df
 
-    def setup_monitoring_schedule(self, schedule: str = "hourly", recreate: bool = False):
+    def create_monitoring_schedule(self, schedule: str = "hourly", recreate: bool = False):
         """
         Sets up the monitoring schedule for the model endpoint.
         Args:
@@ -462,7 +473,7 @@ if __name__ == "__main__":
         print(statistics_df.head())
 
     # Set up the monitoring schedule (if it doesn't already exist)
-    mm.setup_monitoring_schedule()
+    mm.create_monitoring_schedule()
 
     #
     # Test the data capture by running some predictions

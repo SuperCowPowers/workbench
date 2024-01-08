@@ -7,6 +7,7 @@ nav:
     - FeatureSet: api_classes/feature_set.md
     - Model: api_classes/model.md
     - Endpoint: api_classes/endpoint.md
+    - Monitor: api_classes/monitor.md
   - SageWorks REPL: repl/index.md
   - Core Classes: 
     - OverView: core_classes/overview.md
@@ -16,6 +17,7 @@ nav:
       - FeatureSetCore: core_classes/artifacts/feature_set_core.md
       - ModelCore: core_classes/artifacts/model_core.md
       - EndpointCore: core_classes/artifacts/endpoint_core.md
+      - MonitorCore: core_classes/artifacts/monitor_core.md
     - Transforms: 
       - OverView: core_classes/transforms/overview.md
       - Data Loaders Light: core_classes/transforms/data_loaders_light.md
