@@ -402,10 +402,18 @@ class MonitorCore:
             return
 
         # Check if monitoring schedule already exists
-        if self.monitoring_schedule_exists() and not recreate:
+        schedule_exists = self.monitoring_schedule_exists()
+
+        # If the schedule exists, and we don't want to recreate it, return
+        if schedule_exists and not recreate:
             return
 
-        # Setup monitoring schedule
+        # If the schedule exists, delete it
+        if schedule_exists:
+            self.log.important(f"Deleting existing monitoring schedule for {self.endpoint_name}...")
+            self.sagemaker_client.delete_monitoring_schedule(MonitoringScheduleName=self.monitoring_schedule_name)
+
+        # Set up a NEW monitoring schedule
         self.model_monitor.create_monitoring_schedule(
             monitor_schedule_name=self.monitoring_schedule_name,
             endpoint_input=self.endpoint_name,
@@ -414,7 +422,7 @@ class MonitorCore:
             constraints=self.constraints_json_file,
             schedule_cron_expression=schedule,
         )
-        self.log.important(f"Monitoring schedule created for {self.endpoint_name}.")
+        self.log.important(f"New Monitoring schedule created for {self.endpoint_name}.")
 
     def setup_alerts(self):
         """Code to set up alerts based on monitoring results"""
