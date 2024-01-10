@@ -68,8 +68,8 @@ class ModelMarkdown(ComponentInterface):
             # Add to markdown string
             markdown += f"**{key}:** {value_str}  \n"
 
-        # Model Test Metrics
-        markdown += "### Model Test Metrics  \n"
+        # Model Metrics
+        markdown += "### Model Metrics  \n"
         meta_df = model_details.get("inference_meta")
         if meta_df is None:
             test_data = "AWS Training Capture"
