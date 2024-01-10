@@ -397,7 +397,9 @@ class ModelCore(Artifact):
                 reg_metrics_df = df.set_index("metric_name").T
 
                 # Store and return the metrics in the SageWorks Metadata
-                self.upsert_sageworks_meta({"sageworks_training_metrics": reg_metrics_df.to_dict(), "sageworks_training_cm": None})
+                self.upsert_sageworks_meta(
+                    {"sageworks_training_metrics": reg_metrics_df.to_dict(), "sageworks_training_cm": None}
+                )
                 return
 
         except (KeyError, botocore.exceptions.ClientError):

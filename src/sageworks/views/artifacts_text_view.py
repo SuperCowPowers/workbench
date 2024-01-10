@@ -262,7 +262,9 @@ class ArtifactsTextView(View):
 
             # Get the model metrics and do a weird bit of conversion to get it into a nice dictionary
             metrics = sageworks_meta.get("sageworks_inference_metrics")
-            metrics = None if metrics is None else json.dumps(pd.DataFrame.from_dict(metrics).to_dict(orient="records")[0])
+            metrics = (
+                None if metrics is None else json.dumps(pd.DataFrame.from_dict(metrics).to_dict(orient="records")[0])
+            )
             summary = {
                 "Model Group": latest_model["ModelPackageGroupName"],
                 "Health": health_tags,
