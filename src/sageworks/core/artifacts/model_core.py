@@ -5,7 +5,6 @@ import urllib.parse
 from typing import Union
 from enum import Enum
 import botocore
-import json
 
 import pandas as pd
 import awswrangler as wr
@@ -223,7 +222,10 @@ class ModelCore(Artifact):
         registered_endpoints = set(self.sageworks_meta().get("sageworks_registered_endpoints", []))
         registered_endpoints.add(endpoint_name)
         self.upsert_sageworks_meta({"sageworks_registered_endpoints": list(registered_endpoints)})
-        self.details(recompute=True)
+
+        # A new endpoint means we need to refresh our inference path
+        time.sleep(2)  # Give the AWS Metadata a chance to update
+        self.endpoint_inference_path = self.get_endpoint_inference_path()
 
     def get_endpoint_inference_path(self) -> str:
         """Get the S3 Path for the Inference Data"""
@@ -346,10 +348,9 @@ class ModelCore(Artifact):
         if "sageworks_registered_endpoints" not in self.sageworks_meta():
             endpoints = input("Register Endpoints? (use commas for multiple): ")
             endpoints = [e.strip() for e in endpoints.split(",")]
-            self.upsert_sageworks_meta({"sageworks_registered_endpoints": endpoints})
-
-        # Refresh our inference endpoint path
-        self.endpoint_inference_path = self.get_endpoint_inference_path()
+            for endpoint in endpoints:
+                self.log.info(f"Registering Endpoint {endpoint}...")
+                self.register_endpoint(endpoint)
 
         # Pull the training metrics and inference metrics
         self._pull_training_metrics()  # Includes both metrics and confusion matrix
