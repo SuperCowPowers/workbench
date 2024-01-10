@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from sagemaker.sklearn.estimator import SKLearn
 import awswrangler as wr
+from datetime import datetime
 
 # Local Imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
@@ -197,8 +198,12 @@ class FeaturesToModel(Transform):
             metric_definitions=metric_definitions,
         )
 
+        # Training Job Name based on the Model UUID and today's date
+        date_today = datetime.today().strftime("%Y-%m-%d")
+        job_name = f"{self.output_uuid}-{date_today}"
+
         # Train the estimator
-        self.estimator.fit({"train": s3_training_path})
+        self.estimator.fit({"train": s3_training_path}, job_name=job_name)
 
         # Now delete the training data
         self.log.info(f"Deleting training data {s3_training_path}...")

@@ -5,6 +5,7 @@ import urllib.parse
 from typing import Union
 from enum import Enum
 import botocore
+import json
 
 import pandas as pd
 import awswrangler as wr
@@ -87,6 +88,7 @@ class ModelCore(Artifact):
             self.endpoint_inference_path = newest_files(endpoint_inference_paths, self.sm_session)
         else:
             self.endpoint_inference_path = None
+            self.log.warning(f"No registered endpoints found for {self.model_name}!")
 
         # Call SuperClass Post Initialization
         super().__post_init__()
@@ -180,11 +182,6 @@ class ModelCore(Artifact):
             df = pull_s3_data(s3_path)
             return df
 
-    def model_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
-        # Shapley only available from inference at the moment, training may come later
-        df_shap = self._pull_shapley_values()
-        return df_shap
-
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
         return 0.0
@@ -224,6 +221,18 @@ class ModelCore(Artifact):
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
         return self.latest_model["CreationTime"]
+
+    def register_endpoint(self, endpoint_name: str):
+        """Add this endpoint to the set of registered endpoints for the model
+
+        Args:
+            endpoint_name (str): Name of the endpoint
+        """
+        self.log.important(f"Registering Endpoint {endpoint_name} with Model {self.uuid}...")
+        registered_endpoints = set(self.sageworks_meta().get("sageworks_registered_endpoints", []))
+        registered_endpoints.add(endpoint_name)
+        self.upsert_sageworks_meta({"sageworks_registered_endpoints": list(registered_endpoints)})
+        self.details(recompute=True)
 
     def details(self, recompute=False) -> dict:
         """Additional Details about this Model
@@ -313,16 +322,33 @@ class ModelCore(Artifact):
         Returns:
             bool: True if the Model is successfully onboarded, False otherwise
         """
+        # Set the status to onboarding
+        self.set_status("onboarding")
+
         # Determine the Model Type
         while self.is_model_unknown():
             self._determine_model_type()
 
-        # Set the status to onboarding
-        self.set_status("onboarding")
-        self.remove_sageworks_health_tag("needs_onboard")
+        # Determine the Target Column (can be None)
+        if "sageworks_model_target" not in self.sageworks_meta():
+            target_column = input("Target Column? (for unsupervised/transformer just type None): ")
+            if target_column in ["None", "none", ""]:
+                target_column = None
+            self.upsert_sageworks_meta({"sageworks_model_target": target_column})
+
+        # Registered Endpoints?
+        if "sageworks_registered_endpoints" not in self.sageworks_meta():
+            endpoints = input("Register Endpoints? (use commas for multiple): ")
+            endpoints = [e.strip() for e in endpoints.split(",")]
+            self.upsert_sageworks_meta({"sageworks_registered_endpoints": endpoints})
+
+        # Pull the training metrics and inference metrics
         self._pull_training_metrics()  # Includes both metrics and confusion matrix
         self._pull_inference_metrics()
         self._pull_inference_cm()
+
+        # Remove the needs_onboard tag
+        self.remove_sageworks_health_tag("needs_onboard")
 
         # Run a health check and refresh the meta
         time.sleep(2)  # Give the AWS Metadata a chance to update
@@ -389,6 +415,10 @@ class ModelCore(Artifact):
         """
         try:
             df = TrainingJobAnalytics(training_job_name=self.training_job_name).dataframe()
+            if df.empty:
+                self.log.warning(f"No training job metrics found for {self.training_job_name}")
+                self.upsert_sageworks_meta({"sageworks_training_metrics": None, "sageworks_training_cm": None})
+                return
             if self.model_type == ModelType.REGRESSOR:
                 if "timestamp" in df.columns:
                     df = df.drop(columns=["timestamp"])
@@ -509,10 +539,12 @@ class ModelCore(Artifact):
 
         return metrics_df, cm_df
 
-    def _pull_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
-        """Internal: Retrieve the inference Shapely values for this model
+    def model_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
+        """Retrieve the Shapely values for this model
+
         Returns:
             pd.DataFrame: Dataframe of the shapley values for the prediction dataframe
+
         Notes:
             This may or may not exist based on whether an Endpoint ran Shapley
         """

@@ -57,11 +57,7 @@ class ModelToEndpoint(Transform):
             self._realtime_deploy(model_package_arn)
 
         # Add this endpoint to the set of registered endpoints for the model
-        self.log.important(f"Registering Endpoint {self.output_uuid} with Model {self.input_uuid}...")
-        registered_endpoints = set(input_model.sageworks_meta().get("sageworks_registered_endpoints", []))
-        registered_endpoints.add(self.output_uuid)
-        input_model.upsert_sageworks_meta({"sageworks_registered_endpoints": list(registered_endpoints)})
-        input_model.details(recompute=True)
+        input_model.register_endpoint(self.output_uuid)
 
     def _realtime_deploy(self, model_package_arn: str):
         """Internal Method: Deploy the Realtime Endpoint
