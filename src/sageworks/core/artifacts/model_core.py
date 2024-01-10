@@ -78,17 +78,8 @@ class ModelCore(Artifact):
         # Set the Model Training S3 Path
         self.model_training_path = self.models_s3_path + "/training/" + self.model_name
 
-        # Look for any Registered Endpoints
-        registered_endpoints = self.sageworks_meta().get("sageworks_registered_endpoints")
-
-        # Note: We may have 0 to N endpoints, so we find the one with the most recent artifacts
-        if registered_endpoints:
-            endpoint_inference_base = self.endpoints_s3_path + "/inference/"
-            endpoint_inference_paths = [endpoint_inference_base + e for e in registered_endpoints]
-            self.endpoint_inference_path = newest_files(endpoint_inference_paths, self.sm_session)
-        else:
-            self.endpoint_inference_path = None
-            self.log.warning(f"No registered endpoints found for {self.model_name}!")
+        # Get our Endpoint Inference Path (might be None)
+        self.endpoint_inference_path = self.get_endpoint_inference_path()
 
         # Call SuperClass Post Initialization
         super().__post_init__()
@@ -234,6 +225,21 @@ class ModelCore(Artifact):
         self.upsert_sageworks_meta({"sageworks_registered_endpoints": list(registered_endpoints)})
         self.details(recompute=True)
 
+    def get_endpoint_inference_path(self) -> str:
+        """Get the S3 Path for the Inference Data"""
+
+        # Look for any Registered Endpoints
+        registered_endpoints = self.sageworks_meta().get("sageworks_registered_endpoints")
+
+        # Note: We may have 0 to N endpoints, so we find the one with the most recent artifacts
+        if registered_endpoints:
+            endpoint_inference_base = self.endpoints_s3_path + "/inference/"
+            endpoint_inference_paths = [endpoint_inference_base + e for e in registered_endpoints]
+            return newest_files(endpoint_inference_paths, self.sm_session)
+        else:
+            self.log.warning(f"No registered endpoints found for {self.model_name}!")
+            return None
+
     def details(self, recompute=False) -> dict:
         """Additional Details about this Model
         Args:
@@ -342,8 +348,8 @@ class ModelCore(Artifact):
             endpoints = [e.strip() for e in endpoints.split(",")]
             self.upsert_sageworks_meta({"sageworks_registered_endpoints": endpoints})
 
-        # Refresh the meta
-        self.refresh_meta()
+        # Refresh our inference endpoint path
+        self.endpoint_inference_path = self.get_endpoint_inference_path()
 
         # Pull the training metrics and inference metrics
         self._pull_training_metrics()  # Includes both metrics and confusion matrix
