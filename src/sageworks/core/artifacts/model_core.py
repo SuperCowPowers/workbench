@@ -342,6 +342,9 @@ class ModelCore(Artifact):
             endpoints = [e.strip() for e in endpoints.split(",")]
             self.upsert_sageworks_meta({"sageworks_registered_endpoints": endpoints})
 
+        # Refresh the meta
+        self.refresh_meta()
+
         # Pull the training metrics and inference metrics
         self._pull_training_metrics()  # Includes both metrics and confusion matrix
         self._pull_inference_metrics()
