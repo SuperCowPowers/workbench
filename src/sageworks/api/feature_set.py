@@ -16,20 +16,18 @@ class FeatureSet(FeatureSetCore):
     Common Usage:
         ```
         my_features = FeatureSet(name)
-        my_features.summary()
         my_features.details()
         my_features.to_model()
         ```
     """
 
-    def __init__(self, name):
-        """FeatureSet Initialization
+    def details(self, **kwargs) -> dict:
+        """FeatureSet Details
 
-        Args:
-            name (str): The name of the FeatureSet
+        Returns:
+            dict: A dictionary of details about the FeatureSet
         """
-        # Call superclass init
-        super().__init__(name)
+        return super().details(**kwargs)
 
     def to_model(
         self,

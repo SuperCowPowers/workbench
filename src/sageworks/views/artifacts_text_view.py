@@ -240,6 +240,8 @@ class ArtifactsTextView(View):
                 summary = {
                     "Model Group": model_group_name,
                     "Health": "No Models!",
+                    "Model Type": None,
+                    "Model Metrics": None,
                     "Created": "-",
                     "Ver": "-",
                     "Tags": "-",
@@ -257,9 +259,17 @@ class ArtifactsTextView(View):
             # If the sageworks_health_tags have nothing in them, then the model is healthy
             health_tags = sageworks_meta.get("sageworks_health_tags", "-")
             health_tags = health_tags if health_tags else "healthy"
+
+            # Get the model metrics and do a weird bit of conversion to get it into a nice dictionary
+            metrics = sageworks_meta.get("sageworks_inference_metrics")
+            metrics = (
+                None if metrics is None else json.dumps(pd.DataFrame.from_dict(metrics).to_dict(orient="records")[0])
+            )
             summary = {
                 "Model Group": latest_model["ModelPackageGroupName"],
                 "Health": health_tags,
+                "Model Type": sageworks_meta.get("sageworks_model_type"),
+                "Model Metrics": metrics,
                 "Created": self.datetime_string(latest_model.get("CreationTime")),
                 "Ver": latest_model["ModelPackageVersion"],
                 "Tags": sageworks_meta.get("sageworks_tags", "-"),
@@ -276,6 +286,8 @@ class ArtifactsTextView(View):
             columns = [
                 "Model Group",
                 "Health",
+                "Model Type",
+                "Model Metrics",
                 "Created",
                 "Ver",
                 "Tags",

@@ -10,6 +10,7 @@ These classes provide high-level APIs for the SageWorks package, they enable you
 - **[FeatureSet](feature_set.md):** Manages AWS Feature Store and Feature Groups
 - **[Model](model.md):** Manages the training and deployment of AWS Model Groups and Packages
 - **[Endpoint](endpoint.md):** Manages the deployment and invocations/inference on AWS Endpoints
+- **[Monitor](monitor.md):** Manages the setup and deployment of AWS Endpoint Monitors
 
 ![ML Pipeline](../images/sageworks_concepts.png)
 

@@ -141,5 +141,4 @@ Running these few lines of code creates and deploys an AWS Endpoint. The Endpoin
 
 
 !!! note "Not Finding a particular method?"
-    The SageWorks API Classes use 'Core' Classes Internally, so you can lookup all the methods in
-[SageWorks Core Classes](../core_classes/overview.md)
+    The SageWorks API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: [SageWorks Core Classes](../core_classes/overview.md)

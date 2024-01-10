@@ -39,7 +39,7 @@ class ModelToEndpoint(Transform):
         self.output_type = TransformOutput.ENDPOINT
 
     def transform_impl(self):
-        """Compute a Feature Set based on RDKit Descriptors"""
+        """Deploy an Endpoint for a Model"""
 
         # Delete endpoint (if it already exists)
         existing_endpoint = EndpointCore(self.output_uuid)
@@ -47,20 +47,31 @@ class ModelToEndpoint(Transform):
             existing_endpoint.delete()
 
         # Get the Model Package ARN for our input model
-        model_package_arn = ModelCore(self.input_uuid).model_package_arn()
+        input_model = ModelCore(self.input_uuid)
+        model_package_arn = input_model.model_package_arn()
 
         # Will this be a Serverless Endpoint?
         if self.instance_type == "serverless":
             self._serverless_deploy(model_package_arn)
-            return
+        else:
+            self._realtime_deploy(model_package_arn)
 
+        # Add this endpoint to the set of registered endpoints for the model
+        input_model.register_endpoint(self.output_uuid)
+
+    def _realtime_deploy(self, model_package_arn: str):
+        """Internal Method: Deploy the Realtime Endpoint
+
+        Args:
+            model_package_arn(str): The Model Package ARN used to deploy the Endpoint
+        """
         # Create a Model Package
         model_package = ModelPackage(role=self.sageworks_role_arn, model_package_arn=model_package_arn)
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
 
-        # Deploy an Endpoint
+        # Deploy a Realtime Endpoint
         model_package.deploy(
             initial_instance_count=1,
             instance_type=self.instance_type,
@@ -71,7 +82,8 @@ class ModelToEndpoint(Transform):
         )
 
     def _serverless_deploy(self, model_package_arn, mem_size=2048, max_concurrency=5, wait=True):
-        """Internal Method: Deploy the Endpoint in serverless mode
+        """Internal Method: Deploy a Serverless Endpoint
+
         Args:
             mem_size(int): Memory size in MB (default: 2048)
             max_concurrency(int): Max concurrency (default: 5)
@@ -128,15 +140,12 @@ class ModelToEndpoint(Transform):
             self.log.important(f"Endpoint {endpoint_name} is now {status}...")
 
     def post_transform(self, **kwargs):
-        """Post-Transform: Calling make_ready() on the Model"""
-        self.log.info("Post-Transform: Calling make_ready() on the Endpoint...")
+        """Post-Transform: Calling onboard() for the Endpoint"""
+        self.log.info("Post-Transform: Calling onboard() for the Endpoint...")
 
-        # Okay, lets get our output model and set it to initializing
+        # Onboard the Endpoint
         output_endpoint = EndpointCore(self.output_uuid, force_refresh=True)
-        output_endpoint.set_status("initializing")
-
-        # Call the Model make_ready method and set status to ready
-        output_endpoint.make_ready()
+        output_endpoint.onboard()
 
 
 if __name__ == "__main__":

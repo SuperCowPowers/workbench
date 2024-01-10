@@ -5,6 +5,7 @@ import urllib.parse
 from typing import Union
 from enum import Enum
 import botocore
+import json
 
 import pandas as pd
 import awswrangler as wr
@@ -15,6 +16,7 @@ from sagemaker.model import Model as SagemakerModel
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
+from sageworks.utils.aws_utils import newest_files, pull_s3_data
 
 
 # Enumerated Model Types
@@ -57,6 +59,7 @@ class ModelCore(Artifact):
             self.log.important(f"Could not find model {self.model_name} within current visibility scope")
             self.latest_model = None
             self.model_type = ModelType.UNKNOWN
+            return
         else:
             try:
                 self.latest_model = self.model_meta[0]
@@ -70,10 +73,22 @@ class ModelCore(Artifact):
                 self.log.critical(f"Model {self.model_name} appears to be malformed. Delete and recreate it!")
                 self.latest_model = None
                 self.model_type = ModelType.UNKNOWN
+                return
 
-        # Set the Model Training S3 Paths
+        # Set the Model Training S3 Path
         self.model_training_path = self.models_s3_path + "/training/" + self.model_name
-        self.model_inference_path = self.models_s3_path + "/inference/" + self.model_name
+
+        # Look for any Registered Endpoints
+        registered_endpoints = self.sageworks_meta().get("sageworks_registered_endpoints")
+
+        # Note: We may have 0 to N endpoints, so we find the one with the most recent artifacts
+        if registered_endpoints:
+            endpoint_inference_base = self.endpoints_s3_path + "/inference/"
+            endpoint_inference_paths = [endpoint_inference_base + e for e in registered_endpoints]
+            self.endpoint_inference_path = newest_files(endpoint_inference_paths, self.sm_session)
+        else:
+            self.endpoint_inference_path = None
+            self.log.warning(f"No registered endpoints found for {self.model_name}!")
 
         # Call SuperClass Post Initialization
         super().__post_init__()
@@ -131,24 +146,19 @@ class ModelCore(Artifact):
             pd.DataFrame: DataFrame of the Model Metrics
         """
         # Grab the metrics from the SageWorks Metadata (try inference first, then training)
-        metrics = self._pull_inference_metrics()
+        metrics = self.sageworks_meta().get("sageworks_inference_metrics")
         if metrics is not None:
-            return metrics
+            return pd.DataFrame.from_dict(metrics)
         metrics = self.sageworks_meta().get("sageworks_training_metrics")
-        return pd.DataFrame.from_dict(metrics) if isinstance(metrics, dict) else None
-
-    def model_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
-        # Shapley only available from inference at the moment, training may come later
-        df_shap = self._pull_shapley_values()
-        return df_shap
+        return pd.DataFrame.from_dict(metrics) if metrics else None
 
     def confusion_matrix(self) -> Union[pd.DataFrame, None]:
         """Retrieve the confusion_matrix for this model
         Returns:
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
-        # Grab the confusion matrix from the SageWorks Metadata
-        cm = self._pull_inference_cm()
+        # Grab the metrics from the SageWorks Metadata (try inference first, then training)
+        cm = self.sageworks_meta().get("sageworks_inference_cm")
         if cm is not None:
             return cm
         cm = self.sageworks_meta().get("sageworks_training_cm")
@@ -160,14 +170,16 @@ class ModelCore(Artifact):
             pd.DataFrame: DataFrame of the Regression based Predictions (might be None)
         """
 
-        # Pull the regression predictions, try first from inference, then from training
-        s3_path = f"{self.model_inference_path}/inference_predictions.csv"
-        df = self._pull_s3_model_artifacts(s3_path)
+        # If an Endpoint, based on this model, has run inference, then grab those
+        s3_path = f"{self.endpoint_inference_path}/inference_predictions.csv"
+        df = pull_s3_data(s3_path)
         if df is not None:
             return df
+
+        # Otherwise, grab the predictions from the training job
         else:
             s3_path = f"{self.model_training_path}/validation_predictions.csv"
-            df = self._pull_s3_model_artifacts(s3_path)
+            df = pull_s3_data(s3_path)
             return df
 
     def size(self) -> float:
@@ -209,6 +221,18 @@ class ModelCore(Artifact):
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
         return self.latest_model["CreationTime"]
+
+    def register_endpoint(self, endpoint_name: str):
+        """Add this endpoint to the set of registered endpoints for the model
+
+        Args:
+            endpoint_name (str): Name of the endpoint
+        """
+        self.log.important(f"Registering Endpoint {endpoint_name} with Model {self.uuid}...")
+        registered_endpoints = set(self.sageworks_meta().get("sageworks_registered_endpoints", []))
+        registered_endpoints.add(endpoint_name)
+        self.upsert_sageworks_meta({"sageworks_registered_endpoints": list(registered_endpoints)})
+        self.details(recompute=True)
 
     def details(self, recompute=False) -> dict:
         """Additional Details about this Model
@@ -254,11 +278,11 @@ class ModelCore(Artifact):
             details["confusion_matrix"] = None
             details["regression_predictions"] = self.regression_predictions()
 
-        # Set Shapley values
-        details["shapley_values"] = self.model_shapley_values()
-
         # Grab the inference metadata
         details["inference_meta"] = self._pull_inference_metadata()
+
+        # Set Shapley values
+        details["shapley_values"] = self.model_shapley_values()
 
         # Cache the details
         self.data_storage.set(storage_key, details)
@@ -273,20 +297,6 @@ class ModelCore(Artifact):
         """
         # Our current list of expected metadata, we can add to this as needed
         return ["sageworks_status", "sageworks_training_metrics", "sageworks_training_cm"]
-
-    def onboard(self) -> bool:
-        """Onboard this Model into SageWorks
-        Returns:
-            bool: True if the Model was successfully onboarded, False otherwise
-        """
-
-        # Determine the Model Type
-        while self.is_model_unknown():
-            self._determine_model_type()
-
-        # Call the superclass onboard
-        super().onboard()
-        return True
 
     def is_model_unknown(self) -> bool:
         """Is the Model Type unknown?"""
@@ -307,18 +317,48 @@ class ModelCore(Artifact):
             self.log.warning(f"Unknown Model Type {model_type}!")
             self._set_model_type(ModelType.UNKNOWN)
 
-    def make_ready(self) -> bool:
-        """This is a BLOCKING method that will wait until the Model is ready
+    def onboard(self) -> bool:
+        """This is a BLOCKING method that will onboard the Model (make it ready)
         Returns:
-            bool: True if the Model is ready, False otherwise
+            bool: True if the Model is successfully onboarded, False otherwise
         """
-        self._pull_training_job_metrics(force_pull=True)
-        self.set_status("ready")
+        # Set the status to onboarding
+        self.set_status("onboarding")
+
+        # Determine the Model Type
+        while self.is_model_unknown():
+            self._determine_model_type()
+
+        # Determine the Target Column (can be None)
+        if "sageworks_model_target" not in self.sageworks_meta():
+            target_column = input("Target Column? (for unsupervised/transformer just type None): ")
+            if target_column in ["None", "none", ""]:
+                target_column = None
+            self.upsert_sageworks_meta({"sageworks_model_target": target_column})
+
+        # Registered Endpoints?
+        if "sageworks_registered_endpoints" not in self.sageworks_meta():
+            endpoints = input("Register Endpoints? (use commas for multiple): ")
+            endpoints = [e.strip() for e in endpoints.split(",")]
+            self.upsert_sageworks_meta({"sageworks_registered_endpoints": endpoints})
+
+        # Refresh the meta
+        self.refresh_meta()
+
+        # Pull the training metrics and inference metrics
+        self._pull_training_metrics()  # Includes both metrics and confusion matrix
+        self._pull_inference_metrics()
+        self._pull_inference_cm()
+
+        # Remove the needs_onboard tag
         self.remove_sageworks_health_tag("needs_onboard")
-        time.sleep(1)  # Give the AWS Metadata a chance to update
+
+        # Run a health check and refresh the meta
+        time.sleep(2)  # Give the AWS Metadata a chance to update
         self.health_check()
         self.refresh_meta()
         self.details(recompute=True)
+        self.set_status("ready")
         return True
 
     def delete(self):
@@ -338,14 +378,9 @@ class ModelCore(Artifact):
         self.log.info(f"Deleting Model Group {self.model_name}...")
         self.sm_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
 
-        # Delete any inference artifacts
-        s3_delete_path = f"{self.model_inference_path}"
-        self.log.info(f"Deleting Training S3 Objects {s3_delete_path}")
-        wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
-
         # Delete any training artifacts
         s3_delete_path = f"{self.model_training_path}"
-        self.log.info(f"Deleting Inference S3 Objects {s3_delete_path}")
+        self.log.info(f"Deleting Training S3 Objects {s3_delete_path}")
         wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
 
         # Delete any data in the Cache
@@ -374,105 +409,32 @@ class ModelCore(Artifact):
             self.log.warning(f"Could not determine model type for {self.model_name}!")
             return ModelType.UNKNOWN
 
-    def _pull_inference_metadata(self) -> Union[pd.DataFrame, None]:
-        """Internal: Retrieve the inference metadata for this model
-        Returns:
-            dict: Dictionary of the inference metadata (might be None)
+    def _pull_training_metrics(self):
+        """Internal: Retrieve the training metrics and Confusion Matrix for this model
+                     and push the data into the SageWorks Metadata
+
         Notes:
-            Basically when the inference was run, name of the dataset, the MD5, etc
+            This may or may not exist based on whether we have access to TrainingJobAnalytics
         """
-        s3_path = f"{self.model_inference_path}/inference_meta.json"
-        try:
-            return wr.s3.read_json(s3_path)
-        except NoFilesFound:
-            self.log.info(f"Could not find model inference meta at {s3_path}...")
-            return None
-
-    def _pull_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
-        """Internal: Retrieve the inference Shapely values for this model
-        Returns:
-            pd.DataFrame: Dataframe of the shapley values for the prediction dataframe
-        """
-
-        # Multiple CSV if classifier
-        if self.model_type == ModelType.CLASSIFIER:
-            # CSVs for shap values are indexed by prediction class
-            # Because we don't know how many classes there are, we need to search through
-            # a list of S3 objects in the parent folder
-            s3_paths = wr.s3.list_objects(self.model_inference_path)
-            return [
-                self._pull_s3_model_artifacts(f, embedded_index=False) for f in s3_paths if "inference_shap_values" in f
-            ]
-
-        # One CSV if regressor
-        if self.model_type == ModelType.REGRESSOR:
-            s3_path = f"{self.model_inference_path}/inference_shap_values.csv"
-            return self._pull_s3_model_artifacts(s3_path, embedded_index=False)
-
-    def _pull_inference_metrics(self) -> Union[pd.DataFrame, None]:
-        """Internal: Retrieve the inference model metrics for this model
-        Returns:
-            pd.DataFrame: DataFrame of the inference model metrics (might be None)
-        """
-        s3_path = f"{self.model_inference_path}/inference_metrics.csv"
-        return self._pull_s3_model_artifacts(s3_path)
-
-    def _pull_inference_cm(self) -> Union[pd.DataFrame, None]:
-        """Internal: Retrieve the inference Confusion Matrix for this model
-        Returns:
-            pd.DataFrame: DataFrame of the inference Confusion Matrix (might be None)
-        """
-        s3_path = f"{self.model_inference_path}/inference_cm.csv"
-        return self._pull_s3_model_artifacts(s3_path, embedded_index=True)
-
-    def _pull_s3_model_artifacts(self, s3_path, embedded_index=False) -> Union[pd.DataFrame, None]:
-        """Internal: Helper method to pull Model Artifact data from S3 storage
-        Args:
-            s3_path (str): S3 Path to the Model Artifact
-            embedded_index (bool, optional): Is the index embedded in the CSV? Defaults to False.
-        Returns:
-            pd.DataFrame: DataFrame of the Model Artifact (metrics, CM, regression_preds) (might be None)
-        """
-
-        # Pull the CSV file from S3
-        try:
-            if embedded_index:
-                df = wr.s3.read_csv(s3_path, index_col=0)
-            else:
-                df = wr.s3.read_csv(s3_path)
-            return df
-        except NoFilesFound:
-            self.log.info(f"Could not find model artifact at {s3_path}...")
-            return None
-
-    def _pull_training_job_metrics(self, force_pull=False):
-        """Internal: Grab any captured metrics from the training job for this model
-        Args:
-            force_pull (bool, optional): Force a pull from TrainingJobAnalytics. Defaults to False.
-        """
-
-        # First check if we have already computed the various metrics
-        model_metrics = self.sageworks_meta().get("sageworks_training_metrics")
-        if self.model_type == ModelType.REGRESSOR:
-            if model_metrics and not force_pull:
-                return
-
-        # For classifiers, we need to pull the confusion matrix as well
-        cm = self.sageworks_meta().get("sageworks_training_cm")
-        if model_metrics and cm and not force_pull:
-            return
-
-        # We don't have them, so go and grab the training job metrics
-        self.log.info(f"Pulling training job metrics for {self.training_job_name}...")
         try:
             df = TrainingJobAnalytics(training_job_name=self.training_job_name).dataframe()
+            if df.empty:
+                self.log.warning(f"No training job metrics found for {self.training_job_name}")
+                self.upsert_sageworks_meta({"sageworks_training_metrics": None, "sageworks_training_cm": None})
+                return
             if self.model_type == ModelType.REGRESSOR:
                 if "timestamp" in df.columns:
                     df = df.drop(columns=["timestamp"])
 
+                # We're going to pivot the DataFrame to get the desired structure
+                reg_metrics_df = df.set_index("metric_name").T
+
                 # Store and return the metrics in the SageWorks Metadata
-                self.upsert_sageworks_meta({"sageworks_training_metrics": df.to_dict(), "sageworks_training_cm": None})
+                self.upsert_sageworks_meta(
+                    {"sageworks_training_metrics": reg_metrics_df.to_dict(), "sageworks_training_cm": None}
+                )
                 return
+
         except (KeyError, botocore.exceptions.ClientError):
             self.log.warning(f"No training job metrics found for {self.training_job_name}")
             # Store and return the metrics in the SageWorks Metadata
@@ -487,6 +449,55 @@ class ModelCore(Artifact):
             self.upsert_sageworks_meta(
                 {"sageworks_training_metrics": metrics_df.to_dict(), "sageworks_training_cm": cm_df.to_dict()}
             )
+
+    def _pull_inference_metrics(self):
+        """Internal: Retrieve the inference model metrics for this model
+                     and push the data into the SageWorks Metadata
+
+        Notes:
+            This may or may not exist based on whether an Endpoint ran Inference
+        """
+        s3_path = f"{self.endpoint_inference_path}/inference_metrics.csv"
+        inference_metrics = pull_s3_data(s3_path)
+
+        # Store data into the SageWorks Metadata
+        metrics_storage = None if inference_metrics is None else inference_metrics.to_dict()
+        self.upsert_sageworks_meta({"sageworks_inference_metrics": metrics_storage})
+
+    def _pull_inference_cm(self) -> Union[pd.DataFrame, None]:
+        """Internal: Retrieve the inference Confusion Matrix for this model
+
+        Returns:
+            pd.DataFrame: DataFrame of the inference Confusion Matrix (might be None)
+
+        Notes:
+            This may or may not exist based on whether an Endpoint ran Inference
+        """
+        s3_path = f"{self.endpoint_inference_path}/inference_cm.csv"
+        inference_cm = pull_s3_data(s3_path, embedded_index=True)
+
+        # Store data into the SageWorks Metadata
+        cm_storage = None if inference_cm is None else inference_cm.to_dict()
+        self.upsert_sageworks_meta({"sageworks_inference_cm": cm_storage})
+
+    def _pull_inference_metadata(self) -> Union[pd.DataFrame, None]:
+        """Internal: Retrieve the inference metadata for this model
+        Returns:
+            dict: Dictionary of the inference metadata (might be None)
+        Notes:
+            Basically when Endpoint inference was run, name of the dataset, the MD5, etc
+        """
+        # Sanity check the inference path (which may or may not exist)
+        if self.endpoint_inference_path is None:
+            return None
+
+        # Pull the inference metadata
+        try:
+            s3_path = f"{self.endpoint_inference_path}/inference_meta.json"
+            return wr.s3.read_json(s3_path)
+        except NoFilesFound:
+            self.log.info(f"Could not find model inference meta at {s3_path}...")
+            return None
 
     def _extract_training_job_name(self) -> Union[str, None]:
         """Internal: Extract the training job name from the ModelDataUrl"""
@@ -531,6 +542,33 @@ class ModelCore(Artifact):
 
         return metrics_df, cm_df
 
+    def model_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
+        """Retrieve the Shapely values for this model
+
+        Returns:
+            pd.DataFrame: Dataframe of the shapley values for the prediction dataframe
+
+        Notes:
+            This may or may not exist based on whether an Endpoint ran Shapley
+        """
+
+        # Sanity check the inference path (which may or may not exist)
+        if self.endpoint_inference_path is None:
+            return None
+
+        # Multiple CSV if classifier
+        if self.model_type == ModelType.CLASSIFIER:
+            # CSVs for shap values are indexed by prediction class
+            # Because we don't know how many classes there are, we need to search through
+            # a list of S3 objects in the parent folder
+            s3_paths = wr.s3.list_objects(self.endpoint_inference_path)
+            return [pull_s3_data(f) for f in s3_paths if "inference_shap_values" in f]
+
+        # One CSV if regressor
+        if self.model_type == ModelType.REGRESSOR:
+            s3_path = f"{self.endpoint_inference_path}/inference_shap_values.csv"
+            return pull_s3_data(s3_path)
+
 
 if __name__ == "__main__":
     """Exercise the ModelCore Class"""
@@ -544,7 +582,7 @@ if __name__ == "__main__":
     print(f"Model Check: {my_model.exists()}")
 
     # Make sure the model is 'ready'
-    my_model.make_ready()
+    my_model.onboard()
 
     # Get the ARN of the Model Group
     print(f"Model Group ARN: {my_model.group_arn()}")
@@ -563,7 +601,7 @@ if __name__ == "__main__":
     print(f"Training Job: {my_model.training_job_name}")
 
     # Get any captured metrics from the training job
-    print("Training Metrics:")
+    print("Model Metrics:")
     print(my_model.model_metrics())
 
     print("Confusion Matrix: (might be None)")

@@ -2,6 +2,7 @@
 from abc import abstractmethod
 import pandas as pd
 from io import StringIO
+import time
 
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
@@ -299,13 +300,24 @@ class DataSourceAbstract(Artifact):
         # Okay so we have the samples and outliers, so we are ready
         return True
 
-    def make_ready(self) -> bool:
-        """This is a BLOCKING method that will wait until the Artifact is ready"""
+    def onboard(self) -> bool:
+        """This is a BLOCKING method that will onboard the data source (make it ready)
+
+        Returns:
+            bool: True if the DataSource was onboarded successfully
+        """
+        self.log.important(f"Onboarding {self.uuid}...")
+        self.set_status("onboarding")
+        self.remove_sageworks_health_tag("needs_onboard")
         self.sample(recompute=True)
         self.column_stats(recompute=True)
         self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts
         self.outliers(recompute=True)
-        self.set_status("ready")
-        self.remove_sageworks_health_tag("needs_onboard")
+
+        # Run a health check and refresh the meta
+        time.sleep(2)  # Give the AWS Metadata a chance to update
+        self.health_check()
+        self.refresh_meta()
         self.details(recompute=True)
+        self.set_status("ready")
         return True

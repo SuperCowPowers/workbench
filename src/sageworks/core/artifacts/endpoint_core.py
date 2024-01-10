@@ -63,18 +63,21 @@ class EndpointCore(Artifact):
             self.endpoint_name
         )
 
-        # Sanity check and then set up our FeatureSet attributes
+        # Sanity check that we found the endpoint
         if self.endpoint_meta is None:
             self.log.important(f"Could not find endpoint {self.uuid} within current visibility scope")
             return
 
-        self.endpoint_return_columns = None
-
         # Set the Inference, Capture, and Monitoring S3 Paths
+        self.endpoint_inference_path = self.endpoints_s3_path + "/inference/" + self.uuid
+        self.endpoint_data_capture_path = self.endpoints_s3_path + "/data_capture/" + self.uuid
+        self.endpoint_monitoring_path = self.endpoints_s3_path + "/monitoring/" + self.uuid
+
+        # Set the Model Name
         self.model_name = self.get_input()
-        self.model_inference_path = self.models_s3_path + "/inference/" + self.model_name
-        self.model_data_capture_path = self.models_s3_path + "/data_capture/" + self.model_name
-        self.model_monitoring_path = self.models_s3_path + "/monitoring/" + self.model_name
+
+        # This is for endpoint error handling later
+        self.endpoint_return_columns = None
 
         # Call SuperClass Post Initialization
         super().__post_init__()
@@ -97,9 +100,13 @@ class EndpointCore(Artifact):
 
     def health_check(self) -> list[str]:
         """Perform a health check on this model
+
         Returns:
             list[str]: List of health issues
         """
+        if not self.ready():
+            return ["needs_onboard"]
+
         # Call the base class health check
         health_issues = super().health_check()
 
@@ -181,10 +188,10 @@ class EndpointCore(Artifact):
         self.get_monitor().add_data_capture()
 
     def get_monitor(self):
-        """Get the ModelMonitoring class for this endpoint"""
-        from sageworks.utils.model_monitoring import ModelMonitoring
+        """Get the MonitorCore class for this endpoint"""
+        from sageworks.core.artifacts.monitor_core import MonitorCore
 
-        return ModelMonitoring(self.endpoint_name)
+        return MonitorCore(self.endpoint_name)
 
     def _endpoint_error_handling(self, predictor, feature_df):
         """Internal: Method that handles Errors, Retries, and Binary Search for Error Row(s)"""
@@ -329,14 +336,21 @@ class EndpointCore(Artifact):
         # Return the details
         return details
 
-    def make_ready(self) -> bool:
-        """This is a BLOCKING method that will wait until the Endpoint is ready
+    def onboard(self) -> bool:
+        """This is a BLOCKING method that will onboard the Endpoint (make it ready)
         Returns:
-            bool: True if the Endpoint is ready, False otherwise
+            bool: True if the Endpoint is successfully onboarded, False otherwise
         """
-        self.set_status("ready")
+        self.log.important(f"Onboarding {self.uuid}...")
+        self.set_status("onboarding")
         self.remove_sageworks_health_tag("needs_onboard")
+
+        # Run a health check and refresh the meta
+        time.sleep(2)  # Give the AWS Metadata a chance to update
+        self.health_check()
+        self.refresh_meta()
         self.details(recompute=True)
+        self.set_status("ready")
         return True
 
     def model_details(self) -> dict:
@@ -358,16 +372,19 @@ class EndpointCore(Artifact):
         self, feature_df: pd.DataFrame, target_column: str, data_name: str, data_hash: str, description: str
     ) -> None:
         """Capture the performance metrics for this Endpoint
+
         Args:
             feature_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
             target_column (str): Name of the target column
             data_name (str): Name of the data used for inference
             data_hash (str): Hash of the data used for inference
             description (str): Description of the data used for inference
+
         Returns:
             None
+
         Note:
-            This method captures performance metrics and writes them to the S3 Model Inference Folder
+            This method captures performance metrics and writes them to the S3 Endpoint Inference Folder
         """
 
         # Run predictions on the feature_df
@@ -393,24 +410,24 @@ class EndpointCore(Artifact):
         # Write the metadata dictionary, and metrics to our S3 Model Inference Folder
         wr.s3.to_json(
             pd.DataFrame([inference_meta]),
-            f"{self.model_inference_path}/inference_meta.json",
+            f"{self.endpoint_inference_path}/inference_meta.json",
             index=False,
         )
-        self.log.debug(f"Writing metrics to {self.model_inference_path}/inference_metrics.csv")
-        wr.s3.to_csv(metrics, f"{self.model_inference_path}/inference_metrics.csv", index=False)
+        self.log.debug(f"Writing metrics to {self.endpoint_inference_path}/inference_metrics.csv")
+        wr.s3.to_csv(metrics, f"{self.endpoint_inference_path}/inference_metrics.csv", index=False)
 
         # Write the confusion matrix to our S3 Model Inference Folder
         if model_type == ModelType.CLASSIFIER.value:
             conf_mtx = self.confusion_matrix(target_column, prediction_df)
-            self.log.debug(f"Writing confusion matrix to {self.model_inference_path}/inference_cm.csv")
+            self.log.debug(f"Writing confusion matrix to {self.endpoint_inference_path}/inference_cm.csv")
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
-            wr.s3.to_csv(conf_mtx, f"{self.model_inference_path}/inference_cm.csv", index=True)
+            wr.s3.to_csv(conf_mtx, f"{self.endpoint_inference_path}/inference_cm.csv", index=True)
 
         # Write the regression predictions to our S3 Model Inference Folder
         if model_type == ModelType.REGRESSOR.value:
             pred_df = self.regression_predictions(target_column, prediction_df)
-            self.log.debug(f"Writing reg predictions to {self.model_inference_path}/inference_predictions.csv")
-            wr.s3.to_csv(pred_df, f"{self.model_inference_path}/inference_predictions.csv", index=False)
+            self.log.debug(f"Writing reg predictions to {self.endpoint_inference_path}/inference_predictions.csv")
+            wr.s3.to_csv(pred_df, f"{self.endpoint_inference_path}/inference_predictions.csv", index=False)
 
         #
         # Generate SHAP values for our Prediction Dataframe
@@ -433,8 +450,10 @@ class EndpointCore(Artifact):
                 df_shap = pd.DataFrame(class_shap_vals, columns=X_pred.columns)
 
                 # Write shap vals to S3 Model Inference Folder
-                self.log.debug(f"Writing SHAP values to {self.model_inference_path}/inference_shap_values.csv")
-                wr.s3.to_csv(df_shap, f"{self.model_inference_path}/inference_shap_values_class_{i}.csv", index=False)
+                self.log.debug(f"Writing SHAP values to {self.endpoint_inference_path}/inference_shap_values.csv")
+                wr.s3.to_csv(
+                    df_shap, f"{self.endpoint_inference_path}/inference_shap_values_class_{i}.csv", index=False
+                )
 
         # Single shap vals CSV for regressors
         if model_type == ModelType.REGRESSOR.value:
@@ -442,8 +461,8 @@ class EndpointCore(Artifact):
             df_shap = pd.DataFrame(shap_vals, columns=X_pred.columns)
 
             # Write shap vals to S3 Model Inference Folder
-            self.log.debug(f"Writing SHAP values to {self.model_inference_path}/inference_shap_values.csv")
-            wr.s3.to_csv(df_shap, f"{self.model_inference_path}/inference_shap_values.csv", index=False)
+            self.log.debug(f"Writing SHAP values to {self.endpoint_inference_path}/inference_shap_values.csv")
+            wr.s3.to_csv(df_shap, f"{self.endpoint_inference_path}/inference_shap_values.csv", index=False)
 
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
@@ -601,19 +620,24 @@ class EndpointCore(Artifact):
             self.log.info(f"Deleting Endpoint Monitoring Schedule {schedule['MonitoringScheduleName']}...")
             self.sm_client.delete_monitoring_schedule(MonitoringScheduleName=schedule["MonitoringScheduleName"])
 
-        # Okay now delete the Endpoint
-        try:
-            time.sleep(1)  # Let AWS catch up with any deletions performed above
-            self.log.info(f"Deleting Endpoint {self.uuid}...")
-            self.sm_client.delete_endpoint(EndpointName=self.uuid)
-        except botocore.exceptions.ClientError as e:
-            self.log.info("Endpoint ClientError...")
-            raise e
+        # Delete any inference, data_capture or monitoring artifacts
+        for s3_path in [self.endpoint_inference_path, self.endpoint_data_capture_path, self.endpoint_monitoring_path]:
+            self.log.info(f"Deleting S3 Path {s3_path}...")
+            wr.s3.delete_objects(s3_path, boto3_session=self.boto_session)
 
         # Now delete any data in the Cache
         for key in self.data_storage.list_subkeys(f"endpoint:{self.uuid}"):
             self.log.info(f"Deleting Cache Key: {key}")
             self.data_storage.delete(key)
+
+        # Okay now delete the Endpoint
+        try:
+            time.sleep(2)  # Let AWS catch up with any deletions performed above
+            self.log.info(f"Deleting Endpoint {self.uuid}...")
+            self.sm_client.delete_endpoint(EndpointName=self.uuid)
+        except botocore.exceptions.ClientError as e:
+            self.log.info("Endpoint ClientError...")
+            raise e
 
     def delete_endpoint_models(self):
         """Delete the underlying Model for an Endpoint"""

@@ -35,6 +35,7 @@ On the first panel you can fill in the users information.
 
 ## Groups
 On the second panel we suggest that you have at LEAST two groups:
+
 - Admin group
 - DataScientists group
 
@@ -42,6 +43,7 @@ On the second panel we suggest that you have at LEAST two groups:
 This allows you to put most of the users into the DataScientists group that has AWS policies based on their job role. AWS uses 'permission sets' and you assign AWS Policies. This approach makes it easy to give a group of users a set of relevant policies for their tasks. 
 
 Our standard setup is to have two permission sets with the following policies:
+
 - IAM Identity Center --> Permission sets --> DataScientist 
    - Add Policy: arn:aws:iam::aws:policy/job-function/DataScientist
 
@@ -116,17 +118,24 @@ export AWS_PROFILE=bob_sso
 
 ## Testing your new AWS Profile
 Make sure your profile is active/set
+
 ```
 env | grep AWS
 AWS_PROFILE=<bob_sso or whatever>
 ```
 Now you can list the S3 buckets in the AWS Account
+
 ```
 aws ls s3
 ```
 If you get some message like this...
 
-```The SSO session associated with this profile has expired or is otherwise invalid. To refresh this SSO session run aws sso login with the corresponding profile.```
+```
+The SSO session associated with this profile has
+expired or is otherwise invalid. To refresh this SSO
+session run aws sso login with the corresponding
+profile.
+```
 
 This is fine/good, a browser will open up and you can refresh your SSO Token.
 

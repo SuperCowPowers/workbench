@@ -241,7 +241,7 @@ class PandasToFeatures(Transform):
 
     def prep_dataframe(self):
         """Prep the DataFrame for Feature Store Creation"""
-        self.log.info("Prep the output_df (cat_convert, convert types, lowercase columns, add training column)...")
+        self.log.info("Prep the output_df (cat_convert, convert types, and lowercase columns)...")
 
         # Make sure we have the required id and event_time columns
         self._ensure_id_column()
@@ -260,9 +260,12 @@ class PandasToFeatures(Transform):
         # - String (timestamp/datetime types need to be converted to string)
         self.output_df = self.convert_column_types(self.output_df)
 
-        # FeatureSet Internal Storage (Athena) will convert columns names to lowercase, so we need
-        # to make sure that the column names are lowercase to match and avoid downstream issues
-        self.output_df.columns = self.output_df.columns.str.lower()
+        # Convert columns names to lowercase, Athena will not work with uppercase column names
+        if str(self.output_df.columns) != str(self.output_df.columns.str.lower()):
+            for c in self.output_df.columns:
+                if c != c.lower():
+                    self.log.warning(f"Column name {c} converted to lowercase: {c.lower()}")
+            self.output_df.columns = self.output_df.columns.str.lower()
 
     def create_feature_group(self):
         """Create a Feature Group, load our Feature Definitions, and wait for it to be ready"""
@@ -327,20 +330,18 @@ class PandasToFeatures(Transform):
         self.log.info(f"Total rows to be ingested: {self.expected_rows}")
 
     def post_transform(self, **kwargs):
-        """Post-Transform: Populating Offline Storage and make_ready()"""
-        self.log.info("Post-Transform: Populating Offline Storage and make_ready()...")
+        """Post-Transform: Populating Offline Storage and onboard()"""
+        self.log.info("Post-Transform: Populating Offline Storage and onboard()...")
 
         # Feature Group Ingestion takes a while, so we need to wait for it to finish
         self.output_feature_set = FeatureSetCore(self.output_uuid, force_refresh=True)
-        self.output_feature_set.set_status("initializing")
-
-        # Wait for offline storage of the Feature Group to be ready
         self.log.important("Waiting for AWS Feature Group Offline storage to be ready...")
         self.log.important("This will often take 10-20 minutes...go have coffee or lunch :)")
+        self.output_feature_set.set_status("initializing")
         self.wait_for_rows(self.expected_rows)
 
-        # Call the FeatureSet make_ready method to compute a bunch of EDA stuff
-        self.output_feature_set.make_ready()
+        # Call the FeatureSet onboard method to compute a bunch of EDA stuff
+        self.output_feature_set.onboard()
 
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")

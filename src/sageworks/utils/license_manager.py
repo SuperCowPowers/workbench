@@ -77,8 +77,10 @@ class LicenseManager:
 
     @classmethod
     def print_license_info(cls):
-        cls.log.important("License Info:")
-        cls.log.important(json.dumps(cls.api_license_info, indent=4, sort_keys=True))
+        id = cls.api_license_info["license_id"]
+        account = cls.api_license_info["aws_account_id"]
+        expires = cls.api_license_info["expires"]
+        cls.log.important(f"SageWorks License: {id}-{account}-{expires}")
 
     @staticmethod
     def extract_data_and_signature(license_key):

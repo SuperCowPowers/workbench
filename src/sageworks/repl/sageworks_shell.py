@@ -64,8 +64,9 @@ class SageWorksShell:
 
     def start(self):
         """Start the SageWorks IPython shell"""
-        cprint("Welcome to SageWorks!", "magenta")
+        cprint("magenta", "Welcome to SageWorks!")
         self.hey()
+        self.summary()
         self.shell(local_ns=self.commands)
 
     @staticmethod
@@ -77,24 +78,24 @@ class SageWorksShell:
         port = os.environ.get("REDIS_PORT", "6379")
 
         # Open the Redis connection (class object)
-        cprint(f"Checking Redis connection to: {host}:{port}..", "lime")
+        cprint("lime", f"Checking Redis connection to: {host}:{port}..")
         if SageWorksCache().check():
-            cprint("Redis Cache Check Success...", "lightgreen")
+            cprint("lightgreen", "Redis Cache Check Success...")
         else:
-            cprint("Redis Cache Check Failed...check your REDIS_HOST Env var", "yellow")
+            cprint("yellow", "Redis Cache Check Failed...check your REDIS_HOST Env var")
 
     @staticmethod
     def check_aws_account():
         """Check if the AWS Account is Setup Correctly"""
-        cprint("Checking AWS Account Connection...", "yellow")
+        cprint("yellow", "Checking AWS Account Connection...")
         try:
             try:
                 aws_clamp = importlib.import_module("sageworks.aws_service_broker.aws_account_clamp").AWSAccountClamp()
-                cprint("AWS Account Clamp Created...", "lightgreen")
+                cprint("lightgreen", "AWS Account Clamp Created...")
                 aws_clamp.check_aws_identity()
-                cprint("AWS Identity Check...", "lightgreen")
+                cprint("lightgreen", "AWS Identity Check...")
                 aws_clamp.boto_session()
-                cprint("AWS Account Check AOK!", "lightgreen")
+                cprint("lightgreen", "AWS Account Check AOK!")
             except RuntimeError:
                 print("AWS Account Check Failed: Check AWS_PROFILE and/or Renew SSO Token...")
                 sys.exit(1)
@@ -107,7 +108,7 @@ class SageWorksShell:
 
     def import_sageworks(self):
         # Import all the SageWorks modules
-        cprint("Pulling AWS Artifacts...", "lightpurple")
+        cprint("lightpurple", "Pulling AWS Artifacts...")
         self.artifacts_text_view = importlib.import_module("sageworks.views.artifacts_text_view").ArtifactsTextView()
 
         # These are the classes we want to expose to the REPL
@@ -116,13 +117,14 @@ class SageWorksShell:
         self.commands["Model"] = importlib.import_module("sageworks.api.model").Model
         self.commands["ModelType"] = importlib.import_module("sageworks.api.model").ModelType
         self.commands["Endpoint"] = importlib.import_module("sageworks.api.endpoint").Endpoint
+        self.commands["Monitor"] = importlib.import_module("sageworks.api.monitor").Monitor
 
     @staticmethod
     def help_txt():
         help_msg = """    Commands:
         - hey: Show this help message
         - docs: Open browser to show SageWorks Documentation
-        - summary: Show a summary of all the SageWorks artifacts
+        - summary: Show a summary of all the AWS Artifacts
         - incoming_data: List all the incoming S3 data
         - glue_jobs: List all the Glue Jobs in AWS
         - data_sources: List all the DataSources in AWS
@@ -134,7 +136,7 @@ class SageWorksShell:
         return help_msg
 
     def hey(self):
-        cprint(self.help_txt(), "lightblue")
+        cprint("lightblue", self.help_txt())
 
     @staticmethod
     def doc_browser():
@@ -143,12 +145,19 @@ class SageWorksShell:
         webbrowser.open(url)
 
     def summary(self):
+        cprint("yellow", "\nAWS Artifacts Summary:")
         view_data = self.artifacts_text_view.view_data()
         for name, df in view_data.items():
-            if df.empty:
-                continue
-            cprint(name, "lightblue")
-            cprint("  " + ", ".join(df.iloc[:, 0].tolist()), "lightgreen")
+            # Pad the name to 15 characters
+            name = (name + " " * 15)[:15]
+
+            # Get the first three items in the first column
+            examples = ", ".join(df.iloc[:, 0].tolist())
+            if len(examples) > 70:
+                examples = examples[:70] + "..."
+
+            # Print the summary
+            cprint(["lightpurple", "\t" + name, "lightgreen", str(df.shape[0]) + "  ", "purple_blue", examples])
 
     def incoming_data(self):
         return self.artifacts_text_view.incoming_data_summary()

@@ -12,11 +12,27 @@ from sageworks.api.endpoint import Endpoint
 log = logging.getLogger("sageworks")
 
 
+def auto_capture_metrics(end: Endpoint) -> None:
+    """Code to Auto Capture Performance Metrics for an Endpoint
+
+    Args:
+        end (Endpoint): Endpoint to backtrace: End -> Model -> FeatureSet (evaluation data)
+    """
+    # Grab the FeatureSet by backtracking from the Endpoint
+    feature_df = fs_evaluation_data(end)
+    model_details = Model(end.get_input()).details()
+    target_column = model_details.get("sageworks_model_target")
+    if target_column is None:
+        log.warning("No target column for the model, aborting Auto Capture Metrics...")
+        return
+    end.capture_performance_metrics(feature_df, target_column, "auto", "auto", "Auto Captured Metrics")
+
+
 def fs_predictions(end: Endpoint) -> pd.DataFrame:
     """Code to get the predictions from the FeatureSet
 
     Args:
-        end (Endpoint): Endpoint to backtrace: End -> Model -> FeatureSet (predictions)
+        end (Endpoint): Endpoint to backtrace: End -> Model -> FeatureSet (evaluation data)
 
     Returns:
         pd.DataFrame: Dataframe with the predictions from the FeatureSet

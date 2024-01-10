@@ -5,7 +5,10 @@ import json
 import base64
 import re
 import os
+from typing import Union
 import pandas as pd
+import awswrangler as wr
+from awswrangler.exceptions import NoFilesFound
 from pathlib import Path
 import posixpath
 from sagemaker.session import Session as SageSession
@@ -273,6 +276,66 @@ def extract_data_source_basename(source: str) -> str:
         return source
 
 
+def newest_files(s3_locations: list[str], sm_session: SageSession) -> Union[str, None]:
+    """Determine which full S3 bucket and prefix combination has the newest files.
+
+    Args:
+        s3_locations (list[str]): A list of full S3 bucket and prefix combinations.
+        sm_session (SageSession): A SageMaker session object.
+
+    Returns:
+        str: The full S3 bucket and prefix combination with the newest files, or None if no files are found.
+    """
+    # Get the S3 client
+    s3_client = sm_session.boto_session.client("s3")
+
+    newest_location = None
+    latest_time = None
+
+    for location in s3_locations:
+        # Extract bucket and prefix from the location
+        bucket, prefix = location.replace("s3://", "").split("/", 1)
+
+        # List files under the current prefix
+        response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+        # Check if there are files
+        if "Contents" in response:
+            # Find the latest file in the current location
+            for file in response["Contents"]:
+                if newest_location is None or file["LastModified"] > latest_time:
+                    newest_location = location
+                    latest_time = file["LastModified"]
+
+    return newest_location
+
+
+def pull_s3_data(s3_path: str, embedded_index=False) -> Union[pd.DataFrame, None]:
+    """Helper method to pull data from S3 storage
+
+    Args:
+        s3_path (str): S3 Path to the Artifact
+        embedded_index (bool, optional): Is the index embedded in the CSV? Defaults to False.
+
+    Returns:
+        pd.DataFrame: DataFrame of the Artifact (metrics, CM, regression_preds) (might be None)
+    """
+
+    # Sanity check for undefined S3 paths (None)
+    if s3_path.startswith("None"):
+        return None
+
+    # Pull the CSV file from S3
+    try:
+        if embedded_index:
+            df = wr.s3.read_csv(s3_path, index_col=0)
+        else:
+            df = wr.s3.read_csv(s3_path)
+        return df
+    except NoFilesFound:
+        log.info(f"Could not find S3 data at {s3_path}...")
+        return None
+
+
 if __name__ == "__main__":
     """Exercise the AWS Utils"""
     from pprint import pprint
@@ -281,6 +344,11 @@ if __name__ == "__main__":
     my_features = FeatureSetCore("test_features")
     my_meta = my_features.sageworks_meta()
     pprint(my_meta)
+
+    # Test the newest files in an S3 folder method
+    s3_path = "s3://sandbox-sageworks-artifacts/endpoints/inference/abalone-regression-end"
+    sm_session = SageSession()
+    most_recent = newest_files([s3_path], sm_session)
 
     # Add a health tag
     my_features.add_sageworks_health_tag("needs_onboard")

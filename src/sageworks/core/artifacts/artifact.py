@@ -128,19 +128,12 @@ class Artifact(ABC):
             return False
 
     @abstractmethod
-    def make_ready(self) -> bool:
-        """Make the Artifact ready. Perform any initial setup steps"""
-        pass
-
     def onboard(self) -> bool:
-        """Onboard this Model into SageWorks
+        """Onboard this Artifact into SageWorks
         Returns:
-            bool: True if the Model was successfully onboarded, False otherwise
+            bool: True if the Artifact was successfully onboarded, False otherwise
         """
-        self.log.important(f"Onboarding {self.uuid}...")
-        self.set_status("onboarding")
-        self.make_ready()
-        return True
+        pass
 
     @abstractmethod
     def details(self) -> dict:
@@ -314,7 +307,7 @@ class Artifact(ABC):
         """This is generic summary information for all Artifacts. If you
         want to get more detailed information, call the details() method
         which is implemented by the specific Artifact class"""
-        return {
+        basic = {
             "uuid": self.uuid,
             "health_tags": self.sageworks_health_tags(),
             "aws_arn": self.arn(),
@@ -322,8 +315,30 @@ class Artifact(ABC):
             "created": self.created(),
             "modified": self.modified(),
             "input": self.get_input(),
-            "sageworks_tags": self.sageworks_tags(),
         }
+        # Combine the sageworks metadata with the basic metadata
+        return {**basic, **self.sageworks_meta()}
+
+    def __repr__(self) -> str:
+        """String representation of this artifact
+
+        Returns:
+            str: String representation of this artifact
+        """
+        summary_dict = self.summary()
+        display_keys = [
+            "aws_arn",
+            "health_tags",
+            "size",
+            "created",
+            "modified",
+            "input",
+            "sageworks_status",
+            "sageworks_tags",
+        ]
+        summary_items = [f"  {repr(key)}: {repr(value)}" for key, value in summary_dict.items() if key in display_keys]
+        summary_str = f"{self.__class__.__name__}: {self.uuid}\n" + ",\n".join(summary_items)
+        return summary_str
 
     def delete_metadata(self, key_to_delete: str):
         """Delete specific metadata from this artifact

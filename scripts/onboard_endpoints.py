@@ -18,5 +18,5 @@ for end_name in endpoints["Name"]:
     if end.ready():
         log.debug(f"Endpoint {end_name} is ready!")
     else:
-        log.important(f"Endpoint {end_name} is not ready...Calling make_ready.... ")
-        end.make_ready()
+        log.important(f"Endpoint {end_name} is not ready...Calling onboard.... ")
+        end.onboard()
