@@ -5,7 +5,6 @@ import urllib.parse
 from typing import Union
 from enum import Enum
 import botocore
-import json
 
 import pandas as pd
 import awswrangler as wr
