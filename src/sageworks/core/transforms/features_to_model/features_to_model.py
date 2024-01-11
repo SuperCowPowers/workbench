@@ -199,11 +199,11 @@ class FeaturesToModel(Transform):
         )
 
         # Training Job Name based on the Model UUID and today's date
-        date_today = datetime.today().strftime("%Y-%m-%d")
-        job_name = f"{self.output_uuid}-{date_today}"
+        training_date_time_utc = datetime.utcnow().strftime("%Y-%m-%d-%H-%M")
+        training_job_name = f"{self.output_uuid}-{training_date_time_utc}"
 
         # Train the estimator
-        self.estimator.fit({"train": s3_training_path}, job_name=job_name)
+        self.estimator.fit({"train": s3_training_path}, job_name=training_job_name)
 
         # Now delete the training data
         self.log.info(f"Deleting training data {s3_training_path}...")
@@ -226,7 +226,7 @@ class FeaturesToModel(Transform):
         output_model.upsert_sageworks_meta({"sageworks_model_target": self.target_column})
 
         # Call the Model onboard method
-        output_model.onboard()
+        output_model.onboard(interactive=False)
 
     def create_and_register_model(self):
         """Create and Register the Model"""

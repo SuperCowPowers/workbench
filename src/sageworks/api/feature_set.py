@@ -17,7 +17,11 @@ class FeatureSet(FeatureSetCore):
         ```
         my_features = FeatureSet(name)
         my_features.details()
-        my_features.to_model()
+        my_features.to_model(
+            ModelType.REGRESSOR,
+            name="abalone-regression",
+            target_column="class_number_of_rings"
+        )
         ```
     """
 
