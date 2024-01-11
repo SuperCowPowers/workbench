@@ -137,10 +137,8 @@ class LicenseManager:
 
     @classmethod
     def set_open_source_api_key(cls):
-        """Set the Open Source API Key as an environment variable"""
-        with resources.path("sageworks.resources", "open_source_api.key") as open_source_key_path:
-            with open(open_source_key_path, "rb") as key_file:
-                open_source_key = key_file.read().decode("utf-8").strip()
+        """Set the Open Source API Key as an environment variable."""
+        open_source_key = resources.read_text("sageworks.resources", "open_source_api.key").strip()
         os.environ[cls.API_ENV_VAR] = open_source_key
 
 
