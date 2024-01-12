@@ -440,11 +440,19 @@ class FeatureSetCore(Artifact):
 
     def delete_training_view(self):
         """Delete the training view for this FeatureSet"""
-        training_view_table = self.get_training_view_table()
-        if training_view_table is not None:
-            self.log.info(f"Deleting Training View {training_view_table} for {self.uuid}")
-            glue_client = self.boto_session.client("glue")
-            glue_client.delete_table(DatabaseName=self.athena_database, Name=training_view_table)
+        try:
+            training_view_table = self.get_training_view_table()
+            if training_view_table is not None:
+                self.log.info(f"Deleting Training View {training_view_table} for {self.uuid}")
+                glue_client = self.boto_session.client("glue")
+                glue_client.delete_table(DatabaseName=self.athena_database, Name=training_view_table)
+        except botocore.exceptions.ClientError as error:
+            # For ResourceNotFound/ValidationException, this is fine, otherwise raise all other exceptions
+            if error.response["Error"]["Code"] in ["ResourceNotFound", "ValidationException"]:
+                self.log.warning(f"Training View for {self.uuid} doesn't exist, nothing to delete...")
+                pass
+            else:
+                raise error
 
     def descriptive_stats(self, recompute: bool = False) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource
