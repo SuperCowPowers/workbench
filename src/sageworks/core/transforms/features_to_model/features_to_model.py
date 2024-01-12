@@ -172,9 +172,14 @@ class FeaturesToModel(Transform):
             targets = feature_set.query(f"select DISTINCT {self.target_column} FROM {table}")[
                 self.target_column
             ].to_list()
-            metrics = ["precision", "recall", "fscore"]
+
+            # Sanity check on the targets
+            if len(targets) > 10:
+                self.log.critical(f"Too many target classes ({len(targets)}) for classification, aborting!")
+                return
 
             # Dynamically create the metric definitions
+            metrics = ["precision", "recall", "fscore"]
             metric_definitions = []
             for t in targets:
                 for m in metrics:
