@@ -85,18 +85,15 @@ class DataSourceAbstract(Artifact):
 
         # If we still don't have display columns, try to set them
         if self._display_columns is None:
-            # If we have less than 30 columns, just use all of them
-            if self.num_columns() < 30:
-                self._display_columns = self.column_names()
+            # Exclude these automatically generated columns
+            exclude_columns = ["write_time", "api_invocation_time", "is_deleted", "event_time", "id"]
 
-            # Otherwise, use the first 30 columns as the display columns
-            else:
-                self.log.important(f"Setting display columns for {self.uuid} to 30 columns...")
-                self._display_columns = self.column_names()[:30]
+            # We're going to remove any excluded columns from the display columns and limit to 30 total columns
+            self._display_columns = [col for col in self.column_names() if col not in exclude_columns][:30]
 
-                # Add the outlier_group column if it exists and isn't already in the display columns
-                if "outlier_group" in self.column_names():
-                    self._display_columns = list(set(self._display_columns) + set(["outlier_group"]))
+            # Add the outlier_group column if it exists and isn't already in the display columns
+            if "outlier_group" in self.column_names():
+                self._display_columns = list(set(self._display_columns) + set(["outlier_group"]))
 
             # Set the display columns in the metadata
             self.set_display_columns(self._display_columns)
