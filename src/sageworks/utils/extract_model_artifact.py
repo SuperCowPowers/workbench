@@ -155,8 +155,8 @@ class ExtractModelArtifact:
             # Try loading from joblib first
             joblib_model_return = self.load_from_joblib(tmpdir)
             if joblib_model_return:
-                logging.warning("Joblib is being deprecated as an XGBoost model format.")
-                logging.warning(
+                log.warning("Joblib is being deprecated as an XGBoost model format.")
+                log.warning(
                     "Please recreate this model using the Sageworks API or the xgb.XGBModel.save_model() method."
                 )
                 model_return = joblib_model_return
