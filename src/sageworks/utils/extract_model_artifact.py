@@ -39,9 +39,7 @@ class ExtractModelArtifact:
         """
 
         # Get the endpoint configuration
-        endpoint_desc = self.sagemaker_client.describe_endpoint(
-            EndpointName=self.endpoint_name
-        )
+        endpoint_desc = self.sagemaker_client.describe_endpoint(EndpointName=self.endpoint_name)
         endpoint_config_desc = self.sagemaker_client.describe_endpoint_config(
             EndpointConfigName=endpoint_desc["EndpointConfigName"]
         )
@@ -66,9 +64,7 @@ class ExtractModelArtifact:
             raise ValueError("ModelPackageName not found in the model description")
 
         # Now get the model package description and from that the model artifact URI
-        model_package_desc = self.sagemaker_client.describe_model_package(
-            ModelPackageName=model_package_arn
-        )
+        model_package_desc = self.sagemaker_client.describe_model_package(ModelPackageName=model_package_arn)
         inference_spec = model_package_desc.get("InferenceSpecification", {})
         containers = inference_spec.get("Containers", [])
         if containers:
@@ -92,9 +88,9 @@ class ExtractModelArtifact:
             # Get json and get model type
             with open(model_file, "rb") as f:
                 model_json = json.load(f)
-            model_type = json.loads(
-                model_json.get("learner").get("attributes").get("scikit_learn")
-            ).get("_estimator_type")
+            model_type = json.loads(model_json.get("learner").get("attributes").get("scikit_learn")).get(
+                "_estimator_type"
+            )
 
             # Load based on model type
             if model_type == "classifier":
@@ -159,9 +155,7 @@ class ExtractModelArtifact:
             # Try loading from joblib first
             joblib_model_return = self.load_from_joblib(tmpdir)
             if joblib_model_return:
-                logging.warning(
-                    "Joblib is being deprecated as an XGBoost model format."
-                )
+                logging.warning("Joblib is being deprecated as an XGBoost model format.")
                 logging.warning(
                     "Please recreate this model using the Sageworks API or the xgb.XGBModel.save_model() method."
                 )
