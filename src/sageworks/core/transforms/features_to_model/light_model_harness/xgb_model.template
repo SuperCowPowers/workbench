@@ -166,7 +166,7 @@ if __name__ == "__main__":
         )
 
     # Now save the model to the standard place/name
-    joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
+    xgb_model.save_model(os.path.join(args.model_dir, "xgb_model.json"))
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
@@ -177,8 +177,19 @@ if __name__ == "__main__":
 
 def model_fn(model_dir):
     """Deserialized and return fitted model"""
-    clf = joblib.load(os.path.join(model_dir, "xgb_model.joblib"))
-    return clf
+    with open(os.path.join(model_dir,'xgb_model.json'), 'rb') as f:
+        model_json = json.load(f)
+
+    model_type = json.loads(model_json.get('learner').get('attributes').get('scikit_learn')).get('_estimator_type')
+
+    if model_type == 'classifier':
+        model = xgb.XGBClassifier()
+        model.load_model(os.path.join(model_dir, "xgb_model.json"))
+    elif model_type == 'regressor':
+        model = xgb.XGBRegressor()
+        model.load_model(os.path.join(model_dir, "xgb_model.json"))
+
+    return model
 
 
 def input_fn(input_data, content_type):
