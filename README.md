@@ -17,7 +17,6 @@ The SageWorks framework makes AWS® both easier to use and more powerful. SageWo
 - Models
 - Endpoints
 
-<br>
 
 ### Installation
 - One time AWS Onboarding: [AWS Setup](https://supercowpowers.github.io/sageworks/aws_setup/core_stack/)

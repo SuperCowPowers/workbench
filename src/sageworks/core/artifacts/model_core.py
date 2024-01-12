@@ -325,32 +325,38 @@ class ModelCore(Artifact):
             self.log.warning(f"Unknown Model Type {model_type}!")
             self._set_model_type(ModelType.UNKNOWN)
 
-    def onboard(self) -> bool:
+    def onboard(self, interactive=True) -> bool:
         """This is a BLOCKING method that will onboard the Model (make it ready)
+
+        Args:
+            interactive (bool, optional): If True, will prompt the user for information. Defaults to True.
         Returns:
             bool: True if the Model is successfully onboarded, False otherwise
         """
         # Set the status to onboarding
         self.set_status("onboarding")
 
-        # Determine the Model Type
-        while self.is_model_unknown():
-            self._determine_model_type()
+        # Interactive Stuff
+        if interactive:
+            # Determine the Model Type
+            while self.is_model_unknown():
+                self._determine_model_type()
 
-        # Determine the Target Column (can be None)
-        if "sageworks_model_target" not in self.sageworks_meta():
-            target_column = input("Target Column? (for unsupervised/transformer just type None): ")
-            if target_column in ["None", "none", ""]:
-                target_column = None
-            self.upsert_sageworks_meta({"sageworks_model_target": target_column})
+            # Determine the Target Column (can be None)
+            if "sageworks_model_target" not in self.sageworks_meta():
+                target_column = input("Target Column? (for unsupervised/transformer just type None): ")
+                if target_column in ["None", "none", ""]:
+                    target_column = None
+                self.upsert_sageworks_meta({"sageworks_model_target": target_column})
 
-        # Registered Endpoints?
-        if "sageworks_registered_endpoints" not in self.sageworks_meta():
-            endpoints = input("Register Endpoints? (use commas for multiple): ")
-            endpoints = [e.strip() for e in endpoints.split(",")]
-            for endpoint in endpoints:
-                self.log.info(f"Registering Endpoint {endpoint}...")
-                self.register_endpoint(endpoint)
+            # Registered Endpoints?
+            if "sageworks_registered_endpoints" not in self.sageworks_meta():
+                endpoints = input("Register Endpoints? (use commas for multiple): ")
+                endpoints = [e.strip() for e in endpoints.split(",")]
+                if endpoints not in [["None"], ["none"], [""]]:
+                    for endpoint in endpoints:
+                        self.log.info(f"Registering Endpoint {endpoint}...")
+                        self.register_endpoint(endpoint)
 
         # Pull the training metrics and inference metrics
         self._pull_training_metrics()  # Includes both metrics and confusion matrix
