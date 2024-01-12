@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from io import StringIO
 import awswrangler as wr
+from typing import Union
 import ast
 import shap
 
@@ -68,6 +69,13 @@ class EndpointCore(Artifact):
             self.log.important(f"Could not find endpoint {self.uuid} within current visibility scope")
             return
 
+        # Sanity check the Endpoint state
+        if self.endpoint_meta["EndpointStatus"] == "Failed":
+            self.log.critical(f"Endpoint {self.uuid} is in a failed state")
+            reason = self.endpoint_meta["FailureReason"]
+            self.log.critical(f"Failure Reason: {reason}")
+            self.log.critical("Please delete this endpoint and re-deploy...")
+
         # Set the Inference, Capture, and Monitoring S3 Paths
         self.endpoint_inference_path = self.endpoints_s3_path + "/inference/" + self.uuid
         self.endpoint_data_capture_path = self.endpoints_s3_path + "/data_capture/" + self.uuid
@@ -112,6 +120,11 @@ class EndpointCore(Artifact):
 
         # We're going to check for 5xx errors and no activity
         endpoint_metrics = self.endpoint_metrics()
+
+        # Check if we have metrics
+        if endpoint_metrics is None:
+            health_issues.append("unknown_error")
+            return health_issues
 
         # Check for 5xx errors
         num_errors = endpoint_metrics["Invocation5XXErrors"].sum()
@@ -270,10 +283,11 @@ class EndpointCore(Artifact):
         """Return the datetime when this artifact was last modified"""
         return self.endpoint_meta["LastModifiedTime"]
 
-    def endpoint_metrics(self) -> pd.DataFrame:
+    def endpoint_metrics(self) -> Union[pd.DataFrame, None]:
         """Return the metrics for this endpoint
+
         Returns:
-            pd.DataFrame: DataFrame with the metrics for this endpoint
+            pd.DataFrame: DataFrame with the metrics for this endpoint (or None if no metrics)
         """
 
         # Do we have it cached?
@@ -283,6 +297,8 @@ class EndpointCore(Artifact):
             return endpoint_metrics
 
         # We don't have it cached so let's get it from CloudWatch
+        if "ProductionVariants" not in self.endpoint_meta:
+            return None
         self.log.important("Updating endpoint metrics...")
         variant = self.endpoint_meta["ProductionVariants"][0]["VariantName"]
         endpoint_metrics = EndpointMetrics().get_metrics(self.uuid, variant=variant)
@@ -316,7 +332,10 @@ class EndpointCore(Artifact):
             details["instance_count"] = self.endpoint_meta["ProductionVariants"][0]["CurrentInstanceCount"] or "-"
         except KeyError:
             details["instance_count"] = "-"
-        details["variant"] = self.endpoint_meta["ProductionVariants"][0]["VariantName"]
+        if "ProductionVariants" in self.endpoint_meta:
+            details["variant"] = self.endpoint_meta["ProductionVariants"][0]["VariantName"]
+        else:
+            details["variant"] = "-"
 
         # Add the underlying model details
         details["model_name"] = self.model_name
@@ -664,7 +683,7 @@ if __name__ == "__main__":
     )
 
     # Grab an EndpointCore object and pull some information from it
-    my_endpoint = EndpointCore("abalone-regression-end")
+    my_endpoint = EndpointCore("aqsol-regression-end")
 
     # Let's do a check/validation of the Endpoint
     assert my_endpoint.exists()

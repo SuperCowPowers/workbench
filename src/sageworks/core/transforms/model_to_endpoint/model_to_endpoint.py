@@ -137,6 +137,12 @@ class ModelToEndpoint(Transform):
                 describe_endpoint_response = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
                 self.log.info(describe_endpoint_response["EndpointStatus"])
             status = describe_endpoint_response["EndpointStatus"]
+            if status != "InService":
+                msg = f"Endpoint {endpoint_name} failed to be created. Status: {status}"
+                details = describe_endpoint_response["FailureReason"]
+                self.log.critical(msg)
+                self.log.critical(details)
+                raise Exception(msg)
             self.log.important(f"Endpoint {endpoint_name} is now {status}...")
 
     def post_transform(self, **kwargs):

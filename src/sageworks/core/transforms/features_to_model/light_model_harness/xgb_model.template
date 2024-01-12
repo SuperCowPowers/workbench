@@ -178,7 +178,23 @@ if __name__ == "__main__":
 
 def model_fn(model_dir):
     """Deserialized and return fitted model"""
-    return load_xgb_model(model_dir)
+
+    # Load our XGBoost model from the model directory
+    model_path = os.path.join(model_dir, "xgb_model.json")
+    with open(model_path, "r") as f:
+        model_json = json.load(f)
+    saved_model_type = json.loads(model_json.get('learner').get('attributes').get('scikit_learn')).get('_estimator_type')
+    if saved_model_type == "classifier":
+        model = xgb.XGBClassifier()
+    elif saved_model_type == "regressor":
+        model = xgb.XGBRegressor()
+    else:
+        msg = f"Model type ({saved_model_type}) not recognized. Expected 'classifier' or 'regressor'"
+        raise ValueError(msg)
+
+    model.load_model(model_path)
+    return model
+
 
 def input_fn(input_data, content_type):
     """We only take CSV Input"""
@@ -233,22 +249,3 @@ def predict_fn(df, model):
 
     # All done, return the DataFrame
     return df
-
-
-# Helper Method to Load XGBoost Model
-def load_xgb_model(model_dir: str) -> Union[xgb.XGBClassifier, xgb.XGBRegressor]:
-    """Load a XGBoost model from a given directory."""
-    model_path = os.path.join(model_dir, "xgb_model.json")
-    with open(model_path, 'r') as f:
-        model_json = json.load(f)
-
-    model_type = model_json.get('learner', {}).get('attributes', {}).get('_estimator_type')
-    if model_type == 'classifier':
-        model = xgb.XGBClassifier()
-    elif model_type == 'regressor':
-        model = xgb.XGBRegressor()
-    else:
-        raise ValueError("Model type not recognized. Expected 'classifier' or 'regressor'.")
-
-    model.load_model(model_path)
-    return model

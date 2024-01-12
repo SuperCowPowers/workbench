@@ -175,13 +175,13 @@ if __name__ == "__main__":
     """Exercise the ExtractModelArtifact class"""
 
     # Create the Class and test it out
-    my_endpoint = "solubility-with-shap-end"
+    my_endpoint = "abalone-regression-end"
     ema = ExtractModelArtifact(my_endpoint)
 
-    # # Test the lower level methods
-    # model_data_uri = ema.get_model_data_uri()
-    # print(f"Model Data URI: {model_data_uri}")
-    # my_model = ema.download_and_extract_model(model_data_uri)
+    # Test the lower level methods
+    model_data_uri = ema.get_model_data_uri()
+    print(f"Model Data URI: {model_data_uri}")
+    my_model = ema.download_and_extract_model(model_data_uri)
 
     # Test the higher level method
     my_model = ema.get_model_artifact()
