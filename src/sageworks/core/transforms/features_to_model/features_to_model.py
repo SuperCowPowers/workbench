@@ -175,8 +175,9 @@ class FeaturesToModel(Transform):
 
             # Sanity check on the targets
             if len(targets) > 10:
-                self.log.critical(f"Too many target classes ({len(targets)}) for classification, aborting!")
-                return
+                msg = f"Too many target classes ({len(targets)}) for classification, aborting!"
+                self.log.critical(msg)
+                raise ValueError(msg)
 
             # Dynamically create the metric definitions
             metrics = ["precision", "recall", "fscore"]
