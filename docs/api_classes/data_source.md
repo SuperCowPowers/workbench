@@ -58,7 +58,7 @@ print(df.head())
 
 **Output**
 
-```
+```python
   sex  length  diameter  height  whole_weight  shucked_weight  viscera_weight  shell_weight  class_number_of_rings
 0   M   0.705     0.565   0.515         2.210          1.1075          0.4865        0.5120                     10
 1   F   0.455     0.355   1.130         0.594          0.3320          0.1160        0.1335                      8
