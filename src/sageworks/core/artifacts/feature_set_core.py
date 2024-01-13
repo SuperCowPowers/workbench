@@ -196,7 +196,7 @@ class FeatureSetCore(Artifact):
             pd.DataFrame: The results of the query
         """
         if overwrite:
-            query = query.replace(" "+ self.uuid + " ", " " + self.athena_table + " ")
+            query = query.replace(" " + self.uuid + " ", " " + self.athena_table + " ")
         return self.data_source.query(query)
 
     def aws_url(self):
