@@ -60,6 +60,17 @@ class DataSource(AthenaSource):
         """
         return super().details(**kwargs)
 
+    def query(self, query: str) -> pd.DataFrame:
+        """Query the AthenaSource
+
+        Args:
+            query (str): The query to run against the DataSource
+
+        Returns:
+            pd.DataFrame: The results of the query
+        """
+        return super().query(query)
+
     def to_features(
         self, name: str = None, tags: list = None, id_column: str = None, event_time_column: str = None
     ) -> FeatureSet:
