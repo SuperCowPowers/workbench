@@ -38,17 +38,6 @@ test_data = DataSource(df, name="test_data")
 print(test_data.details())
 ```
 
-**Create a FeatureSet from a DataSource**
-
-```py title="datasource_to_featureset.py"
-from sageworks.api.data_source import DataSource
-
-# Convert the Data Source to a Feature Set
-test_data = DataSource('test_data')
-my_features = test_data.to_features()
-print(my_features.details())
-```
-
 **Query a DataSource**
 
 All SageWorks DataSources use AWS Athena, so any query that you can make with Athena is accessible through the DataSource API.
@@ -79,8 +68,19 @@ print(df.head())
 1   I   0.150     0.100   0.025         0.015          0.0045          0.0040        0.0050                      2
 ```
 
+**Create a FeatureSet from a DataSource**
+
+```py title="datasource_to_featureset.py"
+from sageworks.api.data_source import DataSource
+
+# Convert the Data Source to a Feature Set
+test_data = DataSource('test_data')
+my_features = test_data.to_features()
+print(my_features.details())
+```
+
 ## SageWorks UI
-Running these few lines of code performs a comprehensive set of Exploratory Data Analysis techniques on your data, pushes the results into AWS, and provides a detailed web visualization of the results.
+Whenever a DataSource is created SageWorks performs a comprehensive set of Exploratory Data Analysis techniques on your data, pushes the results into AWS, and provides a detailed web visualization of the results.
 
 <figure style="width: 700px;">
 <img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/9126bbe7-902e-409e-9caa-570b054b69e6"">

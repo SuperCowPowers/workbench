@@ -142,7 +142,7 @@ pprint(my_model.details())
 ```
 
 ## SageWorks UI
-Running these few lines of code performs a comprehensive set of Exploratory Data Analysis techniques on your data, pushes the results into AWS, and provides a detailed web visualization of the results.
+Whenever a FeatureSet is created SageWorks performs a comprehensive set of Exploratory Data Analysis techniques on your data, pushes the results into AWS, and provides a detailed web visualization of the results.
 
 <figure style="width: 700px;">
 <img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/0b4103fe-2c33-4611-86df-ff659fad1a3b">
