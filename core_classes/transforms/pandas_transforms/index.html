@@ -1982,6 +1982,22 @@
 
 
 <h1 id="pandas-transforms">Pandas Transforms</h1>
+<div class="admonition tip inline end">
+<p class="admonition-title">API Classes</p>
+<p>The <a href="../../../api_classes/overview/">API Classes</a> will often provide helpful methods that give you a DataFrame (data_source.query() for instance), so always check out the <a href="../../../api_classes/overview/">API Classes</a> first.</p>
+</div>
+<p>These Transforms will give you the ultimate in customization and flexibility when creating AWS Machine Learning Pipelines. Grab a Pandas DataFrame from a DataSource or FeatureSet process in whatever way for your use case and simply create another Sageworks DataSource or FeatureSet from the resulting DataFrame.</p>
+<p><strong>Lots of Options:</strong></p>
+<div class="admonition warning inline end">
+<p class="admonition-title">Not for Large Data</p>
+<p>Pandas Transforms can't handle large datasets (&gt; 4 GigaBytes). For doing transforma on large data see our <strong>Heavy</strong> <a href="../overview/">Transforms</a></p>
+</div>
+<ul>
+<li>S3 --&gt; DF --&gt; DataSource</li>
+<li>DataSource --&gt; DF --&gt; DataSource</li>
+<li>DataSoruce --&gt; DF --&gt; FeatureSet</li>
+<li>Get Creative!</li>
+</ul>
 
 
 <div class="doc doc-object doc-module">
