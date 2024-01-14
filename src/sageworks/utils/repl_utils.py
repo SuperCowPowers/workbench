@@ -61,7 +61,6 @@ def status_lights(status_colors: list[str]):
 
 
 if __name__ == "__main__":
-
     # Print all the colors
     for color in colors.keys():
         cprint(color, f"Hello world! ({color})")

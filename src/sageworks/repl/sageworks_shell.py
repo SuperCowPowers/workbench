@@ -26,7 +26,7 @@ class CustomPromptStyle(Style):
         Token.Lightgreen: "#87ff87",
         Token.Lime: "#afff00",
         Token.Darkyellow: "#ffd787",
-        Token.Orange:  "#ff8700",
+        Token.Orange: "#ff8700",
         Token.Red: "#ff5f87",
     }
 
