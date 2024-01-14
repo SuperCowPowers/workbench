@@ -21,6 +21,13 @@ class CustomPromptStyle(Style):
     styles = {
         Token.SageWorks: "#ff69b4",  # Pink color for SageWorks
         Token.AWSProfile: "#ffd700",  # Yellow color for AWS Profile
+        Token.Lightblue: "#5fd7ff",
+        Token.Lightpurple: "#af87ff",
+        Token.Lightgreen: "#87ff87",
+        Token.Lime: "#afff00",
+        Token.Darkyellow: "#ffd787",
+        Token.Orange:  "#ff8700",
+        Token.Red: "#ff5f87",
     }
 
 
@@ -60,7 +67,8 @@ class SageWorksShell:
         def in_prompt_tokens(self, cli=None):
             aws_profile = os.getenv("AWS_PROFILE", "default")
             # return [(Token.Prompt, "🍺  "), (Token.Prompt, f"SageWorks({aws_profile})> ")]
-            return [(Token.SageWorks, "SageWorks"), (Token.AWSProfile, f"({aws_profile})> ")]
+            lights = [(Token.Lightgreen, "●"), (Token.Darkyellow, "●"), (Token.Red, "●")]
+            return lights + [(Token.SageWorks, "SageWorks"), (Token.AWSProfile, f"({aws_profile})>")]
 
     def start(self):
         """Start the SageWorks IPython shell"""

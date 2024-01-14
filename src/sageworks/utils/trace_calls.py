@@ -9,10 +9,10 @@ import sageworks  # noqa: F401 (we need to import this to set up the logger)
 log = logging.getLogger("sageworks")
 
 # Define ANSI color codes for blue text and class name color
-BLUE = "\033[94m"
-GREEN = "\033[92m"
-CYAN = "\033[96m"
-RESET = "\033[0m"
+BLUE = "\x1b[94m"
+GREEN = "\x1b[92m"
+CYAN = "\x1b[96m"
+RESET = "\x1b[0m"
 
 exclude_classes = ["Thread", "WSGIRequestHandler", "ThreadedWSGIServer", "Flask", "_NewThreadStartupWithTrace"]
 
