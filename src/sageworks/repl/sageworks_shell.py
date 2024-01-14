@@ -28,6 +28,8 @@ class CustomPromptStyle(Style):
         Token.Darkyellow: "#ffd787",
         Token.Orange: "#ff8700",
         Token.Red: "#ff5f87",
+        Token.Blue: "#4444d7",
+        Token.Green: "#22cc22",
     }
 
 
@@ -67,8 +69,8 @@ class SageWorksShell:
         def in_prompt_tokens(self, cli=None):
             aws_profile = os.getenv("AWS_PROFILE", "default")
             # return [(Token.Prompt, "🍺  "), (Token.Prompt, f"SageWorks({aws_profile})> ")]
-            lights = [(Token.Lightgreen, "●"), (Token.Darkyellow, "●"), (Token.Red, "●")]
-            return lights + [(Token.SageWorks, "SageWorks"), (Token.AWSProfile, f"({aws_profile})>")]
+            lights = SageWorksShell.status_lights()
+            return lights + [(Token.SageWorks, "SageWorks"), (Token.AWSProfile, f"({aws_profile})> ")]
 
     def start(self):
         """Start the SageWorks IPython shell"""
@@ -76,6 +78,11 @@ class SageWorksShell:
         self.hey()
         self.summary()
         self.shell(local_ns=self.commands)
+
+    @staticmethod
+    def check_api_key():
+        """Check the API Key"""
+        return True
 
     @staticmethod
     def check_redis():
@@ -203,6 +210,31 @@ class SageWorksShell:
 
     def broker_refresh(self):
         self.artifacts_text_view.refresh(force_refresh=True)
+
+    @classmethod
+    def status_lights(cls) -> list[(Token, str)]:
+        """Check the status of AWS, Redis, and API Key and return Token colors
+
+        Returns:
+            list[(Token, str)]: A list of Token colors and status symbols
+        """
+        _status_lights = [(Token.Blue, "[")]
+
+        # Check AWS Account
+        # if 1 or cls.check_aws_account():
+        _status_lights.append((Token.Green, "●"))
+
+        # Check Redis
+        # if 0 or cls.check_redis():
+        _status_lights.append((Token.Green, "●"))
+
+        # Check API Key
+        # if 0 or cls.check_api_key():
+        _status_lights.append((Token.Green, "●"))
+
+        _status_lights.append((Token.Blue, "]"))
+
+        return _status_lights
 
 
 # Launch Shell Entry Point
