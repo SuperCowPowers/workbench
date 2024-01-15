@@ -33,6 +33,10 @@ class CustomPromptStyle(Style):
     }
 
 
+# Note: Hack
+aws_profile = ConfigManager().get_config("AWS_PROFILE")
+
+
 class SageWorksShell:
     def __init__(self):
         # Check the SageWorks config
@@ -44,7 +48,6 @@ class SageWorksShell:
             self.onboard()
 
         # Perform AWS connection test and other checks
-        self.aws_profile = self.cm.get_config("AWS_PROFILE")
         self.commands = dict()
         self.artifacts_text_view = None
         self.check_aws_account()
@@ -77,8 +80,8 @@ class SageWorksShell:
     class SageWorksPrompt(Prompts):
         def in_prompt_tokens(self, cli=None):
             lights = SageWorksShell.status_lights()
-            aws_profile = [(Token.Blue, ":"), (Token.AWSProfile, f"{self.aws_profile}"), (Token.Blue, "> ")]
-            return lights + [(Token.SageWorks, "SageWorks")] + aws_profile
+            aws_profile_prompt = [(Token.Blue, ":"), (Token.AWSProfile, f"{aws_profile}"), (Token.Blue, "> ")]
+            return lights + [(Token.SageWorks, "SageWorks")] + aws_profile_prompt
 
     def start(self):
         """Start the SageWorks IPython shell"""
