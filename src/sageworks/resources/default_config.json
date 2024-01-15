@@ -2,10 +2,11 @@
     "AWS_PROFILE": "change_me",
     "REDIS_HOST": "localhost",
     "REDIS_PORT": "6379",
+    "REDIS_PASSWORD": "",
     "SAGEWORKS_BUCKET": "change_me",
     "SAGEWORKS_WHITELIST": "change_me_optional",
     "SAGEWORKS_SSO_GROUP": "change_me_optional",
-    "SAGEWORKS_PLUGINS": "sageworks_plugins",
+    "SAGEWORKS_PLUGINS": "package",
     "SAGEWORKS_ROLE": "SageWorks-ExecutionRole",
     "SAGEWORKS_FEATURES": {
         "plugins": "true",

@@ -1,4 +1,5 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
+import os
 import boto3
 import awswrangler as wr
 from botocore.exceptions import (
@@ -31,6 +32,10 @@ class AWSAccountClamp:
             cls.config = ConfigManager().load_config()
             cls.role_name = cls.config["SAGEWORKS_ROLE"]
             cls.sageworks_bucket_name = cls.config["SAGEWORKS_BUCKET"]
+
+            # Note: We might want to revisit this
+            os.environ["AWS_PROFILE"] = cls.config["AWS_PROFILE"]
+
             try:
                 cls.account_id = boto3.client("sts").get_caller_identity()["Account"]
                 cls.region = boto3.session.Session().region_name

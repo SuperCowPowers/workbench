@@ -1,5 +1,4 @@
 """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
-import os
 import sys
 import argparse
 from enum import Enum, auto
@@ -9,6 +8,7 @@ from botocore.exceptions import ClientError
 
 # SageWorks Imports
 from sageworks.utils.sageworks_cache import SageWorksCache
+from sageworks.utils.config_manager import ConfigManager
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_broker.aws_service_connectors.glue_jobs import GlueJobs
 from sageworks.aws_service_broker.aws_service_connectors.data_catalog import DataCatalog
@@ -59,10 +59,8 @@ class AWSServiceBroker:
         cls.log = logging.getLogger("sageworks")
 
         # Grab our SageWorks Bucket
-        cls.sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
-        if cls.sageworks_bucket is None:
-            print("Could not find ENV var for SAGEWORKS_BUCKET!")
-            sys.exit(1)
+        cm = ConfigManager()
+        cls.sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
 
         # Construct bucket paths
         cls.incoming_data_bucket = "s3://" + cls.sageworks_bucket + "/incoming-data/"

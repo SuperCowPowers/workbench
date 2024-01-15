@@ -1,4 +1,5 @@
 """S3ToDataSourceLight: Class to move LIGHT S3 Files into a SageWorks DataSource"""
+import sys
 import awswrangler as wr
 
 # Local imports
@@ -87,11 +88,11 @@ class S3ToDataSourceLight(Transform):
 
 if __name__ == "__main__":
     """Exercise the S3ToDataSourceLight Class"""
-    import os
-    import sys
+    from sageworks.utils.config_manager import ConfigManager
 
     # Grab our SageWorks Bucket from ENV
-    sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
+    cm = ConfigManager()
+    sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
     if sageworks_bucket is None:
         print("Could not find ENV var for SAGEWORKS_BUCKET!")
         sys.exit(1)

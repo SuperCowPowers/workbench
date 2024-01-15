@@ -125,11 +125,20 @@ class ConfigManager:
         Returns:
             Any: The value of the configuration key.
         """
+        # Special logic for SAGEWORKS_PLUGINS
+        if key == "SAGEWORKS_PLUGINS":
+            plugin_dir = self.config.get(key, None)
+            if plugin_dir in ["package", "", None]:
+                return os.path.join(os.path.dirname(__file__), "../../sageworks_plugins")
+            else:
+                return self.config.get(key, None)
+
+        # Normal logic
         return self.config.get(key, None)
 
     def platform_specific_instructions(self):
         """Provides instructions to the user for setting the SAGEWORKS_CONFIG
-           environment variable permanently based on their operating system.
+        environment variable permanently based on their operating system.
         """
         os_name = platform.system()
 
@@ -164,3 +173,5 @@ if __name__ == "__main__":
     config_manager = ConfigManager()
     sageworks_role = config_manager.get_config("SAGEWORKS_ROLE")
     print(f"SAGEWORKS_ROLE: {sageworks_role}")
+    sageworks_plugins = config_manager.get_config("SAGEWORKS_PLUGINS")
+    print(f"SAGEWORKS_PLUGINS: {sageworks_plugins}")

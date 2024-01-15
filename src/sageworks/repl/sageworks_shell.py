@@ -2,7 +2,6 @@ from IPython.terminal.embed import InteractiveShellEmbed
 from IPython.terminal.prompts import Prompts
 from pygments.style import Style
 from pygments.token import Token
-import os
 import sys
 import logging
 import importlib
@@ -45,6 +44,7 @@ class SageWorksShell:
             self.onboard()
 
         # Perform AWS connection test and other checks
+        self.aws_profile = self.cm.get_config("AWS_PROFILE")
         self.commands = dict()
         self.artifacts_text_view = None
         self.check_aws_account()
@@ -76,10 +76,8 @@ class SageWorksShell:
 
     class SageWorksPrompt(Prompts):
         def in_prompt_tokens(self, cli=None):
-            aws_profile = os.getenv("AWS_PROFILE", "default")
-            # return [(Token.Prompt, "🍺  "), (Token.Prompt, f"SageWorks({aws_profile})> ")]
             lights = SageWorksShell.status_lights()
-            aws_profile = [(Token.Blue, ":"), (Token.AWSProfile, f"{aws_profile}"), (Token.Blue, "> ")]
+            aws_profile = [(Token.Blue, ":"), (Token.AWSProfile, f"{self.aws_profile}"), (Token.Blue, "> ")]
             return lights + [(Token.SageWorks, "SageWorks")] + aws_profile
 
     def start(self):
@@ -94,24 +92,24 @@ class SageWorksShell:
         """Check the current Configuration Status"""
         return True
 
-    @staticmethod
-    def check_redis():
+    def check_redis(self):
         """Check the Redis Cache"""
         from sageworks.utils.sageworks_cache import SageWorksCache
 
-        host = os.environ.get("REDIS_HOST", "localhost")
-        port = os.environ.get("REDIS_PORT", "6379")
+        # Grab the Redis Host and Port
+        host = self.cm.get_config("REDIS_HOST")
+        port = self.cm.get_config("REDIS_PORT")
 
         # Open the Redis connection (class object)
         cprint("lime", f"Checking Redis connection to: {host}:{port}..")
         if SageWorksCache().check():
             cprint("lightgreen", "Redis Cache Check Success...")
         else:
-            cprint("yellow", "Redis Cache Check Failed...check your REDIS_HOST Env var")
+            cprint("yellow", "Redis Cache Check Failed...check your SageWorks Config...")
 
     @staticmethod
     def check_aws_account():
-        """Check if the AWS Account is Setup Correctly"""
+        """Check if the AWS Account is Set up Correctly"""
         cprint("yellow", "Checking AWS Account Connection...")
         try:
             try:

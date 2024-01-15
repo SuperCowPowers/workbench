@@ -5,6 +5,7 @@ import logging
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.utils.config_manager import ConfigManager
 
 
 class AWSAccountCheck:
@@ -18,10 +19,8 @@ class AWSAccountCheck:
         self.aws_clamp = AWSAccountClamp()
 
         # Grab our SageWorks Bucket
-        self.sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
-        if self.sageworks_bucket is None:
-            print("Could not find ENV var for SAGEWORKS_BUCKET!")
-            sys.exit(1)
+        cm = ConfigManager()
+        self.sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
 
     def check_s3_bucket_subfolders(self):
         """Check if the SageWorks S3 Bucket is set up and has the correct sub-folders"""

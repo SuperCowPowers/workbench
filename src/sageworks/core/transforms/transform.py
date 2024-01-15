@@ -3,12 +3,11 @@
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import final
-import os
-import sys
 import logging
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.utils.config_manager import ConfigManager
 
 
 class TransformInput(Enum):
@@ -52,10 +51,8 @@ class Transform(ABC):
         self.data_catalog_db = "sageworks"
 
         # Grab our SageWorks Bucket
-        self.sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
-        if self.sageworks_bucket is None:
-            print("Could not find ENV var for SAGEWORKS_BUCKET!")
-            sys.exit(1)
+        cm = ConfigManager()
+        self.sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
         self.data_sources_s3_path = "s3://" + self.sageworks_bucket + "/data-sources"
         self.feature_sets_s3_path = "s3://" + self.sageworks_bucket + "/feature-sets"
         self.models_s3_path = "s3://" + self.sageworks_bucket + "/models"

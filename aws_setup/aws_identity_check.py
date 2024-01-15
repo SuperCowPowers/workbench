@@ -5,6 +5,7 @@ import logging
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.utils.config_manager import ConfigManager
 
 
 class AWSIdentityCheck:
@@ -21,9 +22,10 @@ class AWSIdentityCheck:
         """Check the AWS Identity"""
 
         # Log if there's any AWS_PROFILE set
-        active_profile = os.getenv("AWS_PROFILE")
+        cm = ConfigManager()
+        active_profile = cm.get_config("AWS_PROFILE")
         if active_profile:
-            self.log.info(f"Active AWS_PROFILE: {active_profile}")
+            self.log.info(f"SageWorks AWS_PROFILE: {active_profile}")
         else:
             self.log.info("No AWS_PROFILE set")
             sys.exit(0)

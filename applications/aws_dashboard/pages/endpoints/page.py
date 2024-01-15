@@ -1,5 +1,4 @@
 """Endpoints:  A SageWorks Web Interface to view and interact with Endpoints"""
-import os
 from dash import register_page
 import dash
 from dash_bootstrap_templates import load_figure_template
@@ -12,6 +11,7 @@ from . import callbacks
 from sageworks.web_components import table, model_markdown, endpoint_metric_plots, plugin_loader
 from sageworks.web_components.plugin_interface import PluginType
 from sageworks.views.endpoint_web_view import EndpointWebView
+from sageworks.utils.config_manager import ConfigManager
 
 # Register this page with Dash
 register_page(
@@ -45,7 +45,8 @@ components = {
 }
 
 # Load the plugins from the sageworks_plugins directory
-plugins = plugin_loader.load_plugins_from_dir(os.getenv("SAGEWORKS_PLUGINS"), PluginType.ENDPOINT)
+plugin_dir = ConfigManager().get_config("SAGEWORKS_PLUGINS")
+plugins = plugin_loader.load_plugins_from_dir(plugin_dir, PluginType.ENDPOINT)
 
 # Add the plugins to the components dictionary
 for plugin in plugins:
