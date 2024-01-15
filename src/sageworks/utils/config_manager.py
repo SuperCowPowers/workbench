@@ -2,10 +2,11 @@ import json
 import os
 import logging
 import importlib.resources as resources
-from typing import Any, Optional, Dict
+from typing import Any, Dict
 
 # Set up the logger
 import sageworks  # noqa: F401 (we need to import this to set up the logger)
+
 log = logging.getLogger("sageworks")
 
 
@@ -22,13 +23,13 @@ class ConfigManager:
         """
 
         # Load configuration from environment variable
-        sageworks_config = os.environ.get('SAGEWORKS_CONFIG')
+        sageworks_config = os.environ.get("SAGEWORKS_CONFIG")
         if sageworks_config is None:
             log.info("SAGEWORKS_CONFIG environment variable not set. Using default configuration.")
             return self.load_default_config()
 
         # Load configuration from AWS Parameter Store
-        if sageworks_config == 'parameter_store':
+        if sageworks_config == "parameter_store":
             try:
                 log.info("Loading site configuration from AWS Parameter Store...")
                 return self.get_config_from_aws_parameter_store()
@@ -39,9 +40,9 @@ class ConfigManager:
         # Load user-specified configuration file
         try:
             log.info(f"Loading site configuration from {sageworks_config}...")
-            with open(sageworks_config, 'r') as file:
+            with open(sageworks_config, "r") as file:
                 return json.load(file)
-        except (FileNotFoundError, json.JSONDecodeError) as e:
+        except (FileNotFoundError, json.JSONDecodeError):
             log.error(f"Could not load configuration from {sageworks_config}. Using default configuration.")
             return self.load_default_config()
 
@@ -52,7 +53,7 @@ class ConfigManager:
         Returns:
             Dict[str, Any]: Default configuration dictionary.
         """
-        with resources.open_text('sageworks.resources', 'default_config.json') as file:
+        with resources.open_text("sageworks.resources", "default_config.json") as file:
             return json.load(file)
 
     def get_config_from_aws_parameter_store(self) -> Dict[str, Any]:
