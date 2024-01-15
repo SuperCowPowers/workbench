@@ -83,7 +83,7 @@ class ConfigManager:
         self.site_config_path = self.get_platform_specific_path()
 
         # Save updated config to platform-specific path
-        with open(self.site_config_path, 'w') as file:
+        with open(self.site_config_path, "w") as file:
             json.dump(site_config, file, indent=4)
 
     @staticmethod
@@ -147,10 +147,7 @@ class ConfigManager:
             ).format(self.site_config_path)
 
         elif os_name in ["Linux", "Darwin"]:  # Darwin is macOS
-            shell_files = {
-                "Linux": "~/.bashrc or ~/.profile",
-                "Darwin": "~/.bash_profile, ~/.zshrc, or ~/.profile"
-            }
+            shell_files = {"Linux": "~/.bashrc or ~/.profile", "Darwin": "~/.bash_profile, ~/.zshrc, or ~/.profile"}
             instructions = (
                 "\nTo set the SAGEWORKS_CONFIG environment variable permanently on {}:\n"
                 "1. Open {} in a text editor.\n"

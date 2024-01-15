@@ -36,7 +36,6 @@ class CustomPromptStyle(Style):
 
 class SageWorksShell:
     def __init__(self):
-
         # Check the SageWorks config
         self.cm = ConfigManager()
         self.cm.load_config()
