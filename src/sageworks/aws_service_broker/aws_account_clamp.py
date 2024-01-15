@@ -1,5 +1,4 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
-import os
 import boto3
 import awswrangler as wr
 from botocore.exceptions import (

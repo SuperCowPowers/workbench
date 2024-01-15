@@ -129,10 +129,7 @@ class ConfigManager:
 
     def platform_specific_instructions(self):
         """Provides instructions to the user for setting the SAGEWORKS_CONFIG
-        environment variable permanently based on their operating system.
-
-        Args:
-            config_path (str): The path to the configuration file.
+           environment variable permanently based on their operating system.
         """
         os_name = platform.system()
 
@@ -157,7 +154,7 @@ class ConfigManager:
             ).format(os_name, shell_files[os_name], self.site_config_path)
 
         else:
-            instructions = "Your operating system is not recognized. Please set the SAGEWORKS_CONFIG environment variable manually."
+            instructions = f"OS not recognized. Set the SAGEWORKS_CONFIG ENV var to {self.site_config_path} manually."
 
         print(instructions)
 
