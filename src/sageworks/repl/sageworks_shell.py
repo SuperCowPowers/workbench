@@ -70,7 +70,8 @@ class SageWorksShell:
             aws_profile = os.getenv("AWS_PROFILE", "default")
             # return [(Token.Prompt, "🍺  "), (Token.Prompt, f"SageWorks({aws_profile})> ")]
             lights = SageWorksShell.status_lights()
-            return lights + [(Token.SageWorks, "SageWorks"), (Token.AWSProfile, f"({aws_profile})> ")]
+            aws_profile = [(Token.Blue, ":"), (Token.AWSProfile, f"{aws_profile}"), (Token.Blue, "> ")]
+            return lights + [(Token.SageWorks, "SageWorks")] + aws_profile
 
     def start(self):
         """Start the SageWorks IPython shell"""
@@ -80,8 +81,8 @@ class SageWorksShell:
         self.shell(local_ns=self.commands)
 
     @staticmethod
-    def check_api_key():
-        """Check the API Key"""
+    def check_config():
+        """Check the current Configuration Status"""
         return True
 
     @staticmethod
@@ -229,7 +230,7 @@ class SageWorksShell:
         _status_lights.append((Token.Green, "●"))
 
         # Check API Key
-        # if 0 or cls.check_api_key():
+        # if 0 or cls.check_config():
         _status_lights.append((Token.Green, "●"))
 
         _status_lights.append((Token.Blue, "]"))
