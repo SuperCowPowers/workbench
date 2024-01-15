@@ -13,6 +13,7 @@ import webbrowser
 from sageworks.utils.repl_utils import cprint
 import sageworks  # noqa: F401
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
+from sageworks.utils.config_manager import ConfigManager
 
 logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
 
@@ -35,6 +36,15 @@ class CustomPromptStyle(Style):
 
 class SageWorksShell:
     def __init__(self):
+
+        # Check the SageWorks config
+        self.cm = ConfigManager()
+        self.cm.load_config()
+        if self.cm.is_default_config:
+            # Invoke Onboarding Procedure
+            cprint("yellow", "Default SageWorks Config Detected...running onboarding procedure...")
+            self.onboard()
+
         # Perform AWS connection test and other checks
         self.commands = dict()
         self.artifacts_text_view = None
@@ -236,6 +246,22 @@ class SageWorksShell:
         _status_lights.append((Token.Blue, "]"))
 
         return _status_lights
+
+    def onboard(self):
+        """Onboard a new user to SageWorks"""
+        cprint("lightgreen", "Welcome to SageWorks!")
+        cprint("lightblue", "Looks like this is your first time using SageWorks...")
+        cprint("lightblue", "Let's get you set up...")
+
+        # Create a Site Specific Config File
+        self.cm.create_site_config()
+        self.cm.platform_specific_instructions()
+
+        # Tell the user to restart the shell
+        cprint("lightblue", "After doing these instructions ^")
+        cprint("lightblue", "Please rerun the SageWorks REPL to complete the onboarding process.")
+        cprint("darkyellow", "Note: You'll need to start a NEW terminal to inherit the new ENV vars.")
+        sys.exit(0)
 
 
 # Launch Shell Entry Point
