@@ -93,7 +93,7 @@ class PandasToData(Transform):
         if str(self.output_df.columns) != str(self.output_df.columns.str.lower()):
             for c in self.output_df.columns:
                 if c != c.lower():
-                    self.log.warning(f"Column name {c} converted to lowercase: {c.lower()}")
+                    self.log.important(f"Column name {c} converted to lowercase: {c.lower()}")
             self.output_df.columns = self.output_df.columns.str.lower()
 
         # Convert Object Columns to String
