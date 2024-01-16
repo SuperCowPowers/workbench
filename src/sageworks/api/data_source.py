@@ -8,6 +8,7 @@ import pandas as pd
 import logging
 
 # SageWorks Imports
+from sageworks.core.artifacts.artifact import Artifact
 from sageworks.core.artifacts.athena_source import AthenaSource
 from sageworks.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
 from sageworks.core.transforms.data_loaders.light.s3_to_data_source_light import S3ToDataSourceLight
@@ -40,14 +41,17 @@ class DataSource(AthenaSource):
         """
         self.log = logging.getLogger("sageworks")
 
-        # Load the source (S3, File, or Existing DataSource)
+        # Automatically generate a name if not provided
         ds_name = extract_data_source_basename(source) if name is None else name
+        ds_name = Artifact.base_compliant_uuid(ds_name)  # Make sure UUID is compliant
 
         # Make sure we have a name for when we use a DataFrame source
         if ds_name == "dataframe":
             msg = "Set the 'name' argument in the constructor: DataSource(df, name='my_data')"
             self.log.critical(msg)
             raise ValueError(msg)
+
+        # Set the tags and load the source
         tags = [ds_name] if tags is None else tags
         self._load_source(source, ds_name, tags)
 
@@ -91,6 +95,7 @@ class DataSource(AthenaSource):
 
         # Create the FeatureSet Name
         fs_name = self.uuid.replace("_data", "") + "_features" if name is None else name
+        fs_name = Artifact.base_compliant_uuid(fs_name)  # Make sure UUID is compliant
 
         # Set the Tags
         tags = [fs_name] if tags is None else tags
@@ -134,11 +139,6 @@ if __name__ == "__main__":
     from pathlib import Path
     from pprint import pprint
     from sageworks.utils.test_data_generator import TestDataGenerator
-
-
-    # Temporary: Capitilization Tests
-    source_path = "s3://sageworks-public-data/common/aBaLone.CSV"
-    my_data = DataSource(source_path)
 
     # Test to Run
     long_tests = False

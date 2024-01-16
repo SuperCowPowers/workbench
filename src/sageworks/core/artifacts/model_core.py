@@ -106,7 +106,7 @@ class ModelCore(Artifact):
         Returns:
             str: The compliant uuid
         """
-        return self.clean_uuid(uuid, delimiter="-")
+        return self.base_compliant_uuid(uuid, delimiter="-")
 
     def exists(self) -> bool:
         """Does the model metadata exist in the AWS Metadata?"""

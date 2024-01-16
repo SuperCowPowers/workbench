@@ -87,7 +87,7 @@ class FeatureSetCore(Artifact):
         Returns:
             str: The compliant uuid
         """
-        return self.clean_uuid(uuid, delimiter="_")
+        return self.base_compliant_uuid(uuid, delimiter="_")
 
     def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""

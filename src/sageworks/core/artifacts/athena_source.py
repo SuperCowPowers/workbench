@@ -80,7 +80,7 @@ class AthenaSource(DataSourceAbstract):
         Returns:
             str: The compliant uuid
         """
-        return self.clean_uuid(uuid, delimiter="_")
+        return self.base_compliant_uuid(uuid, delimiter="_")
 
     def exists(self) -> bool:
         """Validation Checks for this Data Source"""
