@@ -2,7 +2,6 @@ from IPython.terminal.embed import InteractiveShellEmbed
 from IPython.terminal.prompts import Prompts
 from pygments.style import Style
 from pygments.token import Token
-import os
 import sys
 import logging
 import importlib
@@ -13,6 +12,7 @@ import webbrowser
 from sageworks.utils.repl_utils import cprint
 import sageworks  # noqa: F401
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
+from sageworks.utils.config_manager import ConfigManager
 
 logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
 
@@ -21,11 +21,32 @@ class CustomPromptStyle(Style):
     styles = {
         Token.SageWorks: "#ff69b4",  # Pink color for SageWorks
         Token.AWSProfile: "#ffd700",  # Yellow color for AWS Profile
+        Token.Lightblue: "#5fd7ff",
+        Token.Lightpurple: "#af87ff",
+        Token.Lightgreen: "#87ff87",
+        Token.Lime: "#afff00",
+        Token.Darkyellow: "#ffd787",
+        Token.Orange: "#ff8700",
+        Token.Red: "#ff5f87",
+        Token.Blue: "#4444d7",
+        Token.Green: "#22cc22",
     }
+
+
+# Note: Hack
+aws_profile = ConfigManager().get_config("AWS_PROFILE")
 
 
 class SageWorksShell:
     def __init__(self):
+        # Check the SageWorks config
+        self.cm = ConfigManager()
+        self.cm.load_config()
+        if self.cm.is_default_config:
+            # Invoke Onboarding Procedure
+            cprint("yellow", "Default SageWorks Config Detected...running onboarding procedure...")
+            self.onboard()
+
         # Perform AWS connection test and other checks
         self.commands = dict()
         self.artifacts_text_view = None
@@ -58,9 +79,9 @@ class SageWorksShell:
 
     class SageWorksPrompt(Prompts):
         def in_prompt_tokens(self, cli=None):
-            aws_profile = os.getenv("AWS_PROFILE", "default")
-            # return [(Token.Prompt, "🍺  "), (Token.Prompt, f"SageWorks({aws_profile})> ")]
-            return [(Token.SageWorks, "SageWorks"), (Token.AWSProfile, f"({aws_profile})> ")]
+            lights = SageWorksShell.status_lights()
+            aws_profile_prompt = [(Token.Blue, ":"), (Token.AWSProfile, f"{aws_profile}"), (Token.Blue, "> ")]
+            return lights + [(Token.SageWorks, "SageWorks")] + aws_profile_prompt
 
     def start(self):
         """Start the SageWorks IPython shell"""
@@ -70,23 +91,28 @@ class SageWorksShell:
         self.shell(local_ns=self.commands)
 
     @staticmethod
-    def check_redis():
+    def check_config():
+        """Check the current Configuration Status"""
+        return True
+
+    def check_redis(self):
         """Check the Redis Cache"""
         from sageworks.utils.sageworks_cache import SageWorksCache
 
-        host = os.environ.get("REDIS_HOST", "localhost")
-        port = os.environ.get("REDIS_PORT", "6379")
+        # Grab the Redis Host and Port
+        host = self.cm.get_config("REDIS_HOST")
+        port = self.cm.get_config("REDIS_PORT")
 
         # Open the Redis connection (class object)
         cprint("lime", f"Checking Redis connection to: {host}:{port}..")
         if SageWorksCache().check():
             cprint("lightgreen", "Redis Cache Check Success...")
         else:
-            cprint("yellow", "Redis Cache Check Failed...check your REDIS_HOST Env var")
+            cprint("yellow", "Redis Cache Check Failed...check your SageWorks Config...")
 
     @staticmethod
     def check_aws_account():
-        """Check if the AWS Account is Setup Correctly"""
+        """Check if the AWS Account is Set up Correctly"""
         cprint("yellow", "Checking AWS Account Connection...")
         try:
             try:
@@ -195,6 +221,47 @@ class SageWorksShell:
 
     def broker_refresh(self):
         self.artifacts_text_view.refresh(force_refresh=True)
+
+    @classmethod
+    def status_lights(cls) -> list[(Token, str)]:
+        """Check the status of AWS, Redis, and API Key and return Token colors
+
+        Returns:
+            list[(Token, str)]: A list of Token colors and status symbols
+        """
+        _status_lights = [(Token.Blue, "[")]
+
+        # Check AWS Account
+        # if 1 or cls.check_aws_account():
+        _status_lights.append((Token.Green, "●"))
+
+        # Check Redis
+        # if 0 or cls.check_redis():
+        _status_lights.append((Token.Green, "●"))
+
+        # Check API Key
+        # if 0 or cls.check_config():
+        _status_lights.append((Token.Green, "●"))
+
+        _status_lights.append((Token.Blue, "]"))
+
+        return _status_lights
+
+    def onboard(self):
+        """Onboard a new user to SageWorks"""
+        cprint("lightgreen", "Welcome to SageWorks!")
+        cprint("lightblue", "Looks like this is your first time using SageWorks...")
+        cprint("lightblue", "Let's get you set up...")
+
+        # Create a Site Specific Config File
+        self.cm.create_site_config()
+        self.cm.platform_specific_instructions()
+
+        # Tell the user to restart the shell
+        cprint("lightblue", "After doing these instructions ^")
+        cprint("lightblue", "Please rerun the SageWorks REPL to complete the onboarding process.")
+        cprint("darkyellow", "Note: You'll need to start a NEW terminal to inherit the new ENV vars.")
+        sys.exit(0)
 
 
 # Launch Shell Entry Point

@@ -63,6 +63,37 @@ iq_score   -0.295513    0.395378    0.076477   -0.435033    0.033364 -0.655210  
 <lots of EDA data and statistics>
 ```
 
+**Query a FeatureSet**
+
+All SageWorks FeatureSet have an 'offline' store that uses AWS Athena, so any query that you can make with Athena is accessible through the FeatureSet API.
+
+```py title="featureset_query.py"
+from sageworks.api.feature_set import FeatureSet
+
+# Grab a FeatureSet
+my_features = FeatureSet("abalone_features")
+
+# Make some queries using the Athena backend
+df = my_features("select * from abalone_features where height > .3")
+print(df.head())
+
+df = my_features("select * from abalone_features where class_number_of_rings < 3")
+print(df.head())
+```
+
+**Output**
+
+```python
+  sex  length  diameter  height  whole_weight  shucked_weight  viscera_weight  shell_weight  class_number_of_rings
+0   M   0.705     0.565   0.515         2.210          1.1075          0.4865        0.5120                     10
+1   F   0.455     0.355   1.130         0.594          0.3320          0.1160        0.1335                      8
+
+  sex  length  diameter  height  whole_weight  shucked_weight  viscera_weight  shell_weight  class_number_of_rings
+0   I   0.075     0.055   0.010         0.002          0.0010          0.0005        0.0015                      1
+1   I   0.150     0.100   0.025         0.015          0.0045          0.0040         0.0050                      2
+```
+
+
 **Create a Model from a FeatureSet**
 
 ```py title="featureset_to_model.py"
@@ -111,7 +142,7 @@ pprint(my_model.details())
 ```
 
 ## SageWorks UI
-Running these few lines of code performs a comprehensive set of Exploratory Data Analysis techniques on your data, pushes the results into AWS, and provides a detailed web visualization of the results.
+Whenever a FeatureSet is created SageWorks performs a comprehensive set of Exploratory Data Analysis techniques on your data, pushes the results into AWS, and provides a detailed web visualization of the results.
 
 <figure style="width: 700px;">
 <img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/0b4103fe-2c33-4611-86df-ff659fad1a3b">

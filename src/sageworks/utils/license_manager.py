@@ -1,5 +1,4 @@
 """SageWorks API License Manager"""
-import os
 import sys
 import base64
 import json
@@ -12,11 +11,14 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 
-import sageworks  # noqa: F401 (we need to import this to set up the logger)
+# SageWorks Imports
+from sageworks.utils.config_manager import ConfigManager
 
 
 class LicenseManager:
-    API_ENV_VAR = "SAGEWORKS_API_KEY"
+    """SageWorks API License Manager"""
+
+    cm = ConfigManager()
     api_license_info = None
     log = logging.getLogger("sageworks")
 
@@ -29,14 +31,8 @@ class LicenseManager:
             dict/None: The SageWorks API License Information or None if the license is invalid
         """
 
-        api_key = os.getenv(cls.API_ENV_VAR)
-        if not api_key:
-            cls.log.important(f"Could not find ENV var for {cls.API_ENV_VAR}, using Open Source API Key...")
-            cls.set_open_source_api_key()
-            api_key = os.getenv(cls.API_ENV_VAR)
-            if not api_key:
-                cls.log.critical("Could not set Open Source API Key!")
-                return None
+        # Grab the API Key from the SageWorks ConfigManager
+        api_key = cls.cm.get_config("SAGEWORKS_API_KEY")
 
         # Decode the API Key
         decoded_license_key = base64.b64decode(api_key)
@@ -134,12 +130,6 @@ class LicenseManager:
 
         public_key = serialization.load_pem_public_key(public_key_data, backend=default_backend())
         return public_key
-
-    @classmethod
-    def set_open_source_api_key(cls):
-        """Set the Open Source API Key as an environment variable."""
-        open_source_key = resources.read_text("sageworks.resources", "open_source_api.key").strip()
-        os.environ[cls.API_ENV_VAR] = open_source_key
 
 
 if __name__ == "__main__":

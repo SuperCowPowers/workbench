@@ -1,15 +1,19 @@
-"""ExtractModelArtifact is a utility class that reanimates a model joblib file."""
+"""ExtractModelArtifact is a utility class that reanimates a model file."""
 import tarfile
 import tempfile
-import joblib
 import awswrangler as wr
 import os
 import glob
-import xgboost  # noqa: F401
+import xgboost as xgb
 from xgboost import XGBModel
+import json
+import joblib
+import logging
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+
+log = logging.getLogger("sageworks")
 
 
 class ExtractModelArtifact:
@@ -70,7 +74,74 @@ class ExtractModelArtifact:
             raise ValueError("ModelDataUrl not found in the model package description")
 
     @staticmethod
-    def download_and_extract_model(model_artifact_uri):
+    def load_from_json(tmpdir):
+        # Find the model file in the extracted directory
+        model_files = glob.glob(os.path.join(tmpdir, "*_model.json"))
+        if not model_files:
+            return None
+
+        # Instantiate return model
+        model_return = None
+
+        # Check each model_file for an XGBModel object
+        for model_file in model_files:
+            # Get json and get model type
+            with open(model_file, "rb") as f:
+                model_json = json.load(f)
+            model_type = json.loads(model_json.get("learner").get("attributes").get("scikit_learn")).get(
+                "_estimator_type"
+            )
+
+            # Load based on model type
+            if model_type == "classifier":
+                model_object = xgb.XGBClassifier()
+                model_object.load_model(model_file)
+
+            else:
+                model_object = xgb.XGBRegressor()
+                model_object.load_model(model_file)
+
+            # Check type
+            if isinstance(model_object, XGBModel):
+                print(f"{model_file} is a model object.")
+
+                # Set return if type check passes
+                model_return = model_object
+            else:
+                print(f"{model_file} is NOT a model object.")
+
+        return model_return
+
+    @staticmethod
+    def load_from_joblib(tmpdir):
+        # Deprecation Warning
+
+        # Find the model file in the extracted directory
+        model_files = glob.glob(os.path.join(tmpdir, "*_model.joblib"))
+        if not model_files:
+            return None
+
+        # Instantiate return model
+        model_return = None
+
+        # Check each model_file for an XGBModel object
+        for model_file in model_files:
+            # Load the model
+            model_object = joblib.load(model_file)
+
+            # Check type
+            if isinstance(model_object, XGBModel):
+                print(f"{model_file} is a model object.")
+
+                # Set return if type check passes
+                model_return = model_object
+            else:
+                print(f"{model_file} is NOT a model object.")
+
+        # Return the model after exiting the temporary directory context
+        return model_return
+
+    def download_and_extract_model(self, model_artifact_uri):
         """Download and extract model artifact from S3, then load the model into memory."""
         with tempfile.TemporaryDirectory() as tmpdir:
             local_tar_path = os.path.join(tmpdir, "model.tar.gz")
@@ -81,27 +152,20 @@ class ExtractModelArtifact:
             with tarfile.open(local_tar_path, "r:gz") as tar:
                 tar.extractall(path=tmpdir)
 
-            # Find the .joblib file in the extracted directory
-            model_files = glob.glob(os.path.join(tmpdir, "*.joblib"))
-            if not model_files:
-                raise FileNotFoundError("No .joblib file found in the extracted model artifact.")
+            # Try loading from joblib first
+            joblib_model_return = self.load_from_joblib(tmpdir)
+            if joblib_model_return:
+                log.warning("Joblib is being deprecated as an XGBoost model format.")
+                log.warning(
+                    "Please recreate this model using the Sageworks API or the xgb.XGBModel.save_model() method."
+                )
+                model_return = joblib_model_return
 
-            # Instantiate return model
-            model_return = None
-
-            # Check each model_file for an XGBModel object
-            for model_file in model_files:
-                # Load the model
-                model_object = joblib.load(model_file)
-
-                # Check type
-                if isinstance(model_object, XGBModel):
-                    print(f"{model_file} is a model object.")
-
-                    # Set return if type check passes
-                    model_return = model_object
-                else:
-                    print(f"{model_file} is NOT a model object.")
+            # If no joblibs, load from json
+            else:
+                json_model_return = self.load_from_json(tmpdir)
+                if json_model_return:
+                    model_return = json_model_return
 
         # Return the model after exiting the temporary directory context
         return model_return

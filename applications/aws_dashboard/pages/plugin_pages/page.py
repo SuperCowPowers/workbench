@@ -1,5 +1,4 @@
 """Plugin Page:  A SageWorks Plugin Web Interface"""
-import os
 from dash import register_page
 import dash
 from dash_bootstrap_templates import load_figure_template
@@ -12,6 +11,7 @@ from . import callbacks
 from sageworks.web_components import table, plugin_loader, model_metrics, metrics_comparison_markdown
 from sageworks.web_components.plugin_interface import PluginType
 from sageworks.views.model_web_view import ModelWebView
+from sageworks.utils.config_manager import ConfigManager
 
 # Register this page with Dash
 register_page(
@@ -56,7 +56,8 @@ components = {
 
 """
 # Load the plugins from the sageworks_plugins directory
-plugins = plugin_loader.load_plugins_from_dir(os.getenv("SAGEWORKS_PLUGINS"), PluginType.CUSTOM)
+plugin_dir = ConfigManager().get_config("SAGEWORKS_PLUGINS")
+plugins = plugin_loader.load_plugins_from_dir(plugin_dir, PluginType.CUSTOM)
 
 # Add the plugins to the components dictionary
 for plugin in plugins:

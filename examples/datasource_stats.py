@@ -10,7 +10,11 @@ pd.set_option("display.width", 1000)
 # Grab a DataSource and pull some of the EDA Stats
 my_data = DataSource("test_data")
 
-# Grab some of the EDA Stats
+# Outliers
+outliers = my_data.outliers()
+print(outliers)
+
+# Correlations
 corr_data = my_data.correlations()
 corr_df = pd.DataFrame(corr_data)
 

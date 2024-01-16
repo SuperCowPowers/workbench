@@ -16,6 +16,7 @@ import logging
 
 # SageWorks Imports
 from sageworks.utils.license_manager import LicenseManager
+from sageworks.utils.config_manager import ConfigManager
 
 
 class AWSAccountClamp:
@@ -26,11 +27,15 @@ class AWSAccountClamp:
             cls.log = logging.getLogger("sageworks")
             cls.log.info("Creating the AWSAccountClamp Singleton...")
             cls.instance = super(AWSAccountClamp, cls).__new__(cls)
-            cls.role_name = os.environ.get("SAGEWORKS_ROLE", "SageWorks-ExecutionRole")
-            cls.sageworks_bucket_name = os.environ.get("SAGEWORKS_BUCKET")
-            if cls.sageworks_bucket_name is None:
-                cls.log.critical("Could not find ENV var for SAGEWORKS_BUCKET!")
-                raise EnvironmentError("Could not find ENV var for SAGEWORKS_BUCKET!")
+
+            # Pull in our config from the config manager
+            cls.config = ConfigManager().load_config()
+            cls.role_name = cls.config["SAGEWORKS_ROLE"]
+            cls.sageworks_bucket_name = cls.config["SAGEWORKS_BUCKET"]
+
+            # Note: We might want to revisit this
+            os.environ["AWS_PROFILE"] = cls.config["AWS_PROFILE"]
+
             try:
                 cls.account_id = boto3.client("sts").get_caller_identity()["Account"]
                 cls.region = boto3.session.Session().region_name

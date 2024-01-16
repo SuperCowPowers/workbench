@@ -2,7 +2,6 @@
                 Artifacts simply reflect and aggregate one or more AWS Services"""
 from abc import ABC, abstractmethod
 from datetime import datetime
-import os
 import sys
 import logging
 
@@ -11,6 +10,7 @@ from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.utils.aws_utils import list_tags_with_throttle, dict_to_aws_tags, sagemaker_delete_tag
+from sageworks.utils.config_manager import ConfigManager
 
 
 class Artifact(ABC):
@@ -30,7 +30,8 @@ class Artifact(ABC):
     aws_broker = AWSServiceBroker()
 
     # Grab our SageWorks Bucket from ENV
-    sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
+    cm = ConfigManager()
+    sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
     if sageworks_bucket is None:
         log = logging.getLogger("sageworks")
         log.critical("Could not find ENV var for SAGEWORKS_BUCKET!")

@@ -186,7 +186,14 @@ class AthenaSource(DataSourceAbstract):
         return [item["Type"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
 
     def query(self, query: str) -> pd.DataFrame:
-        """Query the AthenaSource"""
+        """Query the AthenaSource
+
+        Args:
+            query (str): The query to run against the AthenaSource
+
+        Returns:
+            pd.DataFrame: The results of the query
+        """
         df = wr.athena.read_sql_query(
             sql=query,
             database=self.get_database(),

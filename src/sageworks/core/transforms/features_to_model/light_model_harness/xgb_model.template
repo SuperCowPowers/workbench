@@ -2,6 +2,7 @@
 from pprint import pprint
 import xgboost as xgb
 import awswrangler as wr
+from typing import Union
 
 # Model Performance Scores
 from sklearn.metrics import (
@@ -166,7 +167,7 @@ if __name__ == "__main__":
         )
 
     # Now save the model to the standard place/name
-    joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
+    xgb_model.save_model(os.path.join(args.model_dir, "xgb_model.json"))
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
@@ -177,8 +178,22 @@ if __name__ == "__main__":
 
 def model_fn(model_dir):
     """Deserialized and return fitted model"""
-    clf = joblib.load(os.path.join(model_dir, "xgb_model.joblib"))
-    return clf
+
+    # Load our XGBoost model from the model directory
+    model_path = os.path.join(model_dir, "xgb_model.json")
+    with open(model_path, "r") as f:
+        model_json = json.load(f)
+    saved_model_type = json.loads(model_json.get('learner').get('attributes').get('scikit_learn')).get('_estimator_type')
+    if saved_model_type == "classifier":
+        model = xgb.XGBClassifier()
+    elif saved_model_type == "regressor":
+        model = xgb.XGBRegressor()
+    else:
+        msg = f"Model type ({saved_model_type}) not recognized. Expected 'classifier' or 'regressor'"
+        raise ValueError(msg)
+
+    model.load_model(model_path)
+    return model
 
 
 def input_fn(input_data, content_type):

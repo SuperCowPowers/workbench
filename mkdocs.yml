@@ -18,6 +18,8 @@ nav:
       - ModelCore: core_classes/artifacts/model_core.md
       - EndpointCore: core_classes/artifacts/endpoint_core.md
       - MonitorCore: core_classes/artifacts/monitor_core.md
+      - Artifact: core_classes/artifacts/artifact.md
+      - DataSourceAbstract: core_classes/artifacts/data_source_abstract.md
     - Transforms: 
       - OverView: core_classes/transforms/overview.md
       - Data Loaders Light: core_classes/transforms/data_loaders_light.md
@@ -26,6 +28,7 @@ nav:
       - Features To Model: core_classes/transforms/features_to_model.md
       - Model to Endpoint: core_classes/transforms/model_to_endpoint.md
       - Pandas Transforms: core_classes/transforms/pandas_transforms.md
+      - Transform: core_classes/transforms/transform.md
   - AWS Setup: 
     - Initial Setup: aws_setup/core_stack.md
     - Dashboard Setup: aws_setup/dashboard_stack.md

@@ -9,8 +9,8 @@ This page tries to give helpful guidance when setting up AWS Accounts, Users, an
 - Now go to AWS Organizations page and hit 'Add an AWS Account' button
 - Add a new User with permissions that **allows AWS Stack creation**
    
-!!! note inline end
-    If you need a 'new' email just add a plus sign '+' at the end of your existing email. That will works and any emails to that address will get forwarded to the existing email `bob.smith+aws_1@gmail.com`
+!!! note inline end "Email Trick"
+    AWS will often not allow the same email to be used for different accounts. If you need a 'new' email just add a plus sign '+' at the end of your existing email (e.g. bob.smith**+aws**@gmail.com). This email will 'auto forward' to bob.smith@gmail.com.
 
 
 ## New AWS Account (without AWS Organizations: a bit harder)

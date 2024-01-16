@@ -100,3 +100,6 @@ if __name__ == "__main__":
     # Make predictions on the Endpoint
     pred_output_df = fs_predictions(my_endpoint)
     print(pred_output_df)
+
+    # Capture performance metrics
+    auto_capture_metrics(my_endpoint)

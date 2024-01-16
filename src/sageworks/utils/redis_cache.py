@@ -1,5 +1,4 @@
 """A Redis Database Cache Class"""
-import os
 import json
 import numpy as np
 import pandas as pd
@@ -10,6 +9,7 @@ from datetime import datetime, date
 
 # Local Imports
 from sageworks.utils.iso_8601 import datetime_to_iso8601, iso8601_to_datetime
+from sageworks.utils.config_manager import ConfigManager
 
 log = logging.getLogger("sageworks")
 
@@ -68,10 +68,11 @@ class RedisCache:
     # Setup logger (class attribute)
     log = logging.getLogger("sageworks")
 
-    # Try to read Redis configuration from environment variables
-    host = os.environ.get("REDIS_HOST", "localhost")
-    port = os.environ.get("REDIS_PORT", "6379")
-    password = os.environ.get("REDIS_PASSWORD", None)
+    # Try to read Redis configuration from the SageWorks ConfigManager
+    cm = ConfigManager()
+    host = cm.get_config("REDIS_HOST")
+    port = cm.get_config("REDIS_PORT")
+    password = cm.get_config("REDIS_PASSWORD")
 
     # Open the Redis connection (class object)
     log.info(f"Opening Redis connection to: {host}:{port}...")

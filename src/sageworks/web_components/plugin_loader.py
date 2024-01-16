@@ -49,11 +49,10 @@ def load_plugins_from_dir(directory: str, plugin_type: PluginType) -> List[Plugi
 
 if __name__ == "__main__":
     # Example of loading plugins from a directory
+    from sageworks.utils.config_manager import ConfigManager
 
     # Get the plugin directory from the environment variable
-    plugin_dir = os.getenv("SAGEWORKS_PLUGINS")
-    if not plugin_dir:
-        log.error("The SAGEWORKS_PLUGINS environment variable is not set.")
+    plugin_dir = ConfigManager().get_config("SAGEWORKS_PLUGINS")
 
     # Loop through the various plugin types and load the plugins
     plugin_types = [PluginType.DATA_SOURCE, PluginType.FEATURE_SET, PluginType.MODEL, PluginType.ENDPOINT]

@@ -4,6 +4,8 @@ All FeatureSets are run through a full set of Exploratory Data Analysis (EDA)
 techniques (data quality, distributions, stats, outliers, etc.) FeatureSets
 can be viewed and explored within the SageWorks Dashboard UI."""
 
+import pandas as pd
+
 # SageWorks Imports
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
@@ -32,6 +34,17 @@ class FeatureSet(FeatureSetCore):
             dict: A dictionary of details about the FeatureSet
         """
         return super().details(**kwargs)
+
+    def query(self, query: str, **kwargs) -> pd.DataFrame:
+        """Query the AthenaSource
+
+        Args:
+            query (str): The query to run against the FeatureSet
+
+        Returns:
+            pd.DataFrame: The results of the query
+        """
+        return super().query(query, **kwargs)
 
     def to_model(
         self,
