@@ -41,10 +41,9 @@ class SageWorksShell:
     def __init__(self):
         # Check the SageWorks config
         self.cm = ConfigManager()
-        self.cm.load_config()
-        if self.cm.is_default_config:
+        if self.cm.needs_bootstrap:
             # Invoke Onboarding Procedure
-            cprint("yellow", "Default SageWorks Config Detected...running onboarding procedure...")
+            cprint("yellow", "Bootstrap SageWorks Config Detected...running onboarding procedure...")
             self.onboard()
 
         # Perform AWS connection test and other checks

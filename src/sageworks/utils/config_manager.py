@@ -14,12 +14,62 @@ log = logging.getLogger("sageworks")
 class ConfigManager:
     def __init__(self):
         """Initialize the ConfigManager."""
-        self.is_default_config = False
         self.site_config_path = None
-        self.config = self.load_config()
+        self.needs_bootstrap = False
+        self.config = self._load_config()
 
-    def load_config(self) -> Dict[str, Any]:
-        """Load configuration based on the SAGEWORKS_CONFIG environment variable.
+    def get_config(self, key: str) -> Any:
+        """Get a configuration value by key.
+
+        Args:
+            key (str): The configuration key to retrieve.
+
+        Returns:
+            Any: The value of the configuration key.
+        """
+        # Special logic for SAGEWORKS_PLUGINS
+        if key == "SAGEWORKS_PLUGINS":
+            plugin_dir = self.config.get(key, None)
+            if plugin_dir in ["package", "", None]:
+                return os.path.join(os.path.dirname(__file__), "../../../applications/aws_dashboard/sageworks_plugins")
+            else:
+                return self.config.get(key, None)
+
+        # Normal logic
+        return self.config.get(key, None)
+
+    def create_site_config(self):
+        """Create a site configuration file from the default configuration."""
+        site_config_updates = {}
+
+        # Grab the bootstrap config
+        bootstrap_config = self._load_bootstrap_config()
+
+        # Prompt for each configuration value
+        for key, value in bootstrap_config.items():
+            if value == "change_me":
+                value = input(f"Enter a value for {key}: ")
+                site_config_updates[key] = value
+            elif value == "change_me_optional":
+                value = input(f"Enter a value for {key} (optional): ")
+                if value in ["", None]:
+                    site_config_updates[key] = None
+
+        # Update default config with provided values
+        site_config = {**bootstrap_config, **site_config_updates}
+
+        # Determine platform-specific path (e.g., ~/.sageworks/config.json)
+        self.site_config_path = self.get_platform_specific_path()
+
+        # Save updated config to platform-specific path
+        with open(self.site_config_path, "w") as file:
+            json.dump(site_config, file, indent=4)
+
+        # Done with bootstrap
+        self.needs_bootstrap = False
+
+    def _load_config(self) -> Dict[str, Any]:
+        """Internal: Load configuration based on the SAGEWORKS_CONFIG environment variable.
 
         Returns:
             Dict[str, Any]: Configuration dictionary.
@@ -28,8 +78,8 @@ class ConfigManager:
         # Load site_config_path from environment variable
         self.site_config_path = os.environ.get("SAGEWORKS_CONFIG")
         if self.site_config_path is None:
-            log.warning("SAGEWORKS_CONFIG ENV var not set. Using default configuration...")
-            return self.load_default_config()
+            log.warning("SAGEWORKS_CONFIG ENV var not set. Using bootstrap configuration...")
+            return self._load_bootstrap_config()
 
         # Load configuration from AWS Parameter Store
         if self.site_config_path == "parameter_store":
@@ -37,8 +87,8 @@ class ConfigManager:
                 log.info("Loading site configuration from AWS Parameter Store...")
                 return self.get_config_from_aws_parameter_store()
             except Exception:
-                log.error("Failed to load config from AWS Parameter Store. Using defaults...")
-                return self.load_default_config()
+                log.error("Failed to load config from AWS Parameter Store. Using bootstrap...")
+                return self._load_bootstrap_config()
 
         # Load site specified configuration file
         try:
@@ -46,45 +96,18 @@ class ConfigManager:
             with open(self.site_config_path, "r") as file:
                 return json.load(file)
         except (FileNotFoundError, json.JSONDecodeError):
-            log.error(f"Failed to load config from {self.site_config_path}. Using defaults...")
-            return self.load_default_config()
+            log.error(f"Failed to load config from {self.site_config_path}. Using bootstrap...")
+            return self._load_bootstrap_config()
 
-    def load_default_config(self) -> Dict[str, Any]:
-        """Load the default configuration from the package resources.
+    def _load_bootstrap_config(self) -> Dict[str, Any]:
+        """Internal: Load the bootstrap configuration from the package resources.
 
         Returns:
-            Dict[str, Any]: Default configuration dictionary.
+            Dict[str, Any]: Bootstrap configuration dictionary.
         """
-        self.is_default_config = True
-        with resources.open_text("sageworks.resources", "default_config.json") as file:
+        self.needs_bootstrap = True
+        with resources.open_text("sageworks.resources", "bootstrap_config.json") as file:
             return json.load(file)
-
-    def create_site_config(self):
-        """Create a site configuration file from the default configuration."""
-        site_config_updates = {}
-
-        # Grab the default config
-        default_config = self.load_default_config()
-
-        # Prompt for each configuration value
-        for key, value in default_config.items():
-            if value == "change_me":
-                value = input(f"Enter a value for {key}: ")
-                site_config_updates[key] = value
-            elif value == "change_me_optional":
-                value = input(f"Enter a value for {key} (optional): ")
-                if value:
-                    site_config_updates[key] = value
-
-        # Update default config with provided values
-        site_config = {**default_config, **site_config_updates}
-
-        # Determine platform-specific path (e.g., ~/.sageworks/config.json)
-        self.site_config_path = self.get_platform_specific_path()
-
-        # Save updated config to platform-specific path
-        with open(self.site_config_path, "w") as file:
-            json.dump(site_config, file, indent=4)
 
     @staticmethod
     def get_platform_specific_path() -> str:
@@ -115,26 +138,6 @@ class ConfigManager:
         """
         # TODO: Implement AWS Parameter Store fetching logic
         return {}
-
-    def get_config(self, key: str) -> Any:
-        """Get a configuration value by key.
-
-        Args:
-            key (str): The configuration key to retrieve.
-
-        Returns:
-            Any: The value of the configuration key.
-        """
-        # Special logic for SAGEWORKS_PLUGINS
-        if key == "SAGEWORKS_PLUGINS":
-            plugin_dir = self.config.get(key, None)
-            if plugin_dir in ["package", "", None]:
-                return os.path.join(os.path.dirname(__file__), "../../../applications/aws_dashboard/sageworks_plugins")
-            else:
-                return self.config.get(key, None)
-
-        # Normal logic
-        return self.config.get(key, None)
 
     def platform_specific_instructions(self):
         """Provides instructions to the user for setting the SAGEWORKS_CONFIG
