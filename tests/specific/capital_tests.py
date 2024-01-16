@@ -9,4 +9,4 @@ pprint(my_data.summary())
 pprint(my_data.details())
 
 # Create a FeatureSet
-my_data.to_features("aBaLone-feaTures")
+my_data.to_features("aBaLone-feaTures")  # Throw in the hyphen to test that it gets removed

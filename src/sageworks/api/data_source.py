@@ -43,10 +43,7 @@ class DataSource(AthenaSource):
         # Load the source (S3, File, or Existing DataSource)
         ds_name = extract_data_source_basename(source) if name is None else name
 
-        # Make sure the name is lowercase
-        if ds_name != ds_name.lower():
-            self.log.warning(f"DataSource name '{ds_name}' is not lowercase. Converting to lowercase.")
-            ds_name = ds_name.lower()
+        # Make sure we have a name for when we use a DataFrame source
         if ds_name == "dataframe":
             msg = "Set the 'name' argument in the constructor: DataSource(df, name='my_data')"
             self.log.critical(msg)
@@ -95,11 +92,6 @@ class DataSource(AthenaSource):
         # Create the FeatureSet Name
         fs_name = self.uuid.replace("_data", "") + "_features" if name is None else name
 
-        # Make sure the name is lowercase
-        if fs_name != fs_name.lower():
-            self.log.warning(f"DataSource name '{fs_name}' is not lowercase. Converting to lowercase.")
-            fs_name = fs_name.lower()
-
         # Set the Tags
         tags = [fs_name] if tags is None else tags
 
@@ -142,6 +134,11 @@ if __name__ == "__main__":
     from pathlib import Path
     from pprint import pprint
     from sageworks.utils.test_data_generator import TestDataGenerator
+
+
+    # Temporary: Capitilization Tests
+    source_path = "s3://sageworks-public-data/common/aBaLone.CSV"
+    my_data = DataSource(source_path)
 
     # Test to Run
     long_tests = False
