@@ -38,6 +38,27 @@ class ConfigManager:
         # Normal logic
         return self.config.get(key, None)
 
+    def get_all_config(self) -> Dict[str, Any]:
+        """Get all configuration values.
+
+        Returns:
+            Dict[str, Any]: All configuration values.
+        """
+        # Grab all config except the SAGEWORKS_API_KEY
+        output = {key: value for key, value in self.config.items() if key != "SAGEWORKS_API_KEY"}
+
+        # Add the SAGEWORKS_API_KEY info
+        api_key_info = self.get_api_key_info()
+        output["API_KEY_INFO"] = api_key_info
+        return output
+
+    def is_open_source(self) -> bool:
+        """Returns True if the API is open source."""
+        api_key_info = self.get_api_key_info()
+        if api_key_info["license_id"] == "Open Source":
+            return True
+        return False
+
     def create_site_config(self):
         """Create a site configuration file from the default configuration."""
         site_config_updates = {}
@@ -78,7 +99,7 @@ class ConfigManager:
         # Load site_config_path from environment variable
         self.site_config_path = os.environ.get("SAGEWORKS_CONFIG")
         if self.site_config_path is None:
-            log.warning("SAGEWORKS_CONFIG ENV var not set. Using bootstrap configuration...")
+            log.warning("SAGEWORKS_CONFIG ENV var not set. Loading bootstrap configuration...")
             return self._load_bootstrap_config()
 
         # Load configuration from AWS Parameter Store
@@ -87,7 +108,7 @@ class ConfigManager:
                 log.info("Loading site configuration from AWS Parameter Store...")
                 return self.get_config_from_aws_parameter_store()
             except Exception:
-                log.error("Failed to load config from AWS Parameter Store. Using bootstrap...")
+                log.error("Failed to load config from AWS Parameter Store. Loading bootstrap...")
                 return self._load_bootstrap_config()
 
         # Load site specified configuration file
@@ -96,7 +117,7 @@ class ConfigManager:
             with open(self.site_config_path, "r") as file:
                 return json.load(file)
         except (FileNotFoundError, json.JSONDecodeError):
-            log.error(f"Failed to load config from {self.site_config_path}. Using bootstrap...")
+            log.error(f"Failed to load config from {self.site_config_path}. Loading bootstrap...")
             return self._load_bootstrap_config()
 
     def _load_bootstrap_config(self) -> Dict[str, Any]:
@@ -108,6 +129,19 @@ class ConfigManager:
         self.needs_bootstrap = True
         with resources.open_text("sageworks.resources", "bootstrap_config.json") as file:
             return json.load(file)
+
+    @staticmethod
+    def get_api_key_info() -> Dict[str, Any]:
+        """Get the API Key information from the configuration.
+
+        Returns:
+            Dict[str, Any]: API Key information.
+        """
+        # Note: This import has to be here to avoid circular imports
+        from sageworks.utils.license_manager import LicenseManager
+
+        api_info = LicenseManager().load_api_license(aws_account_id=None)
+        return api_info
 
     @staticmethod
     def get_platform_specific_path() -> str:
@@ -173,8 +207,17 @@ class ConfigManager:
 
 if __name__ == "__main__":
     """Exercise the ConfigManager class"""
-    config_manager = ConfigManager()
-    sageworks_role = config_manager.get_config("SAGEWORKS_ROLE")
+    from pprint import pprint
+
+    cm = ConfigManager()
+    sageworks_role = cm.get_config("SAGEWORKS_ROLE")
     print(f"SAGEWORKS_ROLE: {sageworks_role}")
-    sageworks_plugins = config_manager.get_config("SAGEWORKS_PLUGINS")
+    sageworks_plugins = cm.get_config("SAGEWORKS_PLUGINS")
     print(f"SAGEWORKS_PLUGINS: {sageworks_plugins}")
+
+    # API Key Info
+    api_key_info = cm.get_api_key_info()
+    pprint(api_key_info)
+
+    # All config
+    pprint(cm.get_all_config())
