@@ -26,7 +26,7 @@ class CustomPromptStyle(Style):
         Token.Lime: "#afff00",
         Token.Darkyellow: "#ddb777",
         Token.Orange: "#ff8700",
-        Token.Red: "#ff5f87",
+        Token.Red: "#dd0000",
         Token.Blue: "#4444d7",
         Token.Green: "#22cc22",
         Token.Yellow: "#ffd787",
@@ -63,10 +63,11 @@ class SageWorksShell:
         # Perform AWS connection test and other checks
         self.commands = dict()
         self.artifacts_text_view = None
-        self.check_aws_account()
+        self.aws_status = self.check_aws_account()
         self.redis_status = self.check_redis()
         self.open_source_api_key = self.check_open_source_api_key()
-        self.import_sageworks()
+        if self.aws_status:
+            self.import_sageworks()
 
         # Set up the Prompt and the IPython shell
         config = InteractiveShellEmbed.instance().config
@@ -96,8 +97,15 @@ class SageWorksShell:
     def start(self):
         """Start the SageWorks IPython shell"""
         cprint("magenta", "Welcome to SageWorks!")
-        self.hey()
-        self.summary()
+        if self.aws_status is False:
+            cprint("red", "AWS Account Connection Failed...Review/Fix the SageWorks Config:")
+            cprint("red", f"Path: {self.cm.site_config_path}")
+            self.show_config()
+        else:
+            self.hey()
+            self.summary()
+
+        # Start the REPL
         self.shell(local_ns=self.commands)
 
     def check_open_source_api_key(self) -> bool:
@@ -138,8 +146,12 @@ class SageWorksShell:
         return status
 
     @staticmethod
-    def check_aws_account():
-        """Check if the AWS Account is Set up Correctly"""
+    def check_aws_account() -> bool:
+        """Check if the AWS Account is Set up Correctly
+
+        Returns:
+            bool: True if AWS Account is set up correctly, False otherwise
+        """
         cprint("yellow", "Checking AWS Account Connection...")
         try:
             try:
@@ -150,14 +162,17 @@ class SageWorksShell:
                 aws_clamp.boto_session()
                 cprint("lightgreen", "AWS Account Check AOK!")
             except RuntimeError:
-                print("AWS Account Check Failed: Check AWS_PROFILE and/or Renew SSO Token...")
-                sys.exit(1)
+                cprint("red", "AWS Account Check Failed: Check AWS_PROFILE and/or Renew SSO Token...")
+                return False
         except botocore.exceptions.ProfileNotFound:
-            print("AWS Account Check Failed: Check AWS_PROFILE...")
-            sys.exit(1)
+            cprint("red", "AWS Account Check Failed: Check AWS_PROFILE...")
+            return False
         except botocore.exceptions.NoCredentialsError:
-            print("AWS Account Check Failed: Check AWS Credentials...")
-            sys.exit(1)
+            cprint("red", "AWS Account Check Failed: Check AWS Credentials...")
+            return False
+
+        # Okay assume everything is good
+        return True
 
     def show_config(self):
         """Show the current SageWorks Config"""
@@ -266,11 +281,13 @@ class SageWorksShell:
         """
         _status_lights = [(Token.Blue, "[")]
 
-        # Check AWS Account
-        # if 1 or cls.check_aws_account():
-        _status_lights.append((Token.Green, "●"))
+        # AWS Account Status
+        if self.aws_status:
+            _status_lights.append((Token.Green, "●"))
+        else:
+            _status_lights.append((Token.Red, "●"))
 
-        # Check Redis
+        # Redis Status
         if self.redis_status == "OK":
             _status_lights.append((Token.Green, "●"))
         elif self.redis_status == "LOCAL":
@@ -294,10 +311,10 @@ class SageWorksShell:
         """Print a description of the status of AWS, Redis, and API Key"""
 
         # AWS Account
-        if 1:  # self.check_aws_account():
+        if self.aws_status:
             cprint("lightgreen", "\t● AWS Account: OK")
         else:
-            cprint("yellow", "\t● AWS Account: FAIL")
+            cprint("red", "\t● AWS Account: FAIL")
 
         # Redis
         if self.redis_status == "OK":
