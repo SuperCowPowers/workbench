@@ -59,6 +59,17 @@ class ConfigManager:
             return True
         return False
 
+    @staticmethod
+    def open_source_api_key() -> str:
+        """Read the open source API key from the package resources.
+
+        Returns:
+            str: The open source API key.
+        """
+        with resources.path("sageworks.resources", "open_source_api.key") as open_source_key_path:
+            with open(open_source_key_path, "r") as key_file:
+                return key_file.read().strip()
+
     def create_site_config(self):
         """Create a site configuration file from the default configuration."""
         site_config_updates = {}
@@ -69,19 +80,24 @@ class ConfigManager:
         # Prompt for each configuration value
         for key, value in bootstrap_config.items():
             if value == "change_me":
-                value = input(f"Enter a value for {key}: ")
+                value = input(f"{key}: ")
                 site_config_updates[key] = value
             elif "change_me_optional" in value:
                 # If the value has a : in it then the part after the : is the default value
                 if ":" in value:
                     default_value = value.split(":")[1].strip()
-                    value = input(f"Enter a value for {key} (optional, default: {default_value}): ")
+                    value = input(f"[optional] {key}({default_value}): ")
                     if value in ["", None]:
                         site_config_updates[key] = default_value
                     else:
                         site_config_updates[key] = value
+
+                    # Special logic for SAGEWORKS_API_KEY
+                    if key == "SAGEWORKS_API_KEY" and site_config_updates[key] == default_value:
+                        print("Using Open Source API Key...")
+                        site_config_updates[key] = self.open_source_api_key()
                 else:
-                    value = input(f"Enter a value for {key} (optional): ")
+                    value = input(f"[optional] {key}: ")
                     if value in ["", None]:
                         site_config_updates[key] = None
 
