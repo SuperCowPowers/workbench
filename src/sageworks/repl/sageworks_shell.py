@@ -177,6 +177,7 @@ class SageWorksShell:
     def show_config(self):
         """Show the current SageWorks Config"""
         cprint("yellow", "\nSageWorks Config:")
+        cprint("lightblue", f"Path: {self.cm.site_config_path}")
         config = self.cm.get_all_config()
         for key, value in config.items():
             cprint(["lightpurple", "\t" + key, "lightgreen", value])

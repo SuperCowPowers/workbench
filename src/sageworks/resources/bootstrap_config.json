@@ -1,7 +1,7 @@
 {
     "AWS_PROFILE": "change_me",
-    "REDIS_HOST": "localhost",
-    "REDIS_PORT": "6379",
+    "REDIS_HOST": "change_me_optional:localhost",
+    "REDIS_PORT": "change_me_optional:6379",
     "REDIS_PASSWORD": "",
     "SAGEWORKS_BUCKET": "change_me",
     "SAGEWORKS_WHITELIST": "change_me_optional",

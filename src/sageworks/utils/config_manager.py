@@ -71,10 +71,19 @@ class ConfigManager:
             if value == "change_me":
                 value = input(f"Enter a value for {key}: ")
                 site_config_updates[key] = value
-            elif value == "change_me_optional":
-                value = input(f"Enter a value for {key} (optional): ")
-                if value in ["", None]:
-                    site_config_updates[key] = None
+            elif "change_me_optional" in value:
+                # If the value has a : in it then the part after the : is the default value
+                if ":" in value:
+                    default_value = value.split(":")[1].strip()
+                    value = input(f"Enter a value for {key} (optional, default: {default_value}): ")
+                    if value in ["", None]:
+                        site_config_updates[key] = default_value
+                    else:
+                        site_config_updates[key] = value
+                else:
+                    value = input(f"Enter a value for {key} (optional): ")
+                    if value in ["", None]:
+                        site_config_updates[key] = None
 
         # Update default config with provided values
         site_config = {**bootstrap_config, **site_config_updates}
