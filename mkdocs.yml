@@ -31,6 +31,7 @@ nav:
       - Transform: core_classes/transforms/transform.md
   - AWS Setup: 
     - Initial Setup: aws_setup/core_stack.md
+    - Full Pipeline Testing: aws_setup/full_pipeline.md
     - Dashboard Setup: aws_setup/dashboard_stack.md
     - AWS Tips and Tricks: aws_setup/aws_tips_and_tricks.md
   - Admin: 
