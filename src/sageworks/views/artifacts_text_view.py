@@ -240,6 +240,7 @@ class ArtifactsTextView(View):
                 summary = {
                     "Model Group": model_group_name,
                     "Health": "No Models!",
+                    "Owner": "-",
                     "Model Type": None,
                     "Model Metrics": None,
                     "Created": "-",
@@ -268,6 +269,7 @@ class ArtifactsTextView(View):
             summary = {
                 "Model Group": latest_model["ModelPackageGroupName"],
                 "Health": health_tags,
+                "Owner": sageworks_meta.get("sageworks_model_owner", "-"),
                 "Model Type": sageworks_meta.get("sageworks_model_type"),
                 "Model Metrics": metrics,
                 "Created": self.datetime_string(latest_model.get("CreationTime")),
@@ -286,6 +288,7 @@ class ArtifactsTextView(View):
             columns = [
                 "Model Group",
                 "Health",
+                "Owner",
                 "Model Type",
                 "Model Metrics",
                 "Created",
