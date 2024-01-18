@@ -4,9 +4,6 @@
     "REDIS_HOST": "change_me_optional:localhost",
     "REDIS_PORT": "change_me_optional:6379",
     "REDIS_PASSWORD": "change_me_optional:",
-    "SAGEWORKS_WHITELIST": "change_me_optional",
-    "SAGEWORKS_SSO_GROUP": "change_me_optional",
-    "SAGEWORKS_PLUGINS": "package",
     "SAGEWORKS_ROLE": "SageWorks-ExecutionRole",
     "SAGEWORKS_FEATURES": {
         "plugins": "true",
