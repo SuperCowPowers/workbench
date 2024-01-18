@@ -40,10 +40,6 @@ class SageworksCoreStack(Stack):
         # Create our main SageWorks Execution Role
         self.sageworks_api_execution_role = self.create_api_execution_role()
 
-        # Create a SageWorks Execution Role for AWS Glue
-        # Note: This is a duplicate, but Glue Jobs require a specific role name and this role can be assumed by Glue Services
-        self.glue_service_role = self.create_glue_execution_role()
-
     def get_artifact_bucket(self, bucket_name: str) -> s3.IBucket:
         # Reference an existing bucket by name
         return s3.Bucket.from_bucket_name(self, id="ExistingArtifactBucket", bucket_name=bucket_name)
@@ -53,7 +49,9 @@ class SageworksCoreStack(Stack):
 
         # Define the base assumed by principals with ECS service principal
         assumed_by = iam.CompositePrincipal(
-            iam.ServicePrincipal("ecs-tasks.amazonaws.com"), iam.ServicePrincipal("sagemaker.amazonaws.com")
+            iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
+            iam.ServicePrincipal("sagemaker.amazonaws.com"),
+            iam.ServicePrincipal("glue.amazonaws.com")
         )
 
         # If sso_group is provided, add the condition to the trust relationship
@@ -105,34 +103,3 @@ class SageworksCoreStack(Stack):
             )
         )
         return api_execution_role
-
-    def create_glue_execution_role(self) -> iam.Role:
-        """Create the SageWorks Execution Role for AWS Glue jobs"""
-
-        # Create the SageWorks Execution Role for Glue jobs
-        glue_execution_role = iam.Role(
-            self,
-            id="AWSGlueServiceRole-SageWorks",
-            assumed_by=iam.ServicePrincipal("glue.amazonaws.com"),
-            managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSGlueServiceRole"),
-                # Include any additional managed policies or provide permissions as needed
-            ],
-            role_name="AWSGlueServiceRole-SageWorks",
-        )
-
-        # Add policy statements specific to the Glue execution role if needed
-        # For example, Glue jobs often require access to specific S3 buckets for input/output data
-        glue_execution_role.add_to_policy(
-            iam.PolicyStatement(
-                actions=["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"],
-                resources=[
-                    f"arn:aws:s3:::{self.sageworks_bucket}",  # Assuming this is the bucket used by Glue
-                    f"arn:aws:s3:::{self.sageworks_bucket}/*",
-                ],
-            )
-        )
-
-        # You may also want to add permissions for other services that Glue interacts with,
-        # such as Amazon Redshift or Amazon RDS, depending on your use case
-        return glue_execution_role
