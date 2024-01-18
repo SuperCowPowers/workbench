@@ -16,6 +16,7 @@ print(f"Region: {aws_region}")
 sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
 sageworks_role_name = os.environ.get("SAGEWORKS_ROLE", "SageWorks-ExecutionRole")
 sso_group = os.environ.get("SAGEWORKS_SSO_GROUP")
+additional_buckets = os.getenv("SAGEWORKS_ADDITIONAL_BUCKETS")
 
 
 # Our CDK App
@@ -30,7 +31,8 @@ sandbox_stack = SageworksCoreStack(
     "SageworksCore",
     env=env,
     props=SageworksCoreStackProps(
-        sageworks_bucket=sageworks_bucket, sageworks_role_name=sageworks_role_name, sso_group=sso_group
+        sageworks_bucket=sageworks_bucket, sageworks_role_name=sageworks_role_name,
+        sso_group=sso_group, additional_buckets=additional_buckets.split(",") if additional_buckets else []
     ),
 )
 

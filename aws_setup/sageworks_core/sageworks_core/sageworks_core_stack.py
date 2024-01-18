@@ -5,8 +5,8 @@ from aws_cdk import (
     aws_s3 as s3,
 )
 from constructs import Construct
-from typing import Any
-from dataclasses import dataclass
+from typing import Any, List
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -14,6 +14,7 @@ class SageworksCoreStackProps:
     sageworks_bucket: str
     sageworks_role_name: str
     sso_group: str
+    additional_buckets: List[str] = field(default_factory=list)
 
 
 class SageworksCoreStack(Stack):
@@ -33,6 +34,7 @@ class SageworksCoreStack(Stack):
         self.sageworks_bucket = props.sageworks_bucket
         self.sageworks_role_name = props.sageworks_role_name
         self.sso_group = props.sso_group
+        self.additional_buckets = props.additional_buckets
 
         # Get the SageWorks Artifact Bucket (must be created before running this script)
         self.artifact_bucket = self.get_artifact_bucket(self.sageworks_bucket)
@@ -51,7 +53,7 @@ class SageworksCoreStack(Stack):
         assumed_by = iam.CompositePrincipal(
             iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
             iam.ServicePrincipal("sagemaker.amazonaws.com"),
-            iam.ServicePrincipal("glue.amazonaws.com")
+            iam.ServicePrincipal("glue.amazonaws.com"),
         )
 
         # If sso_group is provided, add the condition to the trust relationship
@@ -76,7 +78,7 @@ class SageworksCoreStack(Stack):
             ],
             role_name=self.sageworks_role_name,
         )
-        # First policy statement for S3 and S3 Object Lambda
+        # Policy statement for main Sageworks Bucket and Athena Results
         api_execution_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["s3:*", "s3-object-lambda:*"],
@@ -87,7 +89,7 @@ class SageworksCoreStack(Stack):
             )
         )
 
-        # Second policy statement for ECS DescribeServices
+        # Policy statement for ECS DescribeServices
         api_execution_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["ecs:DescribeServices"],
@@ -102,4 +104,14 @@ class SageworksCoreStack(Stack):
                 resources=["*"],
             )
         )
+
+        # Add permissions for additional buckets
+        for bucket in self.additional_buckets:
+            api_execution_role.add_to_policy(
+                iam.PolicyStatement(
+                    actions=["s3:*"],
+                    resources=[f"arn:aws:s3:::{bucket}/*"]
+                )
+            )
+
         return api_execution_role
