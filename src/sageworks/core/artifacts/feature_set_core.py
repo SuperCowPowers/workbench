@@ -37,6 +37,9 @@ class FeatureSetCore(Artifact):
             force_refresh (bool): Force a refresh of the Feature Set metadata (default: False)
         """
 
+        # Make sure the feature_set_uuid is compliant
+        feature_set_uuid = self.compliant_uuid(feature_set_uuid)
+
         # Call superclass init
         super().__init__(feature_set_uuid)
 
@@ -74,6 +77,17 @@ class FeatureSetCore(Artifact):
         """Internal: Refresh our internal AWS Feature Store metadata"""
         self.log.info("Calling refresh_meta() on the underlying DataSource")
         self.data_source.refresh_meta()
+
+    def compliant_uuid(self, uuid: str) -> str:
+        """Make sure the uuid is compliant with Athena Table Name requirements
+
+        Args:
+            uuid (str): The uuid to make compliant
+
+        Returns:
+            str: The compliant uuid
+        """
+        return self.base_compliant_uuid(uuid, delimiter="_")
 
     def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""

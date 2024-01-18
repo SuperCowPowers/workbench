@@ -10,7 +10,6 @@ import webbrowser
 
 # SageWorks Imports
 from sageworks.utils.repl_utils import cprint
-import sageworks  # noqa: F401
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
 from sageworks.utils.config_manager import ConfigManager
 
@@ -25,39 +24,55 @@ class CustomPromptStyle(Style):
         Token.Lightpurple: "#af87ff",
         Token.Lightgreen: "#87ff87",
         Token.Lime: "#afff00",
-        Token.Darkyellow: "#ffd787",
+        Token.Darkyellow: "#ddb777",
         Token.Orange: "#ff8700",
-        Token.Red: "#ff5f87",
+        Token.Red: "#dd0000",
         Token.Blue: "#4444d7",
         Token.Green: "#22cc22",
+        Token.Yellow: "#ffd787",
+        Token.Grey: "#aaaaaa",
     }
 
 
-# Note: Hack
+# Note: Hack so the Prompt Class can access these variables
 aws_profile = ConfigManager().get_config("AWS_PROFILE")
+sageworks_shell = None
+
+
+class SageWorksPrompt(Prompts):
+    """Custom SageWorks Prompt"""
+
+    def in_prompt_tokens(self, cli=None):
+        if sageworks_shell is None:
+            lights = []
+        else:
+            lights = sageworks_shell.status_lights()
+        aws_profile_prompt = [(Token.Blue, ":"), (Token.AWSProfile, f"{aws_profile}"), (Token.Blue, "> ")]
+        return lights + [(Token.SageWorks, "SageWorks")] + aws_profile_prompt
 
 
 class SageWorksShell:
     def __init__(self):
         # Check the SageWorks config
         self.cm = ConfigManager()
-        self.cm.load_config()
-        if self.cm.is_default_config:
+        if self.cm.needs_bootstrap:
             # Invoke Onboarding Procedure
-            cprint("yellow", "Default SageWorks Config Detected...running onboarding procedure...")
+            cprint("yellow", "Bootstrap SageWorks Config Detected...running onboarding procedure...")
             self.onboard()
 
         # Perform AWS connection test and other checks
         self.commands = dict()
         self.artifacts_text_view = None
-        self.check_aws_account()
-        self.check_redis()
-        self.import_sageworks()
+        self.aws_status = self.check_aws_account()
+        self.redis_status = self.check_redis()
+        self.open_source_api_key = self.check_open_source_api_key()
+        if self.aws_status:
+            self.import_sageworks()
 
         # Set up the Prompt and the IPython shell
         config = InteractiveShellEmbed.instance().config
         config.TerminalInteractiveShell.autocall = 2
-        config.TerminalInteractiveShell.prompts_class = self.SageWorksPrompt
+        config.TerminalInteractiveShell.prompts_class = SageWorksPrompt
         config.TerminalInteractiveShell.highlighting_style = CustomPromptStyle
         self.shell = InteractiveShellEmbed(config=config, banner1="", exit_msg="Goodbye from SageWorks!")
 
@@ -76,32 +91,48 @@ class SageWorksShell:
         self.commands["log_important"] = self.log_important
         self.commands["log_warning"] = self.log_warning
         self.commands["broker_refresh"] = self.broker_refresh
-
-    class SageWorksPrompt(Prompts):
-        def in_prompt_tokens(self, cli=None):
-            lights = SageWorksShell.status_lights()
-            aws_profile_prompt = [(Token.Blue, ":"), (Token.AWSProfile, f"{aws_profile}"), (Token.Blue, "> ")]
-            return lights + [(Token.SageWorks, "SageWorks")] + aws_profile_prompt
+        self.commands["config"] = self.show_config
+        self.commands["status"] = self.status_description
 
     def start(self):
         """Start the SageWorks IPython shell"""
         cprint("magenta", "Welcome to SageWorks!")
-        self.hey()
-        self.summary()
+        if self.aws_status is False:
+            cprint("red", "AWS Account Connection Failed...Review/Fix the SageWorks Config:")
+            cprint("red", f"Path: {self.cm.site_config_path}")
+            self.show_config()
+        else:
+            self.hey()
+            self.summary()
+
+        # Start the REPL
         self.shell(local_ns=self.commands)
 
-    @staticmethod
-    def check_config():
-        """Check the current Configuration Status"""
-        return True
+    def check_open_source_api_key(self) -> bool:
+        """Check the current Configuration Status
 
-    def check_redis(self):
-        """Check the Redis Cache"""
+        Returns:
+            bool: True if Open Source API Key, False otherwise
+        """
+        config = self.cm.get_all_config()
+        return config["API_KEY_INFO"]["license_id"] == "Open Source"
+
+    def check_redis(self) -> str:
+        """Check the Redis Cache
+
+        Returns:
+            str: The Redis status (either "OK", "FAIL", or "LOCAL")
+        """
         from sageworks.utils.sageworks_cache import SageWorksCache
 
         # Grab the Redis Host and Port
         host = self.cm.get_config("REDIS_HOST")
         port = self.cm.get_config("REDIS_PORT")
+
+        # Check if Redis is running locally
+        status = "OK"
+        if host == "localhost":
+            status = "LOCAL"
 
         # Open the Redis connection (class object)
         cprint("lime", f"Checking Redis connection to: {host}:{port}..")
@@ -109,10 +140,18 @@ class SageWorksShell:
             cprint("lightgreen", "Redis Cache Check Success...")
         else:
             cprint("yellow", "Redis Cache Check Failed...check your SageWorks Config...")
+            status = "FAIL"
+
+        # Return the Redis status
+        return status
 
     @staticmethod
-    def check_aws_account():
-        """Check if the AWS Account is Set up Correctly"""
+    def check_aws_account() -> bool:
+        """Check if the AWS Account is Set up Correctly
+
+        Returns:
+            bool: True if AWS Account is set up correctly, False otherwise
+        """
         cprint("yellow", "Checking AWS Account Connection...")
         try:
             try:
@@ -123,14 +162,25 @@ class SageWorksShell:
                 aws_clamp.boto_session()
                 cprint("lightgreen", "AWS Account Check AOK!")
             except RuntimeError:
-                print("AWS Account Check Failed: Check AWS_PROFILE and/or Renew SSO Token...")
-                sys.exit(1)
+                cprint("red", "AWS Account Check Failed: Check AWS_PROFILE and/or Renew SSO Token...")
+                return False
         except botocore.exceptions.ProfileNotFound:
-            print("AWS Account Check Failed: Check AWS_PROFILE...")
-            sys.exit(1)
+            cprint("red", "AWS Account Check Failed: Check AWS_PROFILE...")
+            return False
         except botocore.exceptions.NoCredentialsError:
-            print("AWS Account Check Failed: Check AWS Credentials...")
-            sys.exit(1)
+            cprint("red", "AWS Account Check Failed: Check AWS Credentials...")
+            return False
+
+        # Okay assume everything is good
+        return True
+
+    def show_config(self):
+        """Show the current SageWorks Config"""
+        cprint("yellow", "\nSageWorks Config:")
+        cprint("lightblue", f"Path: {self.cm.site_config_path}")
+        config = self.cm.get_all_config()
+        for key, value in config.items():
+            cprint(["lightpurple", "\t" + key, "lightgreen", value])
 
     def import_sageworks(self):
         # Import all the SageWorks modules
@@ -158,6 +208,8 @@ class SageWorksShell:
         - models: List all the Models in AWS
         - endpoints: List all the Endpoints in AWS
         - broker_refresh: Force a refresh of the AWS broker data
+        - config: Show the current SageWorks Config
+        - status: Show the current SageWorks Status
         - exit: Exit SageWorks REPL"""
         return help_msg
 
@@ -222,8 +274,7 @@ class SageWorksShell:
     def broker_refresh(self):
         self.artifacts_text_view.refresh(force_refresh=True)
 
-    @classmethod
-    def status_lights(cls) -> list[(Token, str)]:
+    def status_lights(self) -> list[(Token, str)]:
         """Check the status of AWS, Redis, and API Key and return Token colors
 
         Returns:
@@ -231,21 +282,54 @@ class SageWorksShell:
         """
         _status_lights = [(Token.Blue, "[")]
 
-        # Check AWS Account
-        # if 1 or cls.check_aws_account():
-        _status_lights.append((Token.Green, "●"))
+        # AWS Account Status
+        if self.aws_status:
+            _status_lights.append((Token.Green, "●"))
+        else:
+            _status_lights.append((Token.Red, "●"))
 
-        # Check Redis
-        # if 0 or cls.check_redis():
-        _status_lights.append((Token.Green, "●"))
+        # Redis Status
+        if self.redis_status == "OK":
+            _status_lights.append((Token.Green, "●"))
+        elif self.redis_status == "LOCAL":
+            _status_lights.append((Token.Blue, "●"))
+        elif self.redis_status == "FAIL":
+            _status_lights.append((Token.Orange, "●"))
+        else:  # Unknown
+            _status_lights.append((Token.Grey, "●"))
 
         # Check API Key
-        # if 0 or cls.check_config():
-        _status_lights.append((Token.Green, "●"))
+        if self.open_source_api_key:
+            _status_lights.append((Token.Lightpurple, "●"))
+        else:
+            _status_lights.append((Token.Green, "●"))
 
         _status_lights.append((Token.Blue, "]"))
 
         return _status_lights
+
+    def status_description(self):
+        """Print a description of the status of AWS, Redis, and API Key"""
+
+        # AWS Account
+        if self.aws_status:
+            cprint("lightgreen", "\t● AWS Account: OK")
+        else:
+            cprint("red", "\t● AWS Account: FAIL")
+
+        # Redis
+        if self.redis_status == "OK":
+            cprint("lightgreen", "\t● Redis: OK")
+        elif self.redis_status == "LOCAL":
+            cprint("lightblue", "\t● Redis: LOCAL")
+        elif self.redis_status == "FAIL":
+            cprint("orange", "\t● Redis: FAIL")
+
+        # API Key
+        if self.open_source_api_key:
+            cprint("lightpurple", "\t● API Key: Open Source")
+        else:
+            cprint("lightgreen", "\t● API Key: Enterprise")
 
     def onboard(self):
         """Onboard a new user to SageWorks"""
@@ -266,8 +350,9 @@ class SageWorksShell:
 
 # Launch Shell Entry Point
 def launch_shell():
-    shell = SageWorksShell()
-    shell.start()
+    global sageworks_shell
+    sageworks_shell = SageWorksShell()
+    sageworks_shell.start()
 
 
 # Start the shell when running the script

@@ -4,6 +4,7 @@ Models can be viewed in the AWS Sagemaker interfaces or in the SageWorks
 Dashboard UI, which provides additional model details and performance metrics"""
 
 # SageWorks Imports
+from sageworks.core.artifacts.artifact import Artifact
 from sageworks.core.artifacts.model_core import ModelCore, ModelType  # noqa: F401
 from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from sageworks.api.endpoint import Endpoint
@@ -42,6 +43,9 @@ class Model(ModelCore):
 
         # Create the Endpoint Name and Tags
         endpoint_name = self.uuid.replace("-model", "") + "-end" if name is None else name
+        endpoint_name = Artifact.base_compliant_uuid(endpoint_name, delimiter="-")
+
+        # Create the Endpoint Tags
         tags = [endpoint_name] if tags is None else tags
 
         # Create an Endpoint from the Model

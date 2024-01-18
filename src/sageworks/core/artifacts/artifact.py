@@ -14,10 +14,10 @@ from sageworks.utils.config_manager import ConfigManager
 
 
 class Artifact(ABC):
-    """Artifact: Abstract Base Class for all Artifact classes in SageWorks.
-    Artifacts simply reflect and aggregate one or more AWS Services"""
+    """Artifact: Abstract Base Class for all Artifact classes in SageWorks"""
 
     # Class attributes
+    log = logging.getLogger("sageworks")
 
     # Set up our Boto3 and SageMaker Session and SageMaker Client
     aws_account_clamp = AWSAccountClamp()
@@ -51,7 +51,6 @@ class Artifact(ABC):
     def __init__(self, uuid: str):
         """Artifact Initialization"""
         self.uuid = uuid
-        self.log = logging.getLogger("sageworks")
 
     def __post_init__(self):
         """Artifact Post Initialization"""
@@ -74,6 +73,36 @@ class Artifact(ABC):
                 self.add_sageworks_health_tag(issue)
         else:
             self.log.info(f"Health Check Passed {self.uuid}")
+
+    @abstractmethod
+    def compliant_uuid(self, uuid: str) -> str:
+        """Return a compliant UUID for this Artifact
+
+        Args:
+            uuid (str): The UUID to make compliant
+
+        Returns:
+            str: The compliant UUID
+        """
+        pass
+
+    @classmethod
+    def base_compliant_uuid(cls, uuid: str, delimiter: str = "_") -> str:
+        """Only allow letters and the specified delimiter, also lowercase the string
+
+        Args:
+            uuid (str): The UUID string to be cleaned.
+            delimiter (str): The delimiter to use in the UUID string (default: "_")
+
+        Returns:
+            str: The cleaned UUID string.
+        """
+        clean_uuid = "".join(c for c in uuid if c.isalnum() or c in ["_", "-"]).lower()
+        clean_uuid = clean_uuid.replace("_", delimiter)
+        clean_uuid = clean_uuid.replace("-", delimiter)
+        if uuid != clean_uuid:
+            cls.log.warning(f"UUID {uuid} is not compliant. Converting to {clean_uuid}")
+        return clean_uuid
 
     @abstractmethod
     def exists(self) -> bool:

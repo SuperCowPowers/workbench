@@ -8,6 +8,7 @@ import pandas as pd
 import logging
 
 # SageWorks Imports
+from sageworks.core.artifacts.artifact import Artifact
 from sageworks.core.artifacts.athena_source import AthenaSource
 from sageworks.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
 from sageworks.core.transforms.data_loaders.light.s3_to_data_source_light import S3ToDataSourceLight
@@ -35,17 +36,22 @@ class DataSource(AthenaSource):
         Args:
             source (str): The source of the data. This can be an S3 bucket, file path,
                           DataFrame object, or an existing DataSource object.
-            name (str): The name of the data source. If not specified, a name will be generated.
+            name (str): The name of the data source (must be lowercase). If not specified, a name will be generated
             tags (list[str]): A list of tags associated with the data source. If not specified tags will be generated.
         """
         self.log = logging.getLogger("sageworks")
 
-        # Load the source (S3, File, or Existing DataSource)
+        # Automatically generate a name if not provided
         ds_name = extract_data_source_basename(source) if name is None else name
+        ds_name = Artifact.base_compliant_uuid(ds_name)  # Make sure UUID is compliant
+
+        # Make sure we have a name for when we use a DataFrame source
         if ds_name == "dataframe":
             msg = "Set the 'name' argument in the constructor: DataSource(df, name='my_data')"
             self.log.critical(msg)
             raise ValueError(msg)
+
+        # Set the tags and load the source
         tags = [ds_name] if tags is None else tags
         self._load_source(source, ds_name, tags)
 
@@ -78,7 +84,7 @@ class DataSource(AthenaSource):
         Convert the DataSource to a FeatureSet
 
         Args:
-            name (str): Set the name for feature set. If not specified, a name will be generated
+            name (str): Set the name for feature set (must be lowercase). If not specified, a name will be generated
             tags (list): Set the tags for the feature set. If not specified tags will be generated.
             id_column (str): Set the id column for the feature set. If not specified will be generated.
             event_time_column (str): Set the event time for the feature set. If not specified will be generated.
@@ -87,8 +93,11 @@ class DataSource(AthenaSource):
             FeatureSet: The FeatureSet created from the DataSource
         """
 
-        # Create the FeatureSet Name and Tags
+        # Create the FeatureSet Name
         fs_name = self.uuid.replace("_data", "") + "_features" if name is None else name
+        fs_name = Artifact.base_compliant_uuid(fs_name)  # Make sure UUID is compliant
+
+        # Set the Tags
         tags = [fs_name] if tags is None else tags
 
         # Transform the DataSource to a FeatureSet

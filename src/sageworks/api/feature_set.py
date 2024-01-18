@@ -7,6 +7,7 @@ can be viewed and explored within the SageWorks Dashboard UI."""
 import pandas as pd
 
 # SageWorks Imports
+from sageworks.core.artifacts.artifact import Artifact
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
 from sageworks.api.model import Model, ModelType
@@ -71,6 +72,9 @@ class FeatureSet(FeatureSetCore):
 
         # Create the Model Name and Tags
         model_name = self.uuid.replace("_features", "").replace("_", "-") + "-model" if name is None else name
+        model_name = Artifact.base_compliant_uuid(model_name, delimiter="-")
+
+        # Create the Model Tags
         tags = [model_name] if tags is None else tags
 
         # Transform the FeatureSet into a Model

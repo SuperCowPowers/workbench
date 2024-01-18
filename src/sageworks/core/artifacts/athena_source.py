@@ -45,6 +45,9 @@ class AthenaSource(DataSourceAbstract):
             force_refresh (bool): Force refresh of AWS Metadata (default: False)
         """
 
+        # Make sure the data_uuid is compliant
+        data_uuid = self.compliant_uuid(data_uuid)
+
         # Call superclass init
         super().__init__(data_uuid, database)
 
@@ -67,6 +70,17 @@ class AthenaSource(DataSourceAbstract):
         """Refresh our internal AWS Broker catalog metadata"""
         _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=True)
         self.catalog_table_meta = _catalog_meta[self.get_database()].get(self.get_table_name())
+
+    def compliant_uuid(self, uuid: str) -> str:
+        """Make sure the uuid is compliant with Athena Table Name requirements
+
+        Args:
+            uuid (str): The uuid to make compliant
+
+        Returns:
+            str: The compliant uuid
+        """
+        return self.base_compliant_uuid(uuid, delimiter="_")
 
     def exists(self) -> bool:
         """Validation Checks for this Data Source"""

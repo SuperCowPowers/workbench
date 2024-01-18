@@ -14,12 +14,108 @@ log = logging.getLogger("sageworks")
 class ConfigManager:
     def __init__(self):
         """Initialize the ConfigManager."""
-        self.is_default_config = False
         self.site_config_path = None
-        self.config = self.load_config()
+        self.needs_bootstrap = False
+        self.config = self._load_config()
 
-    def load_config(self) -> Dict[str, Any]:
-        """Load configuration based on the SAGEWORKS_CONFIG environment variable.
+    def get_config(self, key: str) -> Any:
+        """Get a configuration value by key.
+
+        Args:
+            key (str): The configuration key to retrieve.
+
+        Returns:
+            Any: The value of the configuration key.
+        """
+        # Special logic for SAGEWORKS_PLUGINS
+        if key == "SAGEWORKS_PLUGINS":
+            plugin_dir = self.config.get(key, None)
+            if plugin_dir in ["package", "", None]:
+                return os.path.join(os.path.dirname(__file__), "../../../applications/aws_dashboard/sageworks_plugins")
+            else:
+                return self.config.get(key, None)
+
+        # Normal logic
+        return self.config.get(key, None)
+
+    def get_all_config(self) -> Dict[str, Any]:
+        """Get all configuration values.
+
+        Returns:
+            Dict[str, Any]: All configuration values.
+        """
+        # Grab all config except the SAGEWORKS_API_KEY
+        output = {key: value for key, value in self.config.items() if key != "SAGEWORKS_API_KEY"}
+
+        # Add the SAGEWORKS_API_KEY info
+        api_key_info = self.get_api_key_info()
+        output["API_KEY_INFO"] = api_key_info
+        return output
+
+    def is_open_source(self) -> bool:
+        """Returns True if the API is open source."""
+        api_key_info = self.get_api_key_info()
+        if api_key_info["license_id"] == "Open Source":
+            return True
+        return False
+
+    @staticmethod
+    def open_source_api_key() -> str:
+        """Read the open source API key from the package resources.
+
+        Returns:
+            str: The open source API key.
+        """
+        with resources.path("sageworks.resources", "open_source_api.key") as open_source_key_path:
+            with open(open_source_key_path, "r") as key_file:
+                return key_file.read().strip()
+
+    def create_site_config(self):
+        """Create a site configuration file from the default configuration."""
+        site_config_updates = {}
+
+        # Grab the bootstrap config
+        bootstrap_config = self._load_bootstrap_config()
+
+        # Prompt for each configuration value
+        for key, value in bootstrap_config.items():
+            if value == "change_me":
+                value = input(f"{key}: ")
+                site_config_updates[key] = value
+            elif "change_me_optional" in value:
+                # If the value has a : in it then the part after the : is the default value
+                if ":" in value:
+                    default_value = value.split(":")[1].strip()
+                    value = input(f"[optional] {key}({default_value}): ")
+                    if value in ["", None]:
+                        site_config_updates[key] = default_value
+                    else:
+                        site_config_updates[key] = value
+
+                    # Special logic for SAGEWORKS_API_KEY
+                    if key == "SAGEWORKS_API_KEY" and site_config_updates[key] == default_value:
+                        print("Using Open Source API Key...")
+                        site_config_updates[key] = self.open_source_api_key()
+                else:
+                    value = input(f"[optional] {key}: ")
+                    if value in ["", None]:
+                        site_config_updates[key] = None
+
+        # Update default config with provided values
+        site_config = {**bootstrap_config, **site_config_updates}
+
+        # Determine platform-specific path (e.g., ~/.sageworks/config.json)
+        self.site_config_path = self.get_platform_specific_path()
+
+        # Save updated config to platform-specific path
+        with open(self.site_config_path, "w") as file:
+            json.dump(site_config, file, indent=4)
+
+        # Done with bootstrap
+        self.needs_bootstrap = False
+
+    def _load_config(self) -> Dict[str, Any]:
+        """Internal: Load configuration based on the SAGEWORKS_CONFIG environment variable.
 
         Returns:
             Dict[str, Any]: Configuration dictionary.
@@ -28,8 +124,8 @@ class ConfigManager:
         # Load site_config_path from environment variable
         self.site_config_path = os.environ.get("SAGEWORKS_CONFIG")
         if self.site_config_path is None:
-            log.warning("SAGEWORKS_CONFIG ENV var not set. Using default configuration...")
-            return self.load_default_config()
+            log.warning("SAGEWORKS_CONFIG ENV var not set. Loading bootstrap configuration...")
+            return self._load_bootstrap_config()
 
         # Load configuration from AWS Parameter Store
         if self.site_config_path == "parameter_store":
@@ -37,8 +133,8 @@ class ConfigManager:
                 log.info("Loading site configuration from AWS Parameter Store...")
                 return self.get_config_from_aws_parameter_store()
             except Exception:
-                log.error("Failed to load config from AWS Parameter Store. Using defaults...")
-                return self.load_default_config()
+                log.error("Failed to load config from AWS Parameter Store. Loading bootstrap...")
+                return self._load_bootstrap_config()
 
         # Load site specified configuration file
         try:
@@ -46,45 +142,31 @@ class ConfigManager:
             with open(self.site_config_path, "r") as file:
                 return json.load(file)
         except (FileNotFoundError, json.JSONDecodeError):
-            log.error(f"Failed to load config from {self.site_config_path}. Using defaults...")
-            return self.load_default_config()
+            log.error(f"Failed to load config from {self.site_config_path}. Loading bootstrap...")
+            return self._load_bootstrap_config()
 
-    def load_default_config(self) -> Dict[str, Any]:
-        """Load the default configuration from the package resources.
+    def _load_bootstrap_config(self) -> Dict[str, Any]:
+        """Internal: Load the bootstrap configuration from the package resources.
 
         Returns:
-            Dict[str, Any]: Default configuration dictionary.
+            Dict[str, Any]: Bootstrap configuration dictionary.
         """
-        self.is_default_config = True
-        with resources.open_text("sageworks.resources", "default_config.json") as file:
+        self.needs_bootstrap = True
+        with resources.open_text("sageworks.resources", "bootstrap_config.json") as file:
             return json.load(file)
 
-    def create_site_config(self):
-        """Create a site configuration file from the default configuration."""
-        site_config_updates = {}
+    @staticmethod
+    def get_api_key_info() -> Dict[str, Any]:
+        """Get the API Key information from the configuration.
 
-        # Grab the default config
-        default_config = self.load_default_config()
+        Returns:
+            Dict[str, Any]: API Key information.
+        """
+        # Note: This import has to be here to avoid circular imports
+        from sageworks.utils.license_manager import LicenseManager
 
-        # Prompt for each configuration value
-        for key, value in default_config.items():
-            if value == "change_me":
-                value = input(f"Enter a value for {key}: ")
-                site_config_updates[key] = value
-            elif value == "change_me_optional":
-                value = input(f"Enter a value for {key} (optional): ")
-                if value:
-                    site_config_updates[key] = value
-
-        # Update default config with provided values
-        site_config = {**default_config, **site_config_updates}
-
-        # Determine platform-specific path (e.g., ~/.sageworks/config.json)
-        self.site_config_path = self.get_platform_specific_path()
-
-        # Save updated config to platform-specific path
-        with open(self.site_config_path, "w") as file:
-            json.dump(site_config, file, indent=4)
+        api_info = LicenseManager().load_api_license(aws_account_id=None)
+        return api_info
 
     @staticmethod
     def get_platform_specific_path() -> str:
@@ -115,26 +197,6 @@ class ConfigManager:
         """
         # TODO: Implement AWS Parameter Store fetching logic
         return {}
-
-    def get_config(self, key: str) -> Any:
-        """Get a configuration value by key.
-
-        Args:
-            key (str): The configuration key to retrieve.
-
-        Returns:
-            Any: The value of the configuration key.
-        """
-        # Special logic for SAGEWORKS_PLUGINS
-        if key == "SAGEWORKS_PLUGINS":
-            plugin_dir = self.config.get(key, None)
-            if plugin_dir in ["package", "", None]:
-                return os.path.join(os.path.dirname(__file__), "../../../applications/aws_dashboard/sageworks_plugins")
-            else:
-                return self.config.get(key, None)
-
-        # Normal logic
-        return self.config.get(key, None)
 
     def platform_specific_instructions(self):
         """Provides instructions to the user for setting the SAGEWORKS_CONFIG
@@ -170,8 +232,17 @@ class ConfigManager:
 
 if __name__ == "__main__":
     """Exercise the ConfigManager class"""
-    config_manager = ConfigManager()
-    sageworks_role = config_manager.get_config("SAGEWORKS_ROLE")
+    from pprint import pprint
+
+    cm = ConfigManager()
+    sageworks_role = cm.get_config("SAGEWORKS_ROLE")
     print(f"SAGEWORKS_ROLE: {sageworks_role}")
-    sageworks_plugins = config_manager.get_config("SAGEWORKS_PLUGINS")
+    sageworks_plugins = cm.get_config("SAGEWORKS_PLUGINS")
     print(f"SAGEWORKS_PLUGINS: {sageworks_plugins}")
+
+    # API Key Info
+    api_key_info = cm.get_api_key_info()
+    pprint(api_key_info)
+
+    # All config
+    pprint(cm.get_all_config())

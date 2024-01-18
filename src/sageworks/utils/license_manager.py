@@ -15,6 +15,13 @@ from cryptography.hazmat.backends import default_backend
 from sageworks.utils.config_manager import ConfigManager
 
 
+class FatalLicenseError(Exception):
+    """Exception raised for fatal errors in API License."""
+
+    def __init__(self):
+        sys.exit(1)
+
+
 class LicenseManager:
     """SageWorks API License Manager"""
 
@@ -23,10 +30,10 @@ class LicenseManager:
     log = logging.getLogger("sageworks")
 
     @classmethod
-    def load_api_license(cls, aws_account_id: str) -> Union[dict, None]:
+    def load_api_license(cls, aws_account_id: Union[str, None]) -> Union[dict, None]:
         """Load the SageWorks API License, verify it, and return the licensed features
         Args:
-            aws_account_id(str): The AWS Account ID to verify the license against
+            aws_account_id(str): The AWS Account ID to verify the license against (None for Open Source)
         Returns:
             dict/None: The SageWorks API License Information or None if the license is invalid
         """
@@ -42,7 +49,7 @@ class LicenseManager:
         if not cls.verify_signature(_license_data, signature):
             msg = "API License key verification failed."
             cls.log.critical(msg)
-            return None
+            raise FatalLicenseError()
 
         # Load the license data into a dictionary
         cls.api_license_info = json.loads(_license_data)
@@ -52,21 +59,17 @@ class LicenseManager:
             cls.log.critical(
                 f"API License expired on {cls.api_license_info.get('expires')} Please contact SageWorks support."
             )
-            return None
+            raise FatalLicenseError()
 
-        # Verify our AWS Account ID
+        # Grab the AWS Account ID from our API License
         api_account_id = cls.api_license_info.get("aws_account_id")
 
-        # Open Source License has no AWS Account ID
-        if api_account_id is None:
-            return cls.api_license_info
-
         # Check if the API License is valid for this AWS Account
-        if api_account_id != aws_account_id:
+        if api_account_id and aws_account_id and api_account_id != aws_account_id:
             cls.log.critical("SageWorks API Key is not valid for this AWS Account!")
             cls.log.critical(f"Connected AWS Account ID: {aws_account_id}")
             cls.log.critical(f"API License AWS Account ID: {api_account_id}")
-            sys.exit(1)
+            raise FatalLicenseError()
 
         # Return the license information
         return cls.api_license_info
@@ -135,7 +138,7 @@ class LicenseManager:
 if __name__ == "__main__":
     """Exercise the License Manager class"""
 
-    my_license_info = LicenseManager.load_api_license(aws_account_id="123")
+    my_license_info = LicenseManager.load_api_license(aws_account_id=None)
     print(my_license_info)
     LicenseManager.print_license_info()
     print(LicenseManager.get_license_id())

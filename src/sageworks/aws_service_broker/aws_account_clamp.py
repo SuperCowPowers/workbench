@@ -1,5 +1,7 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
 import os
+import sys
+
 import boto3
 import awswrangler as wr
 from botocore.exceptions import (
@@ -19,6 +21,13 @@ from sageworks.utils.license_manager import LicenseManager
 from sageworks.utils.config_manager import ConfigManager
 
 
+class FatalConfigError(Exception):
+    """Exception raised for errors in the configuration."""
+
+    def __init__(self):
+        sys.exit(1)
+
+
 class AWSAccountClamp:
     def __new__(cls):
         """AWSAccountClamp Singleton Pattern"""
@@ -29,22 +38,23 @@ class AWSAccountClamp:
             cls.instance = super(AWSAccountClamp, cls).__new__(cls)
 
             # Pull in our config from the config manager
-            cls.config = ConfigManager().load_config()
-            cls.role_name = cls.config["SAGEWORKS_ROLE"]
-            cls.sageworks_bucket_name = cls.config["SAGEWORKS_BUCKET"]
+            cls.cm = ConfigManager()
+            if cls.cm.needs_bootstrap:
+                cls.log.error("SageWorks Configuration Requires Bootstrapping...")
+                cls.log.error("Run the 'sageworks' command and follow the prompts...")
+                raise FatalConfigError()
+            cls.role_name = cls.cm.get_config("SAGEWORKS_ROLE")
+            cls.sageworks_bucket_name = cls.cm.get_config("SAGEWORKS_BUCKET")
 
             # Note: We might want to revisit this
-            os.environ["AWS_PROFILE"] = cls.config["AWS_PROFILE"]
+            os.environ["AWS_PROFILE"] = cls.cm.get_config("AWS_PROFILE")
 
             try:
                 cls.account_id = boto3.client("sts").get_caller_identity()["Account"]
                 cls.region = boto3.session.Session().region_name
             except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
-                msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...\n"
-                # msg += "Docker: Make sure either TEMP credentials are correctly set or\n"
-                # msg += "        EC2 Execution ROLE is using the SageWorks Execution Role...\n "
-                cls.log.critical(msg)
-                raise RuntimeError(msg)
+                cls.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+                raise FatalConfigError()
 
             # Check our SageWorks API Key and Load the License
             cls.log.info("Checking SageWorks API License...")

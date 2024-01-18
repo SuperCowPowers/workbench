@@ -1,0 +1,15 @@
+{
+    "AWS_PROFILE": "change_me",
+    "SAGEWORKS_BUCKET": "change_me",
+    "REDIS_HOST": "change_me_optional:localhost",
+    "REDIS_PORT": "change_me_optional:6379",
+    "REDIS_PASSWORD": "change_me_optional:",
+    "SAGEWORKS_ROLE": "SageWorks-ExecutionRole",
+    "SAGEWORKS_FEATURES": {
+        "plugins": "true",
+        "experimental": "false",
+        "large_meta_data": "false",
+        "enterprise": "false"
+    },
+    "SAGEWORKS_API_KEY": "change_me_optional:open_source"
+}
