@@ -11,9 +11,6 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 
-# SageWorks Imports
-from sageworks.utils.config_manager import ConfigManager
-
 
 class FatalLicenseError(Exception):
     """Exception raised for fatal errors in API License."""
@@ -25,21 +22,18 @@ class FatalLicenseError(Exception):
 class LicenseManager:
     """SageWorks API License Manager"""
 
-    cm = ConfigManager()
     api_license_info = None
     log = logging.getLogger("sageworks")
 
     @classmethod
-    def load_api_license(cls, aws_account_id: Union[str, None]) -> Union[dict, None]:
+    def load_api_license(cls, aws_account_id: Union[str, None], api_key: str) -> Union[dict, None]:
         """Load the SageWorks API License, verify it, and return the licensed features
         Args:
             aws_account_id(str): The AWS Account ID to verify the license against (None for Open Source)
+            api_key(str): The SageWorks API Key to verify (base64 encoded)
         Returns:
             dict/None: The SageWorks API License Information or None if the license is invalid
         """
-
-        # Grab the API Key from the SageWorks ConfigManager
-        api_key = cls.cm.get_config("SAGEWORKS_API_KEY")
 
         # Decode the API Key
         decoded_license_key = base64.b64decode(api_key)
@@ -137,8 +131,13 @@ class LicenseManager:
 
 if __name__ == "__main__":
     """Exercise the License Manager class"""
+    from sageworks.utils.config_manager import ConfigManager
 
-    my_license_info = LicenseManager.load_api_license(aws_account_id=None)
+    # Grab the API Key from the SageWorks ConfigManager
+    cm = ConfigManager()
+    api_key = cm.get_config("SAGEWORKS_API_KEY")
+
+    my_license_info = LicenseManager.load_api_license(aws_account_id=None, api_key=api_key)
     print(my_license_info)
     LicenseManager.print_license_info()
     print(LicenseManager.get_license_id())

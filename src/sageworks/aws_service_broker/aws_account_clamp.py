@@ -58,7 +58,8 @@ class AWSAccountClamp:
 
             # Check our SageWorks API Key and Load the License
             cls.log.info("Checking SageWorks API License...")
-            cls.license_info = LicenseManager.load_api_license(cls.account_id)
+            api_key = cls.cm.get_config("SAGEWORKS_API_KEY")
+            cls.license_info = LicenseManager.load_api_license(cls.account_id, api_key)
             LicenseManager.print_license_info()
 
             # Initialize the boto3 session (this is a refreshable session)

@@ -5,15 +5,19 @@ import logging
 import importlib.resources as resources
 from typing import Any, Dict
 
-# Set up the logger
-import sageworks  # noqa: F401 (we need to import this to set up the logger)
-
-log = logging.getLogger("sageworks")
+# SageWorks imports
+from sageworks.utils.license_manager import LicenseManager
 
 
 class ConfigManager:
-    def __init__(self):
-        """Initialize the ConfigManager."""
+    def __init__(self, interactive: bool = False):
+        """Initialize the ConfigManager
+
+        Args:
+            interactive (bool, optional): If True, prompt the user for configuration values. Defaults to False.
+        """
+        self.log = logging.getLogger("sageworks")
+        self.interactive = interactive
         self.site_config_path = None
         self.needs_bootstrap = False
         self.config = self._load_config()
@@ -124,26 +128,30 @@ class ConfigManager:
         # Load site_config_path from environment variable
         self.site_config_path = os.environ.get("SAGEWORKS_CONFIG")
         if self.site_config_path is None:
-            log.warning("SAGEWORKS_CONFIG ENV var not set. Loading bootstrap configuration...")
-            return self._load_bootstrap_config()
+            if self.interactive:
+                self.log.warning("SAGEWORKS_CONFIG ENV var not set. [Interactive] bootstrap configuration...")
+                return self._load_bootstrap_config()
+            else:
+                self.log.warning("SAGEWORKS_CONFIG ENV var not set. Loading Default config...")
+                return self._load_default_config()
 
         # Load configuration from AWS Parameter Store
         if self.site_config_path == "parameter_store":
             try:
-                log.info("Loading site configuration from AWS Parameter Store...")
+                self.log.info("Loading site configuration from AWS Parameter Store...")
                 return self.get_config_from_aws_parameter_store()
             except Exception:
-                log.error("Failed to load config from AWS Parameter Store. Loading bootstrap...")
-                return self._load_bootstrap_config()
+                self.log.error("Failed to load config from AWS Parameter Store. Loading Default config...")
+                return self._load_default_config()
 
         # Load site specified configuration file
         try:
-            log.info(f"Loading site configuration from {self.site_config_path}...")
+            self.log.info(f"Loading site configuration from {self.site_config_path}...")
             with open(self.site_config_path, "r") as file:
                 return json.load(file)
         except (FileNotFoundError, json.JSONDecodeError):
-            log.error(f"Failed to load config from {self.site_config_path}. Loading bootstrap...")
-            return self._load_bootstrap_config()
+            self.log.error(f"Failed to load config from {self.site_config_path}. Loading Default config...")
+            return self._load_default_config()
 
     def _load_bootstrap_config(self) -> Dict[str, Any]:
         """Internal: Load the bootstrap configuration from the package resources.
@@ -155,17 +163,30 @@ class ConfigManager:
         with resources.open_text("sageworks.resources", "bootstrap_config.json") as file:
             return json.load(file)
 
-    @staticmethod
-    def get_api_key_info() -> Dict[str, Any]:
+    def _load_default_config(self) -> Dict[str, Any]:
+        """Internal: Load default configuration and combine with any existing environment variables.
+
+        Returns:
+            Dict[str, Any]: Configuration dictionary.
+        """
+        config = {
+            "SAGEWORKS_ROLE": "SageWorks-ExecutionRole",
+            "SAGEWORKS_PLUGINS": "package",
+            "SAGEWORKS_API_KEY": self.open_source_api_key(),
+        }
+        for key, value in os.environ.items():
+            if key.startswith("SAGEWORKS_") or key.startswith("REDIS_"):
+                config[key] = value
+        return config
+
+    def get_api_key_info(self) -> Dict[str, Any]:
         """Get the API Key information from the configuration.
 
         Returns:
             Dict[str, Any]: API Key information.
         """
-        # Note: This import has to be here to avoid circular imports
-        from sageworks.utils.license_manager import LicenseManager
-
-        api_info = LicenseManager().load_api_license(aws_account_id=None)
+        api_key = self.get_config("SAGEWORKS_API_KEY")
+        api_info = LicenseManager().load_api_license(aws_account_id=None, api_key=api_key)
         return api_info
 
     @staticmethod
@@ -241,8 +262,17 @@ if __name__ == "__main__":
     print(f"SAGEWORKS_PLUGINS: {sageworks_plugins}")
 
     # API Key Info
-    api_key_info = cm.get_api_key_info()
-    pprint(api_key_info)
+    my_api_key_info = cm.get_api_key_info()
+    pprint(my_api_key_info)
 
     # All config
+    pprint(cm.get_all_config())
+
+    # Unset SAGEWORKS_CONFIG
+    os.environ.pop("SAGEWORKS_CONFIG", None)
+
+    # Add the SAGEWORKS_BUCKET and REDIS_HOST to the ENV vars
+    os.environ["SAGEWORKS_BUCKET"] = "ideaya-sageworks-bucket"
+    os.environ["REDIS_HOST"] = "sageworksredis.qo8vb5.0001.use1.cache.amazonaws.com"
+    cm = ConfigManager()
     pprint(cm.get_all_config())
