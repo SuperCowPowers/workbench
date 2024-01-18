@@ -47,7 +47,9 @@ class AWSAccountClamp:
             cls.sageworks_bucket_name = cls.cm.get_config("SAGEWORKS_BUCKET")
 
             # Note: We might want to revisit this
-            os.environ["AWS_PROFILE"] = cls.cm.get_config("AWS_PROFILE")
+            profile = cls.cm.get_config("AWS_PROFILE")
+            if profile is not None:
+                os.environ["AWS_PROFILE"] = profile
 
             try:
                 cls.account_id = boto3.client("sts").get_caller_identity()["Account"]
