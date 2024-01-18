@@ -113,8 +113,8 @@ class ArtifactsTextView(View):
             summary = {
                 "Name": info["Name"],
                 "GlueVersion": info["GlueVersion"],
-                "Workers": info["NumberOfWorkers"],
-                "WorkerType": info["WorkerType"],
+                "Workers": info.get("NumberOfWorkers", "-"),
+                "WorkerType": info.get("WorkerType", "-"),
                 "Modified": self.datetime_string(info.get("LastModifiedOn")),
                 "LastRun": self.datetime_string(info["sageworks_meta"]["last_run"]),
                 "Status": info["sageworks_meta"]["status"],
