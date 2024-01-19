@@ -6,7 +6,10 @@ from dash.dependencies import Input, Output, State
 from sageworks.views.model_web_view import ModelWebView
 from sageworks.web_components import table, model_metrics, metrics_comparison_markdown
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
+from sageworks.utils.metrics_utils import get_reg_metric, get_class_metric, get_class_metric_ave
 
+import json
+import numpy as np
 
 def update_plugin_table(app: Dash):
     @app.callback(
@@ -17,8 +20,15 @@ def update_plugin_table(app: Dash):
         """Return the table data for the Plugin/Models Table"""
         aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
         models = aws_broker_data["MODELS"]
+
+        # Parse metrics from JSON strings into new columns with floats
+        models['RMSE'] = models[models['Model Type'] == 'regressor']['Model Metrics'].apply(lambda x: get_reg_metric(x, 'RMSE'))
+        models['ROCAUC_0'] = models[models['Model Type'] == 'classifier']['Model Metrics'].apply(lambda x: get_class_metric(x, 0, 'roc_auc'))
+        models['ROCAUC_1'] = models[models['Model Type'] == 'classifier']['Model Metrics'].apply(lambda x: get_class_metric(x, 1, 'roc_auc'))
+        models['ROCAUC_2'] = models[models['Model Type'] == 'classifier']['Model Metrics'].apply(lambda x: get_class_metric(x, 2, 'roc_auc'))
+        models['Average_ROCAUC'] = models[models['Model Type'] == 'classifier']['Model Metrics'].apply(lambda x: get_class_metric_ave(x, 'roc_auc'))
         models["id"] = range(len(models))
-        column_setup_list = table.Table().column_setup(models, markdown_columns=["Model Group"])
+        column_setup_list = table.Table().column_setup(models, show_columns=['Model Group', 'Health', 'Owner', 'Model Type', 'Created', 'Ver', 'RMSE', 'ROCAUC_0', 'ROCAUC_1', 'ROCAUC_2', 'Average_ROCAUC'], markdown_columns=["Model Group"])
         return [column_setup_list, models.to_dict("records")]
 
 
