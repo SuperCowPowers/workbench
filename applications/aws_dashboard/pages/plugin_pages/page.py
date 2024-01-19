@@ -32,15 +32,15 @@ models_table = table.Table().create_component(
     header_color="rgb(60, 60, 60)",
     row_select="multi",
     max_height=400,
-    filter_action='native',
-    style_filter={'backgroundColor': 'rgb(60, 60, 60)', 'color': 'white'}
+    filter_action="native",
+    style_filter={"backgroundColor": "rgb(60, 60, 60)", "color": "white"},
 )
 
-#TODO Dynamic...
+# TODO Dynamic...
 metrics_comp_1 = metrics_comparison_markdown.MetricsComparisonMarkdown().create_component("metrics_comparison_1")
 metrics_comp_2 = metrics_comparison_markdown.MetricsComparisonMarkdown().create_component("metrics_comparison_2")
 
-#TODO Make dynamic number of model metrics components
+# TODO Make dynamic number of model metrics components
 # Make multiple model metrics components
 model_mets = model_metrics.ModelMetrics().create_component("model_metrics_1")
 model_mets_2 = model_metrics.ModelMetrics().create_component("model_metrics_2")
@@ -51,7 +51,7 @@ components = {
     "metrics_comparison_1": metrics_comp_1,
     "metrics_comparison_2": metrics_comp_2,
     "model_metrics_1": model_mets,
-    "model_metrics_2": model_mets_2
+    "model_metrics_2": model_mets_2,
 }
 
 """

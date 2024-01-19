@@ -24,23 +24,13 @@ def plugin_layout(
             dbc.Row(plugin_table),
             # Model metrics
             # Column 1: First model
-            #TODO Display abbreviated model details on the same row
-            dbc.Row(html.H2(id="model_header_1", style={'textAlign': 'center'})),
-            dbc.Row(
-                [
-                    dbc.Col([metrics_comparison_1], width=4),
-                    dbc.Col(model_metrics_1, width=8)
-                ]
-            ),
+            # TODO Display abbreviated model details on the same row
+            dbc.Row(html.H2(id="model_header_1", style={"textAlign": "center"})),
+            dbc.Row([dbc.Col([metrics_comparison_1], width=4), dbc.Col(model_metrics_1, width=8)]),
             # Column 2: Second model
-            #TODO Display abbreviated model details on the same row
-            dbc.Row(html.H2(id="model_header_2", style={'textAlign': 'center'})),
-            dbc.Row(
-                [
-                    dbc.Col([metrics_comparison_2], width=4),
-                    dbc.Col(model_metrics_2, width=8)
-                ]
-            )
+            # TODO Display abbreviated model details on the same row
+            dbc.Row(html.H2(id="model_header_2", style={"textAlign": "center"})),
+            dbc.Row([dbc.Col([metrics_comparison_2], width=4), dbc.Col(model_metrics_2, width=8)]),
         ]
-        )
+    )
     return layout

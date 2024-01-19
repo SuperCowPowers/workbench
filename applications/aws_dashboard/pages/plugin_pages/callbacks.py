@@ -11,6 +11,7 @@ from sageworks.utils.metrics_utils import get_reg_metric, get_class_metric, get_
 import json
 import numpy as np
 
+
 def update_plugin_table(app: Dash):
     @app.callback(
         [Output("plugin_table", "columns"), Output("plugin_table", "data")],
@@ -22,13 +23,37 @@ def update_plugin_table(app: Dash):
         models = aws_broker_data["MODELS"]
 
         # Parse metrics from JSON strings into new columns with floats
-        models['RMSE'] = models[models['Model Type'] == 'regressor']['Model Metrics'].apply(lambda x: get_reg_metric(x, 'RMSE'))
-        models['ROCAUC_0'] = models[models['Model Type'] == 'classifier']['Model Metrics'].apply(lambda x: get_class_metric(x, 0, 'roc_auc'))
-        models['ROCAUC_1'] = models[models['Model Type'] == 'classifier']['Model Metrics'].apply(lambda x: get_class_metric(x, 1, 'roc_auc'))
-        models['ROCAUC_2'] = models[models['Model Type'] == 'classifier']['Model Metrics'].apply(lambda x: get_class_metric(x, 2, 'roc_auc'))
-        models['Average_ROCAUC'] = models[models['Model Type'] == 'classifier']['Model Metrics'].apply(lambda x: get_class_metric_ave(x, 'roc_auc'))
+        models["RMSE"] = models[models["Model Type"] == "regressor"]["Model Metrics"].apply(lambda x: get_reg_metric(x, "RMSE"))
+        models["ROCAUC_0"] = models[models["Model Type"] == "classifier"]["Model Metrics"].apply(
+            lambda x: get_class_metric(x, 0, "roc_auc")
+        )
+        models["ROCAUC_1"] = models[models["Model Type"] == "classifier"]["Model Metrics"].apply(
+            lambda x: get_class_metric(x, 1, "roc_auc")
+        )
+        models["ROCAUC_2"] = models[models["Model Type"] == "classifier"]["Model Metrics"].apply(
+            lambda x: get_class_metric(x, 2, "roc_auc")
+        )
+        models["Average_ROCAUC"] = models[models["Model Type"] == "classifier"]["Model Metrics"].apply(
+            lambda x: get_class_metric_ave(x, "roc_auc")
+        )
         models["id"] = range(len(models))
-        column_setup_list = table.Table().column_setup(models, show_columns=['Model Group', 'Health', 'Owner', 'Model Type', 'Created', 'Ver', 'RMSE', 'ROCAUC_0', 'ROCAUC_1', 'ROCAUC_2', 'Average_ROCAUC'], markdown_columns=["Model Group"])
+        column_setup_list = table.Table().column_setup(
+            models,
+            show_columns=[
+                "Model Group",
+                "Health",
+                "Owner",
+                "Model Type",
+                "Created",
+                "Ver",
+                "RMSE",
+                "ROCAUC_0",
+                "ROCAUC_1",
+                "ROCAUC_2",
+                "Average_ROCAUC",
+            ],
+            markdown_columns=["Model Group"],
+        )
         return [column_setup_list, models.to_dict("records")]
 
 
@@ -57,8 +82,9 @@ def table_row_select(app: Dash, table_name: str):
         row_style.append(symbol_style)
         return row_style
 
+
 # Updates the model metrics when a model row is selected
-#TODO Add abbreviated model details markdown
+# TODO Add abbreviated model details markdown
 def update_model_metrics_components(app: Dash, model_web_view: ModelWebView):
     @app.callback(
         [
@@ -67,7 +93,7 @@ def update_model_metrics_components(app: Dash, model_web_view: ModelWebView):
             Output("model_metrics_1", "figure"),
             Output("model_header_2", "children"),
             Output("metrics_comparison_2", "children"),
-            Output("model_metrics_2", "figure")
+            Output("model_metrics_2", "figure"),
         ],
         Input("plugin_table", "derived_viewport_selected_row_ids"),
         State("plugin_table", "data"),
@@ -77,9 +103,9 @@ def update_model_metrics_components(app: Dash, model_web_view: ModelWebView):
         # Check for no selected rows
         if not selected_rows or len(selected_rows) < 2 or len(selected_rows) > 2:
             return no_update
-        
+
         print(f"Metrics Print Rows: {selected_rows}")
-        
+
         # Metrics 1
         # Get the selected row data and grab the uuid
         selected_row_data = table_data[selected_rows[0]]
@@ -105,5 +131,5 @@ def update_model_metrics_components(app: Dash, model_web_view: ModelWebView):
             model_metrics_figure,
             model_header_2,
             metrics_comp_md_2,
-            model_metrics_figure_2
-            ]
+            model_metrics_figure_2,
+        ]
