@@ -8,10 +8,8 @@ from .layout import plugin_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, plugin_loader, model_metrics, metrics_comparison_markdown
-from sageworks.web_components.plugin_interface import PluginType
+from sageworks.web_components import table, model_metrics, metrics_comparison_markdown
 from sageworks.views.model_web_view import ModelWebView
-from sageworks.utils.config_manager import ConfigManager
 
 # Register this page with Dash
 register_page(

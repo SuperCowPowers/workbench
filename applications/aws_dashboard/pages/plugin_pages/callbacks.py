@@ -8,10 +8,6 @@ from sageworks.web_components import table, model_metrics, metrics_comparison_ma
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 from sageworks.utils.metrics_utils import get_reg_metric, get_class_metric, get_class_metric_ave
 
-import json
-import numpy as np
-
-
 def update_plugin_table(app: Dash):
     @app.callback(
         [Output("plugin_table", "columns"), Output("plugin_table", "data")],

@@ -108,7 +108,6 @@ class MetricsComparisonMarkdown(ComponentInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
-    import dash
     from dash import dcc, html, Dash
     import dash_bootstrap_components as dbc
     from sageworks.core.artifacts.model_core import ModelCore
@@ -133,6 +132,4 @@ if __name__ == "__main__":
 
     app.layout = html.Div([component])
     component.children = markdown
-
-    if __name__ == "__main__":
-        app.run_server(host="0.0.0.0", port=8000, dev_tools_ui=False, dev_tools_props_check=False, debug=True)
+    app.run_server(host="0.0.0.0", port=8000, dev_tools_ui=False, dev_tools_props_check=False, debug=True)
