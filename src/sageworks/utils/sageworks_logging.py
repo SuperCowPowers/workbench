@@ -79,42 +79,49 @@ class ColoredFormatter(logging.Formatter):
 
     def format(self, record):
         log_message = super().format(record)
-        return f"{self.COLORS.get(record.levelname, self.RESET)}{log_message}{self.RESET}"
+        return (
+            f"{self.COLORS.get(record.levelname, self.RESET)}{log_message}{self.RESET}"
+        )
 
 
 def logging_setup(color_logs=True):
     log = logging.getLogger("sageworks")
-    if not log.hasHandlers():
-        handler = logging.StreamHandler(stream=sys.stdout)
-        formatter = (
-            ColoredFormatter(
-                "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-            if color_logs
-            else logging.Formatter(
-                "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
+
+    # Remove any existing handlers
+    for handler in log.handlers[:]:
+        log.removeHandler(handler)
+
+    # Setup new handler
+    handler = logging.StreamHandler(stream=sys.stdout)
+    formatter = (
+        ColoredFormatter(
+            "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
-        handler.setFormatter(formatter)
-        log.addHandler(handler)
+        if color_logs
+        else logging.Formatter(
+            "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+    )
+    handler.setFormatter(formatter)
+    log.addHandler(handler)
 
-        # Check for SAGEWORKS_DEBUG environment variable
-        debug_env = os.getenv("SAGEWORKS_DEBUG", "False")
-        if debug_env.lower() == "true":
-            log.setLevel(logging.DEBUG)
-            log.debug("Debugging enabled via SAGEWORKS_DEBUG environment variable.")
-        else:
-            log.setLevel(logging.INFO)
-            throttle_filter = ThrottlingFilter(rate_seconds=5)
-            handler.addFilter(throttle_filter)
+    # Setup logging level
+    debug_env = os.getenv("SAGEWORKS_DEBUG", "False")
+    if debug_env.lower() == "true":
+        log.setLevel(logging.DEBUG)
+        log.debug("Debugging enabled via SAGEWORKS_DEBUG environment variable.")
+    else:
+        log.setLevel(logging.INFO)
+        throttle_filter = ThrottlingFilter(rate_seconds=5)
+        handler.addFilter(throttle_filter)
 
-        # Sagemaker continuously complains about config, so we'll suppress it
-        logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
+    # Suppress specific logger
+    logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
 
-        # All done
-        log.info("SageWorks Logging Setup Complete...")
+    # Logging setup complete
+    log.info("SageWorks Logging Setup Complete...")
 
 
 if __name__ == "__main__":
