@@ -56,6 +56,15 @@ class ConfigManager:
         output["API_KEY_INFO"] = api_key_info
         return output
 
+    def set_config(self, key: str, value: Any):
+        """Set a configuration value for the given key.
+
+        Args:
+            key (str): The configuration key to set.
+            value (Any): The value for the configuration key.
+        """
+        self.config[key] = value
+
     def is_open_source(self) -> bool:
         """Returns True if the API is open source."""
         api_key_info = self.get_api_key_info()

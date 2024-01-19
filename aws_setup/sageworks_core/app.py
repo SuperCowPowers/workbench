@@ -31,8 +31,10 @@ sandbox_stack = SageworksCoreStack(
     "SageworksCore",
     env=env,
     props=SageworksCoreStackProps(
-        sageworks_bucket=sageworks_bucket, sageworks_role_name=sageworks_role_name,
-        sso_group=sso_group, additional_buckets=additional_buckets.split(",") if additional_buckets else []
+        sageworks_bucket=sageworks_bucket,
+        sageworks_role_name=sageworks_role_name,
+        sso_group=sso_group,
+        additional_buckets=additional_buckets.split(",") if additional_buckets else [],
     ),
 )
 

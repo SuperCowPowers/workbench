@@ -108,10 +108,7 @@ class SageworksCoreStack(Stack):
         # Add permissions for additional buckets
         for bucket in self.additional_buckets:
             api_execution_role.add_to_policy(
-                iam.PolicyStatement(
-                    actions=["s3:*"],
-                    resources=[f"arn:aws:s3:::{bucket}/*"]
-                )
+                iam.PolicyStatement(actions=["s3:*"], resources=[f"arn:aws:s3:::{bucket}/*"])
             )
 
         return api_execution_role
