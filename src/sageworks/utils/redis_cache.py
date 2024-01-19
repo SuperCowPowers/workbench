@@ -70,8 +70,8 @@ class RedisCache:
 
     # Try to read Redis configuration from the SageWorks ConfigManager
     cm = ConfigManager()
-    host = cm.get_config("REDIS_HOST")
-    port = cm.get_config("REDIS_PORT")
+    host = cm.get_config("REDIS_HOST", "localhost")
+    port = cm.get_config("REDIS_PORT", 6379)
     password = cm.get_config("REDIS_PASSWORD")
 
     # Open the Redis connection (class object)

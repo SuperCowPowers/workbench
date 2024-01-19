@@ -10,37 +10,37 @@ from sageworks.utils.license_manager import LicenseManager
 
 
 class ConfigManager:
-    def __init__(self, interactive: bool = False):
+    def __init__(self, use_bootstrap: bool = False):
         """Initialize the ConfigManager
 
         Args:
             interactive (bool, optional): If True, prompt the user for configuration values. Defaults to False.
         """
         self.log = logging.getLogger("sageworks")
-        self.interactive = interactive
         self.site_config_path = None
         self.needs_bootstrap = False
-        self.config = self._load_config()
+        self.config = self._load_config(use_bootstrap)
 
-    def get_config(self, key: str) -> Any:
+    def get_config(self, key: str, default_value: Any = None) -> Any:
         """Get a configuration value by key.
 
         Args:
             key (str): The configuration key to retrieve.
+            default_value (Any, optional): The default value to return if not found. Defaults to None.
 
         Returns:
             Any: The value of the configuration key.
         """
         # Special logic for SAGEWORKS_PLUGINS
         if key == "SAGEWORKS_PLUGINS":
-            plugin_dir = self.config.get(key, None)
+            plugin_dir = self.config.get(key, default_value)
             if plugin_dir in ["package", "", None]:
                 return os.path.join(os.path.dirname(__file__), "../../../applications/aws_dashboard/sageworks_plugins")
             else:
-                return self.config.get(key, None)
+                return plugin_dir
 
         # Normal logic
-        return self.config.get(key, None)
+        return self.config.get(key, default_value)
 
     def get_all_config(self) -> Dict[str, Any]:
         """Get all configuration values.
@@ -118,9 +118,11 @@ class ConfigManager:
         # Done with bootstrap
         self.needs_bootstrap = False
 
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config(self, use_bootstrap: bool) -> Dict[str, Any]:
         """Internal: Load configuration based on the SAGEWORKS_CONFIG environment variable.
 
+        Args:
+            use_bootstrap (bool): If True, bootstrap the configuration if needed.
         Returns:
             Dict[str, Any]: Configuration dictionary.
         """
@@ -128,8 +130,8 @@ class ConfigManager:
         # Load site_config_path from environment variable
         self.site_config_path = os.environ.get("SAGEWORKS_CONFIG")
         if self.site_config_path is None:
-            if self.interactive:
-                self.log.warning("SAGEWORKS_CONFIG ENV var not set. [Interactive] bootstrap configuration...")
+            if use_bootstrap:
+                self.log.warning("SAGEWORKS_CONFIG ENV var not set. Loading Bootstrap config...")
                 return self._load_bootstrap_config()
             else:
                 self.log.warning("SAGEWORKS_CONFIG ENV var not set. Loading Default config...")
@@ -272,7 +274,6 @@ if __name__ == "__main__":
     os.environ.pop("SAGEWORKS_CONFIG", None)
 
     # Add the SAGEWORKS_BUCKET and REDIS_HOST to the ENV vars
-    os.environ["SAGEWORKS_BUCKET"] = "ideaya-sageworks-bucket"
-    os.environ["REDIS_HOST"] = "sageworksredis.qo8vb5.0001.use1.cache.amazonaws.com"
+    os.environ["SAGEWORKS_BUCKET"] = "sandbox-sageworks-artifacts"
     cm = ConfigManager()
     pprint(cm.get_all_config())
