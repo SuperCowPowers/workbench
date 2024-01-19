@@ -34,7 +34,9 @@ class MetricsComparisonMarkdown(ComponentInterface):
 
         # Keys
         top_level_details = {
-            key: value for key, value in model_details.items() if key in ['uuid', 'input', 'sageworks_tags', 'model_type', 'version', 'description']
+            key: value
+            for key, value in model_details.items()
+            if key in ["uuid", "input", "sageworks_tags", "model_type", "version", "description"]
         }
 
         # FIXME: Remove this later: Add the model info to the top level details
@@ -64,7 +66,7 @@ class MetricsComparisonMarkdown(ComponentInterface):
 
             # Add to markdown string
             markdown += f"**{key}:** {value_str}  \n"
-        
+
         # Grab the Metrics from the model details
         metrics = model_details.get("model_metrics")
         if metrics is None:
