@@ -17,10 +17,6 @@ from sageworks.aws_service_broker.aws_service_connectors.model_registry import M
 from sageworks.aws_service_broker.aws_service_connectors.endpoints import Endpoints
 
 
-# SageWorks Logger
-log = logging.getLogger("sageworks")
-
-
 # Enumerated types for SageWorks Meta Requests
 class ServiceCategory(Enum):
     """Enumerated Types for SageWorks Meta Requests"""
@@ -38,14 +34,15 @@ class ServiceCategory(Enum):
 class AWSServiceBroker:
     """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
 
-    # Note: This database_scope is a list of databases that we want to pull metadata from
-    #       At some point, we should pull this from a config file.
-    database_scope = ["sageworks", "sagemaker_featurestore"]
-
     def __new__(cls):
         """AWSServiceBroker Singleton Pattern"""
         if not hasattr(cls, "instance"):
-            log.info("Creating the AWSServiceBroker Singleton...")
+            # Initialize class attributes here
+            cls.log = logging.getLogger("sageworks")
+            # Note: This database_scope is a list of databases that we want to pull metadata from
+            #       At some point, we should pull this from a config file.
+            cls.database_scope = ["sageworks", "sagemaker_featurestore"]
+            cls.log.info("Creating the AWSServiceBroker Singleton...")
             cls.instance = super(AWSServiceBroker, cls).__new__(cls)
 
             # Class Initialization
