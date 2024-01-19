@@ -23,7 +23,9 @@ def update_plugin_table(app: Dash):
         models = aws_broker_data["MODELS"]
 
         # Parse metrics from JSON strings into new columns with floats
-        models["RMSE"] = models[models["Model Type"] == "regressor"]["Model Metrics"].apply(lambda x: get_reg_metric(x, "RMSE"))
+        models["RMSE"] = models[models["Model Type"] == "regressor"]["Model Metrics"].apply(
+            lambda x: get_reg_metric(x, "RMSE")
+        )
         models["ROCAUC_0"] = models[models["Model Type"] == "classifier"]["Model Metrics"].apply(
             lambda x: get_class_metric(x, 0, "roc_auc")
         )
