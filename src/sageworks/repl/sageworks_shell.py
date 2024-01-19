@@ -54,10 +54,10 @@ class SageWorksPrompt(Prompts):
 class SageWorksShell:
     def __init__(self):
         # Check the SageWorks config
-        self.cm = ConfigManager(use_bootstrap=True)
-        if self.cm.needs_bootstrap:
+        self.cm = ConfigManager()
+        if not self.cm.config_okay():
             # Invoke Onboarding Procedure
-            cprint("yellow", "Bootstrap SageWorks Config Detected...running onboarding procedure...")
+            cprint("yellow", "SageWorks Config incomplete...running onboarding procedure...")
             self.onboard()
 
         # Perform AWS connection test and other checks

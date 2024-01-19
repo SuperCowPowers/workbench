@@ -10,16 +10,28 @@ from sageworks.utils.license_manager import LicenseManager
 
 
 class ConfigManager:
-    def __init__(self, use_bootstrap: bool = False):
-        """Initialize the ConfigManager
+    """A Singleton Configuration Manager Class"""
 
-        Args:
-            interactive (bool, optional): If True, prompt the user for configuration values. Defaults to False.
-        """
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        """Create a new instance of the class if it doesn't exist, else return the existing instance."""
+        if cls._instance is None:
+            cls._instance = super(ConfigManager, cls).__new__(cls)
+            # Initialize the instance
+            cls._instance.__initialized = False
+        return cls._instance
+
+    def __init__(self):
+        """Initialize the ConfigManager as a singleton."""
+        if self.__initialized:
+            return
+
         self.log = logging.getLogger("sageworks")
         self.site_config_path = None
-        self.needs_bootstrap = False
-        self.config = self._load_config(use_bootstrap)
+        self.using_default_config = False
+        self.config = self._load_config()
+        self.__initialized = True
 
     def get_config(self, key: str, default_value: Any = None) -> Any:
         """Get a configuration value by key.
@@ -124,14 +136,9 @@ class ConfigManager:
         with open(self.site_config_path, "w") as file:
             json.dump(site_config, file, indent=4)
 
-        # Done with bootstrap
-        self.needs_bootstrap = False
-
-    def _load_config(self, use_bootstrap: bool) -> Dict[str, Any]:
+    def _load_config(self) -> Dict[str, Any]:
         """Internal: Load configuration based on the SAGEWORKS_CONFIG environment variable.
 
-        Args:
-            use_bootstrap (bool): If True, bootstrap the configuration if needed.
         Returns:
             Dict[str, Any]: Configuration dictionary.
         """
@@ -139,12 +146,8 @@ class ConfigManager:
         # Load site_config_path from environment variable
         self.site_config_path = os.environ.get("SAGEWORKS_CONFIG")
         if self.site_config_path is None:
-            if use_bootstrap:
-                self.log.warning("SAGEWORKS_CONFIG ENV var not set. Loading Bootstrap config...")
-                return self._load_bootstrap_config()
-            else:
-                self.log.warning("SAGEWORKS_CONFIG ENV var not set. Loading Default config...")
-                return self._load_default_config()
+            self.log.warning("SAGEWORKS_CONFIG ENV var not set")
+            return self._load_default_config()
 
         # Load configuration from AWS Parameter Store
         if self.site_config_path == "parameter_store":
@@ -152,7 +155,7 @@ class ConfigManager:
                 self.log.info("Loading site configuration from AWS Parameter Store...")
                 return self.get_config_from_aws_parameter_store()
             except Exception:
-                self.log.error("Failed to load config from AWS Parameter Store. Loading Default config...")
+                self.log.error("Failed to load config from AWS Parameter Store")
                 return self._load_default_config()
 
         # Load site specified configuration file
@@ -161,18 +164,32 @@ class ConfigManager:
             with open(self.site_config_path, "r") as file:
                 return json.load(file)
         except (FileNotFoundError, json.JSONDecodeError):
-            self.log.error(f"Failed to load config from {self.site_config_path}. Loading Default config...")
+            self.log.error(f"Failed to load config from {self.site_config_path}")
             return self._load_default_config()
 
-    def _load_bootstrap_config(self) -> Dict[str, Any]:
+    @staticmethod
+    def _load_bootstrap_config() -> Dict[str, Any]:
         """Internal: Load the bootstrap configuration from the package resources.
 
         Returns:
             Dict[str, Any]: Bootstrap configuration dictionary.
         """
-        self.needs_bootstrap = True
-        with resources.open_text("sageworks.resources", "bootstrap_config.json") as file:
-            return json.load(file)
+        bootstrap_config = {
+            "AWS_PROFILE": "change_me",
+            "SAGEWORKS_BUCKET": "change_me",
+            "REDIS_HOST": "change_me_optional:localhost",
+            "REDIS_PORT": "change_me_optional:6379",
+            "REDIS_PASSWORD": "change_me_optional:",
+            "SAGEWORKS_ROLE": "SageWorks-ExecutionRole",
+            "SAGEWORKS_FEATURES": {
+                "plugins": "true",
+                "experimental": "false",
+                "large_meta_data": "false",
+                "enterprise": "false",
+            },
+            "SAGEWORKS_API_KEY": "change_me_optional:open_source",
+        }
+        return bootstrap_config
 
     def _load_default_config(self) -> Dict[str, Any]:
         """Internal: Load default configuration and combine with any existing environment variables.
@@ -180,15 +197,25 @@ class ConfigManager:
         Returns:
             Dict[str, Any]: Configuration dictionary.
         """
+        self.using_default_config = True
+        self.log.warning("Loading default config and pulling ENV vars...")
         config = {
             "SAGEWORKS_ROLE": "SageWorks-ExecutionRole",
             "SAGEWORKS_PLUGINS": "package",
             "SAGEWORKS_API_KEY": self.open_source_api_key(),
         }
         for key, value in os.environ.items():
-            if key.startswith("SAGEWORKS_") or key.startswith("REDIS_"):
+            if key.startswith("SAGEWORKS_") or key.startswith("REDIS_") or key == "AWS_PROFILE":
                 config[key] = value
         return config
+
+    def config_okay(self) -> bool:
+        """Returns True if the configuration is okay."""
+        required_keys = ["SAGEWORKS_ROLE", "SAGEWORKS_BUCKET", "SAGEWORKS_API_KEY"]
+        for key in required_keys:
+            if key not in self.config:
+                return False
+        return True
 
     def get_api_key_info(self) -> Dict[str, Any]:
         """Get the API Key information from the configuration.
@@ -281,8 +308,20 @@ if __name__ == "__main__":
 
     # Unset SAGEWORKS_CONFIG
     os.environ.pop("SAGEWORKS_CONFIG", None)
+    ConfigManager._instance = None  # We need to reset the singleton instance for testing
 
     # Add the SAGEWORKS_BUCKET and REDIS_HOST to the ENV vars
-    os.environ["SAGEWORKS_BUCKET"] = "sandbox-sageworks-artifacts"
+    os.environ["SAGEWORKS_BUCKET"] = "sandbox-from-env"
     cm = ConfigManager()
     pprint(cm.get_all_config())
+
+    # Test set_config()
+    cm.set_config("SAGEWORKS_BUCKET", "sandbox-from-set_config")
+    cm_new = ConfigManager()
+    pprint(cm_new.get_all_config())
+
+    # Test not having enough config
+    ConfigManager._instance = None  # We need to reset the singleton instance for testing
+    os.environ.pop("SAGEWORKS_BUCKET", None)
+    cm = ConfigManager()
+    print(cm.config_okay())

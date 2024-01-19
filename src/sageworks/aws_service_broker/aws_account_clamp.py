@@ -39,8 +39,8 @@ class AWSAccountClamp:
 
             # Pull in our config from the config manager
             cls.cm = ConfigManager()
-            if cls.cm.needs_bootstrap:
-                cls.log.error("SageWorks Configuration Requires Bootstrapping...")
+            if not cls.cm.config_okay():
+                cls.log.error("SageWorks Configuration Incomplete...")
                 cls.log.error("Run the 'sageworks' command and follow the prompts...")
                 raise FatalConfigError()
             cls.role_name = cls.cm.get_config("SAGEWORKS_ROLE")
