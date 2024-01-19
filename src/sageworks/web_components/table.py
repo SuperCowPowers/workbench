@@ -21,7 +21,7 @@ class Table(ComponentInterface):
         row_select=False,
         max_height: int = 200,
         fixed_headers: bool = True,
-        **kwargs
+        **kwargs,
     ) -> dash_table.DataTable:
         """Create a DataTable Component without any data.
         Args:
@@ -71,7 +71,7 @@ class Table(ComponentInterface):
             },
             style_data_conditional=[{"if": {"column_id": "Health"}, "fontSize": 16, "textAlign": "left"}],
             markdown_options={"html": True},
-            **kwargs
+            **kwargs,
         )
         return table
 
