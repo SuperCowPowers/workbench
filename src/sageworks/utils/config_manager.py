@@ -18,8 +18,7 @@ class ConfigManager:
         """Create a new instance of the class if it doesn't exist, else return the existing instance."""
         if cls._instance is None:
             cls._instance = super(ConfigManager, cls).__new__(cls)
-            # Initialize the instance
-            cls._instance.__initialized = False
+            cls._instance.__initialized = False  # Gets initialized in __init__
         return cls._instance
 
     def __init__(self):

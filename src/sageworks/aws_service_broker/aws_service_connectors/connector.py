@@ -10,18 +10,29 @@ from sageworks.utils.aws_utils import list_tags_with_throttle
 
 
 class Connector(ABC):
-    # Class attributes
-    log = logging.getLogger("sageworks")
+    """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
 
-    # Set up our Boto3 and SageMaker Session and SageMaker Client
-    aws_account_clamp = AWSAccountClamp()
-    boto_session = aws_account_clamp.boto_session()
-    sm_session = aws_account_clamp.sagemaker_session(boto_session)
-    sm_client = aws_account_clamp.sagemaker_client(boto_session)
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        """Create a new instance of the class if it doesn't exist, else return the existing instance."""
+        if cls._instance is None:
+            cls._instance = super(Connector, cls).__new__(cls)
+            cls._instance.__initialized = False  # Gets initialized in __init__
+        return cls._instance
 
     def __init__(self):
-        """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
+        """Initialize the ConfigManager as a singleton."""
+        if self.__initialized:
+            return
+
+        # Initializing class attributes
         self.log = logging.getLogger("sageworks")
+        self.aws_account_clamp = AWSAccountClamp()
+        self.boto_session = self.aws_account_clamp.boto_session()
+        self.sm_session = self.aws_account_clamp.sagemaker_session(self.boto_session)
+        self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto_session)
+        self.__initialized = True
 
     @abstractmethod
     def check(self) -> bool:
