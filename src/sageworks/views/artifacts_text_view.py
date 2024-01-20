@@ -147,7 +147,7 @@ class ArtifactsTextView(View):
         if "sageworks" in data_catalog:
             for name, info in data_catalog["sageworks"].items():  # Just the sageworks database
                 # Get the size of the S3 Storage Object(s)
-                """ Memory Tests
+                """Memory Tests
                 size = self.aws_broker.get_s3_object_sizes(
                     ServiceCategory.DATA_SOURCES_S3,
                     info["StorageDescriptor"]["Location"],
