@@ -16,41 +16,43 @@ from sageworks.utils.config_manager import ConfigManager
 class Artifact(ABC):
     """Artifact: Abstract Base Class for all Artifact classes in SageWorks"""
 
-    # Class attributes
-    log = logging.getLogger("sageworks")
-
-    # Set up our Boto3 and SageMaker Session and SageMaker Client
-    aws_account_clamp = AWSAccountClamp()
-    boto_session = aws_account_clamp.boto_session()
-    sm_session = aws_account_clamp.sagemaker_session(boto_session)
-    sm_client = aws_account_clamp.sagemaker_client(boto_session)
-    aws_region = aws_account_clamp.region
-
-    # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
-    aws_broker = AWSServiceBroker()
-
-    # Grab our SageWorks Bucket from ENV
-    cm = ConfigManager()
-    sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
-    if sageworks_bucket is None:
-        log = logging.getLogger("sageworks")
-        log.critical("Could not find ENV var for SAGEWORKS_BUCKET!")
-        sys.exit(1)
-
-    # Setup Bucket Paths
-    data_sources_s3_path = "s3://" + sageworks_bucket + "/data-sources"
-    feature_sets_s3_path = "s3://" + sageworks_bucket + "/feature-sets"
-    models_s3_path = "s3://" + sageworks_bucket + "/models"
-    endpoints_s3_path = "s3://" + sageworks_bucket + "/endpoints"
-
-    # Data Cache for Artifacts
-    data_storage = SageWorksCache(prefix="data_storage")
-    temp_storage = SageWorksCache(prefix="temp_storage", expire=300)  # 5 minutes
-    ephemeral_storage = SageWorksCache(prefix="ephemeral_storage", expire=1)  # 1 second
-
     def __init__(self, uuid: str):
-        """Artifact Initialization"""
+        """Initialize the Artifact Base Class
+
+        Args:
+            uuid (str): The UUID of this artifact
+        """
         self.uuid = uuid
+        self.log = logging.getLogger("sageworks")
+
+        # Set up our Boto3 and SageMaker Session and SageMaker Client
+        self.aws_account_clamp = AWSAccountClamp()
+        self.boto_session = self.aws_account_clamp.boto_session()
+        self.sm_session = self.aws_account_clamp.sagemaker_session(self.boto_session)
+        self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto_session)
+        self.aws_region = self.aws_account_clamp.region
+
+        # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
+        self.aws_broker = AWSServiceBroker()
+
+        # Grab our SageWorks Bucket from ENV
+        self.cm = ConfigManager()
+        self.sageworks_bucket = self.cm.get_config("SAGEWORKS_BUCKET")
+        if self.sageworks_bucket is None:
+            self.log = logging.getLogger("sageworks")
+            self.log.critical("Could not find ENV var for SAGEWORKS_BUCKET!")
+            sys.exit(1)
+
+        # Setup Bucket Paths
+        self.data_sources_s3_path = "s3://" + self.sageworks_bucket + "/data-sources"
+        self.feature_sets_s3_path = "s3://" + self.sageworks_bucket + "/feature-sets"
+        self.models_s3_path = "s3://" + self.sageworks_bucket + "/models"
+        self.endpoints_s3_path = "s3://" + self.sageworks_bucket + "/endpoints"
+
+        # Data Cache for Artifacts
+        self.data_storage = SageWorksCache(prefix="data_storage")
+        self.temp_storage = SageWorksCache(prefix="temp_storage", expire=300)  # 5 minutes
+        self.ephemeral_storage = SageWorksCache(prefix="ephemeral_storage", expire=1)  # 1 second
 
     def __post_init__(self):
         """Artifact Post Initialization"""

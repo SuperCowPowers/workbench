@@ -10,18 +10,17 @@ from sageworks.utils.aws_utils import list_tags_with_throttle
 
 
 class Connector(ABC):
-    # Class attributes
-    log = logging.getLogger("sageworks")
-
-    # Set up our Boto3 and SageMaker Session and SageMaker Client
-    aws_account_clamp = AWSAccountClamp()
-    boto_session = aws_account_clamp.boto_session()
-    sm_session = aws_account_clamp.sagemaker_session(boto_session)
-    sm_client = aws_account_clamp.sagemaker_client(boto_session)
+    """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
 
     def __init__(self):
-        """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
+        """Initialize the Connector Base Class"""
+
+        # Initializing class attributes
         self.log = logging.getLogger("sageworks")
+        self.aws_account_clamp = AWSAccountClamp()
+        self.boto_session = self.aws_account_clamp.boto_session()
+        self.sm_session = self.aws_account_clamp.sagemaker_session(self.boto_session)
+        self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto_session)
 
     @abstractmethod
     def check(self) -> bool:
