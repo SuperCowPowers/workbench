@@ -23,8 +23,8 @@ class ServiceCategory(Enum):
 
     INCOMING_DATA_S3 = auto()
     GLUE_JOBS = auto()
-    DATA_SOURCES_S3 = auto()
-    FEATURE_SETS_S3 = auto()
+    # DATA_SOURCES_S3 = auto()  Memory Tests
+    # FEATURE_SETS_S3 = auto()  Memory Tests
     DATA_CATALOG = auto()
     FEATURE_STORE = auto()
     MODELS = auto()
@@ -73,8 +73,8 @@ class AWSServiceBroker:
 
         # Pull in AWS Service Connectors
         cls.incoming_data_s3 = S3Bucket(cls.incoming_data_bucket)
-        cls.data_sources_s3 = S3Bucket(cls.data_sources_bucket)
-        cls.feature_sets_s3 = S3Bucket(cls.feature_sets_bucket)
+        # cls.data_sources_s3 = S3Bucket(cls.data_sources_bucket)  Memory Tests
+        # cls.feature_sets_s3 = S3Bucket(cls.feature_sets_bucket)  Memory Tests
         cls.glue_jobs = GlueJobs()
         cls.data_catalog = DataCatalog(database_scope)
         cls.feature_store = FeatureStore()
@@ -94,8 +94,8 @@ class AWSServiceBroker:
         cls.connection_map = {
             ServiceCategory.INCOMING_DATA_S3: cls.incoming_data_s3,
             ServiceCategory.GLUE_JOBS: cls.glue_jobs,
-            ServiceCategory.DATA_SOURCES_S3: cls.data_sources_s3,
-            ServiceCategory.FEATURE_SETS_S3: cls.feature_sets_s3,
+            # ServiceCategory.DATA_SOURCES_S3: cls.data_sources_s3,  Memory Tests
+            # ServiceCategory.FEATURE_SETS_S3: cls.feature_sets_s3,  Memory Tests
             ServiceCategory.DATA_CATALOG: cls.data_catalog,
             ServiceCategory.FEATURE_STORE: cls.feature_store,
             ServiceCategory.MODELS: cls.model_registry,
@@ -224,11 +224,13 @@ if __name__ == "__main__":
     incoming_data_size = aws_broker.get_s3_object_sizes(ServiceCategory.INCOMING_DATA_S3)
     print(f"Incoming Data Size: {incoming_data_size} Bytes")
 
+    """Memory Tests
     data_sources_size = aws_broker.get_s3_object_sizes(ServiceCategory.DATA_SOURCES_S3)
     print(f"Data Sources Size: {data_sources_size} Bytes")
 
     abalone_size = aws_broker.get_s3_object_sizes(ServiceCategory.DATA_SOURCES_S3, prefix="abalone_data")
     print(f"Abalone Size: {abalone_size} Bytes")
+    """
 
     # Wait for any open threads to finish
     aws_broker.shutdown()
