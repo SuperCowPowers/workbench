@@ -89,7 +89,7 @@ class SageworksCoreStack(Stack):
             )
         )
 
-        # Policy statement for ECS DescribeServices
+        # ECS DescribeServices
         api_execution_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["ecs:DescribeServices"],
@@ -97,10 +97,18 @@ class SageworksCoreStack(Stack):
             )
         )
 
-        # Third policy statement for ELB DescribeLoadBalancers
+        # ELB DescribeLoadBalancers
         api_execution_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["elasticloadbalancing:DescribeLoadBalancers"],
+                resources=["*"],
+            )
+        )
+
+        # Getting Athena Workgroup
+        api_execution_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=["athena:GetWorkGroup"],
                 resources=["*"],
             )
         )
