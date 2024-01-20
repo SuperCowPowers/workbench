@@ -44,7 +44,7 @@ my_data = DataSource(source_path, name="abalone_glue_test")
 ```
 
 ## Glue Job Local Testing
-Glue Power without the Pain. SageWorks manages the AWS Execution Role, so local API and Glue Jobs will have the same permissions/access. Also using the same Code as your notebooks or scripts makes createing and testing Glue Jobs a breeze.
+Glue Power without the Pain. SageWorks manages the AWS Execution Role, so local API and Glue Jobs will have the same permissions/access. Also using the same Code as your notebooks or scripts makes creating and testing Glue Jobs a breeze.
 
 ```shell
 export SAGEWORKS_CONFIG=<your config>  # Only if not already set up
