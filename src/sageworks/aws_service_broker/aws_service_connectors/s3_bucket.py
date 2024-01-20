@@ -66,7 +66,6 @@ class S3Bucket(Connector):
 
 if __name__ == "__main__":
     """Exercises the S3Bucket Class"""
-    from pprint import pprint
     from sageworks.utils.config_manager import ConfigManager
 
     # Grab out incoming data bucket for something to test with
@@ -86,10 +85,6 @@ if __name__ == "__main__":
 
     # Get the size of all the objects in this bucket
     print(f"Bucket Size: {s3_bucket.bucket_size()}")
-
-    # Get additional info for a specific file
-    my_file_info = s3_bucket.file_info(file_name)
-    pprint(my_file_info)
 
     # Test the functionality for a bucket that doesn't exist
     not_exist_bucket = "s3://non_existent_bucket"

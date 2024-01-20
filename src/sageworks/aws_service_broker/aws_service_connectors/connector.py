@@ -12,19 +12,8 @@ from sageworks.utils.aws_utils import list_tags_with_throttle
 class Connector(ABC):
     """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
 
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        """Create a new instance of the class if it doesn't exist, else return the existing instance."""
-        if cls._instance is None:
-            cls._instance = super(Connector, cls).__new__(cls)
-            cls._instance.__initialized = False  # Gets initialized in __init__
-        return cls._instance
-
     def __init__(self):
-        """Initialize the ConfigManager as a singleton."""
-        if self.__initialized:
-            return
+        """Initialize the Connector Base Class"""
 
         # Initializing class attributes
         self.log = logging.getLogger("sageworks")
@@ -32,7 +21,6 @@ class Connector(ABC):
         self.boto_session = self.aws_account_clamp.boto_session()
         self.sm_session = self.aws_account_clamp.sagemaker_session(self.boto_session)
         self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto_session)
-        self.__initialized = True
 
     @abstractmethod
     def check(self) -> bool:
