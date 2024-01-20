@@ -20,7 +20,6 @@ from sageworks.algorithms.sql import (
     correlations,
 )
 from sageworks.utils.redis_cache import CustomEncoder
-from sageworks.utils.trace_calls import trace_calls
 from sageworks.utils.aws_utils import sageworks_meta_from_catalog_table_meta
 
 
@@ -99,7 +98,6 @@ class AthenaSource(DataSourceAbstract):
         arn = f"arn:aws:glue:{region}:{account_id}:table/{self.get_database()}/{self.get_table_name()}"
         return arn
 
-    @trace_calls
     def sageworks_meta(self) -> dict:
         """Get the SageWorks specific metadata for this Artifact"""
 

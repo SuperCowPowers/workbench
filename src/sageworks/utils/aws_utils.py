@@ -13,9 +13,6 @@ from pathlib import Path
 import posixpath
 from sagemaker.session import Session as SageSession
 
-# SageWorks Imports
-from sageworks.utils.trace_calls import trace_calls
-
 # SageWorks Logger
 log = logging.getLogger("sageworks")
 
@@ -36,7 +33,6 @@ def client_error_info(err: botocore.exceptions.ClientError):
     log.error(f"Request ID: {request_id}")
 
 
-@trace_calls
 def list_tags_with_throttle(arn: str, sm_session: SageSession) -> dict:
     """A Wrapper around SageMaker's list_tags method that handles throttling
     Args:
