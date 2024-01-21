@@ -7,7 +7,7 @@ SageWorks make creating, testing, and debugging of AWS Glue Jobs easy. The exact
 
 Setting up a AWS Glue Job that uses SageWorks is straight forward. SageWorks can be 'installed' on AWS Glue via the `--additional-python-modules` parameter and then you can use the Sageworks API just like normal. 
 
-<img alt="sageworks_repl" style="float: right; width: 348px; padding-left: 10px; border: 1px solid grey;""
+<img alt="sageworks_repl" style="float: right; width: 348px; padding-left: 12px; border: 1px solid grey;""
 src="https://github.com/SuperCowPowers/sageworks/assets/4806709/64b72d12-e5d6-411a-9ce5-a64926afceea">
 
 Here are the settings and a screen shot to guide you. Please feel free to contact SageWorks support if you need any help with setting up Glue Jobs.
@@ -19,9 +19,12 @@ Here are the settings and a screen shot to guide you. Please feel free to contac
 - Number of Workers: 2
 - Job Parameters
   - --additional-python-modules: sageworks>=0.4.5
-  - --sageworks-bucket: <your bucket\>
+  - --sageworks-bucket: <your sageworks bucket\>
 
 ## SageWorks Glue Example
+Anyone familiar with a typical Glue Job should be pleasantly surpised by how simple the example below is. Also SageWorks allows you to test Glue Jobs locally using the same code that you use for script and Notebooks (see [Glue Testing](#glue-job-local-testing))
+!!!tip "Glue Job Arguments"
+    AWS Glue Jobs take arguments in the form of **Job Parameters** (see screenshot above). There's a SageWorks utility function `glue_args_to_dict` that turns these Job Parameters into a nice dictionary for ease of use.
 
 ```py title="examples/glue_hello_world.py"
 import sys
@@ -41,6 +44,37 @@ cm.set_config("SAGEWORKS_BUCKET", glue_args["--sageworks-bucket"])
 # Create a new Data Source from an S3 Path
 source_path = "s3://sageworks-public-data/common/abalone.csv"
 my_data = DataSource(source_path, name="abalone_glue_test")
+```
+
+## Glue Example 2
+This example takes two 'Job Parameters'
+
+- --sageworks-bucket : <your sageworks bucket\>
+- --input-s3-path : <your S3 input path\>
+
+The example will convert all CSV files in an S3 bucket/prefix and load them up as DataSources in SageWorks.
+
+```py title="examples/glue_load_s3_bucket.py"
+import sys
+
+# SageWorks Imports
+from sageworks.api.data_source import DataSource
+from sageworks.utils.config_manager import ConfigManager
+from sageworks.utils.glue_utils import glue_args_to_dict, list_s3_files
+
+# Convert Glue Job Args to a Dictionary
+glue_args = glue_args_to_dict(sys.argv)
+
+# Set the SAGEWORKS_BUCKET for the ConfigManager
+cm = ConfigManager()
+cm.set_config("SAGEWORKS_BUCKET", glue_args["--sageworks-bucket"])
+
+# List all the CSV files in the given S3 Path
+input_s3_path = glue_args["--input-s3-path"]
+for input_file in list_s3_files(input_s3_path):
+
+    # Note: If we don't specify a name, one will be 'auto-generated'
+    my_data = DataSource(input_file, name=None)
 ```
 
 ## Glue Job Local Testing
