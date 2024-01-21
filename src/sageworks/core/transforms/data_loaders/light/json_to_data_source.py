@@ -5,7 +5,6 @@ import pandas as pd
 # Local imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.transforms.pandas_transforms.pandas_to_data import PandasToData
-from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 
 
 class JSONToDataSource(Transform):

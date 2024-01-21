@@ -5,7 +5,6 @@ import awswrangler as wr
 # Local imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.transforms.pandas_transforms.pandas_to_data import PandasToData
-from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.utils.pandas_utils import convert_object_columns
 
 
