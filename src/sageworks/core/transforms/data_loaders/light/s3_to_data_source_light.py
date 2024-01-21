@@ -78,12 +78,10 @@ class S3ToDataSourceLight(Transform):
         self.log.info(f"{self.input_uuid} -->  DataSource: {self.output_uuid} Complete!")
 
     def post_transform(self, **kwargs):
-        """Post-Transform: Calling onboard() for the DataSource"""
-        self.log.info("Post-Transform: Calling onboard() for the DataSource...")
+        """Post-Transform"""
+        self.log.info("Post-Transform: S3 to DataSource...")
 
-        # Okay, lets onboard this data source
-        output_data_source = DataSourceFactory(self.output_uuid, force_refresh=True)
-        output_data_source.onboard()
+        # Note: We do not need to onboard because PandasToData already onboarded
 
 
 if __name__ == "__main__":

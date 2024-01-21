@@ -96,19 +96,23 @@ class DataSourceAbstract(Artifact):
                 self._display_columns = list(set(self._display_columns) + set(["outlier_group"]))
 
             # Set the display columns in the metadata
-            self.set_display_columns(self._display_columns)
+            self.set_display_columns(self._display_columns, onboard=False)
 
         # Return the display columns
         return self._display_columns
 
-    def set_display_columns(self, display_columns: list[str]):
+    def set_display_columns(self, display_columns: list[str], onboard: bool = True):
         """Set the display columns for this Data Source
+
         Args:
             display_columns (list[str]): The display columns for this Data Source
+            onboard (bool): Onboard the Data Source after setting the display columns (default: True)
         """
+        self.log.important(f"Setting Display Columns...{display_columns}")
         self._display_columns = display_columns
         self.upsert_sageworks_meta({"sageworks_display_columns": self._display_columns})
-        self.onboard()
+        if onboard:
+            self.onboard()
 
     def num_display_columns(self) -> int:
         """Return the number of display columns for this Data Source"""
