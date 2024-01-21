@@ -1,5 +1,6 @@
 """Transform: Base Class for all transforms within SageWorks
               Inherited Classes must implement the abstract transform_impl() method"""
+import sys
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import final
@@ -7,7 +8,7 @@ import logging
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.config_manager import ConfigManager
+from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
 
 class TransformInput(Enum):
@@ -52,6 +53,10 @@ class Transform(ABC):
 
         # Grab our SageWorks Bucket
         cm = ConfigManager()
+        if not cm.config_okay():
+            self.log.error("SageWorks Configuration Incomplete...")
+            self.log.error("Run the 'sageworks' command and follow the prompts...")
+            raise FatalConfigError()
         self.sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
         self.data_sources_s3_path = "s3://" + self.sageworks_bucket + "/data-sources"
         self.feature_sets_s3_path = "s3://" + self.sageworks_bucket + "/feature-sets"

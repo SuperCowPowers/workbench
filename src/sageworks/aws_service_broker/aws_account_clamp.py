@@ -18,14 +18,7 @@ import logging
 
 # SageWorks Imports
 from sageworks.utils.license_manager import LicenseManager
-from sageworks.utils.config_manager import ConfigManager
-
-
-class FatalConfigError(Exception):
-    """Exception raised for errors in the configuration."""
-
-    def __init__(self):
-        sys.exit(1)
+from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
 
 class AWSAccountClamp:

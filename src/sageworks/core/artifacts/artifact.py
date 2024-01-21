@@ -10,7 +10,7 @@ from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.utils.aws_utils import list_tags_with_throttle, dict_to_aws_tags, sagemaker_delete_tag
-from sageworks.utils.config_manager import ConfigManager
+from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
 
 class Artifact(ABC):
@@ -35,8 +35,14 @@ class Artifact(ABC):
         # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
         self.aws_broker = AWSServiceBroker()
 
-        # Grab our SageWorks Bucket from ENV
+        # Config Manager Checks
         self.cm = ConfigManager()
+        if not self.cm.config_okay():
+            self.log.error("SageWorks Configuration Incomplete...")
+            self.log.error("Run the 'sageworks' command and follow the prompts...")
+            raise FatalConfigError()
+
+        # Grab our SageWorks Bucket from Config
         self.sageworks_bucket = self.cm.get_config("SAGEWORKS_BUCKET")
         if self.sageworks_bucket is None:
             self.log = logging.getLogger("sageworks")

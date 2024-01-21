@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import platform
 import logging
 import importlib.resources as resources
@@ -7,6 +8,13 @@ from typing import Any, Dict
 
 # SageWorks imports
 from sageworks.utils.license_manager import LicenseManager
+
+
+class FatalConfigError(Exception):
+    """Exception raised for errors in the configuration."""
+
+    def __init__(self):
+        sys.exit(1)
 
 
 class ConfigManager:

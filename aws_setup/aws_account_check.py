@@ -1,11 +1,10 @@
 """AWSAccountCheck runs a bunch of tests/checks to ensure SageWorks AWS Setup"""
-import os
 import sys
 import logging
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.config_manager import ConfigManager
+from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
 
 class AWSAccountCheck:
@@ -20,6 +19,11 @@ class AWSAccountCheck:
 
         # Grab our SageWorks Bucket
         cm = ConfigManager()
+        if not cm.config_okay():
+            self.log.error("SageWorks Configuration Incomplete...")
+            self.log.error("Run the 'sageworks' command and follow the prompts...")
+            raise FatalConfigError()
+
         self.sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
 
     def check_s3_bucket_subfolders(self):
