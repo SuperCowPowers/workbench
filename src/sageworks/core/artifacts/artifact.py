@@ -16,8 +16,6 @@ from sageworks.utils.config_manager import ConfigManager
 class Artifact(ABC):
     """Artifact: Abstract Base Class for all Artifact classes in SageWorks"""
 
-    log = logging.getLogger("sageworks")
-
     def __init__(self, uuid: str):
         """Initialize the Artifact Base Class
 
@@ -25,6 +23,7 @@ class Artifact(ABC):
             uuid (str): The UUID of this artifact
         """
         self.uuid = uuid
+        self.log = logging.getLogger("sageworks")
 
         # Set up our Boto3 and SageMaker Session and SageMaker Client
         self.aws_account_clamp = AWSAccountClamp()
@@ -104,7 +103,8 @@ class Artifact(ABC):
         clean_uuid = clean_uuid.replace("_", delimiter)
         clean_uuid = clean_uuid.replace("-", delimiter)
         if uuid != clean_uuid:
-            cls.log.warning(f"UUID {uuid} is not compliant. Converting to {clean_uuid}")
+            log = logging.getLogger("sageworks")
+            log.warning(f"UUID {uuid} is not compliant. Converting to {clean_uuid}")
         return clean_uuid
 
     @abstractmethod
