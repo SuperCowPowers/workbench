@@ -5,7 +5,7 @@ import importlib
 from typing import Dict, List, Any
 
 # SageWorks Imports
-from sageworks.utils.config_manager import ConfigManager, FatalConfigError
+from sageworks.utils.config_manager import ConfigManager
 from sageworks.web_components.plugin_interface import PluginInterface as WebPluginInterface
 from sageworks.web_components.plugin_interface import PluginType as WebPluginType
 
@@ -28,14 +28,9 @@ class PluginManager:
             return
 
         self.log = logging.getLogger("sageworks")
-        self.plugins: Dict[str, List[Any]] = {
-            'web_components': [],
-            'transforms': [],
-            'views': [],
-            'pages': []
-        }
+        self.plugins: Dict[str, List[Any]] = {"web_components": [], "transforms": [], "views": [], "pages": []}
         cm = ConfigManager()
-        self.plugin_dir = cm.get_config('SAGEWORKS_PLUGINS')
+        self.plugin_dir = cm.get_config("SAGEWORKS_PLUGINS")
         if not self.plugin_dir:
             self.log.warning("SAGEWORKS_PLUGINS not set. No plugins will be loaded.")
             return
@@ -61,7 +56,7 @@ class PluginManager:
             return
 
         for filename in os.listdir(type_dir):
-            if filename.endswith('.py') and not filename.startswith('_'):
+            if filename.endswith(".py") and not filename.startswith("_"):
                 file_path = os.path.join(type_dir, filename)
                 module_name = filename[:-3]
                 spec = importlib.util.spec_from_file_location(module_name, file_path)
@@ -73,9 +68,8 @@ class PluginManager:
 
                         # Check if the attribute is a class and is defined in the module
                         if isinstance(attr, type) and attr.__module__ == module.__name__:
-
                             # For web components, check if the class is a subclass of WebPluginInterface
-                            if plugin_type == 'web_components' and issubclass(attr, WebPluginInterface):
+                            if plugin_type == "web_components" and issubclass(attr, WebPluginInterface):
                                 self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
                                 self.plugins[plugin_type].append(attr)
                             else:
@@ -103,14 +97,13 @@ class PluginManager:
 
 if __name__ == "__main__":
     """Exercise the PluginManager class"""
-    from pprint import pprint
 
     # Create the class, load plugins, and call various methods
     manager = PluginManager()
-    transforms = manager.get_plugins('web_components')
+    transforms = manager.get_plugins("web_components")
 
     # Get web components for the model view
-    print(manager.get_plugins('web_components', WebPluginType.MODEL))
+    print(manager.get_plugins("web_components", WebPluginType.MODEL))
 
     # Get web components for the endpoint view
-    print(manager.get_plugins('web_components', WebPluginType.ENDPOINT))
+    print(manager.get_plugins("web_components", WebPluginType.ENDPOINT))
