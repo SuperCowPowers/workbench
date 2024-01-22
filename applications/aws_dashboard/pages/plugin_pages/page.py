@@ -8,10 +8,10 @@ from .layout import plugin_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, plugin_loader
+from sageworks.web_components import table
 from sageworks.web_components.plugin_interface import PluginType
 from sageworks.views.model_web_view import ModelWebView
-from sageworks.utils.config_manager import ConfigManager
+from sageworks.utils.plugin_manager import PluginManager
 
 # Register this page with Dash
 register_page(
@@ -36,9 +36,9 @@ components = {
     "plugin_table": models_table,
 }
 
-# Load the plugins from the sageworks_plugins directory
-plugin_dir = ConfigManager().get_config("SAGEWORKS_PLUGINS")
-plugins = plugin_loader.load_plugins_from_dir(plugin_dir, PluginType.CUSTOM)
+# Load any web components plugins of type 'custom'
+pm = PluginManager()
+plugins = pm.get_plugins("web_components", web_plugin_type=PluginType.CUSTOM)
 
 # Add the plugins to the components dictionary
 for plugin in plugins:

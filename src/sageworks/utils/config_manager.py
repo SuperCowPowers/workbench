@@ -54,7 +54,7 @@ class ConfigManager:
         if key == "SAGEWORKS_PLUGINS":
             plugin_dir = self.config.get(key, default_value)
             if plugin_dir in ["package", "", None]:
-                return os.path.join(os.path.dirname(__file__), "../../../applications/aws_dashboard/sageworks_plugins")
+                return os.path.join(os.path.dirname(__file__), "../plugins")
             else:
                 return plugin_dir
 
