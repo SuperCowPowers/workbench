@@ -146,6 +146,19 @@ class PluginManager:
         """
         return [x() for x in self.plugins.get("pages", [])]
 
+    def __repr__(self) -> str:
+        """String representation of the PluginManager state and contents
+
+        Returns:
+            str: String representation of the PluginManager state and contents
+        """
+        summary = "SAGEWORKS_PLUGINS: " + self.plugin_dir + "\n"
+        summary += "Plugins:\n"
+        for plugin_type, plugins in self.plugins.items():
+            for plugin in plugins:
+                summary += f"  {plugin_type}: {plugin.__name__}\n"
+        return summary
+
 
 if __name__ == "__main__":
     """Exercise the PluginManager class"""
