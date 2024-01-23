@@ -21,6 +21,24 @@ Here are the settings and a screen shot to guide you. Please feel free to contac
   - --additional-python-modules: sageworks>=0.4.5
   - --sageworks-bucket: <your sageworks bucket\>
 
+!!! warning "IAM Pass Role"
+    If you'd like for your Data Science Team to be able to create new glue jobs in this way, you will need to have the iam:PassRole permission for SageWorks-ExecutionRole. This allows them to delegate the role to AWS Glue when creating or updating jobs. 
+    
+Add a policy to your user/group like so 
+    
+```
+{
+"Version": "2012-10-17",
+	"Statement": [
+	    {
+	        "Effect": "Allow",
+	        "Action": "iam:PassRole",
+	        "Resource": "arn:aws:iam::<account>:role/SageWorks-ExecutionRole"
+	    }
+	]
+}
+```
+
 ## SageWorks Glue Example
 Anyone familiar with a typical Glue Job should be pleasantly surpised by how simple the example below is. Also SageWorks allows you to test Glue Jobs locally using the same code that you use for script and Notebooks (see [Glue Testing](#glue-job-local-testing))
 !!!tip "Glue Job Arguments"
