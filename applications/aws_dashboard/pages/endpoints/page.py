@@ -46,7 +46,7 @@ components = {
 
 # Load any web components plugins of type 'endpoint'
 pm = PluginManager()
-plugins = pm.get_plugins("web_components", web_plugin_type=PluginType.ENDPOINT)
+plugins = pm.get_web_plugins(web_plugin_type=PluginType.ENDPOINT)
 
 # Add the plugins to the components dictionary
 for plugin in plugins:
