@@ -1,6 +1,7 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 from dash import Dash, page_container, html, dcc
 import dash_bootstrap_components as dbc
+from sageworks.utils.plugin_manager import PluginManager
 
 
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
@@ -22,6 +23,15 @@ app.layout = html.Div(
         page_container,
     ]
 )
+
+# Grab any plugin pages
+pm = PluginManager()
+plugin_pages = pm.get_pages()
+
+# Setup each if the plugin pages (call layout and callbacks internally)
+for page in plugin_pages:
+    page.page_setup(app)
+
 
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
