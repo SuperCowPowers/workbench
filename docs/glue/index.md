@@ -10,7 +10,7 @@ Setting up a AWS Glue Job that uses SageWorks is straight forward. SageWorks can
 <img alt="sageworks_repl" style="float: right; width: 348px; padding-left: 12px; border: 1px solid grey;""
 src="https://github.com/SuperCowPowers/sageworks/assets/4806709/64b72d12-e5d6-411a-9ce5-a64926afceea">
 
-Here are the settings and a screen shot to guide you. Please feel free to contact SageWorks support if you need any help with setting up Glue Jobs.
+Here are the settings and a screen shot to guide you. There are several ways to set up and run Glue Jobs, with either the SageWorks-ExecutionRole or using the SageWorksAPIPolicy. Please feel free to contact SageWorks support if you need any help with setting up Glue Jobs.
 
 - IAM Role: SageWorks-ExecutionRole
 - Type: Spark
@@ -18,26 +18,11 @@ Here are the settings and a screen shot to guide you. Please feel free to contac
 - Worker Type: G.1X
 - Number of Workers: 2
 - Job Parameters
-  - --additional-python-modules: sageworks>=0.4.5
+  - --additional-python-modules: sageworks>=0.4.6
   - --sageworks-bucket: <your sageworks bucket\>
 
-!!! warning "IAM Pass Role"
-    If you'd like for your Data Science Team to be able to create new glue jobs in this way, you will need to have the iam:PassRole permission for SageWorks-ExecutionRole. This allows them to delegate the role to AWS Glue when creating or updating jobs. 
-    
-Add a policy to your user/group like so 
-    
-```
-{
-"Version": "2012-10-17",
-	"Statement": [
-	    {
-	        "Effect": "Allow",
-	        "Action": "iam:PassRole",
-	        "Resource": "arn:aws:iam::<account>:role/SageWorks-ExecutionRole"
-	    }
-	]
-}
-```
+!!! tip "Glue IAM Role Details"
+    If your Glue Jobs already use an existing IAM Role then you can add the `SageWorksAPIPolicy` to that Role to enable the Glue Job to perform SageWorks API Tasks.
 
 ## SageWorks Glue Example
 Anyone familiar with a typical Glue Job should be pleasantly surpised by how simple the example below is. Also SageWorks allows you to test Glue Jobs locally using the same code that you use for script and Notebooks (see [Glue Testing](#glue-job-local-testing))
