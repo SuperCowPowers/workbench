@@ -53,7 +53,7 @@ class PluginPageExample:
         # Register this page with Dash and set up the layout (required)
         register_page(
             __name__,
-            path="/plugin",
+            path="/model_comparison",
             name="SageWorks - Plugin",
             layout=self.page_layout(),
         )
