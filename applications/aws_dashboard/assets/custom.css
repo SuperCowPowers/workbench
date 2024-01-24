@@ -49,12 +49,16 @@
     border: 0 !important;
 }
 
-
 .column,
 .columns {
   width: 100%;
   float: left;
   box-sizing: border-box;
+}
+
+/* Dash Table filter */
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner input:not([type=radio]):not([type=checkbox]){
+  color: white !important;
 }
 
 /* For devices larger than 400px */
