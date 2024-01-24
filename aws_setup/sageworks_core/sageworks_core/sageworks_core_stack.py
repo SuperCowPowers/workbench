@@ -46,7 +46,7 @@ class SageworksCoreStack(Stack):
         # Reference an existing bucket by name
         return s3.Bucket.from_bucket_name(self, id="ExistingArtifactBucket", bucket_name=bucket_name)
 
-    def create_sageworks_managed_policy(self) -> iam.ManagedPolicy:
+    def create_sageworks_api_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for SageWorks"""
         policy_statements = [
             # Policy statement for main Sageworks Bucket and Athena Results
@@ -80,9 +80,9 @@ class SageworksCoreStack(Stack):
 
         return iam.ManagedPolicy(
             self,
-            id="SageWorksManagedPolicy",
+            id="SageWorksAPIPolicy",
             statements=policy_statements,
-            managed_policy_name="SageWorksManagedPolicy",
+            managed_policy_name="SageWorksAPIPolicy",
         )
 
     def create_api_execution_role(self) -> iam.Role:
@@ -112,7 +112,7 @@ class SageworksCoreStack(Stack):
             id=self.sageworks_role_name,
             assumed_by=assumed_by,
             managed_policies=[
-                # For Reading/Writing of the Glue DataCatalog Databases and Tables
+                # For Reading/Writing of the Glue Data Catalog Databases and Tables
                 iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSGlueServiceRole"),
                 # For Reading/Writing FeatureStore, Models, and Endpoints
                 iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSageMakerFullAccess"),
@@ -121,7 +121,7 @@ class SageworksCoreStack(Stack):
         )
 
         # Attach the SageWorks managed policy to the role
-        sageworks_managed_policy = self.create_sageworks_managed_policy()
-        api_execution_role.add_managed_policy(sageworks_managed_policy)
+        sageworks_api_policy = self.create_sageworks_api_policy()
+        api_execution_role.add_managed_policy(sageworks_api_policy)
 
         return api_execution_role
