@@ -188,6 +188,7 @@ class ConfigManager:
             "REDIS_PORT": "change_me_optional:6379",
             "REDIS_PASSWORD": "change_me_optional:",
             "SAGEWORKS_ROLE": "SageWorks-ExecutionRole",
+            "SAGEWORKS_PLUGINS": "package",
             "SAGEWORKS_FEATURES": {
                 "plugins": "true",
                 "experimental": "false",
