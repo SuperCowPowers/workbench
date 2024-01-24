@@ -10,7 +10,6 @@ import logging
 from sageworks.web_components import table
 from sageworks.web_components.plugin_interface import PluginType
 from sageworks.utils.plugin_manager import PluginManager
-from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 
 
 class PluginPageExample:
@@ -53,7 +52,7 @@ class PluginPageExample:
         # Register this page with Dash and set up the layout (required)
         register_page(
             __name__,
-            path="/model_comparison",
+            path="/plugin",
             name="SageWorks - Plugin",
             layout=self.page_layout(),
         )
@@ -98,12 +97,11 @@ class PluginPageExample:
 
         @self.app.callback(
             [Output("my_model_table", "columns"), Output("my_model_table", "data")],
-            Input("aws-broker-data", "data"),
+            Input("aws-broker-data", "data"),  # View this as an update trigger
         )
         def models_update(serialized_aws_broker_data):
-            """Return the table data for the Plugin/Models Table"""
-            aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-            models = aws_broker_data["MODELS"]
+            """Grab our view data and update the table"""
+            models = self.my_model_view.view_data()
             models["id"] = range(len(models))
             column_setup_list = table.Table().column_setup(models, markdown_columns=["Model Group"])
             return [column_setup_list, models.to_dict("records")]
