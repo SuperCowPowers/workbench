@@ -130,7 +130,6 @@ class AWSAccountClamp:
         Returns:
             bool: True if running in AWS Glue environment, False otherwise.
         """
-        # Define a set of environment variables typical for AWS Glue
         try:
             import awsglue
             return True
@@ -140,11 +139,6 @@ class AWSAccountClamp:
     @classmethod
     def _session_credentials(cls):
         """Internal: Set up our AWS Session credentials for automatic refresh"""
-
-        # Check if running in AWS Glue and skip role assumption if true
-        if cls.glue_check():
-            cls.log.info("Running inside AWS Glue. Skipping Role Assumption.")
-            return boto3.Session().get_credentials().get_frozen_credentials()
 
         # Assume the SageWorks Execution Role and then pull the credentials
         cls.log.debug("Assuming the SageWorks Execution Role and Refreshing Credentials...")
@@ -165,7 +159,7 @@ class AWSAccountClamp:
 
     @classmethod
     def _init_boto3_session(cls):
-        if cls.is_sageworks_role():
+        if cls.is_sageworks_role() or cls.glue_check():
             return boto3.Session()
 
         refreshable_credentials = RefreshableCredentials.create_from_metadata(
