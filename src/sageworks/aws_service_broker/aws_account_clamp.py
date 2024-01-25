@@ -123,8 +123,27 @@ class AWSAccountClamp:
             raise RuntimeError(msg)
 
     @classmethod
+    def glue_check(cls):
+        """
+        Check if the current execution environment is an AWS Glue job.
+
+        Returns:
+            bool: True if running in AWS Glue environment, False otherwise.
+        """
+        # Define a set of environment variables typical for AWS Glue
+        glue_env_vars = ['AWS_REGION', 'GLUE_JOB_NAME']  # Add more as identified
+
+        # Check if all these environment variables are present
+        return all(var in os.environ for var in glue_env_vars)
+
+    @classmethod
     def _session_credentials(cls):
         """Internal: Set up our AWS Session credentials for automatic refresh"""
+
+        # Check if running in AWS Glue and skip role assumption if true
+        if cls.glue_check():
+            cls.log.debug("Running inside AWS Glue. Skipping Role Assumption.")
+            return boto3.Session().get_credentials().get_frozen_credentials()
 
         # Assume the SageWorks Execution Role and then pull the credentials
         cls.log.debug("Assuming the SageWorks Execution Role and Refreshing Credentials...")
@@ -141,6 +160,7 @@ class AWSAccountClamp:
         }
         cls.log.debug(f"Credentials Refreshed: Expires at {credentials['expiry_time']}")
         return credentials
+
 
     @classmethod
     def _init_boto3_session(cls):
