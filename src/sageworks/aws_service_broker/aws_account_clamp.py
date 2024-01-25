@@ -131,10 +131,11 @@ class AWSAccountClamp:
             bool: True if running in AWS Glue environment, False otherwise.
         """
         # Define a set of environment variables typical for AWS Glue
-        glue_env_vars = ['AWS_REGION', 'GLUE_JOB_NAME']  # Add more as identified
-
-        # Check if all these environment variables are present
-        return all(var in os.environ for var in glue_env_vars)
+        try:
+            import awsglue
+            return True
+        except ImportError:
+            return False
 
     @classmethod
     def _session_credentials(cls):
@@ -142,7 +143,7 @@ class AWSAccountClamp:
 
         # Check if running in AWS Glue and skip role assumption if true
         if cls.glue_check():
-            cls.log.debug("Running inside AWS Glue. Skipping Role Assumption.")
+            cls.log.info("Running inside AWS Glue. Skipping Role Assumption.")
             return boto3.Session().get_credentials().get_frozen_credentials()
 
         # Assume the SageWorks Execution Role and then pull the credentials
