@@ -265,7 +265,7 @@ class ArtifactsTextView(View):
             summary = {
                 "Model Group": latest_model["ModelPackageGroupName"],
                 "Health": health_tags,
-                "Owner": sageworks_meta.get("sageworks_model_owner", "-"),
+                "Owner": sageworks_meta.get("sageworks_owner", "-"),
                 "Model Type": sageworks_meta.get("sageworks_model_type"),
                 "Created": self.datetime_string(latest_model.get("CreationTime")),
                 "Ver": latest_model["ModelPackageVersion"],
