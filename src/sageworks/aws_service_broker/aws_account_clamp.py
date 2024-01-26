@@ -131,7 +131,7 @@ class AWSAccountClamp:
             bool: True if running in AWS Glue environment, False otherwise.
         """
         try:
-            import awsglue
+            import awsglue  # noqa: F401
             return True
         except ImportError:
             return False
@@ -155,7 +155,6 @@ class AWSAccountClamp:
         }
         cls.log.debug(f"Credentials Refreshed: Expires at {credentials['expiry_time']}")
         return credentials
-
 
     @classmethod
     def _init_boto3_session(cls):

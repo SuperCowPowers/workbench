@@ -272,6 +272,9 @@ class Artifact(ABC):
         # Otherwise, return the health tags
         return health_tags.split(":") if health_tags else []
 
+    def set_sageworks_tags(self, tags):
+        self.upsert_sageworks_meta({"sageworks_tags": ":".join(tags)})
+
     def add_sageworks_tag(self, tag, tag_type="user"):
         """Add a tag for this artifact, ensuring no duplicates and maintaining order.
         Args:
