@@ -53,7 +53,6 @@ class AWSServiceBroker:
     @classmethod
     def __class_init__(cls, database_scope):
         """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
-        cls.log = logging.getLogger("sageworks")
 
         # Grab our SageWorks Bucket
         cm = ConfigManager()
