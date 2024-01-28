@@ -28,17 +28,9 @@ class Connector(ABC):
         pass
 
     @abstractmethod
-    def refresh_impl(self):
-        """Abstract Method: Implement the AWS Service Data Refresh"""
+    def refresh(self):
+        """Abstract Method: Implement refresh logic for AWS Service Data"""
         pass
-
-    @final
-    def refresh(self) -> bool:
-        """Refresh data/metadata associated with this service"""
-        # We could do something here to refresh the AWS Session or whatever
-
-        # Call the subclass Refresh method
-        return self.refresh_impl()
 
     @abstractmethod
     def aws_meta(self) -> dict:

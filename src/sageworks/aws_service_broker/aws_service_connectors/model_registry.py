@@ -25,8 +25,8 @@ class ModelRegistry(Connector):
             self.log.critical(f"Error connecting to AWS Model Registry Service: {e}")
             return False
 
-    def refresh_impl(self):
-        """Load/reload the tables in the database"""
+    def refresh(self):
+        """Refresh all the Model Registry Data from SageMaker"""
         # Grab all the Model Groups in the AWS Model Registry
         _model_groups = self.sm_client.list_model_package_groups(MaxResults=100)["ModelPackageGroupSummaryList"]
         _mg_names = [model_group["ModelPackageGroupName"] for model_group in _model_groups]

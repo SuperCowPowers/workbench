@@ -26,8 +26,8 @@ class Endpoints(Connector):
             self.log.critical(f"Error connecting to AWS SageMaker Endpoints: {e}")
             return False
 
-    def refresh_impl(self):
-        """Grab all the Endpoint Data from SageMaker"""
+    def refresh(self):
+        """Refresh all the Endpoint Data from SageMaker"""
         self.log.info("Reading Endpoints from SageMaker...")
         _endpoints = self.sm_client.list_endpoints(MaxResults=100)["Endpoints"]
         _end_names = [_endpoint["EndpointName"] for _endpoint in _endpoints]

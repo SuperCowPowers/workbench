@@ -24,8 +24,8 @@ class FeatureStore(Connector):
             self.log.critical(f"Error connecting to AWS Feature Store Service: {e}")
             return False
 
-    def refresh_impl(self):
-        """Load/reload the tables in the database"""
+    def refresh(self):
+        """Refresh all the Feature Store Data from SageMaker"""
         # Grab all the Feature Groups in the AWS Feature Store
         _feature_groups = self.sm_client.list_feature_groups()["FeatureGroupSummaries"]
         _fg_names = [feature_group["FeatureGroupName"] for feature_group in _feature_groups]

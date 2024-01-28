@@ -28,8 +28,8 @@ class GlueJobs(Connector):
             self.log.critical(f"Error connecting to AWS Glue: {e}")
             return False
 
-    def refresh_impl(self):
-        """Load/reload all the metadata for all the Glue Jobs"""
+    def refresh(self):
+        """Refresh the metadata for all the Glue Jobs"""
 
         # For each Glue Job get the detailed metadata about that job
         jobs = self.glue_client.get_jobs()
