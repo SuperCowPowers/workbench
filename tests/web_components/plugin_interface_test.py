@@ -1,4 +1,5 @@
 """Tests if plugin interface works with correct and incorrect inputs and returns"""
+
 from dash import dcc
 import plotly.graph_objects as go
 

@@ -1,4 +1,5 @@
 """DataToPandas: Class to transform a Data Source into a Pandas DataFrame"""
+
 import pandas as pd
 
 # Local imports

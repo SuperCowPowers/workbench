@@ -1,4 +1,5 @@
 """EndpointWebView pulls Endpoint metadata from the AWS Service Broker with Details Panels on each Endpoint"""
+
 import pandas as pd
 
 # SageWorks Imports

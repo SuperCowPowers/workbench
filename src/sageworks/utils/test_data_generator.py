@@ -1,4 +1,5 @@
 """A Test Data Generator Class"""
+
 import logging
 import pandas as pd
 import numpy as np

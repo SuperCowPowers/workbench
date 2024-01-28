@@ -1,4 +1,5 @@
 """View: View in the database sense: Pulls from the AWS Service Broker and does slice and dice"""
+
 from abc import ABC, abstractmethod
 
 import logging

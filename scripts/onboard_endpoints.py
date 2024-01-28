@@ -1,4 +1,5 @@
 """Script that loops through all endpoints and checks if they are ready"""
+
 import logging
 
 # SageWorks Imports

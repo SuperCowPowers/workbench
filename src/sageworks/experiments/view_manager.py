@@ -1,6 +1,7 @@
 """ViewManager: Used by DataSource to manage 'views' of the data
    Note: This is probably Athena specific, so we may need to refactor this
 """
+
 import logging
 from enum import Enum
 

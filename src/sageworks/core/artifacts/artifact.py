@@ -1,5 +1,6 @@
 """Artifact: Abstract Base Class for all Artifact classes in SageWorks.
                 Artifacts simply reflect and aggregate one or more AWS Services"""
+
 from abc import ABC, abstractmethod
 from datetime import datetime
 import sys

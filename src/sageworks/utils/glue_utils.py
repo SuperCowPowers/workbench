@@ -1,4 +1,5 @@
 """AWS Glue Job Utilities"""
+
 import sys
 from typing import List
 import awswrangler as wr

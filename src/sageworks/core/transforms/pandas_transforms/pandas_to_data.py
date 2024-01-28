@@ -1,4 +1,5 @@
 """PandasToData: Class to publish a Pandas DataFrame as a DataSource"""
+
 import awswrangler as wr
 import pandas as pd
 from pandas.errors import ParserError

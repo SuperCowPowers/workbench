@@ -1,4 +1,5 @@
 """An Endpoint Metrics Plots component"""
+
 import math
 from dash import dcc
 import plotly.graph_objects as go

@@ -1,4 +1,5 @@
 """A table component"""
+
 from dash import dash_table
 from dash.dash_table.Format import Format
 import plotly.express as px

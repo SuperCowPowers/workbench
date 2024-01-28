@@ -1,4 +1,5 @@
 """Callbacks/Connections in the Web User Interface"""
+
 from datetime import datetime
 import hashlib
 from dash import Dash, no_update

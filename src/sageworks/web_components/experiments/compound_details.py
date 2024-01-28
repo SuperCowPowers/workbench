@@ -1,4 +1,5 @@
 """A Component for details/information about DataSources"""
+
 from dash import dcc
 
 

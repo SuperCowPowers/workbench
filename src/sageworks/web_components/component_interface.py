@@ -1,4 +1,5 @@
 """An abstract class that defines the web component interface for SageWorks"""
+
 from abc import ABC, abstractmethod
 from typing import Any, Union
 import re

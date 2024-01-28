@@ -1,4 +1,5 @@
 """A line chart component"""
+
 from dash import dcc
 import pandas as pd
 import plotly.express as px

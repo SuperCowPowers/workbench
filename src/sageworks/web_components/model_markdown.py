@@ -1,4 +1,5 @@
 """A Markdown Component for details/information about Models"""
+
 import pandas as pd
 from dash import dcc
 

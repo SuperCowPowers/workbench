@@ -1,9 +1,11 @@
 """FeatureStore: Helper Class for the AWS Feature Store Service"""
+
 import sys
 import argparse
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
+from sageworks.utils.aws_utils import list_tags_with_throttle
 
 
 class FeatureStore(Connector):
@@ -36,7 +38,7 @@ class FeatureStore(Connector):
         # Additional details under the sageworks_meta section for each Feature Group
         for fg_name in _fg_names:
             arn = self.feature_data[fg_name]["FeatureGroupArn"]
-            sageworks_meta = self.sageworks_meta_via_arn(arn)
+            sageworks_meta = list_tags_with_throttle(arn, self.sm_session)
             add_data = {
                 "athena_database": self.athena_database_name(fg_name),
                 "athena_table": self.athena_table_name(fg_name),
@@ -45,17 +47,17 @@ class FeatureStore(Connector):
             sageworks_meta.update(add_data)
             self.feature_data[fg_name]["sageworks_meta"] = sageworks_meta
 
-    def aws_meta(self) -> dict:
-        """Return ALL the AWS metadata for this AWS Feature Store"""
+    def summary(self) -> dict:
+        """Return a summary of all the AWS Feature Store Groups"""
         return self.feature_data
+
+    def details(self, feature_group_name: str) -> dict:
+        """Get the details for a specific feature group"""
+        return self.feature_data.get(feature_group_name)
 
     def feature_group_names(self) -> list:
         """Get all the feature group names"""
         return list(self.feature_data.keys())
-
-    def feature_group_details(self, feature_group_name: str) -> dict:
-        """Get the details for a specific feature group"""
-        return self.feature_data.get(feature_group_name)
 
     def athena_database_name(self, feature_group_name: str) -> str:
         """Get the Athena Database Name for a specific feature group"""
@@ -76,7 +78,7 @@ class FeatureStore(Connector):
         return self.feature_data[feature_group_name]["OfflineStoreConfig"]["S3StorageConfig"]["ResolvedOutputS3Uri"]
 
     def _feature_group_details(self, feature_group_name: str) -> dict:
-        """Internal: Do not call this method directly, use feature_group_details() instead"""
+        """Internal: Do not call this method directly, use details() instead"""
 
         # Grab the Feature Group details from the AWS Feature Store
         details = self.sm_client.describe_feature_group(FeatureGroupName=feature_group_name)
@@ -118,21 +120,17 @@ if __name__ == "__main__":
     feature_store = FeatureStore()
     feature_store.refresh()
 
-    # List the Feature Groups
+    # List the Feature Groups and Details
     print("Feature Groups:")
-    for fname in feature_store.feature_group_names():
-        print(f"\t{fname}")
-
-    # Get the details for a specific Feature Group
-    my_group = fname
-    group_info = feature_store.feature_group_details(my_group)
-    pprint(group_info)
+    for group_name in feature_store.feature_group_names():
+        print(f"\t{group_name}")
+        pprint(feature_store.details(group_name))
 
     # Get the Athena Database Name for this Feature Group
-    my_database = feature_store.athena_database_name(my_group)
+    my_database = feature_store.athena_database_name(group_name)
 
     # Get the Athena Table Name for this Feature Group
-    my_table = feature_store.athena_table_name(my_group)
+    my_table = feature_store.athena_table_name(group_name)
 
     # Get the Athena Query for this Feature Group
-    my_query = feature_store.snapshot_query(my_group)
+    my_query = feature_store.snapshot_query(group_name)

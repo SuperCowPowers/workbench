@@ -7,6 +7,7 @@ Models:
 Endpoints:
     - abalone-regression-end-100
 """
+
 import sys
 import time
 import logging

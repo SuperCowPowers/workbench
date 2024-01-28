@@ -1,4 +1,5 @@
 """FeatureSet: SageWorks Feature Set accessible through Athena"""
+
 import time
 from datetime import datetime, timezone
 from typing import Union

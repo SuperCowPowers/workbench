@@ -2,6 +2,7 @@
 Endpoints Monitors are set up and provisioned for deployment into AWS.
 Monitors can be viewed in the AWS Sagemaker interfaces or in the SageWorks
 Dashboard UI, which provides additional monitor details and performance metrics"""
+
 import pandas as pd
 from typing import Union
 

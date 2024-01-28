@@ -1,4 +1,5 @@
 """ArtifactsTextView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
+
 import json
 import pandas as pd
 from datetime import datetime

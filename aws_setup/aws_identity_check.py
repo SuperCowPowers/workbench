@@ -1,4 +1,5 @@
 """Just a Utility Script that allows people to check which AWS Identity is active"""
+
 import os
 import sys
 import logging

@@ -45,17 +45,17 @@ class GlueJobs(Connector):
             self.glue_job_metadata[job_name] = job_info
             self.glue_job_metadata[job_name]["sageworks_meta"] = last_run_info
 
-    def aws_meta(self) -> dict:
-        """Get ALL the AWS metadata for the AWS Glue Jobs"""
+    def summary(self) -> dict:
+        """Return a summary of all the AWS Glue Jobs"""
         return self.glue_job_metadata
+
+    def details(self, job_name: str) -> dict:
+        """Get the details for a specific glue job"""
+        return self.glue_job_metadata.get(job_name)
 
     def get_glue_jobs(self) -> list:
         """Get the glue job names for the AWS Glue Jobs"""
         return list(self.glue_job_metadata.keys())
-
-    def get_job_info(self, job_name: str) -> dict | None:
-        """Get the information for the given glue job"""
-        return self.glue_job_metadata.get(job_name)
 
     def get_last_run_info(self, job_name: str) -> dict:
         """Get the last run status for the given glue job"""
@@ -86,21 +86,20 @@ class GlueJobs(Connector):
 if __name__ == "__main__":
     from pprint import pprint
 
-    # Create the class and get the AWS Data Catalog database info
-    glue_jobs = GlueJobs()
+    # Create the class and get the AWS Glue Job Info
+    glue_info = GlueJobs()
 
     # The connectors need an explicit refresh to populate themselves
-    glue_jobs.refresh()
+    glue_info.refresh()
 
-    # Get the AWS metadata for the Glue Jobs
-    pprint(glue_jobs.aws_meta())
+    # Get a summary of the AWS Glue Jobs
+    pprint(glue_info.summary())
 
     # List Glue Jobs and their details
-    for my_job_name in glue_jobs.get_glue_jobs():
+    for my_job_name in glue_info.get_glue_jobs():
         print(f"{my_job_name}")
-        details = glue_jobs.get_job_info(my_job_name)
-        pprint(details)
+        pprint(glue_info.details(my_job_name))
 
     # Get the ARN for a specific Glue Job
-    arn = glue_jobs.get_job_arn(my_job_name)
+    arn = glue_info.get_job_arn(my_job_name)
     print(f"ARN for {my_job_name} is {arn}")

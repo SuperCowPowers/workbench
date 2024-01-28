@@ -1,4 +1,5 @@
 """SQL based Outliers: Compute outliers for all the columns in a DataSource using SQL"""
+
 import logging
 import pandas as pd
 

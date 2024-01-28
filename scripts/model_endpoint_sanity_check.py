@@ -1,4 +1,5 @@
 """Script that checks ModelGroups, Model (Resources), Endpoints and does a set of Sanity checks"""
+
 import logging
 
 # SageWorks Imports

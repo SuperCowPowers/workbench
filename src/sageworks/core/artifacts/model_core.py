@@ -1,4 +1,5 @@
 """ModelCore: SageWorks ModelCore Class"""
+
 import time
 from datetime import datetime
 import urllib.parse

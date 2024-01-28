@@ -1,4 +1,5 @@
 """Endpoints:  A SageWorks Web Interface to view and interact with Endpoints"""
+
 from dash import register_page
 import dash
 from dash_bootstrap_templates import load_figure_template

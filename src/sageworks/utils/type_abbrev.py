@@ -1,4 +1,5 @@
 """Helper function to convert Athena and Feature Store type names to abbreviations"""
+
 import pandas as pd
 
 

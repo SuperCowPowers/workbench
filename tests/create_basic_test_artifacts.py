@@ -11,6 +11,7 @@ Models:
 Endpoints:
     - abalone-regression-end
 """
+
 import sys
 import logging
 from pathlib import Path

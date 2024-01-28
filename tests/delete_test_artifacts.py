@@ -1,4 +1,5 @@
 """This Script Deletes the SageWorks Artifacts used for the tests"""
+
 import time
 from sageworks.api.data_source import DataSource
 from sageworks.api.feature_set import FeatureSet

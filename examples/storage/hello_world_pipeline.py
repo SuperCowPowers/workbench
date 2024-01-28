@@ -9,6 +9,7 @@ Models:
 Endpoints:
     - abalone-regression-end
 """
+
 import sys
 from pathlib import Path
 from sageworks.core.artifacts.model_core import ModelType

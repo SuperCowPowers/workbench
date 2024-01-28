@@ -1,4 +1,5 @@
-"""Class: DataCatalog"""
+"""Class: DataCatalog Helper Class for the AWS Data Catalog Databases"""
+
 import sys
 import argparse
 import awswrangler as wr
@@ -8,7 +9,7 @@ from sageworks.aws_service_broker.aws_service_connectors.connector import Connec
 
 
 class DataCatalog(Connector):
-    """DataCatalog: Helper Class for the AWS Data Catalog"""
+    """DataCatalog: Helper Class for the AWS Data Catalog Databases"""
 
     def __init__(self, database_scope: (str, list) = "sageworks"):
         """DataCatalog: Helper Class for the AWS Data Catalog
@@ -21,7 +22,6 @@ class DataCatalog(Connector):
 
         # Set up our database scope
         self.database_scope = database_scope if isinstance(database_scope, list) else [database_scope]
-        self.scoped_database_list = self.get_scoped_database_list()
 
         # Set up our internal data storage
         self.data_catalog_metadata = {}
@@ -38,43 +38,59 @@ class DataCatalog(Connector):
     def refresh(self):
         """Refresh all the tables in all the catalog databases"""
 
-        # For each database in our scoped list, load the tables
-        for database in self.scoped_database_list:
+        for database in self.database_scope:
             # Get all table metadata from the Glue catalog Database
             self.log.debug(f"Reading Data Catalog Database: {database}...")
             all_tables = wr.catalog.get_tables(database=database, boto3_session=self.boto_session)
 
-            # Filter out views (disabled for now)
-            table_list = all_tables
-            # table_list = [table for table in all_tables if table["TableType"] in ("EXTERNAL_TABLE", "MANAGED_TABLE")]
-
             # Convert to a data structure with direct lookup
-            self.data_catalog_metadata[database] = {table["Name"]: table for table in table_list}
+            self.data_catalog_metadata[database] = {table["Name"]: table for table in all_tables}
 
-    def aws_meta(self) -> dict:
-        """Return ALL the AWS metadata for this AWS Service"""
-        return self.data_catalog_metadata
+    def summary(self, with_details: bool = True) -> dict:
+        """Return a summary of all the tables in this AWS Data Catalog Database
 
-    def get_scoped_database_list(self):
-        """Return a list of databases within the defined scope for this class"""
-        all_databases = [db["Name"] for db in wr.catalog.get_databases(boto3_session=self.boto_session)]
-        if self.database_scope == ["all"]:
-            return all_databases
+        Args:
+            with_details (bool, optional): Include the details for each table (defaults to True)
+        """
+        if with_details:
+            return self.data_catalog_metadata
+        else:
+            # Recursively remove any keys with 'sageworks_' in them
+            return self._remove_sageworks_meta(self.data_catalog_metadata)
 
-        # Return a subset of the databases
-        return list(set(all_databases).intersection(set(self.database_scope)))
+    def details(self, database: str, table: str) -> dict:
+        """Get the details for a specific table
 
-    def get_database_names(self) -> list:
-        """Get all the database names from AWS Data Catalog"""
-        return list(self.data_catalog_metadata.keys())
+        Args:
+            database (str): The name of the database
+            table (str): The name of the table
 
-    def get_table_names(self, database: str) -> list:
-        """Get all the table names in this database"""
+        Returns:
+            dict: The details for the table
+        """
+        return self.data_catalog_metadata[database].get(table)
+
+    def get_tables(self, database: str) -> list:
+        """Get all the table names in this database
+
+        Args:
+            database (str): The name of the database
+        Returns:
+            list: List of table names
+        """
         return list(self.data_catalog_metadata[database].keys())
 
-    def get_table(self, database: str, table_name: str) -> dict:
-        """Get the table information for the given table name"""
-        return self.data_catalog_metadata[database].get(table_name)
+    def _remove_sageworks_meta(self, data: dict) -> dict:
+        """Internal: Recursively remove any keys with 'sageworks_' in them"""
+
+        # Recursively exclude any keys with 'sageworks_' in them
+        summary_data = {}
+        for key, value in data.items():
+            if isinstance(value, dict):
+                summary_data[key] = self._remove_sageworks_meta(value)
+            elif not key.startswith("sageworks_"):
+                summary_data[key] = value
+        return summary_data
 
 
 if __name__ == "__main__":
@@ -95,17 +111,11 @@ if __name__ == "__main__":
     # The connectors need an explicit refresh to populate themselves
     catalog.refresh()
 
-    # Get ALL the AWS metadata for the AWS Data Catalog
-    pprint(catalog.aws_meta())
+    # Get the Summary Information
+    pprint(catalog.summary())
 
-    # List databases and tables
-    for my_database in catalog.get_database_names():
-        print(f"{my_database}")
-        for name in catalog.get_table_names(my_database):
-            print(f"\t{name}")
-
-    # Get a specific table
-    my_database = "sageworks"
-    my_table = "test_data"
-    table_info = catalog.get_table(my_database, my_table)
-    pprint(table_info)
+    # Get the details for the specific tables
+    db = "sageworks"
+    for my_table_name in catalog.get_tables(db):
+        print(f"\n*** {my_table_name} ***")
+        pprint(catalog.details(db, my_table_name))

@@ -1,4 +1,5 @@
 """An Outlier Plot Component"""
+
 import plotly.graph_objs
 from dash import dcc
 import pandas as pd

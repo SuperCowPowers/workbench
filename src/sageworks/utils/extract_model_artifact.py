@@ -1,4 +1,5 @@
 """ExtractModelArtifact is a utility class that reanimates a model file."""
+
 import tarfile
 import tempfile
 import awswrangler as wr

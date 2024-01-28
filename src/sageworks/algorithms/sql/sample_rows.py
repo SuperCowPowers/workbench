@@ -1,4 +1,5 @@
 """SQL based Sample Rows: Compute Sample rows for a DataSource using SQL"""
+
 import logging
 import pandas as pd
 

@@ -1,4 +1,5 @@
 """Main: The main SageWorks Web Interface to view, interact, and manage SageWorks Artifacts"""
+
 from dash import register_page
 import dash
 

@@ -1,4 +1,5 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
+
 import os
 
 import boto3
@@ -132,6 +133,7 @@ class AWSAccountClamp:
         """
         try:
             import awsglue  # noqa: F401
+
             return True
         except ImportError:
             return False

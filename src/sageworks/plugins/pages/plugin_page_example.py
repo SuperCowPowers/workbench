@@ -1,4 +1,5 @@
 """Plugin Page:  A SageWorks Plugin Web Interface"""
+
 import dash
 from dash import register_page, no_update
 from dash_bootstrap_templates import load_figure_template

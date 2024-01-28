@@ -1,4 +1,5 @@
 """A Singleton Plugin Manager Class: Manages the loading and retrieval of SageWorks plugins"""
+
 import os
 import logging
 import importlib

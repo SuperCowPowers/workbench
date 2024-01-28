@@ -1,9 +1,11 @@
 """ModelRegistry: Helper Class for the AWS Model Registry Service"""
+
 import sys
 import argparse
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
+from sageworks.utils.aws_utils import list_tags_with_throttle
 
 
 class ModelRegistry(Connector):
@@ -39,22 +41,22 @@ class ModelRegistry(Connector):
 
         # Additional details under the sageworks_meta section for each Model Group
         for mg_name in _mg_names:
-            sageworks_meta = self.sageworks_meta_via_arn(self.model_package_group_arns[mg_name])
+            sageworks_meta = list_tags_with_throttle(self.model_package_group_arns[mg_name], self.sm_session)
             # Model groups have a list of models
             for model_info in self.model_data[mg_name]:
                 model_info["sageworks_meta"] = sageworks_meta
 
-    def aws_meta(self) -> dict:
-        """Return ALL the AWS metadata for the AWS Model Registry"""
+    def summary(self) -> dict:
+        """Return a summary of all the AWS Model Registry Groups"""
         return self.model_data
+
+    def details(self, model_group_name: str) -> dict:
+        """Get the details for a specific feature group"""
+        return self.model_data.get(model_group_name)
 
     def model_group_names(self) -> list:
         """Get all the feature group names in this database"""
         return list(self.model_data.keys())
-
-    def model_group_details(self, model_group_name: str) -> dict:
-        """Get the details for a specific feature group"""
-        return self.model_data.get(model_group_name)
 
     def _model_group_details(self, model_group_name: str) -> dict:
         """Internal: Do not call this method directly, use model_group_details() instead"""
@@ -84,12 +86,8 @@ if __name__ == "__main__":
     model_registry = ModelRegistry()
     model_registry.refresh()
 
-    # List the Model Groups
+    # List the Model Groups and their details
     print("Model Groups:")
     for my_group_name in model_registry.model_group_names():
         print(f"\t{my_group_name}")
-
-    # Get the details for a specific Model Group
-    my_group = "abalone-regression"
-    group_info = model_registry.model_group_details(my_group)
-    pprint(group_info)
+        pprint(model_registry.details(my_group_name))

@@ -1,4 +1,5 @@
 """An Dashboard Metrics Plots component"""
+
 import math
 
 import pandas as pd

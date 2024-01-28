@@ -1,4 +1,5 @@
 """Layout for the Models page"""
+
 from typing import Any
 from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc

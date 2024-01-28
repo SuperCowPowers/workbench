@@ -1,4 +1,5 @@
 """EndpointMetrics is a utility class that fetches metrics for a SageMaker endpoint."""
+
 from datetime import datetime, timedelta, timezone
 import pandas as pd
 

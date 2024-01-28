@@ -1,12 +1,11 @@
 """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
+
 from abc import ABC, abstractmethod
 
 import logging
-from typing import final
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.aws_utils import list_tags_with_throttle
 
 
 class Connector(ABC):
@@ -29,19 +28,20 @@ class Connector(ABC):
 
     @abstractmethod
     def refresh(self):
-        """Abstract Method: Implement refresh logic for AWS Service Data"""
+        """Refresh logic for AWS Service Data"""
         pass
 
     @abstractmethod
-    def aws_meta(self) -> dict:
-        """Return ALL the AWS metadata for this AWS Service"""
+    def summary(self) -> dict:
+        """Return a summary list of all the AWS resources for this service"""
         pass
 
-    def sageworks_meta_via_arn(self, arn: str) -> dict:
-        """Helper: Get the SageWorks specific metadata for this ARN
+    @abstractmethod
+    def details(self, name: str) -> dict:
+        """Return the details for a specific AWS resource
         Args:
-            arn (str): The ARN of the SageMaker resource
+            name (str): The name of the AWS resource
         Returns:
-            dict: A dictionary of SageWorks specific metadata
+            dict: A dictionary of details about this AWS resource
         """
-        return list_tags_with_throttle(arn, self.sm_session)
+        pass

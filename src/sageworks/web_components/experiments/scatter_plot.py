@@ -1,4 +1,5 @@
 """A scatter plot component"""
+
 import plotly.graph_objs
 from dash import dcc
 import pandas as pd

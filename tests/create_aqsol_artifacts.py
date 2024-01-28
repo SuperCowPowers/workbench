@@ -9,6 +9,7 @@ Models:
 Endpoints:
     - aqsol-regression-end
 """
+
 from sageworks.api.data_source import DataSource
 from sageworks.api.feature_set import FeatureSet
 from sageworks.api.model import Model, ModelType

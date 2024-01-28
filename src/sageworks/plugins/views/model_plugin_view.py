@@ -1,4 +1,5 @@
 """ModelPluginView is a tailored view of the Model Summary data + Details"""
+
 import pandas as pd
 import json
 

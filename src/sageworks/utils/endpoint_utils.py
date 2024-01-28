@@ -1,4 +1,5 @@
 """Endpoint Utilities for SageWorks endpoints"""
+
 import logging
 
 import pandas as pd

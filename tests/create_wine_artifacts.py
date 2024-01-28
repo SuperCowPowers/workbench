@@ -9,6 +9,7 @@ Models:
 Endpoints:
     - wine-classification-end
 """
+
 import sys
 
 from pathlib import Path

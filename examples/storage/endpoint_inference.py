@@ -1,4 +1,5 @@
 """Example script of running inference on an Endpoint"""
+
 import argparse
 import pandas as pd
 

@@ -1,4 +1,5 @@
 """A Correlation Matrix component"""
+
 from dash import dcc
 import plotly.graph_objects as go
 import pandas as pd

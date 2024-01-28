@@ -1,4 +1,5 @@
 """Endpoints: Helper Class for AWS SageMaker Endpoints"""
+
 import sys
 import argparse
 import botocore
@@ -6,6 +7,7 @@ import botocore
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
 from sageworks.utils.aws_utils import client_error_info
+from sageworks.utils.aws_utils import list_tags_with_throttle
 
 
 class Endpoints(Connector):
@@ -37,24 +39,24 @@ class Endpoints(Connector):
 
         # Additional details under the sageworks_meta section for each Endpoint
         for _end_name, end_info in self.endpoint_data.items():
-            sageworks_meta = self.sageworks_meta_via_arn(end_info["EndpointArn"])
+            sageworks_meta = list_tags_with_throttle(end_info["EndpointArn"], self.sm_session)
             end_info["sageworks_meta"] = sageworks_meta
         self.log.info("Done with Endpoints...")
 
-    def aws_meta(self) -> dict:
-        """Get the full AWS metadata about endpoints"""
+    def summary(self) -> dict:
+        """Return a summary of all the AWS endpoints"""
         return self.endpoint_data
+
+    def details(self, endpoint_name: str) -> dict:
+        """Get the details for a specific endpoint"""
+        return self.endpoint_data.get(endpoint_name)
 
     def endpoint_names(self) -> list:
         """Get all the endpoint names in AWS"""
         return list(self.endpoint_data.keys())
 
-    def endpoint_details(self, endpoint_name: str) -> dict:
-        """Get the details for a specific endpoint"""
-        return self.endpoint_data.get(endpoint_name)
-
     def _retrieve_details(self, endpoint_name: str) -> dict:
-        """Internal: Do not call this method directly, use endpoint_details() instead"""
+        """Internal: Do not call this method directly, use details() instead"""
 
         # Grab the Endpoint details from AWS
         details = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
@@ -91,11 +93,16 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Create the class and get the AWS Endpoint details
-    my_endpoints = Endpoints()
-    my_endpoints.refresh()
+    endpoint_info = Endpoints()
+
+    # The connectors need an explicit refresh to populate themselves
+    endpoint_info.refresh()
+
+    # Get the Summary Information
+    pprint(endpoint_info.summary())
 
     # List the Endpoint Names and Details
     print("Endpoints:")
-    for end_name in my_endpoints.endpoint_names():
-        print(f"\t{end_name}")
-        pprint(my_endpoints.endpoint_details(end_name))
+    for end_name in endpoint_info.endpoint_names():
+        print(f"\n*** {end_name} ***")
+        pprint(endpoint_info.details(end_name))

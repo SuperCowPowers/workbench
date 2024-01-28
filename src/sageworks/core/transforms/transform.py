@@ -1,5 +1,6 @@
 """Transform: Base Class for all transforms within SageWorks
               Inherited Classes must implement the abstract transform_impl() method"""
+
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import final

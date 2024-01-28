@@ -1,4 +1,5 @@
 """Helper Method to call endpoints with a DataFrame as input"""
+
 import sys
 import argparse
 from io import StringIO

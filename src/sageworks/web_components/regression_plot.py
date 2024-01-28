@@ -1,4 +1,5 @@
 """A Regression Plot component"""
+
 from dash import dcc
 import plotly.graph_objects as go
 import plotly.express as px

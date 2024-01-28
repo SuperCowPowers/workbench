@@ -1,4 +1,5 @@
 """SageWorksEventBridge: Class for publishing events to AWS EventBridge"""
+
 import json
 from pprint import pprint
 import logging

@@ -1,4 +1,5 @@
 """DashboardMetrics is a utility class that fetches metrics for the SageWorks Dashboard."""
+
 from datetime import datetime, timedelta, timezone
 import pandas as pd
 

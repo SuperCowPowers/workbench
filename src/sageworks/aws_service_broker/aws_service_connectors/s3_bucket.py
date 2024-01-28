@@ -1,4 +1,5 @@
 """S3Bucket: Class to retrieve object/file information from an AWS S3 Bucket"""
+
 import awswrangler as wr
 from botocore.exceptions import ClientError
 
@@ -24,8 +25,8 @@ class S3Bucket(Connector):
         try:
             wr.s3.does_object_exist(self.bucket, boto3_session=self.boto_session)
             return True
-        except Exception as e:
-            self.log.critical(f"Could not connect to AWS S3 {self.bucket}: {e}")
+        except Exception:
+            self.log.critical(f"Could not connect to AWS S3 {self.bucket}!")
             return False
 
     def refresh(self):
@@ -44,9 +45,20 @@ class S3Bucket(Connector):
                 return {}
         self.s3_bucket_data = {full_path: info for full_path, info in _aws_file_info.items()}
 
-    def aws_meta(self) -> dict:
-        """Return ALL the AWS metadata for the AWS S3 Service"""
+    def summary(self) -> dict:
+        """Return a summary of all the file/objects in our bucket"""
         return self.s3_bucket_data
+
+    def details(self, s3_file: str) -> dict:
+        """Get the details for a specific S3 file/object
+
+        Args:
+            s3_file (str): The name of the file/object to get the details
+
+        Returns:
+            dict: The details for the file/object
+        """
+        return self.s3_bucket_data[s3_file]
 
     def file_names(self) -> list:
         """Get all the file names in this bucket"""
@@ -59,14 +71,11 @@ class S3Bucket(Connector):
             sizes.append(info["ContentLength"])
         return sum(sizes)
 
-    def file_info(self, file: str) -> dict:
-        """Get additional info about this specific file"""
-        return self.s3_bucket_data[file]
-
 
 if __name__ == "__main__":
     """Exercises the S3Bucket Class"""
     from sageworks.utils.config_manager import ConfigManager
+    from pprint import pprint
 
     # Grab out incoming data bucket for something to test with
     cm = ConfigManager()
@@ -78,10 +87,14 @@ if __name__ == "__main__":
     s3_bucket.check()
     s3_bucket.refresh()
 
-    # List files in the bucket
-    print(f"{s3_bucket.bucket}")
+    # Get the Summary Information
+    pprint(s3_bucket.summary())
+
+    # List the S3 Files and Details
+    print("S3 Objects:")
     for file_name in s3_bucket.file_names():
-        print(f"\t{file_name}")
+        print(f"\n*** {file_name} ***")
+        pprint(s3_bucket.details(file_name))
 
     # Get the size of all the objects in this bucket
     print(f"Bucket Size: {s3_bucket.bucket_size()}")

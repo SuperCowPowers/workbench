@@ -1,4 +1,5 @@
 """SageWorksSQS: Class for retrieving messages from the AWS SQS Message Queue"""
+
 import logging
 
 # Local Imports

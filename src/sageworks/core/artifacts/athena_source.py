@@ -1,4 +1,5 @@
 """AthenaSource: SageWorks Data Source accessible through Athena"""
+
 import pandas as pd
 import awswrangler as wr
 from datetime import datetime
@@ -57,7 +58,7 @@ class AthenaSource(DataSourceAbstract):
         except KeyError:
             self.log.critical(f"Unable to find {self.get_database()} in Catalogs...")
             self.log.critical("You must run the sageworks/aws_setup/aws_account_check.py script")
-            raise RuntimeError("Unable to find {self.get_database()} in Catalogs...")
+            raise RuntimeError(f"Unable to find {self.get_database()} in Catalogs...")
 
         # Call superclass post init
         super().__post_init__()

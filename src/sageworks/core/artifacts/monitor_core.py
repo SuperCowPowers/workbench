@@ -1,4 +1,5 @@
 """MonitorCore class for monitoring SageMaker endpoints"""
+
 import logging
 import json
 from typing import Union

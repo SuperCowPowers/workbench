@@ -1,4 +1,5 @@
 """SageWorks API License Manager"""
+
 import sys
 import base64
 import json

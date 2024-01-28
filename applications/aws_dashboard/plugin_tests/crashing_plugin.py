@@ -1,4 +1,5 @@
 """A Plugin Component that Crashes for Testing"""
+
 from dash import dcc
 import plotly.graph_objects as go
 

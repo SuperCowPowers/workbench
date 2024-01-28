@@ -1,4 +1,5 @@
 """EndpointCore: SageWorks EndpointCore Class"""
+
 import time
 from datetime import datetime
 import botocore

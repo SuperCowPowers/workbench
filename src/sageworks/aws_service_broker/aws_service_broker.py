@@ -1,4 +1,5 @@
 """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
+
 import sys
 import argparse
 from enum import Enum, auto
@@ -39,19 +40,17 @@ class AWSServiceBroker:
         if not hasattr(cls, "instance"):
             # Initialize class attributes here
             cls.log = logging.getLogger("sageworks")
-            # Note: This database_scope is a list of databases that we want to pull metadata from
-            #       At some point, we should pull this from a config file.
             cls.database_scope = ["sageworks", "sagemaker_featurestore"]
             cls.log.info("Creating the AWSServiceBroker Singleton...")
             cls.instance = super(AWSServiceBroker, cls).__new__(cls)
 
             # Class Initialization
-            cls.instance.__class_init__(cls.database_scope)
+            cls.instance.__class_init__()
 
         return cls.instance
 
     @classmethod
-    def __class_init__(cls, database_scope):
+    def __class_init__(cls):
         """AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
 
         # Grab our SageWorks Bucket
@@ -75,7 +74,7 @@ class AWSServiceBroker:
         # cls.data_sources_s3 = S3Bucket(cls.data_sources_bucket)  Memory Tests
         # cls.feature_sets_s3 = S3Bucket(cls.feature_sets_bucket)  Memory Tests
         cls.glue_jobs = GlueJobs()
-        cls.data_catalog = DataCatalog(database_scope)
+        cls.data_catalog = DataCatalog(cls.database_scope)
         cls.feature_store = FeatureStore()
         cls.model_registry = ModelRegistry()
         cls.endpoints = Endpoints()
@@ -112,7 +111,7 @@ class AWSServiceBroker:
         try:
             cls.fresh_cache.set(category, True)
             cls.connection_map[category].refresh()
-            cls.meta_cache.set(category, cls.connection_map[category].aws_meta())
+            cls.meta_cache.set(category, cls.connection_map[category].summary())
         except ClientError:
             cls.log.warning(f"Failed to refresh AWS data for {category}")
             cls.log.warning("Sometimes this happens when an artifact is being deleted/recreated...")

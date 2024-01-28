@@ -1,4 +1,5 @@
 """A Model Metrics component that switches display based on model type"""
+
 from dash import dcc
 import plotly.graph_objects as go
 
