@@ -90,7 +90,7 @@ class SageWorksShell:
         self.commands["log_info"] = self.log_info
         self.commands["log_important"] = self.log_important
         self.commands["log_warning"] = self.log_warning
-        self.commands["broker_refresh"] = self.broker_refresh
+        self.commands["meta_refresh"] = self.meta_refresh
         self.commands["config"] = self.show_config
         self.commands["status"] = self.status_description
 
@@ -194,6 +194,7 @@ class SageWorksShell:
         self.commands["ModelType"] = importlib.import_module("sageworks.api.model").ModelType
         self.commands["Endpoint"] = importlib.import_module("sageworks.api.endpoint").Endpoint
         self.commands["Monitor"] = importlib.import_module("sageworks.api.monitor").Monitor
+        self.commands["Meta"] = importlib.import_module("sageworks.api.meta").Meta
         self.commands["PluginManager"] = importlib.import_module("sageworks.utils.plugin_manager").PluginManager
 
     @staticmethod
@@ -208,7 +209,7 @@ class SageWorksShell:
         - feature_sets: List all the FeatureSets in AWS
         - models: List all the Models in AWS
         - endpoints: List all the Endpoints in AWS
-        - broker_refresh: Force a refresh of the AWS broker data
+        - meta_refresh: Force a refresh of the AWS Metadata
         - config: Show the current SageWorks Config
         - status: Show the current SageWorks Status
         - exit: Exit SageWorks REPL"""
@@ -272,7 +273,7 @@ class SageWorksShell:
     def log_warning():
         logging.getLogger("sageworks").setLevel(logging.WARNING)
 
-    def broker_refresh(self):
+    def meta_refresh(self):
         self.artifacts_text_view.refresh(force_refresh=True)
 
     def status_lights(self) -> list[(Token, str)]:

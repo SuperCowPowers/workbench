@@ -8,6 +8,7 @@ nav:
     - Model: api_classes/model.md
     - Endpoint: api_classes/endpoint.md
     - Monitor: api_classes/monitor.md
+    - Meta: api_classes/meta.md
   - SageWorks REPL: repl/index.md
   - Core Classes: 
     - OverView: core_classes/overview.md

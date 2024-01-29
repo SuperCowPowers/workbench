@@ -1,4 +1,8 @@
-"""Meta: A class that provides high level access and summaries of SageWorks/AWS Metadata"""
+"""Meta: A class that provides high level information and summaries of SageWorks/AWS Artifacts.
+The Meta class provides 'meta' information, what account are we in, what is the current
+configuration, etc. It also provides summaries of the AWS Artifacts, such as Data Sources,
+Feature Sets, Models, and Endpoints.
+"""
 
 import logging
 
@@ -9,7 +13,16 @@ from sageworks.utils.config_manager import ConfigManager
 
 
 class Meta:
-    """ "Meta: A class that provides high level access and summaries of SageWorks/AWS Metadata"""
+    """Meta: A class that provides high level information and summaries of SageWorks/AWS Artifacts
+
+        Common Usage:
+        ```
+        meta = Meta()
+        meta.account()
+        meta.config()
+        meta.data_sources()
+        ```
+    """
 
     def __init__(self):
         """Meta Initialization"""
