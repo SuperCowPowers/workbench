@@ -100,7 +100,6 @@ class DataCatalog(Connector):
 
 if __name__ == "__main__":
     """Exercises the DataCatalog Class"""
-    import time
     from pprint import pprint
 
     # Collect args from the command line
