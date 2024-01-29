@@ -32,8 +32,12 @@ class Connector(ABC):
         pass
 
     @abstractmethod
-    def summary(self) -> dict:
-        """Return a summary list of all the AWS resources for this service"""
+    def summary(self, include_details: bool = False) -> dict:
+        """Return a summary list of all the AWS resources for this service
+
+        Args:
+            include_details (bool, optional): Include the details for each resource (defaults to False)
+        """
         pass
 
     @abstractmethod

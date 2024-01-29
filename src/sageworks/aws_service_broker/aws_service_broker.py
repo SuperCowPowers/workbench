@@ -108,10 +108,11 @@ class AWSServiceBroker:
             category (ServiceCategory): The Category of metadata to Pull
         """
         # Refresh the connection for the given category and pull new data
+        include_details = True if category == ServiceCategory.DATA_CATALOG else False
         try:
             cls.fresh_cache.set(category, True)
             cls.connection_map[category].refresh()
-            cls.meta_cache.set(category, cls.connection_map[category].summary())
+            cls.meta_cache.set(category, cls.connection_map[category].summary(include_details))
         except ClientError:
             cls.log.warning(f"Failed to refresh AWS data for {category}")
             cls.log.warning("Sometimes this happens when an artifact is being deleted/recreated...")

@@ -45,8 +45,13 @@ class GlueJobs(Connector):
             self.glue_job_metadata[job_name] = job_info
             self.glue_job_metadata[job_name]["sageworks_meta"] = last_run_info
 
-    def summary(self) -> dict:
-        """Return a summary of all the AWS Glue Jobs"""
+    def summary(self, include_details: bool = False) -> dict:
+        """Return a summary of all the AWS Glue Jobs
+
+        Args:
+            include_details (bool, optional): Include the details for each job (defaults to False)
+        """
+        # Note: The details are already included
         return self.glue_job_metadata
 
     def details(self, job_name: str) -> dict:

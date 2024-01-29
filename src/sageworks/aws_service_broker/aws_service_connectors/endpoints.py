@@ -43,8 +43,13 @@ class Endpoints(Connector):
             end_info["sageworks_meta"] = sageworks_meta
         self.log.info("Done with Endpoints...")
 
-    def summary(self) -> dict:
-        """Return a summary of all the AWS endpoints"""
+    def summary(self, include_details: bool = False) -> dict:
+        """Return a summary of all the AWS endpoints
+
+        Args:
+            include_details (bool, optional): Include the details for each endpoint (defaults to False)
+        """
+        # Note: The details are already included
         return self.endpoint_data
 
     def details(self, endpoint_name: str) -> dict:

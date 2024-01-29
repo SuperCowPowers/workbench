@@ -46,13 +46,14 @@ class DataCatalog(Connector):
             # Convert to a data structure with direct lookup
             self.data_catalog_metadata[database] = {table["Name"]: table for table in all_tables}
 
-    def summary(self, with_details: bool = True) -> dict:
+    def summary(self, include_details: bool = False) -> dict:
         """Return a summary of all the tables in this AWS Data Catalog Database
 
         Args:
-            with_details (bool, optional): Include the details for each table (defaults to True)
+            include_details (bool, optional): Include the details for each table (defaults to False)
         """
-        if with_details:
+        # Note: The details are already included
+        if include_details:
             return self.data_catalog_metadata
         else:
             # Recursively remove any keys with 'sageworks_' in them

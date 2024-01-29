@@ -46,8 +46,13 @@ class ModelRegistry(Connector):
             for model_info in self.model_data[mg_name]:
                 model_info["sageworks_meta"] = sageworks_meta
 
-    def summary(self) -> dict:
-        """Return a summary of all the AWS Model Registry Groups"""
+    def summary(self, include_details: bool = False) -> dict:
+        """Return a summary of all the AWS Model Registry Groups
+
+        Args:
+            include_details (bool, optional): Include the details for each feature group (defaults to False)
+        """
+        # Note: The details are already included
         return self.model_data
 
     def details(self, model_group_name: str) -> dict:

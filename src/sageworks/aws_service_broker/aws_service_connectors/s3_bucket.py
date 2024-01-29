@@ -45,8 +45,13 @@ class S3Bucket(Connector):
                 return {}
         self.s3_bucket_data = {full_path: info for full_path, info in _aws_file_info.items()}
 
-    def summary(self) -> dict:
-        """Return a summary of all the file/objects in our bucket"""
+    def summary(self, include_details: bool = False) -> dict:
+        """Return a summary of all the file/objects in our bucket
+
+        Args:
+            include_details (bool, optional): Include the details for each file/object (defaults to False)
+        """
+        # Note: The details are already included
         return self.s3_bucket_data
 
     def details(self, s3_file: str) -> dict:
