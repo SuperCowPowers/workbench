@@ -108,7 +108,7 @@ class AWSServiceBroker:
             category (ServiceCategory): The Category of metadata to Pull
         """
         # Refresh the connection for the given category and pull new data
-        include_details = True if category == ServiceCategory.DATA_CATALOG else False
+        include_details = True
         try:
             cls.fresh_cache.set(category, True)
             cls.connection_map[category].refresh()

@@ -56,8 +56,10 @@ class ModelRegistry(Connector):
         return self.model_data
 
     def details(self, model_group_name: str) -> dict:
-        """Get the details for a specific feature group"""
-        return self.model_data.get(model_group_name)
+        """Get the details for the LATEST MODEL in a specific model group"""
+        return (
+            self.model_data.get(model_group_name)[0] if isinstance(self.model_data.get(model_group_name), list) else {}
+        )
 
     def model_group_names(self) -> list:
         """Get all the feature group names in this database"""

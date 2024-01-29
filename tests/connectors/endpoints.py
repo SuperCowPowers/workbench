@@ -1,0 +1,42 @@
+"""Endpoints Connector Tests"""
+
+# SageWorks Imports
+from sageworks.aws_service_broker.aws_service_connectors.endpoints import Endpoints
+
+
+def test_check():
+    """Test the check() method"""
+    endpoints = Endpoints()
+    assert endpoints.check() is True
+
+
+def test_refresh():
+    """Test the refresh() method"""
+    endpoints = Endpoints()
+    endpoints.refresh()
+
+
+def test_summary():
+    """Test the summary() method"""
+    endpoints = Endpoints()
+    endpoints.refresh()
+    summary = endpoints.summary()
+    assert isinstance(summary, dict)
+    assert "abalone-regression-end" in summary.keys()
+
+
+def test_details():
+    """Test the details() method"""
+    endpoints = Endpoints()
+    endpoints.refresh()
+    details = endpoints.details("abalone-regression-end")
+    assert isinstance(details, dict)
+    assert "InstanceType" in details.keys()
+
+
+if __name__ == "__main__":
+    """Run the tests for the Endpoints Connector"""
+    test_check()
+    test_refresh()
+    test_summary()
+    test_details()

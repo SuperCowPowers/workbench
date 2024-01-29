@@ -37,7 +37,6 @@ class DataCatalog(Connector):
 
     def refresh(self):
         """Refresh all the tables in all the catalog databases"""
-
         for database in self.database_scope:
             # Get all table metadata from the Glue catalog Database
             self.log.debug(f"Reading Data Catalog Database: {database}...")
@@ -108,8 +107,6 @@ if __name__ == "__main__":
 
     # Create the class and get the AWS Data Catalog database info
     catalog = DataCatalog()
-
-    # The connectors need an explicit refresh to populate themselves
     catalog.refresh()
 
     # Get the Summary Information
