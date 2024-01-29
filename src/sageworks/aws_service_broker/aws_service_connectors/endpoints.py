@@ -6,8 +6,7 @@ import botocore
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
-from sageworks.utils.aws_utils import client_error_info
-from sageworks.utils.aws_utils import list_tags_with_throttle
+from sageworks.utils.aws_utils import client_error_info, list_tags_with_throttle, compute_size
 
 
 class Endpoints(Connector):
@@ -41,6 +40,10 @@ class Endpoints(Connector):
         for _end_name, end_info in self.endpoint_data.items():
             sageworks_meta = list_tags_with_throttle(end_info["EndpointArn"], self.sm_session)
             end_info["sageworks_meta"] = sageworks_meta
+
+        # Track the size of the metadata
+        for key in self.endpoint_data.keys():
+            self.metadata_size_info[key] = compute_size(self.endpoint_data[key])
         self.log.info("Done with Endpoints...")
 
     def summary(self, include_details: bool = False) -> dict:
@@ -111,3 +114,6 @@ if __name__ == "__main__":
     for end_name in endpoint_info.endpoint_names():
         print(f"\n*** {end_name} ***")
         pprint(endpoint_info.details(end_name))
+
+    # Print out the metadata sizes for this connector
+    pprint(endpoint_info.get_metadata_sizes())

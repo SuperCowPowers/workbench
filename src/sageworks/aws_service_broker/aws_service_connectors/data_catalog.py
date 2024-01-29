@@ -6,6 +6,7 @@ import awswrangler as wr
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
+from sageworks.utils.aws_utils import compute_size
 
 
 class DataCatalog(Connector):
@@ -44,6 +45,10 @@ class DataCatalog(Connector):
 
             # Convert to a data structure with direct lookup
             self.data_catalog_metadata[database] = {table["Name"]: table for table in all_tables}
+
+            # Track the size of the metadata
+            for key in self.data_catalog_metadata[database].keys():
+                self.metadata_size_info[database][key] = compute_size(self.data_catalog_metadata[database][key])
 
     def summary(self, include_details: bool = False) -> dict:
         """Return a summary of all the tables in this AWS Data Catalog Database
@@ -94,6 +99,8 @@ class DataCatalog(Connector):
 
 
 if __name__ == "__main__":
+    """Exercises the DataCatalog Class"""
+    import time
     from pprint import pprint
 
     # Collect args from the command line
@@ -106,7 +113,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Create the class and get the AWS Data Catalog database info
-    catalog = DataCatalog()
+    catalog = DataCatalog(["sageworks", "sagemaker_featurestore"])
     catalog.refresh()
 
     # Get the Summary Information
@@ -117,3 +124,6 @@ if __name__ == "__main__":
     for my_table_name in catalog.get_tables(db):
         print(f"\n*** {my_table_name} ***")
         pprint(catalog.details(db, my_table_name))
+
+    # Print out the metadata sizes for this connector
+    pprint(catalog.get_metadata_sizes())

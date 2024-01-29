@@ -1,7 +1,7 @@
 """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
 
 from abc import ABC, abstractmethod
-
+from collections import defaultdict
 import logging
 
 # SageWorks Imports
@@ -20,6 +20,7 @@ class Connector(ABC):
         self.boto_session = self.aws_account_clamp.boto_session()
         self.sm_session = self.aws_account_clamp.sagemaker_session(self.boto_session)
         self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto_session)
+        self.metadata_size_info = defaultdict(dict)
 
     @abstractmethod
     def check(self) -> bool:
@@ -49,3 +50,13 @@ class Connector(ABC):
             dict: A dictionary of details about this AWS resource
         """
         pass
+
+    def get_metadata_sizes(self) -> dict:
+        """Return the size of the metadata for each AWS Service"""
+        return dict(self.metadata_size_info)
+
+    def report_metadata_sizes(self) -> None:
+        """Report the size of the metadata for each AWS Service"""
+        connector_name = self.__class__.__name__
+        for key, size in self.metadata_size_info.items():
+            self.log.info(f"{connector_name}: {key} ({size})")

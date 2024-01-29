@@ -1,5 +1,6 @@
 import botocore
 import logging
+import sys
 import time
 import json
 import base64
@@ -12,6 +13,7 @@ from awswrangler.exceptions import NoFilesFound
 from pathlib import Path
 import posixpath
 from sagemaker.session import Session as SageSession
+from collections.abc import Mapping, Iterable
 
 # SageWorks Logger
 log = logging.getLogger("sageworks")
@@ -330,6 +332,23 @@ def pull_s3_data(s3_path: str, embedded_index=False) -> Union[pd.DataFrame, None
     except NoFilesFound:
         log.info(f"Could not find S3 data at {s3_path}...")
         return None
+
+
+def compute_size(obj: object) -> int:
+    """Recursively calculate the size of an object including its contents.
+
+    Args:
+        obj (object): The object whose size is to be computed.
+
+    Returns:
+        int: The total size of the object in bytes.
+    """
+    if isinstance(obj, Mapping):
+        return sys.getsizeof(obj) + sum(compute_size(k) + compute_size(v) for k, v in obj.items())
+    elif isinstance(obj, Iterable) and not isinstance(obj, (str, bytes, bytearray)):
+        return sys.getsizeof(obj) + sum(compute_size(item) for item in obj)
+    else:
+        return sys.getsizeof(obj)
 
 
 if __name__ == "__main__":

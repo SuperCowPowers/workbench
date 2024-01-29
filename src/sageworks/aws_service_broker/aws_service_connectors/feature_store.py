@@ -5,7 +5,7 @@ import argparse
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
-from sageworks.utils.aws_utils import list_tags_with_throttle
+from sageworks.utils.aws_utils import list_tags_with_throttle, compute_size
 
 
 class FeatureStore(Connector):
@@ -46,6 +46,10 @@ class FeatureStore(Connector):
             }
             sageworks_meta.update(add_data)
             self.feature_data[fg_name]["sageworks_meta"] = sageworks_meta
+
+        # Track the size of the metadata
+        for key in self.feature_data.keys():
+            self.metadata_size_info[key] = compute_size(self.feature_data[key])
 
     def summary(self, include_details: bool = False) -> dict:
         """Return a summary of all the AWS Feature Store Groups
@@ -128,7 +132,7 @@ if __name__ == "__main__":
     # List the Feature Groups and Details
     print("Feature Groups:")
     for group_name in feature_store.feature_group_names():
-        print(f"\t{group_name}")
+        print(f"\n*** {group_name} ***")
         pprint(feature_store.details(group_name))
 
     # Get the Athena Database Name for this Feature Group
@@ -139,3 +143,6 @@ if __name__ == "__main__":
 
     # Get the Athena Query for this Feature Group
     my_query = feature_store.snapshot_query(group_name)
+
+    # Print out the metadata sizes for this connector
+    pprint(feature_store.get_metadata_sizes())

@@ -6,6 +6,7 @@ from botocore.exceptions import ClientError
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
+from sageworks.utils.aws_utils import compute_size
 
 
 # Class to retrieve object/file information from an AWS S3 Bucket
@@ -44,6 +45,10 @@ class S3Bucket(Connector):
                 self.log.warning(f"Describing objects in {self.bucket} gave {error.response['Error']['Code']}")
                 return {}
         self.s3_bucket_data = {full_path: info for full_path, info in _aws_file_info.items()}
+
+        # Track the size of the metadata
+        for key in self.s3_bucket_data.keys():
+            self.metadata_size_info[key] = compute_size(self.s3_bucket_data[key])
 
     def summary(self, include_details: bool = False) -> dict:
         """Return a summary of all the file/objects in our bucket
@@ -103,6 +108,9 @@ if __name__ == "__main__":
 
     # Get the size of all the objects in this bucket
     print(f"Bucket Size: {s3_bucket.bucket_size()}")
+
+    # Print out the metadata sizes for this connector
+    pprint(s3_bucket.get_metadata_sizes())
 
     # Test the functionality for a bucket that doesn't exist
     not_exist_bucket = "s3://non_existent_bucket"

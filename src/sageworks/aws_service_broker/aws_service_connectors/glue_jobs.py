@@ -2,6 +2,7 @@
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
+from sageworks.utils.aws_utils import compute_size
 
 # References
 # - https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-python-calling.html
@@ -44,6 +45,10 @@ class GlueJobs(Connector):
             # Add the job info to our internal data storage
             self.glue_job_metadata[job_name] = job_info
             self.glue_job_metadata[job_name]["sageworks_meta"] = last_run_info
+
+        # Track the size of the metadata
+        for key in self.glue_job_metadata.keys():
+            self.metadata_size_info[key] = compute_size(self.glue_job_metadata[key])
 
     def summary(self, include_details: bool = False) -> dict:
         """Return a summary of all the AWS Glue Jobs
@@ -108,3 +113,6 @@ if __name__ == "__main__":
     # Get the ARN for a specific Glue Job
     arn = glue_info.get_job_arn(my_job_name)
     print(f"ARN for {my_job_name} is {arn}")
+
+    # Print out the metadata sizes for this connector
+    pprint(glue_info.get_metadata_sizes())

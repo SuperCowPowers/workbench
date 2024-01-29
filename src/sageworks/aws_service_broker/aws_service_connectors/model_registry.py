@@ -5,7 +5,7 @@ import argparse
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
-from sageworks.utils.aws_utils import list_tags_with_throttle
+from sageworks.utils.aws_utils import list_tags_with_throttle, compute_size
 
 
 class ModelRegistry(Connector):
@@ -45,6 +45,10 @@ class ModelRegistry(Connector):
             # Model groups have a list of models
             for model_info in self.model_data[mg_name]:
                 model_info["sageworks_meta"] = sageworks_meta
+
+        # Track the size of the metadata
+        for key in self.model_data.keys():
+            self.metadata_size_info[key] = compute_size(self.model_data[key])
 
     def summary(self, include_details: bool = False) -> dict:
         """Return a summary of all the AWS Model Registry Groups
@@ -98,3 +102,6 @@ if __name__ == "__main__":
     for my_group_name in model_registry.model_group_names():
         print(f"\t{my_group_name}")
         pprint(model_registry.details(my_group_name))
+
+    # Print out the metadata sizes for this connector
+    pprint(model_registry.get_metadata_sizes())
