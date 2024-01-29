@@ -31,6 +31,7 @@ class GlueJobs(Connector):
 
     def refresh(self):
         """Refresh the metadata for all the Glue Jobs"""
+        self.log.info("Refreshing Glue Job Metadata from AWS Glue...")
 
         # For each Glue Job get the detailed metadata about that job
         jobs = self.glue_client.get_jobs()
@@ -49,6 +50,9 @@ class GlueJobs(Connector):
         # Track the size of the metadata
         for key in self.glue_job_metadata.keys():
             self.metadata_size_info[key] = compute_size(self.glue_job_metadata[key])
+
+        # Total size of the metadata
+        self.metadata_size_info["total"] = sum(self.metadata_size_info.values())
 
     def summary(self, include_details: bool = False) -> dict:
         """Return a summary of all the AWS Glue Jobs

@@ -28,7 +28,7 @@ class FeatureStore(Connector):
 
     def refresh(self):
         """Refresh all the Feature Store Data from SageMaker"""
-        # Grab all the Feature Groups in the AWS Feature Store
+        self.log.info("Refreshing Feature Store Data from SageMaker...")
         _feature_groups = self.sm_client.list_feature_groups()["FeatureGroupSummaries"]
         _fg_names = [feature_group["FeatureGroupName"] for feature_group in _feature_groups]
 
@@ -50,6 +50,9 @@ class FeatureStore(Connector):
         # Track the size of the metadata
         for key in self.feature_data.keys():
             self.metadata_size_info[key] = compute_size(self.feature_data[key])
+
+        # Total size of the metadata
+        self.metadata_size_info["total"] = sum(self.metadata_size_info.values())
 
     def summary(self, include_details: bool = False) -> dict:
         """Return a summary of all the AWS Feature Store Groups

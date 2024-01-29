@@ -40,7 +40,7 @@ class DataCatalog(Connector):
         """Refresh all the tables in all the catalog databases"""
         for database in self.database_scope:
             # Get all table metadata from the Glue catalog Database
-            self.log.debug(f"Reading Data Catalog Database: {database}...")
+            self.log.info(f"Refreshing Data Catalog Database: {database}...")
             all_tables = wr.catalog.get_tables(database=database, boto3_session=self.boto_session)
 
             # Convert to a data structure with direct lookup
@@ -49,6 +49,14 @@ class DataCatalog(Connector):
             # Track the size of the metadata
             for key in self.data_catalog_metadata[database].keys():
                 self.metadata_size_info[database][key] = compute_size(self.data_catalog_metadata[database][key])
+
+        # Total size of the metadata
+        try:
+            self.metadata_size_info = dict(self.metadata_size_info)
+            self.metadata_size_info["total"] = sum([sum(x.values()) for x in self.metadata_size_info.values()])
+        except AttributeError:
+            self.log.critical(self.metadata_size_info)
+            self.metadata_size_info["total"] = 0
 
     def summary(self, include_details: bool = False) -> dict:
         """Return a summary of all the tables in this AWS Data Catalog Database

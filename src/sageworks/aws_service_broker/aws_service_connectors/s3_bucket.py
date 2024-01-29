@@ -32,8 +32,7 @@ class S3Bucket(Connector):
 
     def refresh(self):
         """Refresh all the file/object data from this bucket"""
-        # Grab all the files in this bucket
-        self.log.debug(f"Reading S3 Bucket: {self.bucket}...")
+        self.log.info(f"Refreshing S3 Bucket: {self.bucket}...")
         try:
             _aws_file_info = wr.s3.describe_objects(self.bucket, boto3_session=self.boto_session)
         except ClientError as error:
@@ -49,6 +48,9 @@ class S3Bucket(Connector):
         # Track the size of the metadata
         for key in self.s3_bucket_data.keys():
             self.metadata_size_info[key] = compute_size(self.s3_bucket_data[key])
+
+        # Total size of the metadata
+        self.metadata_size_info["total"] = sum(self.metadata_size_info.values())
 
     def summary(self, include_details: bool = False) -> dict:
         """Return a summary of all the file/objects in our bucket

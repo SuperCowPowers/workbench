@@ -29,7 +29,7 @@ class ModelRegistry(Connector):
 
     def refresh(self):
         """Refresh all the Model Registry Data from SageMaker"""
-        # Grab all the Model Groups in the AWS Model Registry
+        self.log.info("Refreshing Model Registry Data from SageMaker...")
         _model_groups = self.sm_client.list_model_package_groups(MaxResults=100)["ModelPackageGroupSummaryList"]
         _mg_names = [model_group["ModelPackageGroupName"] for model_group in _model_groups]
 
@@ -49,6 +49,9 @@ class ModelRegistry(Connector):
         # Track the size of the metadata
         for key in self.model_data.keys():
             self.metadata_size_info[key] = compute_size(self.model_data[key])
+
+        # Total size of the metadata
+        self.metadata_size_info["total"] = sum(self.metadata_size_info.values())
 
     def summary(self, include_details: bool = False) -> dict:
         """Return a summary of all the AWS Model Registry Groups

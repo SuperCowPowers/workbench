@@ -231,5 +231,8 @@ if __name__ == "__main__":
     print(f"Abalone Size: {abalone_size} Bytes")
     """
 
+    # Get the Metadata for ALL the categories (with a force refresh)
+    pprint(aws_broker.get_all_metadata(force_refresh=True))
+
     # Wait for any open threads to finish
     aws_broker.shutdown()
