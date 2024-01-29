@@ -58,30 +58,9 @@ class DataCatalog(Connector):
             self.log.critical(self.metadata_size_info)
             self.metadata_size_info["total"] = 0
 
-    def summary(self, include_details: bool = False) -> dict:
-        """Return a summary of all the tables in this AWS Data Catalog Database
-
-        Args:
-            include_details (bool, optional): Include the details for each table (defaults to False)
-        """
-        # Note: The details are already included
-        if include_details:
-            return self.data_catalog_metadata
-        else:
-            # Recursively remove any keys with 'sageworks_' in them
-            return self._remove_sageworks_meta(self.data_catalog_metadata)
-
-    def details(self, database: str, table: str) -> dict:
-        """Get the details for a specific table
-
-        Args:
-            database (str): The name of the database
-            table (str): The name of the table
-
-        Returns:
-            dict: The details for the table
-        """
-        return self.data_catalog_metadata[database].get(table)
+    def summary(self) -> dict:
+        """Return a summary of all the tables in this AWS Data Catalog Database"""
+        return self.data_catalog_metadata
 
     def get_tables(self, database: str) -> list:
         """Get all the table names in this database
@@ -92,18 +71,6 @@ class DataCatalog(Connector):
             list: List of table names
         """
         return list(self.data_catalog_metadata[database].keys())
-
-    def _remove_sageworks_meta(self, data: dict) -> dict:
-        """Internal: Recursively remove any keys with 'sageworks_' in them"""
-
-        # Recursively exclude any keys with 'sageworks_' in them
-        summary_data = {}
-        for key, value in data.items():
-            if isinstance(value, dict):
-                summary_data[key] = self._remove_sageworks_meta(value)
-            elif not key.startswith("sageworks_"):
-                summary_data[key] = value
-        return summary_data
 
 
 if __name__ == "__main__":
@@ -125,12 +92,6 @@ if __name__ == "__main__":
 
     # Get the Summary Information
     pprint(catalog.summary())
-
-    # Get the details for the specific tables
-    db = "sageworks"
-    for my_table_name in catalog.get_tables(db):
-        print(f"\n*** {my_table_name} ***")
-        pprint(catalog.details(db, my_table_name))
 
     # Print out the metadata sizes for this connector
     pprint(catalog.get_metadata_sizes())

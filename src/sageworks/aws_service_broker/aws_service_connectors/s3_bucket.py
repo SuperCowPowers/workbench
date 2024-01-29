@@ -52,25 +52,9 @@ class S3Bucket(Connector):
         # Total size of the metadata
         self.metadata_size_info["total"] = sum(self.metadata_size_info.values())
 
-    def summary(self, include_details: bool = False) -> dict:
-        """Return a summary of all the file/objects in our bucket
-
-        Args:
-            include_details (bool, optional): Include the details for each file/object (defaults to False)
-        """
-        # Note: The details are already included
+    def summary(self) -> dict:
+        """Return a summary of all the file/objects in our bucket"""
         return self.s3_bucket_data
-
-    def details(self, s3_file: str) -> dict:
-        """Get the details for a specific S3 file/object
-
-        Args:
-            s3_file (str): The name of the file/object to get the details
-
-        Returns:
-            dict: The details for the file/object
-        """
-        return self.s3_bucket_data[s3_file]
 
     def file_names(self) -> list:
         """Get all the file names in this bucket"""
@@ -102,11 +86,10 @@ if __name__ == "__main__":
     # Get the Summary Information
     pprint(s3_bucket.summary())
 
-    # List the S3 Files and Details
+    # List the S3 Files
     print("S3 Objects:")
     for file_name in s3_bucket.file_names():
         print(f"\n*** {file_name} ***")
-        pprint(s3_bucket.details(file_name))
 
     # Get the size of all the objects in this bucket
     print(f"Bucket Size: {s3_bucket.bucket_size()}")

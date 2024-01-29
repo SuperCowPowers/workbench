@@ -49,18 +49,9 @@ class Endpoints(Connector):
         # Total size of the metadata
         self.metadata_size_info["total"] = sum(self.metadata_size_info.values())
 
-    def summary(self, include_details: bool = False) -> dict:
-        """Return a summary of all the AWS endpoints
-
-        Args:
-            include_details (bool, optional): Include the details for each endpoint (defaults to False)
-        """
-        # Note: The details are already included
+    def summary(self) -> dict:
+        """Return a summary of all the AWS endpoints"""
         return self.endpoint_data
-
-    def details(self, endpoint_name: str) -> dict:
-        """Get the details for a specific endpoint"""
-        return self.endpoint_data.get(endpoint_name)
 
     def endpoint_names(self) -> list:
         """Get all the endpoint names in AWS"""
@@ -106,17 +97,11 @@ if __name__ == "__main__":
     # Create the class and get the AWS Endpoint details
     endpoint_info = Endpoints()
 
-    # The connectors need an explicit refresh to populate themselves
+    # Connectors need an explicit refresh to populate themselves
     endpoint_info.refresh()
 
     # Get the Summary Information
     pprint(endpoint_info.summary())
-
-    # List the Endpoint Names and Details
-    print("Endpoints:")
-    for end_name in endpoint_info.endpoint_names():
-        print(f"\n*** {end_name} ***")
-        pprint(endpoint_info.details(end_name))
 
     # Print out the metadata sizes for this connector
     pprint(endpoint_info.get_metadata_sizes())

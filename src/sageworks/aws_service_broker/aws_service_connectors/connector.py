@@ -41,16 +41,6 @@ class Connector(ABC):
         """
         pass
 
-    @abstractmethod
-    def details(self, name: str) -> dict:
-        """Return the details for a specific AWS resource
-        Args:
-            name (str): The name of the AWS resource
-        Returns:
-            dict: A dictionary of details about this AWS resource
-        """
-        pass
-
     def get_metadata_sizes(self) -> dict:
         """Return the size of the metadata for each AWS Service"""
         return dict(self.metadata_size_info)

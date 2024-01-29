@@ -53,20 +53,9 @@ class ModelRegistry(Connector):
         # Total size of the metadata
         self.metadata_size_info["total"] = sum(self.metadata_size_info.values())
 
-    def summary(self, include_details: bool = False) -> dict:
-        """Return a summary of all the AWS Model Registry Groups
-
-        Args:
-            include_details (bool, optional): Include the details for each feature group (defaults to False)
-        """
-        # Note: The details are already included
+    def summary(self) -> dict:
+        """Return a summary of all the AWS Model Registry Groups"""
         return self.model_data
-
-    def details(self, model_group_name: str) -> dict:
-        """Get the details for the LATEST MODEL in a specific model group"""
-        return (
-            self.model_data.get(model_group_name)[0] if isinstance(self.model_data.get(model_group_name), list) else {}
-        )
 
     def model_group_names(self) -> list:
         """Get all the feature group names in this database"""
@@ -100,11 +89,10 @@ if __name__ == "__main__":
     model_registry = ModelRegistry()
     model_registry.refresh()
 
-    # List the Model Groups and their details
+    # List the Model Groups
     print("Model Groups:")
     for my_group_name in model_registry.model_group_names():
         print(f"\t{my_group_name}")
-        pprint(model_registry.details(my_group_name))
 
     # Print out the metadata sizes for this connector
     pprint(model_registry.get_metadata_sizes())

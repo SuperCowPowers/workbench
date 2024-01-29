@@ -73,13 +73,32 @@ class AWSAccountClamp:
             identity = sts.get_caller_identity()
             cls.log.info("AWS Account Info:")
             cls.log.info(f"Account: {identity['Account']}")
-            cls.log.info(f"ARN: {identity['Arn']}")
+            cls.log.info(f"Identity ARN: {identity['Arn']}")
             cls.log.info(f"Region: {cls.region}")
             return True
         except (ClientError, UnauthorizedSSOTokenError):
             msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
             cls.log.critical(msg)
             raise RuntimeError(msg)
+
+    @classmethod
+    def get_aws_account_info(cls) -> dict:
+        """Get the AWS Account Information
+
+        Returns:
+            dict: A dictionary of the AWS Account Information
+        """
+        info = {}
+        sts = boto3.client("sts")
+        try:
+            identity = sts.get_caller_identity()
+            info["Account"] = identity["Account"]
+            info["IdentityArn"] = identity["Arn"]
+            info["Region"] = cls.region
+            return info
+        except (ClientError, UnauthorizedSSOTokenError):
+            cls.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+            return info
 
     @classmethod
     def check_s3_access(cls, boto_session: boto3.Session) -> bool:

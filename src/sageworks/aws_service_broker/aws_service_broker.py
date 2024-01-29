@@ -1,4 +1,10 @@
-"""AWSServiceBroker pulls and collects metadata from a bunch of AWS Services"""
+"""AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
+   Note: This is the most complicated/messy class in the entire SageWorks project.
+      If you're looking at the class you're probably in the wrong place.
+      We suggest looking at these classes instead:
+      - api/meta.py (API for the data produced by this class)
+      - aws_service_broker/aws_service_connectors/*.py (Pulls the data from AWS)
+"""
 
 import sys
 import argparse
@@ -108,11 +114,10 @@ class AWSServiceBroker:
             category (ServiceCategory): The Category of metadata to Pull
         """
         # Refresh the connection for the given category and pull new data
-        include_details = True
         try:
             cls.fresh_cache.set(category, True)
             cls.connection_map[category].refresh()
-            cls.meta_cache.set(category, cls.connection_map[category].summary(include_details))
+            cls.meta_cache.set(category, cls.connection_map[category].summary())
         except ClientError:
             cls.log.warning(f"Failed to refresh AWS data for {category}")
             cls.log.warning("Sometimes this happens when an artifact is being deleted/recreated...")

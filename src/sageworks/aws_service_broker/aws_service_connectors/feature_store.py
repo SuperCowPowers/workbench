@@ -40,9 +40,9 @@ class FeatureStore(Connector):
             arn = self.feature_data[fg_name]["FeatureGroupArn"]
             sageworks_meta = list_tags_with_throttle(arn, self.sm_session)
             add_data = {
-                "athena_database": self.athena_database_name(fg_name),
-                "athena_table": self.athena_table_name(fg_name),
-                "s3_storage": self.s3_storage(fg_name),
+                "athena_database": self._athena_database_name(fg_name),
+                "athena_table": self._athena_table_name(fg_name),
+                "s3_storage": self._s3_storage(fg_name),
             }
             sageworks_meta.update(add_data)
             self.feature_data[fg_name]["sageworks_meta"] = sageworks_meta
@@ -54,39 +54,30 @@ class FeatureStore(Connector):
         # Total size of the metadata
         self.metadata_size_info["total"] = sum(self.metadata_size_info.values())
 
-    def summary(self, include_details: bool = False) -> dict:
-        """Return a summary of all the AWS Feature Store Groups
-
-        Args:
-            include_details (bool, optional): Include the details for each feature group (defaults to False)
-        """
-        # Note: The details are already included
+    def summary(self) -> dict:
+        """Return a summary of all the AWS Feature Store Groups"""
         return self.feature_data
-
-    def details(self, feature_group_name: str) -> dict:
-        """Get the details for a specific feature group"""
-        return self.feature_data.get(feature_group_name)
 
     def feature_group_names(self) -> list:
         """Get all the feature group names"""
         return list(self.feature_data.keys())
 
-    def athena_database_name(self, feature_group_name: str) -> str:
-        """Get the Athena Database Name for a specific feature group"""
+    def _athena_database_name(self, feature_group_name: str) -> str:
+        """Internal: Get the Athena Database Name for a specific feature group"""
         try:
             return self.feature_data[feature_group_name]["OfflineStoreConfig"]["DataCatalogConfig"]["Database"].lower()
         except KeyError:
             return "-"
 
-    def athena_table_name(self, feature_group_name: str) -> str:
-        """Get the Athena Table Name for a specific feature group"""
+    def _athena_table_name(self, feature_group_name: str) -> str:
+        """Internal: Get the Athena Table Name for a specific feature group"""
         try:
             return self.feature_data[feature_group_name]["OfflineStoreConfig"]["DataCatalogConfig"]["TableName"]
         except KeyError:
             return "-"
 
-    def s3_storage(self, feature_group_name: str) -> str:
-        """Get the S3 Location for a specific feature group"""
+    def _s3_storage(self, feature_group_name: str) -> str:
+        """Internal: Get the S3 Location for a specific feature group"""
         return self.feature_data[feature_group_name]["OfflineStoreConfig"]["S3StorageConfig"]["ResolvedOutputS3Uri"]
 
     def _feature_group_details(self, feature_group_name: str) -> dict:
@@ -98,8 +89,8 @@ class FeatureStore(Connector):
 
     def snapshot_query(self, feature_group_name: str) -> str:
         """Construct an Athena 'snapshot' query for the given feature group"""
-        database = self.athena_database_name(feature_group_name)
-        table = self.athena_table_name(feature_group_name)
+        database = self._athena_database_name(feature_group_name)
+        table = self._athena_table_name(feature_group_name)
         event_time = "event_time"
         record_id = "id"
         query = f"""
@@ -132,17 +123,10 @@ if __name__ == "__main__":
     feature_store = FeatureStore()
     feature_store.refresh()
 
-    # List the Feature Groups and Details
+    # List the Feature Groups
     print("Feature Groups:")
     for group_name in feature_store.feature_group_names():
         print(f"\n*** {group_name} ***")
-        pprint(feature_store.details(group_name))
-
-    # Get the Athena Database Name for this Feature Group
-    my_database = feature_store.athena_database_name(group_name)
-
-    # Get the Athena Table Name for this Feature Group
-    my_table = feature_store.athena_table_name(group_name)
 
     # Get the Athena Query for this Feature Group
     my_query = feature_store.snapshot_query(group_name)

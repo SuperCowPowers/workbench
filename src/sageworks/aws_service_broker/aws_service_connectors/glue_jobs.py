@@ -41,7 +41,7 @@ class GlueJobs(Connector):
         for job_name in job_names:
             # Join the General Job and Last Run Info
             job_info = self.glue_client.get_job(JobName=job_name)["Job"]
-            last_run_info = self.get_last_run_info(job_name)
+            last_run_info = self._get_last_run_info(job_name)
 
             # Add the job info to our internal data storage
             self.glue_job_metadata[job_name] = job_info
@@ -54,25 +54,16 @@ class GlueJobs(Connector):
         # Total size of the metadata
         self.metadata_size_info["total"] = sum(self.metadata_size_info.values())
 
-    def summary(self, include_details: bool = False) -> dict:
-        """Return a summary of all the AWS Glue Jobs
-
-        Args:
-            include_details (bool, optional): Include the details for each job (defaults to False)
-        """
-        # Note: The details are already included
+    def summary(self) -> dict:
+        """Return a summary of all the AWS Glue Jobs"""
         return self.glue_job_metadata
-
-    def details(self, job_name: str) -> dict:
-        """Get the details for a specific glue job"""
-        return self.glue_job_metadata.get(job_name)
 
     def get_glue_jobs(self) -> list:
         """Get the glue job names for the AWS Glue Jobs"""
         return list(self.glue_job_metadata.keys())
 
-    def get_last_run_info(self, job_name: str) -> dict:
-        """Get the last run status for the given glue job"""
+    def _get_last_run_info(self, job_name: str) -> dict:
+        """Internal: Get the last run status for the given glue job"""
         # Get job runs
         job_runs = self.glue_client.get_job_runs(JobName=job_name)
 
@@ -87,8 +78,8 @@ class GlueJobs(Connector):
         else:
             return {"status": "-", "last_run": "-"}
 
-    def get_job_arn(self, job_name: str) -> dict:
-        """Get the AWS ARN for the given Glue Job name"""
+    def _get_job_arn(self, job_name: str) -> dict:
+        """Internal: Get the AWS ARN for the given Glue Job name"""
 
         # Construct the ARN for this Glue Job
         region = self.aws_account_clamp.region
@@ -109,14 +100,9 @@ if __name__ == "__main__":
     # Get a summary of the AWS Glue Jobs
     pprint(glue_info.summary())
 
-    # List Glue Jobs and their details
+    # List Glue Jobs
     for my_job_name in glue_info.get_glue_jobs():
         print(f"{my_job_name}")
-        pprint(glue_info.details(my_job_name))
-
-    # Get the ARN for a specific Glue Job
-    arn = glue_info.get_job_arn(my_job_name)
-    print(f"ARN for {my_job_name} is {arn}")
 
     # Print out the metadata sizes for this connector
     pprint(glue_info.get_metadata_sizes())
