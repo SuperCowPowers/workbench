@@ -50,9 +50,6 @@ class ModelRegistry(Connector):
         for key in self.model_data.keys():
             self.metadata_size_info[key] = compute_size(self.model_data[key])
 
-        # Total size of the metadata
-        self.metadata_size_info["total"] = sum(self.metadata_size_info.values())
-
     def summary(self) -> dict:
         """Return a summary of all the AWS Model Registry Groups"""
         return self.model_data

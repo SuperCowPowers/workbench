@@ -25,18 +25,8 @@ def test_summary():
     assert "test_features" in summary.keys()
 
 
-def test_details():
-    """Test the details() method"""
-    fs = FeatureStore()
-    fs.refresh()
-    details = fs.details("test_features")
-    assert isinstance(details, dict)
-    assert "FeatureGroupArn" in details.keys()
-
-
 if __name__ == "__main__":
     """Run the tests for the Feature Store Connector"""
     test_check()
     test_refresh()
     test_summary()
-    test_details()

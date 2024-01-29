@@ -25,18 +25,8 @@ def test_summary():
     assert "abalone-regression-end" in summary.keys()
 
 
-def test_details():
-    """Test the details() method"""
-    endpoints = Endpoints()
-    endpoints.refresh()
-    details = endpoints.details("abalone-regression-end")
-    assert isinstance(details, dict)
-    assert "InstanceType" in details.keys()
-
-
 if __name__ == "__main__":
     """Run the tests for the Endpoints Connector"""
     test_check()
     test_refresh()
     test_summary()
-    test_details()

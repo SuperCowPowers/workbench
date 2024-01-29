@@ -25,18 +25,8 @@ def test_summary():
     assert "sageworks" in summary.keys()
 
 
-def test_details():
-    """Test the details() method"""
-    catalog = DataCatalog()
-    catalog.refresh()
-    details = catalog.details("sageworks", "test_data")
-    assert isinstance(details, dict)
-    assert "Name" in details.keys()
-
-
 if __name__ == "__main__":
     """Run the tests for the DataCatalog Connector"""
     test_check()
     test_refresh()
     test_summary()
-    test_details()

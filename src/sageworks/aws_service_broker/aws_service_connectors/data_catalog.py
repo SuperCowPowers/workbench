@@ -50,14 +50,6 @@ class DataCatalog(Connector):
             for key in self.data_catalog_metadata[database].keys():
                 self.metadata_size_info[database][key] = compute_size(self.data_catalog_metadata[database][key])
 
-        # Total size of the metadata
-        try:
-            self.metadata_size_info = dict(self.metadata_size_info)
-            self.metadata_size_info["total"] = sum([sum(x.values()) for x in self.metadata_size_info.values()])
-        except AttributeError:
-            self.log.critical(self.metadata_size_info)
-            self.metadata_size_info["total"] = 0
-
     def summary(self) -> dict:
         """Return a summary of all the tables in this AWS Data Catalog Database"""
         return self.data_catalog_metadata

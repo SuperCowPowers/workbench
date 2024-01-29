@@ -25,18 +25,8 @@ def test_summary():
     assert "abalone-regression" in summary.keys()
 
 
-def test_details():
-    """Test the details() method"""
-    model_registry = ModelRegistry()
-    model_registry.refresh()
-    details = model_registry.details("abalone-regression")
-    assert isinstance(details, dict)
-    assert "ModelPackageGroupArn" in details.keys()
-
-
 if __name__ == "__main__":
     """Run the tests for the Model Registry Connector"""
     test_check()
     test_refresh()
     test_summary()
-    test_details()

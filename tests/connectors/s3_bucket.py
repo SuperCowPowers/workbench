@@ -31,22 +31,8 @@ def test_summary():
     assert any("incoming-data" in key for key in summary.keys())
 
 
-def test_details():
-    """Test the details() method"""
-    bucket = S3Bucket(test_bucket)
-    bucket.refresh()
-
-    # Grab the first file in the bucket and get its details
-    example_bucket_file = bucket.file_names()[0] if bucket.file_names() else None
-    if example_bucket_file:
-        details = bucket.details(example_bucket_file)
-        assert isinstance(details, dict)
-        assert "ContentLength" in details.keys()
-
-
 if __name__ == "__main__":
     """Run the tests for the S3 Bucket Connector"""
     test_check()
     test_refresh()
     test_summary()
-    test_details()

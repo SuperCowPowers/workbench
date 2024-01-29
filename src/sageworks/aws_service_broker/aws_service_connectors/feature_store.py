@@ -51,9 +51,6 @@ class FeatureStore(Connector):
         for key in self.feature_data.keys():
             self.metadata_size_info[key] = compute_size(self.feature_data[key])
 
-        # Total size of the metadata
-        self.metadata_size_info["total"] = sum(self.metadata_size_info.values())
-
     def summary(self) -> dict:
         """Return a summary of all the AWS Feature Store Groups"""
         return self.feature_data
