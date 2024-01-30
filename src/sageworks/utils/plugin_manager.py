@@ -101,12 +101,12 @@ class PluginManager:
                 return module
         return None
 
-    def get_all_plugins(self) -> Dict[str, List[Any]]:
+    def get_all_plugins(self) -> Dict[str, dict[Any]]:
         """
         Retrieve a dictionary of all plugins.
 
         Returns:
-            Dict[str, dict]: A dictionary of all plugins.
+            Dict[str, dict]: A dictionary of all plugins (keyed by plugin type).
         """
         return self.plugins
 
@@ -137,16 +137,18 @@ class PluginManager:
         Returns:
             View: An INSTANTIATED view class with the given name.
         """
-        return self.plugins.get("views", {}).get(view_name, None)
+        view = self.plugins["views"].get(view_name)
+        return view() if view else None
 
-    def get_pages(self) -> List[Any]:
+    def get_pages(self) -> dict[Any]:
         """
         Retrieve a dict of plugins pages
 
         Returns:
            dict: A dict of INSTANTIATED plugin pages.
         """
-        return self.plugins.get("pages", {})
+        pages = self.plugins["pages"]
+        return {name: page() for name, page in pages.items()}
 
     def __repr__(self) -> str:
         """String representation of the PluginManager state and contents
