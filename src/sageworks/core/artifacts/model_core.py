@@ -490,7 +490,7 @@ class ModelCore(Artifact):
         inference_metrics = pull_s3_data(s3_path)
 
         # Store data into the SageWorks Metadata
-        metrics_storage = None if inference_metrics is None else inference_metrics.to_dict()
+        metrics_storage = None if inference_metrics is None else inference_metrics.to_dict("records")
         self.upsert_sageworks_meta({"sageworks_inference_metrics": metrics_storage})
 
     def _pull_inference_cm(self) -> Union[pd.DataFrame, None]:
@@ -506,7 +506,7 @@ class ModelCore(Artifact):
         inference_cm = pull_s3_data(s3_path, embedded_index=True)
 
         # Store data into the SageWorks Metadata
-        cm_storage = None if inference_cm is None else inference_cm.to_dict()
+        cm_storage = None if inference_cm is None else inference_cm.to_dict("records")
         self.upsert_sageworks_meta({"sageworks_inference_cm": cm_storage})
 
     def _pull_inference_metadata(self) -> Union[pd.DataFrame, None]:

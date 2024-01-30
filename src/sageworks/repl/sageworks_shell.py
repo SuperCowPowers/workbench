@@ -197,6 +197,10 @@ class SageWorksShell:
         self.commands["Meta"] = importlib.import_module("sageworks.api.meta").Meta
         self.commands["PluginManager"] = importlib.import_module("sageworks.utils.plugin_manager").PluginManager
 
+        # These are 'nice to have' imports
+        self.commands["pd"] = importlib.import_module("pandas")
+        self.commands["pprint"] = importlib.import_module("pprint").pprint
+
     @staticmethod
     def help_txt():
         help_msg = """    Commands:
