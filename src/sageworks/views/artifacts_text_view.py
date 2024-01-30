@@ -27,10 +27,6 @@ class ArtifactsTextView(View):
         pd.set_option("display.max_colwidth", 35)
         pd.set_option("display.width", 600)
 
-    def check(self) -> bool:
-        """Can we connect to this view/service?"""
-        return True  # I'm great, thx for asking
-
     def refresh(self, force_refresh: bool = False) -> None:
         """Refresh data/metadata associated with this view"""
         ArtifactsTextView.aws_artifact_data = self.aws_broker.get_all_metadata(force_refresh=force_refresh)

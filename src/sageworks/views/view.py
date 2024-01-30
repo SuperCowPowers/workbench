@@ -21,11 +21,6 @@ class View(ABC):
         self.sm_session = self.aws_account_clamp.sagemaker_session()
 
     @abstractmethod
-    def check(self) -> bool:
-        """Can we connect to this view/service?"""
-        pass
-
-    @abstractmethod
     def refresh(self) -> bool:
         """Refresh data/metadata associated with this view"""
         pass

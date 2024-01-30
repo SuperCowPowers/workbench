@@ -1,28 +1,32 @@
 """ModelPluginView is a tailored view of the Model Summary data + Details"""
 
-import pandas as pd
 import json
+import pandas as pd
 
 # SageWorks Imports
-from sageworks.views.model_web_view import ModelWebView
-from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker, ServiceCategory
+from sageworks.views.view import View
+from sageworks.api.meta import Meta
+from sageworks.api.model import Model
 
 
-class ModelPluginView(ModelWebView):
+class ModelPluginView(View):
     def __init__(self):
         """ModelPluginView pulls Model metadata and populates a Details Panel"""
         # Call SuperClass Initialization
         super().__init__()
 
-        # We're using the AWS Service Broker to get additional information about the models
-        self.aws_broker = AWSServiceBroker()
+        # We're using the SageWorks Meta class to get information about models
+        self.meta = Meta()
 
-        # DataFrame of the Models Summary
-        self.models_df = self.models_summary()
+        # Call Refresh
+        self.models_df = None
+        self.refresh()  # Sets the self.models_df
 
     def refresh(self):
-        """Refresh the data from the AWS Service Broker"""
-        super().refresh()
+        """Refresh our data from the SageWorks Meta Class"""
+
+        # Note: This page is served on an AWS Web server and stays up 24/7.
+        #       We want to make sure new models show up when they are created.
         self.models_df = self.models_summary()
 
     def view_data(self) -> pd.DataFrame:
@@ -36,48 +40,64 @@ class ModelPluginView(ModelWebView):
     def models_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Models"""
 
-        # We get the summary dataframe from our parent class
-        model_df = super().models_summary()
+        # Note: The data we get from Meta is structured as follows:
+        # {
+        #    model_group_name: [model_1, model_2, ...],
+        #    model_group_name_2: [model_1, model_2, ...], ...
+        # }
+        model_summary = []
+        for model_group_name, model_list in self.meta.models().items():
 
-        # We pull a dictionary of model metrics from our internal method
-        model_metrics = self._model_metrics()
-
-        # Now 'join' the metrics to the model_df
-        model_df["metrics"] = model_df["uuid"].map(model_metrics)
-        return model_df
-
-    def _model_metrics(self) -> dict[str]:
-        """Internal: Get the metrics for all models and return a dictionary
-
-        Returns:
-            dict: In the form {model_uuid: metrics, model_uuid_2: metrics, ...}
-
-        Notes:
-            - There will not be keys for models without metrics
-            - Metrics are in JSON.dumps format, so those will have to be unpacked
-        """
-        model_metrics = dict()
-
-        # Now we use the AWS Service Broker to get additional information about
-        # the Models. Specifically, we want to grab any inference metrics
-        model_data = self.aws_broker.get_metadata(ServiceCategory.MODELS)
-        for model_group_name, model_list in model_data.items():
-            if not model_list:
-                continue
+            # Get Summary information for the 'latest' model in the model_list
             latest_model = model_list[0]
             sageworks_meta = latest_model.get("sageworks_meta", {})
-            metrics = sageworks_meta.get("sageworks_inference_metrics")
-            if metrics:
-                model_metrics[latest_model["ModelPackageGroupName"]] = json.dumps(
-                    pd.DataFrame.from_dict(metrics).to_dict(orient="records")
-                )
+            summary = {
+                "uuid": latest_model["ModelPackageGroupName"],  # Required for selection
+                "Name": latest_model["ModelPackageGroupName"],
+                "Owner": sageworks_meta.get("sageworks_owner", "-"),
+                "Model Type": sageworks_meta.get("sageworks_model_type"),
+                "Created": latest_model.get("CreationTime"),
+                "Ver": latest_model["ModelPackageVersion"],
+                "Tags": sageworks_meta.get("sageworks_tags", "-"),
+                "Input": sageworks_meta.get("sageworks_input", "-"),
+                "Status": latest_model["ModelPackageStatus"],
+                "Description": latest_model.get("ModelPackageDescription", "-"),
+                "Metrics": self.get_model_metrics(latest_model),
+            }
+            model_summary.append(summary)
 
-        return model_metrics
+        # Now return a dataframe of the model_summary
+        return pd.DataFrame(model_summary)
+
+    @staticmethod
+    def get_model_metrics(latest_model) -> list[dict]:
+        """Get the metrics for a single model
+
+        Args:
+            latest_model (dict): The latest model from the SageWorks Meta Class
+
+        Returns:
+            list(dict): A list of metrics for the model
+        """
+        sageworks_meta = latest_model.get("sageworks_meta", {})
+        metrics = sageworks_meta.get("sageworks_inference_metrics")
+        return json.dumps(metrics) if metrics else []
+
+    @staticmethod
+    def model_details(model_uuid) -> dict:
+        """Get the details for the given model
+
+        Args:
+            model_uuid (str): The uuid of the model to get details for
+
+        Returns:
+            dict: A dictionary of the model details
+        """
+        return Model(model_uuid).details()
 
 
 if __name__ == "__main__":
     # Exercising the ModelPluginView
-    import time
 
     # Create the class and get the AWS Model details
     model_view = ModelPluginView()
@@ -86,6 +106,3 @@ if __name__ == "__main__":
     print("ModelsSummary:")
     summary = model_view.view_data()
     print(summary.head())
-
-    # Give any broker threads time to finish
-    time.sleep(1)
