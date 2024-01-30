@@ -30,7 +30,7 @@ pm = PluginManager()
 plugin_pages = pm.get_pages()
 
 # Setup each if the plugin pages (call layout and callbacks internally)
-for page in plugin_pages:
+for name, page in plugin_pages.items():
     page.page_setup(app)
 
 
