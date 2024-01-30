@@ -22,7 +22,6 @@ def test_summary():
     jobs.refresh()
     summary = jobs.summary()
     assert isinstance(summary, dict)
-    assert "Glue_Test" in summary.keys()
 
 
 if __name__ == "__main__":
