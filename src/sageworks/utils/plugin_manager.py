@@ -30,7 +30,7 @@ class PluginManager:
             return
 
         self.log = logging.getLogger("sageworks")
-        self.plugins: Dict[str, List[Any]] = {"web_components": [], "transforms": [], "views": [], "pages": []}
+        self.plugins: Dict[str, dict] = {"web_components": {}, "transforms": {}, "views": {}, "pages": {}}
         cm = ConfigManager()
         self.plugin_dir = cm.get_config("SAGEWORKS_PLUGINS")
         if not self.plugin_dir:
@@ -67,18 +67,18 @@ class PluginManager:
                         # For web components, check if the class is a subclass of WebPluginInterface
                         if plugin_type == "web_components" and issubclass(attr, WebPluginInterface):
                             self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
-                            self.plugins[plugin_type].append(attr)
+                            self.plugins[plugin_type][attr_name] = attr
 
                         # For views, check if the class is a subclass of View
                         elif plugin_type == "views" and issubclass(attr, View):
                             self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
-                            self.plugins[plugin_type].append(attr)
+                            self.plugins[plugin_type][attr_name] = attr
 
                         # For pages, check if the class has the required page plugin method (page_setup)
                         elif plugin_type == "pages":
                             if hasattr(attr, "page_setup"):
                                 self.log.important(f"Loading page plugin: {attr_name}")
-                                self.plugins[plugin_type].append(attr)
+                                self.plugins[plugin_type][attr_name] = attr
                             else:
                                 self.log.warning(
                                     f"Class {attr_name} in {filename} does not have all required page methods"
@@ -106,7 +106,7 @@ class PluginManager:
         Retrieve a dictionary of all plugins.
 
         Returns:
-            Dict[str, List[Any]]: A dictionary of all plugins.
+            Dict[str, dict]: A dictionary of all plugins.
         """
         return self.plugins
 
@@ -120,7 +120,11 @@ class PluginManager:
         Returns:
             List[Any]: A list of INSTANTIATED plugin classes of the requested type.
         """
-        plugin_classes = [x for x in self.plugins.get("web_components", []) if x.plugin_type == web_plugin_type]
+        plugin_classes = [
+            self.plugins.get("web_components", {})[x]
+            for x in self.plugins.get("web_components", {})
+            if self.plugins.get("web_components", {})[x].plugin_type == web_plugin_type
+        ]
         return [x() for x in plugin_classes]
 
     def get_view(self, view_name: str) -> Union[View, None]:
@@ -133,19 +137,16 @@ class PluginManager:
         Returns:
             View: An INSTANTIATED view class with the given name.
         """
-        for view in self.plugins.get("views", []):
-            if view.__name__ == view_name:
-                return view()
-        return None
+        return self.plugins.get("views", {}).get(view_name, None)
 
     def get_pages(self) -> List[Any]:
         """
-        Retrieve a list of plugins pages
+        Retrieve a dict of plugins pages
 
         Returns:
-            List[Any]: A list of INSTANTIATED plugin pages.
+           dict: A dict of INSTANTIATED plugin pages.
         """
-        return [x() for x in self.plugins.get("pages", [])]
+        return self.plugins.get("pages", {})
 
     def __repr__(self) -> str:
         """String representation of the PluginManager state and contents
