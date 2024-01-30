@@ -119,7 +119,11 @@ class PluginManager:
         Returns:
             List[Any]: A list of INSTANTIATED plugin classes of the requested type.
         """
-        plugin_classes = [self.plugins.get("web_components", {})[x] for x in self.plugins.get("web_components", {}) if self.plugins.get("web_components", {})[x].plugin_type == web_plugin_type]
+        plugin_classes = [
+            self.plugins.get("web_components", {})[x]
+            for x in self.plugins.get("web_components", {})
+            if self.plugins.get("web_components", {})[x].plugin_type == web_plugin_type
+        ]
         return [x() for x in plugin_classes]
 
     def get_view(self, view_name: str) -> Union[View, None]:
