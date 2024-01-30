@@ -1,15 +1,15 @@
 site_name: SageWorks
 nav:
   - Welcome: index.md
+  - SageWorks REPL: repl/index.md
   - API Classes: 
     - OverView: api_classes/overview.md
+    - Meta: api_classes/meta.md
     - DataSource: api_classes/data_source.md
     - FeatureSet: api_classes/feature_set.md
     - Model: api_classes/model.md
     - Endpoint: api_classes/endpoint.md
     - Monitor: api_classes/monitor.md
-    - Meta: api_classes/meta.md
-  - SageWorks REPL: repl/index.md
   - Core Classes: 
     - OverView: core_classes/overview.md
     - Artifacts: 
