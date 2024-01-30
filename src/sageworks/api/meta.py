@@ -15,13 +15,13 @@ from sageworks.utils.config_manager import ConfigManager
 class Meta:
     """Meta: A class that provides high level information and summaries of SageWorks/AWS Artifacts
 
-        Common Usage:
-        ```
-        meta = Meta()
-        meta.account()
-        meta.config()
-        meta.data_sources()
-        ```
+    Common Usage:
+    ```
+    meta = Meta()
+    meta.account()
+    meta.config()
+    meta.data_sources()
+    ```
     """
 
     def __init__(self):
