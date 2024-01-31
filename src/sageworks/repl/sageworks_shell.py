@@ -126,8 +126,8 @@ class SageWorksShell:
         from sageworks.utils.sageworks_cache import SageWorksCache
 
         # Grab the Redis Host and Port
-        host = self.cm.get_config("REDIS_HOST")
-        port = self.cm.get_config("REDIS_PORT")
+        host = self.cm.get_config("REDIS_HOST", "localhost")
+        port = self.cm.get_config("REDIS_PORT", 6379)
 
         # Check if Redis is running locally
         status = "OK"
