@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 
 # Get the SageWorks Version and License ID
 import sageworks
-from sageworks.utils.license_manager import LicenseManager
+from sageworks.utils.config_manager import ConfigManager
 
 
 def main_layout(
@@ -18,7 +18,7 @@ def main_layout(
 ) -> html.Div:
     """Main Layout for the Dashboard"""
     sageworks_version = sageworks.__version__.split("+")[0].strip()
-    sageworks_license = LicenseManager.get_license_id()
+    license_id = ConfigManager().get_license_id()
 
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
@@ -37,7 +37,7 @@ def main_layout(
                                 },
                             ),
                             html.Span(
-                                f" ({sageworks_license})",
+                                f" ({license_id})",
                                 style={
                                     "color": "rgb(140, 140, 200)",
                                     "fontSize": 15,

@@ -235,6 +235,14 @@ class ConfigManager:
         api_info = LicenseManager().load_api_license(aws_account_id=None, api_key=api_key)
         return api_info
 
+    def get_license_id(self) -> str:
+        """Get the license ID from the license information
+
+        Returns:
+            str: The license ID
+        """
+        return self.get_api_key_info().get("license_id", "Unknown")
+
     @staticmethod
     def get_platform_specific_path() -> str:
         """Returns the platform-specific path for the config file.
@@ -306,6 +314,9 @@ if __name__ == "__main__":
     print(f"SAGEWORKS_ROLE: {sageworks_role}")
     sageworks_plugins = cm.get_config("SAGEWORKS_PLUGINS")
     print(f"SAGEWORKS_PLUGINS: {sageworks_plugins}")
+
+    # License ID
+    print(f"SAGEWORKS_LICENSE_ID: {ConfigManager().get_license_id()}")
 
     # API Key Info
     my_api_key_info = cm.get_api_key_info()
