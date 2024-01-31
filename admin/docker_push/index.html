@@ -1393,12 +1393,13 @@
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>vi Dockerfile
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a># Install Sageworks (changes often)
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>RUN pip install --no-cache-dir sageworks==0.4.11 &lt;-- change this
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>RUN pip install --no-cache-dir sageworks==0.4.13 &lt;-- change this
 </span></code></pre></div>
 <h3 id="build-the-docker-image">Build the Docker Image</h3>
 <p><strong>Note:</strong> For a client specific config file you'll need to copy it locally so that it's within Dockers 'build context'. If you're building the 'vanilla' open source Docker image, then you can use the <code>open_source_config.json</code> that's in the directory already.</p>
+<p><strong>Note2:</strong> If you're using a specific config <strong>make sure</strong> to remove the AWS_PROFILE line, Docker containers/ECS/etc will use a different mechanism for AWS credientials.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker build --build-arg SAGEWORKS_CONFIG=open_source_config.json -t \
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>sageworks_dashboard:v0_1_9_amd64 --platform linux/amd64 .
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>sageworks_dashboard:v0_4_13_amd64 --platform linux/amd64 .
 </span></code></pre></div>
 <h3 id="test-the-image-locally">Test the Image Locally</h3>
 <p>You have a <code>docker_local_dashboard</code> alias in your <code>~/.zshrc</code> :)</p>
@@ -1408,13 +1409,13 @@
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>--password-stdin public.ecr.aws
 </span></code></pre></div>
 <h3 id="tagpush-the-image-to-aws-ecr">Tag/Push the Image to AWS ECR</h3>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker tag sageworks_dashboard:v0_4_11_amd64 \
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_1_amd64
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker tag sageworks_dashboard:v0_4_13_amd64 \
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_13_amd64
 </span></code></pre></div>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_11_amd64
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_13_amd64
 </span></code></pre></div></p>
 <h3 id="update-the-latest-tag">Update the 'latest' tag</h3>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker tag public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_11_amd64 \
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker tag public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_13_amd64 \
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
 </span></code></pre></div>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
