@@ -14,10 +14,10 @@ RUN pip install --no-cache-dir sageworks==0.4.11 <-- change this
 ```
 
 ### Build the Docker Image
-**Note:** You'll need to copy the config file locally so that it's within Dockers 'build context'.
+**Note:** For a client specific config file you'll need to copy it locally so that it's within Dockers 'build context'. If you're building the 'vanilla' open source Docker image, then you can use the `open_source_config.json` that's in the directory already.
 
 ```
-docker build --build-arg SAGEWORKS_CONFIG=my_config.json -t \
+docker build --build-arg SAGEWORKS_CONFIG=open_source_config.json -t \
 sageworks_dashboard:v0_1_9_amd64 --platform linux/amd64 .
 ```
 
