@@ -106,7 +106,9 @@ class PluginManager:
         Retrieve a dictionary of all plugins.
 
         Returns:
-            Dict[str, dict]: A dictionary of all plugins (keyed by plugin type).
+            Dict[str, dict]: A dictionary of all plugins.
+                {'pages': {name: plugin, name2: plugin2,...
+                 'views': {name: plugin, name2: plugin2,...},
         """
         return self.plugins
 
@@ -158,9 +160,9 @@ class PluginManager:
         """
         summary = "SAGEWORKS_PLUGINS: " + self.plugin_dir + "\n"
         summary += "Plugins:\n"
-        for plugin_type, plugins in self.plugins.items():
-            for plugin in plugins:
-                summary += f"  {plugin_type}: {plugin.__name__}\n"
+        for plugin_type, plugin_dict in self.plugins.items():
+            for name, plugin in plugin_dict.items():
+                summary += f"  {plugin_type}: {name}: {plugin}\n"
         return summary
 
 
@@ -185,3 +187,6 @@ if __name__ == "__main__":
 
     # Get all the plugins
     pprint(manager.get_all_plugins())
+
+    # Test REPR
+    print(manager)

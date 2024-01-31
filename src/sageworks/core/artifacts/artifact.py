@@ -114,8 +114,8 @@ class Artifact(ABC):
         clean_uuid = clean_uuid.replace("-", delimiter)
         if uuid != clean_uuid:
             log = logging.getLogger("sageworks")
-            log.warning("UUIDs have constraints and are suppose to conform to things like, lower case,etc)")
-            log.warning(f"{uuid} doesn't conform and should be converted to something like: {clean_uuid}")
+            log.warning("UUIDs have constraints (lower case, etc) to minimize downstream issues.")
+            log.warning(f"{uuid} doesn't conform and should be converted to: {clean_uuid}")
             return uuid
         return clean_uuid
 
