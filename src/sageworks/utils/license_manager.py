@@ -119,7 +119,7 @@ class LicenseManager:
         Returns:
             str: The license ID
         """
-        return cls.api_license_info.get("license_id", "Unknown")
+        return cls.api_license_info.get("license_id", "Unknown") if cls.api_license_info else "Unknown"
 
     @staticmethod
     def read_signature_public_key():
@@ -142,6 +142,7 @@ if __name__ == "__main__":
     # Grab the API Key from the SageWorks ConfigManager
     cm = ConfigManager()
     api_key = cm.get_config("SAGEWORKS_API_KEY")
+    print(LicenseManager.get_license_id())
 
     my_license_info = LicenseManager.load_api_license(aws_account_id=None, api_key=api_key)
     print(my_license_info)

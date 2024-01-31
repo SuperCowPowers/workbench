@@ -16,10 +16,6 @@ RUN pip install --no-cache-dir gunicorn
 # Inform Docker that the container is listening on port 8000
 EXPOSE 8000
 
-# Set ENV variables
-ENV SAGEWORKS_BUCKET=sageworks-bucket-not-specified
-ENV REDIS_HOST=localhost
-
 # Install app-specific dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
@@ -29,13 +25,15 @@ COPY nginx.conf /etc/nginx/sites-available/default
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Install Sageworks (changes often)
-RUN pip install --no-cache-dir sageworks==0.3.8
+RUN pip install --no-cache-dir sageworks==0.4.11
 
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Set the sageworks plugins ENV var
-ENV SAGEWORKS_PLUGINS=/app/sageworks_plugins
+# Grab the config file from build args, copy, and set ENV var
+ARG SAGEWORKS_CONFIG
+COPY $SAGEWORKS_CONFIG /app/sageworks_config.json
+ENV SAGEWORKS_CONFIG=/app/sageworks_config.json
 
 # Run supervisord
 CMD ["/usr/bin/supervisord"]

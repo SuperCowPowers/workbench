@@ -8,13 +8,17 @@ The following instructions should work, but things change :)
 ```
 cd applications/aws_dashboard
 vi Dockerfile
+
 # Install Sageworks (changes often)
-RUN pip install --no-cache-dir sageworks==0.2.28 <-- change this
+RUN pip install --no-cache-dir sageworks==0.4.11 <-- change this
 ```
 
 ### Build the Docker Image
+**Note:** You'll need to copy the config file locally so that it's within Dockers 'build context'.
+
 ```
-docker build -t sageworks_dashboard:v0_1_9_amd64 --platform linux/amd64 .
+docker build --build-arg SAGEWORKS_CONFIG=my_config.json -t \
+sageworks_dashboard:v0_1_9_amd64 --platform linux/amd64 .
 ```
 
 ### Test the Image Locally
@@ -28,16 +32,16 @@ scp_sandbox_admin | docker login --username AWS \
 ```
 ### Tag/Push the Image to AWS ECR
 ```
-docker tag sageworks_dashboard:v0_2_28_amd64 \
-public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_2_28_amd64
+docker tag sageworks_dashboard:v0_4_11_amd64 \
+public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_1_amd64
 ```
 ```
-docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_2_28_amd64
+docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_11_amd64
 ```
 
 ### Update the 'latest' tag
 ```
-docker tag public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_2_28_amd64 \
+docker tag public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_11_amd64 \
 public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
 ```
 ```

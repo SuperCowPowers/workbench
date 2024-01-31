@@ -7,9 +7,6 @@ import dash_bootstrap_components as dbc
 import sageworks
 from sageworks.utils.license_manager import LicenseManager
 
-sageworks_version = sageworks.__version__.split("+")[0].strip()
-sageworks_license = LicenseManager.get_license_id()
-
 
 def main_layout(
     incoming_data: dash_table.DataTable,
@@ -19,6 +16,10 @@ def main_layout(
     models: dash_table.DataTable,
     endpoints: dash_table.DataTable,
 ) -> html.Div:
+    """Main Layout for the Dashboard"""
+    sageworks_version = sageworks.__version__.split("+")[0].strip()
+    sageworks_license = LicenseManager.get_license_id()
+
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
         children=[
