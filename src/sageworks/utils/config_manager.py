@@ -184,6 +184,7 @@ class ConfigManager:
         required_keys = ["SAGEWORKS_ROLE", "SAGEWORKS_BUCKET", "SAGEWORKS_API_KEY"]
         for key in required_keys:
             if key not in self.config:
+                self.log.critical(f"Missing required config: {key}")
                 return False
 
         # Also make sure that the SAGEWORKS_BUCKET is not the default value
