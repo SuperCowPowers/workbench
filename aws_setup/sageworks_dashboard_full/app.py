@@ -15,6 +15,7 @@ print(f"Region: {aws_region}")
 # SageWorks Configuration
 try:
     from sageworks.utils.config_manager import ConfigManager
+
     cm = ConfigManager()
     pprint(cm.config)
     sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")

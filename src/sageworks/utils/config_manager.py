@@ -111,7 +111,14 @@ class ConfigManager:
 
     def overwrite_config_with_env(self):
         """Overwrite the configuration with environment variables."""
-        overwrites = ["SAGEWORKS_ROLE", "SAGEWORKS_BUCKET", "SAGEWORKS_API_KEY", "REDIS_HOST", "REDIS_PORT", "REDIS_PASSWORD"]
+        overwrites = [
+            "SAGEWORKS_ROLE",
+            "SAGEWORKS_BUCKET",
+            "SAGEWORKS_API_KEY",
+            "REDIS_HOST",
+            "REDIS_PORT",
+            "REDIS_PASSWORD",
+        ]
         for key, value in os.environ.items():
             # If the key is in the overwrites list, then overwrite the config
             if key in overwrites:
