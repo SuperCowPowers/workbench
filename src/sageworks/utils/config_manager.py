@@ -394,6 +394,15 @@ if __name__ == "__main__":
     cm = ConfigManager()
     pprint(cm.get_all_config())
 
+    # Simulate running on Docker
+    def running_on_docker() -> bool:
+        return True
+    ConfigManager._instance = None  # We need to reset the singleton instance for testing
+    os.environ.pop("SAGEWORKS_BUCKET", None)
+    cm = ConfigManager()
+    cm.set_config("SAGEWORKS_BUCKET", "bucket-from-set_config")
+    pprint(cm.get_all_config())
+
     # Test set_config()
     cm.set_config("SAGEWORKS_BUCKET", "bucket-from-set_config")
     cm_new = ConfigManager()
