@@ -193,8 +193,10 @@ class ConfigManager:
 
         # Also make sure that the SAGEWORKS_BUCKET is not the default value
         if self.config["SAGEWORKS_BUCKET"] == "env-will-overwrite":
-            self.log.critical("SAGEWORKS_BUCKET needs to be set with ENV var...")
-            return False
+            self.overwrite_config_with_env()
+            if self.config["SAGEWORKS_BUCKET"] == "env-will-overwrite":
+                self.log.critical("SAGEWORKS_BUCKET needs to be set with ENV var...")
+                return False
         return True
 
     def get_api_key_info(self) -> Dict[str, Any]:

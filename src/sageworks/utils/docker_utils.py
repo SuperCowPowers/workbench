@@ -1,4 +1,5 @@
 """Utilities for working with Docker containers."""
+import os
 
 
 def running_on_docker() -> bool:
@@ -23,7 +24,23 @@ def running_on_docker() -> bool:
     except FileNotFoundError:
         pass
 
+    # Check if we are running on ECS
+    if running_on_ecs():
+        return True
+
+    # Probably not running in a Docker container
     return False
+
+
+def running_on_ecs() -> bool:
+    """
+    Check if the current environment is running on AWS ECS.
+
+    Returns:
+        bool: True if running on AWS ECS, False otherwise.
+    """
+    # AWS sets AWS_EXECUTION_ENV for ECS environments; check if it contains "ECS".
+    return "ECS" in os.environ.get("AWS_EXECUTION_ENV", "")
 
 
 if __name__ == "__main__":
