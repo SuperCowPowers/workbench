@@ -103,7 +103,7 @@ class SageworksDashboardStack(Stack):
             memory_limit_mib=4096,
             cpu=2048,
         )
-        dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_15_amd64"
+        dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_16_amd64"
         container = task_definition.add_container(
             "SageworksContainer",
             image=ecs.ContainerImage.from_registry(dashboard_image),
