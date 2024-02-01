@@ -53,6 +53,9 @@ class SageWorksPrompt(Prompts):
 
 class SageWorksShell:
     def __init__(self):
+        # Give the SageWorks Version
+        cprint("lightpurple", f"SageWorks Version: {importlib.import_module('sageworks').__version__}")
+
         # Check the SageWorks config
         self.cm = ConfigManager()
         if not self.cm.config_okay():
