@@ -57,11 +57,6 @@ class ConfigManager:
             # For Docker, overwrite the config with the ENV vars
             self.overwrite_config_with_env()
 
-        # Check if the configuration is okay
-        if not self.config_okay():
-            self.log.critical("Configuration fail! Please chat with SageWorks Support...")
-            raise FatalConfigError()
-
         # AOK
         self.__initialized = True
 
