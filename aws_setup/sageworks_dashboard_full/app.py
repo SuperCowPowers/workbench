@@ -1,6 +1,7 @@
 import os
 import boto3
 import aws_cdk as cdk
+from pprint import pprint
 
 from sageworks_dashboard_full.sageworks_dashboard_stack import SageworksDashboardStack, SageworksDashboardStackProps
 
@@ -11,14 +12,24 @@ aws_region = session.region_name
 print(f"Account: {aws_account}")
 print(f"Region: {aws_region}")
 
-# We'd like to set up our parameters here
-sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
-sageworks_api_key = os.environ.get("SAGEWORKS_API_KEY")
-existing_vpc_id = os.environ.get("SAGEWORKS_VPC_ID")
-existing_subnet_ids = os.environ.get("SAGEWORKS_SUBNET_IDS")
-whitelist_ips = [ip.strip() for ip in os.environ.get("SAGEWORKS_WHITELIST", "").split(",") if ip.strip()]
-whitelist_prefix_lists = [ip.strip() for ip in os.environ.get("SAGEWORKS_PREFIX_LISTS", "").split(",") if ip.strip()]
-certificate_arn = os.environ.get("SAGEWORKS_CERTIFICATE_ARN")
+# SageWorks Configuration
+try:
+    from sageworks.utils.config_manager import ConfigManager
+    cm = ConfigManager()
+    pprint(cm.config)
+    sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
+    sageworks_api_key = cm.get_config("SAGEWORKS_API_KEY")
+    existing_vpc_id = cm.get_config("SAGEWORKS_VPC_ID")
+    existing_subnet_ids = cm.get_config("SAGEWORKS_SUBNET_IDS")
+    config_ips = cm.get_config("SAGEWORKS_WHITELIST", "")
+    whitelist_ips = [ip.strip() for ip in config_ips.split(",") if ip.strip()]
+    config_prefix = cm.get_config("SAGEWORKS_PREFIX_LISTS", "")
+    whitelist_prefix_lists = [ip.strip() for ip in config_prefix.split(",") if ip.strip()]
+    certificate_arn = cm.get_config("SAGEWORKS_CERTIFICATE_ARN")
+except ImportError:
+    print("SageWorks Configuration Manager Not Found...")
+    print("Set the SAGEWORKS_CONFiG Env var and run again...")
+    raise SystemExit(1)
 
 
 # TODO: Add in a security group and pass as a prop to the stack

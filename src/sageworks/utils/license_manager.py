@@ -1,4 +1,4 @@
-"""SageWorks API License Manager"""
+"""Internal: SageWorks API License Manager (used by ConfigManager, do not use directly)"""
 
 import sys
 import base64
@@ -21,14 +21,14 @@ class FatalLicenseError(Exception):
 
 
 class LicenseManager:
-    """SageWorks API License Manager"""
+    """Internal: SageWorks API License Manager (used by ConfigManager, do not use directly)"""
 
     api_license_info = None
     log = logging.getLogger("sageworks")
 
     @classmethod
     def load_api_license(cls, aws_account_id: Union[str, None], api_key: str) -> Union[dict, None]:
-        """Load the SageWorks API License, verify it, and return the licensed features
+        """Internal: Load the SageWorks API License, verify it, and return the licensed features
         Args:
             aws_account_id(str): The AWS Account ID to verify the license against (None for Open Source)
             api_key(str): The SageWorks API Key to verify (base64 encoded)

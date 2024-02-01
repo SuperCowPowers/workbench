@@ -1,6 +1,6 @@
-import os
 import boto3
 import aws_cdk as cdk
+from pprint import pprint
 
 from sageworks_core.sageworks_core_stack import SageworksCoreStack, SageworksCoreStackProps
 
@@ -12,18 +12,23 @@ aws_region = session.region_name
 print(f"Account: {aws_account}")
 print(f"Region: {aws_region}")
 
-# We'd like to set up our parameters here
-sageworks_bucket = os.environ.get("SAGEWORKS_BUCKET")
-sageworks_role_name = os.environ.get("SAGEWORKS_ROLE", "SageWorks-ExecutionRole")
-sso_group = os.environ.get("SAGEWORKS_SSO_GROUP")
-additional_buckets = os.getenv("SAGEWORKS_ADDITIONAL_BUCKETS")
+# SageWorks Configuration
+try:
+    from sageworks.utils.config_manager import ConfigManager
+    cm = ConfigManager()
+    pprint(cm.config)
+    sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
+    sageworks_role_name = cm.get_config("SAGEWORKS_ROLE")
+    sso_group = cm.get_config("SAGEWORKS_SSO_GROUP")
+    additional_buckets = cm.get_config("SAGEWORKS_ADDITIONAL_BUCKETS")
+except ImportError:
+    print("SageWorks Configuration Manager Not Found...")
+    print("Set the SAGEWORKS_CONFiG Env var and run again...")
+    raise SystemExit(1)
 
 
-# Our CDK App
+# Our CDK App and Environment
 app = cdk.App()
-
-# Note: We might want to look into this
-# env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
 env = cdk.Environment(account=aws_account, region=aws_region)
 
 sandbox_stack = SageworksCoreStack(

@@ -16,12 +16,12 @@ RUN pip install --no-cache-dir sageworks==0.4.13 <-- change this
 ### Build the Docker Image
 **Note:** For a client specific config file you'll need to copy it locally so that it's within Dockers 'build context'. If you're building the 'vanilla' open source Docker image, then you can use the `open_source_config.json` that's in the directory already.
 
-**Note2:** If you're using a specific config **make sure** to remove the AWS_PROFILE line, Docker containers/ECS/etc will use a different mechanism for AWS credientials.
-
 ```
 docker build --build-arg SAGEWORKS_CONFIG=open_source_config.json -t \
 sageworks_dashboard:v0_4_13_amd64 --platform linux/amd64 .
 ```
+
+**Docker with Custom Plugins:** If you're using custom plugins you may want to change the SAGEWORKS_PLUGINS directory to something like `/app/sageworks_plugins` and then have Dockerfile copy your plugins into that directory on the Docker image.
 
 ### Test the Image Locally
 You have a `docker_local_dashboard` alias in your `~/.zshrc` :)

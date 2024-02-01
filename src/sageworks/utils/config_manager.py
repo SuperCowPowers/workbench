@@ -8,6 +8,7 @@ from typing import Any, Dict
 
 # SageWorks imports
 from sageworks.utils.license_manager import LicenseManager
+from sageworks.utils.docker_utils import running_on_docker
 
 
 class FatalConfigError(Exception):
@@ -37,7 +38,31 @@ class ConfigManager:
         self.log = logging.getLogger("sageworks")
         self.site_config_path = None
         self.using_default_config = False
+
+        # Load the configuration
         self.config = self._load_config()
+
+        # Load the LicenseManager
+        self.license_manager = LicenseManager()
+
+        # Check if we're running in a Docker container
+        if running_on_docker():
+            self.log.important("Running on a Docker container...")
+
+            # Remove the AWS_PROFILE from the config
+            if "AWS_PROFILE" in self.config:
+                self.log.important("Removing AWS_PROFILE from config...")
+                del self.config["AWS_PROFILE"]
+
+            # For Docker, overwrite the config with the ENV vars
+            self.overwrite_config_with_env()
+
+        # Check if the configuration is okay
+        if not self.config_okay():
+            self.log.critical("Configuration fail! Please chat with SageWorks Support...")
+            raise FatalConfigError()
+
+        # AOK
         self.__initialized = True
 
     def get_config(self, key: str, default_value: Any = None) -> Any:
@@ -83,6 +108,15 @@ class ConfigManager:
             value (Any): The value for the configuration key.
         """
         self.config[key] = value
+
+    def overwrite_config_with_env(self):
+        """Overwrite the configuration with environment variables."""
+        overwrites = ["SAGEWORKS_ROLE", "SAGEWORKS_BUCKET", "SAGEWORKS_API_KEY", "REDIS_HOST", "REDIS_PORT", "REDIS_PASSWORD"]
+        for key, value in os.environ.items():
+            # If the key is in the overwrites list, then overwrite the config
+            if key in overwrites:
+                self.log.important(f"Overwriting {key} with ENV var: {value}")
+                self.config[key] = value
 
     def is_open_source(self) -> bool:
         """Returns True if the API is open source."""
@@ -142,6 +176,114 @@ class ConfigManager:
         # Save updated config to platform-specific path
         with open(self.site_config_path, "w") as file:
             json.dump(site_config, file, indent=4)
+
+    def config_okay(self) -> bool:
+        """Returns True if the configuration is okay."""
+        required_keys = ["SAGEWORKS_ROLE", "SAGEWORKS_BUCKET", "SAGEWORKS_API_KEY"]
+        for key in required_keys:
+            if key not in self.config:
+                return False
+
+        # Also make sure that the SAGEWORKS_BUCKET is not the default value
+        if self.config["SAGEWORKS_BUCKET"] == "env-will-overwrite":
+            self.log.critical("SAGEWORKS_BUCKET needs to be set with ENV var...")
+            return False
+        return True
+
+    def get_api_key_info(self) -> Dict[str, Any]:
+        """Get the API Key information from the configuration.
+
+        Returns:
+            Dict[str, Any]: API Key information.
+        """
+        api_key = self.get_config("SAGEWORKS_API_KEY")
+        api_info = self.license_manager.load_api_license(aws_account_id=None, api_key=api_key)
+        return api_info
+
+    def get_license_id(self) -> str:
+        """Get the license ID from the license information
+
+        Returns:
+            str: The license ID
+        """
+        return self.get_api_key_info().get("license_id", "Unknown")
+
+    def load_and_check_license(self, aws_account_id: int) -> bool:
+        """Check the license for expiration and signature verification.
+
+        Args:
+            aws_account_id (int): The AWS account ID (for account specific licenses).
+
+        Returns:
+            bool: True if the license is okay.
+        """
+        is_valid = self.license_manager.load_api_license(aws_account_id, self.get_config("SAGEWORKS_API_KEY"))
+        return is_valid
+
+    def print_license_info(self):
+        """Print the license information to the log."""
+        self.license_manager.print_license_info()
+
+    @staticmethod
+    def get_platform_specific_path() -> str:
+        """Returns the platform-specific path for the config file.
+
+        Returns:
+            str: Path for the config file.
+        """
+        home_dir = os.path.expanduser("~")
+        config_file_name = "sageworks_config.json"
+
+        if platform.system() == "Windows":
+            # Use AppData\Local
+            config_path = os.path.join(home_dir, "AppData", "Local", "SageWorks", config_file_name)
+        else:
+            # For macOS and Linux, use a hidden file in the home directory
+            config_path = os.path.join(home_dir, ".sageworks", config_file_name)
+
+        # Ensure the directory exists and return the path
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        return config_path
+
+    def get_config_from_aws_parameter_store(self) -> Dict[str, Any]:
+        """Stub method to fetch configuration from AWS Parameter Store.
+
+        Returns:
+            Dict[str, Any]: Configuration dictionary from AWS Parameter Store.
+        """
+        # TODO: Implement AWS Parameter Store fetching logic
+        return {}
+
+    def platform_specific_instructions(self):
+        """Provides instructions to the user for setting the SAGEWORKS_CONFIG
+        environment variable permanently based on their operating system.
+        """
+        os_name = platform.system()
+
+        if os_name == "Windows":
+            instructions = (
+                "\nTo set the SAGEWORKS_CONFIG environment variable permanently on Windows:\n"
+                "1. Press Win + R, type 'sysdm.cpl', and press Enter.\n"
+                "2. Go to the 'Advanced' tab and click on 'Environment Variables'.\n"
+                "3. Under 'System variables', click 'New'.\n"
+                "4. Set 'Variable name' to 'SAGEWORKS_CONFIG' and 'Variable value' to '{}'.\n"
+                "5. Click OK and Apply. You might need to restart your system for changes to take effect."
+            ).format(self.site_config_path)
+
+        elif os_name in ["Linux", "Darwin"]:  # Darwin is macOS
+            shell_files = {"Linux": "~/.bashrc or ~/.profile", "Darwin": "~/.bash_profile, ~/.zshrc, or ~/.profile"}
+            instructions = (
+                "\nTo set the SAGEWORKS_CONFIG environment variable permanently on {}:\n"
+                "1. Open {} in a text editor.\n"
+                "2. Add the following line at the end of the file:\n"
+                "   export SAGEWORKS_CONFIG='{}'\n"
+                "3. Save the file and restart your terminal for the changes to take effect."
+            ).format(os_name, shell_files[os_name], self.site_config_path)
+
+        else:
+            instructions = f"OS not recognized. Set the SAGEWORKS_CONFIG ENV var to {self.site_config_path} manually."
+
+        print(instructions)
 
     def _load_config(self) -> Dict[str, Any]:
         """Internal: Load configuration based on the SAGEWORKS_CONFIG environment variable.
@@ -217,93 +359,6 @@ class ConfigManager:
                 config[key] = value
         return config
 
-    def config_okay(self) -> bool:
-        """Returns True if the configuration is okay."""
-        required_keys = ["SAGEWORKS_ROLE", "SAGEWORKS_BUCKET", "SAGEWORKS_API_KEY"]
-        for key in required_keys:
-            if key not in self.config:
-                return False
-        return True
-
-    def get_api_key_info(self) -> Dict[str, Any]:
-        """Get the API Key information from the configuration.
-
-        Returns:
-            Dict[str, Any]: API Key information.
-        """
-        api_key = self.get_config("SAGEWORKS_API_KEY")
-        api_info = LicenseManager().load_api_license(aws_account_id=None, api_key=api_key)
-        return api_info
-
-    def get_license_id(self) -> str:
-        """Get the license ID from the license information
-
-        Returns:
-            str: The license ID
-        """
-        return self.get_api_key_info().get("license_id", "Unknown")
-
-    @staticmethod
-    def get_platform_specific_path() -> str:
-        """Returns the platform-specific path for the config file.
-
-        Returns:
-            str: Path for the config file.
-        """
-        home_dir = os.path.expanduser("~")
-        config_file_name = "sageworks_config.json"
-
-        if platform.system() == "Windows":
-            # Use AppData\Local
-            config_path = os.path.join(home_dir, "AppData", "Local", "SageWorks", config_file_name)
-        else:
-            # For macOS and Linux, use a hidden file in the home directory
-            config_path = os.path.join(home_dir, ".sageworks", config_file_name)
-
-        # Ensure the directory exists and return the path
-        os.makedirs(os.path.dirname(config_path), exist_ok=True)
-        return config_path
-
-    def get_config_from_aws_parameter_store(self) -> Dict[str, Any]:
-        """Stub method to fetch configuration from AWS Parameter Store.
-
-        Returns:
-            Dict[str, Any]: Configuration dictionary from AWS Parameter Store.
-        """
-        # TODO: Implement AWS Parameter Store fetching logic
-        return {}
-
-    def platform_specific_instructions(self):
-        """Provides instructions to the user for setting the SAGEWORKS_CONFIG
-        environment variable permanently based on their operating system.
-        """
-        os_name = platform.system()
-
-        if os_name == "Windows":
-            instructions = (
-                "\nTo set the SAGEWORKS_CONFIG environment variable permanently on Windows:\n"
-                "1. Press Win + R, type 'sysdm.cpl', and press Enter.\n"
-                "2. Go to the 'Advanced' tab and click on 'Environment Variables'.\n"
-                "3. Under 'System variables', click 'New'.\n"
-                "4. Set 'Variable name' to 'SAGEWORKS_CONFIG' and 'Variable value' to '{}'.\n"
-                "5. Click OK and Apply. You might need to restart your system for changes to take effect."
-            ).format(self.site_config_path)
-
-        elif os_name in ["Linux", "Darwin"]:  # Darwin is macOS
-            shell_files = {"Linux": "~/.bashrc or ~/.profile", "Darwin": "~/.bash_profile, ~/.zshrc, or ~/.profile"}
-            instructions = (
-                "\nTo set the SAGEWORKS_CONFIG environment variable permanently on {}:\n"
-                "1. Open {} in a text editor.\n"
-                "2. Add the following line at the end of the file:\n"
-                "   export SAGEWORKS_CONFIG='{}'\n"
-                "3. Save the file and restart your terminal for the changes to take effect."
-            ).format(os_name, shell_files[os_name], self.site_config_path)
-
-        else:
-            instructions = f"OS not recognized. Set the SAGEWORKS_CONFIG ENV var to {self.site_config_path} manually."
-
-        print(instructions)
-
 
 if __name__ == "__main__":
     """Exercise the ConfigManager class"""
@@ -330,17 +385,25 @@ if __name__ == "__main__":
     ConfigManager._instance = None  # We need to reset the singleton instance for testing
 
     # Add the SAGEWORKS_BUCKET and REDIS_HOST to the ENV vars
-    os.environ["SAGEWORKS_BUCKET"] = "sandbox-from-env"
+    os.environ["SAGEWORKS_BUCKET"] = "bucket-from-env"
     cm = ConfigManager()
     pprint(cm.get_all_config())
 
     # Test set_config()
-    cm.set_config("SAGEWORKS_BUCKET", "sandbox-from-set_config")
+    cm.set_config("SAGEWORKS_BUCKET", "bucket-from-set_config")
     cm_new = ConfigManager()
     pprint(cm_new.get_all_config())
+
+    # Test ENV var overwrite
+    os.environ["SAGEWORKS_BUCKET"] = "bucket-from-env"
+    os.environ["REDIS_HOST"] = "localhost"
+    cm = ConfigManager()
+    cm.overwrite_config_with_env()
+    pprint(cm.get_all_config())
 
     # Test not having enough config
     ConfigManager._instance = None  # We need to reset the singleton instance for testing
     os.environ.pop("SAGEWORKS_BUCKET", None)
+
+    # This will fail with a FatalConfigError (which is good)
     cm = ConfigManager()
-    print(cm.config_okay())

@@ -1,0 +1,12 @@
+{
+    "SAGEWORKS_BUCKET": "env-will-overwrite",
+    "SAGEWORKS_ROLE": "SageWorks-ExecutionRole",
+    "SAGEWORKS_PLUGINS": "package",
+    "SAGEWORKS_FEATURES": {
+        "plugins": "true",
+        "experimental": "false",
+        "large_meta_data": "false",
+        "enterprise": "false"
+    },
+    "SAGEWORKS_API_KEY": "eyJsaWNlbnNlX2lkIjogIk9wZW4gU291cmNlIiwgImF3c19hY2NvdW50X2lkIjogbnVsbCwgImZlYXR1cmVzIjogeyJmZWF0dXJlX3NldHMiOiB0cnVlLCAibW9kZWxfbW9uaXRvcmluZyI6IHRydWV9LCAiZXhwaXJlcyI6ICIyMDI1LTAxLTEwIn2QElHhryzF61yIVDi5SgVZIog7L4zR5frdMrv8fncPEgXZjs+pTQkzxCtnvDIB8ZpcPR+1AQ1apyGnTUab6yt3+m4GH11HOZgOmqEl5EhapufmQfI2w6kRn1HSp3HKU+EKzbANqlhTrGnuJnret9YHItD2DlXe7D7hMcrQW4Fh1g=="
+}
