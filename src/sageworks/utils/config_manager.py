@@ -395,7 +395,7 @@ if __name__ == "__main__":
     pprint(cm.get_all_config())
 
     # Simulate running on Docker
-    def running_on_docker() -> bool:
+    def running_on_docker() -> bool:  # noqa: F811
         return True
     ConfigManager._instance = None  # We need to reset the singleton instance for testing
     os.environ.pop("SAGEWORKS_BUCKET", None)
