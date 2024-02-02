@@ -9,7 +9,7 @@ import botocore
 import webbrowser
 
 # SageWorks Imports
-from sageworks.utils.repl_utils import cprint
+from sageworks.utils.repl_utils import cprint, Spinner
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
 from sageworks.utils.config_manager import ConfigManager
 
@@ -187,8 +187,12 @@ class SageWorksShell:
 
     def import_sageworks(self):
         # Import all the SageWorks modules
-        cprint("lightpurple", "Pulling AWS Artifacts...")
-        self.artifacts_text_view = importlib.import_module("sageworks.views.artifacts_text_view").ArtifactsTextView()
+        spinner = Spinner("lightpurple", "Chatting with AWS")
+        spinner.start()  # Start the spinner
+        try:
+            self.artifacts_text_view = importlib.import_module("sageworks.views.artifacts_text_view").ArtifactsTextView()
+        finally:
+            spinner.stop()
 
         # These are the classes we want to expose to the REPL
         self.commands["DataSource"] = importlib.import_module("sageworks.api.data_source").DataSource
