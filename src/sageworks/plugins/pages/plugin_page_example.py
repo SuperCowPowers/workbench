@@ -9,7 +9,6 @@ import logging
 
 # SageWorks Imports
 from sageworks.web_components import table
-from sageworks.web_components.plugin_interface import PluginType
 from sageworks.utils.plugin_manager import PluginManager
 
 
