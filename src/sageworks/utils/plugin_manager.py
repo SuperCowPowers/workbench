@@ -112,7 +112,7 @@ class PluginManager:
         """
         return self.plugins
 
-    def get_web_plugins(self, web_plugin_type: WebPluginType = None) -> List[Any]:
+    def get_list_of_web_plugins(self, web_plugin_type: WebPluginType = None) -> List[Any]:
         """
         Retrieve a list of plugins of a specific type.
 
@@ -123,11 +123,24 @@ class PluginManager:
             List[Any]: A list of INSTANTIATED plugin classes of the requested type.
         """
         plugin_classes = [
-            self.plugins.get("web_components", {})[x]
-            for x in self.plugins.get("web_components", {})
-            if self.plugins.get("web_components", {})[x].plugin_type == web_plugin_type
+            self.plugins["web_components"][x]
+            for x in self.plugins["web_components"]
+            if self.plugins["web_components"][x].plugin_type == web_plugin_type
         ]
         return [x() for x in plugin_classes]
+
+    def get_web_plugin(self, plugin_name: str) -> WebPluginInterface:
+        """
+        Retrieve a specific web plugin by name
+
+        Args:
+            plugin_name (str): The name of the web plugin to retrieve
+
+        Returns:
+            WebPluginInterface: The INSTANTIATED web plugin class with the given name
+        """
+        web_plugin = self.plugins["web_components"].get(plugin_name)
+        return web_plugin() if web_plugin else None
 
     def get_view(self, view_name: str) -> Union[View, None]:
         """
@@ -174,10 +187,10 @@ if __name__ == "__main__":
     manager = PluginManager()
 
     # Get web components for the model view
-    model_plugin = manager.get_web_plugins(WebPluginType.MODEL)
+    model_plugin = manager.get_list_of_web_plugins(WebPluginType.MODEL)
 
     # Get web components for the endpoint view
-    endpoint_plugin = manager.get_web_plugins(WebPluginType.ENDPOINT)
+    endpoint_plugin = manager.get_list_of_web_plugins(WebPluginType.ENDPOINT)
 
     # Get view plugin
     my_view = manager.get_view("ModelPluginView")
@@ -187,6 +200,10 @@ if __name__ == "__main__":
 
     # Get all the plugins
     pprint(manager.get_all_plugins())
+
+    # Get a web plugin by name
+    my_plugin = manager.get_web_plugin("CustomTurbo")
+    print(my_plugin)
 
     # Test REPR
     print(manager)

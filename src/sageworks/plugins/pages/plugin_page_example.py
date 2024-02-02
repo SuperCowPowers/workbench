@@ -41,14 +41,13 @@ class PluginPageExample:
             "my_model_table", header_color="rgb(60, 60, 60)", row_select="single", max_height=400
         )
 
-        # Load any web components plugins of type 'custom'
+        # Load my custom plugin
         pm = PluginManager()
-        plugins = pm.get_web_plugins(web_plugin_type=PluginType.CUSTOM)
+        custom_plugin = pm.get_web_plugin("CustomTurbo")
 
         # Create a dictionary of plugin components
-        for plugin in plugins:
-            component_id = plugin.component_id()
-            self.plugin_comps[component_id] = plugin.create_component(component_id)
+        component_id = custom_plugin.component_id()
+        self.plugin_comps[component_id] = custom_plugin.create_component(component_id)
 
         # Register this page with Dash and set up the layout (required)
         register_page(
@@ -62,8 +61,7 @@ class PluginPageExample:
         self.model_table_callback()
 
         # Callbacks for each plugin
-        for plugin in plugins:
-            self.plugin_callback(plugin)
+        self.plugin_callback(custom_plugin)
 
     def page_layout(self) -> dash.html.Div:
         """Set up the layout for the page"""

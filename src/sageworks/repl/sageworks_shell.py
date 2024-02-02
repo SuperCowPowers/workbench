@@ -341,15 +341,15 @@ class SageWorksShell:
         if self.aws_status:
             cprint("lightgreen", "\t● AWS Account: OK")
         else:
-            cprint("red", "\t● AWS Account: FAIL")
+            cprint("red", "\t● AWS Account: Failed to Connect")
 
         # Redis
         if self.redis_status == "OK":
             cprint("lightgreen", "\t● Redis: OK")
         elif self.redis_status == "LOCAL":
-            cprint("lightblue", "\t● Redis: LOCAL")
+            cprint("lightblue", "\t● Redis: Local")
         elif self.redis_status == "FAIL":
-            cprint("orange", "\t● Redis: FAIL")
+            cprint("orange", "\t● Redis: Failed to Connect")
 
         # API Key
         if self.open_source_api_key:
