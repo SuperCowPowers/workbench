@@ -94,9 +94,8 @@ class Spinner:
         spinners = [itertools.cycle(frames) for _ in range(4)]  # Create four separate cycle iterators
 
         # Initialize each spinner to a random position in the cycle
-        for spinner in spinners:
-            steps = random.randint(0, len(frames) - 1)
-            for _ in range(steps):
+        for i, spinner in enumerate(spinners):
+            for _ in range(i*2):
                 next(spinner)
 
         self._hide_cursor()
