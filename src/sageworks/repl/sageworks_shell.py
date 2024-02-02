@@ -190,7 +190,9 @@ class SageWorksShell:
         spinner = Spinner("lightpurple", "Chatting with AWS")
         spinner.start()  # Start the spinner
         try:
-            self.artifacts_text_view = importlib.import_module("sageworks.views.artifacts_text_view").ArtifactsTextView()
+            self.artifacts_text_view = importlib.import_module(
+                "sageworks.views.artifacts_text_view"
+            ).ArtifactsTextView()
         finally:
             spinner.stop()
 

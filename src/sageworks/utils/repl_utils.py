@@ -1,4 +1,5 @@
 """Repl utilities for Sageworks"""
+
 import random
 import threading
 import itertools
@@ -75,13 +76,13 @@ class Spinner:
     @staticmethod
     def _hide_cursor():
         """Hide the terminal cursor."""
-        sys.stdout.write('\033[?25l')
+        sys.stdout.write("\033[?25l")
         sys.stdout.flush()
 
     @staticmethod
     def _show_cursor():
         """Show the terminal cursor."""
-        sys.stdout.write('\033[?25h')
+        sys.stdout.write("\033[?25h")
         sys.stdout.flush()
 
     def spin(self):
@@ -100,7 +101,7 @@ class Spinner:
 
         self._hide_cursor()
         while not self.done:
-            spinner_display = ''.join([next(spinner) for spinner in spinners])
+            spinner_display = "".join([next(spinner) for spinner in spinners])
             sys.stdout.write(f"\r{colors[self.color]}{self.message} {colors['darkyellow']}{spinner_display}")
             sys.stdout.flush()
             time.sleep(0.1)
