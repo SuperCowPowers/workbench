@@ -80,7 +80,7 @@ class SageWorksShell:
         self.shell = InteractiveShellEmbed(config=config, banner1="", exit_msg="Goodbye from SageWorks!")
 
         # Register our custom commands
-        self.commands["hey"] = self.hey
+        self.commands["help"] = self.help
         self.commands["docs"] = self.doc_browser
         self.commands["summary"] = self.summary
         self.commands["incoming_data"] = self.incoming_data
@@ -105,7 +105,7 @@ class SageWorksShell:
             cprint("red", f"Path: {self.cm.site_config_path}")
             self.show_config()
         else:
-            self.hey()
+            self.help()
             self.summary()
 
         # Start the REPL
@@ -204,10 +204,24 @@ class SageWorksShell:
         self.commands["pd"] = importlib.import_module("pandas")
         self.commands["pprint"] = importlib.import_module("pprint").pprint
 
+    def help(self, *args):
+        """Custom help command for the SageWorks REPL
+
+        Args:
+            *args: Arguments passed to the help command.
+        """
+        # If we have args forward to the built-in help function
+        if args:
+            help(*args)
+
+        # Otherwise show the SageWorks help message
+        else:
+            cprint("lightblue", self.help_txt())
+
     @staticmethod
     def help_txt():
         help_msg = """    Commands:
-        - hey: Show this help message
+        - help: Show this help message
         - docs: Open browser to show SageWorks Documentation
         - summary: Show a summary of all the AWS Artifacts
         - incoming_data: List all the incoming S3 data
@@ -221,9 +235,6 @@ class SageWorksShell:
         - status: Show the current SageWorks Status
         - exit: Exit SageWorks REPL"""
         return help_msg
-
-    def hey(self):
-        cprint("lightblue", self.help_txt())
 
     @staticmethod
     def doc_browser():

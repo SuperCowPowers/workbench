@@ -75,7 +75,7 @@ class SageworksCoreStack(Stack):
                     "athena:GetQueryResults",  # To fetch query results
                     "athena:StopQueryExecution",  # To stop query executions, if needed
                     "athena:GetWorkGroup",  # To get workgroup details
-                    "athena:ListWorkGroups"  # To list available workgroups
+                    "athena:ListWorkGroups",  # To list available workgroups
                 ],
                 resources=["*"],
             ),
