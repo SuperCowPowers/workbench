@@ -187,7 +187,7 @@ class SageWorksShell:
 
     def import_sageworks(self):
         # Import all the SageWorks modules
-        spinner = Spinner("lightpurple", "Chatting with AWS")
+        spinner = Spinner("lightpurple", "Chatting with AWS:")
         spinner.start()  # Start the spinner
         try:
             self.artifacts_text_view = importlib.import_module(

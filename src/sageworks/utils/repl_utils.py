@@ -1,6 +1,5 @@
 """Repl utilities for Sageworks"""
 
-import random
 import threading
 import itertools
 import time
@@ -95,7 +94,7 @@ class Spinner:
 
         # Initialize each spinner to a random position in the cycle
         for i, spinner in enumerate(spinners):
-            for _ in range(i*2):
+            for _ in range(i * 2):
                 next(spinner)
 
         self._hide_cursor()
