@@ -67,9 +67,16 @@ class SageworksCoreStack(Stack):
                 actions=["elasticloadbalancing:DescribeLoadBalancers"],
                 resources=["*"],
             ),
-            # Getting Athena Workgroup
+            # You need this to run queries on Athena tables
             iam.PolicyStatement(
-                actions=["athena:GetWorkGroup"],
+                actions=[
+                    "athena:StartQueryExecution",  # To start query executions
+                    "athena:GetQueryExecution",  # To check the status of executions
+                    "athena:GetQueryResults",  # To fetch query results
+                    "athena:StopQueryExecution",  # To stop query executions, if needed
+                    "athena:GetWorkGroup",  # To get workgroup details
+                    "athena:ListWorkGroups"  # To list available workgroups
+                ],
                 resources=["*"],
             ),
         ]
