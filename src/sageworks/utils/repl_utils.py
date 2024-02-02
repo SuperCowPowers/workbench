@@ -110,7 +110,7 @@ class Spinner:
         complete = f"{colors['lightgreen']}{done_frame}"
         sys.stdout.write(f"\r{colors[self.color]}{self.message} {complete}")
         time.sleep(0.5)
-        sys.stdout.write("\r")
+        sys.stdout.write("\n")
         self._show_cursor()
 
     def start(self):
