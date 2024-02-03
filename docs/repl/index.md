@@ -11,18 +11,20 @@ Just type `sageworks` at the command line and the SageWorks shell will spin up a
 
 At startup the SageWorks shell, will connect to your AWS Account and create a summary of the Machine Learning artifacts currently residing on the account.
 
-<img alt="sageworks_repl" style="float: right; width: 380px; padding-left: 5px;"
-src="https://github.com/SuperCowPowers/sageworks/assets/4806709/f7a12f04-11cf-451c-9afd-5dd388b50167">
+<img alt="sageworks_repl" style="float: right; width: 500px; padding-left: 5px;"
+src="https://github.com/SuperCowPowers/sageworks/assets/4806709/10a969ed-3415-4d9f-ad0d-ac23706e6202">
 
 **Available Commands:**
 
+- status
+- config
 - incoming_data
 - glue_jobs
 - data_sources
 - feature_sets
 - models
 - endpoints
-- broker_refresh
+- meta_refresh
 - and more...
 
 
