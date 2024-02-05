@@ -5,6 +5,12 @@ from collections import defaultdict
 import time
 
 
+# Check if we're running on Docker
+# AWS Cloud Watch doesn't like ANSI escape codes or custom log levels
+from sageworks.utils.docker_utils import running_on_ecs
+on_ecs = running_on_ecs()
+
+
 class ThrottlingFilter(logging.Filter):
     def __init__(self, rate_seconds=60):
         super().__init__()
@@ -28,7 +34,8 @@ class ThrottlingFilter(logging.Filter):
 
 # Define TRACE level
 # Note: see https://docs.python.org/3/library/logging.html#logging-levels
-TRACE_LEVEL_NUM = 15  # Between DEBUG and INFO
+# Between DEBUG and INFO
+TRACE_LEVEL_NUM = 15 if not on_ecs else 10  # Cloud Watch doesn't like custom log levels
 logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
 
 
@@ -39,7 +46,8 @@ def trace(self, message, *args, **kws):
 
 # Define IMPORTANT level
 # Note: see https://docs.python.org/3/library/logging.html#logging-levels
-IMPORTANT_LEVEL_NUM = 25  # Between INFO and WARNING
+ # Between INFO and WARNING
+IMPORTANT_LEVEL_NUM = 25 if not on_ecs else 20  # Cloud Watch doesn't like custom log levels
 logging.addLevelName(IMPORTANT_LEVEL_NUM, "IMPORTANT")
 
 
@@ -83,6 +91,15 @@ class ColoredFormatter(logging.Formatter):
 
 
 def logging_setup(color_logs=True):
+    """Setup the logging for the application.""
+
+    Args:
+        color_logs (bool, optional): Whether to colorize the logs. Defaults to True.
+    """
+
+    # Cloud Watch doesn't like colors
+    if on_ecs:
+        color_logs = False
     log = logging.getLogger("sageworks")
 
     # Remove any existing handlers
