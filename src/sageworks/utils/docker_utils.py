@@ -40,8 +40,13 @@ def running_on_ecs() -> bool:
     Returns:
         bool: True if running on AWS ECS, False otherwise.
     """
-    # AWS sets AWS_EXECUTION_ENV for ECS environments; check if it contains "ECS".
-    return "ECS" in os.environ.get("AWS_EXECUTION_ENV", "")
+    indicators = [
+        "ECS_CONTAINER_METADATA_URI",
+        "ECS_CONTAINER_METADATA_URI_V4",
+        "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI",
+        "AWS_EXECUTION_ENV"
+    ]
+    return any(indicator in os.environ for indicator in indicators)
 
 
 if __name__ == "__main__":
@@ -49,3 +54,4 @@ if __name__ == "__main__":
 
     # Test the is_running_in_docker method
     print(f"Running in Docker: {running_on_docker()}")
+    print(f"Running on ECS: {running_on_ecs()}")
