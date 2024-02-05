@@ -110,6 +110,7 @@ class ConfigManager:
             "SAGEWORKS_ROLE",
             "SAGEWORKS_BUCKET",
             "SAGEWORKS_API_KEY",
+            "SAGEWORKS_PLUGINS",
             "REDIS_HOST",
             "REDIS_PORT",
             "REDIS_PASSWORD",
