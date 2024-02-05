@@ -35,8 +35,7 @@ class ThrottlingFilter(logging.Filter):
 
 # Define TRACE level
 # Note: see https://docs.python.org/3/library/logging.html#logging-levels
-# Between DEBUG and INFO
-TRACE_LEVEL_NUM = 15 if not on_ecs else 10  # Cloud Watch doesn't like custom log levels
+TRACE_LEVEL_NUM = 15  # Between DEBUG and INFO
 logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
 
 
@@ -47,8 +46,7 @@ def trace(self, message, *args, **kws):
 
 # Define IMPORTANT level
 # Note: see https://docs.python.org/3/library/logging.html#logging-levels
-# Between INFO and WARNING
-IMPORTANT_LEVEL_NUM = 25 if not on_ecs else 20  # Cloud Watch doesn't like custom log levels
+IMPORTANT_LEVEL_NUM = 25  # Between INFO and WARNING
 logging.addLevelName(IMPORTANT_LEVEL_NUM, "IMPORTANT")
 
 
