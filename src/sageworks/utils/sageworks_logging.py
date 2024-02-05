@@ -8,6 +8,7 @@ import time
 # Check if we're running on Docker
 # AWS Cloud Watch doesn't like ANSI escape codes or custom log levels
 from sageworks.utils.docker_utils import running_on_ecs
+
 on_ecs = running_on_ecs()
 
 
@@ -46,7 +47,7 @@ def trace(self, message, *args, **kws):
 
 # Define IMPORTANT level
 # Note: see https://docs.python.org/3/library/logging.html#logging-levels
- # Between INFO and WARNING
+# Between INFO and WARNING
 IMPORTANT_LEVEL_NUM = 25 if not on_ecs else 20  # Cloud Watch doesn't like custom log levels
 logging.addLevelName(IMPORTANT_LEVEL_NUM, "IMPORTANT")
 
