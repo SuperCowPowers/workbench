@@ -44,7 +44,7 @@ def running_on_ecs() -> bool:
         "ECS_CONTAINER_METADATA_URI",
         "ECS_CONTAINER_METADATA_URI_V4",
         "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI",
-        "AWS_EXECUTION_ENV"
+        "AWS_EXECUTION_ENV",
     ]
     return any(indicator in os.environ for indicator in indicators)
 
