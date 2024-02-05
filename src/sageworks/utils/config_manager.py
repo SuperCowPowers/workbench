@@ -47,7 +47,7 @@ class ConfigManager:
 
         # Check if we're running in a Docker container
         if running_on_docker():
-            self.log.important("Running on a Docker container...")
+            self.log.important("Running on a Docker/ECS container...")
 
             # Remove the AWS_PROFILE from the config
             if "AWS_PROFILE" in self.config:

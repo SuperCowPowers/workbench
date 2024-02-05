@@ -21,7 +21,8 @@ def running_on_docker() -> bool:
         # Another method is to check the contents of /proc/self/cgroup which should be different
         # inside a Docker container.
         with open("/proc/self/cgroup") as f:
-            return any("docker" in line for line in f)
+            if any("docker" in line for line in f):
+                return True
     except FileNotFoundError:
         pass
 
