@@ -1,0 +1,10 @@
+# Copy this to your plugins directory, change the
+# plugin directory names and docker build :)
+
+# Pull latest sageworks dashboard image
+FROM public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
+
+# Copy the plugin files and set the plugin ENV var
+COPY ./my_plugins /app/my_plugins
+ENV SAGEWORKS_PLUGINS=/app/my_plugins
+

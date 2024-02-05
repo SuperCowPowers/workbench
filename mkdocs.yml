@@ -30,6 +30,7 @@ nav:
       - Model to Endpoint: core_classes/transforms/model_to_endpoint.md
       - Pandas Transforms: core_classes/transforms/pandas_transforms.md
       - Transform: core_classes/transforms/transform.md
+  - Plugins: plugins/index.md 
   - AWS Glue Jobs: glue/index.md 
   - AWS Setup: 
     - Initial Setup: aws_setup/core_stack.md
