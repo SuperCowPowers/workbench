@@ -3,15 +3,13 @@
 
 The SageWorks Plugin system allows clients to customize how their AWS Machine Learning Pipeline is displayed, analyzed, and visualized. Our easy to use Python API enables developers to make new [Dash/Plotly](https://plotly.com/) components, data views, and entirely new web pages focused on business use cases.
 
-### Plugin Classes
-Docs TBD for now see our slides [SageWorks Plugins](https://docs.google.com/presentation/d/1sByTnZa24lY6d4INRMm7OHmQndIZmLbTxOyTeAJol20/edit?usp=sharing)
+### Concept Docs
+Many classes in SageWorks need additional high-level material that covers classs design and illustrate class usage. Here's the Concept Docs for Plugins [SageWorks Plugins](https://docs.google.com/presentation/d/1sByTnZa24lY6d4INRMm7OHmQndIZmLbTxOyTeAJol20/edit?usp=sharing)
 
 ## Additional Resources
 
-- Setting up SageWorks on your AWS Account: [AWS Setup](../aws_setup/core_stack.md)
-- Using SageWorks for ML Pipelines: [SageWorks API Classes](../api_classes/overview.md)
-
 <img align="right" src="../images/scp.png" width="180">
 
-- SageWorks Core Classes: [Core Classes](../core_classes/overview.md)
+Need help with plugins? Want to develop a customized application tailored to your business needs?
+
 - Consulting Available: [SuperCowPowers LLC](https://www.supercowpowers.com)
