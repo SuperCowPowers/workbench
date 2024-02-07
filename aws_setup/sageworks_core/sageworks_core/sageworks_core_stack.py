@@ -36,60 +36,393 @@ class SageworksCoreStack(Stack):
         self.sso_group = props.sso_group
         self.additional_buckets = props.additional_buckets
 
-        # Get the SageWorks Artifact Bucket (must be created before running this script)
-        self.artifact_bucket = self.get_artifact_bucket(self.sageworks_bucket)
+        # Create a list of buckets
+        self.bucket_list = [self.sageworks_bucket] + ["aws-athena-query-results*"] + self.additional_buckets
+        self.bucket_arns = self._bucket_names_to_arns(self.bucket_list)
 
         # Create our main SageWorks Execution Role
         self.sageworks_api_execution_role = self.create_api_execution_role()
 
-    def get_artifact_bucket(self, bucket_name: str) -> s3.IBucket:
-        # Reference an existing bucket by name
-        return s3.Bucket.from_bucket_name(self, id="ExistingArtifactBucket", bucket_name=bucket_name)
-
-    def create_sageworks_api_policy(self) -> iam.ManagedPolicy:
-        """Create a managed policy for SageWorks"""
-        policy_statements = [
-            # Policy statement for main Sageworks Bucket and Athena Results
-            iam.PolicyStatement(
-                actions=["s3:*", "s3-object-lambda:*"],
-                resources=[
-                    f"arn:aws:s3:::{self.sageworks_bucket}/*",
-                    "arn:aws:s3:::aws-athena-query-results*/*",
-                ],
-            ),
-            # ECS DescribeServices
-            iam.PolicyStatement(
-                actions=["ecs:DescribeServices"],
-                resources=["*"],
-            ),
-            # ELB DescribeLoadBalancers
-            iam.PolicyStatement(
-                actions=["elasticloadbalancing:DescribeLoadBalancers"],
-                resources=["*"],
-            ),
-            # You need this to run queries on Athena tables
-            iam.PolicyStatement(
-                actions=[
-                    "athena:StartQueryExecution",  # To start query executions
-                    "athena:GetQueryExecution",  # To check the status of executions
-                    "athena:GetQueryResults",  # To fetch query results
-                    "athena:StopQueryExecution",  # To stop query executions, if needed
-                    "athena:GetWorkGroup",  # To get workgroup details
-                    "athena:ListWorkGroups",  # To list available workgroups
-                ],
-                resources=["*"],
-            ),
+    @staticmethod
+    def _bucket_names_to_arns(bucket_list: list[str]) -> list[str]:
+        """Convert a list of bucket names to ARNs"""
+        return [f"arn:aws:s3:::{bucket}" for bucket in bucket_list] + [
+            f"arn:aws:s3:::{bucket}/*" for bucket in bucket_list
         ]
 
-        # Add policy statements for additional buckets (if provided)
-        for bucket in self.additional_buckets:
-            policy_statements.append(iam.PolicyStatement(actions=["s3:*"], resources=[f"arn:aws:s3:::{bucket}/*"]))
+    @staticmethod
+    def s3_list_policy_statement() -> iam.PolicyStatement:
+        """Create policy statement for listing S3 buckets
+
+        Returns:
+           iam.PolicyStatement: A policy statements for listing S3 buckets
+        """
+        list_all_buckets_policy = iam.PolicyStatement(
+            actions=["s3:ListAllMyBuckets"],
+            resources=["*"],  # ListAllMyBuckets applies to all buckets
+        )
+        return list_all_buckets_policy
+
+    def s3_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for S3 access.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for S3 access.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                # Define the S3 actions you need
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject",
+                "s3:ListBucket",
+                "s3:GetBucketLocation",
+                "s3:GetBucketAcl",
+            ],
+            resources=self.bucket_arns,
+        )
+
+    @staticmethod
+    def glue_job_policy_statement() -> iam.PolicyStatement:
+        """Create a policy statement for AWS Glue job-related actions.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for AWS Glue job operations.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "glue:GetJobs",  # Retrieve metadata about all the Glue jobs
+                "glue:GetJobRuns",  # Retrieve metadata about Glue job runs
+                "glue:GetJob",  # Retrieve metadata about a specific Glue job
+                "glue:StartJobRun",  # Example additional job-related action
+                "glue:StopJobRun",  # Another example job-related action
+            ],
+            resources=["*"],  # Broad permission necessary for job management
+        )
+
+    def glue_catalog_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for permissions related to the Glue Data Catalog.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for Glue Data Catalog access.
+        """
+        catalog_arn = f"arn:aws:glue:{self.region}:{self.account}:catalog"
+
+        return iam.PolicyStatement(
+            actions=[
+                # Permissions for catalog/database-level actions
+                "glue:CreateDatabase",
+                "glue:GetDatabase",
+                "glue:GetDatabases",
+                "glue:SearchTables",
+                "glue:GetTable",
+                "glue:GetTables",
+                "glue:CreateTable",
+                "glue:UpdateTable",
+                "glue:DeleteTable",
+            ],
+            resources=[catalog_arn],
+        )
+
+    def glue_database_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for AWS Glue Data Catalog read and write access, limited to specific databases.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for AWS Glue Data Catalog access.
+        """
+        # Construct ARNs for the specific databases
+        sageworks_database_arn = f"arn:aws:glue:{self.region}:{self.account}:database/sageworks"
+        sageworks_table_arn = f"arn:aws:glue:{self.region}:{self.account}:table/sageworks/*"
+        sagemaker_featurestore_database_arn = (
+            f"arn:aws:glue:{self.region}:{self.account}:database/sagemaker_featurestore"
+        )
+        sagemaker_table_arn = f"arn:aws:glue:{self.region}:{self.account}:table/sagemaker_featurestore/*"
+
+        return iam.PolicyStatement(
+            actions=[
+                # Permissions for database-level actions, we need to 'get' the database
+                "glue:GetDatabase",
+                # Permissions for table-level actions, focusing on read/write operations
+                "glue:GetTable",
+                "glue:GetTables",
+                "glue:UpdateTable",
+                "glue:CreateTable",
+                "glue:DeleteTable",
+                # Actions for working with data in tables
+                "glue:GetPartition",
+                "glue:GetPartitions",
+            ],
+            resources=[
+                sageworks_database_arn,
+                f"{sageworks_database_arn}/*",
+                sageworks_table_arn,
+                sagemaker_featurestore_database_arn,
+                f"{sagemaker_featurestore_database_arn}/*",
+                sagemaker_table_arn,
+            ],
+        )
+
+    def athena_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for Athena actions that involve S3 buckets.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for Athena S3 bucket access.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "athena:StartQueryExecution",
+                "athena:GetQueryExecution",
+                "athena:GetQueryResults",
+                "athena:StopQueryExecution",
+            ],
+            resources=["*"],  # Athena Actions are not resource-specific in IAM policies
+        )
+
+    @staticmethod
+    def athena_workgroup_policy_statement() -> iam.PolicyStatement:
+        """Create a policy statement for Athena WorkGroup actions.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for Athena WorkGroup access.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "athena:GetWorkGroup",
+                "athena:ListWorkGroups",
+            ],
+            resources=["*"],  # Listing WorkGroups not S3 bucket specific
+        )
+
+    @staticmethod
+    def featurestore_list_policy_statement() -> iam.PolicyStatement:
+        """Create a policy statement for listing SageMaker feature groups.
+
+        Returns:
+            iam.PolicyStatement: The policy statement allowing listing of SageMaker feature groups.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "sagemaker:ListFeatureGroups",  # Action for listing feature groups
+            ],
+            resources=["*"],  # Broad permission necessary for listing operations
+        )
+
+    def featurestore_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for broad SageMaker Feature Store access using self attributes for region and account.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for broad SageMaker Feature Store access.
+        """
+        # Define the SageMaker Feature Store resources
+        resources = [f"arn:aws:sagemaker:{self.region}:{self.account}:feature-group/*"]
+
+        return iam.PolicyStatement(
+            actions=[
+                # Define the SageMaker Feature Store actions you need
+                "sagemaker:CreateFeatureGroup",
+                "sagemaker:DeleteFeatureGroup",
+                "sagemaker:DescribeFeatureGroup",
+                "sagemaker:GetRecord",
+                "sagemaker:PutRecord",
+                "sagemaker:ListTags",
+                "sagemaker:AddTags",
+            ],
+            resources=resources,
+        )
+
+    @staticmethod
+    def model_list_policy_statement() -> iam.PolicyStatement:
+        """Create a policy statement for listing SageMaker models.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for listing SageMaker models.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "sagemaker:ListModelPackageGroups",
+            ],
+            resources=["*"],  # Broad permission necessary for listing operations
+        )
+
+    def model_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for accessing SageMaker model package groups and model packages.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for SageMaker model resources access.
+        """
+        # Define the SageMaker Model Package Group and Model Package ARNs
+        model_package_group_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:model-package-group/*"
+        model_package_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:model-package/*/*"
+        model_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:model/*"
+
+        return iam.PolicyStatement(
+            actions=[
+                # Actions for model package groups
+                "sagemaker:CreateModelPackageGroup",
+                "sagemaker:DeleteModelPackageGroup",
+                "sagemaker:DescribeModelPackageGroup",
+                "sagemaker:GetModelPackageGroup",
+                "sagemaker:UpdateModelPackageGroup",
+                # Actions for model packages
+                "sagemaker:CreateModelPackage",
+                "sagemaker:DeleteModelPackage",
+                "sagemaker:DescribeModelPackage",
+                "sagemaker:GetModelPackage",
+                "sagemaker:UpdateModelPackage",
+                "sagemaker:ListModelPackages",
+                # Actions for models
+                "sagemaker:CreateModel",
+                "sagemaker:DeleteModel",
+                "sagemaker:DescribeModel",
+                # Additional actions
+                "sagemaker:ListTags",
+                "sagemaker:AddTags",
+            ],
+            resources=[
+                model_package_group_arn,
+                model_package_arn,
+                model_arn,
+            ],
+        )
+
+    @staticmethod
+    def endpoint_list_policy_statement() -> iam.PolicyStatement:
+        """Create a policy statement for listing SageMaker endpoints.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for listing SageMaker endpoints.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "sagemaker:ListEndpoints",
+            ],
+            resources=["*"],  # Broad permission necessary for listing operations
+        )
+
+    def endpoint_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for accessing SageMaker endpoints.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for SageMaker endpoint access.
+        """
+        # Define the SageMaker Endpoint ARN
+        endpoint_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint/*"
+        endpoint_config_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint-config/*"
+
+        return iam.PolicyStatement(
+            actions=[
+                # Actions for endpoints
+                "sagemaker:CreateEndpoint",
+                "sagemaker:DeleteEndpoint",
+                "sagemaker:UpdateEndpoint",
+                "sagemaker:DescribeEndpoint",
+                "sagemaker:DescribeEndpointConfig",
+                "sagemaker:InvokeEndpoint",
+                "sagemaker:ListTags",
+                "sagemaker:AddTags",
+            ],
+            resources=[
+                endpoint_arn,
+                endpoint_config_arn,
+            ],
+        )
+
+    @staticmethod
+    def endpoint_list_monitoring_policy_statement() -> iam.PolicyStatement:
+        """Create a policy statement for listing all SageMaker monitoring schedules.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for listing SageMaker monitoring schedules.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "sagemaker:ListMonitoringSchedules",
+            ],
+            resources=["*"],  # ListMonitoringSchedules does not support specific resources
+        )
+
+    @staticmethod
+    def cloudwatch_policy_statement() -> iam.PolicyStatement:
+        """Create a policy statement for accessing CloudWatch metric data.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for CloudWatch GetMetricData access.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "cloudwatch:GetMetricData",
+            ],
+            resources=["*"],  # Cloudwatch does not support specific resources
+        )
+
+    def dashboard_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for additional permissions needed by SageWorks Dashboard.
+
+        Returns:
+            iam.PolicyStatement: The policy statement needed by SageWorks Dashboard.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                # ECS action
+                "ecs:DescribeServices",
+                # ELB action
+                "elasticloadbalancing:DescribeLoadBalancers",
+            ],
+            resources=["*"],
+        )
+
+    def sageworks_datasource_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the SageWorks DataSources"""
+        policy_statements = [
+            self.s3_list_policy_statement(),
+            self.s3_policy_statement(),
+            self.glue_job_policy_statement(),
+            self.glue_catalog_policy_statement(),
+            self.glue_database_policy_statement(),
+            self.athena_policy_statement(),
+            self.athena_workgroup_policy_statement(),
+        ]
 
         return iam.ManagedPolicy(
             self,
-            id="SageWorksAPIPolicy",
+            id="SageWorksDataSourcePolicy",
             statements=policy_statements,
-            managed_policy_name="SageWorksAPIPolicy",
+            managed_policy_name="SageWorksDataSourcePolicy",
+        )
+
+    def sageworks_featureset_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the SageWorks FeatureSets"""
+        policy_statements = [
+            self.s3_policy_statement(),
+            self.glue_catalog_policy_statement(),
+            self.glue_database_policy_statement(),
+            self.athena_policy_statement(),
+            self.athena_workgroup_policy_statement(),
+            self.featurestore_list_policy_statement(),
+            self.featurestore_policy_statement(),
+        ]
+        return iam.ManagedPolicy(
+            self,
+            id="SageWorksFeatureSetPolicy",
+            statements=policy_statements,
+            managed_policy_name="SageWorksFeatureSetPolicy",
+        )
+
+    def sageworks_model_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the SageWorks Models"""
+        policy_statements = [
+            self.model_list_policy_statement(),
+            self.model_policy_statement(),
+            self.endpoint_list_policy_statement(),
+            self.endpoint_policy_statement(),
+            self.endpoint_list_monitoring_policy_statement(),
+            self.cloudwatch_policy_statement(),
+        ]
+        return iam.ManagedPolicy(
+            self,
+            id="SageWorksModelPolicy",
+            statements=policy_statements,
+            managed_policy_name="SageWorksModelPolicy",
         )
 
     def create_api_execution_role(self) -> iam.Role:
@@ -113,22 +446,34 @@ class SageworksCoreStack(Stack):
         else:
             assumed_by.add_principals(iam.AccountPrincipal(self.account_id))
 
-        # Create the role with the trust relationship and managed policies
+        # Create the role with the trust relationships
         api_execution_role = iam.Role(
             self,
             id=self.sageworks_role_name,
             assumed_by=assumed_by,
-            managed_policies=[
-                # For Reading/Writing of the Glue Data Catalog Databases and Tables
-                iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSGlueServiceRole"),
-                # For Reading/Writing FeatureStore, Models, and Endpoints
-                iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSageMakerFullAccess"),
-            ],
             role_name=self.sageworks_role_name,
         )
 
-        # Attach the SageWorks managed policy to the role
-        sageworks_api_policy = self.create_sageworks_api_policy()
-        api_execution_role.add_managed_policy(sageworks_api_policy)
+        # Create and attach the SageWorks managed policies to the role
+        api_execution_role.add_managed_policy(self.sageworks_datasource_policy())
+        api_execution_role.add_managed_policy(self.sageworks_featureset_policy())
+        api_execution_role.add_managed_policy(self.sageworks_model_policy())
+
+        # Attach the AmazonSageMakerFeatureStoreAccess managed policy to the role
+        # api_execution_role.add_managed_policy(
+        # iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSageMakerFeatureStoreAccess")
+        #    iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSageMakerFullAccess")
+        # )
+        # api_execution_role.add_managed_policy(
+        #    iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSGlueServiceRole")
+        # )
+
+        # Some Sagemaker operations require the PassRole permission
+        pass_role_policy_statement = iam.PolicyStatement(
+            actions=["iam:PassRole"],
+            resources=[api_execution_role.role_arn],
+            conditions={"StringEquals": {"iam:PassedToService": "sagemaker.amazonaws.com"}},
+        )
+        api_execution_role.add_to_policy(pass_role_policy_statement)
 
         return api_execution_role
