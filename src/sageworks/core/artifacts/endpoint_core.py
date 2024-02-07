@@ -690,7 +690,15 @@ class EndpointCore(Artifact):
         model_names = [variant["ModelName"] for variant in endpoint_config["ProductionVariants"]]
         for model_name in model_names:
             self.log.info(f"Deleting Model {model_name}...")
-            self.sm_client.delete_model(ModelName=model_name)
+            try:
+                self.sm_client.delete_model(ModelName=model_name)
+            except botocore.exceptions.ClientError as error:
+                error_code = error.response["Error"]["Code"]
+                error_message = error.response["Error"]["Message"]
+                if error_code == "ResourceInUse":
+                    self.log.warning(f"Model {model_name} is still in use...")
+                else:
+                    self.log.warning(f"Error: {error_code} - {error_message}")
 
 
 if __name__ == "__main__":
