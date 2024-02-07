@@ -118,9 +118,11 @@ class AWSServiceBroker:
             cls.fresh_cache.set(category, True)
             cls.connection_map[category].refresh()
             cls.meta_cache.set(category, cls.connection_map[category].summary())
-        except ClientError:
-            cls.log.warning(f"Failed to refresh AWS data for {category}")
-            cls.log.warning("Sometimes this happens when an artifact is being deleted/recreated...")
+        except ClientError as error:
+            error_code = error.response["Error"]["Code"]
+            error_message = error.response["Error"]["Message"]
+            cls.log.warning(f"Failed to refresh AWS data for {category}: {error_code} - {error_message}")
+            cls.log.warning(f"ClientError response: {error.response}")
 
     @classmethod
     def get_metadata(cls, category: ServiceCategory, force_refresh: bool = False) -> dict:
