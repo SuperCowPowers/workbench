@@ -466,7 +466,7 @@ class FeatureSetCore(Artifact):
     def delete_training_view(self):
         """Delete the training view for this FeatureSet"""
         try:
-            training_view_table = self.get_training_view_table()
+            training_view_table = self.get_training_view_table(create=False)
             if training_view_table is not None:
                 self.log.info(f"Deleting Training View {training_view_table} for {self.uuid}")
                 glue_client = self.boto_session.client("glue")
