@@ -99,12 +99,13 @@ class Artifact(ABC):
         pass
 
     @classmethod
-    def base_compliant_uuid(cls, uuid: str, delimiter: str = "_") -> str:
+    def base_compliant_uuid(cls, uuid: str, delimiter: str = "_", just_warn: bool = False) -> str:
         """Only allow letters and the specified delimiter, also lowercase the string
 
         Args:
             uuid (str): The UUID string to be cleaned.
             delimiter (str): The delimiter to use in the UUID string (default: "_")
+            just_warn (bool): Just warn if the UUID is not compliant (default: False)
 
         Returns:
             str: The cleaned UUID string.
@@ -115,8 +116,12 @@ class Artifact(ABC):
         if uuid != clean_uuid:
             log = logging.getLogger("sageworks")
             log.warning("UUIDs have constraints (lower case, etc) to minimize downstream issues.")
-            log.warning(f"{uuid} doesn't conform and should be converted to: {clean_uuid}")
-            return uuid
+            if just_warn:
+                log.warning(f"{uuid} doesn't conform and should be converted to: {clean_uuid}")
+                return uuid
+            else:
+                log.warning(f"{uuid} is being converted to --> {clean_uuid}")
+                return clean_uuid
         return clean_uuid
 
     @abstractmethod
