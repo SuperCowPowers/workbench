@@ -89,6 +89,22 @@ class SageworksCoreStack(Stack):
         )
 
     @staticmethod
+    def s3_public_policy_statement() -> iam.PolicyStatement:
+        """Create a policy statement for access to PUBLIC S3 buckets.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for access to PUBLIC S3 buckets.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                # Define the S3 actions you need
+                "s3:GetObject",
+                "s3:ListBucket",
+            ],
+            resources=["arn:aws:s3:::*"],
+        )
+
+    @staticmethod
     def glue_job_policy_statement() -> iam.PolicyStatement:
         """Create a policy statement for AWS Glue job-related actions.
 
@@ -126,6 +142,8 @@ class SageworksCoreStack(Stack):
                 "glue:CreateTable",
                 "glue:UpdateTable",
                 "glue:DeleteTable",
+                "glue:GetPartition",
+                "glue:GetPartitions",
             ],
             resources=[catalog_arn],
         )
@@ -355,6 +373,8 @@ class SageworksCoreStack(Stack):
                 "sagemaker:UpdateEndpoint",
                 "sagemaker:DescribeEndpoint",
                 "sagemaker:DescribeEndpointConfig",
+                "sagemaker:CreateEndpointConfig",
+                "sagemaker:DeleteEndpointConfig",
                 "sagemaker:InvokeEndpoint",
                 "sagemaker:ListTags",
                 "sagemaker:AddTags",
@@ -414,6 +434,7 @@ class SageworksCoreStack(Stack):
         policy_statements = [
             self.s3_list_policy_statement(),
             self.s3_policy_statement(),
+            self.s3_public_policy_statement(),
             self.glue_job_policy_statement(),
             self.glue_catalog_policy_statement(),
             self.glue_database_policy_statement(),
@@ -517,8 +538,8 @@ class SageworksCoreStack(Stack):
         api_execution_role.add_to_policy(pass_role_policy_statement)
 
         # Temp: Add the SageMakerFullAccess policy
-        api_execution_role.add_managed_policy(
-            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSageMakerFullAccess")
-        )
+        # api_execution_role.add_managed_policy(
+        #     iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSageMakerFullAccess")
+        # )
 
         return api_execution_role
