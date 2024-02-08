@@ -37,18 +37,24 @@ class SageworksCoreStack(Stack):
         self.additional_buckets = props.additional_buckets
 
         # Create a list of buckets
-        self.bucket_list = [self.sageworks_bucket] + ["aws-athena-query-results*"] + self.additional_buckets
+        athena_bucket = "aws-athena-query-results*"
+        sagemaker_bucket = "sagemaker-{region}-{account_id}*"
+        self.bucket_list = [self.sageworks_bucket, athena_bucket, sagemaker_bucket] + self.additional_buckets
         self.bucket_arns = self._bucket_names_to_arns(self.bucket_list)
 
         # Create our main SageWorks Execution Role
         self.sageworks_api_execution_role = self.create_api_execution_role()
 
-    @staticmethod
-    def _bucket_names_to_arns(bucket_list: list[str]) -> list[str]:
-        """Convert a list of bucket names to ARNs"""
-        return [f"arn:aws:s3:::{bucket}" for bucket in bucket_list] + [
-            f"arn:aws:s3:::{bucket}/*" for bucket in bucket_list
-        ]
+    def _bucket_names_to_arns(self, bucket_list: list[str]) -> list[str]:
+        """Convert a list of dynamic bucket names to ARNs."""
+        arns = []
+        for bucket_name_template in bucket_list:
+            # Dynamically construct the bucket name
+            bucket_name = bucket_name_template.format(region=self.region, account_id=self.account_id)
+            bucket_arn = f"arn:aws:s3:::{bucket_name}"
+            arns.append(bucket_arn)
+            arns.append(f"{bucket_arn}/*")
+        return arns
 
     @staticmethod
     def s3_list_policy_statement() -> iam.PolicyStatement:
@@ -285,6 +291,38 @@ class SageworksCoreStack(Stack):
             ],
         )
 
+    def model_training_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for training SageMaker models.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for SageMaker model training.
+        """
+
+        return iam.PolicyStatement(
+            actions=["sagemaker:CreateTrainingJob", "sagemaker:DescribeTrainingJob"],
+            resources=[f"arn:aws:sagemaker:{self.region}:{self.account}:training-job/*"],
+        )
+
+    def model_training_log_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for log interactions when training SageMaker models.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for log interactions when training SageMaker models.
+        """
+
+        return iam.PolicyStatement(
+            actions=[
+                "logs:DescribeLogStreams",
+                "logs:GetLogEvents",
+                "logs:FilterLogEvents",
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "cloudwatch:PutMetricData",
+            ],
+            resources=["*"],  # Broad permission necessary for log operations
+        )
+
     @staticmethod
     def endpoint_list_policy_statement() -> iam.PolicyStatement:
         """Create a policy statement for listing SageMaker endpoints.
@@ -413,6 +451,8 @@ class SageworksCoreStack(Stack):
         policy_statements = [
             self.model_list_policy_statement(),
             self.model_policy_statement(),
+            self.model_training_statement(),
+            self.model_training_log_statement(),
             self.endpoint_list_policy_statement(),
             self.endpoint_policy_statement(),
             self.endpoint_list_monitoring_policy_statement(),
@@ -475,5 +515,10 @@ class SageworksCoreStack(Stack):
             conditions={"StringEquals": {"iam:PassedToService": "sagemaker.amazonaws.com"}},
         )
         api_execution_role.add_to_policy(pass_role_policy_statement)
+
+        # Temp: Add the SageMakerFullAccess policy
+        api_execution_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSageMakerFullAccess")
+        )
 
         return api_execution_role
