@@ -5,6 +5,7 @@ from datetime import datetime
 from sagemaker import ModelPackage
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
+from botocore.exceptions import ClientError
 
 # Local Imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
@@ -110,16 +111,33 @@ class ModelToEndpoint(Transform):
 
         # Create Endpoint Config
         self.log.info(f"Creating Endpoint Config {endpoint_name}...")
-        self.sm_client.create_endpoint_config(
-            EndpointConfigName=endpoint_name,
-            ProductionVariants=[
-                {
-                    "ServerlessConfig": {"MemorySizeInMB": mem_size, "MaxConcurrency": max_concurrency},
-                    "ModelName": model_name,
-                    "VariantName": "AllTraffic",
-                }
-            ],
-        )
+        try:
+            self.sm_client.create_endpoint_config(
+                EndpointConfigName=endpoint_name,
+                ProductionVariants=[
+                    {
+                        "ServerlessConfig": {"MemorySizeInMB": mem_size, "MaxConcurrency": max_concurrency},
+                        "ModelName": model_name,
+                        "VariantName": "AllTraffic",
+                    }
+                ],
+            )
+        except ClientError as e:
+            # Already Exists: Check if ValidationException and existing endpoint configuration
+            if e.response['Error']['Code'] == 'ValidationException' and \
+                    "already existing endpoint configuration" in e.response['Error']['Message']:
+                self.log.warning("Endpoint configuration already exists: Deleting and retrying...")
+                self.sm_client.delete_endpoint_config(EndpointConfigName=endpoint_name)
+                self.sm_client.create_endpoint_config(
+                    EndpointConfigName=endpoint_name,
+                    ProductionVariants=[
+                        {
+                            "ServerlessConfig": {"MemorySizeInMB": mem_size, "MaxConcurrency": max_concurrency},
+                            "ModelName": model_name,
+                            "VariantName": "AllTraffic",
+                        }
+                    ],
+                )
 
         # Create Endpoint
         self.log.info(f"Creating Serverless Endpoint {endpoint_name}...")
