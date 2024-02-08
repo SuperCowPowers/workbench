@@ -27,6 +27,20 @@ import os
 import pandas as pd
 
 
+# Function to check if dataframe is empty
+def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
+    """
+    Check if the provided dataframe is empty and raise an exception if it is.
+
+    :param df: DataFrame to check
+    :param df_name: Name of the DataFrame (for error message clarity)
+    """
+    if df.empty:
+        msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
+        print(msg)
+        raise ValueError(msg)
+
+
 if __name__ == "__main__":
     # Harness Template Parameters
     target = "{{target_column}}"
@@ -55,6 +69,9 @@ if __name__ == "__main__":
 
     # Combine files and read them all into a single pandas dataframe
     all_df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
+
+    # Check if the dataframe is empty
+    check_dataframe(all_df, "training_df")
 
     # Features/Target output
     print(f"Target: {target}")
