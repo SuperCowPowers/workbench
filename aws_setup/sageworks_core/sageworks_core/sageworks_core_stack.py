@@ -467,6 +467,21 @@ class SageworksCoreStack(Stack):
             managed_policy_name="SageWorksFeatureSetPolicy",
         )
 
+    """In SageMaker, certain operations, such as creating training jobs, endpoint deployments, or batch transform jobs,
+       require SageMaker to assume an IAM role. This role provides SageMaker with permissions to access AWS resources 
+       on your behalf, such as reading training data from S3, writing model artifacts, or logging to CloudWatch."""
+    def sagemaker_pass_role_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for SageMaker to assume the Execution Role
+
+        Args:
+            sageworks_api_role (iam.Role): The SageWorks Execution Role
+        """
+        return iam.PolicyStatement(
+            actions=["iam:PassRole"],
+            resources=["arn:aws:iam::*:role/*"],
+            conditions={"StringEquals": {"iam:PassedToService": "sagemaker.amazonaws.com"}},
+        )
+
     def sageworks_model_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the SageWorks Models"""
         policy_statements = [
@@ -478,6 +493,7 @@ class SageworksCoreStack(Stack):
             self.endpoint_policy_statement(),
             self.endpoint_list_monitoring_policy_statement(),
             self.cloudwatch_policy_statement(),
+            self.sagemaker_pass_role_policy_statement(),
         ]
         return iam.ManagedPolicy(
             self,
@@ -486,20 +502,7 @@ class SageworksCoreStack(Stack):
             managed_policy_name="SageWorksModelPolicy",
         )
 
-    """In SageMaker, certain operations, such as creating training jobs, endpoint deployments, or batch transform jobs,
-       require SageMaker to assume an IAM role. This role provides SageMaker with permissions to access AWS resources 
-       on your behalf, such as reading training data from S3, writing model artifacts, or logging to CloudWatch."""
-    def sagemaker_pass_role_policy_statement(self, sageworks_api_role: iam.Role) -> iam.PolicyStatement:
-        """Create a policy statement for SageMaker to assume the Execution Role
 
-        Args:
-            sageworks_api_role (iam.Role): The SageWorks Execution Role
-        """
-        return iam.PolicyStatement(
-            actions=["iam:PassRole"],
-            resources=[sageworks_api_role.role_arn],
-            conditions={"StringEquals": {"iam:PassedToService": "sagemaker.amazonaws.com"}},
-        )
 
     def create_api_execution_role(self) -> iam.Role:
         """Create the SageWorks Execution Role for API-related tasks"""
@@ -534,8 +537,5 @@ class SageworksCoreStack(Stack):
         api_execution_role.add_managed_policy(self.sageworks_datasource_policy())
         api_execution_role.add_managed_policy(self.sageworks_featureset_policy())
         api_execution_role.add_managed_policy(self.sageworks_model_policy())
-
-        # Some Sagemaker operations require the PassRole permission
-        api_execution_role.add_to_policy(self.sagemaker_pass_role_policy_statement(api_execution_role))
 
         return api_execution_role
