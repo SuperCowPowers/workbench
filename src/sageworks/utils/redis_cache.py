@@ -94,8 +94,8 @@ class RedisCache:
         )
         log.info(f"Redis connection success: {host}:{port}...")
     except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
-        msg = f"Could not connect to Redis Database: {host}:{port}..."
-        log.warning(msg)
+        log.warning(f"Could not connect to Redis Database: {host}:{port}")
+        log.warning("SageWorks will still function, but will be SLOW without Redis...")
 
     @classmethod
     def check(cls):

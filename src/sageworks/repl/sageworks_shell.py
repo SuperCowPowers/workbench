@@ -187,8 +187,7 @@ class SageWorksShell:
 
     def import_sageworks(self):
         # Import all the SageWorks modules
-        spinner = Spinner("lightpurple", "Chatting with AWS:")
-        spinner.start()  # Start the spinner
+        spinner = self.spinner_start("Chatting with AWS:")
         try:
             self.artifacts_text_view = importlib.import_module(
                 "sageworks.views.artifacts_text_view"
@@ -241,6 +240,12 @@ class SageWorksShell:
         - status: Show the current SageWorks Status
         - exit: Exit SageWorks REPL"""
         return help_msg
+
+    def spinner_start(self, text: str, color: str = "lightpurple") -> Spinner:
+        # Import all the SageWorks modules
+        spinner = Spinner(color, text)
+        spinner.start()  # Start the spinner
+        return spinner
 
     @staticmethod
     def doc_browser():
@@ -298,7 +303,12 @@ class SageWorksShell:
         logging.getLogger("sageworks").setLevel(logging.WARNING)
 
     def meta_refresh(self):
-        self.artifacts_text_view.refresh(force_refresh=True)
+        """Force a refresh of the AWS Metadata"""
+        spinner = self.spinner_start("Refreshing AWS Metadata:")
+        try:
+            self.artifacts_text_view.refresh(force_refresh=True)
+        finally:
+            spinner.stop()
 
     def status_lights(self) -> list[(Token, str)]:
         """Check the status of AWS, Redis, and API Key and return Token colors
