@@ -336,7 +336,6 @@ class SageworksCoreStack(Stack):
                 "logs:CreateLogGroup",
                 "logs:CreateLogStream",
                 "logs:PutLogEvents",
-                "cloudwatch:PutMetricData",
             ],
             resources=["*"],  # Broad permission necessary for log operations
         )
@@ -409,6 +408,7 @@ class SageworksCoreStack(Stack):
         return iam.PolicyStatement(
             actions=[
                 "cloudwatch:GetMetricData",
+                "cloudwatch:PutMetricData",
             ],
             resources=["*"],  # Cloudwatch does not support specific resources
         )
@@ -489,9 +489,6 @@ class SageworksCoreStack(Stack):
             self.model_policy_statement(),
             self.model_training_statement(),
             self.model_training_log_statement(),
-            self.endpoint_list_policy_statement(),
-            self.endpoint_policy_statement(),
-            self.endpoint_list_monitoring_policy_statement(),
             self.cloudwatch_policy_statement(),
             self.sagemaker_pass_role_policy_statement(),
         ]
@@ -502,7 +499,20 @@ class SageworksCoreStack(Stack):
             managed_policy_name="SageWorksModelPolicy",
         )
 
-
+    def sageworks_endpoint_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the SageWorks Models"""
+        policy_statements = [
+            self.endpoint_list_policy_statement(),
+            self.endpoint_policy_statement(),
+            self.endpoint_list_monitoring_policy_statement(),
+            self.cloudwatch_policy_statement(),
+        ]
+        return iam.ManagedPolicy(
+            self,
+            id="SageWorksEndpointPolicy",
+            statements=policy_statements,
+            managed_policy_name="SageWorksEndpointPolicy",
+        )
 
     def create_api_execution_role(self) -> iam.Role:
         """Create the SageWorks Execution Role for API-related tasks"""
@@ -537,5 +547,6 @@ class SageworksCoreStack(Stack):
         api_execution_role.add_managed_policy(self.sageworks_datasource_policy())
         api_execution_role.add_managed_policy(self.sageworks_featureset_policy())
         api_execution_role.add_managed_policy(self.sageworks_model_policy())
+        api_execution_role.add_managed_policy(self.sageworks_endpoint_policy())
 
         return api_execution_role
