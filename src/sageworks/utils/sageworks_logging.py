@@ -101,9 +101,13 @@ def logging_setup(color_logs=True):
         color_logs = False
     log = logging.getLogger("sageworks")
 
+    # Turn off propagation to root logger
+    log.propagate = False
+
     # Remove any existing handlers
-    for handler in log.handlers[:]:
-        log.removeHandler(handler)
+    while log.handlers:
+        log.info("Removing log handler...")
+        log.removeHandler(log.handlers[0])
 
     # Setup new handler
     handler = logging.StreamHandler(stream=sys.stdout)

@@ -11,7 +11,6 @@ from datetime import datetime
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.artifacts.model_core import ModelCore, ModelType
-from sageworks.utils import sageworks_logging
 
 
 class FeaturesToModel(Transform):
@@ -212,9 +211,6 @@ class FeaturesToModel(Transform):
 
         # Train the estimator
         self.estimator.fit({"train": s3_training_path}, job_name=training_job_name)
-
-        # AWS Model Training add a log handler, so run SageWorks logging setup again
-        sageworks_logging.logging_setup()
 
         # Now delete the training data
         self.log.info(f"Deleting training data {s3_training_path}...")
