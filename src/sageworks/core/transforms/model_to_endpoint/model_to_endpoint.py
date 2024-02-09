@@ -124,8 +124,10 @@ class ModelToEndpoint(Transform):
             )
         except ClientError as e:
             # Already Exists: Check if ValidationException and existing endpoint configuration
-            if e.response['Error']['Code'] == 'ValidationException' and \
-                    "already existing endpoint configuration" in e.response['Error']['Message']:
+            if (
+                e.response["Error"]["Code"] == "ValidationException"
+                and "already existing endpoint configuration" in e.response["Error"]["Message"]
+            ):
                 self.log.warning("Endpoint configuration already exists: Deleting and retrying...")
                 self.sm_client.delete_endpoint_config(EndpointConfigName=endpoint_name)
                 self.sm_client.create_endpoint_config(

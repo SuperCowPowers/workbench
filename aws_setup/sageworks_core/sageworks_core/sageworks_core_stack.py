@@ -470,6 +470,7 @@ class SageworksCoreStack(Stack):
     """In SageMaker, certain operations, such as creating training jobs, endpoint deployments, or batch transform jobs,
        require SageMaker to assume an IAM role. This role provides SageMaker with permissions to access AWS resources 
        on your behalf, such as reading training data from S3, writing model artifacts, or logging to CloudWatch."""
+
     def sagemaker_pass_role_policy_statement(self) -> iam.PolicyStatement:
         """Create a policy statement for SageMaker to assume the Execution Role
 
