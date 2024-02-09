@@ -85,9 +85,8 @@ class Spinner:
         sys.stdout.flush()
 
     def spin(self):
-        # frames = "▁▃▄▅▆▇█▇▆▅▄▃"  # Spinner frames
-        # frames = "⣾⣽⣻⢿⡿⣟⣯⣷"  # Spinner frames
         frames = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"  # Spinner frames
+        # frames = "⠧⠩⠪⠫⠭⠮⠯⠳⠵⠷⠹⠺⠻⠼⠽⠾"  # Spinner frames
         done_frame = "⠿⠿⠿⠿"  # Done frame
 
         spinners = [itertools.cycle(frames) for _ in range(4)]  # Create four separate cycle iterators
