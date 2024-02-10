@@ -37,6 +37,7 @@ nav:
     - Full Pipeline Testing: aws_setup/full_pipeline.md
     - Dashboard Setup: aws_setup/dashboard_stack.md
     - AWS Tips and Tricks: aws_setup/aws_tips_and_tricks.md
+    - AWS Access Management: aws_setup/aws_access_management.md
   - Admin: 
     - PyPI Release:  admin/pypi_release.md
     - Docker Push:  admin/docker_push.md
