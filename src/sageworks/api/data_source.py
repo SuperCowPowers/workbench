@@ -67,6 +67,22 @@ class DataSource(AthenaSource):
         """
         return super().details(**kwargs)
 
+    def get_tags(self) -> list:
+        """Get DataSource Tags
+
+        Returns:
+            list: A list of tags for this DataSource
+        """
+        return super().get_tags()
+
+    def set_tags(self, tags: list[str]):
+        """Set DataSource Tags
+
+        Args:
+            tags (list[str]): A list of tags to associate with the DataSource
+        """
+        return super().set_tags(tags)
+
     def query(self, query: str) -> pd.DataFrame:
         """Query the AthenaSource
 

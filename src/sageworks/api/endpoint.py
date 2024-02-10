@@ -28,6 +28,22 @@ class Endpoint(EndpointCore):
         """
         return super().details(**kwargs)
 
+    def get_tags(self) -> list:
+        """Get Endpoint Tags
+
+        Returns:
+            list: A list of tags for this Endpoint
+        """
+        return super().get_tags()
+
+    def set_tags(self, tags: list[str]):
+        """Set Endpoint Tags
+
+        Args:
+            tags (list[str]): A list of tags to associate with the Endpoint
+        """
+        return super().set_tags(tags)
+
     def predict(self, df) -> pd.DataFrame:
         """Run predictions on the Endpoint
 

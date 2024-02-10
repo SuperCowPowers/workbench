@@ -37,7 +37,7 @@ class Monitor(MonitorCore):
         """Monitor Summary
 
         Returns:
-            dict: A dictionary of summary information about the Endpoint
+            dict: A dictionary of summary information about the Monitor
         """
         return super().summary()
 
