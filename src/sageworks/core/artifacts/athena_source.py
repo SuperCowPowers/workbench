@@ -48,6 +48,9 @@ class AthenaSource(DataSourceAbstract):
         # Make sure the data_uuid is compliant
         data_uuid = self.compliant_uuid(data_uuid)
 
+        # Flag for metadata cache refresh logic
+        self.metadata_refresh_needed = False
+
         # Call superclass init
         super().__init__(data_uuid, database)
 
@@ -70,6 +73,7 @@ class AthenaSource(DataSourceAbstract):
         """Refresh our internal AWS Broker catalog metadata"""
         _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=True)
         self.catalog_table_meta = _catalog_meta[self.get_database()].get(self.get_table_name())
+        self.metadata_refresh_needed = False
 
     def compliant_uuid(self, uuid: str) -> str:
         """Make sure the uuid is compliant with Athena Table Name requirements
@@ -112,6 +116,10 @@ class AthenaSource(DataSourceAbstract):
                 self.log.critical("Malformed Artifact! Delete this Artifact and recreate it!")
             return {}
 
+        # Check if we need to refresh our metadata
+        if self.metadata_refresh_needed:
+            self.refresh_meta()
+
         # Get the SageWorks Metadata from the Catalog Table Metadata
         return sageworks_meta_from_catalog_table_meta(self.catalog_table_meta)
 
@@ -140,6 +148,7 @@ class AthenaSource(DataSourceAbstract):
                 table=self.get_table_name(),
                 boto3_session=self.boto_session,
             )
+            self.metadata_refresh_needed = True
         except botocore.exceptions.ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code == "InvalidInputException":
