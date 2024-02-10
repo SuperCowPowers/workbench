@@ -366,12 +366,12 @@ if __name__ == "__main__":
     most_recent = newest_files([s3_path], sm_session)
 
     # Add a health tag
-    my_features.add_sageworks_health_tag("needs_onboard")
-    print(my_features.sageworks_health_tags())
+    my_features.add_health_tag("needs_onboard")
+    print(my_features.get_health_tags())
 
     # Add a user tag
-    my_features.add_sageworks_tag("test_tag")
-    my_tags = my_features.sageworks_tags()
+    my_features.add_tag("test_tag")
+    my_tags = my_features.get_tags()
     pprint(my_tags)
 
     # Add sageworks meta data

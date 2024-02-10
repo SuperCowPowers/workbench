@@ -60,7 +60,7 @@ if __name__ == "__main__":
     print(f"Column Types: {my_data.column_types()}")
 
     # Get Tags associated with this Artifact
-    print(f"Tags: {my_data.sageworks_tags()}")
+    print(f"Tags: {my_data.get_tags()}")
 
     # Get ALL the AWS Metadata associated with this Artifact
     print("\n\nALL Meta")

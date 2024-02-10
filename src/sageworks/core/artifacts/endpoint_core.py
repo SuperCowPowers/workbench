@@ -149,15 +149,15 @@ class EndpointCore(Artifact):
         elif num_errors > 0:
             health_issues.append("5xx_errors_min")
         else:
-            self.remove_sageworks_health_tag("5xx_errors")
-            self.remove_sageworks_health_tag("5xx_errors_min")
+            self.remove_health_tag("5xx_errors")
+            self.remove_health_tag("5xx_errors_min")
 
         # Check for Endpoint activity
         num_invocations = endpoint_metrics["Invocations"].sum()
         if num_invocations == 0:
             health_issues.append("no_activity")
         else:
-            self.remove_sageworks_health_tag("no_activity")
+            self.remove_health_tag("no_activity")
         return health_issues
 
     def predict(self, feature_df: pd.DataFrame) -> pd.DataFrame:
@@ -378,7 +378,7 @@ class EndpointCore(Artifact):
         """
         self.log.important(f"Onboarding {self.uuid}...")
         self.set_status("onboarding")
-        self.remove_sageworks_health_tag("needs_onboard")
+        self.remove_health_tag("needs_onboard")
 
         # Run a health check and refresh the meta
         time.sleep(2)  # Give the AWS Metadata a chance to update
@@ -718,7 +718,7 @@ if __name__ == "__main__":
     print(my_endpoint.modified())
 
     # Get the tags associated with this Endpoint
-    print(f"Tags: {my_endpoint.sageworks_tags()}")
+    print(f"Tags: {my_endpoint.get_tags()}")
 
     print("Details:")
     print(f"{my_endpoint.details(recompute=True)}")

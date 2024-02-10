@@ -128,13 +128,13 @@ class ModelCore(Artifact):
         if self._get_model_type() == ModelType.UNKNOWN:
             health_issues.append("model_type_unknown")
         else:
-            self.remove_sageworks_health_tag("model_type_unknown")
+            self.remove_health_tag("model_type_unknown")
 
         # Model Metrics
         if self.model_metrics() is None:
             health_issues.append("metrics_needed")
         else:
-            self.remove_sageworks_health_tag("metrics_needed")
+            self.remove_health_tag("metrics_needed")
         return health_issues
 
     def latest_model_object(self) -> SagemakerModel:
@@ -380,7 +380,7 @@ class ModelCore(Artifact):
         self._pull_inference_cm()
 
         # Remove the needs_onboard tag
-        self.remove_sageworks_health_tag("needs_onboard")
+        self.remove_health_tag("needs_onboard")
 
         # Run a health check and refresh the meta
         time.sleep(2)  # Give the AWS Metadata a chance to update
@@ -421,7 +421,7 @@ class ModelCore(Artifact):
         """Internal: Set the Model Type for this Model"""
         self.model_type = model_type
         self.upsert_sageworks_meta({"sageworks_model_type": self.model_type.value})
-        self.remove_sageworks_health_tag("model_type_unknown")
+        self.remove_health_tag("model_type_unknown")
 
     def _get_model_type(self) -> ModelType:
         """Internal: Query the SageWorks Metadata to get the model type
@@ -618,7 +618,7 @@ if __name__ == "__main__":
     print(f"Model Package ARN: {my_model.arn()}")
 
     # Get the tags associated with this Model
-    print(f"Tags: {my_model.sageworks_tags()}")
+    print(f"Tags: {my_model.get_tags()}")
 
     # Get the SageWorks metadata associated with this Model
     print(f"SageWorks Meta: {my_model.sageworks_meta()}")

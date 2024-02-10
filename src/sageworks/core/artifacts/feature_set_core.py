@@ -333,7 +333,7 @@ class FeatureSetCore(Artifact):
         # Additional Details
         details["sageworks_status"] = self.get_status()
         details["sageworks_input"] = self.get_input()
-        details["sageworks_tags"] = ":".join(self.sageworks_tags())
+        details["sageworks_tags"] = ":".join(self.get_tags())
 
         # Underlying Storage Details
         details["storage_type"] = "athena"  # TODO: Add RDS support
@@ -593,7 +593,7 @@ class FeatureSetCore(Artifact):
         # Set our status to onboarding
         self.log.important(f"Onboarding {self.uuid}...")
         self.set_status("onboarding")
-        self.remove_sageworks_health_tag("needs_onboard")
+        self.remove_health_tag("needs_onboard")
 
         # Call our underlying DataSource onboard method
         self.data_source.refresh_meta()
@@ -644,7 +644,7 @@ if __name__ == "__main__":
 
     # Get the metadata and tags associated with this feature set
     print(f"SageWorks Meta: {my_features.sageworks_meta()}")
-    print(f"SageWorks Tags: {my_features.sageworks_tags()}")
+    print(f"SageWorks Tags: {my_features.get_tags()}")
 
     # Get a summary for this Feature Set
     print("\nSummary:")

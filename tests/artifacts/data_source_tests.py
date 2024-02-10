@@ -31,7 +31,7 @@ def test():
     print(f"Modified: {my_data.modified()}")
 
     # Get Tags associated with this Artifact
-    print(f"Tags: {my_data.sageworks_tags()}")
+    print(f"Tags: {my_data.get_tags()}")
 
     # Get ALL the AWS Metadata associated with this Artifact
     print("\n\nALL Meta")

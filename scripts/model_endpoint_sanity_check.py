@@ -74,7 +74,7 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
         log.important(f"{model_group}")
         if tag:
             m = ModelCore(model_group)
-            m.add_sageworks_health_tag("no_endpoint")
+            m.add_health_tag("no_endpoint")
     log.important("Recommendation: Delete these Models Groups or create an Endpoint for them")
 
     # List all endpoints
@@ -98,7 +98,7 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
                 log.warning("Recommendation: This endpoint may no longer work, test it!")
                 if tag:
                     e = EndpointCore(endpoint["EndpointName"])
-                    e.add_sageworks_health_tag("no_model")
+                    e.add_health_tag("no_model")
 
     # Now report on the models that are not used by any endpoint (orphans)
     unused_models = model_set - set(found_models)

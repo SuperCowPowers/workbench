@@ -26,7 +26,7 @@ def test():
     print(columns)
 
     # Get Tags associated with this Feature Set
-    print(f"Tags: {my_features.sageworks_tags()}")
+    print(f"Tags: {my_features.get_tags()}")
 
     # Get ALL the AWS Metadata associated with this Feature Set
     print("\n\nALL Meta")

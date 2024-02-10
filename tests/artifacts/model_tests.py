@@ -20,7 +20,7 @@ def test():
     print(f"Model Package ARN: {my_model.arn()}")
 
     # Get the tags associated with this Model
-    print(f"Tags: {my_model.sageworks_tags()}")
+    print(f"Tags: {my_model.get_tags()}")
 
     # Get creation time
     print(f"Created: {my_model.created()}")

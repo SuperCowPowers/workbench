@@ -82,7 +82,7 @@ class Artifact(ABC):
             else:
                 self.log.warning(f"Health Check Failed {self.uuid}: {health_issues}")
             for issue in health_issues:
-                self.add_sageworks_health_tag(issue)
+                self.add_health_tag(issue)
         else:
             self.log.info(f"Health Check Passed {self.uuid}")
 
@@ -260,7 +260,7 @@ class Artifact(ABC):
         self.log.info(f"Removing SageWorks Metadata {key_to_remove} for Artifact: {aws_arn}...")
         sagemaker_delete_tag(aws_arn, self.sm_session, key_to_remove)
 
-    def sageworks_tags(self, tag_type="user") -> list:
+    def get_tags(self, tag_type="user") -> list:
         """Get the tags for this artifact
         Args:
             tag_type (str): Type of tags to return (user or health)
@@ -283,16 +283,16 @@ class Artifact(ABC):
         # Otherwise, return the health tags
         return health_tags.split(self.delimiter) if health_tags else []
 
-    def set_sageworks_tags(self, tags):
+    def set_tags(self, tags):
         self.upsert_sageworks_meta({"sageworks_tags": self.delimiter.join(tags)})
 
-    def add_sageworks_tag(self, tag, tag_type="user"):
+    def add_tag(self, tag, tag_type="user"):
         """Add a tag for this artifact, ensuring no duplicates and maintaining order.
         Args:
             tag (str): Tag to add for this artifact
             tag_type (str): Type of tag to add (user or health)
         """
-        current_tags = self.sageworks_tags(tag_type) if tag_type == "user" else self.sageworks_health_tags()
+        current_tags = self.get_tags(tag_type) if tag_type == "user" else self.get_health_tags()
         if tag not in current_tags:
             current_tags.append(tag)
             combined_tags = self.delimiter.join(current_tags)
@@ -307,7 +307,7 @@ class Artifact(ABC):
             tag (str): Tag to remove from this artifact
             tag_type (str): Type of tag to remove (user or health)
         """
-        current_tags = self.sageworks_tags(tag_type) if tag_type == "user" else self.sageworks_health_tags()
+        current_tags = self.get_tags(tag_type) if tag_type == "user" else self.get_health_tags()
         if tag in current_tags:
             current_tags.remove(tag)
             combined_tags = self.delimiter.join(current_tags)
@@ -317,16 +317,16 @@ class Artifact(ABC):
                 self.upsert_sageworks_meta({"sageworks_health_tags": combined_tags})
 
     # Syntactic sugar for health tags
-    def sageworks_health_tags(self):
-        return self.sageworks_tags(tag_type="health")
+    def get_health_tags(self):
+        return self.get_tags(tag_type="health")
 
-    def set_sageworks_health_tags(self, tags):
+    def set_health_tags(self, tags):
         self.upsert_sageworks_meta({"sageworks_health_tags": self.delimiter.join(tags)})
 
-    def add_sageworks_health_tag(self, tag):
-        self.add_sageworks_tag(tag, tag_type="health")
+    def add_health_tag(self, tag):
+        self.add_tag(tag, tag_type="health")
 
-    def remove_sageworks_health_tag(self, tag):
+    def remove_health_tag(self, tag):
         self.remove_sageworks_tag(tag, tag_type="health")
 
     # Owner of this artifact
@@ -375,7 +375,7 @@ class Artifact(ABC):
         which is implemented by the specific Artifact class"""
         basic = {
             "uuid": self.uuid,
-            "health_tags": self.sageworks_health_tags(),
+            "health_tags": self.get_health_tags(),
             "aws_arn": self.arn(),
             "size": self.size(),
             "created": self.created(),

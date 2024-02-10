@@ -21,7 +21,7 @@ def test():
     print(my_endpoint.modified())
 
     # Get the tags associated with this Endpoint
-    print(f"Tags: {my_endpoint.sageworks_tags()}")
+    print(f"Tags: {my_endpoint.get_tags()}")
 
     # Create the FeatureSet to DF Transform
     feature_to_pandas = FeaturesToPandas("abalone_features")

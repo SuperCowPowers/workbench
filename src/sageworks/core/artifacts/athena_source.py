@@ -520,7 +520,7 @@ if __name__ == "__main__":
     print(f"Input: {my_data.get_input()}")
 
     # Get Tags associated with this Artifact
-    print(f"Tags: {my_data.sageworks_tags()}")
+    print(f"Tags: {my_data.get_tags()}")
 
     # Get a sample of the data
     my_df = my_data.sample()
