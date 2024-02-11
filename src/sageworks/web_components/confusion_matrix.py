@@ -80,10 +80,9 @@ class ConfusionMatrix(ComponentInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
-    from sageworks.core.artifacts.model_core import ModelCore
+    from sageworks.api.model import Model
 
-    # m = ModelCore("abalone-regression")
-    m = ModelCore("wine-classification")
+    m = Model("wine-classification")
     model_details = m.details()
 
     # Instantiate the ConfusionMatrix class

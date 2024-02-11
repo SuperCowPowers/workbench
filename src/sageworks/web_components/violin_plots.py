@@ -116,3 +116,32 @@ class ViolinPlots(ComponentInterface):
         if num_rows == 1:
             return base_height
         return base_height + num_rows * 80
+
+
+if __name__ == "__main__":
+    # This class takes in DataSource details and generates a Confusion Matrix
+    from sageworks.api.data_source import DataSource
+
+    ds = DataSource("abalone_data")
+    smart_sample_rows = ds.smart_sample()
+
+    # Instantiate the ViolinPlots class
+    v_plots = ViolinPlots()
+
+    # Generate the figure
+    fig = v_plots.generate_component_figure(
+        smart_sample_rows,
+        figure_args={
+            "box_visible": True,
+            "meanline_visible": True,
+            "showlegend": False,
+            "points": "all",
+            "spanmode": "hard",
+        },
+    )
+
+    # Apply dark theme
+    fig.update_layout(template="plotly_dark")
+
+    # Show the figure
+    fig.show()
