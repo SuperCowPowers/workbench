@@ -210,6 +210,7 @@ class PluginManager:
         most_recent_time = self._most_recent_modified_time(self.plugin_dir)
         if most_recent_time > self.plugin_modified_time:
             self.log.important("Plugins have been modified")
+            self.plugin_modified_time = most_recent_time
             return True
         return False
 
