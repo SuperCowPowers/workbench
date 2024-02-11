@@ -29,22 +29,6 @@ class Model(ModelCore):
         """
         return super().details(**kwargs)
 
-    def get_tags(self) -> list:
-        """Get Model Tags
-
-        Returns:
-            list: A list of tags for this Model
-        """
-        return super().get_tags()
-
-    def set_tags(self, tags: list[str]):
-        """Set Model Tags
-
-        Args:
-            tags (list[str]): A list of tags to associate with the Model
-        """
-        return super().set_tags(tags)
-
     def to_endpoint(self, name: str = None, tags: list = None, serverless: bool = True) -> Endpoint:
         """Create an Endpoint from the Model
 
