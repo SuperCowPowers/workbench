@@ -1,12 +1,16 @@
 """A Singleton Plugin Manager Class: Manages the loading and retrieval of SageWorks plugins"""
 
 import os
+import atexit
+import shutil
+import tempfile
 import logging
 import importlib
 from typing import Union, Dict, List, Any
 
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager
+from sageworks.utils.s3_utils import copy_s3_files_to_local
 from sageworks.views.view import View
 from sageworks.web_components.plugin_interface import PluginInterface as WebPluginInterface
 from sageworks.web_components.plugin_interface import PluginType as WebPluginType
@@ -30,20 +34,45 @@ class PluginManager:
             return
 
         self.log = logging.getLogger("sageworks")
+        self.temp_dir = None
+        self.plugin_modified_time = None
         self.plugins: Dict[str, dict] = {"web_components": {}, "transforms": {}, "views": {}, "pages": {}}
+
+        # Get the plugin directory from the config
         cm = ConfigManager()
         self.plugin_dir = cm.get_config("SAGEWORKS_PLUGINS")
         if not self.plugin_dir:
             self.log.warning("SAGEWORKS_PLUGINS not set. No plugins will be loaded.")
             return
-        self.load_plugins()
+
+        # Load plugins from the local directory
+        self.log.important(f"Loading plugins from {self.plugin_dir}...")
+        if not self.plugin_dir.startswith("s3://"):
+            self.load_plugins(self.plugin_dir)
+
+        # Load plugins from S3 (copy to a temporary directory, then load)
+        else:
+            self.temp_dir = tempfile.mkdtemp()
+            copy_s3_files_to_local(self.plugin_dir, self.temp_dir)
+            atexit.register(self._cleanup_temp_dir)
+
+            # Load plugins from the temporary directory
+            self.load_plugins(self.temp_dir)
+
+            # The plugin directory is now the temporary directory
+            self.plugin_dir = self.temp_dir
+
+        # Singleton is now initialized
         self.__initialized = True
 
-    def load_plugins(self):
+    def load_plugins(self, plugin_dir: str):
         """Loads plugins from our plugins directory"""
-        self.log.important(f"Loading plugins from {self.plugin_dir}...")
+        self.log.important(f"Loading plugins from {plugin_dir}...")
         for plugin_type in self.plugins.keys():
-            self._load_plugins(self.plugin_dir, plugin_type)
+            self._load_plugins(plugin_dir, plugin_type)
+
+        # Store the most recent modified time
+        self.plugin_modified_time = self._most_recent_modified_time(plugin_dir)
 
     def _load_plugins(self, base_dir: str, plugin_type: str):
         """Internal: Load plugins of a specific type from a subdirectory.
@@ -165,6 +194,38 @@ class PluginManager:
         pages = self.plugins["pages"]
         return {name: page() for name, page in pages.items()}
 
+    def _cleanup_temp_dir(self):
+        """Cleans up the temporary directory created for S3 files."""
+        if self.temp_dir and os.path.isdir(self.temp_dir):
+            self.log.important(f"Cleaning up temporary directory: {self.temp_dir}")
+            shutil.rmtree(self.temp_dir)
+            self.temp_dir = None
+
+    def plugins_modified(self) -> bool:
+        """Check if the plugins have been modified since the last check
+
+        Returns:
+            bool: True if the plugins have been modified, else False
+        """
+        most_recent_time = self._most_recent_modified_time(self.plugin_dir)
+        if most_recent_time > self.plugin_modified_time:
+            self.log.important("Plugins have been modified")
+            return True
+        return False
+
+    # Helper method to compute the most recent modified time
+    @staticmethod
+    def _most_recent_modified_time(dir_path: str) -> float:
+        """Internal: Compute the most recent modified time of a directory"""
+        most_recent_time = 0
+        for root, _, files in os.walk(dir_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                file_modified_time = os.path.getmtime(file_path)
+                if file_modified_time > most_recent_time:
+                    most_recent_time = file_modified_time
+        return most_recent_time
+
     def __repr__(self) -> str:
         """String representation of the PluginManager state and contents
 
@@ -207,3 +268,36 @@ if __name__ == "__main__":
 
     # Test REPR
     print(manager)
+
+    # Test Modified Time by modifying a plugin file
+    cm = ConfigManager()
+    plugin_path = cm.get_config("SAGEWORKS_PLUGINS") + "/web_components/custom_turbo.py"
+    print(manager.plugins_modified())
+    # Modify the plugin file modified time to now
+    os.utime(plugin_path, None)
+    print(manager.plugins_modified())
+
+    # Test S3 Plugin Loading
+    print("\n\n*** Testing S3 Plugin Loading ***\n\n")
+    s3_path = "s3://sandbox-sageworks-artifacts/sageworks_plugins"
+    cm = ConfigManager()
+    cm.set_config("SAGEWORKS_PLUGINS", s3_path)
+
+    # Since we're using a singleton, we need to create a new instance
+    PluginManager._instance = None
+    manager = PluginManager()
+
+    # Get web components for the model view
+    model_plugin = manager.get_list_of_web_plugins(WebPluginType.MODEL)
+
+    # Get web components for the endpoint view
+    endpoint_plugin = manager.get_list_of_web_plugins(WebPluginType.ENDPOINT)
+
+    # Get view plugin
+    my_view = manager.get_view("ModelPluginView")
+
+    # Get plugin pages
+    plugin_pages = manager.get_pages()
+
+    # Get all the plugins
+    pprint(manager.get_all_plugins())
