@@ -46,7 +46,7 @@ def main_layout(
                                 },
                             ),
                             html.Span(
-                                f"",
+                                "",
                                 id="plugin-info",
                                 style={
                                     "color": "rgb(140, 140, 80)",
