@@ -18,12 +18,14 @@ def main_layout(
 ) -> html.Div:
     """Main Layout for the Dashboard"""
     sageworks_version = sageworks.__version__.split("+")[0].strip()
-    license_id = ConfigManager().get_license_id()
+    cm = ConfigManager()
+    license_id = cm.get_license_id()
 
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
         children=[
             dcc.Interval(id="broker-update-timer", interval=30000, n_intervals=0),
+            dcc.Interval(id="plugin-update-timer", interval=45000, n_intervals=0),
             dbc.Row(
                 [
                     html.H2(
@@ -32,7 +34,7 @@ def main_layout(
                             html.Span(
                                 f" v {sageworks_version}",
                                 style={
-                                    "color": "rgb(200, 140, 200)",
+                                    "color": "rgb(180, 120, 180)",
                                     "fontSize": 15,
                                 },
                             ),
@@ -41,6 +43,14 @@ def main_layout(
                                 style={
                                     "color": "rgb(140, 140, 200)",
                                     "fontSize": 15,
+                                },
+                            ),
+                            html.Span(
+                                f"",
+                                id="plugin-info",
+                                style={
+                                    "color": "rgb(140, 140, 80)",
+                                    "fontSize": 14,
                                 },
                             ),
                         ]

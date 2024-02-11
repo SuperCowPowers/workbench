@@ -10,6 +10,7 @@ from dash.dependencies import Input, Output, State
 from sageworks.views.artifacts_web_view import ArtifactsWebView
 from sageworks.web_components import table
 from sageworks.utils.pandas_utils import serialize_aws_broker_data, deserialize_aws_broker_data
+from sageworks.utils.plugin_manager import PluginManager
 
 
 # Helper functions
@@ -127,3 +128,19 @@ def update_artifact_tables(app: Dash):
         endpoints = aws_broker_data["ENDPOINTS"]
         column_setup_list = table.Table().column_setup(endpoints, markdown_columns=["Name"])
         return [column_setup_list, endpoints.to_dict("records")]
+
+
+def check_for_plugin_refresh(app: Dash):
+    pm = PluginManager()
+
+    @app.callback(
+        Output("plugin-info", "children"),
+        Input("plugin-update-timer", "n_intervals"),
+    )
+    def check_plugin_modification(n):
+        # Check if the plugins have been modified
+        print("Checking for plugin modification...")
+        if pm.plugins_modified():
+            return " [Plugins Reloading...]"
+        else:
+            return ""
