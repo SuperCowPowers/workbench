@@ -453,7 +453,8 @@ class EndpointCore(Artifact):
 
         # Write the predictions to our S3 Model Inference Folder (just the target and prediction columns)
         self.log.debug(f"Writing predictions to {self.endpoint_inference_path}/inference_predictions.csv")
-        subset_df = prediction_df[[target_column, "prediction"]]
+        output_columns = [c for c in prediction_df.columns if c in [target_column, "prediction", "pred_proba"]]
+        subset_df = prediction_df[output_columns]
         wr.s3.to_csv(subset_df, f"{self.endpoint_inference_path}/inference_predictions.csv", index=False)
 
         # CLASSIFIER: Write the confusion matrix to our S3 Model Inference Folder
@@ -484,9 +485,10 @@ class EndpointCore(Artifact):
                 df_shap = pd.DataFrame(class_shap_vals, columns=X_pred.columns)
 
                 # Write shap vals to S3 Model Inference Folder
-                self.log.debug(f"Writing SHAP values to {self.endpoint_inference_path}/inference_shap_values.csv")
+                shap_file_path = f"{self.endpoint_inference_path}/inference_shap_values_class_{i}.csv"
+                self.log.debug(f"Writing SHAP values to {shap_file_path}")
                 wr.s3.to_csv(
-                    df_shap, f"{self.endpoint_inference_path}/inference_shap_values_class_{i}.csv", index=False
+                    df_shap, shap_file_path, index=False
                 )
 
         # Single shap vals CSV for regressors
