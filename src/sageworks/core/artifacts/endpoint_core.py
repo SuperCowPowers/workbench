@@ -359,7 +359,7 @@ class EndpointCore(Artifact):
         details["model_type"] = model_details.get("model_type", "unknown")
         details["model_metrics"] = model_details.get("model_metrics")
         details["confusion_matrix"] = model_details.get("confusion_matrix")
-        details["regression_predictions"] = model_details.get("regression_predictions")
+        details["predictions"] = model_details.get("predictions")
         details["inference_meta"] = model_details.get("inference_meta")
 
         # Add endpoint metrics from CloudWatch
@@ -451,18 +451,18 @@ class EndpointCore(Artifact):
         self.log.debug(f"Writing metrics to {self.endpoint_inference_path}/inference_metrics.csv")
         wr.s3.to_csv(metrics, f"{self.endpoint_inference_path}/inference_metrics.csv", index=False)
 
-        # Write the confusion matrix to our S3 Model Inference Folder
+        # Write the predictions to our S3 Model Inference Folder (just the target and prediction columns)
+        self.log.debug(f"Writing predictions to {self.endpoint_inference_path}/inference_predictions.csv")
+        output_columns = [c for c in prediction_df.columns if c in [target_column, "prediction", "pred_proba"]]
+        subset_df = prediction_df[output_columns]
+        wr.s3.to_csv(subset_df, f"{self.endpoint_inference_path}/inference_predictions.csv", index=False)
+
+        # CLASSIFIER: Write the confusion matrix to our S3 Model Inference Folder
         if model_type == ModelType.CLASSIFIER.value:
             conf_mtx = self.confusion_matrix(target_column, prediction_df)
             self.log.debug(f"Writing confusion matrix to {self.endpoint_inference_path}/inference_cm.csv")
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
             wr.s3.to_csv(conf_mtx, f"{self.endpoint_inference_path}/inference_cm.csv", index=True)
-
-        # Write the regression predictions to our S3 Model Inference Folder
-        if model_type == ModelType.REGRESSOR.value:
-            pred_df = self.regression_predictions(target_column, prediction_df)
-            self.log.debug(f"Writing reg predictions to {self.endpoint_inference_path}/inference_predictions.csv")
-            wr.s3.to_csv(pred_df, f"{self.endpoint_inference_path}/inference_predictions.csv", index=False)
 
         #
         # Generate SHAP values for our Prediction Dataframe
@@ -485,10 +485,9 @@ class EndpointCore(Artifact):
                 df_shap = pd.DataFrame(class_shap_vals, columns=X_pred.columns)
 
                 # Write shap vals to S3 Model Inference Folder
-                self.log.debug(f"Writing SHAP values to {self.endpoint_inference_path}/inference_shap_values.csv")
-                wr.s3.to_csv(
-                    df_shap, f"{self.endpoint_inference_path}/inference_shap_values_class_{i}.csv", index=False
-                )
+                shap_file_path = f"{self.endpoint_inference_path}/inference_shap_values_class_{i}.csv"
+                self.log.debug(f"Writing SHAP values to {shap_file_path}")
+                wr.s3.to_csv(df_shap, shap_file_path, index=False)
 
         # Single shap vals CSV for regressors
         if model_type == ModelType.REGRESSOR.value:
@@ -620,18 +619,6 @@ class EndpointCore(Artifact):
         conf_mtx_df = pd.DataFrame(conf_mtx, index=labels, columns=labels)
         return conf_mtx_df
 
-    def regression_predictions(self, target: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
-        """Compute the regression predictions for this Endpoint
-        Args:
-            target (str): Name of the target column
-            prediction_df (pd.DataFrame): DataFrame with the prediction results
-        Returns:
-            pd.DataFrame: DataFrame with the regression predictions
-        """
-
-        # Return the predictions
-        return prediction_df[[target, "prediction"]]
-
     def endpoint_config_name(self) -> str:
         # Grab the Endpoint Config Name from the AWS
         details = self.sm_client.describe_endpoint(EndpointName=self.endpoint_name)
@@ -703,12 +690,10 @@ class EndpointCore(Artifact):
 
 if __name__ == "__main__":
     """Exercise the Endpoint Class"""
-    from sageworks.core.transforms.pandas_transforms.features_to_pandas import (
-        FeaturesToPandas,
-    )
+    from sageworks.utils.endpoint_utils import auto_capture_metrics
 
     # Grab an EndpointCore object and pull some information from it
-    my_endpoint = EndpointCore("aqsol-regression-end")
+    my_endpoint = EndpointCore("abalone-regression-end")
 
     # Let's do a check/validation of the Endpoint
     assert my_endpoint.exists()
@@ -726,65 +711,9 @@ if __name__ == "__main__":
     # Serverless?
     print(f"Serverless: {my_endpoint.is_serverless()}")
 
-    # Temp Testing
-    from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-
-    end = EndpointCore("abalone-regression-end")
-    model = end.get_input()
-    feature_set = ModelCore(model).get_input()
-    features = FeatureSetCore(feature_set)
-    table = features.get_training_view_table()
-    df = features.query(f"SELECT * FROM {table} where training = 0")
-    DATA_NAME = "Test Data (20) 2023_08_31"
-    DATA_HASH = "12345"
-    DESCRIPTION = "Test Features"
-    TARGET_COLUMN = "class_number_of_rings"
-
     # Capture the performance metrics for this Endpoint
-    end.capture_performance_metrics(
-        df, TARGET_COLUMN, data_name=DATA_NAME, data_hash=DATA_HASH, description=DESCRIPTION
-    )
+    auto_capture_metrics(my_endpoint)
 
-    #
-    # This section is all about INFERENCE TESTING
-    #
-    INFERENCE_TESTING = True
-    if INFERENCE_TESTING:
-        REGRESSION = True
-        if REGRESSION:
-            my_endpoint = EndpointCore("abalone-regression-end")
-            feature_to_pandas = FeaturesToPandas("abalone_features")
-            my_target_column = "class_number_of_rings"
-            data_name = ("abalone_holdout_2023_10_19",)
-            data_hash = ("12345",)
-            description = "Test Abalone Data"
-        else:
-            my_endpoint = EndpointCore("wine-classification-end")
-            feature_to_pandas = FeaturesToPandas("wine_features")
-            my_target_column = "wine_class"
-            data_name = ("wine_holdout_2023_10_19",)
-            data_hash = ("67890",)
-            description = "Test Wine Data"
-
-        # Transform the DataSource into a Pandas DataFrame (with max_rows = 500)
-        feature_to_pandas.transform(max_rows=500)
-
-        # Grab the output and show it
-        my_feature_df = feature_to_pandas.get_output()
-        print(my_feature_df)
-
-        # Okay now run inference against our Features DataFrame
-        my_prediction_df = my_endpoint.predict(my_feature_df)
-        print(my_prediction_df)
-
-        # Compute performance metrics for out test predictions
-        if REGRESSION:
-            my_metrics = my_endpoint.regression_metrics(my_target_column, my_prediction_df)
-        else:
-            my_metrics = my_endpoint.classification_metrics(my_target_column, my_prediction_df)
-        print(my_metrics)
-
-        # Capture the performance metrics for this Endpoint
-        my_endpoint.capture_performance_metrics(
-            my_feature_df, my_target_column, data_name=data_name, data_hash=data_hash, description=description
-        )
+    # Capture the performance metrics for a Classification Endpoint
+    class_endpoint = EndpointCore("wine-classification-end")
+    auto_capture_metrics(class_endpoint)

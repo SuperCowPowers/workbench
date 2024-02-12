@@ -170,20 +170,22 @@ class ModelCore(Artifact):
         cm = self.sageworks_meta().get("sageworks_training_cm")
         return pd.DataFrame.from_dict(cm) if cm else None
 
-    def regression_predictions(self) -> Union[pd.DataFrame, None]:
-        """Retrieve the regression based predictions for this model
+    def get_predictions(self) -> Union[pd.DataFrame, None]:
+        """Retrieve the captured predictions for this model
         Returns:
-            pd.DataFrame: DataFrame of the Regression based Predictions (might be None)
+            pd.DataFrame: DataFrame of the Captured Predictions (might be None)
         """
 
         # If an Endpoint, based on this model, has run inference, then grab those
         s3_path = f"{self.endpoint_inference_path}/inference_predictions.csv"
         df = pull_s3_data(s3_path)
         if df is not None:
+            self.log.important(f"Grabbing Inference Predictions for {self.model_name}...")
             return df
 
         # Otherwise, grab the predictions from the training job
         else:
+            self.log.important(f"Grabbing Validation Predictions for {self.model_name}...")
             s3_path = f"{self.model_training_path}/validation_predictions.csv"
             df = pull_s3_data(s3_path)
             return df
@@ -297,10 +299,10 @@ class ModelCore(Artifact):
         details["model_metrics"] = self.model_metrics()
         if self.model_type == ModelType.CLASSIFIER:
             details["confusion_matrix"] = self.confusion_matrix()
-            details["regression_predictions"] = None
+            details["predictions"] = None
         else:
             details["confusion_matrix"] = None
-            details["regression_predictions"] = self.regression_predictions()
+            details["predictions"] = self.get_predictions()
 
         # Grab the inference metadata
         details["inference_meta"] = self._pull_inference_metadata()
@@ -637,8 +639,8 @@ if __name__ == "__main__":
     print(my_model.confusion_matrix())
 
     # Grab our regression predictions from S3
-    print("Regression Predictions: (might be None)")
-    print(my_model.regression_predictions())
+    print("Captured Predictions: (might be None)")
+    print(my_model.get_predictions())
 
     # Grab our Shapley values from S3
     print("Shapley Values: (might be None)")

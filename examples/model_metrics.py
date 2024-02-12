@@ -15,4 +15,4 @@ else:
 
 # Get the model metrics and regression predictions
 print(model.model_metrics())
-print(model.regression_predictions())
+print(model.get_predictions())
