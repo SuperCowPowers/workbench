@@ -180,10 +180,12 @@ class ModelCore(Artifact):
         s3_path = f"{self.endpoint_inference_path}/inference_predictions.csv"
         df = pull_s3_data(s3_path)
         if df is not None:
+            self.log.important(f"Grabbing Inference Predictions for {self.model_name}...")
             return df
 
         # Otherwise, grab the predictions from the training job
         else:
+            self.log.important(f"Grabbing Validation Predictions for {self.model_name}...")
             s3_path = f"{self.model_training_path}/validation_predictions.csv"
             df = pull_s3_data(s3_path)
             return df
