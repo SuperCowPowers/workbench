@@ -19,7 +19,7 @@ class RegressionPlot(ComponentInterface):
 
     def generate_component_figure(self, model_details: dict) -> go.Figure:
         # Grab the confusion matrix from the model details
-        df = model_details.get("regression_predictions")
+        df = model_details.get("predictions")
         if df is None:
             return self.message_figure("No Data")
 
