@@ -487,9 +487,7 @@ class EndpointCore(Artifact):
                 # Write shap vals to S3 Model Inference Folder
                 shap_file_path = f"{self.endpoint_inference_path}/inference_shap_values_class_{i}.csv"
                 self.log.debug(f"Writing SHAP values to {shap_file_path}")
-                wr.s3.to_csv(
-                    df_shap, shap_file_path, index=False
-                )
+                wr.s3.to_csv(df_shap, shap_file_path, index=False)
 
         # Single shap vals CSV for regressors
         if model_type == ModelType.REGRESSOR.value:
