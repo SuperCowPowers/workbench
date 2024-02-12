@@ -25,7 +25,6 @@ def main_layout(
     layout = html.Div(
         children=[
             dcc.Interval(id="broker-update-timer", interval=30000, n_intervals=0),
-            dcc.Interval(id="plugin-update-timer", interval=45000, n_intervals=0),
             dbc.Row(
                 [
                     html.H2(
@@ -43,14 +42,6 @@ def main_layout(
                                 style={
                                     "color": "rgb(140, 140, 200)",
                                     "fontSize": 15,
-                                },
-                            ),
-                            html.Span(
-                                "",
-                                id="plugin-info",
-                                style={
-                                    "color": "rgb(140, 140, 80)",
-                                    "fontSize": 14,
                                 },
                             ),
                         ]

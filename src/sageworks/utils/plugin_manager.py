@@ -56,7 +56,7 @@ class PluginManager:
             self.loading_dir = tempfile.mkdtemp()
             copy_s3_files_to_local(self.config_plugin_dir, self.loading_dir)
             atexit.register(self._cleanup_temp_dir)
-            
+
         # Load the plugins
         self.load_plugins()
 

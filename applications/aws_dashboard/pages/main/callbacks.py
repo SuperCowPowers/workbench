@@ -128,19 +128,3 @@ def update_artifact_tables(app: Dash):
         endpoints = aws_broker_data["ENDPOINTS"]
         column_setup_list = table.Table().column_setup(endpoints, markdown_columns=["Name"])
         return [column_setup_list, endpoints.to_dict("records")]
-
-
-def check_for_plugin_refresh(app: Dash):
-    pm = PluginManager()
-
-    @app.callback(
-        Output("plugin-info", "children"),
-        Input("plugin-update-timer", "n_intervals"),
-    )
-    def check_plugin_modification(n):
-        # Check if the plugins have been modified
-        print("Checking for plugin modification...")
-        if pm.plugins_modified():
-            return " [Plugins Reloading...]"
-        else:
-            return ""
