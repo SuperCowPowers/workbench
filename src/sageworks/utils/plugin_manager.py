@@ -34,45 +34,43 @@ class PluginManager:
             return
 
         self.log = logging.getLogger("sageworks")
-        self.temp_dir = None
+        self.config_plugin_dir = None
+        self.loading_dir = False
         self.plugin_modified_time = None
         self.plugins: Dict[str, dict] = {"web_components": {}, "transforms": {}, "views": {}, "pages": {}}
 
         # Get the plugin directory from the config
         cm = ConfigManager()
-        self.plugin_dir = cm.get_config("SAGEWORKS_PLUGINS")
-        if not self.plugin_dir:
+        self.config_plugin_dir = cm.get_config("SAGEWORKS_PLUGINS")
+        if not self.config_plugin_dir:
             self.log.warning("SAGEWORKS_PLUGINS not set. No plugins will be loaded.")
             return
 
-        # Load plugins from the local directory
-        self.log.important(f"Loading plugins from {self.plugin_dir}...")
-        if not self.plugin_dir.startswith("s3://"):
-            self.load_plugins(self.plugin_dir)
+        # Check if the config directory is local file or S3
+        self.log.important(f"Loading plugins from {self.config_plugin_dir}...")
+        if not self.config_plugin_dir.startswith("s3://"):
+            self.loading_dir = self.config_plugin_dir
 
         # Load plugins from S3 (copy to a temporary directory, then load)
         else:
-            self.temp_dir = tempfile.mkdtemp()
-            copy_s3_files_to_local(self.plugin_dir, self.temp_dir)
+            self.loading_dir = tempfile.mkdtemp()
+            copy_s3_files_to_local(self.config_plugin_dir, self.loading_dir)
             atexit.register(self._cleanup_temp_dir)
-
-            # Load plugins from the temporary directory
-            self.load_plugins(self.temp_dir)
-
-            # The plugin directory is now the temporary directory
-            self.plugin_dir = self.temp_dir
+            
+        # Load the plugins
+        self.load_plugins()
 
         # Singleton is now initialized
         self.__initialized = True
 
-    def load_plugins(self, plugin_dir: str):
-        """Loads plugins from our plugins directory"""
-        self.log.important(f"Loading plugins from {plugin_dir}...")
+    def load_plugins(self):
+        """Loads plugins from our 'load_from' directory"""
+        self.log.important(f"Loading plugins from {self.loading_dir}...")
         for plugin_type in self.plugins.keys():
-            self._load_plugins(plugin_dir, plugin_type)
+            self._load_plugins(self.loading_dir, plugin_type)
 
         # Store the most recent modified time
-        self.plugin_modified_time = self._most_recent_modified_time(plugin_dir)
+        self.plugin_modified_time = self._most_recent_modified_time()
 
     def _load_plugins(self, base_dir: str, plugin_type: str):
         """Internal: Load plugins of a specific type from a subdirectory.
@@ -184,7 +182,7 @@ class PluginManager:
         view = self.plugins["views"].get(view_name)
         return view() if view else None
 
-    def get_pages(self) -> dict[Any]:
+    def get_pages(self) -> dict:
         """
         Retrieve a dict of plugins pages
 
@@ -196,10 +194,10 @@ class PluginManager:
 
     def _cleanup_temp_dir(self):
         """Cleans up the temporary directory created for S3 files."""
-        if self.temp_dir and os.path.isdir(self.temp_dir):
-            self.log.important(f"Cleaning up temporary directory: {self.temp_dir}")
-            shutil.rmtree(self.temp_dir)
-            self.temp_dir = None
+        if self.loading_dir and os.path.isdir(self.loading_dir):
+            self.log.important(f"Cleaning up temporary directory: {self.loading_dir}")
+            shutil.rmtree(self.loading_dir)
+            self.loading_dir = None
 
     def plugins_modified(self) -> bool:
         """Check if the plugins have been modified since the last check
@@ -207,7 +205,7 @@ class PluginManager:
         Returns:
             bool: True if the plugins have been modified, else False
         """
-        most_recent_time = self._most_recent_modified_time(self.plugin_dir)
+        most_recent_time = self._most_recent_modified_time()
         if most_recent_time > self.plugin_modified_time:
             self.log.important("Plugins have been modified")
             self.plugin_modified_time = most_recent_time
@@ -215,11 +213,10 @@ class PluginManager:
         return False
 
     # Helper method to compute the most recent modified time
-    @staticmethod
-    def _most_recent_modified_time(dir_path: str) -> float:
+    def _most_recent_modified_time(self) -> float:
         """Internal: Compute the most recent modified time of a directory"""
         most_recent_time = 0
-        for root, _, files in os.walk(dir_path):
+        for root, _, files in os.walk(self.loading_dir):
             for file in files:
                 file_path = os.path.join(root, file)
                 file_modified_time = os.path.getmtime(file_path)
@@ -233,7 +230,7 @@ class PluginManager:
         Returns:
             str: String representation of the PluginManager state and contents
         """
-        summary = "SAGEWORKS_PLUGINS: " + self.plugin_dir + "\n"
+        summary = "SAGEWORKS_PLUGINS: " + self.config_plugin_dir + "\n"
         summary += "Plugins:\n"
         for plugin_type, plugin_dict in self.plugins.items():
             for name, plugin in plugin_dict.items():
