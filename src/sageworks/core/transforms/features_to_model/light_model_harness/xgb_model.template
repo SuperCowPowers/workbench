@@ -125,12 +125,21 @@ if __name__ == "__main__":
 
     # Make Predictions on the Validation Set
     preds = xgb_model.predict(df_val[feature_list])
+    if model_type == "classifier":
+        # Also get the probabilities for each class
+        probs = xgb_model.predict_proba(df_val[feature_list])
+        df_val["pred_proba"] = [json.dumps(p.tolist()) for p in probs]
 
-    # Save predictions to S3 (just the target and prediction columns)
+        # Decode the target and predictions
+        df_val[target] = label_encoder.inverse_transform(df_val[target])
+        preds = label_encoder.inverse_transform(preds)
+
+
+    # Save predictions to S3 (just the target, prediction, and pred_proba columns)
     df_val["prediction"] = preds
-    columns = [target, "prediction"]
+    output_columns = [c for c in df_val.columns if c in [target, "prediction", "pred_proba"]]
     wr.s3.to_csv(
-        df_val[columns],
+        df_val[output_columns],
         path=f"{model_metrics_s3_path}/validation_predictions.csv",
         index=False,
     )
@@ -139,11 +148,10 @@ if __name__ == "__main__":
     if model_type == "classifier":
         # Get the label names and their integer mapping
         label_names = label_encoder.classes_
-        label_integers = label_encoder.transform(label_names)
 
         # Calculate various model performance metrics
         scores = precision_recall_fscore_support(
-            df_val[target], preds, average=None, labels=label_integers
+            df_val[target], preds, average=None, labels=label_names
         )
 
         # Put the scores into a dataframe
@@ -165,7 +173,7 @@ if __name__ == "__main__":
                 print(f"Metrics:{t}:{m} {value}")
 
         # Compute and output the confusion matrix
-        conf_mtx = confusion_matrix(df_val[target], preds, labels=label_integers)
+        conf_mtx = confusion_matrix(df_val[target], preds, labels=label_names)
         for i, row_name in enumerate(label_names):
             for j, col_name in enumerate(label_names):
                 value = conf_mtx[i, j]
@@ -257,9 +265,7 @@ def predict_fn(df, model):
     # Does our model have a 'predict_proba' method? If so add that to the DataFrame as well
     if getattr(model, "predict_proba", None):
         pred_proba = model.predict_proba(df[features])
-        df["pred_proba"] = [
-            json.dumps(p.tolist()) for p in pred_proba
-        ]  # We have to do this for CSV serialization
+        df["pred_proba"] = [json.dumps(p.tolist()) for p in pred_proba]  # We have to do this for CSV serialization
 
     # All done, return the DataFrame
     return df
