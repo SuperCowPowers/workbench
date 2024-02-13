@@ -10,6 +10,7 @@ import logging
 # SageWorks Imports
 from sageworks.web_components import table
 from sageworks.utils.plugin_manager import PluginManager
+from sageworks.api.model import Model
 
 
 class PluginPageExample:
@@ -122,6 +123,6 @@ class PluginPageExample:
             selected_row_data = table_data[selected_rows[0]]
             model_uuid = selected_row_data["uuid"]
 
-            # Get the model details and send it to the plugin
-            model_details = self.my_model_view.model_details(model_uuid)
-            return plugin.generate_component_figure(model_details)
+            # Instantiate the Model and send it to the plugin
+            model = Model(model_uuid)
+            return plugin.generate_component_figure(model)

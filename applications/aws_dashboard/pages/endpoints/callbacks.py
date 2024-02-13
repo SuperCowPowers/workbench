@@ -7,6 +7,7 @@ from dash.dependencies import Input, Output, State
 from sageworks.views.endpoint_web_view import EndpointWebView
 from sageworks.web_components import table, model_markdown, endpoint_metric_plots
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
+from sageworks.api.endpoint import Endpoint
 
 
 def update_endpoints_table(app: Dash):
@@ -106,6 +107,8 @@ def update_plugin(app: Dash, plugin, endpoint_web_view: EndpointWebView):
         selected_row_data = table_data[selected_rows[0]]
         endpoint_uuid = selected_row_data["uuid"]
 
-        # Get the endpoint details and send it to the plugin
-        endpoint_details = endpoint_web_view.endpoint_details(endpoint_uuid)
-        return plugin.generate_component_figure(endpoint_details)
+        # Instantiate the Endpoint and send it to the plugin
+        endpoint = Endpoint(endpoint_uuid)
+
+        # Instantiate the Endpoint and send it to the plugin
+        return plugin.generate_component_figure(endpoint)

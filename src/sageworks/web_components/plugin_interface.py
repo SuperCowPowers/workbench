@@ -2,12 +2,13 @@
 
 from abc import abstractmethod
 from inspect import signature
-import typing
+from typing import Union, get_args
 from enum import Enum
 from functools import wraps
 
 # Local Imports
 from sageworks.web_components.component_interface import ComponentInterface
+from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 
 
 class PluginType(Enum):
@@ -38,6 +39,8 @@ class PluginInterface(ComponentInterface):
       - The 'generate_component_figure' method must be implemented by the child class
     """
 
+    sageworks_object = Union[DataSource, FeatureSet, Model, Endpoint]
+
     @abstractmethod
     def create_component(self, component_id: str) -> ComponentInterface.ComponentTypes:
         """Create a Dash Component without any data.
@@ -49,10 +52,10 @@ class PluginInterface(ComponentInterface):
         pass
 
     @abstractmethod
-    def generate_component_figure(self, details: dict) -> ComponentInterface.FigureTypes:
+    def generate_component_figure(self, data_object: sageworks_object) -> ComponentInterface.FigureTypes:
         """Generate a figure from the data in the given dataframe.
         Args:
-            details (dict): The details dictionary for the plugin type
+            data_object (sageworks_object): The instantiated data object for the plugin type.
         Returns:
             Union[go.Figure, str]: A Plotly Figure or a Markdown string
         """
@@ -114,21 +117,30 @@ class PluginInterface(ComponentInterface):
 
     @classmethod
     def _check_argument_types(cls, base_class_method, subclass_method):
-        # Extract argument types, excluding 'self'
+        # Extract expected argument types, excluding 'self'
         expected_arg_types = [v for k, v in base_class_method.__annotations__.items() if k != "return" and k != "self"]
         actual_arg_types = [
             param.annotation for param in signature(subclass_method).parameters.values() if param.name != "self"
         ]
 
-        # Directly compare the lists of argument types
-        if expected_arg_types != actual_arg_types:
-            return f"Expected argument types {expected_arg_types} do not match actual argument types {actual_arg_types}"
+        # Iterate over expected and actual argument types together
+        for expected, actual in zip(expected_arg_types, actual_arg_types):
+            # If the expected type is a Union, use get_args to extract its arguments
+            if getattr(expected, "__origin__", None) is Union:
+                expected_types = get_args(expected)
+                # Check if the actual type is a subtype of any of the expected types
+                if not any(issubclass(actual, exp) for exp in expected_types):
+                    return f"Expected argument types {expected_types} do not include the actual argument type {actual}"
+            else:
+                # Direct comparison for non-Union types
+                if expected != actual:
+                    return f"Expected argument type {expected} does not match actual argument type {actual}"
         return None
 
     @classmethod
     def _check_return_type(cls, base_class_method, subclass_method):
         return_annotation = base_class_method.__annotations__["return"]
-        expected_return_types = typing.get_args(return_annotation)
+        expected_return_types = get_args(return_annotation)
         return_type = signature(subclass_method).return_annotation
 
         if return_type not in expected_return_types:

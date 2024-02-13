@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 
 # SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginType, PluginInputType
+from sageworks.api.model import Model
 
 
 class CustomTurbo(PluginInterface):
@@ -24,13 +25,16 @@ class CustomTurbo(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, model_details: dict) -> go.Figure:
+    def generate_component_figure(self, model: Model) -> go.Figure:
         """Create a CustomTurbo Figure for the numeric columns in the dataframe.
         Args:
-            model_details (dict): The model details dictionary (see Model.details())
+            model (Model): An instantiated Model object
         Returns:
             go.Figure: A Figure object containing the confusion matrix.
         """
+
+        # Just to make sure we have the right model object
+        print(model.summary())
 
         data = [  # Portfolio (inner donut)
             # Inner ring
@@ -86,16 +90,15 @@ class CustomTurbo(PluginInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a CustomTurbo
-    from sageworks.core.artifacts.model_core import ModelCore
 
-    m = ModelCore("wine-classification")
-    my_model_details = m.details()
+    # Instantiate a Model
+    model = Model("abalone-regression")
 
     # Instantiate the CustomTurbo class
     turbo = CustomTurbo()
 
     # Generate the figure
-    fig = turbo.generate_component_figure(my_model_details)
+    fig = turbo.generate_component_figure(model)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")
