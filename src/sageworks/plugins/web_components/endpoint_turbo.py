@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 
 # SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginType, PluginInputType
+from sageworks.api.endpoint import Endpoint
 
 
 class EndpointTurbo(PluginInterface):
@@ -24,10 +25,10 @@ class EndpointTurbo(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, model_details: dict) -> go.Figure:
+    def generate_component_figure(self, endpoint: Endpoint) -> go.Figure:
         """Create a EndpointTurbo Figure for the numeric columns in the dataframe.
         Args:
-            model_details (dict): The model details dictionary (see Model.details())
+            endpoint (Endpoint): An instantiated Endpoint object
         Returns:
             go.Figure: A Plotly Figure object
         """
@@ -86,16 +87,16 @@ class EndpointTurbo(PluginInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a EndpointTurbo
-    from sageworks.core.artifacts.model_core import ModelCore
+    from sageworks.api.endpoint import Endpoint
 
-    m = ModelCore("wine-classification")
-    endpoint_details = m.details()
+    # Instantiate an Endpoint
+    end = Endpoint("abalone-regression-end")
 
     # Instantiate the EndpointTurbo class
     pie = EndpointTurbo()
 
     # Generate the figure
-    fig = pie.generate_component_figure(endpoint_details)
+    fig = pie.generate_component_figure(end)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")
