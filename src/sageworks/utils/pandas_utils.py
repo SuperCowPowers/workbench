@@ -6,7 +6,7 @@ import numpy as np
 import json
 from io import StringIO
 import logging
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 
 # SageWorks Logger
 log = logging.getLogger("sageworks")
@@ -310,6 +310,33 @@ def deserialize_aws_broker_data(serialized_data):
     """
     deserialized_dict = json.loads(serialized_data)
     return {key: pd.read_json(StringIO(df_json)) for key, df_json in deserialized_dict.items()}
+
+
+def expand_proba_column(df: pd.DataFrame, class_labels: List[str], proba_column: str = "pred_proba") -> pd.DataFrame:
+    """
+    Expands a column in a DataFrame containing JSON strings of lists of probabilities into separate columns.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing the proba_column
+        class_labels (List[str]): List of class labels
+        proba_column (str): Name of the column containing the JSON strings of lists of probabilities
+
+    Returns:
+        pd.DataFrame: DataFrame with the proba_column expanded into separate columns
+    """
+    # Convert JSON strings to lists
+    df[proba_column] = df[proba_column].apply(lambda x: json.loads(x))
+
+    # Construct new column names with '_proba' suffix
+    new_col_names = [f"{label}_proba" for label in class_labels]
+
+    # Expand the proba_column into separate columns for each probability
+    proba_df = pd.DataFrame(df[proba_column].tolist(), columns=new_col_names)
+
+    # Concatenate the new columns with the original DataFrame
+    df = pd.concat([df, proba_df], axis=1).drop(columns=[proba_column])
+
+    return df
 
 
 if __name__ == "__main__":
