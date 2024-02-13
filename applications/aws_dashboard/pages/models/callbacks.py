@@ -7,6 +7,7 @@ from dash.dependencies import Input, Output, State
 from sageworks.views.model_web_view import ModelWebView
 from sageworks.web_components import table, model_markdown, model_metrics
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
+from sageworks.api.model import Model
 
 
 def update_models_table(app: Dash):
@@ -101,6 +102,6 @@ def update_plugin(app: Dash, plugin, model_web_view: ModelWebView):
         selected_row_data = table_data[selected_rows[0]]
         model_uuid = selected_row_data["uuid"]
 
-        # Get the model details and send it to the plugin
-        model_details = model_web_view.model_details(model_uuid)
-        return plugin.generate_component_figure(model_details)
+        # Instantiate the Model and send it to the plugin
+        model = Model(model_uuid)
+        return plugin.generate_component_figure(model)

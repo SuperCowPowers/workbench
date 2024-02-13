@@ -33,6 +33,9 @@ class CustomTurbo(PluginInterface):
             go.Figure: A Figure object containing the confusion matrix.
         """
 
+        # Just to make sure we have the right model object
+        print(model.summary())
+
         data = [  # Portfolio (inner donut)
             # Inner ring
             go.Pie(

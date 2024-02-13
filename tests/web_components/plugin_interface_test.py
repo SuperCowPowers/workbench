@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 
 # SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginType, PluginInputType
+from sageworks.api.model import Model
 
 
 class CorrectPlugin(PluginInterface):
@@ -24,10 +25,10 @@ class CorrectPlugin(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def generate_component_figure(self, model_details: dict) -> go.Figure:
+    def generate_component_figure(self, model: Model) -> go.Figure:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
-            model_details (dict):  The model details dictionary (see Model.details())
+             model (Model): An instantiated Model object
         Returns:
              go.Figure: A Plotly Figure object
         """
@@ -69,10 +70,10 @@ class IncorrectArgTypes(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def generate_component_figure(self, model_details: list) -> go.Figure:
+    def generate_component_figure(self, model: list) -> go.Figure:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
-            model_details (list): An incorrect argument type
+            model (list): An incorrect argument type
         Returns:
             go.Figure: A Figure object containing the confusion matrix.
         """
@@ -95,10 +96,10 @@ class IncorrectReturnType(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def generate_component_figure(self, model_details: dict) -> list:
+    def generate_component_figure(self, model: Model) -> list:
         """Create a Figure but give the wrong return type.
         Args:
-            model_details (dict): Model class details attribute
+            model (Model): An instantiated Model object
         Returns:
             list: An incorrect return type
         """
