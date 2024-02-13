@@ -91,7 +91,7 @@ if __name__ == "__main__":
     # Instantiate a Model
     model = Model("abalone-regression")
 
-    # Instantiate the ModelTurbo class
+    # Instantiate the CustomTurbo class
     turbo = CustomTurbo()
 
     # Generate the figure
