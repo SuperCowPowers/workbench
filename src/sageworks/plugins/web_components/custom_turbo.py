@@ -87,7 +87,6 @@ class CustomTurbo(PluginInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a CustomTurbo
-    from sageworks.core.artifacts.model_core import ModelCore
 
     # Instantiate a Model
     model = Model("abalone-regression")

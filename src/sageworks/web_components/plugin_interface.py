@@ -38,8 +38,8 @@ class PluginInterface(ComponentInterface):
       - The 'create_component' method must be implemented by the child class
       - The 'generate_component_figure' method must be implemented by the child class
     """
-    sageworks_object = Union[DataSource, FeatureSet, Model, Endpoint]
 
+    sageworks_object = Union[DataSource, FeatureSet, Model, Endpoint]
 
     @abstractmethod
     def create_component(self, component_id: str) -> ComponentInterface.ComponentTypes:
@@ -118,19 +118,15 @@ class PluginInterface(ComponentInterface):
     @classmethod
     def _check_argument_types(cls, base_class_method, subclass_method):
         # Extract expected argument types, excluding 'self'
-        expected_arg_types = [
-            v for k, v in base_class_method.__annotations__.items()
-            if k != "return" and k != "self"
-        ]
+        expected_arg_types = [v for k, v in base_class_method.__annotations__.items() if k != "return" and k != "self"]
         actual_arg_types = [
-            param.annotation for param in signature(subclass_method).parameters.values()
-            if param.name != "self"
+            param.annotation for param in signature(subclass_method).parameters.values() if param.name != "self"
         ]
 
         # Iterate over expected and actual argument types together
         for expected, actual in zip(expected_arg_types, actual_arg_types):
             # If the expected type is a Union, use get_args to extract its arguments
-            if getattr(expected, '__origin__', None) is Union:
+            if getattr(expected, "__origin__", None) is Union:
                 expected_types = get_args(expected)
                 # Check if the actual type is a subtype of any of the expected types
                 if not any(issubclass(actual, exp) for exp in expected_types):
