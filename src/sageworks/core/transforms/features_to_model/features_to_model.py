@@ -46,6 +46,7 @@ class FeaturesToModel(Transform):
         self.model_training_root = self.models_s3_path + "/training"
         self.model_feature_list = None
         self.target_column = None
+        self.class_labels = None
 
     def generate_model_script(
         self, target_column: str, feature_list: list[str], model_type: ModelType, train_all_data: bool
@@ -168,28 +169,29 @@ class FeaturesToModel(Transform):
             ]
         else:
             # We need to get creative with the Classification Metrics
-            # Grab all the target column class values
+
+            # Grab all the target column class values (class labels)
             table = feature_set.data_source.get_table_name()
-            targets = feature_set.query(f"select DISTINCT {self.target_column} FROM {table}")[
+            self.class_labels = feature_set.query(f"select DISTINCT {self.target_column} FROM {table}")[
                 self.target_column
             ].to_list()
 
             # Sanity check on the targets
-            if len(targets) > 10:
-                msg = f"Too many target classes ({len(targets)}) for classification, aborting!"
+            if len(self.class_labels) > 10:
+                msg = f"Too many target classes ({len(self.class_labels)}) for classification, aborting!"
                 self.log.critical(msg)
                 raise ValueError(msg)
 
             # Dynamically create the metric definitions
             metrics = ["precision", "recall", "fscore"]
             metric_definitions = []
-            for t in targets:
+            for t in self.class_labels:
                 for m in metrics:
                     metric_definitions.append({"Name": f"Metrics:{t}:{m}", "Regex": f"Metrics:{t}:{m} ([0-9.]+)"})
 
             # Add the confusion matrix metrics
-            for row in targets:
-                for col in targets:
+            for row in self.class_labels:
+                for col in self.class_labels:
                     metric_definitions.append(
                         {"Name": f"ConfusionMatrix:{row}:{col}", "Regex": f"ConfusionMatrix:{row}:{col} ([0-9.]+)"}
                     )
@@ -231,6 +233,10 @@ class FeaturesToModel(Transform):
         output_model = ModelCore(self.output_uuid, model_type=self.model_type, force_refresh=True)
         output_model.upsert_sageworks_meta({"sageworks_model_features": self.model_feature_list})
         output_model.upsert_sageworks_meta({"sageworks_model_target": self.target_column})
+
+        # Store the class labels (if they exist)
+        if self.class_labels:
+            output_model.set_class_labels(self.class_labels)
 
         # Call the Model onboard method
         output_model.onboard(interactive=False)

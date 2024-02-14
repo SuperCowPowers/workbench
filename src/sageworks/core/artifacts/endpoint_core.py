@@ -165,7 +165,7 @@ class EndpointCore(Artifact):
         Args:
             feature_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
         Returns:
-            pd.DataFrame: Return the feature DataFrame with two additional columns (prediction, pred_proba)
+            pd.DataFrame: Return the DataFrame with additional columns, prediction and any _proba
         """
 
         # Create our Endpoint Predictor Class
@@ -453,7 +453,8 @@ class EndpointCore(Artifact):
 
         # Write the predictions to our S3 Model Inference Folder (just the target and prediction columns)
         self.log.debug(f"Writing predictions to {self.endpoint_inference_path}/inference_predictions.csv")
-        output_columns = [c for c in prediction_df.columns if c in [target_column, "prediction", "pred_proba"]]
+        output_columns = [target_column, "prediction"]
+        output_columns += [col for col in prediction_df.columns if col.endswith("_proba")]
         subset_df = prediction_df[output_columns]
         wr.s3.to_csv(subset_df, f"{self.endpoint_inference_path}/inference_predictions.csv", index=False)
 
@@ -547,8 +548,7 @@ class EndpointCore(Artifact):
         # Return the metrics
         return pd.DataFrame.from_records([{"MAE": mae, "RMSE": rmse, "R2": r2, "MAPE": mape, "MedAE": medae}])
 
-    @staticmethod
-    def classification_metrics(target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+    def classification_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
         Args:
             target_column (str): Name of the target column
@@ -570,16 +570,23 @@ class EndpointCore(Artifact):
         # - A value of 0.5 indicates no discrimination (equivalent to random guessing)
         # - A score close to 1 indicates high discriminative power
 
-        # Convert 'pred_proba' column to a 2D NumPy array
-        y_score = np.array([ast.literal_eval(x) for x in prediction_df["pred_proba"]], dtype=float)
-        # y_score = np.array(prediction_df['pred_proba'].tolist())
+        # Sanity check for older versions that have a single column for probability
+        if "pred_proba" in prediction_df.columns:
+            self.log.error("Older version of prediction output detected, rerun inference...")
+            roc_auc = [0.0] * len(labels)
 
-        # One-hot encode the true labels
-        lb = LabelBinarizer()
-        lb.fit(prediction_df[target_column])
-        y_true = lb.transform(prediction_df[target_column])
+        # Convert probability columns to a 2D NumPy array
+        else:
+            proba_columns = [col for col in prediction_df.columns if col.endswith("_proba")]
+            y_score = prediction_df[proba_columns].to_numpy()
 
-        roc_auc = roc_auc_score(y_true, y_score, multi_class="ovr", average=None)
+            # One-hot encode the true labels
+            lb = LabelBinarizer()
+            lb.fit(prediction_df[target_column])
+            y_true = lb.transform(prediction_df[target_column])
+
+            # Compute ROC AUC
+            roc_auc = roc_auc_score(y_true, y_score, multi_class="ovr", average=None)
 
         # Put the scores into a dataframe
         score_df = pd.DataFrame(

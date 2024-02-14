@@ -260,6 +260,28 @@ class ModelCore(Artifact):
             self.log.warning(f"No registered endpoints found for {self.model_name}!")
             return None
 
+    def class_labels(self) -> Union[list[str], None]:
+        """Return the class labels for this Model (if it's a classifier)
+
+        Returns:
+            list[str]: List of class labels
+        """
+        if self.model_type == ModelType.CLASSIFIER:
+            return self.sageworks_meta().get("class_labels")  # Returns None if not found
+        else:
+            return None
+
+    def set_class_labels(self, labels: list[str]):
+        """Return the class labels for this Model (if it's a classifier)
+
+        Args:
+            labels (list[str]): List of class labels
+        """
+        if self.model_type == ModelType.CLASSIFIER:
+            self.upsert_sageworks_meta({"class_labels": labels})
+        else:
+            self.log.error(f"Model {self.model_name} is not a classifier!")
+
     def details(self, recompute=False) -> dict:
         """Additional Details about this Model
         Args:
@@ -652,6 +674,12 @@ if __name__ == "__main__":
     # Get the latest model object (sagemaker.model.Model)
     sagemaker_model = my_model.latest_model_object()
     print(f"Latest Model Object: {my_model.latest_model_object()}")
+
+    # Get the Class Labels (if it's a classifier)
+    my_model = ModelCore("wine-classification")
+    print(f"Class Labels: {my_model.class_labels()}")
+    my_model.set_class_labels(["red", "white"])
+    print(f"Class Labels: {my_model.class_labels()}")
 
     # Delete the Model
     # my_model.delete()

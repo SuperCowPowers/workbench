@@ -25,6 +25,7 @@ import argparse
 import joblib
 import os
 import pandas as pd
+from typing import List
 
 
 # Function to check if dataframe is empty
@@ -32,13 +33,40 @@ def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
     """
     Check if the provided dataframe is empty and raise an exception if it is.
 
-    :param df: DataFrame to check
-    :param df_name: Name of the DataFrame (for error message clarity)
+    Args:
+        df (pd.DataFrame): DataFrame to check
+        df_name (str): Name of the DataFrame
     """
     if df.empty:
         msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
         print(msg)
         raise ValueError(msg)
+
+def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFrame:
+    """
+    Expands a column in a DataFrame containing JSON strings of lists of probabilities into separate columns.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing the proba_column
+        class_labels (List[str]): List of class labels
+
+    Returns:
+        pd.DataFrame: DataFrame with the proba_column expanded into separate columns
+    """
+    proba_column = "pred_proba"
+
+    # Convert JSON strings to lists
+    df[proba_column] = df[proba_column].apply(lambda x: json.loads(x))
+
+    # Construct new column names with '_proba' suffix
+    new_col_names = [f"{label}_proba" for label in class_labels]
+
+    # Expand the proba_column into separate columns for each probability
+    proba_df = pd.DataFrame(df[proba_column].tolist(), columns=new_col_names)
+
+    # Concatenate the new columns with the original DataFrame
+    df = pd.concat([df, proba_df], axis=1).drop(columns=[proba_column])
+    return df
 
 
 if __name__ == "__main__":
@@ -109,15 +137,6 @@ if __name__ == "__main__":
         xgb_model = xgb.XGBRegressor()
         label_encoder = None  # We don't need this for regression
 
-    # Print out the Label Encoder if we have one
-    if label_encoder:
-        # Create a dictionary mapping from original class names to integer labels
-        label_mapping = {label: idx for idx, label in enumerate(label_encoder.classes_)}
-
-        # Print the mapping
-        print("Label Encoder Dictionary Mapping:")
-        pprint(label_mapping)
-
     # Grab our Features, Target and Train the Model
     y = df_train[target]
     X = df_train[feature_list]
@@ -130,14 +149,18 @@ if __name__ == "__main__":
         probs = xgb_model.predict_proba(df_val[feature_list])
         df_val["pred_proba"] = [json.dumps(p.tolist()) for p in probs]
 
+        # Expand the pred_proba column into separate columns for each class
+        df_val = expand_proba_column(df_val, label_encoder.classes_)
+
         # Decode the target and predictions
         df_val[target] = label_encoder.inverse_transform(df_val[target])
         preds = label_encoder.inverse_transform(preds)
 
 
-    # Save predictions to S3 (just the target, prediction, and pred_proba columns)
+    # Save predictions to S3 (just the target, prediction, and '_proba' columns)
     df_val["prediction"] = preds
-    output_columns = [c for c in df_val.columns if c in [target, "prediction", "pred_proba"]]
+    output_columns = [target, "prediction"]
+    output_columns += [col for col in df_val.columns if col.endswith("_proba")]
     wr.s3.to_csv(
         df_val[output_columns],
         path=f"{model_metrics_s3_path}/validation_predictions.csv",
