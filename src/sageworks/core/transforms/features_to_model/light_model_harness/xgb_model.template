@@ -2,7 +2,6 @@
 from pprint import pprint
 import xgboost as xgb
 import awswrangler as wr
-from typing import Union
 
 # Model Performance Scores
 from sklearn.metrics import (
@@ -44,19 +43,16 @@ def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
 
 def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFrame:
     """
-    Expands a column in a DataFrame containing JSON strings of lists of probabilities into separate columns.
+    Expands a column in a DataFrame containing a list of probabilities into separate columns.
 
     Args:
-        df (pd.DataFrame): DataFrame containing the proba_column
+        df (pd.DataFrame): DataFrame containing a "pred_proba" column
         class_labels (List[str]): List of class labels
 
     Returns:
-        pd.DataFrame: DataFrame with the proba_column expanded into separate columns
+        pd.DataFrame: DataFrame with the "pred_proba" expanded into separate columns
     """
     proba_column = "pred_proba"
-
-    # Convert JSON strings to lists
-    df[proba_column] = df[proba_column].apply(lambda x: json.loads(x))
 
     # Construct new column names with '_proba' suffix
     new_col_names = [f"{label}_proba" for label in class_labels]
@@ -65,7 +61,7 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     proba_df = pd.DataFrame(df[proba_column].tolist(), columns=new_col_names)
 
     # Concatenate the new columns with the original DataFrame
-    df = pd.concat([df, proba_df], axis=1).drop(columns=[proba_column])
+    df = pd.concat([df.reset_index(drop=True), proba_df], axis=1).drop(columns=[proba_column])
     return df
 
 
@@ -133,6 +129,7 @@ if __name__ == "__main__":
         label_encoder = LabelEncoder()
         df_train[target] = label_encoder.fit_transform(df_train[target])
         df_val[target] = label_encoder.transform(df_val[target])
+
     else:
         xgb_model = xgb.XGBRegressor()
         label_encoder = None  # We don't need this for regression
@@ -143,16 +140,18 @@ if __name__ == "__main__":
     xgb_model.fit(X, y)
 
     # Make Predictions on the Validation Set
+    print(f"Making Predictions on Validation Set...")
     preds = xgb_model.predict(df_val[feature_list])
     if model_type == "classifier":
         # Also get the probabilities for each class
+        print("Processing Probabilities...")
         probs = xgb_model.predict_proba(df_val[feature_list])
-        df_val["pred_proba"] = [json.dumps(p.tolist()) for p in probs]
+        df_val["pred_proba"] = [p.tolist() for p in probs]
 
         # Expand the pred_proba column into separate columns for each class
         df_val = expand_proba_column(df_val, label_encoder.classes_)
 
-        # Decode the target and predictions
+        # Decode the target and prediction labels
         df_val[target] = label_encoder.inverse_transform(df_val[target])
         preds = label_encoder.inverse_transform(preds)
 
