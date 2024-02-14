@@ -290,7 +290,7 @@ def predict_fn(df, model):
         df["pred_proba"] = [p.tolist() for p in probs]
 
         # Expand the pred_proba column into separate columns for each class
-        df= expand_proba_column(df, label_encoder.classes_)
+        df = expand_proba_column(df, label_encoder.classes_)
 
     # All done, return the DataFrame
     return df
