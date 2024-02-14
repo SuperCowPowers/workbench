@@ -277,3 +277,10 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.REGRESSOR)
     to_model.set_output_tags(["abalone", "public"])
     to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")
+
+    # Now a classification model
+    input_uuid = "wine_features"
+    output_uuid = "wine-classification"
+    to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.CLASSIFIER)
+    to_model.set_output_tags(["wine", "public"])
+    to_model.transform(target_column="wine_class", description="Wine Classification Model")
