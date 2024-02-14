@@ -332,9 +332,8 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     proba_df = pd.DataFrame(df[proba_column].tolist(), columns=new_col_names)
 
     # Concatenate the new columns with the original DataFrame
-    df = pd.concat([df.reset_index(drop=True), proba_df], axis=1).drop(columns=[proba_column])
+    df = pd.concat([df, proba_df], axis=1, ignore_index=True).drop(columns=[proba_column])
     return df
-
 
 
 if __name__ == "__main__":

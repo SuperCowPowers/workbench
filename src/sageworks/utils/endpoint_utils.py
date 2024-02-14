@@ -104,3 +104,17 @@ if __name__ == "__main__":
 
     # Capture performance metrics
     auto_capture_metrics(my_endpoint)
+
+    # Create a Classification Endpoint
+    endpoint_name = "wine-classification-end"
+    my_endpoint = Endpoint(endpoint_name)
+    if not my_endpoint.exists():
+        print(f"Endpoint {endpoint_name} does not exist.")
+        exit(1)
+
+    # Make predictions on the Endpoint
+    pred_output_df = fs_predictions(my_endpoint)
+    print(pred_output_df)
+
+    # Capture performance metrics
+    auto_capture_metrics(my_endpoint)

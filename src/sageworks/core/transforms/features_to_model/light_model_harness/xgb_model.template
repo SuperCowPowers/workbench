@@ -61,7 +61,7 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     proba_df = pd.DataFrame(df[proba_column].tolist(), columns=new_col_names)
 
     # Concatenate the new columns with the original DataFrame
-    df = pd.concat([df.reset_index(drop=True), proba_df], axis=1).drop(columns=[proba_column])
+    df = pd.concat([df, proba_df], axis=1, ignore_index=True).drop(columns=[proba_column])
     return df
 
 
@@ -284,10 +284,13 @@ def predict_fn(df, model):
     # Set the predictions on the DataFrame
     df["prediction"] = predictions
 
-    # Does our model have a 'predict_proba' method? If so add that to the DataFrame as well
+    # Does our model have a 'predict_proba' method? If so we will call it and add the results to the DataFrame
     if getattr(model, "predict_proba", None):
-        pred_proba = model.predict_proba(df[features])
-        df["pred_proba"] = [json.dumps(p.tolist()) for p in pred_proba]  # We have to do this for CSV serialization
+        probs = model.predict_proba(df[features])
+        df["pred_proba"] = [p.tolist() for p in probs]
+
+        # Expand the pred_proba column into separate columns for each class
+        df= expand_proba_column(df, label_encoder.classes_)
 
     # All done, return the DataFrame
     return df
