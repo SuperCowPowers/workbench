@@ -323,7 +323,11 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     Returns:
         pd.DataFrame: DataFrame with the "pred_proba" expanded into separate columns
     """
+
+    # Sanity check
     proba_column = "pred_proba"
+    if proba_column not in df.columns:
+        raise ValueError('DataFrame does not contain a "pred_proba" column')
 
     # Construct new column names with '_proba' suffix
     new_col_names = [f"{label}_proba" for label in class_labels]
@@ -331,8 +335,12 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     # Expand the proba_column into separate columns for each probability
     proba_df = pd.DataFrame(df[proba_column].tolist(), columns=new_col_names)
 
+    # Drop the original proba_column and reset the index in prep for the concat
+    df = df.drop(columns=[proba_column])
+    df.reset_index(drop=True)
+
     # Concatenate the new columns with the original DataFrame
-    df = pd.concat([df, proba_df], axis=1, ignore_index=True).drop(columns=[proba_column])
+    df = pd.concat([df, proba_df], axis=1)
     return df
 
 
