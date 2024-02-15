@@ -32,7 +32,7 @@ class CustomEncoder(json.JSONEncoder):
             elif isinstance(obj, (datetime, date)):
                 return {"__datetime__": True, "datetime": datetime_to_iso8601(obj)}
             elif isinstance(obj, pd.DataFrame):
-                return {"__dataframe__": True, "df": obj.to_dict("records")}
+                return {"__dataframe__": True, "df": obj.to_dict()}
             else:
                 return super(CustomEncoder, self).default(obj)
         except Exception as e:
