@@ -1,4 +1,4 @@
-"""This Script creates the Classification Artifacts in AWS/SageWorks
+"""This Script creates the AQSol (Public) Artifacts in AWS/SageWorks
 
 DataSources:
     - aqsol_data
@@ -86,7 +86,7 @@ if __name__ == "__main__":
         query = "SELECT id, solubility, smiles FROM aqsol_data"
         rdkit_features.transform(target_column="solubility", id_column="udm_mol_bat_id", query=query)
 
-    # Create the RDKIT based  regression Model
+    # Create the RDKIT based regression Model
     if recreate or not Model("aqsol-rdkit-regression").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_rdkit_features")
