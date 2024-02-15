@@ -79,7 +79,13 @@ class DataSource(AthenaSource):
         return super().query(query)
 
     def to_features(
-        self, name: str = None, tags: list = None, id_column: str = None, event_time_column: str = None
+        self,
+        name: str = None,
+        tags: list = None,
+        target_column: str = None,
+        id_column: str = None,
+        event_time_column: str = None,
+        one_hot_encode: bool = True,
     ) -> FeatureSet:
         """
         Convert the DataSource to a FeatureSet
@@ -87,8 +93,10 @@ class DataSource(AthenaSource):
         Args:
             name (str): Set the name for feature set (must be lowercase). If not specified, a name will be generated
             tags (list): Set the tags for the feature set. If not specified tags will be generated.
+            target_column (str): Set the target column for the feature set. (Optional)
             id_column (str): Set the id column for the feature set. If not specified will be generated.
             event_time_column (str): Set the event time for the feature set. If not specified will be generated.
+            one_hot_encode (bool): Whether to one-hot encode categorical fields (default: True)
 
         Returns:
             FeatureSet: The FeatureSet created from the DataSource
@@ -104,7 +112,12 @@ class DataSource(AthenaSource):
         # Transform the DataSource to a FeatureSet
         data_to_features = DataToFeaturesLight(self.uuid, fs_name)
         data_to_features.set_output_tags(tags)
-        data_to_features.transform(id_column=id_column, event_time_column=event_time_column)
+        data_to_features.transform(
+            target_column=target_column,
+            id_column=id_column,
+            event_time_column=event_time_column,
+            auto_categorize=one_hot_encode,
+        )
 
         # Return the FeatureSet (which will now be up-to-date)
         return FeatureSet(fs_name)
