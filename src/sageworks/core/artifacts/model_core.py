@@ -245,6 +245,14 @@ class ModelCore(Artifact):
         time.sleep(2)  # Give the AWS Metadata a chance to update
         self.endpoint_inference_path = self.get_endpoint_inference_path()
 
+    def get_endpoints(self) -> list[str]:
+        """Get the list of registered endpoints for this Model
+
+        Returns:
+            list[str]: List of registered endpoints
+        """
+        return self.sageworks_meta().get("sageworks_registered_endpoints", [])
+
     def get_endpoint_inference_path(self) -> str:
         """Get the S3 Path for the Inference Data"""
 
