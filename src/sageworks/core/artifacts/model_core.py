@@ -430,7 +430,7 @@ class ModelCore(Artifact):
             if self.get_owner() in [None, "unknown"]:
                 owner = input("Model Owner: ")
                 if owner in ["None", "none", ""]:
-                    self.set_owner("-")
+                    self.set_owner("unknown")
                 else:
                     self.set_owner(owner)
 
