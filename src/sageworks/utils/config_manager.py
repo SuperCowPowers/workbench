@@ -277,7 +277,7 @@ class ConfigManager:
             ).format(self.site_config_path)
 
         elif os_name in ["Linux", "Darwin"]:  # Darwin is macOS
-            shell_files = {"Linux": "~/.bashrc or ~/.profile", "Darwin": "~/.bash_profile, ~/.zshrc, or ~/.profile"}
+            shell_files = {"Linux": "~/.bashrc or ~/.profile", "Darwin": "~/.bash_profile, ~/.zshrc, or ~/.zprofile"}
             instructions = (
                 "\nTo set the SAGEWORKS_CONFIG environment variable permanently on {}:\n"
                 "1. Open {} in a text editor.\n"

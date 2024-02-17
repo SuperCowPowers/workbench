@@ -3,7 +3,7 @@
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.algorithms.table.light import feature_spider
+from sageworks.algorithms.dataframe import feature_spider
 
 
 # Class: RowTagger
@@ -18,7 +18,7 @@ class RowTagger:
         dataframe: pd.DataFrame,
         features: list,
         id_column: str,
-        target: str,
+        target_column: str,
         min_dist: float,
         min_target_diff: float,
     ):
@@ -28,11 +28,13 @@ class RowTagger:
         self.min_target_diff = min_target_diff
 
         # Do a validation check on the dataframe
-        self.df = dataframe
+        self.df = dataframe.copy()
         self.validate_input_data()
 
         # We need the feature spider for the more advanced tags
-        self.f_spider = feature_spider.FeatureSpider(self.df, features, id_column=self.id_column, target=target)
+        self.f_spider = feature_spider.FeatureSpider(self.df, features,
+                                                     id_column=self.id_column,
+                                                     target_column=target_column)
 
         # Add a 'tags' column (if it doesn't already exist)
         if "tags" not in self.df.columns:
@@ -120,7 +122,7 @@ def test():
         data_df,
         features=["feat1", "feat2", "feat3"],
         id_column="ID",
-        target="price",
+        target_column="price",
         min_dist=2.0,
         min_target_diff=1.0,
     )
