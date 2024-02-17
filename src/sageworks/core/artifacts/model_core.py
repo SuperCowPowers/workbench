@@ -276,6 +276,14 @@ class ModelCore(Artifact):
         """
         return self.sageworks_meta().get("sageworks_model_target")  # Returns None if not found
 
+    def features(self) -> Union[list[str], None]:
+        """Return a list of features used for this Model
+
+        Returns:
+            list[str]: List of features used for this Model
+        """
+        return self.sageworks_meta().get("sageworks_model_features")  # Returns None if not found
+
     def class_labels(self) -> Union[list[str], None]:
         """Return the class labels for this Model (if it's a classifier)
 
@@ -344,9 +352,6 @@ class ModelCore(Artifact):
 
         # Grab the inference metadata
         details["inference_meta"] = self._pull_inference_metadata()
-
-        # Set Shapley values
-        details["shapley_values"] = self.model_shapley_values()
 
         # Cache the details
         self.data_storage.set(storage_key, details)
@@ -611,7 +616,7 @@ class ModelCore(Artifact):
 
         return metrics_df, cm_df
 
-    def model_shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
+    def shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
         """Retrieve the Shapely values for this model
 
         Returns:
@@ -682,7 +687,7 @@ if __name__ == "__main__":
 
     # Grab our Shapley values from S3
     print("Shapley Values: (might be None)")
-    print(my_model.model_shapley_values())
+    print(my_model.shapley_values())
 
     # Get the SageWorks metadata associated with this Model
     print(f"SageWorks Meta: {my_model.sageworks_meta()}")
