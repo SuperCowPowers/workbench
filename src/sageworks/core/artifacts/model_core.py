@@ -404,14 +404,21 @@ class ModelCore(Artifact):
                 self._determine_model_type()
 
             # Determine the Target Column (can be None)
-            if "sageworks_model_target" not in self.sageworks_meta():
+            if self.target() is None:
                 target_column = input("Target Column? (for unsupervised/transformer just type None): ")
                 if target_column in ["None", "none", ""]:
                     target_column = None
                 self.upsert_sageworks_meta({"sageworks_model_target": target_column})
 
+            # Determine the Feature Columns
+            if self.features() is None:
+                feature_columns = input("Feature Columns? (use commas): ")
+                feature_columns = [e.strip() for e in feature_columns.split(",")]
+                if feature_columns not in [["None"], ["none"], [""]]:
+                    self.upsert_sageworks_meta({"sageworks_model_features": feature_columns})
+
             # Registered Endpoints?
-            if "sageworks_registered_endpoints" not in self.sageworks_meta():
+            if not self.get_endpoints():
                 endpoints = input("Register Endpoints? (use commas for multiple): ")
                 endpoints = [e.strip() for e in endpoints.split(",")]
                 if endpoints not in [["None"], ["none"], [""]]:
@@ -419,8 +426,16 @@ class ModelCore(Artifact):
                         self.log.info(f"Registering Endpoint {endpoint}...")
                         self.register_endpoint(endpoint)
 
+            # Model Owner?
+            if self.get_owner() in [None, "unknown"]:
+                owner = input("Model Owner: ")
+                if owner in ["None", "none", ""]:
+                    self.set_owner("-")
+                else:
+                    self.set_owner(owner)
+
         # Pull the training metrics and inference metrics
-        self._pull_training_metrics()  # Includes both metrics and confusion matrix
+        self._pull_training_metrics()
         self._pull_inference_metrics()
         self._pull_inference_cm()
 
