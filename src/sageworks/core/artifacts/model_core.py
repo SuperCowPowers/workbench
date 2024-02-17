@@ -268,6 +268,14 @@ class ModelCore(Artifact):
             self.log.warning(f"No registered endpoints found for {self.model_name}!")
             return None
 
+    def target(self) -> Union[str, None]:
+        """Return the target for this Model (if supervised, else None)
+
+        Returns:
+            str: Target column for this Model (if supervised, else None)
+        """
+        return self.sageworks_meta().get("sageworks_model_target")  # Returns None if not found
+
     def class_labels(self) -> Union[list[str], None]:
         """Return the class labels for this Model (if it's a classifier)
 

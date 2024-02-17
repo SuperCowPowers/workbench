@@ -75,11 +75,11 @@ def fs_evaluation_data(end: Endpoint) -> pd.DataFrame:
     return train_df
 
 
-def backtrack_to_fs(end: Endpoint) -> pd.DataFrame:
+def backtrack_to_fs(end: Endpoint) -> FeatureSet:
     """Code to Backtrack to FeatureSet: End -> Model -> FeatureSet
 
     Returns:
-        pd.DataFrame: The training data in a dataframe with the features from the FeatureSet
+        FeatureSet: The FeatureSet used to train the Model
     """
     # Grab the FeatureSet by backtracking from the Endpoint
     model_name = end.get_input()
