@@ -49,7 +49,7 @@ class SageworksDashboardStack(Stack):
 
         # Create a cluster using a NEW VPC
         else:
-            cluster = ecs.Cluster(self, "SageworksCluster", vpc=ec2.Vpc(self, "SageworksVpc", max_azs=1))
+            cluster = ecs.Cluster(self, "SageworksCluster", vpc=ec2.Vpc(self, "SageworksVpc", max_azs=2))
 
         # Import the existing SageWorks-ExecutionRole
         sageworks_execution_role = iam.Role.from_role_arn(
@@ -131,18 +131,21 @@ class SageworksDashboardStack(Stack):
             for pl in props.whitelist_prefix_lists:
                 lb_security_group.add_ingress_rule(ec2.Peer.prefix_list(pl), ec2.Port.tcp(443))
 
-        # Allow access from the internet if public is True
-        if props.public:
-            lb_security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80))
-            if props.certificate_arn:
-                lb_security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(443))
-
         # Import existing SSL certificate if certificate_arn is provided
         certificate = (
             Certificate.from_certificate_arn(self, "ImportedCertificate", certificate_arn=props.certificate_arn)
             if props.certificate_arn
             else None
         )
+
+        # Allow HTTP/HTTPS access from the internet (public)
+        if props.public:
+            if certificate:
+                # Only allow HTTPS access if a certificate is provided
+                lb_security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(443))
+            else:
+                # Allow HTTP access if no certificate is provided
+                lb_security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80))
 
         # Adding LoadBalancer with Fargate Service
         fargate_service = ApplicationLoadBalancedFargateService(
