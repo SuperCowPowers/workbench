@@ -8,7 +8,6 @@ from aws_cdk import (
     aws_elasticache as elasticache,
     aws_logs as logs,
 )
-from aws_cdk.aws_ec2 import Subnet
 from aws_cdk.aws_certificatemanager import Certificate
 from aws_cdk.aws_ecs_patterns import ApplicationLoadBalancedFargateService
 from constructs import Construct
@@ -24,6 +23,7 @@ class SageworksDashboardStackProps(StackProps):
         whitelist_ips: Optional[List[str]] = None,
         whitelist_prefix_lists: Optional[List[str]] = None,
         certificate_arn: Optional[str] = None,
+        public: bool = False,
     ):
         self.sageworks_bucket = sageworks_bucket
         self.sageworks_api_key = sageworks_api_key
@@ -32,6 +32,7 @@ class SageworksDashboardStackProps(StackProps):
         self.whitelist_ips = whitelist_ips
         self.certificate_arn = certificate_arn
         self.whitelist_prefix_lists = whitelist_prefix_lists
+        self.public = public
 
 
 class SageworksDashboardStack(Stack):
@@ -48,7 +49,7 @@ class SageworksDashboardStack(Stack):
 
         # Create a cluster using a NEW VPC
         else:
-            cluster = ecs.Cluster(self, "SageworksCluster", vpc=ec2.Vpc(self, "SageworksVpc", max_azs=2))
+            cluster = ecs.Cluster(self, "SageworksCluster", vpc=ec2.Vpc(self, "SageworksVpc", max_azs=1))
 
         # Import the existing SageWorks-ExecutionRole
         sageworks_execution_role = iam.Role.from_role_arn(
@@ -100,14 +101,14 @@ class SageworksDashboardStack(Stack):
             self,
             "SageworksTaskDef",
             task_role=sageworks_execution_role,
-            memory_limit_mib=4096,
-            cpu=2048,
+            memory_limit_mib=2048,
+            cpu=512,
         )
         dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_23_amd64"
         container = task_definition.add_container(
             "SageworksContainer",
             image=ecs.ContainerImage.from_registry(dashboard_image),
-            memory_limit_mib=4096,
+            memory_limit_mib=2048,
             environment={
                 "REDIS_HOST": redis_endpoint,
                 "SAGEWORKS_BUCKET": props.sageworks_bucket,
@@ -117,30 +118,24 @@ class SageworksDashboardStack(Stack):
         )
         container.add_port_mappings(ecs.PortMapping(container_port=8000))
 
-        # Were we given a subnet selection?
-        # TODO: This isn't currently working, so we need to figure out how to use existing subnets
-        subnet_selection = None
-        if props.existing_subnet_ids:
-            subnets = [
-                ec2.Subnet.from_subnet_id(self, f"Subnet{i}", subnet_id)
-                for i, subnet_id in enumerate(props.existing_subnet_ids)
-            ]
-            subnet_selection = ec2.SubnetSelection(subnets=subnets)
-
         # Create a NEW Security Group for the Load Balancer
         lb_security_group = ec2.SecurityGroup(self, "LoadBalancerSecurityGroup", vpc=cluster.vpc)
 
         # Add rules for the whitelist IPs
         if props.whitelist_ips:
-            print(f"Adding Whitelist IPs: {props.whitelist_ips}")
             for ip in props.whitelist_ips:
                 lb_security_group.add_ingress_rule(ec2.Peer.ipv4(ip), ec2.Port.tcp(443))
 
         # Adding AWS Managed Prefix Lists
         if props.whitelist_prefix_lists:
-            print(f"Adding Whitelist Prefix Lists: {props.whitelist_prefix_lists}")
             for pl in props.whitelist_prefix_lists:
                 lb_security_group.add_ingress_rule(ec2.Peer.prefix_list(pl), ec2.Port.tcp(443))
+
+        # Allow access from the internet if public is True
+        if props.public:
+            lb_security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80))
+            if props.certificate_arn:
+                lb_security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(443))
 
         # Import existing SSL certificate if certificate_arn is provided
         certificate = (
@@ -154,15 +149,14 @@ class SageworksDashboardStack(Stack):
             self,
             "SageworksService",
             cluster=cluster,
-            cpu=1024,
+            cpu=512,
             desired_count=1,
             task_definition=task_definition,
-            memory_limit_mib=4096,
-            public_load_balancer=False,
+            memory_limit_mib=2048,
+            public_load_balancer=props.public,
             security_groups=[lb_security_group],
-            open_listener=False,
+            open_listener=props.public,
             certificate=certificate,
-            # task_subnets=subnet_selection
         )
 
         # Remove all default security groups from the load balancer
