@@ -13,5 +13,10 @@ athena_table = fs.get_training_view_table()
 df = fs.query(f"SELECT * FROM {athena_table} where training = 0")
 
 # Run inference/predictions on the Endpoint
-results = endpoint.inference(df)
-print(results[["class_number_of_rings", "prediction"]])
+results_df = endpoint.inference(df)
+
+# Run inference/predictions and capture the results
+results_df = endpoint.inference(df, capture=True)
+
+# Run inference/predictions using the FeatureSet evaluation data
+results_df = endpoint.auto_inference(capture=True)
