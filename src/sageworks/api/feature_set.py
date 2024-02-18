@@ -47,6 +47,21 @@ class FeatureSet(FeatureSetCore):
         """
         return super().query(query, **kwargs)
 
+    def pull_dataframe(self) -> pd.DataFrame:
+        """Return a DataFrame of ALL the data from this FeatureSet
+
+        Returns:
+            pd.DataFrame: A DataFrame of ALL the data from this FeatureSet
+
+        Note:
+            Obviously, this is not recommended for large datasets :)
+        """
+
+        # Get the table associated with the data
+        self.log.info(f"Pulling all data from {self.uuid}...")
+        query = f"SELECT * FROM {self.athena_table}"
+        return self.query(query)
+
     def to_model(
         self,
         model_type: ModelType,
