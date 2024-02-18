@@ -21,7 +21,6 @@ from sklearn.metrics import (
     confusion_matrix,
 )
 from sklearn.preprocessing import LabelBinarizer
-from math import sqrt
 
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
