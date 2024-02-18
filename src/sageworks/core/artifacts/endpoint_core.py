@@ -416,6 +416,7 @@ class EndpointCore(Artifact):
 
         # This Utility needs to be loaded now to avoid circular imports
         from sageworks.utils.endpoint_utils import fs_evaluation_data
+
         eval_data_df = fs_evaluation_data(self)
         return self.inference(eval_data_df, capture)
 
@@ -459,11 +460,9 @@ class EndpointCore(Artifact):
         # Return the prediction DataFrame
         return prediction_df
 
-    def _capture_inference_results(self,
-                                   pred_results_df: pd.DataFrame,
-                                   target_column: str,
-                                   metrics: pd.DataFrame,
-                                   description: str):
+    def _capture_inference_results(
+        self, pred_results_df: pd.DataFrame, target_column: str, metrics: pd.DataFrame, description: str
+    ):
         """Internal: Capture the inference results and metrics to S3
 
         Args:

@@ -32,9 +32,9 @@ class RowTagger:
         self.validate_input_data()
 
         # We need the feature spider for the more advanced tags
-        self.f_spider = feature_spider.FeatureSpider(self.df, features,
-                                                     id_column=self.id_column,
-                                                     target_column=target_column)
+        self.f_spider = feature_spider.FeatureSpider(
+            self.df, features, id_column=self.id_column, target_column=target_column
+        )
 
         # Add a 'tags' column (if it doesn't already exist)
         if "tags" not in self.df.columns:
