@@ -20,9 +20,8 @@ endpoint = Endpoint("abalone-regression-end")
 
 # SageWorks has full ML Pipeline provenance, so we can backtrack the inputs,
 # get a DataFrame of data (not used for training) and run inference
-model_name = endpoint.get_input()
-fs_name = Model(model_name).get_input()
-fs = FeatureSet(fs_name)
+model = Model(endpoint.get_input())
+fs = FeatureSet(model.get_input())
 athena_table = fs.get_training_view_table()
 df = fs.query(f"SELECT * FROM {athena_table} where training = 0")
 

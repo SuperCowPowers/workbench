@@ -16,7 +16,7 @@ class Endpoint(EndpointCore):
         ```
         my_endpoint = Endpoint(name)
         my_endpoint.details()
-        my_endpoint.predict(df)
+        my_endpoint.inference(eval_df)
         ```
     """
 
