@@ -220,6 +220,7 @@ if __name__ == "__main__":
         print(f"RMSE: {rms:.3f}")
         print(f"MAE: {mae:.3f}")
         print(f"R2 Score: {r2:.3f}")
+        print(f"NumValRows: {len(df_val)}")
 
     # Now save the model to the standard place/name
     xgb_model.save_model(os.path.join(args.model_dir, "xgb_model.json"))

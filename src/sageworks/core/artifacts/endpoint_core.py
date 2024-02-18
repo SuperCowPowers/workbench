@@ -450,8 +450,8 @@ class EndpointCore(Artifact):
             raise ValueError(f"Unknown Model Type: {model_type}")
 
         # Print out the metrics
-        self.log.important(f"Performance Metrics for {self.model_name} on {self.uuid}")
-        self.log.important(metrics.head())
+        print(f"Performance Metrics for {self.model_name} on {self.uuid}")
+        print(metrics.head())
 
         # Capture the inference results and metrics
         if capture:
@@ -579,7 +579,7 @@ class EndpointCore(Artifact):
         y_pred = prediction_df["prediction"]
 
         mae = mean_absolute_error(y_true, y_pred)
-        rmse = sqrt(mean_squared_error(y_true, y_pred))
+        rmse = mean_squared_error(y_true, y_pred, squared=False)
         r2 = r2_score(y_true, y_pred)
         # Mean Absolute Percentage Error
         mape = np.mean(np.where(y_true != 0, np.abs((y_true - y_pred) / y_true), np.abs(y_true - y_pred))) * 100
@@ -587,7 +587,8 @@ class EndpointCore(Artifact):
         medae = median_absolute_error(y_true, y_pred)
 
         # Return the metrics
-        return pd.DataFrame.from_records([{"MAE": mae, "RMSE": rmse, "R2": r2, "MAPE": mape, "MedAE": medae}])
+        return pd.DataFrame.from_records([{"MAE": mae, "RMSE": rmse, "R2": r2,
+                                           "MAPE": mape, "MedAE": medae, "NumPredRows": len(prediction_df)}])
 
     def classification_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
