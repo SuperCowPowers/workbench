@@ -399,11 +399,11 @@ class FeatureSetCore(Artifact):
         view_name = f"{self.athena_table}_training"
         self.log.important(f"Creating default Training View {view_name}...")
 
-        # Construct the CREATE VIEW query with random assignment
+        # Construct the CREATE VIEW query with a simple modulo operation for the 80/20 split
         create_view_query = f"""
         CREATE OR REPLACE VIEW {view_name} AS
         SELECT *, CASE
-            WHEN RAND() < 0.8 THEN 1  -- Assign roughly 80% to training
+            WHEN MOD(ROW_NUMBER() OVER (), 10) < 8 THEN 1  -- Assign roughly 80% to training
             ELSE 0  -- Assign roughly 20% to hold-out
         END AS training
         FROM {self.athena_table}
