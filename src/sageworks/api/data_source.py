@@ -78,6 +78,22 @@ class DataSource(AthenaSource):
         """
         return super().query(query)
 
+    def pull_dataframe(self) -> pd.DataFrame:
+        """Return a DataFrame of ALL the data from this DataSource
+
+        Returns:
+            pd.DataFrame: A DataFrame of ALL the data from this DataSource
+
+        Note:
+            Obviously, this is not recommended for large datasets :)
+        """
+
+        # Get the table associated with the data
+        self.log.info(f"Pulling all data from {self.uuid}...")
+        table = super().get_table_name()
+        query = f"SELECT * FROM {table}"
+        return self.query(query)
+
     def to_features(
         self,
         name: str = None,
