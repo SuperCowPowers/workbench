@@ -214,10 +214,10 @@ if __name__ == "__main__":
 
     else:
         # Calculate various model performance metrics (regression)
-        rms = mean_squared_error(df_val[target], preds, squared=False)
+        rmse = mean_squared_error(df_val[target], preds, squared=False)
         mae = mean_absolute_error(df_val[target], preds)
         r2 = r2_score(df_val[target], preds)
-        print(f"RMSE: {rms:.3f}")
+        print(f"RMSE: {rmse:.3f}")
         print(f"MAE: {mae:.3f}")
         print(f"R2 Score: {r2:.3f}")
         print(f"NumValRows: {len(df_val)}")
