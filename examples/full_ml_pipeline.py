@@ -46,5 +46,5 @@ if __name__ == "__main__":
     # Get a DataFrame of data (not used to train) and run predictions
     athena_table = fs.get_training_view_table()
     df = fs.query(f"SELECT * FROM {athena_table} where training = 0")
-    results = endpoint.predict(df)
+    results = endpoint.inference(df)
     print(results[["class_number_of_rings", "prediction"]])

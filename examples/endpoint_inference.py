@@ -14,5 +14,5 @@ athena_table = fs.get_training_view_table()
 df = fs.query(f"SELECT * FROM {athena_table} where training = 0")
 
 # Run inference/predictions on the Endpoint
-results = endpoint.predict(df)
+results = endpoint.inference(df)
 print(results[["class_number_of_rings", "prediction"]])

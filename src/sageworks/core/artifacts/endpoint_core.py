@@ -159,13 +159,18 @@ class EndpointCore(Artifact):
             self.remove_health_tag("no_activity")
         return health_issues
 
-    def predict(self, feature_df: pd.DataFrame) -> pd.DataFrame:
+    def predict(self, eval_df: pd.DataFrame) -> pd.DataFrame:
         """Run inference/prediction on the given Feature DataFrame
         Args:
-            feature_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
+            eval_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
         Returns:
             pd.DataFrame: Return the DataFrame with additional columns, prediction and any _proba
         """
+
+        # Make sure the eval_df has the features used to train the model
+        features = ModelCore(self.model_name).features()
+        if not set(features).issubset(eval_df.columns):
+            raise ValueError(f"DataFrame does not contain required features: {features}")
 
         # Create our Endpoint Predictor Class
         predictor = Predictor(
@@ -178,11 +183,11 @@ class EndpointCore(Artifact):
         # Now split up the dataframe into 500 row chunks, send those chunks to our
         # endpoint (with error handling) and stitch all the chunks back together
         df_list = []
-        for index in range(0, len(feature_df), 500):
+        for index in range(0, len(eval_df), 500):
             print("Processing...")
 
             # Compute partial DataFrames, add them to a list, and concatenate at the end
-            partial_df = self._endpoint_error_handling(predictor, feature_df[index : index + 500])
+            partial_df = self._endpoint_error_handling(predictor, eval_df[index : index + 500])
             df_list.append(partial_df)
 
         # Concatenate the dataframes
@@ -402,29 +407,39 @@ class EndpointCore(Artifact):
         """Return the type of model used in this Endpoint"""
         return self.details().get("model_type", "unknown")
 
-    def capture_performance_metrics(
-        self, feature_df: pd.DataFrame, target_column: str, data_name: str, data_hash: str, description: str
-    ) -> None:
-        """Capture the performance metrics for this Endpoint
+    def auto_inference(self, capture: bool = False):
+        """Run inference on the endpoint using FeatureSet data
 
         Args:
-            feature_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
-            target_column (str): Name of the target column
-            data_name (str): Name of the data used for inference
-            data_hash (str): Hash of the data used for inference
-            description (str): Description of the data used for inference
-
-        Returns:
-            None
-
-        Note:
-            This method captures performance metrics and writes them to the S3 Endpoint Inference Folder
+            capture (bool, optional): Capture the inference results and metrics (default=False)
         """
 
-        # Run predictions on the feature_df
-        prediction_df = self.predict(feature_df)
+        # This Utility needs to be loaded now to avoid circular imports
+        from sageworks.utils.endpoint_utils import fs_evaluation_data
+        eval_data_df = fs_evaluation_data(self)
+        return self.inference(eval_data_df, capture)
 
-        # Compute the metrics
+    def inference(self, eval_df: pd.DataFrame, capture: bool = False) -> pd.DataFrame:
+        """Run inference and compute performance metrics with optional capture
+
+        Args:
+            eval_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
+            capture (bool, optional): Capture the inference results and metrics (default=False)
+
+        Returns:
+            pd.DataFrame: DataFrame with the inference results
+
+        Note:
+            If capture=True inference/performance metrics are written to S3 Endpoint Inference Folder
+        """
+
+        # Run predictions on the evaluation data
+        prediction_df = self.predict(eval_df)
+
+        # Get the target column
+        target_column = ModelCore(self.model_name).target()
+
+        # Compute the standard performance metrics for this model
         model_type = self.model_type()
         if model_type == ModelType.REGRESSOR.value:
             metrics = self.regression_metrics(target_column, prediction_df)
@@ -433,11 +448,36 @@ class EndpointCore(Artifact):
         else:
             raise ValueError(f"Unknown Model Type: {model_type}")
 
+        # Print out the metrics
+        self.log.important(f"Performance Metrics for {self.model_name} on {self.uuid}")
+        self.log.important(metrics.head())
+
+        # Capture the inference results and metrics
+        if capture:
+            self._capture_inference_results(prediction_df, target_column, metrics, "Inference Results")
+
+        # Return the prediction DataFrame
+        return prediction_df
+
+    def _capture_inference_results(self,
+                                   pred_results_df: pd.DataFrame,
+                                   target_column: str,
+                                   metrics: pd.DataFrame,
+                                   description: str):
+        """Internal: Capture the inference results and metrics to S3
+
+        Args:
+            pred_results_df (pd.DataFrame): DataFrame with the prediction results
+            target_column (str): Name of the target column
+            metrics (pd.DataFrame): DataFrame with the performance metrics
+            description (str): Description of the inference results
+        """
+
         # Metadata for the model inference
         inference_meta = {
-            "test_data": data_name,
-            "test_data_hash": data_hash,
-            "test_rows": len(feature_df),
+            "test_data": "auto",
+            "test_data_hash": "123",
+            "test_rows": len(pred_results_df),
             "description": description,
         }
 
@@ -453,13 +493,14 @@ class EndpointCore(Artifact):
         # Write the predictions to our S3 Model Inference Folder (just the target and prediction columns)
         self.log.debug(f"Writing predictions to {self.endpoint_inference_path}/inference_predictions.csv")
         output_columns = [target_column, "prediction"]
-        output_columns += [col for col in prediction_df.columns if col.endswith("_proba")]
-        subset_df = prediction_df[output_columns]
+        output_columns += [col for col in pred_results_df.columns if col.endswith("_proba")]
+        subset_df = pred_results_df[output_columns]
         wr.s3.to_csv(subset_df, f"{self.endpoint_inference_path}/inference_predictions.csv", index=False)
 
         # CLASSIFIER: Write the confusion matrix to our S3 Model Inference Folder
+        model_type = self.model_type()
         if model_type == ModelType.CLASSIFIER.value:
-            conf_mtx = self.confusion_matrix(target_column, prediction_df)
+            conf_mtx = self.confusion_matrix(target_column, pred_results_df)
             self.log.debug(f"Writing confusion matrix to {self.endpoint_inference_path}/inference_cm.csv")
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
             wr.s3.to_csv(conf_mtx, f"{self.endpoint_inference_path}/inference_cm.csv", index=True)
@@ -473,7 +514,7 @@ class EndpointCore(Artifact):
 
         # Get the exact features used to train the model
         model_features = model_artifact.feature_names_in_
-        X_pred = prediction_df[model_features]
+        X_pred = pred_results_df[model_features]
 
         # Compute the SHAP values
         shap_vals = self.shap_values(model_artifact, X_pred)
@@ -511,9 +552,11 @@ class EndpointCore(Artifact):
     @staticmethod
     def shap_values(model, X: pd.DataFrame) -> np.array:
         """Compute the SHAP values for this Model
+
         Args:
             model (Model): Model object
             X (pd.DataFrame): DataFrame with the prediction results
+
         Returns:
             pd.DataFrame: DataFrame with the SHAP values
         """
@@ -696,7 +739,7 @@ class EndpointCore(Artifact):
 
 if __name__ == "__main__":
     """Exercise the Endpoint Class"""
-    from sageworks.utils.endpoint_utils import auto_capture_metrics
+    from sageworks.utils.endpoint_utils import fs_evaluation_data
 
     # Grab an EndpointCore object and pull some information from it
     my_endpoint = EndpointCore("abalone-regression-end")
@@ -717,9 +760,23 @@ if __name__ == "__main__":
     # Serverless?
     print(f"Serverless: {my_endpoint.is_serverless()}")
 
-    # Capture the performance metrics for this Endpoint
-    auto_capture_metrics(my_endpoint)
+    # Health Check
+    print(f"Health Check: {my_endpoint.health_check()}")
 
-    # Capture the performance metrics for a Classification Endpoint
+    # Run Auto Inference on the Endpoint (uses the FeatureSet)
+    print("Running Auto Inference...")
+    my_endpoint.auto_inference(capture=False)
+
+    # Run Inference where we provide the data
+    # Note: This dataframe could be from a FeatureSet or any other source
+    print("Running Inference...")
+    eval_df = fs_evaluation_data(my_endpoint)
+    pred_results = my_endpoint.inference(eval_df, capture=False)
+
+    # Now set capture=True to save inference results and metrics
+    eval_df = fs_evaluation_data(my_endpoint)
+    pred_results = my_endpoint.inference(eval_df, capture=True)
+
+    # Run Inference and metrics for a Classification Endpoint
     class_endpoint = EndpointCore("wine-classification-end")
-    auto_capture_metrics(class_endpoint)
+    class_endpoint.auto_inference(capture=True)

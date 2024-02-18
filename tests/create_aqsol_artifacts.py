@@ -9,6 +9,8 @@ Models:
 Endpoints:
     - aqsol-regression-end
 """
+import pandas as pd
+import awswrangler as wr
 
 from sageworks.api.data_source import DataSource
 from sageworks.api.feature_set import FeatureSet
@@ -30,12 +32,22 @@ if __name__ == "__main__":
 
     # Create the aqsol_data DataSource
     if recreate or not DataSource("aqsol_data").exists():
-        DataSource(s3_path, name="aqsol_data")
+        # We could create a Datasource directly,  but we're going to add a column to the data
+        df = wr.s3.read_csv(s3_path)
+
+        # Okay this is a bit cheesy, but we're going to create a solubility classification column
+        bins = [-float("inf"), -5, -4, float("inf")]
+        labels = ["low", "medium", "high"]
+        df["solubility_class"] = pd.cut(df["Solubility"], bins=bins, labels=labels)
+
+        # Now we'll create the DataSource with the new column
+        DataSource(df, name="aqsol_data")
 
     # Create the aqsol_features FeatureSet
     if recreate or not FeatureSet("aqsol_features").exists():
         ds = DataSource("aqsol_data")
-        ds.to_features("aqsol_features", id_column="id")
+        ds.to_features("aqsol_features", id_column="id",
+                       target_column="solubility_class", tags=["aqsol", "public"])
 
     # Create the aqsol solubility regression Model
     if recreate or not Model("aqsol-regression").exists():

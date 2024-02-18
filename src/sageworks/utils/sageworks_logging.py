@@ -63,10 +63,10 @@ logging.Logger.important = important
 # Define a ColoredFormatter
 class ColoredFormatter(logging.Formatter):
     COLORS_DARK_THEME = {
-        "DEBUG": "\x1b[38;5;69m",  # LightBlue
+        "DEBUG": "\x1b[38;5;245m",  # LightGrey
         "TRACE": "\x1b[38;5;141m",  # LightPurple
-        "INFO": "\x1b[38;5;113m",  # LightGreen
-        "IMPORTANT": "\x1b[38;5;154m",  # Lime
+        "INFO": "\x1b[38;5;69m",  # LightBlue
+        "IMPORTANT": "\x1b[38;5;113m",  # LightGreen
         "WARNING": "\x1b[38;5;220m",  # DarkYellow
         "ERROR": "\x1b[38;5;208m",  # Orange
         "CRITICAL": "\x1b[38;5;198m",  # Red
