@@ -587,8 +587,9 @@ class EndpointCore(Artifact):
         medae = median_absolute_error(y_true, y_pred)
 
         # Return the metrics
-        return pd.DataFrame.from_records([{"MAE": mae, "RMSE": rmse, "R2": r2,
-                                           "MAPE": mape, "MedAE": medae, "NumPredRows": len(prediction_df)}])
+        return pd.DataFrame.from_records(
+            [{"MAE": mae, "RMSE": rmse, "R2": r2, "MAPE": mape, "MedAE": medae, "NumPredRows": len(prediction_df)}]
+        )
 
     def classification_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
