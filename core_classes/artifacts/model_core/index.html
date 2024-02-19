@@ -2829,16 +2829,16 @@
 </span><span id="__span-0-146"><a id="__codelineno-0-146" name="__codelineno-0-146"></a>            <span class="n">model_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_package_arn</span><span class="p">(),</span> <span class="n">sagemaker_session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sm_session</span><span class="p">,</span> <span class="n">image_uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_image</span><span class="p">()</span>
 </span><span id="__span-0-147"><a id="__codelineno-0-147" name="__codelineno-0-147"></a>        <span class="p">)</span>
 </span><span id="__span-0-148"><a id="__codelineno-0-148" name="__codelineno-0-148"></a>
-</span><span id="__span-0-149"><a id="__codelineno-0-149" name="__codelineno-0-149"></a>    <span class="k">def</span> <span class="nf">model_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specific_run</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;any&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-</span><span id="__span-0-150"><a id="__codelineno-0-150" name="__codelineno-0-150"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the training metrics for this model</span>
+</span><span id="__span-0-149"><a id="__codelineno-0-149" name="__codelineno-0-149"></a>    <span class="k">def</span> <span class="nf">model_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specific_run</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;latest&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+</span><span id="__span-0-150"><a id="__codelineno-0-150" name="__codelineno-0-150"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the performance metrics for this model</span>
 </span><span id="__span-0-151"><a id="__codelineno-0-151" name="__codelineno-0-151"></a>
 </span><span id="__span-0-152"><a id="__codelineno-0-152" name="__codelineno-0-152"></a><span class="sd">        Args:</span>
-</span><span id="__span-0-153"><a id="__codelineno-0-153" name="__codelineno-0-153"></a><span class="sd">            specific_run (str, optional): Can be &quot;any&quot; (latest) , &quot;inference&quot;, &quot;training&quot; or name of a specific run</span>
+</span><span id="__span-0-153"><a id="__codelineno-0-153" name="__codelineno-0-153"></a><span class="sd">            specific_run (str, optional): Can be &quot;latest&quot;, &quot;inference&quot;, &quot;training&quot; or name of a specific run</span>
 </span><span id="__span-0-154"><a id="__codelineno-0-154" name="__codelineno-0-154"></a><span class="sd">        Returns:</span>
 </span><span id="__span-0-155"><a id="__codelineno-0-155" name="__codelineno-0-155"></a><span class="sd">            pd.DataFrame: DataFrame of the Model Metrics</span>
 </span><span id="__span-0-156"><a id="__codelineno-0-156" name="__codelineno-0-156"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-157"><a id="__codelineno-0-157" name="__codelineno-0-157"></a>        <span class="c1"># Grab the metrics from the SageWorks Metadata</span>
-</span><span id="__span-0-158"><a id="__codelineno-0-158" name="__codelineno-0-158"></a>        <span class="k">if</span> <span class="n">specific_run</span> <span class="o">==</span> <span class="s2">&quot;any&quot;</span><span class="p">:</span>
+</span><span id="__span-0-158"><a id="__codelineno-0-158" name="__codelineno-0-158"></a>        <span class="k">if</span> <span class="n">specific_run</span> <span class="o">==</span> <span class="s2">&quot;latest&quot;</span><span class="p">:</span>
 </span><span id="__span-0-159"><a id="__codelineno-0-159" name="__codelineno-0-159"></a>            <span class="n">metrics_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_metrics</span><span class="p">(</span><span class="s2">&quot;inference&quot;</span><span class="p">)</span>
 </span><span id="__span-0-160"><a id="__codelineno-0-160" name="__codelineno-0-160"></a>            <span class="k">return</span> <span class="n">metrics_df</span> <span class="k">if</span> <span class="n">metrics_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_metrics</span><span class="p">(</span><span class="s2">&quot;training&quot;</span><span class="p">)</span>
 </span><span id="__span-0-161"><a id="__codelineno-0-161" name="__codelineno-0-161"></a>
@@ -4544,14 +4544,14 @@ Returns:
 
 
 <h3 id="sageworks.core.artifacts.model_core.ModelCore.model_metrics" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">model_metrics</span><span class="p">(</span><span class="n">specific_run</span><span class="o">=</span><span class="s1">&#39;any&#39;</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">model_metrics</span><span class="p">(</span><span class="n">specific_run</span><span class="o">=</span><span class="s1">&#39;latest&#39;</span><span class="p">)</span></code>
 
 </h3>
 
 
   <div class="doc doc-contents ">
   
-      <p>Retrieve the training metrics for this model</p>
+      <p>Retrieve the performance metrics for this model</p>
 
 
 
@@ -4573,11 +4573,11 @@ Returns:
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Can be "any" (latest) , "inference", "training" or name of a specific run</p>
+              <p>Can be "latest", "inference", "training" or name of a specific run</p>
             </div>
           </td>
           <td>
-                <code>&#39;any&#39;</code>
+                <code>&#39;latest&#39;</code>
           </td>
         </tr>
     </tbody>
@@ -4612,16 +4612,16 @@ Returns:
 <span class="normal"><a href="#__codelineno-0-171">171</a></span>
 <span class="normal"><a href="#__codelineno-0-172">172</a></span>
 <span class="normal"><a href="#__codelineno-0-173">173</a></span>
-<span class="normal"><a href="#__codelineno-0-174">174</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-149"><a id="__codelineno-0-149" name="__codelineno-0-149"></a><span class="k">def</span> <span class="nf">model_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specific_run</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;any&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-</span><span id="__span-0-150"><a id="__codelineno-0-150" name="__codelineno-0-150"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the training metrics for this model</span>
+<span class="normal"><a href="#__codelineno-0-174">174</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-149"><a id="__codelineno-0-149" name="__codelineno-0-149"></a><span class="k">def</span> <span class="nf">model_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specific_run</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;latest&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+</span><span id="__span-0-150"><a id="__codelineno-0-150" name="__codelineno-0-150"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the performance metrics for this model</span>
 </span><span id="__span-0-151"><a id="__codelineno-0-151" name="__codelineno-0-151"></a>
 </span><span id="__span-0-152"><a id="__codelineno-0-152" name="__codelineno-0-152"></a><span class="sd">    Args:</span>
-</span><span id="__span-0-153"><a id="__codelineno-0-153" name="__codelineno-0-153"></a><span class="sd">        specific_run (str, optional): Can be &quot;any&quot; (latest) , &quot;inference&quot;, &quot;training&quot; or name of a specific run</span>
+</span><span id="__span-0-153"><a id="__codelineno-0-153" name="__codelineno-0-153"></a><span class="sd">        specific_run (str, optional): Can be &quot;latest&quot;, &quot;inference&quot;, &quot;training&quot; or name of a specific run</span>
 </span><span id="__span-0-154"><a id="__codelineno-0-154" name="__codelineno-0-154"></a><span class="sd">    Returns:</span>
 </span><span id="__span-0-155"><a id="__codelineno-0-155" name="__codelineno-0-155"></a><span class="sd">        pd.DataFrame: DataFrame of the Model Metrics</span>
 </span><span id="__span-0-156"><a id="__codelineno-0-156" name="__codelineno-0-156"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-157"><a id="__codelineno-0-157" name="__codelineno-0-157"></a>    <span class="c1"># Grab the metrics from the SageWorks Metadata</span>
-</span><span id="__span-0-158"><a id="__codelineno-0-158" name="__codelineno-0-158"></a>    <span class="k">if</span> <span class="n">specific_run</span> <span class="o">==</span> <span class="s2">&quot;any&quot;</span><span class="p">:</span>
+</span><span id="__span-0-158"><a id="__codelineno-0-158" name="__codelineno-0-158"></a>    <span class="k">if</span> <span class="n">specific_run</span> <span class="o">==</span> <span class="s2">&quot;latest&quot;</span><span class="p">:</span>
 </span><span id="__span-0-159"><a id="__codelineno-0-159" name="__codelineno-0-159"></a>        <span class="n">metrics_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_metrics</span><span class="p">(</span><span class="s2">&quot;inference&quot;</span><span class="p">)</span>
 </span><span id="__span-0-160"><a id="__codelineno-0-160" name="__codelineno-0-160"></a>        <span class="k">return</span> <span class="n">metrics_df</span> <span class="k">if</span> <span class="n">metrics_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_metrics</span><span class="p">(</span><span class="s2">&quot;training&quot;</span><span class="p">)</span>
 </span><span id="__span-0-161"><a id="__codelineno-0-161" name="__codelineno-0-161"></a>
