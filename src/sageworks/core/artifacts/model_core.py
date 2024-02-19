@@ -157,7 +157,7 @@ class ModelCore(Artifact):
         # Grab the metrics from the SageWorks Metadata
         if specific_run == "any":
             metrics_df = self.model_metrics("inference")
-            return metrics_df or self.model_metrics("training")
+            return metrics_df if metrics_df is not None else self.model_metrics("training")
 
         # Grab the inference metrics (could return None)
         if specific_run == "inference":
@@ -686,7 +686,7 @@ if __name__ == "__main__":
     print(f"Model Check: {my_model.exists()}")
 
     # Make sure the model is 'ready'
-    my_model.onboard()
+    my_model.onboard(interactive=False)
 
     # Get the ARN of the Model Group
     print(f"Model Group ARN: {my_model.group_arn()}")
