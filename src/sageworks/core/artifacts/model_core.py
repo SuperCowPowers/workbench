@@ -146,16 +146,16 @@ class ModelCore(Artifact):
             model_data=self.model_package_arn(), sagemaker_session=self.sm_session, image_uri=self.model_image()
         )
 
-    def model_metrics(self, specific_run: str = "any") -> Union[pd.DataFrame, None]:
-        """Retrieve the training metrics for this model
+    def model_metrics(self, specific_run: str = "latest") -> Union[pd.DataFrame, None]:
+        """Retrieve the performance metrics for this model
 
         Args:
-            specific_run (str, optional): Can be "any" (latest) , "inference", "training" or name of a specific run
+            specific_run (str, optional): Can be "latest", "inference", "training" or name of a specific run
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics
         """
         # Grab the metrics from the SageWorks Metadata
-        if specific_run == "any":
+        if specific_run == "latest":
             metrics_df = self.model_metrics("inference")
             return metrics_df if metrics_df is not None else self.model_metrics("training")
 
