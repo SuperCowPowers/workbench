@@ -146,17 +146,32 @@ class ModelCore(Artifact):
             model_data=self.model_package_arn(), sagemaker_session=self.sm_session, image_uri=self.model_image()
         )
 
-    def model_metrics(self) -> Union[pd.DataFrame, None]:
+    def model_metrics(self, specific_run: str = "any") -> Union[pd.DataFrame, None]:
         """Retrieve the training metrics for this model
+
+        Args:
+            specific_run (str, optional): Can be "any" (latest) , "inference", "training" or name of a specific run
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics
         """
-        # Grab the metrics from the SageWorks Metadata (try inference first, then training)
-        metrics = self.sageworks_meta().get("sageworks_inference_metrics")
-        if metrics is not None:
-            return pd.DataFrame.from_dict(metrics)
-        metrics = self.sageworks_meta().get("sageworks_training_metrics")
-        return pd.DataFrame.from_dict(metrics) if metrics else None
+        # Grab the metrics from the SageWorks Metadata
+        if specific_run == "any":
+            metrics_df = self.model_metrics("inference")
+            return metrics_df or self.model_metrics("training")
+
+        # Grab the inference metrics (could return None)
+        if specific_run == "inference":
+            metric = self.sageworks_meta().get("sageworks_inference_metrics")
+            return pd.DataFrame.from_dict(metric) if metric else None
+
+        # Grab the training metrics (could return None)
+        if specific_run == "training":
+            metric = self.sageworks_meta().get("sageworks_training_metrics")
+            return pd.DataFrame.from_dict(metric) if metric else None
+
+        else:
+            self.log.warning(f"Specific Run {specific_run} not found for {self.model_name}!")
+            return None
 
     def confusion_matrix(self) -> Union[pd.DataFrame, None]:
         """Retrieve the confusion_matrix for this model

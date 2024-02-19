@@ -587,7 +587,7 @@ class EndpointCore(Artifact):
 
         # Return the metrics
         return pd.DataFrame.from_records(
-            [{"MAE": mae, "RMSE": rmse, "R2": r2, "MAPE": mape, "MedAE": medae, "NumPredRows": len(prediction_df)}]
+            [{"MAE": mae, "RMSE": rmse, "R2": r2, "MAPE": mape, "MedAE": medae, "NumRows": len(prediction_df)}]
         )
 
     def classification_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:

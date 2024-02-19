@@ -165,8 +165,8 @@ class FeaturesToModel(Transform):
             metric_definitions = [
                 {"Name": "RMSE", "Regex": "RMSE: ([0-9.]+)"},
                 {"Name": "MAE", "Regex": "MAE: ([0-9.]+)"},
-                {"Name": "R2", "Regex": "R2 Score: ([0-9.]+)"},
-                {"Name": "NumValRows", "Regex": "NumValRows: ([0-9.]+)"},
+                {"Name": "R2", "Regex": "R2: ([0-9.]+)"},
+                {"Name": "NumRows", "Regex": "NumRows: ([0-9]+)"},
             ]
         else:
             # We need to get creative with the Classification Metrics

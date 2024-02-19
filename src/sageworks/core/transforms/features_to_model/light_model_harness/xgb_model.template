@@ -1,5 +1,4 @@
 # Imports for XGB Model
-from pprint import pprint
 import xgboost as xgb
 import awswrangler as wr
 
@@ -219,8 +218,8 @@ if __name__ == "__main__":
         r2 = r2_score(df_val[target], preds)
         print(f"RMSE: {rmse:.3f}")
         print(f"MAE: {mae:.3f}")
-        print(f"R2 Score: {r2:.3f}")
-        print(f"NumValRows: {len(df_val)}")
+        print(f"R2: {r2:.3f}")
+        print(f"NumRows: {len(df_val)}")
 
     # Now save the model to the standard place/name
     xgb_model.save_model(os.path.join(args.model_dir, "xgb_model.json"))

@@ -400,11 +400,12 @@ class FeatureSetCore(Artifact):
         self.log.important(f"Creating default Training View {view_name}...")
 
         # Construct the CREATE VIEW query with a simple modulo operation for the 80/20 split
+        # using self.record_id as the stable identifier for row numbering
         create_view_query = f"""
         CREATE OR REPLACE VIEW {view_name} AS
         SELECT *, CASE
-            WHEN MOD(ROW_NUMBER() OVER (), 10) < 8 THEN 1  -- Assign roughly 80% to training
-            ELSE 0  -- Assign roughly 20% to hold-out
+            WHEN MOD(ROW_NUMBER() OVER (ORDER BY {self.record_id}), 10) < 8 THEN 1  -- Assign roughly 80% to training
+            ELSE 0  -- Assign roughly 20% to validation
         END AS training
         FROM {self.athena_table}
         """
