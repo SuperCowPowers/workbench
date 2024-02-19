@@ -592,7 +592,7 @@ class EndpointCore(Artifact):
             "R2": round(r2, 3),
             "MAPE": round(mape, 3),
             "MedAE": round(medae, 3),
-            "NumRows": len(prediction_df)
+            "NumRows": len(prediction_df),
         }
         return pd.DataFrame.from_records([metrics])
 
