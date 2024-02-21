@@ -9,6 +9,7 @@ from io import StringIO
 import awswrangler as wr
 from typing import Union
 import shap
+import joblib
 
 # Model Performance Scores
 from sklearn.metrics import (
@@ -406,7 +407,7 @@ class EndpointCore(Artifact):
         """Return the type of model used in this Endpoint"""
         return self.details().get("model_type", "unknown")
 
-    def auto_inference(self, capture: bool = False):
+    def auto_inference(self, capture: bool = False) -> pd.DataFrame:
         """Run inference on the endpoint using FeatureSet data
 
         Args:
@@ -417,14 +418,15 @@ class EndpointCore(Artifact):
         from sageworks.utils.endpoint_utils import fs_evaluation_data
 
         eval_data_df = fs_evaluation_data(self)
-        return self.inference(eval_data_df, capture)
+        capture_uuid = "featureset_20" if capture else None
+        return self.inference(eval_data_df, capture_uuid)
 
-    def inference(self, eval_df: pd.DataFrame, capture: bool = False) -> pd.DataFrame:
+    def inference(self, eval_df: pd.DataFrame, capture_uuid: str = None) -> pd.DataFrame:
         """Run inference and compute performance metrics with optional capture
 
         Args:
             eval_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
-            capture (bool, optional): Capture the inference results and metrics (default=False)
+            capture_uuid (str, optional): UUID of the inference capture (default=None)
 
         Returns:
             pd.DataFrame: DataFrame with the inference results
@@ -453,55 +455,68 @@ class EndpointCore(Artifact):
         print(metrics.head())
 
         # Capture the inference results and metrics
-        if capture:
-            self._capture_inference_results(prediction_df, target_column, metrics, "Inference Results")
+        if capture_uuid is not None:
+            description = capture_uuid.replace("_", " ").title()
+            self._capture_inference_results(capture_uuid, prediction_df, target_column, metrics, description)
 
         # Return the prediction DataFrame
         return prediction_df
 
     def _capture_inference_results(
-        self, pred_results_df: pd.DataFrame, target_column: str, metrics: pd.DataFrame, description: str
+        self,
+        capture_uuid: str,
+        pred_results_df: pd.DataFrame,
+        target_column: str,
+        metrics: pd.DataFrame,
+        description: str,
     ):
         """Internal: Capture the inference results and metrics to S3
 
         Args:
+            capture_uuid (str): UUID of the inference capture
             pred_results_df (pd.DataFrame): DataFrame with the prediction results
             target_column (str): Name of the target column
             metrics (pd.DataFrame): DataFrame with the performance metrics
             description (str): Description of the inference results
         """
 
+        # Compute a dataframe hash
+        data_hash = joblib.hash(pred_results_df)
+
         # Metadata for the model inference
         inference_meta = {
-            "test_data": "auto",
-            "test_data_hash": "123",
-            "test_rows": len(pred_results_df),
+            "name": capture_uuid,
+            "data_hash": data_hash,
+            "num_rows": len(pred_results_df),
             "description": description,
         }
+
+        # Create the S3 Path for the Inference Capture
+        inference_capture_path = f"{self.endpoint_inference_path}/{capture_uuid}"
 
         # Write the metadata dictionary, and metrics to our S3 Model Inference Folder
         wr.s3.to_json(
             pd.DataFrame([inference_meta]),
-            f"{self.endpoint_inference_path}/inference_meta.json",
+            f"{inference_capture_path}/inference_meta.json",
             index=False,
         )
-        self.log.debug(f"Writing metrics to {self.endpoint_inference_path}/inference_metrics.csv")
-        wr.s3.to_csv(metrics, f"{self.endpoint_inference_path}/inference_metrics.csv", index=False)
+        self.log.debug(f"Writing metrics to {inference_capture_path}/inference_metrics.csv")
+        wr.s3.to_csv(metrics, f"{inference_capture_path}/inference_metrics.csv", index=False)
 
         # Write the predictions to our S3 Model Inference Folder (just the target and prediction columns)
-        self.log.debug(f"Writing predictions to {self.endpoint_inference_path}/inference_predictions.csv")
+        self.log.debug(f"Writing predictions to {inference_capture_path}/inference_predictions.csv")
         output_columns = [target_column, "prediction"]
         output_columns += [col for col in pred_results_df.columns if col.endswith("_proba")]
         subset_df = pred_results_df[output_columns]
-        wr.s3.to_csv(subset_df, f"{self.endpoint_inference_path}/inference_predictions.csv", index=False)
+        wr.s3.to_csv(subset_df, f"{inference_capture_path}/inference_predictions.csv", index=False)
 
         # CLASSIFIER: Write the confusion matrix to our S3 Model Inference Folder
         model_type = self.model_type()
         if model_type == ModelType.CLASSIFIER.value:
             conf_mtx = self.confusion_matrix(target_column, pred_results_df)
-            self.log.debug(f"Writing confusion matrix to {self.endpoint_inference_path}/inference_cm.csv")
+            self.log.debug(f"Writing confusion matrix to {inference_capture_path}/inference_cm.csv")
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
-            wr.s3.to_csv(conf_mtx, f"{self.endpoint_inference_path}/inference_cm.csv", index=True)
+            wr.s3.to_csv(conf_mtx, f"{inference_capture_path}/inference_cm.csv", index=True)
 
         #
         # Generate SHAP values for our Prediction Dataframe
@@ -524,7 +539,7 @@ class EndpointCore(Artifact):
                 df_shap = pd.DataFrame(class_shap_vals, columns=X_pred.columns)
 
                 # Write shap vals to S3 Model Inference Folder
-                shap_file_path = f"{self.endpoint_inference_path}/inference_shap_values_class_{i}.csv"
+                shap_file_path = f"{inference_capture_path}/inference_shap_values_class_{i}.csv"
                 self.log.debug(f"Writing SHAP values to {shap_file_path}")
                 wr.s3.to_csv(df_shap, shap_file_path, index=False)
 
@@ -534,13 +549,13 @@ class EndpointCore(Artifact):
             df_shap = pd.DataFrame(shap_vals, columns=X_pred.columns)
 
             # Write shap vals to S3 Model Inference Folder
-            self.log.debug(f"Writing SHAP values to {self.endpoint_inference_path}/inference_shap_values.csv")
-            wr.s3.to_csv(df_shap, f"{self.endpoint_inference_path}/inference_shap_values.csv", index=False)
+            self.log.debug(f"Writing SHAP values to {inference_capture_path}/inference_shap_values.csv")
+            wr.s3.to_csv(df_shap, f"{inference_capture_path}/inference_shap_values.csv", index=False)
 
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
         model = ModelCore(self.model_name)
-        model._pull_inference_metrics()
+        model._pull_inference_metrics(capture_uuid)
         model.details(recompute=True)
 
         # Recompute the details so that inference model metrics are updated
@@ -700,8 +715,10 @@ class EndpointCore(Artifact):
 
         # Delete any inference, data_capture or monitoring artifacts
         for s3_path in [self.endpoint_inference_path, self.endpoint_data_capture_path, self.endpoint_monitoring_path]:
-            self.log.info(f"Deleting S3 Path {s3_path}...")
-            wr.s3.delete_objects(s3_path, boto3_session=self.boto_session)
+            objects = wr.s3.list_objects(s3_path, boto3_session=self.boto_session)
+            for obj in objects:
+                self.log.info(f"Deleting S3 Object {obj}...")
+            wr.s3.delete_objects(objects, boto3_session=self.boto_session)
 
         # Now delete any data in the Cache
         for key in self.data_storage.list_subkeys(f"endpoint:{self.uuid}"):
@@ -771,18 +788,18 @@ if __name__ == "__main__":
 
     # Run Auto Inference on the Endpoint (uses the FeatureSet)
     print("Running Auto Inference...")
-    my_endpoint.auto_inference(capture=False)
+    my_endpoint.auto_inference()
 
     # Run Inference where we provide the data
     # Note: This dataframe could be from a FeatureSet or any other source
     print("Running Inference...")
     eval_df = fs_evaluation_data(my_endpoint)
-    pred_results = my_endpoint.inference(eval_df, capture=False)
+    pred_results = my_endpoint.inference(eval_df)
 
     # Now set capture=True to save inference results and metrics
     eval_df = fs_evaluation_data(my_endpoint)
-    pred_results = my_endpoint.inference(eval_df, capture=True)
+    pred_results = my_endpoint.inference(eval_df, capture_uuid="holdout_xyz")
 
     # Run Inference and metrics for a Classification Endpoint
     class_endpoint = EndpointCore("wine-classification-end")
-    class_endpoint.auto_inference(capture=True)
+    class_endpoint.auto_inference()

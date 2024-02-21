@@ -146,31 +146,34 @@ class ModelCore(Artifact):
             model_data=self.model_package_arn(), sagemaker_session=self.sm_session, image_uri=self.model_image()
         )
 
-    def model_metrics(self, specific_run: str = "latest") -> Union[pd.DataFrame, None]:
+    def model_metrics(self, capture_uuid: str = None) -> Union[pd.DataFrame, None]:
         """Retrieve the performance metrics for this model
 
         Args:
-            specific_run (str, optional): Can be "latest", "inference", "training" or name of a specific run
+            capture_uuid (str, optional): Specific capture_uuid or "training" (default: None)
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics
+
+        Note:
+            If a capture_uuid isn't specified this will try to return something reasonable
         """
-        # Grab the metrics from the SageWorks Metadata
-        if specific_run == "latest":
-            metrics_df = self.model_metrics("inference")
+        # If there's no capture_uuid try to get the auto capture 'featureset_20' or the training
+        if capture_uuid is None:
+            metrics_df = self.model_metrics("featureset_20")
             return metrics_df if metrics_df is not None else self.model_metrics("training")
 
         # Grab the inference metrics (could return None)
-        if specific_run == "inference":
+        if capture_uuid == "featureset_20":
             metric = self.sageworks_meta().get("sageworks_inference_metrics")
             return pd.DataFrame.from_dict(metric) if metric else None
 
         # Grab the training metrics (could return None)
-        if specific_run == "training":
+        if capture_uuid == "training":
             metric = self.sageworks_meta().get("sageworks_training_metrics")
             return pd.DataFrame.from_dict(metric) if metric else None
 
         else:
-            self.log.warning(f"Specific Run {specific_run} not found for {self.model_name}!")
+            self.log.warning(f"Specific capture {capture_uuid} not found for {self.model_name}!")
             return None
 
     def confusion_matrix(self) -> Union[pd.DataFrame, None]:
@@ -186,24 +189,15 @@ class ModelCore(Artifact):
         return pd.DataFrame.from_dict(cm) if cm else None
 
     def get_predictions(self) -> Union[pd.DataFrame, None]:
-        """Retrieve the captured predictions for this model
+        """Retrieve the confusion_matrix for this model
         Returns:
-            pd.DataFrame: DataFrame of the Captured Predictions (might be None)
+            pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
-
-        # If an Endpoint, based on this model, has run inference, then grab those
-        s3_path = f"{self.endpoint_inference_path}/inference_predictions.csv"
-        df = pull_s3_data(s3_path)
-        if df is not None:
-            self.log.important(f"Grabbing Inference Predictions for {self.model_name}...")
-            return df
-
-        # Otherwise, grab the predictions from the training job
-        else:
-            self.log.important(f"Grabbing Validation Predictions for {self.model_name}...")
-            s3_path = f"{self.model_training_path}/validation_predictions.csv"
-            df = pull_s3_data(s3_path)
-            return df
+        # Grab the metrics from the SageWorks Metadata (try inference first, then training)
+        inference_preds = self.inference_predictions()
+        if inference_preds is not None:
+            return inference_preds
+        return self.validation_predictions()
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -366,7 +360,7 @@ class ModelCore(Artifact):
             details["predictions"] = self.get_predictions()
 
         # Grab the inference metadata
-        details["inference_meta"] = self._pull_inference_metadata()
+        details["inference_meta"] = self.inference_metadata()
 
         # Cache the details
         self.data_storage.set(storage_key, details)
@@ -554,22 +548,28 @@ class ModelCore(Artifact):
                 {"sageworks_training_metrics": metrics_df.to_dict(), "sageworks_training_cm": cm_df.to_dict()}
             )
 
-    def _pull_inference_metrics(self):
+    def _pull_inference_metrics(self, capture_uuid: str = "featureset_20"):
         """Internal: Retrieve the inference model metrics for this model
                      and push the data into the SageWorks Metadata
 
+        Args:
+            capture_uuid (str, optional): A specific capture_uuid (default: "featureset_20")
         Notes:
             This may or may not exist based on whether an Endpoint ran Inference
         """
-        s3_path = f"{self.endpoint_inference_path}/inference_metrics.csv"
+        s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_metrics.csv"
         inference_metrics = pull_s3_data(s3_path)
 
         # Store data into the SageWorks Metadata
         metrics_storage = None if inference_metrics is None else inference_metrics.to_dict("records")
         self.upsert_sageworks_meta({"sageworks_inference_metrics": metrics_storage})
 
-    def _pull_inference_cm(self) -> Union[pd.DataFrame, None]:
-        """Internal: Retrieve the inference Confusion Matrix for this model
+    def _pull_inference_cm(self, capture_uuid: str = "featureset_20"):
+        """Internal: Pull the inference Confusion Matrix for this model
+                     and push the data into the SageWorks Metadata
+
+        Args:
+            capture_uuid (str, optional): A specific capture_uuid (default: "featureset_20")
 
         Returns:
             pd.DataFrame: DataFrame of the inference Confusion Matrix (might be None)
@@ -577,15 +577,19 @@ class ModelCore(Artifact):
         Notes:
             This may or may not exist based on whether an Endpoint ran Inference
         """
-        s3_path = f"{self.endpoint_inference_path}/inference_cm.csv"
+        s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_cm.csv"
         inference_cm = pull_s3_data(s3_path, embedded_index=True)
 
         # Store data into the SageWorks Metadata
         cm_storage = None if inference_cm is None else inference_cm.to_dict("records")
         self.upsert_sageworks_meta({"sageworks_inference_cm": cm_storage})
 
-    def _pull_inference_metadata(self) -> Union[pd.DataFrame, None]:
-        """Internal: Retrieve the inference metadata for this model
+    def inference_metadata(self, capture_uuid: str = "featureset_20") -> Union[pd.DataFrame, None]:
+        """Retrieve the inference metadata for this model
+
+        Args:
+            capture_uuid (str, optional): A specific capture_uuid (default: "featureset_20")
+
         Returns:
             dict: Dictionary of the inference metadata (might be None)
         Notes:
@@ -597,11 +601,35 @@ class ModelCore(Artifact):
 
         # Pull the inference metadata
         try:
-            s3_path = f"{self.endpoint_inference_path}/inference_meta.json"
+            s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_meta.json"
             return wr.s3.read_json(s3_path)
         except NoFilesFound:
             self.log.info(f"Could not find model inference meta at {s3_path}...")
             return None
+
+    def inference_predictions(self, capture_uuid: str = "featureset_20") -> Union[pd.DataFrame, None]:
+        """Retrieve the captured prediction results for this model
+
+        Args:
+            capture_uuid (str, optional): Specific capture_uuid (default: featureset_20)
+
+        Returns:
+            pd.DataFrame: DataFrame of the Captured Predictions (might be None)
+        """
+        self.log.important(f"Grabbing {capture_uuid} predictions for {self.model_name}...")
+        s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_predictions.csv"
+        return pull_s3_data(s3_path)
+
+    def validation_predictions(self) -> Union[pd.DataFrame, None]:
+        """Internal: Retrieve the captured prediction results for this model
+
+        Returns:
+            pd.DataFrame: DataFrame of the Captured Validation Predictions (might be None)
+        """
+        self.log.important(f"Grabbing Validation Predictions for {self.model_name}...")
+        s3_path = f"{self.model_training_path}/validation_predictions.csv"
+        df = pull_s3_data(s3_path)
+        return df
 
     def _extract_training_job_name(self) -> Union[str, None]:
         """Internal: Extract the training job name from the ModelDataUrl"""
@@ -646,8 +674,11 @@ class ModelCore(Artifact):
 
         return metrics_df, cm_df
 
-    def shapley_values(self) -> Union[list[pd.DataFrame], pd.DataFrame, None]:
+    def shapley_values(self, capture_uuid: str = "featureset_20") -> Union[list[pd.DataFrame], pd.DataFrame, None]:
         """Retrieve the Shapely values for this model
+
+        Args:
+            capture_uuid (str, optional): Specific capture_uuid (default: featureset_20)
 
         Returns:
             pd.DataFrame: Dataframe of the shapley values for the prediction dataframe
@@ -660,17 +691,20 @@ class ModelCore(Artifact):
         if self.endpoint_inference_path is None:
             return None
 
+        # Construct the S3 path for the Shapley values
+        shapley_s3_path = f"{self.endpoint_inference_path}/{capture_uuid}"
+
         # Multiple CSV if classifier
         if self.model_type == ModelType.CLASSIFIER:
             # CSVs for shap values are indexed by prediction class
             # Because we don't know how many classes there are, we need to search through
             # a list of S3 objects in the parent folder
-            s3_paths = wr.s3.list_objects(self.endpoint_inference_path)
+            s3_paths = wr.s3.list_objects(shapley_s3_path)
             return [pull_s3_data(f) for f in s3_paths if "inference_shap_values" in f]
 
         # One CSV if regressor
         if self.model_type == ModelType.REGRESSOR:
-            s3_path = f"{self.endpoint_inference_path}/inference_shap_values.csv"
+            s3_path = f"{shapley_s3_path}/inference_shap_values.csv"
             return pull_s3_data(s3_path)
 
 
