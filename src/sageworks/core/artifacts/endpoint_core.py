@@ -480,8 +480,8 @@ class EndpointCore(Artifact):
             description (str): Description of the inference results
         """
 
-        # Compute a dataframe hash
-        data_hash = joblib.hash(pred_results_df)
+        # Compute a dataframe hash (just use the last 8)
+        data_hash = joblib.hash(pred_results_df)[:8]
 
         # Metadata for the model inference
         inference_meta = {

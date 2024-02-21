@@ -15,7 +15,7 @@ model_class = Model("wine-classification")
 # Test the Model Metrics
 def test_metrics():
     """Test the Model Metrics"""
-    # pprint(model_reg.model_meta())
+    pprint(model_reg.inference_metadata())
     pprint(model_reg.model_metrics())
     pprint(model_class.model_metrics())
 
@@ -32,7 +32,7 @@ def test_inference_predictions():
 
 def test_confusion_matrix():
     pprint(model_reg.confusion_matrix())
-    pprint(model_class.consufsion_matrix())
+    pprint(model_class.confusion_matrix())
 
 
 def test_shap_values():
