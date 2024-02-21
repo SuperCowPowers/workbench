@@ -1,5 +1,5 @@
 """Tests for the creation and comparison of Model Metrics"""
-
+import pytest
 from pprint import pprint
 
 # SageWorks Imports
@@ -82,6 +82,7 @@ def test_metrics_with_capture_uuid():
     pprint(metrics)
 
 
+@pytest.mark.long
 def test_auto_inference():
     # Run auto_inference (back track to FeatureSet)
     my_endpoint = Endpoint("abalone-regression-end")
@@ -94,8 +95,10 @@ def test_auto_inference():
     pprint(pred_results.head())
 
 
-def test_inference_with_capture_uuid(capture_uuid: str):
+@pytest.mark.long
+def test_inference_with_capture_uuid():
     # Run inference on the model
+    capture_uuid = "hold_out_123"
 
     # Grab a dataframe for inference
     my_features = FeatureSet("abalone_features")
@@ -135,7 +138,9 @@ if __name__ == "__main__":
     test_retrieval_with_capture_uuid()
     test_validation_predictions()
     test_inference_predictions()
+    test_confusion_matrix()
     test_shap_values()
+    test_metrics_with_capture_uuid()
 
     # These are longer tests (commented out for now)
     # test_auto_inference()
