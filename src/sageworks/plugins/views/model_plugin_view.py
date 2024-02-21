@@ -62,7 +62,7 @@ class ModelPluginView(View):
                 "Input": sageworks_meta.get("sageworks_input", "-"),
                 "Status": latest_model["ModelPackageStatus"],
                 "Description": latest_model.get("ModelPackageDescription", "-"),
-                "Metrics": self.get_model_metrics(latest_model),
+                "Metrics": self.get_performance_metrics(latest_model),
             }
             model_summary.append(summary)
 
@@ -70,7 +70,7 @@ class ModelPluginView(View):
         return pd.DataFrame(model_summary)
 
     @staticmethod
-    def get_model_metrics(latest_model) -> list[dict]:
+    def get_performance_metrics(latest_model) -> list[dict]:
         """Get the metrics for a single model
 
         Args:

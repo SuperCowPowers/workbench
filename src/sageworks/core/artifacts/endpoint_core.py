@@ -555,7 +555,7 @@ class EndpointCore(Artifact):
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
         model = ModelCore(self.model_name)
-        model._pull_inference_metrics(capture_uuid)
+        model._load_inference_metrics(capture_uuid)
         model.details(recompute=True)
 
         # Recompute the details so that inference model metrics are updated

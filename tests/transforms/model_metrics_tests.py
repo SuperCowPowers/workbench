@@ -13,38 +13,72 @@ model_class = Model("wine-classification")
 
 
 # Test the Model Metrics
-def test_metrics():
-    """Test the Model Metrics"""
+def test_list_inference_runs():
+    """Test the List Inference Runs"""
+    print("\n\n*** List Inference Runs ***")
+    pprint(model_reg.list_inference_runs())
+    pprint(model_class.list_inference_runs())
+
+
+def test_performance_metrics():
+    """Test the Model Performance Metrics"""
+    print("\n\n*** Performance Metrics ***")
     pprint(model_reg.inference_metadata())
-    pprint(model_reg.model_metrics())
-    pprint(model_class.model_metrics())
+    pprint(model_reg.performance_metrics())
+    pprint(model_class.performance_metrics())
+
+
+def test_retrieval_with_capture_uuid():
+    """Test the retrieval of the model metrics using capture UUID"""
+    capture_list = model_class.list_inference_runs()
+    for capture_uuid in capture_list:
+        print(f"\n\n*** Retrieval with Capture UUID ({capture_uuid}) ***")
+        pprint(model_class.inference_metadata(capture_uuid).head())
+        pprint(model_class.performance_metrics(capture_uuid).head())
+        pprint(model_class.inference_predictions(capture_uuid).head())
+        pprint(model_class.confusion_matrix(capture_uuid))
+        # Classifiers have a list of dataframes for shap values
+        shap_list = model_class.shapley_values(capture_uuid)
+        for i, df in enumerate(shap_list):
+            print(f"SHAP Values for Class {i}")
+            pprint(df.head())
 
 
 def test_validation_predictions():
-    pprint(model_reg.validation_predictions())
-    pprint(model_class.validation_predictions())
+    print("\n\n*** Validation Predictions ***")
+    pprint(model_reg.validation_predictions().head())
+    pprint(model_class.validation_predictions().head())
 
 
 def test_inference_predictions():
-    pprint(model_reg.inference_predictions())
-    pprint(model_class.inference_predictions())
+    print("\n\n*** Inference Predictions ***")
+    pprint(model_reg.inference_predictions().head())
+    pprint(model_class.inference_predictions().head())
 
 
 def test_confusion_matrix():
+    print("\n\n*** Confusion Matrix ***")
     pprint(model_reg.confusion_matrix())
     pprint(model_class.confusion_matrix())
 
 
 def test_shap_values():
-    pprint(model_reg.shapley_values())
-    pprint(model_class.shapley_values())
+    print("\n\n*** SHAP Values ***")
+    pprint(model_reg.shapley_values().head())
+
+    # Classifiers have a list of dataframes
+    shap_list = model_class.shapley_values()
+    for i, df in enumerate(shap_list):
+        print(f"SHAP Values for Class {i}")
+        pprint(df.head())
 
 
 def test_metrics_with_capture_uuid():
-    """Test the Model Metrics"""
-    metrics = model_reg.model_metrics("featureset_20")
+    """Test the Performance Metrics using a Capture UUID"""
+    metrics = model_reg.performance_metrics("featureset_20")
+    print("\n\n*** Performance Metrics with Capture UUID ***")
     pprint(metrics)
-    metrics = model_class.model_metrics("featureset_20")
+    metrics = model_class.performance_metrics("featureset_20")
     pprint(metrics)
 
 
@@ -52,6 +86,7 @@ def test_auto_inference():
     # Run auto_inference (back track to FeatureSet)
     my_endpoint = Endpoint("abalone-regression-end")
     pred_results = my_endpoint.auto_inference()
+    print("\n\n*** Auto Inference ***")
     pprint(pred_results.head())
 
     my_endpoint = Endpoint("wine-classification-end")
@@ -59,7 +94,7 @@ def test_auto_inference():
     pprint(pred_results.head())
 
 
-def test_inference():
+def test_inference_with_capture_uuid(capture_uuid: str):
     # Run inference on the model
 
     # Grab a dataframe for inference
@@ -69,7 +104,7 @@ def test_inference():
 
     # Run inference
     my_endpoint = Endpoint("abalone-regression-end")
-    pred_results = my_endpoint.inference(df)
+    pred_results = my_endpoint.inference(df, capture_uuid)
     pprint(pred_results.head())
 
 
@@ -95,9 +130,13 @@ if __name__ == "__main__":
     # create_model_and_endpoint()
 
     # Run the tests
-    test_metrics()
+    test_list_inference_runs()
+    test_performance_metrics()
+    test_retrieval_with_capture_uuid()
     test_validation_predictions()
     test_inference_predictions()
     test_shap_values()
-    test_auto_inference()
-    test_inference()
+
+    # These are longer tests (commented out for now)
+    # test_auto_inference()
+    # test_inference_with_capture_uuid("hold_out_123")

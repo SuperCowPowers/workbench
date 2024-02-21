@@ -9,6 +9,7 @@ import botocore
 
 import pandas as pd
 import awswrangler as wr
+from urllib.parse import urlparse
 from awswrangler.exceptions import NoFilesFound
 from sagemaker import TrainingJobAnalytics
 from sagemaker.model import Model as SagemakerModel
@@ -130,8 +131,8 @@ class ModelCore(Artifact):
         else:
             self.remove_health_tag("model_type_unknown")
 
-        # Model Metrics
-        if self.model_metrics() is None:
+        # Model Performance Metrics
+        if self.performance_metrics() is None:
             health_issues.append("metrics_needed")
         else:
             self.remove_health_tag("metrics_needed")
@@ -139,6 +140,7 @@ class ModelCore(Artifact):
 
     def latest_model_object(self) -> SagemakerModel:
         """Return the latest AWS Sagemaker Model object for this SageWorks Model
+
         Returns:
            sagemaker.model.Model: AWS Sagemaker Model object
         """
@@ -146,21 +148,32 @@ class ModelCore(Artifact):
             model_data=self.model_package_arn(), sagemaker_session=self.sm_session, image_uri=self.model_image()
         )
 
-    def model_metrics(self, capture_uuid: str = None) -> Union[pd.DataFrame, None]:
+    def list_inference_runs(self) -> list[str]:
+        """List the inference runs for this model
+
+        Returns:
+            list[str]: List of inference run UUIDs
+        """
+        if self.endpoint_inference_path is None:
+            return []
+        directories = wr.s3.list_directories(path=self.endpoint_inference_path + "/")
+        return [urlparse(directory).path.split("/")[-2] for directory in directories]
+
+    def performance_metrics(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
         """Retrieve the performance metrics for this model
 
         Args:
-            capture_uuid (str, optional): Specific capture_uuid or "training" (default: None)
+            capture_uuid (str, optional): Specific capture_uuid or "training" (default: "latest")
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics
 
         Note:
             If a capture_uuid isn't specified this will try to return something reasonable
         """
-        # If there's no capture_uuid try to get the auto capture 'featureset_20' or the training
-        if capture_uuid is None:
-            metrics_df = self.model_metrics("featureset_20")
-            return metrics_df if metrics_df is not None else self.model_metrics("training")
+        # Try to get the auto capture 'featureset_20' or the training
+        if capture_uuid == "latest":
+            metrics_df = self.performance_metrics("featureset_20")
+            return metrics_df if metrics_df is not None else self.performance_metrics("training")
 
         # Grab the inference metrics (could return None)
         if capture_uuid == "featureset_20":
@@ -172,21 +185,39 @@ class ModelCore(Artifact):
             metric = self.sageworks_meta().get("sageworks_training_metrics")
             return pd.DataFrame.from_dict(metric) if metric else None
 
-        else:
-            self.log.warning(f"Specific capture {capture_uuid} not found for {self.model_name}!")
-            return None
+        else:  # Specific capture_uuid
+            s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_metrics.csv"
+            metrics = pull_s3_data(s3_path, embedded_index=True)
+            if metrics is not None:
+                return metrics
+            else:
+                self.log.warning(f"Performance metrics {capture_uuid} not found for {self.model_name}!")
+                return None
 
-    def confusion_matrix(self) -> Union[pd.DataFrame, None]:
+    def confusion_matrix(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
         """Retrieve the confusion_matrix for this model
+
+        Args:
+            capture_uuid (str, optional): Specific capture_uuid or "training" (default: "latest")
         Returns:
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
         # Grab the metrics from the SageWorks Metadata (try inference first, then training)
-        cm = self.sageworks_meta().get("sageworks_inference_cm")
-        if cm is not None:
-            return cm
-        cm = self.sageworks_meta().get("sageworks_training_cm")
-        return pd.DataFrame.from_dict(cm) if cm else None
+        if capture_uuid == "latest":
+            cm = self.sageworks_meta().get("sageworks_inference_cm")
+            if cm is not None:
+                return cm
+            cm = self.sageworks_meta().get("sageworks_training_cm")
+            return pd.DataFrame.from_dict(cm) if cm else None
+
+        else:  # Specific capture_uuid
+            s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_cm.csv"
+            cm = pull_s3_data(s3_path, embedded_index=True)
+            if cm is not None:
+                return cm
+            else:
+                self.log.warning(f"Confusion Matrix {capture_uuid} not found for {self.model_name}!")
+                return None
 
     def get_predictions(self) -> Union[pd.DataFrame, None]:
         """Retrieve the confusion_matrix for this model
@@ -351,7 +382,7 @@ class ModelCore(Artifact):
         details["transform_types"] = inference_spec["SupportedTransformInstanceTypes"]
         details["content_types"] = inference_spec["SupportedContentTypes"]
         details["response_types"] = inference_spec["SupportedResponseMIMETypes"]
-        details["model_metrics"] = self.model_metrics()
+        details["model_metrics"] = self.performance_metrics()
         if self.model_type == ModelType.CLASSIFIER:
             details["confusion_matrix"] = self.confusion_matrix()
             details["predictions"] = None
@@ -443,10 +474,10 @@ class ModelCore(Artifact):
                 else:
                     self.set_owner(owner)
 
-        # Pull the training metrics and inference metrics
-        self._pull_training_metrics()
-        self._pull_inference_metrics()
-        self._pull_inference_cm()
+        # Load the training metrics and inference metrics
+        self._load_training_metrics()
+        self._load_inference_metrics()
+        self._load_inference_cm()
 
         # Remove the needs_onboard tag
         self.remove_health_tag("needs_onboard")
@@ -507,9 +538,9 @@ class ModelCore(Artifact):
             self.log.warning(f"Could not determine model type for {self.model_name}!")
             return ModelType.UNKNOWN
 
-    def _pull_training_metrics(self):
+    def _load_training_metrics(self):
         """Internal: Retrieve the training metrics and Confusion Matrix for this model
-                     and push the data into the SageWorks Metadata
+                     and load the data into the SageWorks Metadata
 
         Notes:
             This may or may not exist based on whether we have access to TrainingJobAnalytics
@@ -548,9 +579,9 @@ class ModelCore(Artifact):
                 {"sageworks_training_metrics": metrics_df.to_dict(), "sageworks_training_cm": cm_df.to_dict()}
             )
 
-    def _pull_inference_metrics(self, capture_uuid: str = "featureset_20"):
+    def _load_inference_metrics(self, capture_uuid: str = "featureset_20"):
         """Internal: Retrieve the inference model metrics for this model
-                     and push the data into the SageWorks Metadata
+                     and load the data into the SageWorks Metadata
 
         Args:
             capture_uuid (str, optional): A specific capture_uuid (default: "featureset_20")
@@ -564,9 +595,9 @@ class ModelCore(Artifact):
         metrics_storage = None if inference_metrics is None else inference_metrics.to_dict("records")
         self.upsert_sageworks_meta({"sageworks_inference_metrics": metrics_storage})
 
-    def _pull_inference_cm(self, capture_uuid: str = "featureset_20"):
+    def _load_inference_cm(self, capture_uuid: str = "featureset_20"):
         """Internal: Pull the inference Confusion Matrix for this model
-                     and push the data into the SageWorks Metadata
+                     and load the data into the SageWorks Metadata
 
         Args:
             capture_uuid (str, optional): A specific capture_uuid (default: "featureset_20")
@@ -738,9 +769,12 @@ if __name__ == "__main__":
     # Get training job name
     print(f"Training Job: {my_model.training_job_name}")
 
+    # List any inference runs
+    print(f"Inference Runs: {my_model.list_inference_runs()}")
+
     # Get any captured metrics from the training job
     print("Model Metrics:")
-    print(my_model.model_metrics())
+    print(my_model.performance_metrics())
 
     print("Confusion Matrix: (might be None)")
     print(my_model.confusion_matrix())

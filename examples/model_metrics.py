@@ -14,5 +14,5 @@ else:
     print(health_issues)
 
 # Get the model metrics and regression predictions
-print(model.model_metrics())
+print(model.performance_metrics())
 print(model.get_predictions())
