@@ -9,7 +9,7 @@ from .layout import models_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, model_markdown, model_metrics
+from sageworks.web_components import table, model_markdown, model_plot
 from sageworks.web_components.plugin_interface import PluginType
 from sageworks.views.model_web_view import ModelWebView
 from sageworks.utils.plugin_manager import PluginManager
@@ -36,13 +36,13 @@ models_table = table.Table().create_component(
 model_details = model_markdown.ModelMarkdown().create_component("model_details")
 
 # Create a Model Metrics component to display the model metrics
-model_metrics = model_metrics.ModelMetrics().create_component("model_metrics")
+model_plot = model_plot.ModelPlot().create_component("model_plot")
 
 # Capture our components in a dictionary to send off to the layout
 components = {
     "models_table": models_table,
     "model_details": model_details,
-    "model_metrics": model_metrics,
+    "model_plot": model_plot,
 }
 
 # Load any web components plugins of type 'model'

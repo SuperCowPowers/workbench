@@ -79,9 +79,9 @@ class ModelMarkdown(ComponentInterface):
             description = " - "
         else:
             inference_meta = meta_df.to_dict(orient="records")[0]
-            test_data = inference_meta.get("test_data", " - ")
-            test_data_hash = inference_meta.get("test_data_hash", " - ")
-            test_rows = inference_meta.get("test_rows", " - ")
+            test_data = inference_meta.get("name", " - ")
+            test_data_hash = inference_meta.get("data_hash", " - ")
+            test_rows = inference_meta.get("num_rows", " - ")
             description = inference_meta.get("description", " - ")
 
         # Add the markdown for the model test metrics

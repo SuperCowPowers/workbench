@@ -50,7 +50,7 @@ def endpoints_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                html.H3("Endpoint Metrics", id="model_metrics_header"),
+                                html.H3("Endpoint Metrics", id="endpoint_metrics_header"),
                                 style={"padding": "30px 0px 0px 0px"},
                             ),
                             dbc.Row(

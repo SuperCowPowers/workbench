@@ -8,7 +8,7 @@ import dash_bootstrap_components as dbc
 def models_layout(
     models_table: dash_table.DataTable,
     model_details: dcc.Markdown,
-    model_metrics: dcc.Graph,
+    model_plot: dcc.Graph,
     **kwargs: Any,
 ) -> html.Div:
     # Generate rows for each plugin
@@ -46,15 +46,15 @@ def models_layout(
                         ],
                         width=4,
                     ),
-                    # Column 2: Model Metrics and Plugins
+                    # Column 2: Model Plot and Plugins
                     dbc.Col(
                         [
                             dbc.Row(
-                                html.H3("Model Testing", id="model_metrics_header"),
+                                html.H3("Model Plot", id="model_plot_header"),
                                 style={"padding": "30px 0px 10px 0px"},
                             ),
                             dbc.Row(
-                                model_metrics,
+                                model_plot,
                                 style={"padding": "30px 0px 10px 0px"},
                             ),
                             dbc.Row(

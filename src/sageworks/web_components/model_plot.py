@@ -1,4 +1,6 @@
-"""A Model Metrics component that switches display based on model type"""
+"""A Model Plot component that switches display based on model type. The plot
+   will be a confusion matrix for a classifier and a regression plot for a regressor
+"""
 
 from dash import dcc
 import plotly.graph_objects as go
@@ -9,7 +11,7 @@ from sageworks.web_components.confusion_matrix import ConfusionMatrix
 from sageworks.web_components.regression_plot import RegressionPlot
 
 
-class ModelMetrics(ComponentInterface):
+class ModelPlot(ComponentInterface):
     """Model Metrics Components"""
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -17,7 +19,7 @@ class ModelMetrics(ComponentInterface):
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
     def generate_component_figure(self, model_details: dict) -> go.Figure:
-        """Create a Model Metrics Figure for the numeric columns in the dataframe
+        """Create a Model Plot Figure based on the model type.
         Args:
             model_details (dict): The model details dictionary
         Returns:
@@ -40,17 +42,16 @@ class ModelMetrics(ComponentInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
-    from sageworks.core.artifacts.model_core import ModelCore
+    from sageworks.api.model import Model
 
-    # m = ModelCore("abalone-regression")
-    m = ModelCore("wine-classification")
+    m = Model("wine-classification")
     model_details = m.details()
 
-    # Instantiate the ConfusionMatrix class
-    reg_plot = ModelMetrics()
+    # Instantiate the ModelPlot class
+    model_plot = ModelPlot()
 
     # Generate the figure
-    fig = reg_plot.generate_component_figure(model_details)
+    fig = model_plot.generate_component_figure(model_details)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

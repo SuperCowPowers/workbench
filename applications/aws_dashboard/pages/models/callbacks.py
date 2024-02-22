@@ -5,7 +5,7 @@ from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.model_web_view import ModelWebView
-from sageworks.web_components import table, model_markdown, model_metrics
+from sageworks.web_components import table, model_markdown, model_plot
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 from sageworks.api.model import Model
 
@@ -55,7 +55,7 @@ def update_model_detail_components(app: Dash, model_web_view: ModelWebView):
         [
             Output("model_details_header", "children"),
             Output("model_details", "children"),
-            Output("model_metrics", "figure"),
+            Output("model_plot", "figure"),
         ],
         Input("models_table", "derived_viewport_selected_row_ids"),
         State("models_table", "data"),
@@ -78,11 +78,11 @@ def update_model_detail_components(app: Dash, model_web_view: ModelWebView):
         model_details = model_web_view.model_details(model_uuid)
         model_details_markdown = model_markdown.ModelMarkdown().generate_markdown(model_details)
 
-        # Model Metrics
-        model_metrics_figure = model_metrics.ModelMetrics().generate_component_figure(model_details)
+        # Model Plot (Confusion Matrix or Regression Plot)
+        model_plot_figure = model_plot.ModelPlot().generate_component_figure(model_details)
 
         # Return the details/markdown for these data details
-        return [header, model_details_markdown, model_metrics_figure]
+        return [header, model_details_markdown, model_plot_figure]
 
 
 # Updates the plugin component when a model row is selected
