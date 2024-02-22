@@ -34,10 +34,10 @@ def test_retrieval_with_capture_uuid():
     capture_list = model_class.list_inference_runs()
     for capture_uuid in capture_list:
         print(f"\n\n*** Retrieval with Capture UUID ({capture_uuid}) ***")
-        pprint(model_class.inference_metadata(capture_uuid).head())
-        pprint(model_class.performance_metrics(capture_uuid).head())
-        pprint(model_class.inference_predictions(capture_uuid).head())
-        pprint(model_class.confusion_matrix(capture_uuid))
+        pprint(model_class.inference_metadata(capture_uuid).head())  # Needed
+        pprint(model_class.performance_metrics(capture_uuid).head())  # Might be deprecated
+        pprint(model_class.inference_predictions(capture_uuid).head())  # Needed
+        pprint(model_class.confusion_matrix(capture_uuid))  # Might be deprecated
         # Classifiers have a list of dataframes for shap values
         shap_list = model_class.shapley_values(capture_uuid)
         for i, df in enumerate(shap_list):
@@ -76,10 +76,10 @@ def test_shap_values():
 
 def test_metrics_with_capture_uuid():
     """Test the Performance Metrics using a Capture UUID"""
-    metrics = model_reg.performance_metrics("featureset_20")
+    metrics = model_reg.performance_metrics("training_holdout")
     print("\n\n*** Performance Metrics with Capture UUID ***")
     pprint(metrics)
-    metrics = model_class.performance_metrics("featureset_20")
+    metrics = model_class.performance_metrics("training_holdout")
     pprint(metrics)
 
 
@@ -99,7 +99,7 @@ def test_auto_inference():
 @pytest.mark.long
 def test_inference_with_capture_uuid():
     # Run inference on the model
-    capture_uuid = "hold_out_123"
+    capture_uuid = "my_holdout_test"
 
     # Grab a dataframe for inference
     my_features = FeatureSet("abalone_features")
@@ -145,4 +145,4 @@ if __name__ == "__main__":
 
     # These are longer tests (commented out for now)
     # test_auto_inference()
-    # test_inference_with_capture_uuid("hold_out_123")
+    # test_inference_with_capture_uuid("my_holdout_test")

@@ -418,7 +418,7 @@ class EndpointCore(Artifact):
         from sageworks.utils.endpoint_utils import fs_evaluation_data
 
         eval_data_df = fs_evaluation_data(self)
-        capture_uuid = "featureset_20" if capture else None
+        capture_uuid = "training_holdout" if capture else None
         return self.inference(eval_data_df, capture_uuid)
 
     def inference(self, eval_df: pd.DataFrame, capture_uuid: str = None) -> pd.DataFrame:
