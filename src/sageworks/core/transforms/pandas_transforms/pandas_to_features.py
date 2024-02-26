@@ -262,11 +262,14 @@ class PandasToFeatures(Transform):
         self.output_df = self.convert_column_types(self.output_df)
 
         # Convert columns names to lowercase, Athena will not work with uppercase column names
+        # LOWERCASE TESTING
+        """
         if str(self.output_df.columns) != str(self.output_df.columns.str.lower()):
             for c in self.output_df.columns:
                 if c != c.lower():
                     self.log.important(f"Column name {c} converted to lowercase: {c.lower()}")
             self.output_df.columns = self.output_df.columns.str.lower()
+        """
 
     def create_feature_group(self):
         """Create a Feature Group, load our Feature Definitions, and wait for it to be ready"""
