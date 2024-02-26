@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 
 # Feature Spider Class
 class FeatureSpider:
-    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target_column: str, neighbors: int = 10):
+    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target_column: str, neighbors: int = 5):
         """FeatureSpider: A Spider for data/feature investigation and QA
 
         Args:
@@ -17,7 +17,7 @@ class FeatureSpider:
              features: List of feature column names
              id_column: Name of the ID column
              target_column: Name of the target column
-            neighbors: Number of neighbors to use in the KNN model (default: 10)
+             neighbors: Number of neighbors to use in the KNN model (default: 5)
         """
         # Check for expected columns
         for column in [id_column, target_column] + features:
