@@ -12,12 +12,18 @@ from sageworks.utils import pandas_utils
 # Third Party Imports
 try:
     from rdkit import Chem
-
-    # from rdkit.Chem import Descriptors
+    from rdkit.Chem import Descriptors
     from rdkit.ML.Descriptors import MoleculeDescriptors
     from rdkit import RDLogger
 except ImportError:
     print("RDKit Python module not found! pip install rdkit")
+    sys.exit(0)
+
+try:
+    from mordred import Calculator
+    from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
+except ImportError:
+    print("Mordred Python module not found! pip install mordred")
     sys.exit(0)
 
 
@@ -72,77 +78,50 @@ class RDKitDescriptors(DataToFeaturesLight):
         molecules = [Chem.MolFromSmiles(smile) for smile in process_df["smiles"]]
 
         # Now get all the RDKIT Descriptors
-        # all_descriptors = [x[0] for x in Descriptors._descList]
+        all_descriptors = [x[0] for x in Descriptors._descList]
 
         # There's an overflow issue that happens with the IPC descriptor, so we'll remove it
         # See: https://github.com/rdkit/rdkit/issues/1527
-        # if "Ipc" in all_descriptors:
-        #    all_descriptors.remove("Ipc")
+        if "Ipc" in all_descriptors:
+            all_descriptors.remove("Ipc")
 
-        # Get the descriptors that are most useful for Solubility
-        best_descriptors = [
-            "MolLogP",
-            "MolWt",
-            "TPSA",
-            "NumHDonors",
-            "NumHAcceptors",
-            "NumRotatableBonds",
-            "NumAromaticRings",
-            "NumSaturatedRings",
-            "NumAliphaticRings",
-            "NumAromaticCarbocycles",
-        ]
-        best_20_descriptors = best_descriptors + [
-            "HeavyAtomCount",
-            "RingCount",
-            "Chi0",
-            "Chi1",
-            "Kappa1",
-            "Kappa2",
-            "Kappa3",
-            "LabuteASA",
-            "FractionCSP3",
-            "HallKierAlpha",
-        ]
-        best_30_descriptors = best_20_descriptors + [
-            "SMR_VSA1",
-            "SlogP_VSA1",
-            "EState_VSA1",
-            "VSA_EState1",
-            "PEOE_VSA1",
-            "NumValenceElectrons",
-            "NumRadicalElectrons",
-            "MaxPartialCharge",
-            "MinPartialCharge",
-            "MaxAbsPartialCharge",
-        ]
-        best_40_descriptors = best_30_descriptors + [
-            "MolMR",
-            "ExactMolWt",
-            "NOCount",
-            "NumHeteroatoms",
-            "NumAmideBonds",
-            "FpDensityMorgan1",
-            "FpDensityMorgan2",
-            "FpDensityMorgan3",
-            "MaxEStateIndex",
-            "MinEStateIndex",
-        ]
+        # Make sure we don't have duplicates
+        all_descriptors = list(set(all_descriptors))
 
         # Super useful Molecular Descriptor Calculator Class
-        calc = MoleculeDescriptors.MolecularDescriptorCalculator(best_40_descriptors)
+        calc = MoleculeDescriptors.MolecularDescriptorCalculator(all_descriptors)
         column_names = calc.GetDescriptorNames()
-
         descriptor_values = [calc.CalcDescriptors(m) for m in molecules]
-        df_features = pd.DataFrame(descriptor_values, columns=column_names)
-        return pd.concat([process_df, df_features], axis=1)
+        rdkit_features_df = pd.DataFrame(descriptor_values, columns=column_names)
+
+        # Now compute Mordred Features
+        descriptor_choice = [AcidBase, Aromatic, Polarizability, RotatableBond]
+        calc = Calculator()
+        for des in descriptor_choice:
+            calc.register(des)
+        mordred_df = calc.pandas(molecules, nproc=1)
+
+        # Return the DataFrame with the RDKit and Mordred Descriptors added
+        return pd.concat([process_df, rdkit_features_df, mordred_df], axis=1)
 
 
 if __name__ == "__main__":
     """Exercise the RDKitDescriptors Class"""
+    from sageworks.api.data_source import DataSource
 
-    # Create the class with inputs and outputs and invoke the transform
-    data_to_features = RDKitDescriptors("aqsol_data", "aqsol_rdkit_features")
-    data_to_features.set_output_tags(["logS", "rdkit", "public"])
-    query = 'SELECT id, "group", solubility, smiles FROM aqsol_data'
-    data_to_features.transform(target_column="solubility", id_column="udm_mol_bat_id", query=query)
+    full_test = True
+
+    # Unit Test: Create the class with inputs
+    unit_test = RDKitDescriptors("aqsol_data", "aqsol_mol_descriptors")
+    unit_test.input_df = DataSource("aqsol_data").pull_dataframe()[:100]
+    unit_test.transform_impl()
+    output_df = unit_test.output_df
+    print(output_df.shape)
+    print(output_df.head())
+
+    # Full Test: Create the class with inputs and outputs and invoke the transform
+    if full_test:
+        data_to_features = RDKitDescriptors("aqsol_data", "aqsol_mol_descriptors")
+        data_to_features.set_output_tags(["logS", "rdkit", "public"])
+        query = 'SELECT id, "group", solubility, smiles FROM aqsol_data limit 100'
+        data_to_features.transform(target_column="solubility", id_column="id", query=query)
