@@ -15,7 +15,7 @@ import joblib
 from sklearn.metrics import (
     mean_absolute_error,
     r2_score,
-    mean_squared_error,
+    root_mean_squared_error,
     precision_recall_fscore_support,
     median_absolute_error,
     roc_auc_score,
@@ -593,7 +593,7 @@ class EndpointCore(Artifact):
         y_pred = prediction_df["prediction"]
 
         mae = mean_absolute_error(y_true, y_pred)
-        rmse = mean_squared_error(y_true, y_pred, squared=False)
+        rmse = root_mean_squared_error(y_true, y_pred)
         r2 = r2_score(y_true, y_pred)
         # Mean Absolute Percentage Error
         mape = np.mean(np.where(y_true != 0, np.abs((y_true - y_pred) / y_true), np.abs(y_true - y_pred))) * 100
