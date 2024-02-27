@@ -94,7 +94,7 @@ if __name__ == "__main__":
         rdkit_features = MolecularDescriptors("aqsol_data", "aqsol_mol_descriptors")
         rdkit_features.set_output_tags(["aqsol", "public"])
         query = "SELECT id, solubility, solubility_class, smiles FROM aqsol_data"
-        rdkit_features.transform(target_column="solubility", id_column="id", query=query)
+        rdkit_features.transform(target_column="solubility", id_column="id", query=query, auto_categorize=False)
 
     # Create the RDKIT based regression Model
     if recreate or not Model("aqsol-mol-regression").exists():
