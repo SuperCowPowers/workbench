@@ -36,7 +36,7 @@ if __name__ == "__main__":
         # We could create a Datasource directly,  but we're going to add a column to the data
         df = wr.s3.read_csv(s3_path)
 
-        # Okay this is a bit cheesy, but we're going to create a solubility classification column
+        # Create a solubility classification column
         bins = [-float("inf"), -5, -4, float("inf")]
         labels = ["low", "medium", "high"]
         df["solubility_class"] = pd.cut(df["Solubility"], bins=bins, labels=labels)
@@ -93,14 +93,14 @@ if __name__ == "__main__":
     if recreate or not FeatureSet("aqsol_mol_descriptors").exists():
         rdkit_features = MolecularDescriptors("aqsol_data", "aqsol_mol_descriptors")
         rdkit_features.set_output_tags(["aqsol", "public"])
-        query = "SELECT id, solubility, smiles FROM aqsol_data"
+        query = "SELECT id, solubility, solubility_class, smiles FROM aqsol_data"
         rdkit_features.transform(target_column="solubility", id_column="id", query=query)
 
     # Create the RDKIT based regression Model
     if recreate or not Model("aqsol-mol-regression").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_mol_descriptors")
-        exclude = ["id", "smiles", "solubility"]
+        exclude = ["id", "smiles", "solubility", "solubility_class"]
         feature_list = [f for f in feature_set.column_names() if f not in exclude]
         feature_set.to_model(
             ModelType.REGRESSOR,
