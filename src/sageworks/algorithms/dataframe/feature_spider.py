@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+from sklearn.impute import SimpleImputer
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -30,6 +31,16 @@ class FeatureSpider:
         self.id_column = id_column
         self.target_column = target_column
         self.features = features
+
+        # Check for NaNs in the features and log the percentage
+        for feature in features:
+            nan_count = df[feature].isna().sum()
+            if nan_count > 0:
+                print(f"Feature '{feature}' has {nan_count} NaNs ({nan_count / len(df) * 100:.2f}%).")
+
+        # Impute NaNs with the mean value for each feature
+        imputer = SimpleImputer(strategy="mean")
+        df[features] = imputer.fit_transform(df[features])
 
         # Build our KNN model pipeline with StandardScalar
         knn = KNeighborsRegressor(n_neighbors=neighbors, weights="distance")
