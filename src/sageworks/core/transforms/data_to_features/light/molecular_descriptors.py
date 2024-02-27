@@ -1,4 +1,4 @@
-"""RDKitDescriptors: Compute a Feature Set based on RDKit Descriptors"""
+"""MolecularDescriptors: Compute a Feature Set based on RDKit Descriptors"""
 
 import sys
 import pandas as pd
@@ -27,19 +27,19 @@ except ImportError:
     sys.exit(0)
 
 
-class RDKitDescriptors(DataToFeaturesLight):
-    """RDKitDescriptors: Create a FeatureSet (RDKit Descriptors) from a DataSource
+class MolecularDescriptors(DataToFeaturesLight):
+    """MolecularDescriptors: Create a FeatureSet (RDKit Descriptors) from a DataSource
 
     Common Usage:
         ```
-        to_features = RDKitDescriptors(data_uuid, feature_uuid)
-        to_features.set_output_tags(["aqsol", "rdkit", "whatever"])
+        to_features = MolecularDescriptors(data_uuid, feature_uuid)
+        to_features.set_output_tags(["aqsol", "whatever"])
         to_features.transform()
         ```
     """
 
     def __init__(self, data_uuid: str, feature_uuid: str):
-        """RDKitDescriptors Initialization
+        """MolecularDescriptors Initialization
 
         Args:
             data_uuid (str): The UUID of the SageWorks DataSource to be transformed
@@ -59,20 +59,20 @@ class RDKitDescriptors(DataToFeaturesLight):
         if "smiles" not in self.input_df.columns:
             raise ValueError("Input DataFrame must have a 'smiles' column")
 
-        # Compute/add all the RDKIT Descriptors
-        self.output_df = self.compute_rdkit_descriptors(self.input_df)
+        # Compute/add all the Molecular Descriptors
+        self.output_df = self.compute_molecular_descriptors(self.input_df)
 
         # Drop any NaNs (and INFs)
         self.output_df = pandas_utils.drop_nans(self.output_df, how="all")
 
-    def compute_rdkit_descriptors(self, process_df: pd.DataFrame) -> pd.DataFrame:
-        """Compute and add all the RDKit Descriptors
+    def compute_molecular_descriptors(self, process_df: pd.DataFrame) -> pd.DataFrame:
+        """Compute and add all the Molecular Descriptors
         Args:
             process_df(pd.DataFrame): The DataFrame to process and generate RDKit Descriptors
         Returns:
             pd.DataFrame: The input DataFrame with all the RDKit Descriptors added
         """
-        self.log.important("Computing RDKit Descriptors...")
+        self.log.important("Computing Molecular Descriptors...")
 
         # Conversion to Molecules
         molecules = [Chem.MolFromSmiles(smile) for smile in process_df["smiles"]]
@@ -106,13 +106,13 @@ class RDKitDescriptors(DataToFeaturesLight):
 
 
 if __name__ == "__main__":
-    """Exercise the RDKitDescriptors Class"""
+    """Exercise the MolecularDescriptors Class"""
     from sageworks.api.data_source import DataSource
 
     full_test = True
 
     # Unit Test: Create the class with inputs
-    unit_test = RDKitDescriptors("aqsol_data", "aqsol_mol_descriptors")
+    unit_test = MolecularDescriptors("aqsol_data", "aqsol_mol_descriptors")
     unit_test.input_df = DataSource("aqsol_data").pull_dataframe()[:100]
     unit_test.transform_impl()
     output_df = unit_test.output_df
@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
     # Full Test: Create the class with inputs and outputs and invoke the transform
     if full_test:
-        data_to_features = RDKitDescriptors("aqsol_data", "aqsol_mol_descriptors")
-        data_to_features.set_output_tags(["logS", "rdkit", "public"])
+        data_to_features = MolecularDescriptors("aqsol_data", "aqsol_mol_descriptors")
+        data_to_features.set_output_tags(["logS", "public"])
         query = 'SELECT id, "group", solubility, smiles FROM aqsol_data limit 100'
         data_to_features.transform(target_column="solubility", id_column="id", query=query)

@@ -175,8 +175,9 @@ if __name__ == "__main__":
 
     # Retrieve an existing Data Source
     test_data = DataSource("test_data")
-    pprint(test_data.summary())
-    pprint(test_data.details())
+    if test_data.exists():
+        pprint(test_data.summary())
+        pprint(test_data.details())
 
     # Create a new Data Source from a Pandas DataFrame
     gen_data = TestDataGenerator()

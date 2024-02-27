@@ -18,7 +18,7 @@ from sageworks.api.feature_set import FeatureSet
 from sageworks.api.model import Model, ModelType
 from sageworks.api.endpoint import Endpoint
 
-from sageworks.core.transforms.data_to_features.light.rdkit_descriptors import RDKitDescriptors
+from sageworks.core.transforms.data_to_features.light.molecular_descriptors import MolecularDescriptors
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 if __name__ == "__main__":
@@ -54,8 +54,6 @@ if __name__ == "__main__":
         # Compute our features
         feature_set = FeatureSet("aqsol_features")
         feature_list = [
-            "sd",
-            "ocurrences",
             "molwt",
             "mollogp",
             "molmr",
@@ -89,31 +87,31 @@ if __name__ == "__main__":
         m.to_endpoint(name="aqsol-regression-end", tags=["aqsol", "regression"])
 
     #
-    # RDKIT Descriptor Artifacts
+    # Molecular Descriptor Artifacts
     #
     # Create the rdkit FeatureSet (this is an example of using lower level classes)
-    if recreate or not FeatureSet("aqsol_rdkit_features").exists():
-        rdkit_features = RDKitDescriptors("aqsol_data", "aqsol_rdkit_features")
-        rdkit_features.set_output_tags(["aqsol", "public", "rdkit"])
+    if recreate or not FeatureSet("aqsol_mol_descriptors").exists():
+        rdkit_features = MolecularDescriptors("aqsol_data", "aqsol_mol_descriptors")
+        rdkit_features.set_output_tags(["aqsol", "public"])
         query = "SELECT id, solubility, smiles FROM aqsol_data"
-        rdkit_features.transform(target_column="solubility", id_column="udm_mol_bat_id", query=query)
+        rdkit_features.transform(target_column="solubility", id_column="id", query=query)
 
     # Create the RDKIT based regression Model
-    if recreate or not Model("aqsol-rdkit-regression").exists():
+    if recreate or not Model("aqsol-mol-regression").exists():
         # Compute our features
-        feature_set = FeatureSet("aqsol_rdkit_features")
+        feature_set = FeatureSet("aqsol_mol_descriptors")
         exclude = ["id", "smiles", "solubility"]
         feature_list = [f for f in feature_set.column_names() if f not in exclude]
         feature_set.to_model(
             ModelType.REGRESSOR,
             target_column="solubility",
-            name="aqsol-rdkit-regression",
+            name="aqsol-mol-regression",
             feature_list=feature_list,
-            description="AQSol/RDKit Regression Model",
-            tags=["aqsol", "regression", "rdkit"],
+            description="AQSol Descriptor Regression Model",
+            tags=["aqsol", "regression"],
         )
 
     # Create the aqsol regression Endpoint
-    if recreate or not Endpoint("aqsol-rdkit-regression-end").exists():
-        m = Model("aqsol-rdkit-regression")
-        m.to_endpoint(name="aqsol-rdkit-regression-end", tags=["aqsol", "regression", "rdkit"])
+    if recreate or not Endpoint("aqsol-mol-regression-end").exists():
+        m = Model("aqsol-mol-regression")
+        m.to_endpoint(name="aqsol-mol-regression-end", tags=["aqsol", "regression"])
