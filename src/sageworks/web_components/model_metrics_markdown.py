@@ -22,10 +22,11 @@ class ModelMetricsMarkdown(ComponentInterface):
         waiting_markdown = "*Waiting for data...*"
         return dcc.Markdown(id=component_id, children=waiting_markdown, dangerously_allow_html=False)
 
-    def generate_markdown(self, model: Model) -> str:
+    def generate_markdown(self, model: Model, inference_run: str) -> str:
         """Create the Markdown for the details/information about the DataSource or the FeatureSet
         Args:
             model (Model): Sageworks Model object
+            inference_run (str): Valid capture_uuid
         Returns:
             str: A Markdown string
         """
@@ -52,7 +53,7 @@ class ModelMetricsMarkdown(ComponentInterface):
 
         # Model Metrics
         markdown = "### Model Metrics  \n"
-        meta_df = model_details.get("inference_meta")
+        meta_df = model.inference_metadata(inference_run)
         if meta_df is None:
             test_data = "AWS Training Capture"
             test_data_hash = " N/A "
@@ -72,7 +73,7 @@ class ModelMetricsMarkdown(ComponentInterface):
         markdown += f"**Description:** {description}  \n"
 
         # Grab the Metrics from the model details
-        metrics = model_details.get("model_metrics")
+        metrics = model.performance_metrics(capture_uuid=inference_run)
         if metrics is None:
             markdown += "  \nNo Data  \n"
         else:
@@ -119,13 +120,14 @@ if __name__ == "__main__":
 
     # Create the class and get the AWS FeatureSet details
     m = ModelCore("hlm-source-class-model-abbrev-3")
+    inference_run = "training_holdout"
 
     # Instantiate the DataDetailsMarkdown class
     ddm = ModelMetricsMarkdown()
     component = ddm.create_component("model_metrics_markdown")
 
     # Generate the markdown
-    markdown = ddm.generate_markdown(m)
+    markdown = ddm.generate_markdown(m, inference_run)
 
     # Initialize Dash app
     app = dash.Dash(

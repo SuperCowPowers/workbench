@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 
 # SageWorks Imports
 from sageworks.web_components.component_interface import ComponentInterface
+from sageworks.api import Model
 
 
 class ConfusionMatrix(ComponentInterface):
@@ -20,16 +21,17 @@ class ConfusionMatrix(ComponentInterface):
         """
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, model_details: dict) -> go.Figure:
+    def generate_component_figure(self, model: Model, inference_run: str) -> go.Figure:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
-            model_details (dict): The model details dictionary
+            model (Model): Sageworks Model object
+            inference_run (str): Inference capture UUID
         Returns:
             plotly.graph_objs.Figure: A Figure object containing the confusion matrix.
         """
 
         # Grab the confusion matrix from the model details
-        df = model_details.get("confusion_matrix")
+        df = model.confusion_matrix(inference_run)
         if df is None:
             return self.message_figure("No Data")
 
@@ -82,14 +84,14 @@ if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
     from sageworks.api.model import Model
 
-    m = Model("wine-classification")
-    model_details = m.details()
+    m = Model("hlm-source-class-model-abbrev-3")
+    inference_run = "training_holdout"
 
     # Instantiate the ConfusionMatrix class
     cm = ConfusionMatrix()
 
     # Generate the figure
-    fig = cm.generate_component_figure(model_details)
+    fig = cm.generate_component_figure(m, inference_run)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

@@ -6,6 +6,7 @@ import plotly.express as px
 
 # SageWorks Imports
 from sageworks.web_components.component_interface import ComponentInterface
+from sageworks.api import Model
 
 
 # This class is basically a specialized version of a Plotly Scatter Plot
@@ -17,9 +18,11 @@ class RegressionPlot(ComponentInterface):
         # Initialize an empty scatter plot figure
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, model_details: dict) -> go.Figure:
-        # Grab the confusion matrix from the model details
-        df = model_details.get("predictions")
+    def generate_component_figure(self, model: Model, inference_run: str = None) -> go.Figure:
+
+        # Get predictions for specific inference
+        df = model.inference_predictions(inference_run)
+
         if df is None:
             return self.message_figure("No Data")
 
@@ -75,15 +78,14 @@ if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
     from sageworks.core.artifacts.model_core import ModelCore
 
-    m = ModelCore("abalone-regression")
-    # m = ModelCore("wine-classification")
-    model_details = m.details()
+    m = ModelCore("test-sol-reg")
+    inference_run = "small_kappa1"
 
     # Instantiate the ConfusionMatrix class
     reg_plot = RegressionPlot()
 
     # Generate the figure
-    fig = reg_plot.generate_component_figure(model_details)
+    fig = reg_plot.generate_component_figure(m, inference_run)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")
