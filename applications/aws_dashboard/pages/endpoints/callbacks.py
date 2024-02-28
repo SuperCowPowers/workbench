@@ -79,7 +79,7 @@ def update_endpoint_details_components(app: Dash, endpoint_web_view: EndpointWeb
 
         # Endpoint Details
         endpoint_details = endpoint_web_view.endpoint_details(endpoint_uuid)
-        endpoint_details_markdown = model_markdown.ModelMarkdown().generate_markdown(endpoint_details)
+        endpoint_details_markdown = model_details_markdown.ModelDetailsMarkdown().generate_markdown(endpoint_details)
 
         # Endpoint Metrics
         endpoint_metrics_figure = endpoint_metric_plots.EndpointMetricPlots().generate_component_figure(
