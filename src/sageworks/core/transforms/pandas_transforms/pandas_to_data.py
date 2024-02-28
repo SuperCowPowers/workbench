@@ -124,7 +124,7 @@ class PandasToData(Transform):
                 boto3_session=self.boto_session,
                 partition_cols=None,
                 glue_table_settings=glue_table_settings,
-                sanitize_columns=False
+                sanitize_columns=False,
             )  # FIXME: Have some logic around partition columns
 
         # Note: In general Parquet works will for most uses cases. We recommend using Parquet
