@@ -261,6 +261,29 @@ def test():
     query_df = data_df[data_df["ID"] == "id_0"].copy()
     print(f_spider.neighbor_info(query_df))
 
+    # Feature matrix
+    print(f_spider.get_feature_matrix())
+
+
+def integration_test():
+    """Integration Test for the FeatureResolution Class"""
+    from sageworks.api.feature_set import FeatureSet
+    from sageworks.api.model import Model
+
+    # Grab a test dataframe
+    fs = FeatureSet("aqsol_mol_descriptors")
+    test_df = fs.pull_dataframe()
+
+    # Get the target and feature columns
+    m = Model("aqsol-mol-regression")
+    target_column = m.target()
+    feature_columns = m.features()
+
+    # Create the class and run the report
+    resolution = FeatureSpider(test_df, features=feature_columns, target_column=target_column, id_column="id")
+    resolution.coincident(1.0)
+
 
 if __name__ == "__main__":
     test()
+    integration_test()
