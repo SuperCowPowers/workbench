@@ -5,7 +5,7 @@ from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.endpoint_web_view import EndpointWebView
-from sageworks.web_components import table, model_markdown, endpoint_metric_plots
+from sageworks.web_components import table, model_details_markdown, endpoint_metric_plots
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 from sageworks.api.endpoint import Endpoint
 
