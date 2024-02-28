@@ -116,10 +116,10 @@ if __name__ == "__main__":
     import dash
     from dash import dcc, html
     import dash_bootstrap_components as dbc
-    from sageworks.core.artifacts.model_core import ModelCore
+    from sageworks.api import Model
 
     # Create the class and get the AWS FeatureSet details
-    m = ModelCore("hlm-source-class-model-abbrev-3")
+    m = Model("wine-classification")
     inference_run = "training_holdout"
 
     # Instantiate the DataDetailsMarkdown class

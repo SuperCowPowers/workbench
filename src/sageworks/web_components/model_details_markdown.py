@@ -108,10 +108,10 @@ if __name__ == "__main__":
     import dash
     from dash import dcc, html
     import dash_bootstrap_components as dbc
-    from sageworks.core.artifacts.model_core import ModelCore
+    from sageworks.api import Model
 
     # Create the class and get the AWS FeatureSet details
-    m = ModelCore("hlm-source-class-model-abbrev-3")
+    m = Model("wine-classification")
 
     # Instantiate the DataDetailsMarkdown class
     ddm = ModelDetailsMarkdown()
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     app = dash.Dash(
         __name__,
         external_stylesheets=[dbc.themes.DARKLY],
-        assets_folder="/home/kolmar/sageworks/applications/aws_dashboard/assets",
+        assets_folder="",
     )
 
     app.layout = html.Div([component])

@@ -76,10 +76,10 @@ class RegressionPlot(ComponentInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
-    from sageworks.core.artifacts.model_core import ModelCore
+    from sageworks.api import Model
 
-    m = ModelCore("test-sol-reg")
-    inference_run = "small_kappa1"
+    m = Model("abalone-regression")
+    inference_run = "training_holdout"
 
     # Instantiate the ConfusionMatrix class
     reg_plot = RegressionPlot()
