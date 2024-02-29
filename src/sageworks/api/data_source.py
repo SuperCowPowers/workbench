@@ -132,7 +132,7 @@ class DataSource(AthenaSource):
             target_column=target_column,
             id_column=id_column,
             event_time_column=event_time_column,
-            auto_categorize=one_hot_encode,
+            one_hot_encode=one_hot_encode,
         )
 
         # Return the FeatureSet (which will now be up-to-date)

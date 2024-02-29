@@ -43,7 +43,7 @@ class DataToFeaturesChunk(Transform):
         """
         self.cat_column_info = cat_column_info
 
-    def auto_categorize(self):
+    def detect_categoral_columns(self):
         """Automatically figure out which columns are categorical"""
         self.log.info("Automatically computing the categorical columns")
 
@@ -65,7 +65,7 @@ class DataToFeaturesChunk(Transform):
 
         # If the user didn't specify any categorical columns, try to figure them out
         if not self.cat_column_info:
-            self.auto_categorize()
+            self.detect_categoral_columns()
 
     def transform_impl(self, query, id_column: str, event_time_column: str = None):
         """Convert the Data Source into a Feature Set using Chunking"""

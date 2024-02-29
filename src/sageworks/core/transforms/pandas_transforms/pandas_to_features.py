@@ -25,11 +25,11 @@ class PandasToFeatures(Transform):
         ```
     """
 
-    def __init__(self, output_uuid: str, auto_categorize=True):
+    def __init__(self, output_uuid: str, one_hot_encode=True):
         """PandasToFeatures Initialization
         Args:
             output_uuid (str): The UUID of the FeatureSet to create
-            auto_categorize (bool): Should we automatically create categorical columns?
+            one_hot_encode (bool): Should we automatically one hot encode categorical columns?
         """
         # Call superclass init
         super().__init__("DataFrame", output_uuid)
@@ -40,7 +40,7 @@ class PandasToFeatures(Transform):
         self.target_column = None
         self.id_column = None
         self.event_time_column = None
-        self.auto_categorize = auto_categorize
+        self.one_hot_encode = one_hot_encode
         self.categorical_dtypes = {}
         self.output_df = None
         self.table_format = TableFormatEnum.ICEBERG
@@ -191,7 +191,7 @@ class PandasToFeatures(Transform):
         return df
 
     # Helper Methods
-    def auto_categorize_converter(self):
+    def auto_convert_columns_to_categorical(self):
         """Convert object and string types to Categorical"""
         categorical_columns = []
         for feature, dtype in self.output_df.dtypes.items():
@@ -206,11 +206,17 @@ class PandasToFeatures(Transform):
                     self.output_df[feature] = self.output_df[feature].astype("category")
                     categorical_columns.append(feature)
 
-        # Now convert Categorical Types to One Hot Encoding
+        # Now run one hot encoding on categorical columns
         self.output_df = self.one_hot_encoding(self.output_df, categorical_columns)
 
     def manual_categorical_converter(self):
-        """Convert object and string types to Categorical"""
+        """Convert object and string types to Categorical
+
+        Note:
+            This method is used for streaming/chunking. You can set the
+            categorical_dtypes attribute to a dictionary of column names and
+            their respective categorical types.
+        """
         for column, cat_d_type in self.categorical_dtypes.items():
             self.output_df[column] = self.output_df[column].astype(cat_d_type)
 
@@ -249,8 +255,8 @@ class PandasToFeatures(Transform):
         self._ensure_event_time()
 
         # Convert object and string types to Categorical
-        if self.auto_categorize:
-            self.auto_categorize_converter()
+        if self.one_hot_encode:
+            self.auto_convert_columns_to_categorical()
         else:
             self.manual_categorical_converter()
 
