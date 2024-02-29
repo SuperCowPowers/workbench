@@ -1,5 +1,6 @@
 """Test Script for the FeatureResolution Class"""
 import numpy as np
+import pandas as pd
 
 from sageworks.api.feature_set import FeatureSet
 from sageworks.algorithms.dataframe.feature_resolution import FeatureResolution
@@ -54,4 +55,8 @@ resolution = FeatureResolution(
     test_df, features=feature_columns, target_column=target_column, id_column="udm_mol_bat_id"
 )
 output_df = resolution.compute(within_distance=0.00, min_target_difference=2.0, output_columns=output_columns)
+
+# Print the output
+pd.options.display.max_columns = None
+pd.options.display.width = 1000
 print(output_df.head())
