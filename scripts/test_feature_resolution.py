@@ -1,4 +1,5 @@
 """Test Script for the FeatureResolution Class"""
+
 import numpy as np
 import pandas as pd
 
@@ -39,10 +40,19 @@ exclude = ["log_s", "udm_asy_res_value", "udm_mol_bat_id"] + meta
 feature_columns = [c for c in test_df.columns if c not in exclude]
 print(f"Num Features {len(feature_columns)}")
 
-output_columns = ["smiles", "udm_asy_protocol", "udm_asy_cnd_target",
-                  "udm_asy_cnd_format", "udm_asy_date", "udm_prj_code",
-                  "udm_mol_bat_slt_ratio", "udm_mol_bat_slt_smiles",
-                  "udm_mol_bat_slv_ratio", "udm_mol_bat_slv_smiles", "udm_asy_cnd_time_hr"]
+output_columns = [
+    "smiles",
+    "udm_asy_protocol",
+    "udm_asy_cnd_target",
+    "udm_asy_cnd_format",
+    "udm_asy_date",
+    "udm_prj_code",
+    "udm_mol_bat_slt_ratio",
+    "udm_mol_bat_slt_smiles",
+    "udm_mol_bat_slv_ratio",
+    "udm_mol_bat_slv_smiles",
+    "udm_asy_cnd_time_hr",
+]
 
 # Sanity check
 df_columns = test_df.columns
