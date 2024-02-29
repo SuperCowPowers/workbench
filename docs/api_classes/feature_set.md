@@ -74,10 +74,10 @@ from sageworks.api.feature_set import FeatureSet
 my_features = FeatureSet("abalone_features")
 
 # Make some queries using the Athena backend
-df = my_features("select * from abalone_features where height > .3")
+df = my_features.query("select * from abalone_features where height > .3")
 print(df.head())
 
-df = my_features("select * from abalone_features where class_number_of_rings < 3")
+df = my_features.query("select * from abalone_features where class_number_of_rings < 3")
 print(df.head())
 ```
 
