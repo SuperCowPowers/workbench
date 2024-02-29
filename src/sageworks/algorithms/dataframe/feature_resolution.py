@@ -5,6 +5,9 @@ from sklearn.impute import SimpleImputer
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
 
+# SageWorks Imports
+from sageworks.utils.pandas_utils import DataFrameBuilder
+
 
 # Feature Resolution Class
 class FeatureResolution:
@@ -29,13 +32,22 @@ class FeatureResolution:
         self.n_neighbors = 10
         self.scalar = StandardScaler()
         self.knn = KNeighborsRegressor(metric=distance_metric, n_neighbors=self.n_neighbors, weights="distance")
+        self.dataframe_builder = DataFrameBuilder()
 
-    def report(self, within_distance: float, min_target_difference: float):
+    def compute(
+        self, within_distance: float, min_target_difference: float, output_columns: list = [], verbose=True
+    ) -> pd.DataFrame:
         """FeatureResolution: Compute Feature Space to Target Resolution and Report Issues
 
         Args:
             within_distance: Features within this distance should have similar target values
             min_target_difference: Minimum target difference to consider
+            output_columns: List of additional columns to output (default: []])
+            verbose: Whether to print out the resolution issues (default: True)
+
+        Returns:
+            Pandas DataFrame of Feature Space to Target Resolution Issues
+            Includes any additional output_columns if specified
         """
 
         # Check for expected columns
@@ -43,6 +55,16 @@ class FeatureResolution:
             if column not in self.df.columns:
                 print(f"DataFrame does not have required {column} Column!")
                 return
+
+        # Set up the output columns (add id and target columns if they are not already included)
+        output_columns = list(set(output_columns).union({self.id_column, self.target_column}))
+
+        # Check the output columns
+        if output_columns is not None:
+            for column in output_columns:
+                if column not in self.df.columns:
+                    print(f"DataFrame does not have required {column} Column!")
+                    return
 
         # Check for NaNs in the features and log the percentage
         for feature in self.features:
@@ -72,7 +94,7 @@ class FeatureResolution:
 
             # Grab the info for this observation
             my_id = self.df.iloc[my_index][self.id_column]
-            # my_features = self.df.iloc[my_index][self.features].values
+            my_output_data = self.df.iloc[my_index][output_columns]
             my_target = y[my_index]
 
             # Loop through the neighbors
@@ -87,19 +109,29 @@ class FeatureResolution:
                 target_diff = abs(my_target - n_target)
 
                 # Compute target differences `within_distance` feature space
-
                 if feature_diff <= within_distance and target_diff >= min_target_difference:
 
-                    # Print out for now
+                    # Gather info about the neighbor
                     neighbor_id = self.df.iloc[n_index][self.id_column]
-                    # neighbor_features = self.df.iloc[n_index][self.features].values
-                    print(f"{output_count} Feature Space to Target Resolution Issue:")
-                    print(f"\tFeature Distance: {feature_diff} Target Difference: {target_diff}")
-                    print(f"\t{my_id}: {my_target}")
-                    print(f"\t{neighbor_id}: {n_target}")
+                    # neighbor_output_data = self.df.iloc[n_index][output_columns]  currently unused
+
+                    # Add to the output DataFrame
+                    row_data = my_output_data.to_dict()
+                    row_data["feature_diff"] = feature_diff
+                    row_data["target_diff"] = target_diff
+                    row_data["n_id"] = neighbor_id
+                    self.dataframe_builder.add_row(row_data)
+
+                    # Print out the resolution issue (if verbose)
+                    if verbose:
+                        print(f"{output_count} Feature Diff: {feature_diff} Target Diff: {target_diff}")
+                        print(f"\t{my_id}: {my_target}")
+                        print(f"\t{neighbor_id}: {n_target}")
+                    # Increment the output count
                     output_count += 1
-                    # print(f"\t{my_id}: {my_target}({my_features})")
-                    # print(f"\t{neighbor_id}: {n_target}({neighbor_features})")
+
+        # Return the output DataFrame
+        return self.dataframe_builder.build()
 
 
 # Test the FeatureResolution Class
@@ -132,7 +164,7 @@ def unit_test():
 
     # Create the class and run the report
     resolution = FeatureResolution(data_df, features=["feat1", "feat2", "feat3"], target_column="price", id_column="ID")
-    resolution.report(within_distance=0.1, min_target_difference=10)
+    resolution.compute(within_distance=0.1, min_target_difference=10)
 
 
 def integration_test():
@@ -151,7 +183,8 @@ def integration_test():
 
     # Create the class and run the report
     resolution = FeatureResolution(test_df, features=feature_columns, target_column=target_column, id_column="id")
-    resolution.report(within_distance=0.01, min_target_difference=1.0)
+    df = resolution.compute(within_distance=0.01, min_target_difference=1.0)
+    print(df)
 
 
 if __name__ == "__main__":
