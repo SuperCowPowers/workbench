@@ -10,6 +10,7 @@ from sagemaker.feature_store.inputs import TableFormatEnum
 # Local imports
 from sageworks.utils.iso_8601 import datetime_to_iso8601
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
+from sageworks.core.artifacts.artifact import Artifact
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 
 
@@ -31,6 +32,10 @@ class PandasToFeatures(Transform):
             output_uuid (str): The UUID of the FeatureSet to create
             one_hot_encode (bool): Should we automatically one hot encode categorical columns?
         """
+
+        # Make sure the output_uuid is a valid UUID
+        output_uuid = Artifact.base_compliant_uuid(output_uuid)
+
         # Call superclass init
         super().__init__("DataFrame", output_uuid)
 
@@ -399,3 +404,6 @@ if __name__ == "__main__":
 
     # Store this dataframe as a SageWorks Feature Set
     df_to_features.transform()
+
+    # Test non-compliant output UUID
+    df_to_features = PandasToFeatures("test_features-123")

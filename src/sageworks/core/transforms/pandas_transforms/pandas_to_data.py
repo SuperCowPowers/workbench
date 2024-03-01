@@ -8,6 +8,7 @@ from pandas.errors import ParserError
 from sageworks.utils.iso_8601 import datetime_to_iso8601
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
+from sageworks.core.artifacts.artifact import Artifact
 
 
 class PandasToData(Transform):
@@ -28,6 +29,9 @@ class PandasToData(Transform):
             output_uuid (str): The UUID of the DataSource to create
             output_format (str): The file format to store the S3 object data in (default: "parquet")
         """
+
+        # Make sure the output_uuid is a valid UUID
+        output_uuid = Artifact.base_compliant_uuid(output_uuid)
 
         # Call superclass init
         super().__init__("DataFrame", output_uuid)
