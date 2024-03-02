@@ -3,7 +3,7 @@
 import pandas as pd
 import time
 import re
-import botocore
+from botocore.exceptions import ClientError
 from sagemaker.feature_store.feature_group import FeatureGroup, IngestionError
 from sagemaker.feature_store.inputs import TableFormatEnum
 
@@ -82,7 +82,7 @@ class PandasToFeatures(Transform):
                 self.log.info(f"Deleting the {self.output_uuid} FeatureSet...")
                 delete_fs.delete()
                 time.sleep(1)
-        except botocore.exceptions.ClientError as exc:
+        except ClientError as exc:
             self.log.info(f"FeatureSet {self.output_uuid} doesn't exist...")
             self.log.info(exc)
 
@@ -101,7 +101,7 @@ class PandasToFeatures(Transform):
             self.event_time_column = "event_time"
             self.output_df[self.event_time_column] = pd.Timestamp("now", tz="UTC")
 
-        # The event_time_column is defined so we need to make sure it's in ISO-8601 string format
+        # The event_time_column is defined, so we need to make sure it's in ISO-8601 string format
         # Note: AWS Feature Store only a particular ISO-8601 format not ALL ISO-8601 formats
         time_column = self.output_df[self.event_time_column]
 
@@ -316,8 +316,8 @@ class PandasToFeatures(Transform):
 
         # Now we actually push the data into the Feature Group (called ingestion)
         self.log.important("Ingesting rows into Feature Group...")
+        ingest_manager = self.output_feature_group.ingest(self.output_df, max_processes=8, wait=False)
         try:
-            ingest_manager = self.output_feature_group.ingest(self.output_df, max_processes=16, wait=False)
             ingest_manager.wait()
         except IngestionError as exc:
             self.log.warning(f"Some rows had an ingesting error: {exc}")
