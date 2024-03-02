@@ -1829,7 +1829,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-101"><a id="__codelineno-0-101" name="__codelineno-0-101"></a>        <span class="n">target_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-102"><a id="__codelineno-0-102" name="__codelineno-0-102"></a>        <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a>        <span class="n">event_time_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-104"><a id="__codelineno-0-104" name="__codelineno-0-104"></a>        <span class="n">one_hot_encode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-104"><a id="__codelineno-0-104" name="__codelineno-0-104"></a>        <span class="n">auto_one_hot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span id="__span-0-105"><a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FeatureSet</span><span class="p">:</span>
 </span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="__span-0-107"><a id="__codelineno-0-107" name="__codelineno-0-107"></a><span class="sd">        Convert the DataSource to a FeatureSet</span>
@@ -1840,7 +1840,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-112"><a id="__codelineno-0-112" name="__codelineno-0-112"></a><span class="sd">            target_column (str): Set the target column for the feature set. (Optional)</span>
 </span><span id="__span-0-113"><a id="__codelineno-0-113" name="__codelineno-0-113"></a><span class="sd">            id_column (str): Set the id column for the feature set. If not specified will be generated.</span>
 </span><span id="__span-0-114"><a id="__codelineno-0-114" name="__codelineno-0-114"></a><span class="sd">            event_time_column (str): Set the event time for the feature set. If not specified will be generated.</span>
-</span><span id="__span-0-115"><a id="__codelineno-0-115" name="__codelineno-0-115"></a><span class="sd">            one_hot_encode (bool): Whether to one-hot encode categorical fields (default: True)</span>
+</span><span id="__span-0-115"><a id="__codelineno-0-115" name="__codelineno-0-115"></a><span class="sd">            auto_one_hot (bool): Automatically one-hot encode categorical fields (default: False)</span>
 </span><span id="__span-0-116"><a id="__codelineno-0-116" name="__codelineno-0-116"></a>
 </span><span id="__span-0-117"><a id="__codelineno-0-117" name="__codelineno-0-117"></a><span class="sd">        Returns:</span>
 </span><span id="__span-0-118"><a id="__codelineno-0-118" name="__codelineno-0-118"></a><span class="sd">            FeatureSet: The FeatureSet created from the DataSource</span>
@@ -1860,7 +1860,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-132"><a id="__codelineno-0-132" name="__codelineno-0-132"></a>            <span class="n">target_column</span><span class="o">=</span><span class="n">target_column</span><span class="p">,</span>
 </span><span id="__span-0-133"><a id="__codelineno-0-133" name="__codelineno-0-133"></a>            <span class="n">id_column</span><span class="o">=</span><span class="n">id_column</span><span class="p">,</span>
 </span><span id="__span-0-134"><a id="__codelineno-0-134" name="__codelineno-0-134"></a>            <span class="n">event_time_column</span><span class="o">=</span><span class="n">event_time_column</span><span class="p">,</span>
-</span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a>            <span class="n">one_hot_encode</span><span class="o">=</span><span class="n">one_hot_encode</span><span class="p">,</span>
+</span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a>            <span class="n">auto_one_hot</span><span class="o">=</span><span class="n">auto_one_hot</span><span class="p">,</span>
 </span><span id="__span-0-136"><a id="__codelineno-0-136" name="__codelineno-0-136"></a>        <span class="p">)</span>
 </span><span id="__span-0-137"><a id="__codelineno-0-137" name="__codelineno-0-137"></a>
 </span><span id="__span-0-138"><a id="__codelineno-0-138" name="__codelineno-0-138"></a>        <span class="c1"># Return the FeatureSet (which will now be up-to-date)</span>
@@ -2283,7 +2283,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 
 
 <h3 id="sageworks.api.data_source.DataSource.to_features" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">to_features</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">one_hot_encode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">to_features</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">auto_one_hot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h3>
 
@@ -2376,17 +2376,17 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
           </td>
         </tr>
         <tr>
-          <td><code>one_hot_encode</code></td>
+          <td><code>auto_one_hot</code></td>
           <td>
                 <code>bool</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to one-hot encode categorical fields (default: True)</p>
+              <p>Automatically one-hot encode categorical fields (default: False)</p>
             </div>
           </td>
           <td>
-                <code>True</code>
+                <code>False</code>
           </td>
         </tr>
     </tbody>
@@ -2467,7 +2467,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-101"><a id="__codelineno-0-101" name="__codelineno-0-101"></a>    <span class="n">target_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-102"><a id="__codelineno-0-102" name="__codelineno-0-102"></a>    <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a>    <span class="n">event_time_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-104"><a id="__codelineno-0-104" name="__codelineno-0-104"></a>    <span class="n">one_hot_encode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-104"><a id="__codelineno-0-104" name="__codelineno-0-104"></a>    <span class="n">auto_one_hot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span id="__span-0-105"><a id="__codelineno-0-105" name="__codelineno-0-105"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FeatureSet</span><span class="p">:</span>
 </span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="__span-0-107"><a id="__codelineno-0-107" name="__codelineno-0-107"></a><span class="sd">    Convert the DataSource to a FeatureSet</span>
@@ -2478,7 +2478,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-112"><a id="__codelineno-0-112" name="__codelineno-0-112"></a><span class="sd">        target_column (str): Set the target column for the feature set. (Optional)</span>
 </span><span id="__span-0-113"><a id="__codelineno-0-113" name="__codelineno-0-113"></a><span class="sd">        id_column (str): Set the id column for the feature set. If not specified will be generated.</span>
 </span><span id="__span-0-114"><a id="__codelineno-0-114" name="__codelineno-0-114"></a><span class="sd">        event_time_column (str): Set the event time for the feature set. If not specified will be generated.</span>
-</span><span id="__span-0-115"><a id="__codelineno-0-115" name="__codelineno-0-115"></a><span class="sd">        one_hot_encode (bool): Whether to one-hot encode categorical fields (default: True)</span>
+</span><span id="__span-0-115"><a id="__codelineno-0-115" name="__codelineno-0-115"></a><span class="sd">        auto_one_hot (bool): Automatically one-hot encode categorical fields (default: False)</span>
 </span><span id="__span-0-116"><a id="__codelineno-0-116" name="__codelineno-0-116"></a>
 </span><span id="__span-0-117"><a id="__codelineno-0-117" name="__codelineno-0-117"></a><span class="sd">    Returns:</span>
 </span><span id="__span-0-118"><a id="__codelineno-0-118" name="__codelineno-0-118"></a><span class="sd">        FeatureSet: The FeatureSet created from the DataSource</span>
@@ -2498,7 +2498,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-132"><a id="__codelineno-0-132" name="__codelineno-0-132"></a>        <span class="n">target_column</span><span class="o">=</span><span class="n">target_column</span><span class="p">,</span>
 </span><span id="__span-0-133"><a id="__codelineno-0-133" name="__codelineno-0-133"></a>        <span class="n">id_column</span><span class="o">=</span><span class="n">id_column</span><span class="p">,</span>
 </span><span id="__span-0-134"><a id="__codelineno-0-134" name="__codelineno-0-134"></a>        <span class="n">event_time_column</span><span class="o">=</span><span class="n">event_time_column</span><span class="p">,</span>
-</span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a>        <span class="n">one_hot_encode</span><span class="o">=</span><span class="n">one_hot_encode</span><span class="p">,</span>
+</span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a>        <span class="n">auto_one_hot</span><span class="o">=</span><span class="n">auto_one_hot</span><span class="p">,</span>
 </span><span id="__span-0-136"><a id="__codelineno-0-136" name="__codelineno-0-136"></a>    <span class="p">)</span>
 </span><span id="__span-0-137"><a id="__codelineno-0-137" name="__codelineno-0-137"></a>
 </span><span id="__span-0-138"><a id="__codelineno-0-138" name="__codelineno-0-138"></a>    <span class="c1"># Return the FeatureSet (which will now be up-to-date)</span>
