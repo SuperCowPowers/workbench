@@ -53,16 +53,16 @@ class DataToFeaturesLight(Transform):
         # This is a reference implementation that should be overridden by the subclass
         self.output_df = self.input_df
 
-    def post_transform(self, target_column=None, id_column=None, event_time_column=None, one_hot_encode=True, **kwargs):
+    def post_transform(self, target_column=None, id_column=None, event_time_column=None, auto_one_hot=False, **kwargs):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set
         Args:
             target_column(str): The name of the target column in the output DataFrame (default: None)
             id_column(str): The name of the id column in the output DataFrame (default: None)
             event_time_column(str): The name of the event time column in the output DataFrame (default: None)
-            one_hot_encode(bool): Whether to one hot encode categorical columns in the output DataFrame (default: True)
+            auto_one_hot(bool): Automatically one-hot encode categorical columns (default: False)
         """
         # Now publish to the output location
-        output_features = PandasToFeatures(self.output_uuid, one_hot_encode=one_hot_encode)
+        output_features = PandasToFeatures(self.output_uuid, auto_one_hot=auto_one_hot)
         output_features.set_input(
             self.output_df, target_column=target_column, id_column=id_column, event_time_column=event_time_column
         )

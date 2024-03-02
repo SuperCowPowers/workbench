@@ -26,11 +26,11 @@ class PandasToFeatures(Transform):
         ```
     """
 
-    def __init__(self, output_uuid: str, one_hot_encode=True):
+    def __init__(self, output_uuid: str, auto_one_hot=False):
         """PandasToFeatures Initialization
         Args:
             output_uuid (str): The UUID of the FeatureSet to create
-            one_hot_encode (bool): Should we automatically one hot encode categorical columns?
+            auto_one_hot (bool): Should we automatically one-hot encode categorical columns?
         """
 
         # Make sure the output_uuid is a valid UUID
@@ -45,7 +45,7 @@ class PandasToFeatures(Transform):
         self.target_column = None
         self.id_column = None
         self.event_time_column = None
-        self.one_hot_encode = one_hot_encode
+        self.auto_one_hot = auto_one_hot
         self.categorical_dtypes = {}
         self.output_df = None
         self.table_format = TableFormatEnum.ICEBERG
@@ -260,7 +260,7 @@ class PandasToFeatures(Transform):
         self._ensure_event_time()
 
         # Convert object and string types to Categorical
-        if self.one_hot_encode:
+        if self.auto_one_hot:
             self.auto_convert_columns_to_categorical()
         else:
             self.manual_categorical_converter()
@@ -398,8 +398,8 @@ if __name__ == "__main__":
     data_df = ds.sample()
 
     # Create my DF to Feature Set Transform
-    df_to_features = PandasToFeatures("test_features")
-    df_to_features.set_input(data_df, id_column="id", event_time_column="date")
+    df_to_features = PandasToFeatures("test_features", auto_one_hot=True)
+    df_to_features.set_input(data_df, id_column="id")
     df_to_features.set_output_tags(["test", "small"])
 
     # Store this dataframe as a SageWorks Feature Set
