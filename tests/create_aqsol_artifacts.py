@@ -96,7 +96,7 @@ if __name__ == "__main__":
         query = "SELECT id, solubility, solubility_class, smiles FROM aqsol_data"
         rdkit_features.transform(target_column="solubility", id_column="id", query=query, auto_one_hot=False)
 
-    # Create the RDKIT based regression Model
+    # Create the Molecular Descriptor based Regression Model
     if recreate or not Model("aqsol-mol-regression").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_mol_descriptors")
@@ -111,7 +111,27 @@ if __name__ == "__main__":
             tags=["aqsol", "regression"],
         )
 
-    # Create the aqsol regression Endpoint
+    # Create the Molecular Descriptor based Classification Model
+    if recreate or not Model("aqsol-mol-class").exists():
+        # Compute our features
+        feature_set = FeatureSet("aqsol_mol_descriptors")
+        exclude = ["id", "smiles", "solubility", "solubility_class"]
+        feature_list = [f for f in feature_set.column_names() if f not in exclude]
+        feature_set.to_model(
+            ModelType.CLASSIFIER,
+            target_column="solubility_class",
+            name="aqsol-mol-class",
+            feature_list=feature_list,
+            description="AQSol Descriptor Classification Model",
+            tags=["aqsol", "classification"],
+        )
+
+    # Create the Molecular Descriptor Regression Endpoint
     if recreate or not Endpoint("aqsol-mol-regression-end").exists():
         m = Model("aqsol-mol-regression")
-        m.to_endpoint(name="aqsol-mol-regression-end", tags=["aqsol", "regression"])
+        m.to_endpoint(name="aqsol-mol-regression-end", tags=["aqsol", "mol", "regression"])
+
+    # Create the Molecular Descriptor Classification Endpoint
+    if recreate or not Endpoint("aqsol-mol-class-end").exists():
+        m = Model("aqsol-mol-class")
+        m.to_endpoint(name="aqsol-mol-class-end", tags=["aqsol", "mol", "classification"])
