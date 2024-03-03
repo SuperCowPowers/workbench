@@ -125,8 +125,8 @@ class FeatureResolution:
                     # Print out the resolution issue (if verbose)
                     if verbose:
                         print(f"{output_count} Feature Diff: {feature_diff} Target Diff: {target_diff}")
-                        print(f"\t{my_id}: {my_target}")
-                        print(f"\t{neighbor_id}: {n_target}")
+                        print(f"\t{my_id}: {my_target:.3f} {list(my_output_data)}")
+                        print(f"\t{neighbor_id}: {n_target:.3f} {list(self.df.iloc[n_index][output_columns])}")
                     # Increment the output count
                     output_count += 1
 
