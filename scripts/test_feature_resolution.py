@@ -19,9 +19,7 @@ target = model.target()
 features = model.features()
 
 # Create the class and run the report
-resolution = FeatureResolution(
-    test_df, features=features, target_column=target, id_column="id"
-)
+resolution = FeatureResolution(test_df, features=features, target_column=target, id_column="id")
 
 # Add some output columns
 output_columns = ["solubility", "solubility_class", "smiles"]
