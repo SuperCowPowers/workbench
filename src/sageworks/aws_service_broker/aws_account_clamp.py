@@ -27,7 +27,6 @@ class AWSAccountClamp:
             # Initialize class attributes here
             cls.log = logging.getLogger("sageworks")
             cls.log.info("Creating the AWSAccountClamp Singleton...")
-            cls.instance = super(AWSAccountClamp, cls).__new__(cls)
 
             # Pull in our config from the config manager
             cls.cm = ConfigManager()
@@ -58,6 +57,7 @@ class AWSAccountClamp:
             # Initialize the boto3 session (this is a refreshable session)
             cls.session_time_delta = timedelta(minutes=50)
             cls.boto3_session = cls._init_boto3_session()
+            cls.instance = super(AWSAccountClamp, cls).__new__(cls)
 
         # Return the singleton
         return cls.instance

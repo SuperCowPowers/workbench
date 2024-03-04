@@ -3,13 +3,14 @@
 import pandas as pd
 import time
 import re
-import botocore
+from botocore.exceptions import ClientError
 from sagemaker.feature_store.feature_group import FeatureGroup, IngestionError
 from sagemaker.feature_store.inputs import TableFormatEnum
 
 # Local imports
 from sageworks.utils.iso_8601 import datetime_to_iso8601
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
+from sageworks.core.artifacts.artifact import Artifact
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 
 
@@ -25,12 +26,16 @@ class PandasToFeatures(Transform):
         ```
     """
 
-    def __init__(self, output_uuid: str, auto_categorize=True):
+    def __init__(self, output_uuid: str, auto_one_hot=False):
         """PandasToFeatures Initialization
         Args:
             output_uuid (str): The UUID of the FeatureSet to create
-            auto_categorize (bool): Should we automatically create categorical columns?
+            auto_one_hot (bool): Should we automatically one-hot encode categorical columns?
         """
+
+        # Make sure the output_uuid is a valid UUID
+        output_uuid = Artifact.base_compliant_uuid(output_uuid)
+
         # Call superclass init
         super().__init__("DataFrame", output_uuid)
 
@@ -40,7 +45,7 @@ class PandasToFeatures(Transform):
         self.target_column = None
         self.id_column = None
         self.event_time_column = None
-        self.auto_categorize = auto_categorize
+        self.auto_one_hot = auto_one_hot
         self.categorical_dtypes = {}
         self.output_df = None
         self.table_format = TableFormatEnum.ICEBERG
@@ -77,7 +82,7 @@ class PandasToFeatures(Transform):
                 self.log.info(f"Deleting the {self.output_uuid} FeatureSet...")
                 delete_fs.delete()
                 time.sleep(1)
-        except botocore.exceptions.ClientError as exc:
+        except ClientError as exc:
             self.log.info(f"FeatureSet {self.output_uuid} doesn't exist...")
             self.log.info(exc)
 
@@ -96,7 +101,7 @@ class PandasToFeatures(Transform):
             self.event_time_column = "event_time"
             self.output_df[self.event_time_column] = pd.Timestamp("now", tz="UTC")
 
-        # The event_time_column is defined so we need to make sure it's in ISO-8601 string format
+        # The event_time_column is defined, so we need to make sure it's in ISO-8601 string format
         # Note: AWS Feature Store only a particular ISO-8601 format not ALL ISO-8601 formats
         time_column = self.output_df[self.event_time_column]
 
@@ -191,7 +196,7 @@ class PandasToFeatures(Transform):
         return df
 
     # Helper Methods
-    def auto_categorize_converter(self):
+    def auto_convert_columns_to_categorical(self):
         """Convert object and string types to Categorical"""
         categorical_columns = []
         for feature, dtype in self.output_df.dtypes.items():
@@ -206,11 +211,17 @@ class PandasToFeatures(Transform):
                     self.output_df[feature] = self.output_df[feature].astype("category")
                     categorical_columns.append(feature)
 
-        # Now convert Categorical Types to One Hot Encoding
+        # Now run one hot encoding on categorical columns
         self.output_df = self.one_hot_encoding(self.output_df, categorical_columns)
 
     def manual_categorical_converter(self):
-        """Convert object and string types to Categorical"""
+        """Convert object and string types to Categorical
+
+        Note:
+            This method is used for streaming/chunking. You can set the
+            categorical_dtypes attribute to a dictionary of column names and
+            their respective categorical types.
+        """
         for column, cat_d_type in self.categorical_dtypes.items():
             self.output_df[column] = self.output_df[column].astype(cat_d_type)
 
@@ -249,8 +260,8 @@ class PandasToFeatures(Transform):
         self._ensure_event_time()
 
         # Convert object and string types to Categorical
-        if self.auto_categorize:
-            self.auto_categorize_converter()
+        if self.auto_one_hot:
+            self.auto_convert_columns_to_categorical()
         else:
             self.manual_categorical_converter()
 
@@ -305,8 +316,8 @@ class PandasToFeatures(Transform):
 
         # Now we actually push the data into the Feature Group (called ingestion)
         self.log.important("Ingesting rows into Feature Group...")
+        ingest_manager = self.output_feature_group.ingest(self.output_df, max_processes=8, wait=False)
         try:
-            ingest_manager = self.output_feature_group.ingest(self.output_df, max_processes=16, wait=False)
             ingest_manager.wait()
         except IngestionError as exc:
             self.log.warning(f"Some rows had an ingesting error: {exc}")
@@ -387,9 +398,12 @@ if __name__ == "__main__":
     data_df = ds.sample()
 
     # Create my DF to Feature Set Transform
-    df_to_features = PandasToFeatures("test_features")
-    df_to_features.set_input(data_df, id_column="id", event_time_column="date")
+    df_to_features = PandasToFeatures("test_features", auto_one_hot=True)
+    df_to_features.set_input(data_df, id_column="id")
     df_to_features.set_output_tags(["test", "small"])
 
     # Store this dataframe as a SageWorks Feature Set
     df_to_features.transform()
+
+    # Test non-compliant output UUID
+    df_to_features = PandasToFeatures("test_features-123")

@@ -101,7 +101,7 @@ class DataSource(AthenaSource):
         target_column: str = None,
         id_column: str = None,
         event_time_column: str = None,
-        one_hot_encode: bool = True,
+        auto_one_hot: bool = False,
     ) -> FeatureSet:
         """
         Convert the DataSource to a FeatureSet
@@ -112,7 +112,7 @@ class DataSource(AthenaSource):
             target_column (str): Set the target column for the feature set. (Optional)
             id_column (str): Set the id column for the feature set. If not specified will be generated.
             event_time_column (str): Set the event time for the feature set. If not specified will be generated.
-            one_hot_encode (bool): Whether to one-hot encode categorical fields (default: True)
+            auto_one_hot (bool): Automatically one-hot encode categorical fields (default: False)
 
         Returns:
             FeatureSet: The FeatureSet created from the DataSource
@@ -132,7 +132,7 @@ class DataSource(AthenaSource):
             target_column=target_column,
             id_column=id_column,
             event_time_column=event_time_column,
-            auto_categorize=one_hot_encode,
+            auto_one_hot=auto_one_hot,
         )
 
         # Return the FeatureSet (which will now be up-to-date)
@@ -175,8 +175,9 @@ if __name__ == "__main__":
 
     # Retrieve an existing Data Source
     test_data = DataSource("test_data")
-    pprint(test_data.summary())
-    pprint(test_data.details())
+    if test_data.exists():
+        pprint(test_data.summary())
+        pprint(test_data.details())
 
     # Create a new Data Source from a Pandas DataFrame
     gen_data = TestDataGenerator()

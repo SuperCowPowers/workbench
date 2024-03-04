@@ -19,12 +19,12 @@ class RowTagger:
         features: list,
         id_column: str,
         target_column: str,
-        min_dist: float,
+        within_dist: float,
         min_target_diff: float,
     ):
         # Set up some parameters
         self.id_column = id_column
-        self.min_dist = min_dist
+        self.within_dist = within_dist
         self.min_target_diff = min_target_diff
 
         # Do a validation check on the dataframe
@@ -82,7 +82,7 @@ class RowTagger:
     def high_gradients(self):
         """Find observations close in feature space with a high difference in target values
         High Target Gradient (HTG)"""
-        htg_indexes = self.f_spider.high_gradients(self.min_dist, self.min_target_diff, verbose=False)
+        htg_indexes = self.f_spider.high_gradients(self.within_dist, self.min_target_diff, verbose=False)
 
         # We get back index offsets (not labels) so we need to use iloc
         for index in htg_indexes:
@@ -123,7 +123,7 @@ def test():
         features=["feat1", "feat2", "feat3"],
         id_column="ID",
         target_column="price",
-        min_dist=2.0,
+        within_dist=2.0,
         min_target_diff=1.0,
     )
     data_df = row_tagger.tag_rows()

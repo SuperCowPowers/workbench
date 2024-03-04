@@ -45,60 +45,60 @@ class TestDataGenerator:
             pd.DataFrame: DataFrame of Person Data
         """
         df = pd.DataFrame()
-        df["id"] = range(1, rows + 1)
-        df["name"] = ["Person " + str(i) for i in range(1, rows + 1)]
+        df["Id"] = range(1, rows + 1)
+        df["Name"] = ["Person " + str(i) for i in range(1, rows + 1)]
 
         # Height will be normally distributed with mean 68 and std 4
-        df["height"] = np.random.normal(68, 4, rows)
+        df["Height"] = np.random.normal(68, 4, rows)
 
         # Weight is loosely correlated with height
-        df["weight"] = self.generate_correlated_series(df["height"], 0.2, 100, 300)
+        df["Weight"] = self.generate_correlated_series(df["Height"], 0.2, 100, 300)
 
         # Salary ranges from 80k to 200k and is correlated with height
-        df["salary"] = self.generate_correlated_series(df["height"], 0.95, 80000, 200000)
+        df["Salary"] = self.generate_correlated_series(df["Height"], 0.95, 80000, 200000)
 
         # Create a few salary outliers
         # Select 4 highest salaries and set them to a random value between 200k and 230k
-        salary_outliers = df.sort_values("salary", ascending=False)[:4]
-        df.loc[salary_outliers.index, "salary"] = np.random.randint(200000, 230000, len(salary_outliers))
+        salary_outliers = df.sort_values("Salary", ascending=False)[:4]
+        df.loc[salary_outliers.index, "Salary"] = np.random.randint(200000, 230000, len(salary_outliers))
 
         # Age is loosely correlated with salary
-        df["age"] = self.generate_correlated_series(df["salary"], 0.5, 20, 80)
+        df["Age"] = self.generate_correlated_series(df["Salary"], 0.5, 20, 80)
 
         # IQ Scores range from 100 to 150 and are negatively correlated with salary :)
-        df["iq_score"] = self.generate_correlated_series(df["salary"], -0.6, 100, 150)
+        df["IQ_Score"] = self.generate_correlated_series(df["Salary"], -0.6, 100, 150)
 
         # Food will be correlated with salary
         food_list = "pizza, tacos, steak, sushi".split(", ")
-        df["food"] = self.generate_correlated_series(df["salary"], 0.8, -1.5, 4.4)
+        df["Food"] = self.generate_correlated_series(df["Salary"], 0.8, -1.5, 4.4)
 
         # Round to nearest integer
-        df["food"] = df["food"].round().astype(int).clip(0, len(food_list) - 1)
+        df["Food"] = df["Food"].round().astype(int).clip(0, len(food_list) - 1)
 
         # Convert integers to food strings
-        df["food"] = df["food"].apply(lambda x: food_list[x])
+        df["Food"] = df["Food"].apply(lambda x: food_list[x])
 
         # Randomly apply some NaNs to the Food column
-        df["food"] = df["food"].apply(lambda x: np.nan if np.random.random() < 0.1 else x)
+        df["Food"] = df["Food"].apply(lambda x: np.nan if np.random.random() < 0.1 else x)
 
         # Boolean column for liking dogs (correlated to IQ)
-        df["likes_dogs"] = self.generate_correlated_series(df["iq_score"], 0.75, -0.5, 1.5)
-        df["likes_dogs"] = df["likes_dogs"].round().astype(int).clip(0, 1)
-        df["likes_dogs"] = df["likes_dogs"].apply(lambda x: True if x == 1 else False)
+        df["Likes_Dogs"] = self.generate_correlated_series(df["IQ_Score"], 0.75, -0.5, 1.5)
+        df["Likes_Dogs"] = df["Likes_Dogs"].round().astype(int).clip(0, 1)
+        df["Likes_Dogs"] = df["Likes_Dogs"].apply(lambda x: True if x == 1 else False)
 
         # Date is a random date between 1/1/2022 and 12/31/2022
-        df["date"] = pd.date_range(start="1/1/2022", end="12/31/2022", periods=rows, tz="US/Mountain")
+        df["Date"] = pd.date_range(start="1/1/2022", end="12/31/2022", periods=rows, tz="US/Mountain")
 
         # Get less bloated types for the columns
         df = df.astype(
             {
-                "id": "int32",
-                "age": "int32",
-                "height": "float32",
-                "weight": "float32",
-                "salary": "float32",
-                "iq_score": "float32",
-                "likes_dogs": "boolean",
+                "Id": "int32",
+                "Age": "int32",
+                "Height": "float32",
+                "Weight": "float32",
+                "Salary": "float32",
+                "IQ_Score": "float32",
+                "Likes_Dogs": "boolean",
             }
         )
 

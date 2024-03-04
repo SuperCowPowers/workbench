@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+from sklearn.impute import SimpleImputer
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -9,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 
 # Feature Spider Class
 class FeatureSpider:
-    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target_column: str, neighbors: int = 10):
+    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target_column: str, neighbors: int = 5):
         """FeatureSpider: A Spider for data/feature investigation and QA
 
         Args:
@@ -17,7 +18,7 @@ class FeatureSpider:
              features: List of feature column names
              id_column: Name of the ID column
              target_column: Name of the target column
-            neighbors: Number of neighbors to use in the KNN model (default: 10)
+             neighbors: Number of neighbors to use in the KNN model (default: 5)
         """
         # Check for expected columns
         for column in [id_column, target_column] + features:
@@ -30,6 +31,16 @@ class FeatureSpider:
         self.id_column = id_column
         self.target_column = target_column
         self.features = features
+
+        # Check for NaNs in the features and log the percentage
+        for feature in features:
+            nan_count = df[feature].isna().sum()
+            if nan_count > 0:
+                print(f"Feature '{feature}' has {nan_count} NaNs ({nan_count / len(df) * 100:.2f}%).")
+
+        # Impute NaNs with the mean value for each feature
+        imputer = SimpleImputer(strategy="mean")
+        df[features] = imputer.fit_transform(df[features])
 
         # Build our KNN model pipeline with StandardScalar
         knn = KNeighborsRegressor(n_neighbors=neighbors, weights="distance")
@@ -250,6 +261,29 @@ def test():
     query_df = data_df[data_df["ID"] == "id_0"].copy()
     print(f_spider.neighbor_info(query_df))
 
+    # Feature matrix
+    print(f_spider.get_feature_matrix())
+
+
+def integration_test():
+    """Integration Test for the FeatureResolution Class"""
+    from sageworks.api.feature_set import FeatureSet
+    from sageworks.api.model import Model
+
+    # Grab a test dataframe
+    fs = FeatureSet("aqsol_mol_descriptors")
+    test_df = fs.pull_dataframe()
+
+    # Get the target and feature columns
+    m = Model("aqsol-mol-regression")
+    target_column = m.target()
+    feature_columns = m.features()
+
+    # Create the class and run the report
+    resolution = FeatureSpider(test_df, features=feature_columns, target_column=target_column, id_column="id")
+    resolution.coincident(1.0)
+
 
 if __name__ == "__main__":
     test()
+    integration_test()

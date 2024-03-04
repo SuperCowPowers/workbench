@@ -105,17 +105,17 @@ if __name__ == "__main__":
     if end.exists():
         print("Deleting aqsol-regression-end endpoint...")
         end.delete()
-    fs = FeatureSet("aqsol_rdkit_features")
+    fs = FeatureSet("aqsol_mol_descriptors")
     if fs.exists():
-        print("Deleting aqsol_rdkit_features...")
+        print("Deleting aqsol_mol_descriptors...")
         fs.delete()
-    m = Model("aqsol-rdkit-regression")
+    m = Model("aqsol-descriptors-regression")
     if m.exists():
-        print("Deleting aqsol-rdkit-regression model...")
+        print("Deleting aqsol-mol-regression model...")
         m.delete()
-    end = Endpoint("aqsol-rdkit-regression-end")
+    end = Endpoint("aqsol-mol-regression-end")
     if end.exists():
-        print("Deleting aqsol-rdkit-regression-end endpoint...")
+        print("Deleting aqsol-mol-regression-end endpoint...")
         end.delete()
 
     time.sleep(5)
