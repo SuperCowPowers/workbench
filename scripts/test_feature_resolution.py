@@ -26,5 +26,4 @@ output_columns = ["solubility", "solubility_class", "smiles"]
 output_df = resolution.compute(within_distance=0.01, min_target_difference=1.0, output_columns=output_columns)
 
 # Print the output
-
 print(output_df.head())

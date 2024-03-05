@@ -399,16 +399,21 @@ class FeatureSetCore(Artifact):
         view_name = f"{self.athena_table}_training"
         self.log.important(f"Creating default Training View {view_name}...")
 
-        # Construct the CREATE VIEW query with a simple modulo operation for the 80/20 split
-        # using self.record_id as the stable identifier for row numbering
-        create_view_query = f"""
-        CREATE OR REPLACE VIEW {view_name} AS
-        SELECT *, CASE
-            WHEN MOD(ROW_NUMBER() OVER (ORDER BY {self.record_id}), 10) < 8 THEN 1  -- Assign roughly 80% to training
-            ELSE 0  -- Assign roughly 20% to validation
-        END AS training
-        FROM {self.athena_table}
-        """
+        # Do we already have a training column?
+        if "training" in self.column_names():
+            create_view_query = f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM {self.athena_table}"
+        else:
+            # No training column, so create one:
+            #    Construct the CREATE VIEW query with a simple modulo operation for the 80/20 split
+            #    using self.record_id as the stable identifier for row numbering
+            create_view_query = f"""
+            CREATE OR REPLACE VIEW {view_name} AS
+            SELECT *, CASE
+                WHEN MOD(ROW_NUMBER() OVER (ORDER BY {self.record_id}), 10) < 8 THEN 1  -- Assign roughly 80% to training
+                ELSE 0  -- Assign roughly 20% to validation
+            END AS training
+            FROM {self.athena_table}
+            """
 
         # Execute the CREATE VIEW query
         self.data_source.execute_statement(create_view_query)
@@ -449,7 +454,7 @@ class FeatureSetCore(Artifact):
         Args:
             create (bool): Create the training view if it doesn't exist (default=True)
         Returns:
-            str: The name of the training view for this FeatureSet (or None if it doesn't exist)
+            str: The name of the training view for this FeatureSet
         """
         training_view_name = f"{self.athena_table}_training"
         glue_client = self.boto_session.client("glue")
@@ -459,7 +464,7 @@ class FeatureSetCore(Artifact):
         except glue_client.exceptions.EntityNotFoundException:
             if not create:
                 return None
-            self.log.warning(f"Training View for {self.uuid} doesn't exist, creating a default one...")
+            self.log.warning(f"Training View for {self.uuid} doesn't exist, creating one...")
             self.create_default_training_view()
             time.sleep(1)  # Give AWS a second to catch up
             return training_view_name

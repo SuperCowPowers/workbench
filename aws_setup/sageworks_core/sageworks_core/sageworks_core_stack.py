@@ -279,6 +279,9 @@ class SageworksCoreStack(Stack):
         model_package_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:model-package/*/*"
         model_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:model/*"
 
+        # Sagemaker Pipelines
+        processing_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:processing-job/*"
+
         return iam.PolicyStatement(
             actions=[
                 # Actions for model package groups
@@ -306,6 +309,7 @@ class SageworksCoreStack(Stack):
                 model_package_group_arn,
                 model_package_arn,
                 model_arn,
+                processing_arn
             ],
         )
 
@@ -396,6 +400,53 @@ class SageworksCoreStack(Stack):
                 "sagemaker:ListMonitoringSchedules",
             ],
             resources=["*"],  # ListMonitoringSchedules does not support specific resources
+        )
+
+    def pipeline_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for running SageMaker Pipelines.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for running SageMaker Pipelines.
+        """
+
+        # Sagemaker Pipeline Processing Jobs ARN
+        processing_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:processing-job/*"
+
+        return iam.PolicyStatement(
+            actions=[
+                # Actions for Jobs
+                "sagemaker:CreateProcessingJob",
+                "sagemaker:DescribeProcessingJob",
+                "sagemaker:StopProcessingJob",
+                "sagemaker:ListProcessingJobs",
+                # Additional actions
+                "sagemaker:ListTags",
+                "sagemaker:AddTags",
+            ],
+            resources=[
+                processing_resources
+            ],
+        )
+
+    def ecr_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for pulling ECR Images.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for pulling ECR Images.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                # Actions for Pulling ECR Images
+                "ecr:GetAuthorizationToken",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:BatchGetImage",
+                "ecr-public:GetAuthorizationToken",
+                "ecr-public:BatchCheckLayerAvailability",
+                "ecr-public:BatchGetImage",
+            ],
+            resources=[
+                "*"
+            ],
         )
 
     @staticmethod
@@ -490,6 +541,8 @@ class SageworksCoreStack(Stack):
             self.model_policy_statement(),
             self.model_training_statement(),
             self.model_training_log_statement(),
+            self.pipeline_policy_statement(),
+            self.ecr_policy_statement(),
             self.cloudwatch_policy_statement(),
             self.sagemaker_pass_role_policy_statement(),
         ]
