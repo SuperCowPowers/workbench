@@ -96,8 +96,9 @@ class FeatureSet(FeatureSetCore):
         # Transform the FeatureSet into a Model
         features_to_model = FeaturesToModel(self.uuid, model_name, model_type=model_type)
         features_to_model.set_output_tags(tags)
-        features_to_model.transform(target_column=target_column, description=description,
-                                    feature_list=feature_list, **kwargs)
+        features_to_model.transform(
+            target_column=target_column, description=description, feature_list=feature_list, **kwargs
+        )
 
         # Return the Model
         return Model(model_name)
