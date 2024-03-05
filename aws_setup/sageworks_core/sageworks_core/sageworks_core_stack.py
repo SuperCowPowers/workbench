@@ -305,12 +305,7 @@ class SageworksCoreStack(Stack):
                 "sagemaker:ListTags",
                 "sagemaker:AddTags",
             ],
-            resources=[
-                model_package_group_arn,
-                model_package_arn,
-                model_arn,
-                processing_arn
-            ],
+            resources=[model_package_group_arn, model_package_arn, model_arn, processing_arn],
         )
 
     def model_training_statement(self) -> iam.PolicyStatement:
@@ -423,9 +418,7 @@ class SageworksCoreStack(Stack):
                 "sagemaker:ListTags",
                 "sagemaker:AddTags",
             ],
-            resources=[
-                processing_resources
-            ],
+            resources=[processing_resources],
         )
 
     def ecr_policy_statement(self) -> iam.PolicyStatement:
@@ -444,9 +437,7 @@ class SageworksCoreStack(Stack):
                 "ecr-public:BatchCheckLayerAvailability",
                 "ecr-public:BatchGetImage",
             ],
-            resources=[
-                "*"
-            ],
+            resources=["*"],
         )
 
     @staticmethod

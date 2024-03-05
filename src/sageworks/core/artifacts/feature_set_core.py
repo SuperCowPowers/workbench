@@ -409,7 +409,7 @@ class FeatureSetCore(Artifact):
             create_view_query = f"""
             CREATE OR REPLACE VIEW {view_name} AS
             SELECT *, CASE
-                WHEN MOD(ROW_NUMBER() OVER (ORDER BY {self.record_id}), 10) < 8 THEN 1  -- Assign roughly 80% to training
+                WHEN MOD(ROW_NUMBER() OVER (ORDER BY {self.record_id}), 10) < 8 THEN 1  -- Assign 80% to training
                 ELSE 0  -- Assign roughly 20% to validation
             END AS training
             FROM {self.athena_table}
