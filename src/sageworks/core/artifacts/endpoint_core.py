@@ -441,6 +441,12 @@ class EndpointCore(Artifact):
         # Get the target column
         target_column = ModelCore(self.model_name).target()
 
+        # Sanity Check that the target column is present
+        if target_column not in prediction_df.columns:
+            self.log.warning(f"Target Column {target_column} not found in prediction_df!")
+            self.log.warning("In order to compute metrics, the target column must be present!")
+            return prediction_df
+
         # Compute the standard performance metrics for this model
         model_type = self.model_type()
         if model_type == ModelType.REGRESSOR.value:
