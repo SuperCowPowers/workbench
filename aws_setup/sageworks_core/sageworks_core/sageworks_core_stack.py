@@ -412,8 +412,9 @@ class SageworksCoreStack(Stack):
                 # Actions for Jobs
                 "sagemaker:CreateProcessingJob",
                 "sagemaker:DescribeProcessingJob",
-                "sagemaker:StopProcessingJob",
                 "sagemaker:ListProcessingJobs",
+                "sagemaker:StopProcessingJob",
+
                 # Additional actions
                 "sagemaker:ListTags",
                 "sagemaker:AddTags",
@@ -433,11 +434,13 @@ class SageworksCoreStack(Stack):
                 "ecr:GetAuthorizationToken",
                 "ecr:BatchCheckLayerAvailability",
                 "ecr:BatchGetImage",
+                "ecr:GetDownloadUrlForLayer",  # May be required for pulling layers
+                # Public ECR actions
                 "ecr-public:GetAuthorizationToken",
                 "ecr-public:BatchCheckLayerAvailability",
                 "ecr-public:BatchGetImage",
             ],
-            resources=["*"],
+            resources=["*"],  # Typically, resources are set to "*" for ECR actions
         )
 
     @staticmethod
