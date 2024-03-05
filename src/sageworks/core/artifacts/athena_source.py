@@ -192,8 +192,8 @@ class AthenaSource(DataSourceAbstract):
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
-        count_df = self.query(f'select count(*) AS count from "{self.get_database()}"."{self.get_table_name()}"')
-        return count_df["count"][0]
+        count_df = self.query(f'select count(*) AS sageworks_count from "{self.get_database()}"."{self.get_table_name()}"')
+        return count_df["sageworks_count"][0]
 
     def num_columns(self) -> int:
         """Return the number of columns for this Data Source"""
@@ -251,7 +251,7 @@ class AthenaSource(DataSourceAbstract):
 
     def athena_test_query(self):
         """Validate that Athena Queries are working"""
-        query = f"select count(*) as count from {self.get_table_name()}"
+        query = f"select count(*) as sageworks_count from {self.get_table_name()}"
         df = wr.athena.read_sql_query(
             sql=query,
             database=self.get_database(),

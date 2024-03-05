@@ -32,18 +32,18 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
         if data_type in ["string", "boolean"]:
             # Combined query to get both top and bottom counts
             query = (
-                f'(SELECT "{column}", count(*) as count '
+                f'(SELECT "{column}", count(*) as sageworks_count '
                 f"FROM {table} "
-                f'GROUP BY "{column}" ORDER BY count DESC LIMIT 20) '
+                f'GROUP BY "{column}" ORDER BY sageworks_count DESC LIMIT 20) '
                 f"UNION ALL "
-                f'(SELECT "{column}", count(*) as count '
+                f'(SELECT "{column}", count(*) as sageworks_count '
                 f"FROM {table} "
-                f'GROUP BY "{column}" ORDER BY count ASC LIMIT 20)'
+                f'GROUP BY "{column}" ORDER BY sageworks_count ASC LIMIT 20)'
             )
             result_df = data_source.query(query)
 
             # Convert Int64 (nullable) to int32 so that we can serialize to JSON
-            result_df["count"] = result_df["count"].astype("int32")
+            result_df["sageworks_count"] = result_df["sageworks_count"].astype("int32")
 
             # If the column is boolean, convert the values to True/False strings (for JSON)
             if result_df[column].dtype == "boolean":
@@ -53,14 +53,14 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
             result_df.fillna("NaN", inplace=True)
 
             # If all of our counts equal 1 we can drop most of them
-            if result_df["count"].sum() == result_df.shape[0]:
+            if result_df["sageworks_count"].sum() == result_df.shape[0]:
                 result_df = result_df.iloc[:5]
 
             # Shorten any long string values
             result_df = shorten_values(result_df)
 
             # Convert the result_df into a dictionary
-            value_count_dict[column] = dict(zip(result_df[column], result_df["count"]))
+            value_count_dict[column] = dict(zip(result_df[column], result_df["sageworks_count"]))
 
     # Return the value_count data
     return value_count_dict
