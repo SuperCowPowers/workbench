@@ -414,7 +414,6 @@ class SageworksCoreStack(Stack):
                 "sagemaker:DescribeProcessingJob",
                 "sagemaker:ListProcessingJobs",
                 "sagemaker:StopProcessingJob",
-
                 # Additional actions
                 "sagemaker:ListTags",
                 "sagemaker:AddTags",
