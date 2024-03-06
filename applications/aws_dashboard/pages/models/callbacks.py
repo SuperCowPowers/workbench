@@ -5,7 +5,13 @@ from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.model_web_view import ModelWebView
-from sageworks.web_components import table, inference_run_selector, model_details_markdown, model_metrics_markdown, model_plot
+from sageworks.web_components import (
+    table,
+    inference_run_selector,
+    model_details_markdown,
+    model_metrics_markdown,
+    model_plot,
+)
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 from sageworks.api.model import Model
 
@@ -52,10 +58,7 @@ def table_row_select(app: Dash, table_name: str):
 # Updates the model details when a model row is selected
 def update_model_detail_component(app: Dash):
     @app.callback(
-        [
-            Output("model_details_header", "children"),
-            Output("model_details", "children")
-        ],
+        [Output("model_details_header", "children"), Output("model_details", "children")],
         Input("models_table", "derived_viewport_selected_row_ids"),
         State("models_table", "data"),
         prevent_initial_call=True,
@@ -78,7 +81,8 @@ def update_model_detail_component(app: Dash):
 
         # Return the details/markdown for these data details
         return [header, model_details_fig]
-    
+
+
 # Updates Inference Run Selector Component
 def update_inference_run_selector(app: Dash):
     @app.callback(
@@ -88,7 +92,6 @@ def update_inference_run_selector(app: Dash):
         prevent_initial_call=True,
     )
     def generate_inference_run_selector_figure(selected_rows, table_data):
-
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return no_update
@@ -103,20 +106,17 @@ def update_inference_run_selector(app: Dash):
 
         # Return the details/markdown for these data details
         return inference_runs
-    
+
+
 # Updates the model metrics when a model row is selected
 def update_model_metrics_component(app: Dash):
     @app.callback(
         Output("model_metrics", "children"),
-        [
-            Input("models_table", "derived_viewport_selected_row_ids"),
-            Input("inference_run_selector", "value")
-        ],
+        [Input("models_table", "derived_viewport_selected_row_ids"), Input("inference_run_selector", "value")],
         State("models_table", "data"),
         prevent_initial_call=True,
     )
     def generate_model_metrics_figure(selected_rows, inference_run, table_data):
-
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return no_update
@@ -131,15 +131,13 @@ def update_model_metrics_component(app: Dash):
 
         # Return the details/markdown for these data details
         return model_metrics_fig
-    
+
+
 # Updates the model plot when a model row is selected
 def update_model_plot_component(app: Dash):
     @app.callback(
         Output("model_plot", "figure"),
-        [
-            Input("models_table", "derived_viewport_selected_row_ids"),
-            Input("inference_run_selector", "value")
-        ],
+        [Input("models_table", "derived_viewport_selected_row_ids"), Input("inference_run_selector", "value")],
         State("models_table", "data"),
         prevent_initial_call=True,
     )

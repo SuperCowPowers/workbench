@@ -9,7 +9,13 @@ from .layout import models_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, model_details_markdown, model_metrics_markdown, inference_run_selector, model_plot
+from sageworks.web_components import (
+    table,
+    model_details_markdown,
+    model_metrics_markdown,
+    inference_run_selector,
+    model_plot,
+)
 from sageworks.web_components.plugin_interface import PluginType
 from sageworks.views.model_web_view import ModelWebView
 from sageworks.utils.plugin_manager import PluginManager

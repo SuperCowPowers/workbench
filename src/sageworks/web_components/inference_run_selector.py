@@ -44,16 +44,14 @@ if __name__ == "__main__":
     from sageworks.api import Model
 
     # Instantiate model
-    m = Model("hlm-source-class-model-abbrev-3")
+    m = Model("abalone-regression")
 
     # Instantiate the class
     irs = InferenceRunSelector()
 
     # Generate the component
-    dropdown = irs.create_component('dropdown')
+    dropdown = irs.create_component("dropdown")
     inf_runs = irs.generate_component(m)
-    print(inf_runs) 
-    # print(dropdown.values)
 
     # Initialize Dash app
     app = dash.Dash(
@@ -62,21 +60,12 @@ if __name__ == "__main__":
         assets_folder="/home/kolmar/sageworks/applications/aws_dashboard/assets",
     )
 
-    app.layout = html.Div(
-        [
-            dropdown,
-            html.Div(id='dd-output-container')
-        ])
-    
+    app.layout = html.Div([dropdown, html.Div(id="dd-output-container")])
     dropdown.options = inf_runs
-    print(dropdown.options)
 
-    @callback(
-        Output('dd-output-container', 'children'),
-        Input('dropdown', 'value')
-    )
+    @callback(Output("dd-output-container", "children"), Input("dropdown", "value"))
     def update_output(value):
-        return f'You have selected {value}'
-
-    if __name__ == "__main__":
-        app.run_server(debug=True)
+        return f"You have selected {value}"
+    
+    # Run server
+    app.run_server(debug=True)

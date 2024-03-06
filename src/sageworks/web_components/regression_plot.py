@@ -19,7 +19,6 @@ class RegressionPlot(ComponentInterface):
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
     def generate_component_figure(self, model: Model, inference_run: str = None) -> go.Figure:
-
         # Get predictions for specific inference
         df = model.inference_predictions(inference_run)
 

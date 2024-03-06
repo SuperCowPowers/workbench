@@ -46,7 +46,7 @@ def models_layout(
                                     model_details,
                                     html.H3("Select Inference Run:", id="inference_run_selector_header"),
                                     inference_run_selector,
-                                    model_metrics
+                                    model_metrics,
                                 ],
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
