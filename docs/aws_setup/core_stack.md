@@ -44,15 +44,19 @@ For more information on Linux installs see [Digital Ocean NodeJS](https://www.di
 SageWorks pushes and pulls data from AWS, it will use this S3 Bucket for storage and processing. You should create a **NEW** S3 Bucket, we suggest a name like `<company_name>-sageworks`
 
 ## Deploying the SageWorks Core Stack
+Do the initial setup/config here: [Getting Started: Initial Setup](../index.md#initial-setupconfig). After you've done that come back to this section. For Stack Deployment additional things need to be added to your config file. The config file will be located in your home directory `~/.sageworks/sageworks_config.json`. Edit this file and add addition stuff for the deployment. Specifically there are two additional fields to be added (optional for both)
+
+```
+"SAGEWORKS_SSO_GROUP": DataScientist (or whatever)
+"SAGEWORKS_ADDITIONAL_BUCKETS": "bucket1, bucket2
+```
+These are optional but are set/used by most SageWorks users.
 
 !!! note "AWS Stuff"
     Activate your AWS Account that's used for SageWorks deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)
 
   ```bash
   cd sageworks/aws_setup/sageworks_core
-  export AWS_PROFLE=<aws_admin_account>
-  export SAGEWORKS_BUCKET=<name of your S3 bucket>
-  (optional) export SAGEWORKS_SSO_GROUP=<your SSO group>
   pip install -r requirements.txt
   cdk bootstrap
   cdk deploy
@@ -62,7 +66,7 @@ SageWorks pushes and pulls data from AWS, it will use this S3 Bucket for storage
 After setting up SageWorks config/AWS Account you can run this test/checking script. If the results ends with `INFO AWS Account Clamp: AOK!` you're in good shape. If not feel free to contact us on [Discord](https://discord.gg/WHAJuz8sw8) and we'll get it straightened out for you :)
 
 ```bash
-pip install sageworks
+pip install sageworks (if not already installed)
 cd sageworks/aws_setup
 python aws_account_check.py
 <lot of print outs for various checks>
