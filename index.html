@@ -297,6 +297,57 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Getting Started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#web-interfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      Web Interfaces
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python API
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#initial-setupconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      Initial Setup/Config
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aws-folks-initial-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      AWS Folks (initial setup)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-scientistsengineers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Scientists/Engineers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1416,6 +1467,57 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Getting Started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#web-interfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      Web Interfaces
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python API
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#initial-setupconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      Initial Setup/Config
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aws-folks-initial-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      AWS Folks (initial setup)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-scientistsengineers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Scientists/Engineers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1464,8 +1566,39 @@
 <li>Endpoints</li>
 </ul>
 <h2 id="getting-started">Getting Started</h2>
+<p>The SageWorks package has two main components, a Web Interface that provides visibility into AWS ML PIpelines and a Python API that makes creation and usage of the AWS ML Services easier than using/learning the services directly.</p>
+<h3 id="web-interfaces">Web Interfaces</h3>
+<p>The SageWorks Dashboard has a set of web interfaces that give visibility into the AWS Glue and SageMaker Services. There are currently 5 web interfaces available:</p>
 <ul>
-<li>Setting up SageWorks on your AWS Account: <a href="aws_setup/core_stack/">AWS Setup</a></li>
+<li><strong>Top Level Dashboard:</strong> Shows all AWS ML Artifacts (Glue and SageMaker)</li>
+<li><strong>DataSources:</strong> DataSource Column Details, Distributions and Correlations</li>
+<li><strong>FeatureSets:</strong> FeatureSet Details, Distributions and Correlations</li>
+<li><strong>Model:</strong> Model details, performance metric, and inference plots</li>
+<li><strong>Endpoints:</strong> Endpoint details, realtime charts of endpoint performance and latency</li>
+</ul>
+<h3 id="python-api">Python API</h3>
+<p>SageWorks API Documentation: <a href="api_classes/overview/">SageWorks API Classes</a> </p>
+<p>The main functionality of the Python API is to encapsulate and manage a set of AWS services underneath a Python Object interface. The Python Classes are used to create and interact with Machine Learning Pipeline Artifacts.</p>
+<h3 id="initial-setupconfig">Initial Setup/Config</h3>
+<p><strong>Note:</strong> Use the SageWorks REPL to setup your AWS connection for both API Usage (Data Scientists/Engineers) and AWS Initial Setup (AWS Folks).</p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&gt; pip install sageworks
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>&gt; sageworks &lt;-- This starts the REPL
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Welcome to SageWorks!
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>Looks like this is your first time using SageWorks...
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>Let&#39;s get you set up...
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>AWS_PROFILE: my_aws_profile
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>SAGEWORKS_BUCKET: my-company-sageworks
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>[optional] REDIS_HOST(localhost): my-redis.cache.amazon (or leave blank)
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>[optional] REDIS_PORT(6379):
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>[optional] REDIS_PASSWORD():
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>[optional] SAGEWORKS_API_KEY(open_source): my_api_key (or leave blank)
+</span></code></pre></div>
+<strong>That's It:</strong> You're now all set. This configuration only needs to be <strong>ONCE</strong> :)</p>
+<h3 id="aws-folks-initial-setup">AWS Folks (initial setup)</h3>
+<p>Setting up SageWorks on your AWS Account: <a href="aws_setup/core_stack/">AWS Setup</a></p>
+<h3 id="data-scientistsengineers">Data Scientists/Engineers</h3>
+<ul>
 <li>SageWorks REPL: <a href="repl/">SageWorks REPL</a></li>
 <li>Using SageWorks for ML Pipelines: <a href="api_classes/overview/">SageWorks API Classes</a></li>
 <li>SCP SageWorks Github: <a href="https://github.com/SuperCowPowers/sageworks">Github Repo</a></li>

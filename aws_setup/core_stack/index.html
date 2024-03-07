@@ -1536,25 +1536,27 @@ For more information on Linux installs see <a href="https://www.digitalocean.com
 <h2 id="create-an-s3-bucket-for-sageworks">Create an S3 Bucket for SageWorks</h2>
 <p>SageWorks pushes and pulls data from AWS, it will use this S3 Bucket for storage and processing. You should create a <strong>NEW</strong> S3 Bucket, we suggest a name like <code>&lt;company_name&gt;-sageworks</code></p>
 <h2 id="deploying-the-sageworks-core-stack">Deploying the SageWorks Core Stack</h2>
+<p>Do the initial setup/config here: <a href="../../#initial-setupconfig">Getting Started: Initial Setup</a>. After you've done that come back to this section. For Stack Deployment additional things need to be added to your config file. The config file will be located in your home directory <code>~/.sageworks/sageworks_config.json</code>. Edit this file and add addition stuff for the deployment. Specifically there are two additional fields to be added (optional for both)</p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>&quot;SAGEWORKS_SSO_GROUP&quot;: DataScientist (or whatever)
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>&quot;SAGEWORKS_ADDITIONAL_BUCKETS&quot;: &quot;bucket1, bucket2
+</span></code></pre></div>
+These are optional but are set/used by most SageWorks users.</p>
 <div class="admonition note">
 <p class="admonition-title">AWS Stuff</p>
 <p>Activate your AWS Account that's used for SageWorks deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)</p>
 </div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">cd</span><span class="w"> </span>sageworks/aws_setup/sageworks_core
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_PROFLE</span><span class="o">=</span>&lt;aws_admin_account&gt;
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SAGEWORKS_BUCKET</span><span class="o">=</span>&lt;name<span class="w"> </span>of<span class="w"> </span>your<span class="w"> </span>S3<span class="w"> </span>bucket&gt;
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="o">(</span>optional<span class="o">)</span><span class="w"> </span><span class="nb">export</span><span class="w"> </span><span class="nv">SAGEWORKS_SSO_GROUP</span><span class="o">=</span>&lt;your<span class="w"> </span>SSO<span class="w"> </span>group&gt;
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>cdk<span class="w"> </span>bootstrap
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>cdk<span class="w"> </span>deploy
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">cd</span><span class="w"> </span>sageworks/aws_setup/sageworks_core
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>cdk<span class="w"> </span>bootstrap
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>cdk<span class="w"> </span>deploy
 </span></code></pre></div>
 <h2 id="aws-account-setup-check">AWS Account Setup Check</h2>
 <p>After setting up SageWorks config/AWS Account you can run this test/checking script. If the results ends with <code>INFO AWS Account Clamp: AOK!</code> you're in good shape. If not feel free to contact us on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> and we'll get it straightened out for you :)</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pip<span class="w"> </span>install<span class="w"> </span>sageworks
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">cd</span><span class="w"> </span>sageworks/aws_setup
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>python<span class="w"> </span>aws_account_check.py
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>&lt;lot<span class="w"> </span>of<span class="w"> </span>print<span class="w"> </span>outs<span class="w"> </span><span class="k">for</span><span class="w"> </span>various<span class="w"> </span>checks&gt;
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="m">2023</span>-04-12<span class="w"> </span><span class="m">11</span>:17:09<span class="w"> </span><span class="o">(</span>aws_account_check.py:48<span class="o">)</span><span class="w"> </span>INFO<span class="w"> </span>AWS<span class="w"> </span>Account<span class="w"> </span>Clamp:<span class="w"> </span>AOK!
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>sageworks<span class="w"> </span><span class="o">(</span><span class="k">if</span><span class="w"> </span>not<span class="w"> </span>already<span class="w"> </span>installed<span class="o">)</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nb">cd</span><span class="w"> </span>sageworks/aws_setup
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>python<span class="w"> </span>aws_account_check.py
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>&lt;lot<span class="w"> </span>of<span class="w"> </span>print<span class="w"> </span>outs<span class="w"> </span><span class="k">for</span><span class="w"> </span>various<span class="w"> </span>checks&gt;
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="m">2023</span>-04-12<span class="w"> </span><span class="m">11</span>:17:09<span class="w"> </span><span class="o">(</span>aws_account_check.py:48<span class="o">)</span><span class="w"> </span>INFO<span class="w"> </span>AWS<span class="w"> </span>Account<span class="w"> </span>Clamp:<span class="w"> </span>AOK!
 </span></code></pre></div>
 <div class="admonition success">
 <p class="admonition-title">Success</p>
