@@ -62,6 +62,7 @@ class ModelToEndpoint(Transform):
         input_model.register_endpoint(self.output_uuid)
 
         # This ensures that the endpoint is ready for use
+        time.sleep(5)
         end = EndpointCore(self.output_uuid, force_refresh=True)
         self.log.important(f"Endpoint {end.uuid} is ready for use")
 
