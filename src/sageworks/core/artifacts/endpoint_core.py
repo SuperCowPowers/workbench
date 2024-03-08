@@ -536,27 +536,34 @@ class EndpointCore(Artifact):
         X_pred = pred_results_df[model_features]
 
         # Compute the SHAP values
-        shap_vals = self.shap_values(model_artifact, X_pred)
+        try:
+            shap_vals = self.shap_values(model_artifact, X_pred)
+        except Exception as e:
+            self.log.error(f"Error computing SHAP values: {e}")
+            shap_vals = None
 
-        # Multiple shap vals CSV for classifiers
-        if model_type == ModelType.CLASSIFIER.value:
-            # Need a separate shapley values CSV for each class
-            for i, class_shap_vals in enumerate(shap_vals):
-                df_shap = pd.DataFrame(class_shap_vals, columns=X_pred.columns)
+        # Write the SHAP values to our S3 Model Inference Folder
+        if shap_vals is not None:
+
+            # Multiple shap vals CSV for classifiers
+            if model_type == ModelType.CLASSIFIER.value:
+                # Need a separate shapley values CSV for each class
+                for i, class_shap_vals in enumerate(shap_vals):
+                    df_shap = pd.DataFrame(class_shap_vals, columns=X_pred.columns)
+
+                    # Write shap vals to S3 Model Inference Folder
+                    shap_file_path = f"{inference_capture_path}/inference_shap_values_class_{i}.csv"
+                    self.log.debug(f"Writing SHAP values to {shap_file_path}")
+                    wr.s3.to_csv(df_shap, shap_file_path, index=False)
+
+            # Single shap vals CSV for regressors
+            if model_type == ModelType.REGRESSOR.value:
+                # Format shap values into single dataframe
+                df_shap = pd.DataFrame(shap_vals, columns=X_pred.columns)
 
                 # Write shap vals to S3 Model Inference Folder
-                shap_file_path = f"{inference_capture_path}/inference_shap_values_class_{i}.csv"
-                self.log.debug(f"Writing SHAP values to {shap_file_path}")
-                wr.s3.to_csv(df_shap, shap_file_path, index=False)
-
-        # Single shap vals CSV for regressors
-        if model_type == ModelType.REGRESSOR.value:
-            # Format shap values into single dataframe
-            df_shap = pd.DataFrame(shap_vals, columns=X_pred.columns)
-
-            # Write shap vals to S3 Model Inference Folder
-            self.log.debug(f"Writing SHAP values to {inference_capture_path}/inference_shap_values.csv")
-            wr.s3.to_csv(df_shap, f"{inference_capture_path}/inference_shap_values.csv", index=False)
+                self.log.debug(f"Writing SHAP values to {inference_capture_path}/inference_shap_values.csv")
+                wr.s3.to_csv(df_shap, f"{inference_capture_path}/inference_shap_values.csv", index=False)
 
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
