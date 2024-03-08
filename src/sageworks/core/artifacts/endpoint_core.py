@@ -538,12 +538,6 @@ class EndpointCore(Artifact):
         # Compute the SHAP values
         try:
             shap_vals = self.shap_values(model_artifact, X_pred)
-        except Exception as e:
-            self.log.error(f"Error computing SHAP values: {e}")
-            shap_vals = None
-
-        # Write the SHAP values to our S3 Model Inference Folder
-        if shap_vals is not None:
 
             # Multiple shap vals CSV for classifiers
             if model_type == ModelType.CLASSIFIER.value:
@@ -564,6 +558,9 @@ class EndpointCore(Artifact):
                 # Write shap vals to S3 Model Inference Folder
                 self.log.debug(f"Writing SHAP values to {inference_capture_path}/inference_shap_values.csv")
                 wr.s3.to_csv(df_shap, f"{inference_capture_path}/inference_shap_values.csv", index=False)
+
+        except Exception as e:
+            self.log.error(f"Error computing SHAP values: {e}")
 
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
