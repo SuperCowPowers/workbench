@@ -61,6 +61,10 @@ class ModelToEndpoint(Transform):
         # Add this endpoint to the set of registered endpoints for the model
         input_model.register_endpoint(self.output_uuid)
 
+        # This ensures that the endpoint is ready for use
+        end = EndpointCore(self.output_uuid, force_refresh=True)
+        print(f"Endpoint {end.uuid} is ready for use")
+
     def _realtime_deploy(self, model_package_arn: str):
         """Internal Method: Deploy the Realtime Endpoint
 
