@@ -63,7 +63,7 @@ class ModelToEndpoint(Transform):
 
         # This ensures that the endpoint is ready for use
         end = EndpointCore(self.output_uuid, force_refresh=True)
-        print(f"Endpoint {end.uuid} is ready for use")
+        self.log.important(f"Endpoint {end.uuid} is ready for use")
 
     def _realtime_deploy(self, model_package_arn: str):
         """Internal Method: Deploy the Realtime Endpoint
