@@ -44,7 +44,7 @@ class ModelToEndpoint(Transform):
         """Deploy an Endpoint for a Model"""
 
         # Delete endpoint (if it already exists)
-        existing_endpoint = EndpointCore(self.output_uuid)
+        existing_endpoint = EndpointCore(self.output_uuid, force_refresh=True)
         if existing_endpoint.exists():
             existing_endpoint.delete()
 
