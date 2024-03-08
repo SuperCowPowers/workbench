@@ -11,7 +11,6 @@ from sageworks.utils.pandas_utils import DataFrameBuilder
 
 # Feature Resolution Class
 class FeatureResolution:
-
     def __init__(
         self,
         input_df: pd.DataFrame,
@@ -99,7 +98,6 @@ class FeatureResolution:
 
             # Loop through the neighbors
             for n_index, n_distance, n_target in zip(indices, distances, target_values):
-
                 # Skip myself
                 if n_index == my_index:
                     continue
@@ -110,7 +108,6 @@ class FeatureResolution:
 
                 # Compute target differences `within_distance` feature space
                 if feature_diff <= within_distance and target_diff >= min_target_difference:
-
                     # Gather info about the neighbor
                     neighbor_id = self.df.iloc[n_index][self.id_column]
                     # neighbor_output_data = self.df.iloc[n_index][output_columns]  currently unused
