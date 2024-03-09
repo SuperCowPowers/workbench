@@ -19,8 +19,16 @@ The SageWorks framework makes AWS® both easier to use and more powerful. SageWo
 
 
 ### Installation
+
+- ```pip install sageworks```  Installs SageWorks
+
+- ```sageworks``` Runs the SageWorks REPL/Initial Setup
+
+For the full instructions for connecting your AWS Account see:
+
+- Initial Setup/Config: [Initial Setup](https://supercowpowers.github.io/sageworks/#initial-setupconfig) 
 - One time AWS Onboarding: [AWS Setup](https://supercowpowers.github.io/sageworks/aws_setup/core_stack/)
-- After that your development team can simply `pip install sageworks`
+
 
 
 ### SageWorks Documentation
