@@ -9,6 +9,7 @@ Thank you for contributing to the SuperCowPowers SageWorks project. Please make 
 [  ] Tox: black/flake8 passes
 [  ] Tox: 100% of the tests passed
 [  ] I've updated the documentation accordingly.
+[  ] I've added (or will add) a reviewer to the PR.
 
 ## Description of Changes
 
