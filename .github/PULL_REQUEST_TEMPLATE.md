@@ -2,7 +2,7 @@
 
 Thank you for contributing to the SuperCowPowers SageWorks project. Please make sure you've completed the following tasks before submitting your pull request:
 
-- [ ] I've read the [CONTRIBUTING](../CONTRIBUTING.md) document.
+- [ ] I've read the [CONTRIBUTING](https://github.com/SuperCowPowers/sageworks/blob/main/CONTRIBUTING.md) document.
 - [ ] I've merged 'main' into my PR branch (like today's main)
 - [ ] I've added tests to cover my changes.
 - [ ] I've run 'tox' (local testing)
