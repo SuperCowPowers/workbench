@@ -10,6 +10,7 @@ Thank you for contributing to the SuperCowPowers SageWorks project. Please make 
 [  ] Tox: 100% of the tests passed
 [  ] I've updated the documentation accordingly.
 [  ] I've added (or will add) a reviewer to the PR.
+[  ] I will delete the branch after the PR is merged 
 
 ## Description of Changes
 
