@@ -744,6 +744,9 @@ class EndpointCore(Artifact):
             self.log.info("Endpoint ClientError...")
             raise e
 
+        # One more sleep as deletions can take a while
+        time.sleep(5)
+
     def delete_endpoint_models(self):
         """Delete the underlying Model for an Endpoint"""
 
