@@ -744,7 +744,7 @@ class EndpointCore(Artifact):
             self.log.info("Endpoint ClientError...")
             raise e
 
-        # One more sleep as deletions can take a while
+        # One more sleep to let AWS fully register the endpoint deletion
         time.sleep(5)
 
     def delete_endpoint_models(self):
