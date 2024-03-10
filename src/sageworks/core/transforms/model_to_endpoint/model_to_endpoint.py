@@ -47,6 +47,7 @@ class ModelToEndpoint(Transform):
         existing_endpoint = EndpointCore(self.output_uuid, force_refresh=True)
         if existing_endpoint.exists():
             existing_endpoint.delete()
+            time.sleep(5)  # We wait for AWS Lag
 
         # Get the Model Package ARN for our input model
         input_model = ModelCore(self.input_uuid)
@@ -62,7 +63,7 @@ class ModelToEndpoint(Transform):
         input_model.register_endpoint(self.output_uuid)
 
         # This ensures that the endpoint is ready for use
-        time.sleep(5)
+        time.sleep(5)  # We wait for AWS Lag
         end = EndpointCore(self.output_uuid, force_refresh=True)
         self.log.important(f"Endpoint {end.uuid} is ready for use")
 
