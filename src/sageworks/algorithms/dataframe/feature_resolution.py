@@ -110,7 +110,7 @@ class FeatureResolution:
                 if feature_diff <= within_distance and target_diff >= min_target_difference:
                     # Gather info about the neighbor
                     neighbor_id = self.df.iloc[n_index][self.id_column]
-                    # neighbor_output_data = self.df.iloc[n_index][output_columns]  currently unused
+                    neighbor_output_data = self.df.iloc[n_index][output_columns]
 
                     # Add to the output DataFrame
                     row_data = my_output_data.to_dict()
@@ -123,7 +123,7 @@ class FeatureResolution:
                     if verbose:
                         print(f"{output_count} Feature Diff: {feature_diff} Target Diff: {target_diff}")
                         print(f"\t{my_id}: {my_target:.3f} {list(my_output_data)}")
-                        print(f"\t{neighbor_id}: {n_target:.3f} {list(self.df.iloc[n_index][output_columns])}")
+                        print(f"\t{neighbor_id}: {n_target:.3f} {list(neighbor_output_data)}")
                     # Increment the output count
                     output_count += 1
 

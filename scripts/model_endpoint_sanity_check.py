@@ -35,7 +35,7 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
         log.debug(f"Model Group: {model_group_name} ({num_packages} packages)")
 
     # Get all the model packages
-    all_model_packages = sagemaker_client.list_model_packages()
+    all_model_packages = sagemaker_client.list_model_packages(MaxResults=100)
 
     # Figure out with model packages are NOT part of a model package group
     standalone_model_packages = []

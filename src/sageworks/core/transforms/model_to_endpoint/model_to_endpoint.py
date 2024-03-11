@@ -44,7 +44,7 @@ class ModelToEndpoint(Transform):
         """Deploy an Endpoint for a Model"""
 
         # Delete endpoint (if it already exists)
-        existing_endpoint = EndpointCore(self.output_uuid)
+        existing_endpoint = EndpointCore(self.output_uuid, force_refresh=True)
         if existing_endpoint.exists():
             existing_endpoint.delete()
 
@@ -60,6 +60,11 @@ class ModelToEndpoint(Transform):
 
         # Add this endpoint to the set of registered endpoints for the model
         input_model.register_endpoint(self.output_uuid)
+
+        # This ensures that the endpoint is ready for use
+        time.sleep(5)  # We wait for AWS Lag
+        end = EndpointCore(self.output_uuid, force_refresh=True)
+        self.log.important(f"Endpoint {end.uuid} is ready for use")
 
     def _realtime_deploy(self, model_package_arn: str):
         """Internal Method: Deploy the Realtime Endpoint

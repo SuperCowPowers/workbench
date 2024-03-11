@@ -7,6 +7,7 @@
 """
 
 import sys
+import time
 import argparse
 from enum import Enum, auto
 import logging
@@ -113,16 +114,30 @@ class AWSServiceBroker:
         Args:
             category (ServiceCategory): The Category of metadata to Pull
         """
-        # Refresh the connection for the given category and pull new data
-        try:
-            cls.fresh_cache.set(category, True)
-            cls.connection_map[category].refresh()
-            cls.meta_cache.set(category, cls.connection_map[category].summary())
-        except ClientError as error:
-            error_code = error.response["Error"]["Code"]
-            error_message = error.response["Error"]["Message"]
-            cls.log.warning(f"Failed to refresh AWS data for {category}: {error_code} - {error_message}")
-            cls.log.warning(f"ClientError response: {error.response}")
+        max_attempts = 5
+        sleep_times = [1, 2, 4, 8, 16]
+        for attempt in range(max_attempts):
+            try:
+                cls.fresh_cache.set(category, True)
+                cls.connection_map[category].refresh()
+                cls.meta_cache.set(category, cls.connection_map[category].summary())
+                return  # Success, exit the loop
+            except ClientError as error:
+                error_code = error.response["Error"]["Code"]
+                error_message = error.response["Error"]["Message"]
+                cls.log.warning(
+                    f"Attempt {attempt}: Failed to refresh AWS data for {category}: {error_code} - {error_message}"
+                )
+
+                # Exponential backoff for ThrottlingExceptions
+                if error_code == "ThrottlingException" and attempt < max_attempts:
+                    cls.log.warning(
+                        f"ThrottlingException: Waiting for {sleep_times[attempt]} seconds before retrying..."
+                    )
+                    time.sleep(sleep_times[attempt])
+                else:
+                    cls.log.warning(f"ClientError response: {error.response}")
+                    break  # Exit the loop
 
     @classmethod
     def get_metadata(cls, category: ServiceCategory, force_refresh: bool = False) -> dict:
