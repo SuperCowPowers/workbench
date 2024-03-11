@@ -4,11 +4,12 @@ import pandas as pd
 from dash import dcc
 
 # SageWorks Imports
+from sageworks.api import Model
 from sageworks.web_components.component_interface import ComponentInterface
 from sageworks.utils.symbols import health_icons
 
 
-class ModelMarkdown(ComponentInterface):
+class ModelDetailsMarkdown(ComponentInterface):
     """Model Markdown Component"""
 
     def create_component(self, component_id: str) -> dcc.Markdown:
@@ -21,13 +22,16 @@ class ModelMarkdown(ComponentInterface):
         waiting_markdown = "*Waiting for data...*"
         return dcc.Markdown(id=component_id, children=waiting_markdown, dangerously_allow_html=False)
 
-    def generate_markdown(self, model_details: dict) -> str:
+    def generate_markdown(self, model: Model) -> str:
         """Create the Markdown for the details/information about the DataSource or the FeatureSet
         Args:
-            model_details (dict): A dictionary of information about the artifact
+            model (Model): Sageworks Model object
         Returns:
             str: A Markdown string
         """
+
+        # Get model details
+        model_details = model.details()
 
         # If the model details are empty then return a message
         if model_details is None:
@@ -69,36 +73,6 @@ class ModelMarkdown(ComponentInterface):
             # Add to markdown string
             markdown += f"**{key}:** {value_str}  \n"
 
-        # Model Metrics
-        markdown += "### Model Metrics  \n"
-        meta_df = model_details.get("inference_meta")
-        if meta_df is None:
-            test_data = "AWS Training Capture"
-            test_data_hash = " N/A "
-            test_rows = " - "
-            description = " - "
-        else:
-            inference_meta = meta_df.to_dict(orient="records")[0]
-            test_data = inference_meta.get("name", " - ")
-            test_data_hash = inference_meta.get("data_hash", " - ")
-            test_rows = inference_meta.get("num_rows", " - ")
-            description = inference_meta.get("description", " - ")
-
-        # Add the markdown for the model test metrics
-        markdown += f"**Test Data:** {test_data}  \n"
-        markdown += f"**Data Hash:** {test_data_hash}  \n"
-        markdown += f"**Test Rows:** {test_rows}  \n"
-        markdown += f"**Description:** {description}  \n"
-
-        # Grab the Metrics from the model details
-        metrics = model_details.get("model_metrics")
-        if metrics is None:
-            markdown += "  \nNo Data  \n"
-        else:
-            markdown += "  \n"
-            metrics = metrics.round(3)
-            markdown += metrics.to_markdown(index=False)
-
         return markdown
 
     @staticmethod
@@ -130,28 +104,27 @@ class ModelMarkdown(ComponentInterface):
 
 
 if __name__ == "__main__":
-    # This class takes in model details and generates a Confusion Matrix
+    # This class takes in model details and generates a details Markdown component
     import dash
     from dash import dcc, html
     import dash_bootstrap_components as dbc
-    from sageworks.core.artifacts.model_core import ModelCore
+    from sageworks.api import Model
 
     # Create the class and get the AWS FeatureSet details
-    m = ModelCore("abalone-regression")
-    model_details = m.details()
+    m = Model("wine-classification")
 
     # Instantiate the DataDetailsMarkdown class
-    ddm = ModelMarkdown()
-    component = ddm.create_component("model_markdown")
+    ddm = ModelDetailsMarkdown()
+    component = ddm.create_component("model_details_markdown")
 
     # Generate the markdown
-    markdown = ddm.generate_markdown(model_details)
+    markdown = ddm.generate_markdown(m)
 
     # Initialize Dash app
     app = dash.Dash(
         __name__,
         external_stylesheets=[dbc.themes.DARKLY],
-        assets_folder="/Users/briford/work/sageworks/applications/aws_dashboard/assets",
+        assets_folder="",
     )
 
     app.layout = html.Div([component])

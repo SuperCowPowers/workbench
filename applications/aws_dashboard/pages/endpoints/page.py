@@ -9,7 +9,7 @@ from .layout import endpoints_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, model_markdown, endpoint_metric_plots
+from sageworks.web_components import table, model_details_markdown, endpoint_metric_plots
 from sageworks.web_components.plugin_interface import PluginType
 from sageworks.views.endpoint_web_view import EndpointWebView
 from sageworks.utils.plugin_manager import PluginManager
@@ -33,7 +33,7 @@ endpoints_table = table.Table().create_component(
 )
 
 # Create a Markdown component to display the endpoint details
-endpoint_details = model_markdown.ModelMarkdown().create_component("endpoint_details")
+endpoint_details = model_details_markdown.ModelDetailsMarkdown().create_component("endpoint_details")
 
 # Create a component to display the endpoint metrics
 endpoint_metrics = endpoint_metric_plots.EndpointMetricPlots().create_component("endpoint_metrics")
