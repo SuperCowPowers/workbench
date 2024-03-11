@@ -8,6 +8,7 @@ from sageworks.views.endpoint_web_view import EndpointWebView
 from sageworks.web_components import table, model_details_markdown, endpoint_metric_plots
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 from sageworks.api.endpoint import Endpoint
+from sageworks.api.model import Model
 
 
 def update_endpoints_table(app: Dash):
@@ -79,7 +80,10 @@ def update_endpoint_details_components(app: Dash, endpoint_web_view: EndpointWeb
 
         # Endpoint Details
         endpoint_details = endpoint_web_view.endpoint_details(endpoint_uuid)
-        endpoint_details_markdown = model_details_markdown.ModelDetailsMarkdown().generate_markdown(endpoint_details)
+
+        # Model Details Markdown component (Review This)
+        model = Model(Endpoint(endpoint_uuid).model_name)
+        endpoint_details_markdown = model_details_markdown.ModelDetailsMarkdown().generate_markdown(model)
 
         # Endpoint Metrics
         endpoint_metrics_figure = endpoint_metric_plots.EndpointMetricPlots().generate_component_figure(
