@@ -104,7 +104,7 @@ class ModelDetailsMarkdown(ComponentInterface):
 
 
 if __name__ == "__main__":
-    # This class takes in model details and generates a Confusion Matrix
+    # This class takes in model details and generates a details Markdown component
     import dash
     from dash import dcc, html
     import dash_bootstrap_components as dbc
