@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     # Generate the component
     dropdown = irs.create_component("dropdown")
-    inf_runs = irs.generate_component(m)
+    inf_runs = irs.generate_inference_runs(m)
 
     # Initialize Dash app
     app = dash.Dash(
