@@ -1,12 +1,10 @@
 """An Inference Selector Component for models"""
 
-import pandas as pd
-from dash import dcc, html
+from dash import dcc
 
 # SageWorks Imports
 from sageworks.api import Model
 from sageworks.web_components.component_interface import ComponentInterface
-from sageworks.utils.symbols import health_icons
 
 
 class InferenceRunSelector(ComponentInterface):
@@ -66,6 +64,6 @@ if __name__ == "__main__":
     @callback(Output("dd-output-container", "children"), Input("dropdown", "value"))
     def update_output(value):
         return f"You have selected {value}"
-    
+
     # Run server
     app.run_server(debug=True)

@@ -1,6 +1,5 @@
 """A Markdown Component for model metrics"""
 
-import pandas as pd
 from dash import dcc
 
 # SageWorks Imports
