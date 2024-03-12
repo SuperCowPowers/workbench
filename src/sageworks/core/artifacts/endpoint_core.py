@@ -197,9 +197,14 @@ class EndpointCore(Artifact):
         # Note: Since we're using CSV serializers numeric columns often get changed to generic 'object' types
 
         # Hard Conversion
-        # Note: If are string/object columns we want to use 'ignore' here so those columns
-        #       won't raise an error (columns maintain current type)
-        converted_df = combined_df.apply(pd.to_numeric, errors="ignore")
+        # Note: We explicitly catch exceptions for columns that cannot be converted to numeric
+        converted_df = combined_df.copy()
+        for column in combined_df.columns:
+            try:
+                converted_df[column] = pd.to_numeric(combined_df[column])
+            except ValueError:
+                # If a ValueError is raised, the column cannot be converted to numeric, so we keep it as is
+                pass
 
         # Soft Conversion
         # Convert columns to the best possible dtype that supports the pd.NA missing value.
@@ -450,11 +455,14 @@ class EndpointCore(Artifact):
         # Compute the standard performance metrics for this model
         model_type = self.model_type()
         if model_type == ModelType.REGRESSOR.value:
+            prediction_df = self.residuals(target_column, prediction_df)
             metrics = self.regression_metrics(target_column, prediction_df)
         elif model_type == ModelType.CLASSIFIER.value:
             metrics = self.classification_metrics(target_column, prediction_df)
         else:
-            raise ValueError(f"Unknown Model Type: {model_type}")
+            # Unknown Model Type: Give log message and set metrics to empty dataframe
+            self.log.warning(f"Unknown Model Type: {model_type}")
+            metrics = pd.DataFrame()
 
         # Print out the metrics
         print(f"Performance Metrics for {self.model_name} on {self.uuid}")
@@ -620,6 +628,28 @@ class EndpointCore(Artifact):
             "NumRows": len(prediction_df),
         }
         return pd.DataFrame.from_records([metrics])
+
+    def residuals(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+        """Add the residuals to the prediction DataFrame
+        Args:
+            target_column (str): Name of the target column
+            prediction_df (pd.DataFrame): DataFrame with the prediction results
+        Returns:
+            pd.DataFrame: DataFrame with two new columns called 'residuals' and 'residuals_abs'
+        """
+        # Sanity Check that this is a regression model
+        if self.model_type() != ModelType.REGRESSOR.value:
+            self.log.warning("Residuals are only computed for regression models")
+            return prediction_df
+
+        # Compute the residuals
+        y_true = prediction_df[target_column]
+        y_pred = prediction_df["prediction"]
+
+        # Add the residuals and the absolute values to the DataFrame
+        prediction_df["residuals"] = y_true - y_pred
+        prediction_df["residuals_abs"] = np.abs(y_true - y_pred)
+        return prediction_df
 
     def classification_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint

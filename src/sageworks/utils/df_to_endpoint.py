@@ -89,9 +89,14 @@ def df_to_endpoint(endpoint, df, dropna=True):
     # Note: Since we're using CSV serializers numeric columns often get changed to generic 'object' types
 
     # Hard Conversion
-    # Note: If are string/object columns we want to use 'ignore' here so those columns
-    #       won't raise an error (columns maintain current type)
-    converted_df = combined_df.apply(pd.to_numeric, errors="ignore")
+    # Note: We explicitly catch exceptions for columns that cannot be converted to numeric
+    converted_df = combined_df.copy()
+    for column in combined_df.columns:
+        try:
+            converted_df[column] = pd.to_numeric(combined_df[column])
+        except ValueError:
+            # If a ValueError is raised, the column cannot be converted to numeric, so we keep it as is
+            pass
 
     # Soft Conversion
     # Convert columns to the best possible dtype that supports the pd.NA missing value.
