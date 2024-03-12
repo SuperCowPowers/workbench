@@ -166,7 +166,7 @@ class EndpointMetrics:
         merged_df.sort_index(inplace=True)
 
         # Resample the index to have 1 hour intervals
-        merged_df = merged_df.resample("1H").max()
+        merged_df = merged_df.resample("1h").max()
 
         # Fill NA values with 0 and reset the index (so we can serialize to JSON)
         merged_df.fillna(0, inplace=True)
