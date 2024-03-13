@@ -355,7 +355,7 @@ class Artifact(ABC):
             This breaks the official provenance of the artifact, so use with caution.
         """
         self.log.important(f"{self.uuid}: Setting input to {input}...")
-        self.log.important(f"Be careful with this! It breaks automatic provenance of the artifact!")
+        self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
         self.upsert_sageworks_meta({"sageworks_input": input})
 
     def get_status(self) -> str:
