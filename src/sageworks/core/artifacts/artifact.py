@@ -346,6 +346,18 @@ class Artifact(ABC):
         """Get the input data for this artifact"""
         return self.sageworks_meta().get("sageworks_input", "unknown")
 
+    def set_input(self, input: str):
+        """Set the input data for this artifact
+
+        Args:
+            input (str): Name of input for this artifact
+        Note:
+            This breaks the official provenance of the artifact, so use with caution.
+        """
+        self.log.important(f"{self.uuid}: Setting input to {input}...")
+        self.log.important(f"Be careful with this! It breaks automatic provenance of the artifact!")
+        self.upsert_sageworks_meta({"sageworks_input": input})
+
     def get_status(self) -> str:
         """Get the status for this artifact"""
         return self.sageworks_meta().get("sageworks_status", "unknown")
@@ -461,3 +473,6 @@ if __name__ == "__main__":
     print(f"Ready: {fs.ready()}")
     print(f"Status: {fs.get_status()}")
     print(f"Input: {fs.get_input()}")
+
+    # Test new input method
+    fs.set_input("test_data")
