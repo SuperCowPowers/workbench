@@ -178,12 +178,12 @@ class ModelCore(Artifact):
         # Grab the inference metrics (could return None)
         if capture_uuid == "training_holdout":
             metrics = self.sageworks_meta().get("sageworks_inference_metrics")
-            return pd.DataFrame.from_dict(metrics) if isinstance(metrics, dict) else None
+            return pd.DataFrame.from_dict(metrics) if metrics else None
 
         # Grab the training metrics (could return None)
         if capture_uuid == "training":
             metrics = self.sageworks_meta().get("sageworks_training_metrics")
-            return pd.DataFrame.from_dict(metrics) if isinstance(metrics, dict) else None
+            return pd.DataFrame.from_dict(metrics) if metrics else None
 
         else:  # Specific capture_uuid
             s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_metrics.csv"

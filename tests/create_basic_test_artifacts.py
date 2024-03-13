@@ -68,7 +68,7 @@ if __name__ == "__main__":
             description="Abalone Regression Model",
         )
 
-        # Create the abalone_regression Model
+    # Create the abalone_regression Model
     if recreate or not Model("abalone-regression-full").exists():
         fs = FeatureSet("abalone_features")
         fs.to_model(
