@@ -18,6 +18,4 @@ cryptography>=41.0.7
 rdkit>=2023.9.1
 mordred>=1.2.0
 ipython>=8.17.2
-pytest>=7.4.3
 setuptools>=69.0.2
-constructs>=10.3.0
