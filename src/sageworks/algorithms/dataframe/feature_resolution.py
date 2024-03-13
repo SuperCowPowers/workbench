@@ -132,7 +132,7 @@ class FeatureResolution:
         return self.dataframe_builder.build()
 
     def recursive_compute(
-            self, within_distance: float, min_target_difference: float, output_columns: list = [], verbose=True
+        self, within_distance: float, min_target_difference: float, output_columns: list = [], verbose=True
     ) -> pd.DataFrame:
         """Compute Feature Resolution Issues, remove the issues, and recurse until no issues are found"""
 
@@ -156,6 +156,7 @@ class FeatureResolution:
         self.df = self.df.reset_index(drop=True)
         self.dataframe_builder = DataFrameBuilder()
         return self.recursive_compute(within_distance, min_target_difference, output_columns, verbose)
+
 
 # Test the FeatureResolution Class
 def unit_test():
