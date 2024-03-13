@@ -8,6 +8,12 @@ import importlib
 import botocore
 import webbrowser
 
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    pass
+
+
 # SageWorks Imports
 from sageworks.utils.repl_utils import cprint, Spinner
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
