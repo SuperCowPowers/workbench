@@ -22,16 +22,17 @@ class FeatureResolution:
         """Initialize the FeatureResolution object
 
         Args:
-            distance_metric: Distance metric to use (default: "cosine")
+            distance_metric: Distance metric to use (default: "minkowski")
         """
-        self.df = input_df.copy()
+        self.df = input_df.copy().reset_index(drop=True)
         self.features = features
         self.target_column = target_column
         self.id_column = id_column
-        self.n_neighbors = 10
+        self.n_neighbors = 5
         self.scalar = StandardScaler()
         self.knn = KNeighborsRegressor(metric=distance_metric, n_neighbors=self.n_neighbors, weights="distance")
         self.dataframe_builder = DataFrameBuilder()
+        self.recursive_df_list = []
 
     def compute(
         self, within_distance: float, min_target_difference: float, output_columns: list = [], verbose=True
@@ -130,6 +131,31 @@ class FeatureResolution:
         # Return the output DataFrame
         return self.dataframe_builder.build()
 
+    def recursive_compute(
+            self, within_distance: float, min_target_difference: float, output_columns: list = [], verbose=True
+    ) -> pd.DataFrame:
+        """Compute Feature Resolution Issues, remove the issues, and recurse until no issues are found"""
+
+        # Compute the resolution issues
+        resolution_df = self.compute(within_distance, min_target_difference, output_columns, verbose)
+        self.recursive_df_list.append(resolution_df)
+
+        # If there are no issues, return the DataFrame
+        if len(resolution_df) == 0:
+            return pd.concat(self.recursive_df_list)
+
+        # Gather all IDs to be removed
+        ids_to_remove = set(list(resolution_df[self.id_column]) + list(resolution_df["n_id"]))
+
+        # Remove the rows of the observations that had issues
+        print("Removing IDs: ", ids_to_remove)
+        self.df = self.df[~self.df[self.id_column].isin(ids_to_remove)]
+
+        # Recurse
+        print("Recursing...")
+        self.df = self.df.reset_index(drop=True)
+        self.dataframe_builder = DataFrameBuilder()
+        return self.recursive_compute(within_distance, min_target_difference, output_columns, verbose)
 
 # Test the FeatureResolution Class
 def unit_test():
@@ -184,6 +210,26 @@ def integration_test():
     print(df)
 
 
+def recursive_test():
+    from sageworks.api.feature_set import FeatureSet
+    from sageworks.api.model import Model
+
+    # Grab a test dataframe
+    fs = FeatureSet("aqsol_mol_descriptors")
+    test_df = fs.pull_dataframe()
+
+    # Get the target and feature columns
+    m = Model("aqsol-mol-regression")
+    target_column = m.target()
+    feature_columns = m.features()
+
+    # Create the class and run the report
+    resolution = FeatureResolution(test_df, features=feature_columns, target_column=target_column, id_column="id")
+    df = resolution.recursive_compute(within_distance=0.01, min_target_difference=1.0)
+    print(df)
+
+
 if __name__ == "__main__":
     unit_test()
     integration_test()
+    # recursive_test()
