@@ -70,6 +70,9 @@ class Transform(ABC):
         self.sm_session = self.aws_account_clamp.sagemaker_session(self.boto_session)
         self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto_session)
 
+        # Delimiter for storing lists in AWS Tags
+        self.delimiter = "::"
+
     @abstractmethod
     def transform_impl(self, **kwargs):
         """Abstract Method: Implement the Transformation from Input to Output"""
@@ -87,9 +90,9 @@ class Transform(ABC):
     def set_output_tags(self, tags: list | str):
         """Set the tags that will be associated with the output object
         Args:
-            tags (list | str): The list of tags or a ':' separated string of tags"""
+            tags (list | str): The list of tags or a '::' separated string of tags"""
         if isinstance(tags, list):
-            self.output_tags = ":".join(tags)
+            self.output_tags = self.delimiter.join(tags)
         else:
             self.output_tags = tags
 

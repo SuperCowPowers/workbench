@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     # Create my Data Loader
     my_loader = JSONToDataSource(data_path, "test_data_json")
-    my_loader.set_output_tags("test:small")
+    my_loader.set_output_tags(["test", "small"])
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()

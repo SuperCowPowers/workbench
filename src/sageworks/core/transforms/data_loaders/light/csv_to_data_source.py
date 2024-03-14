@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     # Create my Data Loader
     my_loader = CSVToDataSource(data_path, "abalone_data")
-    my_loader.set_output_tags("abalone:public")
+    my_loader.set_output_tags(["abalone", "public"])
 
     # Store this data as a SageWorks DataSource
     my_loader.transform()

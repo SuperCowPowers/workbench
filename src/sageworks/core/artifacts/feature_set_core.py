@@ -333,7 +333,7 @@ class FeatureSetCore(Artifact):
         # Additional Details
         details["sageworks_status"] = self.get_status()
         details["sageworks_input"] = self.get_input()
-        details["sageworks_tags"] = ":".join(self.get_tags())
+        details["sageworks_tags"] = self.delimiter.join(self.get_tags())
 
         # Underlying Storage Details
         details["storage_type"] = "athena"  # TODO: Add RDS support
