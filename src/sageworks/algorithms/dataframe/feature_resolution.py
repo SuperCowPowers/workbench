@@ -1,5 +1,5 @@
 """FeatureResolution: Report on Feature Space Resolution Issues"""
-
+from typing import Union
 import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.neighbors import KNeighborsRegressor
@@ -36,7 +36,7 @@ class FeatureResolution:
 
     def compute(
         self, within_distance: float, min_target_difference: float, output_columns: list = [], verbose=True
-    ) -> pd.DataFrame:
+    ) -> Union[pd.DataFrame, None]:
         """FeatureResolution: Compute Feature Space to Target Resolution and Report Issues
 
         Args:
@@ -140,7 +140,7 @@ class FeatureResolution:
         resolution_df = self.compute(within_distance, min_target_difference, output_columns, verbose)
         self.recursive_df_list.append(resolution_df)
 
-        # If there are no issues, return the DataFrame
+        # If there are no resolution issues, return the combined DataFrame
         if len(resolution_df) == 0:
             return pd.concat(self.recursive_df_list)
 
