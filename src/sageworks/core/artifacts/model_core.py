@@ -230,6 +230,16 @@ class ModelCore(Artifact):
             return inference_preds
         return self.validation_predictions()
 
+    def set_input(self, input: str):
+        """Override: Set the input data for this artifact
+
+        Args:
+            input (str): Name of input for this artifact
+        Note:
+            We're going to not allow this to be used for Models
+        """
+        self.log.warning(f"Model {self.uuid}: Does not allow manual override of the input!")
+
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
         return 0.0

@@ -734,6 +734,16 @@ class EndpointCore(Artifact):
         details = self.sm_client.describe_endpoint(EndpointName=self.endpoint_name)
         return details["EndpointConfigName"]
 
+    def set_input(self, input: str):
+        """Override: Set the input data for this artifact
+
+        Args:
+            input (str): Name of input for this artifact
+        Note:
+            We're going to not allow this to be used for Models
+        """
+        self.log.warning(f"Endpoint {self.uuid}: Does not allow manual override of the input!")
+
     def delete(self):
         """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
         self.delete_endpoint_models()
