@@ -1,7 +1,7 @@
 """FeatureResolution: Report on Feature Space Resolution Issues"""
+import logging
 from typing import Union
 import pandas as pd
-from sklearn.impute import SimpleImputer
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
 
@@ -24,11 +24,12 @@ class FeatureResolution:
         Args:
             distance_metric: Distance metric to use (default: "minkowski")
         """
+        self.log = logging.getLogger("sageworks")
         self.df = input_df.copy().reset_index(drop=True)
         self.features = features
         self.target_column = target_column
         self.id_column = id_column
-        self.n_neighbors = 5
+        self.n_neighbors = 10
         self.scalar = StandardScaler()
         self.knn = KNeighborsRegressor(metric=distance_metric, n_neighbors=self.n_neighbors, weights="distance")
         self.dataframe_builder = DataFrameBuilder()
@@ -53,7 +54,7 @@ class FeatureResolution:
         # Check for expected columns
         for column in [self.target_column] + self.features:
             if column not in self.df.columns:
-                print(f"DataFrame does not have required {column} Column!")
+                self.log.error(f"DataFrame does not have required {column} Column!")
                 return
 
         # Set up the output columns (add id and target columns if they are not already included)
@@ -63,7 +64,7 @@ class FeatureResolution:
         if output_columns is not None:
             for column in output_columns:
                 if column not in self.df.columns:
-                    print(f"DataFrame does not have required {column} Column!")
+                    self.log.error(f"DataFrame does not have required {column} Column!")
                     return
 
         # Check for NaNs in the features and log the percentage
@@ -72,9 +73,10 @@ class FeatureResolution:
             if nan_count > 0:
                 print(f"Feature '{feature}' has {nan_count} NaNs ({nan_count / len(self.df) * 100:.2f}%).")
 
-        # Impute NaNs with the mean value for each feature
-        imputer = SimpleImputer(strategy="mean")
-        self.df[self.features] = imputer.fit_transform(self.df[self.features])
+        # Remove and NaNs or INFs in the features
+        self.log.info(f"Dataframe Shape before NaN/INF removal {self.df.shape}")
+        self.df = self.df.replace([float('inf'), float('-inf')], pd.NA).dropna().reset_index(drop=True)
+        self.log.info(f"Dataframe Shape after NaN/INF removal {self.df.shape}")
 
         # Standardize the features
         X = self.scalar.fit_transform(self.df[self.features])
@@ -159,7 +161,7 @@ class FeatureResolution:
 
 
 # Test the FeatureResolution Class
-def unit_test():
+def simple_unit_test():
     """Test for the Feature Spider Class"""
     # Set some pandas options
     pd.set_option("display.max_columns", None)
@@ -191,8 +193,8 @@ def unit_test():
     resolution.compute(within_distance=0.1, min_target_difference=10)
 
 
-def integration_test():
-    """Integration Test for the FeatureResolution Class"""
+def unit_test():
+    """Unit Test for the FeatureResolution Class"""
     from sageworks.api.feature_set import FeatureSet
     from sageworks.api.model import Model
 
@@ -231,6 +233,6 @@ def recursive_test():
 
 
 if __name__ == "__main__":
+    simple_unit_test()
     unit_test()
-    integration_test()
     # recursive_test()

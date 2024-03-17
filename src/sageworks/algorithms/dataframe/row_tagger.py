@@ -89,8 +89,8 @@ class RowTagger:
             self.df["tags"].iloc[index].add("htg")
 
 
-def test():
-    """Test for the RowTagger Class"""
+def simple_unit_test():
+    """Unit Test for the RowTagger Class"""
 
     # Set some pandas options
     pd.set_option("display.max_columns", None)
@@ -100,7 +100,7 @@ def test():
     data = {
         "ID": [
             "id_0",
-            "id_0",
+            "id_1",
             "id_2",
             "id_3",
             "id_4",
@@ -130,5 +130,32 @@ def test():
     print(data_df)
 
 
+def unit_test():
+    """Unit Test for the FeatureResolution Class"""
+    from sageworks.api.feature_set import FeatureSet
+    from sageworks.api.model import Model
+
+    # Grab a test dataframe
+    fs = FeatureSet("aqsol_mol_descriptors")
+    test_df = fs.pull_dataframe()
+
+    # Get the target and feature columns
+    m = Model("aqsol-mol-regression")
+    target_column = m.target()
+    feature_columns = m.features()
+
+    row_tagger = RowTagger(
+        test_df,
+        features=feature_columns,
+        id_column="id",
+        target_column=target_column,
+        within_dist=0.25,
+        min_target_diff=1.0,
+    )
+    data_df = row_tagger.tag_rows()
+    print(data_df["tags"].value_counts())
+
+
 if __name__ == "__main__":
-    test()
+    simple_unit_test()
+    unit_test()
