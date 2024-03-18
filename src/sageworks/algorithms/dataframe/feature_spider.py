@@ -2,7 +2,6 @@
 
 import numpy as np
 import pandas as pd
-from sklearn.impute import SimpleImputer
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -40,7 +39,7 @@ class FeatureSpider:
 
         # Remove and NaNs or INFs in the features
         print(f"Dataframe Shape before NaN/INF removal {self.df.shape}")
-        self.df[features] = self.df[features].replace([float('inf'), float('-inf')], pd.NA)
+        self.df[features] = self.df[features].replace([float("inf"), float("-inf")], pd.NA)
         self.df = self.df.dropna(subset=features).reset_index(drop=True)
         print(f"Dataframe Shape after NaN/INF removal {self.df.shape}")
 

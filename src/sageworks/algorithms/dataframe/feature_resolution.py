@@ -1,4 +1,5 @@
 """FeatureResolution: Report on Feature Space Resolution Issues"""
+
 import logging
 from typing import Union
 import pandas as pd
@@ -75,7 +76,7 @@ class FeatureResolution:
 
         # Remove and NaNs or INFs in the features
         self.log.info(f"Dataframe Shape before NaN/INF removal {self.df.shape}")
-        self.df = self.df.replace([float('inf'), float('-inf')], pd.NA).dropna().reset_index(drop=True)
+        self.df = self.df.replace([float("inf"), float("-inf")], pd.NA).dropna().reset_index(drop=True)
         self.log.info(f"Dataframe Shape after NaN/INF removal {self.df.shape}")
 
         # Standardize the features
