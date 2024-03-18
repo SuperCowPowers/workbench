@@ -27,7 +27,7 @@ class FeatureSpider:
                 return
 
         # Set internal vars that are used later
-        self.df = df
+        self.df = df.copy()
         self.id_column = id_column
         self.target_column = target_column
         self.features = features
@@ -38,23 +38,32 @@ class FeatureSpider:
             if nan_count > 0:
                 print(f"Feature '{feature}' has {nan_count} NaNs ({nan_count / len(df) * 100:.2f}%).")
 
+        # Remove and NaNs or INFs in the features
+        print(f"Dataframe Shape before NaN/INF removal {self.df.shape}")
+        self.df[features] = self.df[features].replace([float('inf'), float('-inf')], pd.NA)
+        self.df = self.df.dropna(subset=features).reset_index(drop=True)
+        print(f"Dataframe Shape after NaN/INF removal {self.df.shape}")
+
         # Impute NaNs with the mean value for each feature
-        imputer = SimpleImputer(strategy="mean")
-        df[features] = imputer.fit_transform(df[features])
+        # imputer = SimpleImputer(strategy="mean")
+        # df[features] = imputer.fit_transform(df[features])
 
         # Build our KNN model pipeline with StandardScalar
         knn = KNeighborsRegressor(n_neighbors=neighbors, weights="distance")
         self.pipe = make_pipeline(StandardScaler(), knn)
 
         # Fit Model on features and target
-        y = df[self.target_column]
-        X = df[self.features]
+        y = self.df[self.target_column]
+        X = self.df[self.features]
         self.pipe.fit(X, y)
 
         # Grab the Standard Scalar and KNN from the pipeline model
         # Note: These handles need to be constructed after the fit
         self.scalar = self.pipe["standardscaler"]
         self.knn = self.pipe["kneighborsregressor"]
+
+        # This is for collection of the neighbor distances
+        self.neigh_distances = []
 
     def get_feature_matrix(self):
         """Return the KNN Model Internal Feature Matrix"""
@@ -122,6 +131,9 @@ class FeatureSpider:
         # Get the Neighbors Information
         neigh_dist, neigh_ind = self.knn.kneighbors(x_scaled)
         target_values = self.knn._y[neigh_ind]
+
+        # Collect the neighbor distances by unpacking the list of lists
+        self.neigh_distances = [dist for sublist in neigh_dist for dist in sublist]
 
         # Note: We're assuming that the Neighbor Index is the same order/cardinality as the dataframe
         results_df["knn_target_values"] = [", ".join([str(val) for val in values]) for values in target_values]
@@ -280,8 +292,8 @@ def integration_test():
     feature_columns = m.features()
 
     # Create the class and run the report
-    resolution = FeatureSpider(test_df, features=feature_columns, target_column=target_column, id_column="id")
-    resolution.coincident(1.0)
+    feature_spider = FeatureSpider(test_df, features=feature_columns, target_column=target_column, id_column="id")
+    feature_spider.coincident(1.0)
 
 
 if __name__ == "__main__":
