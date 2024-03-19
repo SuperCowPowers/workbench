@@ -169,7 +169,7 @@ class EndpointCore(Artifact):
 
         # Make sure the eval_df has the features used to train the model
         features = ModelCore(self.model_name).features()
-        if not set(features).issubset(eval_df.columns):
+        if features and not set(features).issubset(eval_df.columns):
             raise ValueError(f"DataFrame does not contain required features: {features}")
 
         # Create our Endpoint Predictor Class
@@ -734,15 +734,23 @@ class EndpointCore(Artifact):
         details = self.sm_client.describe_endpoint(EndpointName=self.endpoint_name)
         return details["EndpointConfigName"]
 
-    def set_input(self, input: str):
+    def set_input(self, input: str, force=False):
         """Override: Set the input data for this artifact
 
         Args:
             input (str): Name of input for this artifact
+            force (bool, optional): Force the input to be set. Defaults to False.
         Note:
             We're going to not allow this to be used for Models
         """
-        self.log.warning(f"Endpoint {self.uuid}: Does not allow manual override of the input!")
+        if not force:
+            self.log.warning(f"Endpoint {self.uuid}: Does not allow manual override of the input!")
+            return
+
+        # Okay we're going to allow this to be set
+        self.log.important(f"{self.uuid}: Setting input to {input}...")
+        self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
+        self.upsert_sageworks_meta({"sageworks_input": input})
 
     def delete(self):
         """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""

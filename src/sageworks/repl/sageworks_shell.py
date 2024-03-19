@@ -244,6 +244,7 @@ class SageWorksShell:
         - meta_refresh: Force a refresh of the AWS Metadata
         - config: Show the current SageWorks Config
         - status: Show the current SageWorks Status
+        - log_(debug/info/important/warning): Set the SageWorks log level
         - exit: Exit SageWorks REPL"""
         return help_msg
 

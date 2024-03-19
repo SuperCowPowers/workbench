@@ -230,15 +230,23 @@ class ModelCore(Artifact):
             return inference_preds
         return self.validation_predictions()
 
-    def set_input(self, input: str):
+    def set_input(self, input: str, force: bool = False):
         """Override: Set the input data for this artifact
 
         Args:
             input (str): Name of input for this artifact
+            force (bool, optional): Force the input to be set (default: False)
         Note:
             We're going to not allow this to be used for Models
         """
-        self.log.warning(f"Model {self.uuid}: Does not allow manual override of the input!")
+        if not force:
+            self.log.warning(f"Model {self.uuid}: Does not allow manual override of the input!")
+            return
+
+        # Okay we're going to allow this to be set
+        self.log.important(f"{self.uuid}: Setting input to {input}...")
+        self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
+        self.upsert_sageworks_meta({"sageworks_input": input})
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
