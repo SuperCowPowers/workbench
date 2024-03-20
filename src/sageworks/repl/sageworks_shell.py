@@ -7,6 +7,7 @@ import logging
 import importlib
 import botocore
 import webbrowser
+import readline  # noqa
 
 try:
     import matplotlib.pyplot as plt  # noqa
