@@ -380,14 +380,26 @@ class EndpointCore(Artifact):
         # Return the details
         return details
 
-    def onboard(self) -> bool:
+    def onboard(self, interactive: bool = True) -> bool:
         """This is a BLOCKING method that will onboard the Endpoint (make it ready)
+        Args:
+            interactive (bool, optional): If True, will prompt the user for information. (default: True)
         Returns:
             bool: True if the Endpoint is successfully onboarded, False otherwise
         """
         self.log.important(f"Onboarding {self.uuid}...")
         self.set_status("onboarding")
         self.remove_health_tag("needs_onboard")
+
+        # Make sure our input is defined
+        if self.get_input() == "unknown":
+            if interactive:
+                input_model = input("Input Model?: ")
+                self.upsert_sageworks_meta({"sageworks_input": input_model})
+                self.model_name = input_model
+            else:
+                self.log.error("Input Model is not defined!")
+                return False
 
         # Run a health check and refresh the meta
         time.sleep(2)  # Give the AWS Metadata a chance to update
@@ -519,7 +531,8 @@ class EndpointCore(Artifact):
 
         # Write the predictions to our S3 Model Inference Folder (just the target and prediction columns)
         self.log.debug(f"Writing predictions to {inference_capture_path}/inference_predictions.csv")
-        output_columns = [target_column, "prediction"]
+        prediction_col = "prediction" if "prediction" in pred_results_df.columns else "predictions"
+        output_columns = [target_column, prediction_col]
         output_columns += [col for col in pred_results_df.columns if col.endswith("_proba")]
         subset_df = pred_results_df[output_columns]
         wr.s3.to_csv(subset_df, f"{inference_capture_path}/inference_predictions.csv", index=False)
@@ -608,7 +621,8 @@ class EndpointCore(Artifact):
 
         # Compute the metrics
         y_true = prediction_df[target_column]
-        y_pred = prediction_df["prediction"]
+        prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
+        y_pred = prediction_df[prediction_col]
 
         mae = mean_absolute_error(y_true, y_pred)
         rmse = root_mean_squared_error(y_true, y_pred)
@@ -644,7 +658,8 @@ class EndpointCore(Artifact):
 
         # Compute the residuals
         y_true = prediction_df[target_column]
-        y_pred = prediction_df["prediction"]
+        prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
+        y_pred = prediction_df[prediction_col]
 
         # Add the residuals and the absolute values to the DataFrame
         prediction_df["residuals"] = y_true - y_pred
@@ -664,8 +679,9 @@ class EndpointCore(Artifact):
         labels = prediction_df[target_column].unique()
 
         # Calculate scores
+        prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
         scores = precision_recall_fscore_support(
-            prediction_df[target_column], prediction_df["prediction"], average=None, labels=labels
+            prediction_df[target_column], prediction_df[prediction_col], average=None, labels=labels
         )
 
         # Calculate ROC AUC
@@ -717,7 +733,8 @@ class EndpointCore(Artifact):
         """
 
         y_true = prediction_df[target_column]
-        y_pred = prediction_df["prediction"]
+        prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
+        y_pred = prediction_df[prediction_col]
 
         # Compute the confusion matrix
         conf_mtx = confusion_matrix(y_true, y_pred)
