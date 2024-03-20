@@ -444,7 +444,7 @@ class ModelCore(Artifact):
             self.log.warning(f"Unknown Model Type {model_type}!")
             self._set_model_type(ModelType.UNKNOWN)
 
-    def onboard(self, interactive=True) -> bool:
+    def onboard(self, interactive: bool = True) -> bool:
         """This is a BLOCKING method that will onboard the Model (make it ready)
 
         Args:
