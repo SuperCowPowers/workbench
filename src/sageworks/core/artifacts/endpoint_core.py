@@ -526,11 +526,11 @@ class EndpointCore(Artifact):
             f"{inference_capture_path}/inference_meta.json",
             index=False,
         )
-        self.log.debug(f"Writing metrics to {inference_capture_path}/inference_metrics.csv")
+        self.log.info(f"Writing metrics to {inference_capture_path}/inference_metrics.csv")
         wr.s3.to_csv(metrics, f"{inference_capture_path}/inference_metrics.csv", index=False)
 
         # Write the predictions to our S3 Model Inference Folder (just the target and prediction columns)
-        self.log.debug(f"Writing predictions to {inference_capture_path}/inference_predictions.csv")
+        self.log.info(f"Writing predictions to {inference_capture_path}/inference_predictions.csv")
         prediction_col = "prediction" if "prediction" in pred_results_df.columns else "predictions"
         output_columns = [target_column, prediction_col]
         output_columns += [col for col in pred_results_df.columns if col.endswith("_proba")]
@@ -541,7 +541,7 @@ class EndpointCore(Artifact):
         model_type = self.model_type()
         if model_type == ModelType.CLASSIFIER.value:
             conf_mtx = self.confusion_matrix(target_column, pred_results_df)
-            self.log.debug(f"Writing confusion matrix to {inference_capture_path}/inference_cm.csv")
+            self.log.info(f"Writing confusion matrix to {inference_capture_path}/inference_cm.csv")
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
             wr.s3.to_csv(conf_mtx, f"{inference_capture_path}/inference_cm.csv", index=True)
 
@@ -568,7 +568,7 @@ class EndpointCore(Artifact):
 
                     # Write shap vals to S3 Model Inference Folder
                     shap_file_path = f"{inference_capture_path}/inference_shap_values_class_{i}.csv"
-                    self.log.debug(f"Writing SHAP values to {shap_file_path}")
+                    self.log.info(f"Writing SHAP values to {shap_file_path}")
                     wr.s3.to_csv(df_shap, shap_file_path, index=False)
 
             # Single shap vals CSV for regressors
