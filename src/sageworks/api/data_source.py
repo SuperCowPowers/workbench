@@ -29,19 +29,16 @@ class DataSource(AthenaSource):
         ```
     """
 
-    def __init__(self, source, name: str = None, tags: list = None):
+    def __init__(self, source, ds_name: str = None, tags: list = None):
         """
         Initializes a new DataSource object.
 
         Args:
             source (str): The source of the data. This can be an S3 bucket, file path,
                           DataFrame object, or an existing DataSource object.
-            name (str): The name of the data source (must be lowercase). If not specified, a name will be generated
+            ds_name (str): The name of the data source (must be lowercase). If not specified, a name will be generated
             tags (list[str]): A list of tags associated with the data source. If not specified tags will be generated.
         """
-
-        # Automatically generate a name if not provided
-        ds_name = extract_data_source_basename(source) if name is None else name
 
         # Make sure we have a name for when we use a DataFrame source
         if ds_name == "dataframe":
@@ -49,8 +46,14 @@ class DataSource(AthenaSource):
             self.log.critical(msg)
             raise ValueError(msg)
 
-        # Make sure the name is valid
-        self.ensure_valid_name(ds_name)
+        # Ensure the ds_name is valid
+        if ds_name:
+            Artifact.ensure_valid_name(ds_name)
+
+        # If the model_name wasn't given generate it
+        else:
+            ds_name = extract_data_source_basename(source)
+            ds_name = Artifact.generate_valid_name(ds_name)
 
         # Set the tags and load the source
         tags = [ds_name] if tags is None else tags
