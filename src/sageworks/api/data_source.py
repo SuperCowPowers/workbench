@@ -6,7 +6,6 @@ can be viewed and explored within the SageWorks Dashboard UI."""
 
 import os
 import pandas as pd
-import logging
 
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact

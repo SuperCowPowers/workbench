@@ -16,6 +16,7 @@ from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
 class Artifact(ABC):
     """Artifact: Abstract Base Class for all Artifact classes in SageWorks"""
+
     log = logging.getLogger("sageworks")
 
     def __init__(self, uuid: str):

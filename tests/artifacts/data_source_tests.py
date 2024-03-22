@@ -37,6 +37,17 @@ def test():
     print("\n\nALL Meta")
     pprint(my_data.aws_meta())
 
+    # Try to get a data source that doesn't exist
+    my_data = AthenaSource("not_exist_data")
+    assert not my_data.exists()
+
+    # Try to get a data source that has Mixed Case
+    try:
+        AthenaSource("tEsT_dAtA")
+        assert False  # Should not get here
+    except ValueError:
+        pass
+
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')
     # my_data.delete()
