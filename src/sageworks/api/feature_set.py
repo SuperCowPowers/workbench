@@ -66,7 +66,7 @@ class FeatureSet(FeatureSetCore):
         self,
         model_type: ModelType,
         target_column: str,
-        model_name: str = None,
+        name: str = None,
         tags: list = None,
         description: str = None,
         feature_list: list = None,
@@ -77,7 +77,7 @@ class FeatureSet(FeatureSetCore):
         Args:
             model_type (ModelType): The type of model to create (See sageworks.model.ModelType)
             target_column (str): The target column for the model (use None for unsupervised model)
-            model_name (str): Set the name for the model. If not specified, a name will be generated
+            name (str): Set the name for the model. If not specified, a name will be generated
             tags (list): Set the tags for the model.  If not specified tags will be generated.
             description (str): Set the description for the model. If not specified a description is generated.
             feature_list (list): Set the feature list for the model. If not specified a feature list is generated.
@@ -87,8 +87,8 @@ class FeatureSet(FeatureSetCore):
         """
 
         # Ensure the model_name is valid
-        if model_name:
-            Artifact.ensure_valid_name(model_name, delimiter="-")
+        if name:
+            Artifact.ensure_valid_name(name, delimiter="-")
 
         # If the model_name wasn't given generate it
         else:
@@ -96,17 +96,17 @@ class FeatureSet(FeatureSetCore):
             model_name = Artifact.generate_valid_name(model_name, delimiter="-")
 
         # Create the Model Tags
-        tags = [model_name] if tags is None else tags
+        tags = [name] if tags is None else tags
 
         # Transform the FeatureSet into a Model
-        features_to_model = FeaturesToModel(self.uuid, model_name, model_type=model_type)
+        features_to_model = FeaturesToModel(self.uuid, name, model_type=model_type)
         features_to_model.set_output_tags(tags)
         features_to_model.transform(
             target_column=target_column, description=description, feature_list=feature_list, **kwargs
         )
 
         # Return the Model
-        return Model(model_name)
+        return Model(name)
 
 
 if __name__ == "__main__":

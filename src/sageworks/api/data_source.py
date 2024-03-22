@@ -99,7 +99,7 @@ class DataSource(AthenaSource):
 
     def to_features(
         self,
-        fs_name: str = None,
+        name: str = None,
         tags: list = None,
         target_column: str = None,
         id_column: str = None,
@@ -122,19 +122,19 @@ class DataSource(AthenaSource):
         """
 
         # Ensure the feature_set_name is valid
-        if fs_name:
-            Artifact.ensure_valid_name(fs_name)
+        if name:
+            Artifact.ensure_valid_name(name)
 
         # If the feature_set_name wasn't given generate it
         else:
-            fs_name = self.uuid.replace("_data", "") + "_features"
-            fs_name = Artifact.generate_valid_name(fs_name)
+            name = self.uuid.replace("_data", "") + "_features"
+            name = Artifact.generate_valid_name(name)
 
         # Set the Tags
-        tags = [fs_name] if tags is None else tags
+        tags = [name] if tags is None else tags
 
         # Transform the DataSource to a FeatureSet
-        data_to_features = DataToFeaturesLight(self.uuid, fs_name)
+        data_to_features = DataToFeaturesLight(self.uuid, name)
         data_to_features.set_output_tags(tags)
         data_to_features.transform(
             target_column=target_column,
@@ -144,7 +144,7 @@ class DataSource(AthenaSource):
         )
 
         # Return the FeatureSet (which will now be up-to-date)
-        return FeatureSet(fs_name)
+        return FeatureSet(name)
 
     def _load_source(self, source: str, name: str, tags: list):
         """Load the source of the data"""

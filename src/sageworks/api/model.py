@@ -29,11 +29,11 @@ class Model(ModelCore):
         """
         return super().details(**kwargs)
 
-    def to_endpoint(self, endpoint_name: str = None, tags: list = None, serverless: bool = True) -> Endpoint:
+    def to_endpoint(self, name: str = None, tags: list = None, serverless: bool = True) -> Endpoint:
         """Create an Endpoint from the Model
 
         Args:
-            endpoint_name (str): Set the name for the endpoint. If not specified, an automatic name will be generated
+            name (str): Set the name for the endpoint. If not specified, an automatic name will be generated
             tags (list): Set the tags for the endpoint. If not specified automatic tags will be generated.
             serverless (bool): Set the endpoint to be serverless (default: True)
 
@@ -42,24 +42,24 @@ class Model(ModelCore):
         """
 
         # Ensure the endpoint_name is valid
-        if endpoint_name:
-            Artifact.ensure_valid_name(endpoint_name, delimiter="-")
+        if name:
+            Artifact.ensure_valid_name(name, delimiter="-")
 
         # If the endpoint_name wasn't given generate it
         else:
-            endpoint_name = self.uuid.replace("_features", "") + "-end"
-            endpoint_name = Artifact.generate_valid_name(endpoint_name, delimiter="-")
+            name = self.uuid.replace("_features", "") + "-end"
+            name = Artifact.generate_valid_name(name, delimiter="-")
 
         # Create the Endpoint Tags
-        tags = [endpoint_name] if tags is None else tags
+        tags = [name] if tags is None else tags
 
         # Create an Endpoint from the Model
-        model_to_endpoint = ModelToEndpoint(self.uuid, endpoint_name, serverless=serverless)
+        model_to_endpoint = ModelToEndpoint(self.uuid, name, serverless=serverless)
         model_to_endpoint.set_output_tags(tags)
         model_to_endpoint.transform()
 
         # Return the Endpoint
-        return Endpoint(endpoint_name)
+        return Endpoint(name)
 
 
 if __name__ == "__main__":
