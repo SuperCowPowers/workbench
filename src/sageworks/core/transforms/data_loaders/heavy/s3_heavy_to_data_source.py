@@ -162,7 +162,7 @@ class S3HeavyToDataSource:
 
         # Set up our SageWorks metadata (description, tags, etc)
         description = f"SageWorks data source: {self.output_uuid}"
-        sageworks_meta = {"sageworks_tags": self.delimiter.join(tags)}
+        sageworks_meta = {"sageworks_tags": self.tag_delimiter.join(tags)}
         for key, value in self.output_meta.items():
             sageworks_meta[key] = value
 

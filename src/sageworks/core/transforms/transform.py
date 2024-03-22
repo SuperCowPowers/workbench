@@ -71,7 +71,7 @@ class Transform(ABC):
         self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto_session)
 
         # Delimiter for storing lists in AWS Tags
-        self.delimiter = "::"
+        self.tag_delimiter = "::"
 
     @abstractmethod
     def transform_impl(self, **kwargs):
@@ -92,7 +92,7 @@ class Transform(ABC):
         Args:
             tags (list | str): The list of tags or a '::' separated string of tags"""
         if isinstance(tags, list):
-            self.output_tags = self.delimiter.join(tags)
+            self.output_tags = self.tag_delimiter.join(tags)
         else:
             self.output_tags = tags
 

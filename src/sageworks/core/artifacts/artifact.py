@@ -62,7 +62,7 @@ class Artifact(ABC):
         self.ephemeral_storage = SageWorksCache(prefix="ephemeral_storage", expire=1)  # 1 second
 
         # Delimiter for storing lists in AWS Tags
-        self.delimiter = "::"
+        self.tag_delimiter = "::"
 
     def __post_init__(self):
         """Artifact Post Initialization"""
@@ -269,7 +269,7 @@ class Artifact(ABC):
         """
         if tag_type == "user":
             user_tags = self.sageworks_meta().get("sageworks_tags")
-            return user_tags.split(self.delimiter) if user_tags else []
+            return user_tags.split(self.tag_delimiter) if user_tags else []
 
         # Grab our health tags
         health_tags = self.sageworks_meta().get("sageworks_health_tags")
@@ -281,10 +281,10 @@ class Artifact(ABC):
             return []
 
         # Otherwise, return the health tags
-        return health_tags.split(self.delimiter) if health_tags else []
+        return health_tags.split(self.tag_delimiter) if health_tags else []
 
     def set_tags(self, tags):
-        self.upsert_sageworks_meta({"sageworks_tags": self.delimiter.join(tags)})
+        self.upsert_sageworks_meta({"sageworks_tags": self.tag_delimiter.join(tags)})
 
     def add_tag(self, tag, tag_type="user"):
         """Add a tag for this artifact, ensuring no duplicates and maintaining order.
@@ -295,7 +295,7 @@ class Artifact(ABC):
         current_tags = self.get_tags(tag_type) if tag_type == "user" else self.get_health_tags()
         if tag not in current_tags:
             current_tags.append(tag)
-            combined_tags = self.delimiter.join(current_tags)
+            combined_tags = self.tag_delimiter.join(current_tags)
             if tag_type == "user":
                 self.upsert_sageworks_meta({"sageworks_tags": combined_tags})
             else:
@@ -310,7 +310,7 @@ class Artifact(ABC):
         current_tags = self.get_tags(tag_type) if tag_type == "user" else self.get_health_tags()
         if tag in current_tags:
             current_tags.remove(tag)
-            combined_tags = self.delimiter.join(current_tags)
+            combined_tags = self.tag_delimiter.join(current_tags)
             if tag_type == "user":
                 self.upsert_sageworks_meta({"sageworks_tags": combined_tags})
             elif tag_type == "health":
@@ -321,7 +321,7 @@ class Artifact(ABC):
         return self.get_tags(tag_type="health")
 
     def set_health_tags(self, tags):
-        self.upsert_sageworks_meta({"sageworks_health_tags": self.delimiter.join(tags)})
+        self.upsert_sageworks_meta({"sageworks_health_tags": self.tag_delimiter.join(tags)})
 
     def add_health_tag(self, tag):
         self.add_tag(tag, tag_type="health")
