@@ -68,9 +68,8 @@ class Cache(object):
         return value
 
     def delete(self, key):
-        actual_key = self._get_prefixed_key(key)
-        if actual_key in self.store:
-            del self.store[actual_key]
+        if key in self.store:
+            del self.store[key]
 
     def list_keys(self):
         """List all keys in the cache"""
