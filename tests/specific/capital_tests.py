@@ -12,8 +12,12 @@ def test():
     pprint(my_data.summary())
     pprint(my_data.details())
 
-    # Create a FeatureSet
-    my_data.to_features("aBaLone-feaTures")  # Throw in the hyphen to test that it gets removed
+    # Create a FeatureSet (with a name that has mixed case)
+    try:
+        my_features = my_data.to_features("aBaLone-feaTures")
+        assert False  # Should not get here
+    except ValueError:
+        pass
 
 
 if __name__ == "__main__":
