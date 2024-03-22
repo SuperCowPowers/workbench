@@ -781,6 +781,9 @@ class EndpointCore(Artifact):
 
         # Delete any inference, data_capture or monitoring artifacts
         for s3_path in [self.endpoint_inference_path, self.endpoint_data_capture_path, self.endpoint_monitoring_path]:
+
+            # Make sure we add the trailing slash
+            s3_path = s3_path if s3_path.endswith("/") else f"{s3_path}/"
             objects = wr.s3.list_objects(s3_path, boto3_session=self.boto_session)
             for obj in objects:
                 self.log.info(f"Deleting S3 Object {obj}...")

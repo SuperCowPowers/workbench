@@ -470,8 +470,12 @@ class AthenaSource(DataSourceAbstract):
 
         # Delete S3 Storage Objects (if they exist)
         try:
-            self.log.info(f"Deleting S3 Storage Object: {self.s3_storage_location()}...")
-            wr.s3.delete_objects(self.s3_storage_location(), boto3_session=self.boto_session)
+            # Make sure we add the trailing slash
+            s3_path = self.s3_storage_location()
+            s3_path = s3_path if s3_path.endswith("/") else f"{s3_path}/"
+
+            self.log.info(f"Deleting S3 Storage Objects: {s3_path}...")
+            wr.s3.delete_objects(s3_path, boto3_session=self.boto_session)
         except TypeError:
             self.log.warning("Malformed Artifact... good thing it's being deleted...")
 
