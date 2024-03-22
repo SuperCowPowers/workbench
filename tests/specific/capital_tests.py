@@ -14,7 +14,7 @@ def test():
 
     # Create a FeatureSet (with a name that has mixed case)
     try:
-        my_features = my_data.to_features("aBaLone-feaTures")
+        my_data.to_features("aBaLone-feaTures")
         assert False  # Should not get here
     except ValueError:
         pass
