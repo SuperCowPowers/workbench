@@ -479,6 +479,11 @@ class AthenaSource(DataSourceAbstract):
         except TypeError:
             self.log.warning("Malformed Artifact... good thing it's being deleted...")
 
+        # Delete any data in the Cache
+        for key in self.data_storage.list_subkeys(f"data_source:{self.uuid}:"):
+            self.log.info(f"Deleting Cache Key {key}...")
+            self.data_storage.delete(key)
+
 
 if __name__ == "__main__":
     """Exercise the AthenaSource Class"""

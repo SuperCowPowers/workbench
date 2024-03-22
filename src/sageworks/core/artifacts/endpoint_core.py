@@ -790,7 +790,7 @@ class EndpointCore(Artifact):
             wr.s3.delete_objects(objects, boto3_session=self.boto_session)
 
         # Now delete any data in the Cache
-        for key in self.data_storage.list_subkeys(f"endpoint:{self.uuid}"):
+        for key in self.data_storage.list_subkeys(f"endpoint:{self.uuid}:"):
             self.log.info(f"Deleting Cache Key: {key}")
             self.data_storage.delete(key)
 

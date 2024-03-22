@@ -524,7 +524,7 @@ class ModelCore(Artifact):
         wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
 
         # Delete any data in the Cache
-        for key in self.data_storage.list_subkeys(f"model:{self.uuid}"):
+        for key in self.data_storage.list_subkeys(f"model:{self.uuid}:"):
             self.log.info(f"Deleting Cache Key {key}...")
             self.data_storage.delete(key)
 
