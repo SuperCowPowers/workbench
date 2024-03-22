@@ -29,38 +29,38 @@ class DataSource(AthenaSource):
         ```
     """
 
-    def __init__(self, source, ds_name: str = None, tags: list = None):
+    def __init__(self, source, name: str = None, tags: list = None):
         """
         Initializes a new DataSource object.
 
         Args:
             source (str): The source of the data. This can be an S3 bucket, file path,
                           DataFrame object, or an existing DataSource object.
-            ds_name (str): The name of the data source (must be lowercase). If not specified, a name will be generated
+            name (str): The name of the data source (must be lowercase). If not specified, a name will be generated
             tags (list[str]): A list of tags associated with the data source. If not specified tags will be generated.
         """
 
         # Make sure we have a name for when we use a DataFrame source
-        if ds_name == "dataframe":
+        if name == "dataframe":
             msg = "Set the 'name' argument in the constructor: DataSource(df, name='my_data')"
             self.log.critical(msg)
             raise ValueError(msg)
 
         # Ensure the ds_name is valid
-        if ds_name:
-            Artifact.ensure_valid_name(ds_name)
+        if name:
+            Artifact.ensure_valid_name(name)
 
         # If the model_name wasn't given generate it
         else:
-            ds_name = extract_data_source_basename(source)
-            ds_name = Artifact.generate_valid_name(ds_name)
+            name = extract_data_source_basename(source)
+            name = Artifact.generate_valid_name(name)
 
         # Set the tags and load the source
-        tags = [ds_name] if tags is None else tags
-        self._load_source(source, ds_name, tags)
+        tags = [name] if tags is None else tags
+        self._load_source(source, name, tags)
 
         # Call superclass init
-        super().__init__(ds_name)
+        super().__init__(name)
 
     def details(self, **kwargs) -> dict:
         """DataSource Details
