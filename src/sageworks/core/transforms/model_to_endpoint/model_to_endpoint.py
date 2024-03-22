@@ -11,6 +11,7 @@ from botocore.exceptions import ClientError
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.artifacts.model_core import ModelCore
 from sageworks.core.artifacts.endpoint_core import EndpointCore
+from sageworks.core.artifacts.artifact import Artifact
 
 
 class ModelToEndpoint(Transform):
@@ -31,6 +32,9 @@ class ModelToEndpoint(Transform):
             endpoint_uuid(str): The UUID of the output Endpoint
             serverless(bool): Deploy the Endpoint in serverless mode (default: True)
         """
+
+        # Make sure the endpoint_uuid is a valid name
+        Artifact.ensure_valid_name(endpoint_uuid, delimiter="-")
 
         # Call superclass init
         super().__init__(model_uuid, endpoint_uuid)

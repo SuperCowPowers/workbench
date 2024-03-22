@@ -29,11 +29,11 @@ class Model(ModelCore):
         """
         return super().details(**kwargs)
 
-    def to_endpoint(self, name: str = None, tags: list = None, serverless: bool = True) -> Endpoint:
+    def to_endpoint(self, endpoint_name: str = None, tags: list = None, serverless: bool = True) -> Endpoint:
         """Create an Endpoint from the Model
 
         Args:
-            name (str): Set the name for the endpoint. If not specified, an automatic name will be generated
+            endpoint_name (str): Set the name for the endpoint. If not specified, an automatic name will be generated
             tags (list): Set the tags for the endpoint. If not specified automatic tags will be generated.
             serverless (bool): Set the endpoint to be serverless (default: True)
 
@@ -41,9 +41,14 @@ class Model(ModelCore):
             Endpoint: The Endpoint created from the Model
         """
 
-        # Create the Endpoint Name and Tags
-        endpoint_name = self.uuid.replace("-model", "") + "-end" if name is None else name
-        endpoint_name = Artifact.base_compliant_uuid(endpoint_name, delimiter="-")
+        # Ensure the endpoint_name is valid
+        if endpoint_name:
+            Artifact.ensure_valid_name(endpoint_name, delimiter="-")
+
+        # If the endpoint_name wasn't given generate it
+        else:
+            endpoint_name = self.uuid.replace("_features", "") + "-end"
+            endpoint_name = Artifact.generate_valid_name(endpoint_name, delimiter="-")
 
         # Create the Endpoint Tags
         tags = [endpoint_name] if tags is None else tags

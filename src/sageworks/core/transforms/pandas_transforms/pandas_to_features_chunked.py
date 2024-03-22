@@ -7,6 +7,7 @@ from pandas.api.types import CategoricalDtype
 from sageworks.core.transforms.transform import Transform
 from sageworks.core.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
+from sageworks.core.artifacts.artifact import Artifact
 
 
 class PandasToFeaturesChunked(Transform):
@@ -27,6 +28,9 @@ class PandasToFeaturesChunked(Transform):
 
     def __init__(self, output_uuid: str, id_column=None, event_time_column=None):
         """PandasToFeaturesChunked Initialization"""
+
+        # Make sure the output_uuid is a valid name
+        Artifact.ensure_valid_name(output_uuid)
 
         # Call superclass init
         super().__init__("DataFrame", output_uuid)

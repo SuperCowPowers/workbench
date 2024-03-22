@@ -16,6 +16,7 @@ from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
 class Artifact(ABC):
     """Artifact: Abstract Base Class for all Artifact classes in SageWorks"""
+    log = logging.getLogger("sageworks")
 
     def __init__(self, uuid: str):
         """Initialize the Artifact Base Class
@@ -24,7 +25,6 @@ class Artifact(ABC):
             uuid (str): The UUID of this artifact
         """
         self.uuid = uuid
-        self.log = logging.getLogger("sageworks")
 
         # Set up our Boto3 and SageMaker Session and SageMaker Client
         self.aws_account_clamp = AWSAccountClamp()
@@ -86,43 +86,38 @@ class Artifact(ABC):
         else:
             self.log.info(f"Health Check Passed {self.uuid}")
 
-    @abstractmethod
-    def compliant_uuid(self, uuid: str) -> str:
-        """Return a compliant UUID for this Artifact
+    @classmethod
+    def ensure_valid_name(cls, name: str, delimiter: str = "_"):
+        """Check if the ID adheres to the naming conventions for this Artifact.
 
         Args:
-            uuid (str): The UUID to make compliant
+            name (str): The name/id to check.
+            delimiter (str): The delimiter to use in the name/id string (default: "_")
 
-        Returns:
-            str: The compliant UUID
+        Raises:
+            ValueError: If the name/id is not valid.
         """
-        pass
+        valid_name = cls.generate_valid_name(name, delimiter=delimiter)
+        if name != valid_name:
+            error_msg = f"{name} doesn't conform and should be converted to: {valid_name}"
+            cls.log.error(error_msg)
+            raise ValueError(error_msg)
 
-    @classmethod
-    def base_compliant_uuid(cls, uuid: str, delimiter: str = "_", just_warn: bool = False) -> str:
+    @staticmethod
+    def generate_valid_name(name: str, delimiter: str = "_") -> str:
         """Only allow letters and the specified delimiter, also lowercase the string
 
         Args:
-            uuid (str): The UUID string to be cleaned.
-            delimiter (str): The delimiter to use in the UUID string (default: "_")
-            just_warn (bool): Just warn if the UUID is not compliant (default: False)
+            name (str): The name/id string to check
+            delimiter (str): The delimiter to use in the name/id string (default: "_")
 
         Returns:
-            str: The cleaned UUID string.
+            str: A generated valid name/id
         """
-        clean_uuid = "".join(c for c in uuid if c.isalnum() or c in ["_", "-"]).lower()
-        clean_uuid = clean_uuid.replace("_", delimiter)
-        clean_uuid = clean_uuid.replace("-", delimiter)
-        if uuid != clean_uuid:
-            log = logging.getLogger("sageworks")
-            log.warning("UUIDs have constraints (lower case, etc) to minimize downstream issues.")
-            if just_warn:
-                log.warning(f"{uuid} doesn't conform and should be converted to: {clean_uuid}")
-                return uuid
-            else:
-                log.warning(f"{uuid} is being converted to --> {clean_uuid}")
-                return clean_uuid
-        return clean_uuid
+        valid_name = "".join(c for c in name if c.isalnum() or c in ["_", "-"]).lower()
+        valid_name = valid_name.replace("_", delimiter)
+        valid_name = valid_name.replace("-", delimiter)
+        return valid_name
 
     @abstractmethod
     def exists(self) -> bool:

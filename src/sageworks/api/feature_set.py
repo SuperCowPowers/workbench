@@ -66,7 +66,7 @@ class FeatureSet(FeatureSetCore):
         self,
         model_type: ModelType,
         target_column: str,
-        name: str = None,
+        model_name: str = None,
         tags: list = None,
         description: str = None,
         feature_list: list = None,
@@ -77,7 +77,7 @@ class FeatureSet(FeatureSetCore):
         Args:
             model_type (ModelType): The type of model to create (See sageworks.model.ModelType)
             target_column (str): The target column for the model (use None for unsupervised model)
-            name (str): Set the name for the model. If not specified, a name will be generated
+            model_name (str): Set the name for the model. If not specified, a name will be generated
             tags (list): Set the tags for the model.  If not specified tags will be generated.
             description (str): Set the description for the model. If not specified a description is generated.
             feature_list (list): Set the feature list for the model. If not specified a feature list is generated.
@@ -86,9 +86,14 @@ class FeatureSet(FeatureSetCore):
             Model: The Model created from the FeatureSet
         """
 
-        # Create the Model Name and Tags
-        model_name = self.uuid.replace("_features", "").replace("_", "-") + "-model" if name is None else name
-        model_name = Artifact.base_compliant_uuid(model_name, delimiter="-")
+        # Ensure the model_name is valid
+        if model_name:
+            Artifact.ensure_valid_name(model_name, delimiter="-")
+
+        # If the model_name wasn't given generate it
+        else:
+            model_name = self.uuid.replace("_features", "") + "-model"
+            model_name = Artifact.generate_valid_name(model_name, delimiter="-")
 
         # Create the Model Tags
         tags = [model_name] if tags is None else tags

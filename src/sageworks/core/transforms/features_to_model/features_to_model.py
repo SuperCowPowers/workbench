@@ -11,6 +11,7 @@ from datetime import datetime
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.artifacts.model_core import ModelCore, ModelType
+from sageworks.core.artifacts.artifact import Artifact
 
 
 class FeaturesToModel(Transform):
@@ -32,6 +33,9 @@ class FeaturesToModel(Transform):
             model_uuid (str): UUID of the Model to create as output
             model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER
         """
+
+        # Make sure the model_uuid is a valid name
+        Artifact.ensure_valid_name(model_uuid, delimiter="-")
 
         # Call superclass init
         super().__init__(feature_uuid, model_uuid)

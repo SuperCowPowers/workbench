@@ -33,8 +33,8 @@ class PandasToFeatures(Transform):
             auto_one_hot (bool): Should we automatically one-hot encode categorical columns?
         """
 
-        # Make sure the output_uuid is a valid UUID
-        output_uuid = Artifact.base_compliant_uuid(output_uuid)
+        # Make sure the output_uuid is a valid name
+        Artifact.ensure_valid_name(output_uuid)
 
         # Call superclass init
         super().__init__("DataFrame", output_uuid)

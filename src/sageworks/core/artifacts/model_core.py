@@ -50,8 +50,8 @@ class ModelCore(Artifact):
             model_type (ModelType, optional): Set this for newly created Models. Defaults to None.
         """
 
-        # Make sure the model_uuid is compliant
-        model_uuid = self.compliant_uuid(model_uuid)
+        # Make sure the model name is valid
+        self.ensure_valid_name(model_uuid, delimiter="-")
 
         # Call SuperClass Initialization
         super().__init__(model_uuid)
@@ -98,17 +98,6 @@ class ModelCore(Artifact):
         self.latest_model = self.model_meta[0]
         self.description = self.latest_model.get("ModelPackageDescription", "-")
         self.training_job_name = self._extract_training_job_name()
-
-    def compliant_uuid(self, uuid: str) -> str:
-        """Make sure the uuid is compliant with Athena Table Name requirements
-
-        Args:
-            uuid (str): The uuid to make compliant
-
-        Returns:
-            str: The compliant uuid
-        """
-        return self.base_compliant_uuid(uuid, delimiter="-", just_warn=True)
 
     def exists(self) -> bool:
         """Does the model metadata exist in the AWS Metadata?"""

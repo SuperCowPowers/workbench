@@ -56,8 +56,8 @@ class EndpointCore(Artifact):
             force_refresh (bool, optional): Force a refresh of the AWS Broker. Defaults to False.
         """
 
-        # Make sure the endpoint_uuid is compliant
-        endpoint_uuid = self.compliant_uuid(endpoint_uuid)
+        # Make sure the endpoint_uuid is a valid name
+        self.ensure_valid_name(endpoint_uuid, delimiter="-")
 
         # Call SuperClass Initialization
         super().__init__(endpoint_uuid)
@@ -102,17 +102,6 @@ class EndpointCore(Artifact):
         self.endpoint_meta = self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS, force_refresh=True).get(
             self.endpoint_name
         )
-
-    def compliant_uuid(self, uuid: str) -> str:
-        """Make sure the uuid is compliant with Athena Table Name requirements
-
-        Args:
-            uuid (str): The uuid to make compliant
-
-        Returns:
-            str: The compliant uuid
-        """
-        return self.base_compliant_uuid(uuid, delimiter="-", just_warn=True)
 
     def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""

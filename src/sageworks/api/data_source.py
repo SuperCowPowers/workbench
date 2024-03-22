@@ -40,17 +40,18 @@ class DataSource(AthenaSource):
             name (str): The name of the data source (must be lowercase). If not specified, a name will be generated
             tags (list[str]): A list of tags associated with the data source. If not specified tags will be generated.
         """
-        self.log = logging.getLogger("sageworks")
 
         # Automatically generate a name if not provided
         ds_name = extract_data_source_basename(source) if name is None else name
-        ds_name = Artifact.base_compliant_uuid(ds_name)  # Make sure UUID is compliant
 
         # Make sure we have a name for when we use a DataFrame source
         if ds_name == "dataframe":
             msg = "Set the 'name' argument in the constructor: DataSource(df, name='my_data')"
             self.log.critical(msg)
             raise ValueError(msg)
+
+        # Make sure the name is valid
+        self.ensure_valid_name(ds_name)
 
         # Set the tags and load the source
         tags = [ds_name] if tags is None else tags
@@ -96,7 +97,7 @@ class DataSource(AthenaSource):
 
     def to_features(
         self,
-        name: str = None,
+        fs_name: str = None,
         tags: list = None,
         target_column: str = None,
         id_column: str = None,
@@ -107,7 +108,7 @@ class DataSource(AthenaSource):
         Convert the DataSource to a FeatureSet
 
         Args:
-            name (str): Set the name for feature set (must be lowercase). If not specified, a name will be generated
+            fs_name (str): Set the name for feature set (must be lowercase). If not specified, a name will be generated
             tags (list): Set the tags for the feature set. If not specified tags will be generated.
             target_column (str): Set the target column for the feature set. (Optional)
             id_column (str): Set the id column for the feature set. If not specified will be generated.
@@ -118,9 +119,14 @@ class DataSource(AthenaSource):
             FeatureSet: The FeatureSet created from the DataSource
         """
 
-        # Create the FeatureSet Name
-        fs_name = self.uuid.replace("_data", "") + "_features" if name is None else name
-        fs_name = Artifact.base_compliant_uuid(fs_name)  # Make sure UUID is compliant
+        # Ensure the feature_set_name is valid
+        if fs_name:
+            Artifact.ensure_valid_name(fs_name)
+
+        # If the feature_set_name wasn't given generate it
+        else:
+            fs_name = self.uuid.replace("_data", "") + "_features"
+            fs_name = Artifact.generate_valid_name(fs_name)
 
         # Set the Tags
         tags = [fs_name] if tags is None else tags

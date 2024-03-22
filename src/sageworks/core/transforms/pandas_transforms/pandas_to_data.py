@@ -30,8 +30,8 @@ class PandasToData(Transform):
             output_format (str): The file format to store the S3 object data in (default: "parquet")
         """
 
-        # Make sure the output_uuid is a valid UUID
-        output_uuid = Artifact.base_compliant_uuid(output_uuid)
+        # Make sure the output_uuid is a valid name/id
+        Artifact.ensure_valid_name(output_uuid)
 
         # Call superclass init
         super().__init__("DataFrame", output_uuid)
