@@ -42,16 +42,20 @@ class ModelCore(Artifact):
         ```
     """
 
-    def __init__(self, model_uuid: str, force_refresh: bool = False, model_type: ModelType = None):
+    def __init__(
+        self, model_uuid: str, force_refresh: bool = False, model_type: ModelType = None, legacy: bool = False
+    ):
         """ModelCore Initialization
         Args:
             model_uuid (str): Name of Model in SageWorks.
             force_refresh (bool, optional): Force a refresh of the AWS Broker. Defaults to False.
             model_type (ModelType, optional): Set this for newly created Models. Defaults to None.
+            legacy (bool, optional): Force load of legacy models. Defaults to False.
         """
 
         # Make sure the model name is valid
-        self.ensure_valid_name(model_uuid, delimiter="-")
+        if not legacy:
+            self.ensure_valid_name(model_uuid, delimiter="-")
 
         # Call SuperClass Initialization
         super().__init__(model_uuid)
