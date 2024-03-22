@@ -4,6 +4,7 @@ import pytest
 
 # Local Imports
 from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
+from sageworks.api.endpoint import Endpoint
 
 
 # Simple test of the ModelToEndpoint functionality
@@ -17,6 +18,10 @@ def test():
     to_endpoint = ModelToEndpoint(input_uuid, output_uuid)
     to_endpoint.set_output_tags(["abalone", "public"])
     to_endpoint.transform()
+
+    # Now run inference on the endpoint
+    endpoint = Endpoint(output_uuid)
+    endpoint.auto_inference()
 
 
 if __name__ == "__main__":
