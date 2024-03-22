@@ -1,5 +1,3 @@
-
-
 import pytest
 import sageworks  # noqa: F401
 import logging
@@ -25,7 +23,7 @@ def test_data_source_deletion():
         abc = DataSource("abc")
 
     if not DataSource("abc_2").exists():
-        abc_2 = DataSource(df, name="abc_2")
+        DataSource(df, name="abc_2")
 
     # Now Delete the 'shorter' name to see if there's any overlap issues
     abc.delete()
@@ -42,7 +40,7 @@ def test_endpoint_deletion():
         end_abc = Endpoint("abc")
 
     if not Endpoint("abc-2").exists():
-        end_abc_2 = model.to_endpoint(name="abc-2")
+        model.to_endpoint(name="abc-2")
 
     # Now Delete the 'shorter' name to see if there's any overlap issues
     end_abc.delete()
