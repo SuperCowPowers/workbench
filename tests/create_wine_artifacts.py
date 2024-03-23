@@ -53,4 +53,7 @@ if __name__ == "__main__":
     # Create the wine classification Endpoint
     if recreate or not Endpoint("wine-classification-end").exists():
         m = Model("wine-classification")
-        m.to_endpoint("wine-classification-end", tags=["wine", "classification"])
+        end = m.to_endpoint("wine-classification-end", tags=["wine", "classification"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)

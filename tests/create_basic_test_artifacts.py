@@ -83,4 +83,7 @@ if __name__ == "__main__":
     # Create the abalone_regression Endpoint
     if recreate or not Endpoint("abalone-regression-end").exists():
         model = Model("abalone-regression")
-        model.to_endpoint(name="abalone-regression-end", tags=["abalone", "regression"])
+        end = model.to_endpoint(name="abalone-regression-end", tags=["abalone", "regression"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
