@@ -67,8 +67,8 @@ def backtrack_to_fs(end: Endpoint) -> FeatureSet:
     """
     # Grab the FeatureSet by backtracking from the Endpoint
     model_name = end.get_input()
-    feature_name = Model(model_name).get_input()
-    fs = FeatureSet(feature_name)
+    fs_name = Model(model_name).get_input()
+    fs = FeatureSet(fs_name)
     return fs
 
 

@@ -17,6 +17,14 @@ if __name__ == "__main__":
     if ds.exists():
         print("Deleting test_data...")
         ds.delete()
+    ds = DataSource("abc")
+    if ds.exists():
+        print("Deleting abc...")
+        ds.delete()
+    ds = DataSource("abc_2")
+    if ds.exists():
+        print("Deleting abc_2...")
+        ds.delete()
     fs = FeatureSet("test_features")
     if fs.exists():
         print("Deleting test_features...")
@@ -28,6 +36,14 @@ if __name__ == "__main__":
     end = Endpoint("test-end")
     if end.exists():
         print("Deleting test-end endpoint...")
+        end.delete()
+    end = Endpoint("abc")
+    if end.exists():
+        print("Deleting abc endpoint...")
+        end.delete()
+    end = Endpoint("abc-2")
+    if end.exists():
+        print("Deleting abc-2 endpoint...")
         end.delete()
 
     # Delete the abalone_data Artifacts
