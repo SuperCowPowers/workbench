@@ -31,13 +31,13 @@ class Cache(object):
         # Try to do cleanup/serialization at exit
         atexit.register(self.cleanup)
 
-    def _get_prefixed_key(self, key):
+    def _get_full_key(self, key):
         return f"{self.prefix}{key}{self.postfix}"
 
     @staticmethod
     def check():
         """Check the status of this cache"""
-        True  # I'm doing great, thanks for asking
+        return True  # I'm doing great, thanks for asking
 
     def set(self, key, value):
         """Add an item to the cache
@@ -46,7 +46,7 @@ class Cache(object):
                value: the value associated with this key
         """
         self._check_limit()
-        actual_key = self._get_prefixed_key(key)
+        actual_key = self._get_full_key(key)
         _expire = time.time() + self.expire if self.expire else None
         self.store[actual_key] = (value, _expire)
 
@@ -57,7 +57,7 @@ class Cache(object):
         Returns:
             the value of the item or None if the item isn't in the cache
         """
-        actual_key = self._get_prefixed_key(key)
+        actual_key = self._get_full_key(key)
         data = self.store.get(actual_key)
         if not data:
             return None
@@ -68,8 +68,12 @@ class Cache(object):
         return value
 
     def delete(self, key):
+        # Delete the key and its full key (if either exists)
         if key in self.store:
             del self.store[key]
+        full_key = self._get_full_key(key)
+        if full_key in self.store:
+            del self.store[full_key]
 
     def list_keys(self):
         """List all keys in the cache"""
@@ -77,7 +81,7 @@ class Cache(object):
 
     def list_subkeys(self, key):
         """List all sub-keys in the cache"""
-        return [k for k in self.store.keys() if k.startswith(self._get_prefixed_key(key))]
+        return [k for k in self.store.keys() if k.startswith(f"{self.prefix}{key}")]
 
     def clear(self):
         """Clear the cache"""

@@ -153,7 +153,10 @@ class RedisCache:
 
     def delete(self, key):
         """Delete an item from the redis_cache"""
+
+        # Delete the key and its full key (if either exists)
         self.redis_db.delete(key)
+        self.redis_db.delete(self.prefix + str(key) + self.postfix)
 
     def list_keys(self):
         """List all keys in the redis_cache"""

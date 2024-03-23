@@ -42,3 +42,33 @@ class SageWorksCache:
 
     def check(self):
         return self._actual_cache.check()
+
+    def clear(self):
+        return self._actual_cache.clear()
+
+
+if __name__ == "__main__":
+    """Exercise the SageWorks Cache class"""
+
+    # Create the SageWorks Cache
+    my_cache = SageWorksCache(prefix="test")
+    assert my_cache.check()
+
+    # Delete anything in the test database
+    my_cache.clear()
+
+    # Test storage
+    my_cache.set("foo", "bar")
+    assert my_cache.get("foo") == "bar"
+    for key in my_cache.list_keys():
+        print(key)
+    my_cache.clear()
+
+    # Test prefix/postfix
+    my_cache = SageWorksCache(prefix="pre", postfix="post")
+    my_cache.set("foo", "bar")
+    assert my_cache.get("foo") == "bar"
+    my_cache.list_keys()
+    for key in my_cache.list_keys():
+        print(key)
+    my_cache.clear()
