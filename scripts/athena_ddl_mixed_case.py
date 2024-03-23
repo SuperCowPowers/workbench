@@ -12,20 +12,21 @@ will be lowercased to castle.
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+
 boto_session = AWSAccountClamp().boto_session()
 
 
 # Create a Glue client and Athena client
-glue_client = boto_session.client('glue')
-athena_client = boto_session.client('athena')
+glue_client = boto_session.client("glue")
+athena_client = boto_session.client("athena")
 
 # Define the database, table name, and S3 path
-database_name = 'sageworks'
-table_name = 'test_table'
-s3_path = 's3://test-bucket/test/'
+database_name = "sageworks"
+table_name = "test_table"
+s3_path = "s3://test-bucket/test/"
 
 # Define the original column names with mixed case
-original_column_dict = {'Id': 'int', 'Name': 'string', 'Age': 'int'}
+original_column_dict = {"Id": "int", "Name": "string", "Age": "int"}
 
 # Define the Athena DDL query to create the table
 ddl_query = f"""
@@ -41,9 +42,9 @@ LOCATION '{s3_path}'
 # Execute the DDL query
 execution_id = athena_client.start_query_execution(
     QueryString=ddl_query,
-    QueryExecutionContext={'Database': database_name},
-    ResultConfiguration={'OutputLocation': 's3://your-output-bucket/path/'}
-)['QueryExecutionId']
+    QueryExecutionContext={"Database": database_name},
+    ResultConfiguration={"OutputLocation": "s3://your-output-bucket/path/"},
+)["QueryExecutionId"]
 
 # Wait for the query execution to complete (you may want to add a timeout or a more sophisticated waiting mechanism)
 athena_client.get_query_execution(QueryExecutionId=execution_id)
@@ -52,7 +53,7 @@ athena_client.get_query_execution(QueryExecutionId=execution_id)
 response = glue_client.get_table(DatabaseName=database_name, Name=table_name)
 
 # Extract the column names from the response
-retrieved_columns = [col['Name'] for col in response['Table']['StorageDescriptor']['Columns']]
+retrieved_columns = [col["Name"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
 
 # Compare the original column names to the retrieved column names
 original_columns = list(original_column_dict.keys())
