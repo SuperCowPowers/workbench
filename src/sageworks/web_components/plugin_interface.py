@@ -163,7 +163,7 @@ def plugin_error_decorator(func):
         except Exception as e:
             # Get the class name of the plugin
             class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
-            error_info = f"{class_name} Plugin Crashed: {e.__class__.__name__}: {e}"
+            error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
             return ComponentInterface.message_figure(error_info, figure_height=100, font_size=16)
 
     return wrapper
