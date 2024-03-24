@@ -98,14 +98,14 @@ class PluginInterface(ComponentInterface):
                     cls.log.warning(f"Subclass {subclass.__name__} is missing required method {method}")
                     return False
 
-                # Check if the method is different from the base class (i.e., it's been implemented)
-                base_class_method = getattr(cls, method)
+                # Check if the method is implemented by the subclass itself
                 subclass_method = getattr(subclass, method)
-                if subclass_method is getattr(PluginInterface, method):
+                if subclass_method.__qualname__.split(".")[0] != subclass.__name__:
                     cls.log.warning(f"Subclass {subclass.__name__} has not implemented the method {method}")
                     return False
 
                 # Check argument types
+                base_class_method = getattr(cls, method)
                 arg_type_error = cls._check_argument_types(base_class_method, subclass_method)
                 if arg_type_error:
                     cls.log.warning(f"Subclass {subclass.__name__} error in method '{method}': {arg_type_error}")
