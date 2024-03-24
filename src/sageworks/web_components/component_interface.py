@@ -47,17 +47,18 @@ class ComponentInterface(ABC):
         return component_id
 
     @staticmethod
-    def message_figure(message: str, figure_height: int = None) -> go.Figure:
+    def message_figure(message: str, figure_height: int = None, font_size=32) -> go.Figure:
         """This helper method creates a waiting figure for the component
         Args:
             message (str): The message to display
             figure_height (int): The height of the figure (default: None)
+            font_size (int): The font size of the message (default: 32)
         Returns:
             go.Figure: A Plotly Figure
         """
         message_figure = go.Figure()
         message_figure.add_annotation(
-            x=0.5, y=0.5, xref="paper", yref="paper", text=message, showarrow=False, font=dict(size=32)
+            x=0.5, y=0.5, xref="paper", yref="paper", text=message, showarrow=False, font=dict(size=font_size)
         )
 
         layout_options = dict(

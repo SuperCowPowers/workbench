@@ -8,8 +8,7 @@ import plotly.graph_objects as go
 from sageworks.web_components.plugin_interface import (
     PluginInterface,
     PluginType,
-    PluginInputType,
-    plugin_error_decorator,
+    PluginInputType
 )
 
 
@@ -29,7 +28,6 @@ class CrashingPlugin(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    @plugin_error_decorator
     def generate_component_figure(self, model_details: dict) -> go.Figure:
         """Create a CrashingPlugin Figure for the numeric columns in the dataframe.
         Args:
