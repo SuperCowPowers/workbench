@@ -74,9 +74,9 @@ class PluginInterface(ComponentInterface):
             raise TypeError("Subclasses must define a 'plugin_input_type' of type PluginInputType")
 
         # Automatically apply the error handling decorator to the create_component and generate_component_figure methods
-        if hasattr(cls, 'create_component') and callable(cls.create_component):
+        if hasattr(cls, "create_component") and callable(cls.create_component):
             cls.create_component = plugin_error_decorator(cls.create_component)
-        if hasattr(cls, 'generate_component_figure') and callable(cls.generate_component_figure):
+        if hasattr(cls, "generate_component_figure") and callable(cls.generate_component_figure):
             cls.generate_component_figure = plugin_error_decorator(cls.generate_component_figure)
 
     # If any base class method or parameter is missing from a subclass, or if a subclass method parameter is not
@@ -165,5 +165,5 @@ def plugin_error_decorator(func):
             class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
             error_info = f"{class_name} Plugin Crashed: {e.__class__.__name__}: {e}"
             return ComponentInterface.message_figure(error_info, figure_height=100, font_size=16)
-    return wrapper
 
+    return wrapper

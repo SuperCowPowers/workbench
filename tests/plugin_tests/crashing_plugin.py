@@ -5,11 +5,7 @@ import plotly.graph_objects as go
 
 
 # SageWorks Imports
-from sageworks.web_components.plugin_interface import (
-    PluginInterface,
-    PluginType,
-    PluginInputType
-)
+from sageworks.web_components.plugin_interface import PluginInterface, PluginType, PluginInputType
 
 
 class CrashingPlugin(PluginInterface):
