@@ -5,18 +5,18 @@ import logging
 import inspect
 
 # SageWorks imports
-from sageworks.web_components.plugin_interface import PluginInterface, PluginType
+from sageworks.web_components.plugin_interface import PluginInterface, PluginPage
 
 
 # SageWorks Logger
 log = logging.getLogger("sageworks")
 
 
-def load_plugins_from_dir(directory: str, plugin_type: PluginType) -> List[PluginInterface]:
+def load_plugins_from_dir(directory: str, plugin_page: PluginPage) -> List[PluginInterface]:
     """Load all the plugins from the given directory.
     Args:
         directory (str): The directory to load the plugins from.
-        plugin_type (PluginType): The type of plugin to load.
+        plugin_page (PluginPage): The type of plugin to load.
     Returns:
         List[PluginInterface]: A list of plugins that were loaded.
     """
@@ -37,7 +37,7 @@ def load_plugins_from_dir(directory: str, plugin_type: PluginType) -> List[Plugi
                     if issubclass(attribute, PluginInterface) and attribute is not PluginInterface:
                         try:
                             instance = attribute()
-                            if instance.plugin_type == plugin_type:
+                            if instance.plugin_page == plugin_page:
                                 plugins.append(instance)
                         except TypeError as e:
                             log.error(f"Error initializing plugin from {filename}: {e}")
@@ -55,8 +55,8 @@ if __name__ == "__main__":
     plugin_dir = ConfigManager().get_config("SAGEWORKS_PLUGINS")
 
     # Loop through the various plugin types and load the plugins
-    plugin_types = [PluginType.DATA_SOURCE, PluginType.FEATURE_SET, PluginType.MODEL, PluginType.ENDPOINT]
-    for plugin_type in plugin_types:
-        plugins = load_plugins_from_dir(plugin_dir, plugin_type)
+    plugin_pages = [PluginPage.DATA_SOURCE, PluginPage.FEATURE_SET, PluginPage.MODEL, PluginPage.ENDPOINT]
+    for plugin_page in plugin_pages:
+        plugins = load_plugins_from_dir(plugin_dir, plugin_page)
         for plugin in plugins:
-            log.info(f"Loaded {plugin_type} plugin: {plugin.__class__.__name__}")
+            log.info(f"Loaded {plugin_page} plugin: {plugin.__class__.__name__}")

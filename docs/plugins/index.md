@@ -12,13 +12,13 @@ Each plugin class inherits from the SageWorks PluginInterface class and needs to
 
 ```
 
-from sageworks.web_components.plugin_interface import PluginInterface, PluginType
+from sageworks.web_components.plugin_interface import PluginInterface, PluginPage
 
 class MyPlugin(PluginInterface):
     """My Awesome Component"""
 
     # Initialize the required attributes"""
-    plugin_type = PluginType.MODEL
+    plugin_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL_DETAILS
     
     # Implement the two methods
@@ -36,7 +36,7 @@ class MyPlugin(PluginInterface):
 
 ### Required Attributes
 
-The class variable plugin_type determines what type of plugin the MyPlugin class is. This variable is inspected during plugin loading at runtime in order to load the plugin to the correct artifact page in the Sageworks dashboard. The PluginType class can be DATA_SOURCE, FEATURE_SET, MODEL, or ENDPOINT.
+The class variable plugin_page determines what type of plugin the MyPlugin class is. This variable is inspected during plugin loading at runtime in order to load the plugin to the correct artifact page in the Sageworks dashboard. The PluginPage class can be DATA_SOURCE, FEATURE_SET, MODEL, or ENDPOINT.
 
 ## S3 Bucket Plugins
 Offers the most flexibility and fast prototyping. Simple set your config/env for  blah to an S3 Path and SageWorks will load the plugins from S3 directly.

@@ -12,8 +12,8 @@ from typing import Union, Dict, List, Any
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.s3_utils import copy_s3_files_to_local
 from sageworks.views.view import View
-from sageworks.web_components.plugin_interface import PluginInterface as WebPluginInterface
-from sageworks.web_components.plugin_interface import PluginType as WebPluginType
+from sageworks.web_components.plugin_interface import PluginInterface
+from sageworks.web_components.plugin_interface import PluginPage
 
 
 class PluginManager:
@@ -91,8 +91,8 @@ class PluginManager:
 
                     # Check if the attribute is a class and is defined in the module
                     if isinstance(attr, type) and attr.__module__ == module.__name__:
-                        # For web components, check if the class is a subclass of WebPluginInterface
-                        if plugin_type == "web_components" and issubclass(attr, WebPluginInterface):
+                        # For web components, check if the class is a subclass of PluginInterface
+                        if plugin_type == "web_components" and issubclass(attr, PluginInterface):
                             self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
                             self.plugins[plugin_type][attr_name] = attr
 
@@ -139,24 +139,24 @@ class PluginManager:
         """
         return self.plugins
 
-    def get_list_of_web_plugins(self, web_plugin_type: WebPluginType = None) -> List[Any]:
+    def get_list_of_web_plugins(self, plugin_page: PluginPage = None) -> List[Any]:
         """
-        Retrieve a list of plugins of a specific type.
+        Retrieve a list of plugins for a specific page (e.g., MODEL, ENDPOINT).
 
         Args:
-            web_plugin_type (WebPluginType): The type of web plugin to retrieve (if applicable).
+            plugin_page (PluginPage): Get plugins for a specific page (e.g., MODEL, ENDPOINT).
 
         Returns:
-            List[Any]: A list of INSTANTIATED plugin classes of the requested type.
+            List[Any]: A list of INSTANTIATED plugin classes for the requested page.
         """
         plugin_classes = [
             self.plugins["web_components"][x]
             for x in self.plugins["web_components"]
-            if self.plugins["web_components"][x].plugin_type == web_plugin_type
+            if self.plugins["web_components"][x].plugin_page == plugin_page
         ]
         return [x() for x in plugin_classes]
 
-    def get_web_plugin(self, plugin_name: str) -> WebPluginInterface:
+    def get_web_plugin(self, plugin_name: str) -> PluginInterface:
         """
         Retrieve a specific web plugin by name
 
@@ -164,7 +164,7 @@ class PluginManager:
             plugin_name (str): The name of the web plugin to retrieve
 
         Returns:
-            WebPluginInterface: The INSTANTIATED web plugin class with the given name
+            PluginInterface: The INSTANTIATED web plugin class with the given name
         """
         web_plugin = self.plugins["web_components"].get(plugin_name)
         return web_plugin() if web_plugin else None
@@ -245,11 +245,11 @@ if __name__ == "__main__":
     # Create the class, load plugins, and call various methods
     manager = PluginManager()
 
-    # Get web components for the model view
-    model_plugin = manager.get_list_of_web_plugins(WebPluginType.MODEL)
+    # Get web components for the model page
+    model_plugin = manager.get_list_of_web_plugins(PluginPage.MODEL)
 
-    # Get web components for the endpoint view
-    endpoint_plugin = manager.get_list_of_web_plugins(WebPluginType.ENDPOINT)
+    # Get web components for the endpoint page
+    endpoint_plugin = manager.get_list_of_web_plugins(PluginPage.ENDPOINT)
 
     # Get view plugin
     my_view = manager.get_view("ModelPluginView")
@@ -286,10 +286,10 @@ if __name__ == "__main__":
     manager = PluginManager()
 
     # Get web components for the model view
-    model_plugin = manager.get_list_of_web_plugins(WebPluginType.MODEL)
+    model_plugin = manager.get_list_of_web_plugins(PluginPage.MODEL)
 
     # Get web components for the endpoint view
-    endpoint_plugin = manager.get_list_of_web_plugins(WebPluginType.ENDPOINT)
+    endpoint_plugin = manager.get_list_of_web_plugins(PluginPage.ENDPOINT)
 
     # Get view plugin
     my_view = manager.get_view("ModelPluginView")

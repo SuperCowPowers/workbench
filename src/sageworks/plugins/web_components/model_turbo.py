@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 
 # SageWorks Imports
-from sageworks.web_components.plugin_interface import PluginInterface, PluginType, PluginInputType
+from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from sageworks.api.model import Model
 
 
@@ -13,7 +13,7 @@ class ModelTurbo(PluginInterface):
     """ModelTurbo Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_type = PluginType.MODEL
+    plugin_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL_DETAILS
 
     def create_component(self, component_id: str) -> dcc.Graph:

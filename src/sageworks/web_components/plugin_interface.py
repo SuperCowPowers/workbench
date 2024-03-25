@@ -9,8 +9,8 @@ from enum import Enum
 from sageworks.web_components.component_interface import ComponentInterface
 
 
-class PluginType(Enum):
-    """Plugin Types: These are the types of plugins that can be loaded"""
+class PluginPage(Enum):
+    """Plugin Page: Specify which page will autoload the plugin (CUSTOM = Don't autoload)"""
 
     DATA_SOURCE = "data_source"
     FEATURE_SET = "feature_set"
@@ -20,7 +20,7 @@ class PluginType(Enum):
 
 
 class PluginInputType(Enum):
-    """TBD: Nice Docstring here or link to docs"""
+    """Plugin Input Type: Specify the type of object that the plugin will receive as input"""
 
     DATA_SOURCE_DETAILS = "data_source_details"
     FEATURE_SET_DETAILS = "feature_set_details"
@@ -63,9 +63,9 @@ class PluginInterface(ComponentInterface):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        # Ensure the subclass defines the required plugin_type and plugin_input_type
-        if not hasattr(cls, "plugin_type") or not isinstance(cls.plugin_type, PluginType):
-            raise TypeError("Subclasses must define a 'plugin_type' of type PluginType")
+        # Ensure the subclass defines the required plugin_page and plugin_input_type
+        if not hasattr(cls, "plugin_page") or not isinstance(cls.plugin_page, PluginPage):
+            raise TypeError("Subclasses must define a 'plugin_page' of type PluginPage")
         if not hasattr(cls, "plugin_input_type") or not isinstance(cls.plugin_input_type, PluginInputType):
             raise TypeError("Subclasses must define a 'plugin_input_type' of type PluginInputType")
 
@@ -76,7 +76,7 @@ class PluginInterface(ComponentInterface):
     def __subclasshook__(cls, subclass):
         if cls is PluginInterface:
             # Check if the subclass has all the required attributes
-            if not all(hasattr(subclass, attr) for attr in ("plugin_type", "plugin_input_type")):
+            if not all(hasattr(subclass, attr) for attr in ("plugin_page", "plugin_input_type")):
                 cls.log.warning(f"Subclass {subclass.__name__} is missing required attributes")
                 return False
 
