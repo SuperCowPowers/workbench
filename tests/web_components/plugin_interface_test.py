@@ -25,7 +25,7 @@ class CorrectPlugin(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def generate_component_figure(self, model: Model) -> go.Figure:
+    def generate_figure(self, model: Model) -> go.Figure:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
              model (Model): An instantiated Model object
@@ -37,7 +37,7 @@ class CorrectPlugin(PluginInterface):
 
 class IncorrectMethods(PluginInterface):
     """Subclass of PluginInterface with incorrect methods
-    they have create_component but forgot to implement generate_component_figure"""
+    they have create_component but forgot to implement generate_figure"""
 
     """Initialize this Plugin Component Class with required attributes"""
     plugin_type = PluginType.MODEL
@@ -70,7 +70,7 @@ class IncorrectArgTypes(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def generate_component_figure(self, model: list) -> go.Figure:
+    def generate_figure(self, model: list) -> go.Figure:
         """Create a Plotly Figure
         Args:
             model (list): An incorrect argument type
@@ -96,7 +96,7 @@ class IncorrectReturnType(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def generate_component_figure(self, model: Model) -> list:
+    def generate_figure(self, model: Model) -> list:
         """Create a Figure but give the wrong return type.
         Args:
             model (Model): An instantiated Model object

@@ -18,7 +18,7 @@ class RegressionPlot(ComponentInterface):
         # Initialize an empty scatter plot figure
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, model: Model, inference_run: str = None) -> go.Figure:
+    def generate_figure(self, model: Model, inference_run: str = None) -> go.Figure:
         # Get predictions for specific inference
         df = model.inference_predictions(inference_run)
 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     reg_plot = RegressionPlot()
 
     # Generate the figure
-    fig = reg_plot.generate_component_figure(m, inference_run)
+    fig = reg_plot.generate_figure(m, inference_run)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

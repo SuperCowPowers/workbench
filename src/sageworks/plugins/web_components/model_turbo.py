@@ -25,7 +25,7 @@ class ModelTurbo(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, model: Model) -> go.Figure:
+    def generate_figure(self, model: Model) -> go.Figure:
         """Create a ModelTurbo Figure for the numeric columns in the dataframe.
         Args:
             model (Model): An instantiated Model object
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     turbo = ModelTurbo()
 
     # Generate the figure
-    fig = turbo.generate_component_figure(model)
+    fig = turbo.generate_figure(model)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

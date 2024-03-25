@@ -34,7 +34,7 @@ class PluginInterface(ComponentInterface):
       - These methods are ^stateless^, all data should be passed through the
         arguments and the implementations should not reference 'self' variables
       - The 'create_component' method must be implemented by the child class
-      - The 'generate_component_figure' method must be implemented by the child class
+      - The 'generate_figure' method must be implemented by the child class
     """
 
     @abstractmethod
@@ -48,7 +48,7 @@ class PluginInterface(ComponentInterface):
         pass
 
     @abstractmethod
-    def generate_component_figure(
+    def generate_figure(
         self, data_object: ComponentInterface.SageworksObject
     ) -> ComponentInterface.FigureTypes:
         """Generate a figure from the data in the given dataframe.

@@ -25,7 +25,7 @@ class EndpointTurbo(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, endpoint: Endpoint) -> go.Figure:
+    def generate_figure(self, endpoint: Endpoint) -> go.Figure:
         """Create a EndpointTurbo Figure for the numeric columns in the dataframe.
         Args:
             endpoint (Endpoint): An instantiated Endpoint object
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     pie = EndpointTurbo()
 
     # Generate the figure
-    fig = pie.generate_component_figure(end)
+    fig = pie.generate_figure(end)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

@@ -26,7 +26,7 @@ class MyPlugin(PluginInterface):
         < Function logic which creates a Dash Component (Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]) >
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def generate_component_figure(self, figure_input: PluginInputType) -> ComponentInterface.FigureTypes:
+    def generate_figure(self, figure_input: PluginInputType) -> ComponentInterface.FigureTypes:
         < Function logic which creates a figure (go.Figure) 
         return figure
 ```

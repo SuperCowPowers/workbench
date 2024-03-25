@@ -125,4 +125,4 @@ class PluginPageExample:
 
             # Instantiate the Model and send it to the plugin
             model = Model(model_uuid)
-            return plugin.generate_component_figure(model)
+            return plugin.generate_figure(model)

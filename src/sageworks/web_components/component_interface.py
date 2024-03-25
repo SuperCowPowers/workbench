@@ -18,7 +18,7 @@ class ComponentInterface(ABC):
       - These methods are ^stateless^, all data should be passed through the
         arguments and the implementations should not reference 'self' variables
       - The 'create_component' method must be implemented by the child class
-      - The 'generate_component_figure' is optional (some components don't use Plotly figures)
+      - The 'generate_figure' is optional (some components don't use Plotly figures)
     """
 
     log = logging.getLogger("sageworks")
@@ -30,11 +30,11 @@ class ComponentInterface(ABC):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        # Automatically apply the error handling decorator to the create_component and generate_component_figure methods
+        # Automatically apply the error handling decorator to the create_component and generate_figure methods
         if hasattr(cls, "create_component") and callable(cls.create_component):
             cls.create_component = component_error_decorator(cls.create_component)
-        if hasattr(cls, "generate_component_figure") and callable(cls.generate_component_figure):
-            cls.generate_component_figure = figure_error_decorator(cls.generate_component_figure)
+        if hasattr(cls, "generate_figure") and callable(cls.generate_figure):
+            cls.generate_figure = figure_error_decorator(cls.generate_figure)
 
     @abstractmethod
     def create_component(self, component_id: str, **kwargs: Any) -> ComponentTypes:
@@ -47,7 +47,7 @@ class ComponentInterface(ABC):
         """
         pass
 
-    def generate_component_figure(self, data_object: SageworksObject) -> FigureTypes:
+    def generate_figure(self, data_object: SageworksObject) -> FigureTypes:
         """Generate a figure from the data in the given dataframe.
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.
