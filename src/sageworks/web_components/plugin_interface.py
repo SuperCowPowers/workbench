@@ -167,6 +167,7 @@ def component_error_decorator(func):
             error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
             figure = ComponentInterface.message_figure(error_info, figure_height=100, font_size=16)
             return dcc.Graph(id="error", figure=figure)
+
     return wrapper
 
 
@@ -180,5 +181,5 @@ def figure_error_decorator(func):
             class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
             error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
             return ComponentInterface.message_figure(error_info, figure_height=100, font_size=16)
-    return wrapper
 
+    return wrapper
