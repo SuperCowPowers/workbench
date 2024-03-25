@@ -29,7 +29,7 @@ class ComponentInterface(ABC):
             component_id (str): The ID of the web component
             kwargs (Any): Any additional arguments to pass to the component
         Returns:
-            Union[go.Figure, dcc.Markdown, html.Div]: The Dash Web component
+            Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]: The Dash Web component
         """
         pass
 
@@ -47,18 +47,18 @@ class ComponentInterface(ABC):
         return component_id
 
     @staticmethod
-    def message_figure(message: str, figure_height: int = None, font_size=32) -> go.Figure:
+    def message_figure(text_message: str, figure_height: int = None, font_size=32) -> go.Figure:
         """This helper method creates a waiting figure for the component
         Args:
-            message (str): The message to display
+            text_message (str): The text message to display
             figure_height (int): The height of the figure (default: None)
             font_size (int): The font size of the message (default: 32)
         Returns:
             go.Figure: A Plotly Figure
         """
-        message_figure = go.Figure()
-        message_figure.add_annotation(
-            x=0.5, y=0.5, xref="paper", yref="paper", text=message, showarrow=False, font=dict(size=font_size)
+        text_message_figure = go.Figure()
+        text_message_figure.add_annotation(
+            x=0.5, y=0.5, xref="paper", yref="paper", text=text_message, showarrow=False, font=dict(size=font_size)
         )
 
         layout_options = dict(
@@ -70,6 +70,6 @@ class ComponentInterface(ABC):
         if figure_height is not None:
             layout_options["height"] = figure_height
 
-        message_figure.update_layout(**layout_options)
+        text_message_figure.update_layout(**layout_options)
 
-        return message_figure
+        return text_message_figure
