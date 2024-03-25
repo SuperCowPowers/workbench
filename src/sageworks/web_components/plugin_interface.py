@@ -9,7 +9,6 @@ from dash import dcc
 
 # Local Imports
 from sageworks.web_components.component_interface import ComponentInterface
-from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 
 
 class PluginType(Enum):
@@ -40,8 +39,6 @@ class PluginInterface(ComponentInterface):
       - The 'generate_component_figure' method must be implemented by the child class
     """
 
-    sageworks_object = Union[DataSource, FeatureSet, Model, Endpoint]
-
     @abstractmethod
     def create_component(self, component_id: str) -> ComponentInterface.ComponentTypes:
         """Create a Dash Component without any data.
@@ -53,7 +50,7 @@ class PluginInterface(ComponentInterface):
         pass
 
     @abstractmethod
-    def generate_component_figure(self, data_object: sageworks_object) -> ComponentInterface.FigureTypes:
+    def generate_component_figure(self, data_object: ComponentInterface.SageworksObject) -> ComponentInterface.FigureTypes:
         """Generate a figure from the data in the given dataframe.
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.
@@ -153,31 +150,3 @@ class PluginInterface(ComponentInterface):
         if return_type not in expected_return_types:
             return f"Incorrect return type (expected one of {expected_return_types}, got {return_type})"
         return None
-
-
-# These are helper decorators to catch errors in plugin methods
-def component_error_decorator(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            # Get the class name of the plugin
-            class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
-            error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
-            figure = ComponentInterface.message_figure(error_info, figure_height=100, font_size=16)
-            return dcc.Graph(id="error", figure=figure)
-    return wrapper
-
-
-def figure_error_decorator(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            # Get the class name of the plugin
-            class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
-            error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
-            return ComponentInterface.message_figure(error_info, figure_height=100, font_size=16)
-    return wrapper

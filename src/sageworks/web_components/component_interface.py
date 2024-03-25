@@ -3,9 +3,13 @@
 from abc import ABC, abstractmethod
 from typing import Any, Union
 import re
+from functools import wraps
 import logging
 import plotly.graph_objects as go
 from dash import dcc, html, dash_table
+
+# SageWorks Imports
+from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 
 
 class ComponentInterface(ABC):
@@ -19,8 +23,18 @@ class ComponentInterface(ABC):
 
     log = logging.getLogger("sageworks")
 
+    SageworksObject = Union[DataSource, FeatureSet, Model, Endpoint]
     ComponentTypes = Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]
     FigureTypes = Union[go.Figure, str]  # str is used for dcc.Markdown
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        # Automatically apply the error handling decorator to the create_component and generate_component_figure methods
+        if hasattr(cls, "create_component") and callable(cls.create_component):
+            cls.create_component = component_error_decorator(cls.create_component)
+        if hasattr(cls, "generate_component_figure") and callable(cls.generate_component_figure):
+            cls.generate_component_figure = figure_error_decorator(cls.generate_component_figure)
 
     @abstractmethod
     def create_component(self, component_id: str, **kwargs: Any) -> ComponentTypes:
@@ -30,6 +44,15 @@ class ComponentInterface(ABC):
             kwargs (Any): Any additional arguments to pass to the component
         Returns:
             Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]: The Dash Web component
+        """
+        pass
+
+    def generate_component_figure(self, data_object: SageworksObject) -> FigureTypes:
+        """Generate a figure from the data in the given dataframe.
+        Args:
+            data_object (sageworks_object): The instantiated data object for the plugin type.
+        Returns:
+            Union[go.Figure, str]: A Plotly Figure or a Markdown string
         """
         pass
 
@@ -73,3 +96,31 @@ class ComponentInterface(ABC):
         text_message_figure.update_layout(**layout_options)
 
         return text_message_figure
+
+
+# These are helper decorators to catch errors in plugin methods
+def component_error_decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            # Get the class name of the plugin
+            class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
+            error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
+            figure = ComponentInterface.message_figure(error_info, figure_height=100, font_size=16)
+            return dcc.Graph(id="error", figure=figure)
+    return wrapper
+
+
+def figure_error_decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            # Get the class name of the plugin
+            class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
+            error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
+            return ComponentInterface.message_figure(error_info, figure_height=100, font_size=16)
+    return wrapper
