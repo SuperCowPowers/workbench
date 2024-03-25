@@ -155,7 +155,7 @@ class PluginInterface(ComponentInterface):
         return None
 
 
-# This are helper decorators to catch errors in plugin methods
+# These are helper decorators to catch errors in plugin methods
 def component_error_decorator(func):
     @wraps(func)
     def wrapper(*args, **kwargs):

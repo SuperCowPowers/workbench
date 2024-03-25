@@ -62,20 +62,20 @@ class IncorrectArgTypes(PluginInterface):
 
     # Component is an incorrectly named keyword argument
     def create_component(self, component_id: str) -> dcc.Graph:
-        """Create a Confusion Matrix Component without any data.
+        """Create a Component without any data.
         Args:
             component_id (str): The ID of the web component
         Returns:
-            dcc.Graph: The Confusion Matrix Component
+            dcc.Graph: A Dash Component
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
     def generate_component_figure(self, model: list) -> go.Figure:
-        """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
+        """Create a Plotly Figure
         Args:
             model (list): An incorrect argument type
         Returns:
-            go.Figure: A Figure object containing the confusion matrix.
+            go.Figure: A Figure object
         """
         return PluginInterface.message_figure("I'm a bad plugin...")
 
