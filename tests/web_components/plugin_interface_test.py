@@ -14,7 +14,7 @@ class CorrectPlugin(PluginInterface):
 
     """Initialize this Plugin Component Class with required attributes"""
     plugin_page = PluginPage.MODEL
-    plugin_input_type = PluginInputType.MODEL_DETAILS
+    plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.
@@ -41,7 +41,7 @@ class IncorrectMethods(PluginInterface):
 
     """Initialize this Plugin Component Class with required attributes"""
     plugin_page = PluginPage.MODEL
-    plugin_input_type = PluginInputType.MODEL_DETAILS
+    plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.
@@ -58,7 +58,7 @@ class IncorrectArgTypes(PluginInterface):
 
     """Initialize this Plugin Component Class with required attributes"""
     plugin_page = PluginPage.MODEL
-    plugin_input_type = PluginInputType.MODEL_DETAILS
+    plugin_input_type = PluginInputType.MODEL
 
     # Component is an incorrectly named keyword argument
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -85,7 +85,7 @@ class IncorrectReturnType(PluginInterface):
 
     """Initialize this Plugin Component Class with required attributes"""
     plugin_page = PluginPage.MODEL
-    plugin_input_type = PluginInputType.MODEL_DETAILS
+    plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.

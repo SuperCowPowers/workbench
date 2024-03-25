@@ -19,7 +19,7 @@ class MyPlugin(PluginInterface):
 
     # Initialize the required attributes"""
     plugin_page = PluginPage.MODEL
-    plugin_input_type = PluginInputType.MODEL_DETAILS
+    plugin_input_type = PluginInputType.MODEL
     
     # Implement the two methods
     def create_component(self, component_id: str) -> ComponentInterface.ComponentTypes:

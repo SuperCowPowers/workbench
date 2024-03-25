@@ -14,7 +14,7 @@ class EndpointTurbo(PluginInterface):
 
     """Initialize this Plugin Component Class with required attributes"""
     plugin_page = PluginPage.ENDPOINT
-    plugin_input_type = PluginInputType.ENDPOINT_DETAILS
+    plugin_input_type = PluginInputType.ENDPOINT
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a EndpointTurbo Component without any data.

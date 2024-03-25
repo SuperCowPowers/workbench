@@ -22,10 +22,10 @@ class PluginPage(Enum):
 class PluginInputType(Enum):
     """Plugin Input Type: Specify the type of object that the plugin will receive as input"""
 
-    DATA_SOURCE_DETAILS = "data_source_details"
-    FEATURE_SET_DETAILS = "feature_set_details"
-    MODEL_DETAILS = "model_details"
-    ENDPOINT_DETAILS = "endpoint_details"
+    DATA_SOURCE = "data_source"
+    FEATURE_SET = "feature_set"
+    MODEL = "model"
+    ENDPOINT = "endpoint"
 
 
 class PluginInterface(ComponentInterface):
