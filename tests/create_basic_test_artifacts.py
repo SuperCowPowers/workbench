@@ -60,18 +60,19 @@ if __name__ == "__main__":
     # Create the abalone_regression Model
     if recreate or not Model("abalone-regression").exists():
         fs = FeatureSet("abalone_features")
-        fs.to_model(
+        m = fs.to_model(
             ModelType.REGRESSOR,
             name="abalone-regression",
             target_column="class_number_of_rings",
             tags=["abalone", "regression"],
             description="Abalone Regression Model",
         )
+        m.set_owner("test")
 
     # Create the abalone_regression Model
     if recreate or not Model("abalone-regression-full").exists():
         fs = FeatureSet("abalone_features")
-        fs.to_model(
+        m = fs.to_model(
             ModelType.REGRESSOR,
             name="abalone-regression-full",
             target_column="class_number_of_rings",
@@ -79,6 +80,7 @@ if __name__ == "__main__":
             description="Abalone Regression Model",
             train_all_data=True,
         )
+        m.set_owner("test")
 
     # Create the abalone_regression Endpoint
     if recreate or not Endpoint("abalone-regression-end").exists():

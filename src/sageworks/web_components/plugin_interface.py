@@ -4,8 +4,6 @@ from abc import abstractmethod
 from inspect import signature
 from typing import Union, get_args
 from enum import Enum
-from functools import wraps
-from dash import dcc
 
 # Local Imports
 from sageworks.web_components.component_interface import ComponentInterface
@@ -50,7 +48,9 @@ class PluginInterface(ComponentInterface):
         pass
 
     @abstractmethod
-    def generate_component_figure(self, data_object: ComponentInterface.SageworksObject) -> ComponentInterface.FigureTypes:
+    def generate_component_figure(
+        self, data_object: ComponentInterface.SageworksObject
+    ) -> ComponentInterface.FigureTypes:
         """Generate a figure from the data in the given dataframe.
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.
@@ -70,12 +70,6 @@ class PluginInterface(ComponentInterface):
             raise TypeError("Subclasses must define a 'plugin_type' of type PluginType")
         if not hasattr(cls, "plugin_input_type") or not isinstance(cls.plugin_input_type, PluginInputType):
             raise TypeError("Subclasses must define a 'plugin_input_type' of type PluginInputType")
-
-        # Automatically apply the error handling decorator to the create_component and generate_component_figure methods
-        if hasattr(cls, "create_component") and callable(cls.create_component):
-            cls.create_component = component_error_decorator(cls.create_component)
-        if hasattr(cls, "generate_component_figure") and callable(cls.generate_component_figure):
-            cls.generate_component_figure = figure_error_decorator(cls.generate_component_figure)
 
     # If any base class method or parameter is missing from a subclass, or if a subclass method parameter is not
     # correctly typed a call of issubclass(subclass, cls) will return False, allowing runtime checks for plugins
