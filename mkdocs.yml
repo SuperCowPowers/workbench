@@ -31,6 +31,7 @@ nav:
       - Pandas Transforms: core_classes/transforms/pandas_transforms.md
       - Transform: core_classes/transforms/transform.md
   - Plugins: plugins/index.md
+  - FAQ:  misc/faq.md
   - Research:
       - EDA: research/eda.md
       - HTG: research/htg.md

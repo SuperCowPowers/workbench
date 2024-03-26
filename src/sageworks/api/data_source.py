@@ -110,7 +110,7 @@ class DataSource(AthenaSource):
         Convert the DataSource to a FeatureSet
 
         Args:
-            fs_name (str): Set the name for feature set (must be lowercase). If not specified, a name will be generated
+            name (str): Set the name for feature set (must be lowercase). If not specified, a name will be generated
             tags (list): Set the tags for the feature set. If not specified tags will be generated.
             target_column (str): Set the target column for the feature set. (Optional)
             id_column (str): Set the id column for the feature set. If not specified will be generated.
