@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 
 # SageWorks Imports
-from sageworks.web_components.plugin_interface import PluginInterface, PluginType, PluginInputType
+from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from sageworks.api.model import Model
 
 
@@ -13,8 +13,8 @@ class CustomTurbo(PluginInterface):
     """CustomTurbo Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_type = PluginType.CUSTOM
-    plugin_input_type = PluginInputType.MODEL_DETAILS
+    plugin_page = PluginPage.CUSTOM
+    plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a CustomTurbo Component without any data.
@@ -25,7 +25,7 @@ class CustomTurbo(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, model: Model) -> go.Figure:
+    def generate_figure(self, model: Model) -> go.Figure:
         """Create a CustomTurbo Figure for the numeric columns in the dataframe.
         Args:
             model (Model): An instantiated Model object
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     turbo = CustomTurbo()
 
     # Generate the figure
-    fig = turbo.generate_component_figure(model)
+    fig = turbo.generate_figure(model)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

@@ -20,7 +20,7 @@ Thank you for contributing to the SuperCowPowers SageWorks project. Please make 
 
 #### REVIEW 
 - [  ] I've added (or will add) a reviewer to the PR
-- [  ] I've addressed any comments/request from review
+- [  ] I'll address any comments/request from reviewer
 - [  ] I will delete the branch after the PR is merged 
 
 #### Notes

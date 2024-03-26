@@ -82,7 +82,7 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
         feature_details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(feature_details)
 
         # Generate a new correlation matrix figure
-        corr_figure = correlation_matrix.CorrelationMatrix().generate_component_figure(feature_details)
+        corr_figure = correlation_matrix.CorrelationMatrix().generate_figure(feature_details)
 
         # Return the details/markdown for these data details
         return [header, feature_details_markdown, corr_figure]
@@ -130,7 +130,7 @@ def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWe
             style_cells = table.Table().style_data_conditional(color_column, unique_categories)
 
         # Update the Violin Plot with the new smart sample rows
-        violin_figure = violin_plots.ViolinPlots().generate_component_figure(
+        violin_figure = violin_plots.ViolinPlots().generate_figure(
             smart_sample_rows,
             figure_args={
                 "box_visible": True,

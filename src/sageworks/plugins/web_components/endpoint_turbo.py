@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 
 # SageWorks Imports
-from sageworks.web_components.plugin_interface import PluginInterface, PluginType, PluginInputType
+from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from sageworks.api.endpoint import Endpoint
 
 
@@ -13,8 +13,8 @@ class EndpointTurbo(PluginInterface):
     """EndpointTurbo Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_type = PluginType.ENDPOINT
-    plugin_input_type = PluginInputType.ENDPOINT_DETAILS
+    plugin_page = PluginPage.ENDPOINT
+    plugin_input_type = PluginInputType.ENDPOINT
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a EndpointTurbo Component without any data.
@@ -25,7 +25,7 @@ class EndpointTurbo(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
 
-    def generate_component_figure(self, endpoint: Endpoint) -> go.Figure:
+    def generate_figure(self, endpoint: Endpoint) -> go.Figure:
         """Create a EndpointTurbo Figure for the numeric columns in the dataframe.
         Args:
             endpoint (Endpoint): An instantiated Endpoint object
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     pie = EndpointTurbo()
 
     # Generate the figure
-    fig = pie.generate_component_figure(end)
+    fig = pie.generate_figure(end)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

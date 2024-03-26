@@ -10,7 +10,7 @@ from . import callbacks
 
 # SageWorks Imports
 from sageworks.web_components import table, model_details_markdown, endpoint_metric_plots
-from sageworks.web_components.plugin_interface import PluginType
+from sageworks.web_components.plugin_interface import PluginPage
 from sageworks.views.endpoint_web_view import EndpointWebView
 from sageworks.utils.plugin_manager import PluginManager
 
@@ -47,7 +47,7 @@ components = {
 
 # Load any web components plugins of type 'endpoint'
 pm = PluginManager()
-plugins = pm.get_list_of_web_plugins(web_plugin_type=PluginType.ENDPOINT)
+plugins = pm.get_list_of_web_plugins(plugin_page=PluginPage.ENDPOINT)
 
 # Add the plugins to the components dictionary
 for plugin in plugins:

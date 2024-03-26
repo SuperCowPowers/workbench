@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 
 # SageWorks Imports
-from sageworks.web_components.plugin_interface import PluginInterface, PluginType, PluginInputType
+from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from sageworks.api.model import Model
 
 
@@ -13,8 +13,8 @@ class CorrectPlugin(PluginInterface):
     """Subclass of PluginInterface with correct inputs and returns."""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_type = PluginType.MODEL
-    plugin_input_type = PluginInputType.MODEL_DETAILS
+    plugin_page = PluginPage.MODEL
+    plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.
@@ -25,7 +25,7 @@ class CorrectPlugin(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def generate_component_figure(self, model: Model) -> go.Figure:
+    def generate_figure(self, model: Model) -> go.Figure:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
              model (Model): An instantiated Model object
@@ -37,11 +37,11 @@ class CorrectPlugin(PluginInterface):
 
 class IncorrectMethods(PluginInterface):
     """Subclass of PluginInterface with incorrect methods
-    they have create_component but forgot to implement generate_component_figure"""
+    they have create_component but forgot to implement generate_figure"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_type = PluginType.MODEL
-    plugin_input_type = PluginInputType.MODEL_DETAILS
+    plugin_page = PluginPage.MODEL
+    plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.
@@ -57,8 +57,8 @@ class IncorrectArgTypes(PluginInterface):
     """Subclass of PluginInterface with an incorrectly typed argument."""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_type = PluginType.MODEL
-    plugin_input_type = PluginInputType.MODEL_DETAILS
+    plugin_page = PluginPage.MODEL
+    plugin_input_type = PluginInputType.MODEL
 
     # Component is an incorrectly named keyword argument
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -70,7 +70,7 @@ class IncorrectArgTypes(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def generate_component_figure(self, model: list) -> go.Figure:
+    def generate_figure(self, model: list) -> go.Figure:
         """Create a Plotly Figure
         Args:
             model (list): An incorrect argument type
@@ -84,8 +84,8 @@ class IncorrectReturnType(PluginInterface):
     """Subclass of PluginInterface with incorrect return type."""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_type = PluginType.MODEL
-    plugin_input_type = PluginInputType.MODEL_DETAILS
+    plugin_page = PluginPage.MODEL
+    plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.
@@ -96,7 +96,7 @@ class IncorrectReturnType(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def generate_component_figure(self, model: Model) -> list:
+    def generate_figure(self, model: Model) -> list:
         """Create a Figure but give the wrong return type.
         Args:
             model (Model): An instantiated Model object

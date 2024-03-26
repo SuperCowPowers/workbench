@@ -42,13 +42,14 @@ if __name__ == "__main__":
     # Create the wine classification Model
     if recreate or not Model("wine-classification").exists():
         fs = FeatureSet("wine_features")
-        fs.to_model(
+        m = fs.to_model(
             model_type=ModelType.CLASSIFIER,
             name="wine-classification",
             target_column="wine_class",
             tags=["wine", "classification"],
             description="Wine Classification Model",
         )
+        m.set_owner("test")
 
     # Create the wine classification Endpoint
     if recreate or not Endpoint("wine-classification-end").exists():

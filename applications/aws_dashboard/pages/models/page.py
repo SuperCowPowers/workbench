@@ -16,7 +16,7 @@ from sageworks.web_components import (
     inference_run_selector,
     model_plot,
 )
-from sageworks.web_components.plugin_interface import PluginType
+from sageworks.web_components.plugin_interface import PluginPage
 from sageworks.views.model_web_view import ModelWebView
 from sageworks.utils.plugin_manager import PluginManager
 
@@ -61,7 +61,7 @@ components = {
 
 # Load any web components plugins of type 'model'
 pm = PluginManager()
-plugins = pm.get_list_of_web_plugins(web_plugin_type=PluginType.MODEL)
+plugins = pm.get_list_of_web_plugins(plugin_page=PluginPage.MODEL)
 
 # Add the plugins to the components dictionary
 for plugin in plugins:

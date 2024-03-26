@@ -4,16 +4,13 @@ from abc import abstractmethod
 from inspect import signature
 from typing import Union, get_args
 from enum import Enum
-from functools import wraps
-from dash import dcc
 
 # Local Imports
 from sageworks.web_components.component_interface import ComponentInterface
-from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 
 
-class PluginType(Enum):
-    """Plugin Types: These are the types of plugins that can be loaded"""
+class PluginPage(Enum):
+    """Plugin Page: Specify which page will autoload the plugin (CUSTOM = Don't autoload)"""
 
     DATA_SOURCE = "data_source"
     FEATURE_SET = "feature_set"
@@ -23,12 +20,12 @@ class PluginType(Enum):
 
 
 class PluginInputType(Enum):
-    """TBD: Nice Docstring here or link to docs"""
+    """Plugin Input Type: Specify the type of object that the plugin will receive as input"""
 
-    DATA_SOURCE_DETAILS = "data_source_details"
-    FEATURE_SET_DETAILS = "feature_set_details"
-    MODEL_DETAILS = "model_details"
-    ENDPOINT_DETAILS = "endpoint_details"
+    DATA_SOURCE = "data_source"
+    FEATURE_SET = "feature_set"
+    MODEL = "model"
+    ENDPOINT = "endpoint"
 
 
 class PluginInterface(ComponentInterface):
@@ -37,10 +34,8 @@ class PluginInterface(ComponentInterface):
       - These methods are ^stateless^, all data should be passed through the
         arguments and the implementations should not reference 'self' variables
       - The 'create_component' method must be implemented by the child class
-      - The 'generate_component_figure' method must be implemented by the child class
+      - The 'generate_figure' method must be implemented by the child class
     """
-
-    sageworks_object = Union[DataSource, FeatureSet, Model, Endpoint]
 
     @abstractmethod
     def create_component(self, component_id: str) -> ComponentInterface.ComponentTypes:
@@ -53,7 +48,7 @@ class PluginInterface(ComponentInterface):
         pass
 
     @abstractmethod
-    def generate_component_figure(self, data_object: sageworks_object) -> ComponentInterface.FigureTypes:
+    def generate_figure(self, data_object: ComponentInterface.SageworksObject) -> ComponentInterface.FigureTypes:
         """Generate a figure from the data in the given dataframe.
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.
@@ -68,17 +63,11 @@ class PluginInterface(ComponentInterface):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        # Ensure the subclass defines the required plugin_type and plugin_input_type
-        if not hasattr(cls, "plugin_type") or not isinstance(cls.plugin_type, PluginType):
-            raise TypeError("Subclasses must define a 'plugin_type' of type PluginType")
+        # Ensure the subclass defines the required plugin_page and plugin_input_type
+        if not hasattr(cls, "plugin_page") or not isinstance(cls.plugin_page, PluginPage):
+            raise TypeError("Subclasses must define a 'plugin_page' of type PluginPage")
         if not hasattr(cls, "plugin_input_type") or not isinstance(cls.plugin_input_type, PluginInputType):
             raise TypeError("Subclasses must define a 'plugin_input_type' of type PluginInputType")
-
-        # Automatically apply the error handling decorator to the create_component and generate_component_figure methods
-        if hasattr(cls, "create_component") and callable(cls.create_component):
-            cls.create_component = component_error_decorator(cls.create_component)
-        if hasattr(cls, "generate_component_figure") and callable(cls.generate_component_figure):
-            cls.generate_component_figure = figure_error_decorator(cls.generate_component_figure)
 
     # If any base class method or parameter is missing from a subclass, or if a subclass method parameter is not
     # correctly typed a call of issubclass(subclass, cls) will return False, allowing runtime checks for plugins
@@ -87,7 +76,7 @@ class PluginInterface(ComponentInterface):
     def __subclasshook__(cls, subclass):
         if cls is PluginInterface:
             # Check if the subclass has all the required attributes
-            if not all(hasattr(subclass, attr) for attr in ("plugin_type", "plugin_input_type")):
+            if not all(hasattr(subclass, attr) for attr in ("plugin_page", "plugin_input_type")):
                 cls.log.warning(f"Subclass {subclass.__name__} is missing required attributes")
                 return False
 
@@ -153,33 +142,3 @@ class PluginInterface(ComponentInterface):
         if return_type not in expected_return_types:
             return f"Incorrect return type (expected one of {expected_return_types}, got {return_type})"
         return None
-
-
-# These are helper decorators to catch errors in plugin methods
-def component_error_decorator(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            # Get the class name of the plugin
-            class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
-            error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
-            figure = ComponentInterface.message_figure(error_info, figure_height=100, font_size=16)
-            return dcc.Graph(id="error", figure=figure)
-
-    return wrapper
-
-
-def figure_error_decorator(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            # Get the class name of the plugin
-            class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
-            error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
-            return ComponentInterface.message_figure(error_info, figure_height=100, font_size=16)
-
-    return wrapper
