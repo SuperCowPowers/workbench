@@ -86,7 +86,8 @@ def update_model_detail_component(app: Dash):
 # Updates Inference Run Selector Component
 def update_inference_run_selector(app: Dash):
     @app.callback(
-        Output("inference_run_selector", "options"),
+        [Output("inference_run_selector", "options"),
+         Output("inference_run_selector", "value")],
         Input("models_table", "derived_viewport_selected_row_ids"),
         State("models_table", "data"),
         prevent_initial_call=True,
@@ -102,10 +103,17 @@ def update_inference_run_selector(app: Dash):
         m = Model(model_uuid)
 
         # Inference runs
-        inference_runs = inference_run_selector.InferenceRunSelector().generate_inference_runs(m)
+        inference_runs = m.list_inference_runs()
 
-        # Return the details/markdown for these data details
-        return inference_runs
+        # Check if there are any inference runs to select
+        if not inference_runs:
+            return [], None
+
+        # Set the first inference run as the selected value
+        first_inference_run = inference_runs[0]
+
+        # Return the options for the dropdown and the selected value
+        return inference_runs, first_inference_run
 
 
 # Updates the model metrics when a model row is selected
