@@ -49,8 +49,8 @@ if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
     from sageworks.api.model import Model
 
-    m = Model("wine-classification")
-    inference_run = "training_holdout"
+    m = Model("abalone-regression")
+    inference_run = "model_training"
 
     # Instantiate the ModelPlot class
     model_plot = ModelPlot()

@@ -148,9 +148,13 @@ class ModelCore(Artifact):
             list[str]: List of inference run UUIDs
         """
         if self.endpoint_inference_path is None:
-            return []
+            return ["model_training"]  # Just the training run
         directories = wr.s3.list_directories(path=self.endpoint_inference_path + "/")
-        return [urlparse(directory).path.split("/")[-2] for directory in directories]
+        inference_runs = [urlparse(directory).path.split("/")[-2] for directory in directories]
+
+        # We're going to add the training to the front of the list
+        inference_runs.insert(0, "model_training")
+        return inference_runs
 
     def performance_metrics(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
         """Retrieve the performance metrics for this model
@@ -163,22 +167,17 @@ class ModelCore(Artifact):
         Note:
             If a capture_uuid isn't specified this will try to return something reasonable
         """
-        # Try to get the auto capture 'training_holdout' or the training
+        # Try to get the auto_capture 'training_holdout' or the training
         if capture_uuid == "latest":
             metrics_df = self.performance_metrics("training_holdout")
-            return metrics_df if metrics_df is not None else self.performance_metrics("training")
+            return metrics_df if metrics_df is not None else self.performance_metrics("model_training")
 
-        # Grab the inference metrics (could return None)
-        if capture_uuid == "training_holdout":
-            metrics = self.sageworks_meta().get("sageworks_inference_metrics")
-            return pd.DataFrame.from_dict(metrics) if metrics else None
-
-        # Grab the training metrics (could return None)
-        if capture_uuid == "training":
+        # Grab the metrics captured during model training (could return None)
+        if capture_uuid == "model_training":
             metrics = self.sageworks_meta().get("sageworks_training_metrics")
             return pd.DataFrame.from_dict(metrics) if metrics else None
 
-        else:  # Specific capture_uuid
+        else:  # Specific capture_uuid (could return None)
             s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_metrics.csv"
             metrics = pull_s3_data(s3_path, embedded_index=True)
             if metrics is not None:
@@ -198,8 +197,10 @@ class ModelCore(Artifact):
         # Grab the metrics from the SageWorks Metadata (try inference first, then training)
         if capture_uuid == "latest":
             cm = self.sageworks_meta().get("sageworks_inference_cm")
-            if cm is not None:
-                return cm
+            return cm if cm is not None else self.confusion_matrix()
+
+        # Grab the confusion matrix captured during model training (could return None)
+        if capture_uuid == "model_training":
             cm = self.sageworks_meta().get("sageworks_training_cm")
             return pd.DataFrame.from_dict(cm) if cm else None
 
@@ -212,13 +213,16 @@ class ModelCore(Artifact):
                 self.log.warning(f"Confusion Matrix {capture_uuid} not found for {self.model_name}!")
                 return None
 
-    def get_predictions(self) -> Union[pd.DataFrame, None]:
-        """Retrieve the confusion_matrix for this model
+    def predictions(self, capture_uuid: str = "training_holdout") -> Union[pd.DataFrame, None]:
+        """Retrieve the predictions for this model
+
+        Args:
+            capture_uuid (str, optional): Specific capture_uuid or "training" (default: "training_holdout")
         Returns:
-            pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
+            pd.DataFrame: DataFrame of the Predictions (might be None)
         """
         # Grab the metrics from the SageWorks Metadata (try inference first, then training)
-        inference_preds = self.inference_predictions()
+        inference_preds = self.inference_predictions(capture_uuid)
         if inference_preds is not None:
             return inference_preds
         return self.validation_predictions()
@@ -399,7 +403,7 @@ class ModelCore(Artifact):
             details["predictions"] = None
         else:
             details["confusion_matrix"] = None
-            details["predictions"] = self.get_predictions()
+            details["predictions"] = self.predictions()
 
         # Grab the inference metadata
         details["inference_meta"] = self.inference_metadata()
@@ -792,7 +796,7 @@ if __name__ == "__main__":
 
     # Grab our regression predictions from S3
     print("Captured Predictions: (might be None)")
-    print(my_model.get_predictions())
+    print(my_model.predictions())
 
     # Grab our Shapley values from S3
     print("Shapley Values: (might be None)")

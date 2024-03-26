@@ -20,7 +20,7 @@ class RegressionPlot(ComponentInterface):
 
     def generate_figure(self, model: Model, inference_run: str = None) -> go.Figure:
         # Get predictions for specific inference
-        df = model.inference_predictions(inference_run)
+        df = model.predictions(inference_run)
 
         if df is None:
             return self.message_figure("No Data")
@@ -78,13 +78,13 @@ if __name__ == "__main__":
     from sageworks.api import Model
 
     m = Model("abalone-regression")
-    inference_run = "training_holdout"
+    my_inference_run = "model_training"
 
     # Instantiate the ConfusionMatrix class
     reg_plot = RegressionPlot()
 
     # Generate the figure
-    fig = reg_plot.generate_figure(m, inference_run)
+    fig = reg_plot.generate_figure(m, my_inference_run)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")
