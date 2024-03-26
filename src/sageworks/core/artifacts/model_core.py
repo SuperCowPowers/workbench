@@ -197,7 +197,7 @@ class ModelCore(Artifact):
         # Grab the metrics from the SageWorks Metadata (try inference first, then training)
         if capture_uuid == "latest":
             cm = self.sageworks_meta().get("sageworks_inference_cm")
-            return cm if cm is not None else self.confusion_matrix()
+            return cm if cm is not None else self.confusion_matrix("model_training")
 
         # Grab the confusion matrix captured during model training (could return None)
         if capture_uuid == "model_training":
