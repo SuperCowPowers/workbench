@@ -36,7 +36,7 @@ def test_retrieval_with_capture_uuid():
         print(f"\n\n*** Retrieval with Capture UUID ({capture_uuid}) ***")
         pprint(model_class.inference_metadata(capture_uuid).head())  # Needed
         pprint(model_class.performance_metrics(capture_uuid).head())  # Might be deprecated
-        pprint(model_class.inference_predictions(capture_uuid).head())  # Needed
+        pprint(model_class.predictions(capture_uuid).head())  # Needed
         pprint(model_class.confusion_matrix(capture_uuid))  # Might be deprecated
         # Classifiers have a list of dataframes for shap values
         shap_list = model_class.shapley_values(capture_uuid)
