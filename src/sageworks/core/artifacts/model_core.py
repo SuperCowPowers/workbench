@@ -645,6 +645,21 @@ class ModelCore(Artifact):
         if self.endpoint_inference_path is None:
             return None
 
+        # Check for model_training capture_uuid
+        if capture_uuid == "model_training":
+            # Create a DataFrame with the training metadata
+            meta_df = pd.DataFrame(
+                [
+                    {
+                        "name": "AWS Training Capture",
+                        "data_hash": "N/A",
+                        "num_rows": "-",
+                        "description": "-",
+                    }
+                ]
+            )
+            return meta_df
+
         # Pull the inference metadata
         try:
             s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_meta.json"

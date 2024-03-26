@@ -5,7 +5,6 @@ from dash import dcc
 # SageWorks Imports
 from sageworks.api import Model
 from sageworks.web_components.component_interface import ComponentInterface
-from sageworks.utils.symbols import health_icons
 
 
 class ModelMetricsMarkdown(ComponentInterface):
@@ -34,7 +33,7 @@ class ModelMetricsMarkdown(ComponentInterface):
         markdown = "### Model Metrics  \n"
         meta_df = model.inference_metadata(inference_run)
         if meta_df is None:
-            test_data = "AWS Training Capture"
+            test_data = "Inference Metadata Not Found"
             test_data_hash = " N/A "
             test_rows = " - "
             description = " - "
@@ -72,7 +71,7 @@ if __name__ == "__main__":
 
     # Create the class and get the AWS FeatureSet details
     m = Model("wine-classification")
-    inference_run = "training_holdout"
+    inference_run = "model_training"
 
     # Instantiate the DataDetailsMarkdown class
     ddm = ModelMetricsMarkdown()

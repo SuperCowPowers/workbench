@@ -60,8 +60,7 @@ if __name__ == "__main__":
     app.layout = html.Div([dropdown, html.Div(id="dd-output-container")])
     dropdown.options = inf_runs
 
-    @callback(Output("dd-output-container", "children"),
-              Input("dropdown", "value"))
+    @callback(Output("dd-output-container", "children"), Input("dropdown", "value"))
     def update_output(value):
         return f"You have selected {value}"
 
