@@ -38,11 +38,13 @@ def models_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                html.H3("Details", id="model_details_header"),
-                                style={"padding": "30px 0px 10px 0px"},
+                                [html.H3("Model: Loading...", id="model_details_header"),
+                                 model_metrics,
+                                 inference_dropdown],
+                                style={"padding": "30px 0px 40px 0px"},
                             ),
                             dbc.Row(
-                                [model_metrics, inference_dropdown, model_details],
+                                [html.H3("Model Details"), model_details],
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],

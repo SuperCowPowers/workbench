@@ -73,7 +73,7 @@ def update_model_detail_component(app: Dash):
         m = Model(model_uuid)
 
         # Set the Header Text
-        header = f"Details: {model_uuid}"
+        header = f"Model: {model_uuid}"
 
         # Model Details Markdown component
         model_details_fig = model_details_markdown.ModelDetailsMarkdown().generate_markdown(m)
