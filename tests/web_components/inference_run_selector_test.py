@@ -1,7 +1,7 @@
 """Tests for inference run selector web component"""
 
 # SageWorks Imports
-from sageworks.web_components.inference_dropdown import InferenceRunSelector
+from sageworks.web_components.inference_run_selector import InferenceRunSelector
 from sageworks.api.model import Model
 
 
