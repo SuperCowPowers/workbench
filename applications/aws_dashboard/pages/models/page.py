@@ -42,7 +42,7 @@ models_table = table.Table().create_component(
 model_details = model_details_markdown.ModelDetailsMarkdown().create_component("model_details")
 
 # Create a Inference Run Dropdown component
-inference_dropdown = dcc.Dropdown(id="inference_dropdown", className='dropdown')
+inference_dropdown = dcc.Dropdown(id="inference_dropdown", className="dropdown")
 
 # Create a Markdown component to display model metrics
 model_metrics = model_metrics_markdown.ModelMetricsMarkdown().create_component("model_metrics")

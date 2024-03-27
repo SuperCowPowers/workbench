@@ -42,11 +42,7 @@ def models_layout(
                                 style={"padding": "30px 0px 10px 0px"},
                             ),
                             dbc.Row(
-                                [
-                                    model_metrics,
-                                    inference_dropdown,
-                                    model_details
-                                ],
+                                [model_metrics, inference_dropdown, model_details],
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],

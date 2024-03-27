@@ -85,8 +85,7 @@ def update_model_detail_component(app: Dash):
 # Updates Inference Run Selector Component
 def update_inference_dropdown(app: Dash):
     @app.callback(
-        [Output("inference_dropdown", "options"),
-         Output("inference_dropdown", "value")],
+        [Output("inference_dropdown", "options"), Output("inference_dropdown", "value")],
         Input("models_table", "derived_viewport_selected_row_ids"),
         State("models_table", "data"),
         prevent_initial_call=True,
