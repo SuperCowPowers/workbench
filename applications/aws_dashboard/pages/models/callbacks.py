@@ -107,11 +107,11 @@ def update_inference_dropdown(app: Dash):
         if not inference_runs:
             return [], None
 
-        # Set the first inference run as the selected value
-        first_inference_run = inference_runs[0]
+        # Set "training_holdout" as the default, if that doesn't exist, set the first
+        default_inference_run = "training_holdout" if "training_holdout" in inference_runs else inference_runs[0]
 
         # Return the options for the dropdown and the selected value
-        return inference_runs, first_inference_run
+        return inference_runs, default_inference_run
 
 
 # Updates the model metrics when a model row is selected
