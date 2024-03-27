@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 
 def models_layout(
     models_table: dash_table.DataTable,
-    inference_run_selector: dcc.Graph,
+    inference_dropdown: dcc.Graph,
     model_details: dcc.Markdown,
     model_metrics: dcc.Markdown,
     model_plot: dcc.Graph,
@@ -43,10 +43,9 @@ def models_layout(
                             ),
                             dbc.Row(
                                 [
-                                    model_details,
-                                    html.H3("Select Inference Run:", id="inference_run_selector_header"),
-                                    inference_run_selector,
                                     model_metrics,
+                                    inference_dropdown,
+                                    model_details
                                 ],
                                 style={"padding": "0px 0px 30px 0px"},
                             ),

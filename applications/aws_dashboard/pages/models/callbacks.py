@@ -7,7 +7,6 @@ from dash.dependencies import Input, Output, State
 from sageworks.views.model_web_view import ModelWebView
 from sageworks.web_components import (
     table,
-    inference_run_selector,
     model_details_markdown,
     model_metrics_markdown,
     model_plot,
@@ -84,15 +83,15 @@ def update_model_detail_component(app: Dash):
 
 
 # Updates Inference Run Selector Component
-def update_inference_run_selector(app: Dash):
+def update_inference_dropdown(app: Dash):
     @app.callback(
-        [Output("inference_run_selector", "options"),
-         Output("inference_run_selector", "value")],
+        [Output("inference_dropdown", "options"),
+         Output("inference_dropdown", "value")],
         Input("models_table", "derived_viewport_selected_row_ids"),
         State("models_table", "data"),
         prevent_initial_call=True,
     )
-    def generate_inference_run_selector_figure(selected_rows, table_data):
+    def generate_inference_dropdown_figure(selected_rows, table_data):
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return no_update
@@ -120,7 +119,7 @@ def update_inference_run_selector(app: Dash):
 def update_model_metrics_component(app: Dash):
     @app.callback(
         Output("model_metrics", "children"),
-        [Input("models_table", "derived_viewport_selected_row_ids"), Input("inference_run_selector", "value")],
+        [Input("models_table", "derived_viewport_selected_row_ids"), Input("inference_dropdown", "value")],
         State("models_table", "data"),
         prevent_initial_call=True,
     )
@@ -145,7 +144,7 @@ def update_model_metrics_component(app: Dash):
 def update_model_plot_component(app: Dash):
     @app.callback(
         Output("model_plot", "figure"),
-        [Input("models_table", "derived_viewport_selected_row_ids"), Input("inference_run_selector", "value")],
+        [Input("models_table", "derived_viewport_selected_row_ids"), Input("inference_dropdown", "value")],
         State("models_table", "data"),
         prevent_initial_call=True,
     )

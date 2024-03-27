@@ -1,11 +1,11 @@
 """Tests for inference run selector web component"""
 
 # SageWorks Imports
-from sageworks.web_components.inference_run_selector import InferenceRunSelector
+from sageworks.web_components.inference_dropdown import InferenceRunSelector
 from sageworks.api.model import Model
 
 
-def test_inference_run_selector():
+def test_inference_dropdown():
     """Test the ConfusionMatrix class"""
     # Instantiate model
     m = Model("wine-classification")
@@ -25,4 +25,4 @@ def test_inference_run_selector():
 
 if __name__ == "__main__":
     # Run the tests
-    test_inference_run_selector()
+    test_inference_dropdown()

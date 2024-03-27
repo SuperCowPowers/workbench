@@ -61,6 +61,48 @@
   color: white !important;
 }
 
+/* Define a CSS class for the dark-themed dropdown */
+/* Style the initial dropdown box and control */
+.dropdown .Select-control {
+    background-color: #333 !important; /* Dark background */
+    color: #FFF !important; /* Light text */
+    border-color: #666 !important; /* Darker border */
+}
+
+/* Style the placeholder and selected value in the dropdown */
+.dropdown .Select-control .Select-value,
+.dropdown .Select-control .Select-single .Select-value,
+.dropdown .Select-control .Select-placeholder {
+    color: #FFF !important; /* Light text for placeholder and selected value */
+}
+
+/* Ensure the text inside the control is light */
+.dropdown .Select-control .Select-value-label {
+    color: #FFF !important; /* Light text for selected value label */
+}
+
+/* Style the dropdown menu */
+.dropdown .Select-menu-outer {
+    background-color: #333 !important; /* Dark background */
+}
+
+/* Style the options in the dropdown menu */
+.dropdown .Select-option {
+    color: #FFF !important; /* Light text for options */
+}
+
+/* Style the focused option in the dropdown menu */
+.dropdown .Select-option.is-focused {
+    background-color: #444 !important; /* Slightly lighter background for focused option */
+}
+
+/* Style the selected option in the dropdown menu */
+.dropdown .Select-option.is-selected {
+    background-color: #333 !important; /* Dark background for selected option */
+    color: #FFF !important; /* Light text for selected option */
+}
+
+
 /* For devices larger than 400px */
 @media (min-width: 400px) {
   .container {
