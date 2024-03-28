@@ -98,7 +98,7 @@ def update_plugin(app: Dash, plugin, endpoint_web_view: EndpointWebView):
         endpoint_uuid = selected_row_data["uuid"]
 
         # Instantiate the Endpoint and send it to the plugin
-        endpoint = Endpoint(endpoint_uuid)
+        endpoint = Endpoint(endpoint_uuid, legacy=True)
 
         # Instantiate the Endpoint and send it to the plugin
         return plugin.generate_figure(endpoint)

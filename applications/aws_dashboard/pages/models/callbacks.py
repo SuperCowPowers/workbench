@@ -68,7 +68,7 @@ def update_model_plot_component(app: Dash):
         # Get the selected row data and grab the uuid
         selected_row_data = table_data[selected_rows[0]]
         model_uuid = selected_row_data["uuid"]
-        m = Model(model_uuid)
+        m = Model(model_uuid, legacy=True)
 
         # Model Details Markdown component
         model_plot_fig = model_plot.ModelPlot().generate_figure(m, inference_run)
@@ -95,5 +95,5 @@ def update_plugin(app: Dash, plugin, model_web_view: ModelWebView):
         model_uuid = selected_row_data["uuid"]
 
         # Instantiate the Model and send it to the plugin
-        model = Model(model_uuid)
+        model = Model(model_uuid, legacy=True)
         return plugin.generate_figure(model)

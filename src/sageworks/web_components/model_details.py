@@ -57,7 +57,7 @@ class ModelDetails(ComponentInterface):
             # Get the selected row data, grab the uuid, and set the Model object
             selected_row_data = table_data[selected_rows[0]]
             model_uuid = selected_row_data["uuid"]
-            self.model = Model(model_uuid)
+            self.model = Model(model_uuid, legacy=True)
 
             # Update the header, the summary, and the details
             header = f"Model: {self.model.uuid}"

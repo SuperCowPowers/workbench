@@ -52,7 +52,7 @@ class EndpointDetails(ComponentInterface):
             # Get the selected row data, grab the uuid, and set the Model object
             selected_row_data = table_data[selected_rows[0]]
             endpoint_uuid = selected_row_data["uuid"]
-            self.endpoint = Endpoint(endpoint_uuid)
+            self.endpoint = Endpoint(endpoint_uuid, legacy=True)
 
             # Update the header, the summary, and the details
             header = f"Model: {self.endpoint.uuid}"
