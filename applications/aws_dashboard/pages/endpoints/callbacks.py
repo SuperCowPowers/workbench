@@ -5,10 +5,9 @@ from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.endpoint_web_view import EndpointWebView
-from sageworks.web_components import table, model_details, endpoint_metric_plots
+from sageworks.web_components import table, endpoint_metric_plots
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 from sageworks.api.endpoint import Endpoint
-from sageworks.api.model import Model
 
 
 def update_endpoints_table(app: Dash):
