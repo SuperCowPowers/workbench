@@ -9,7 +9,7 @@ from .layout import endpoints_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, model_details_markdown, endpoint_metric_plots
+from sageworks.web_components import table, endpoint_details, endpoint_metric_plots
 from sageworks.web_components.plugin_interface import PluginPage
 from sageworks.views.endpoint_web_view import EndpointWebView
 from sageworks.utils.plugin_manager import PluginManager
@@ -33,7 +33,8 @@ endpoints_table = table.Table().create_component(
 )
 
 # Create a Markdown component to display the endpoint details
-endpoint_details = model_details_markdown.ModelDetailsMarkdown().create_component("endpoint_details")
+endpoint_details = endpoint_details.EndpointDetails()
+endpoint_details_component = endpoint_details.create_component("endpoint_details")
 
 # Create a component to display the endpoint metrics
 endpoint_metrics = endpoint_metric_plots.EndpointMetricPlots().create_component("endpoint_metrics")
@@ -41,7 +42,7 @@ endpoint_metrics = endpoint_metric_plots.EndpointMetricPlots().create_component(
 # Capture our components in a dictionary to send off to the layout
 components = {
     "endpoints_table": endpoints_table,
-    "endpoint_details": endpoint_details,
+    "endpoint_details": endpoint_details_component,
     "endpoint_metrics": endpoint_metrics,
 }
 
@@ -60,10 +61,11 @@ layout = endpoints_layout(**components)
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.update_endpoints_table(app)
+endpoint_details.register_callbacks("endpoints_table")
 
 # Callback for the endpoints table
 callbacks.table_row_select(app, "endpoints_table")
-callbacks.update_endpoint_details_components(app, endpoint_broker)
+callbacks.update_endpoint_metrics(app, endpoint_broker)
 
 # For each plugin, set up a callback to update the plugin figure
 for plugin in plugins:

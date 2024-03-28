@@ -7,9 +7,7 @@ import dash_bootstrap_components as dbc
 
 def models_layout(
     models_table: dash_table.DataTable,
-    inference_dropdown: dcc.Graph,
-    model_details: dcc.Markdown,
-    model_metrics: dcc.Markdown,
+    model_details: html.Div,
     model_plot: dcc.Graph,
     **kwargs: Any,
 ) -> html.Div:
@@ -35,21 +33,7 @@ def models_layout(
             dbc.Row(
                 [
                     # Column 1: Model Details
-                    dbc.Col(
-                        [
-                            dbc.Row(
-                                [html.H3("Model: Loading...", id="model_details_header"),
-                                 model_metrics,
-                                 inference_dropdown],
-                                style={"padding": "30px 0px 40px 0px"},
-                            ),
-                            dbc.Row(
-                                [html.H3("Model Details"), model_details],
-                                style={"padding": "0px 0px 30px 0px"},
-                            ),
-                        ],
-                        width=4,
-                    ),
+                    dbc.Col(model_details, width=4),
                     # Column 2: Model Plot and Plugins
                     dbc.Col(
                         [

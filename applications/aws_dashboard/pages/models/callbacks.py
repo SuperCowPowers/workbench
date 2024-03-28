@@ -7,8 +7,6 @@ from dash.dependencies import Input, Output, State
 from sageworks.views.model_web_view import ModelWebView
 from sageworks.web_components import (
     table,
-    model_details_markdown,
-    model_metrics_markdown,
     model_plot,
 )
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
@@ -54,100 +52,15 @@ def table_row_select(app: Dash, table_name: str):
         return row_style
 
 
-# Updates the model details when a model row is selected
-def update_model_detail_component(app: Dash):
-    @app.callback(
-        [Output("model_details_header", "children"), Output("model_details", "children")],
-        Input("models_table", "derived_viewport_selected_row_ids"),
-        State("models_table", "data"),
-        prevent_initial_call=True,
-    )
-    def generate_model_details_figure(selected_rows, table_data):
-        # Check for no selected rows
-        if not selected_rows or selected_rows[0] is None:
-            return no_update
-
-        # Get the selected row data and grab the uuid
-        selected_row_data = table_data[selected_rows[0]]
-        model_uuid = selected_row_data["uuid"]
-        m = Model(model_uuid)
-
-        # Set the Header Text
-        header = f"Model: {model_uuid}"
-
-        # Model Details Markdown component
-        model_details_fig = model_details_markdown.ModelDetailsMarkdown().generate_markdown(m)
-
-        # Return the details/markdown for these data details
-        return [header, model_details_fig]
-
-
-# Updates Inference Run Selector Component
-def update_inference_dropdown(app: Dash):
-    @app.callback(
-        [Output("inference_dropdown", "options"), Output("inference_dropdown", "value")],
-        Input("models_table", "derived_viewport_selected_row_ids"),
-        State("models_table", "data"),
-        prevent_initial_call=True,
-    )
-    def generate_inference_dropdown_figure(selected_rows, table_data):
-        # Check for no selected rows
-        if not selected_rows or selected_rows[0] is None:
-            return no_update
-
-        # Get the selected row data and grab the uuid
-        selected_row_data = table_data[selected_rows[0]]
-        model_uuid = selected_row_data["uuid"]
-        m = Model(model_uuid)
-
-        # Inference runs
-        inference_runs = m.list_inference_runs()
-
-        # Check if there are any inference runs to select
-        if not inference_runs:
-            return [], None
-
-        # Set "training_holdout" as the default, if that doesn't exist, set the first
-        default_inference_run = "training_holdout" if "training_holdout" in inference_runs else inference_runs[0]
-
-        # Return the options for the dropdown and the selected value
-        return inference_runs, default_inference_run
-
-
-# Updates the model metrics when a model row is selected
-def update_model_metrics_component(app: Dash):
-    @app.callback(
-        Output("model_metrics", "children"),
-        [Input("models_table", "derived_viewport_selected_row_ids"), Input("inference_dropdown", "value")],
-        State("models_table", "data"),
-        prevent_initial_call=True,
-    )
-    def generate_model_metrics_figure(selected_rows, inference_run, table_data):
-        # Check for no selected rows
-        if not selected_rows or selected_rows[0] is None:
-            return no_update
-
-        # Get the selected row data and grab the uuid
-        selected_row_data = table_data[selected_rows[0]]
-        model_uuid = selected_row_data["uuid"]
-        m = Model(model_uuid)
-
-        # Model Details Markdown component
-        model_metrics_fig = model_metrics_markdown.ModelMetricsMarkdown().generate_markdown(m, inference_run)
-
-        # Return the details/markdown for these data details
-        return model_metrics_fig
-
-
 # Updates the model plot when a model row is selected
 def update_model_plot_component(app: Dash):
     @app.callback(
         Output("model_plot", "figure"),
-        [Input("models_table", "derived_viewport_selected_row_ids"), Input("inference_dropdown", "value")],
-        State("models_table", "data"),
+        Input("model_details-dropdown", "value"),
+        [State("models_table", "data"), State("models_table", "derived_viewport_selected_row_ids")],
         prevent_initial_call=True,
     )
-    def generate_model_plot_figure(selected_rows, inference_run, table_data):
+    def generate_model_plot_figure(inference_run, table_data, selected_rows):
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return no_update
@@ -155,7 +68,7 @@ def update_model_plot_component(app: Dash):
         # Get the selected row data and grab the uuid
         selected_row_data = table_data[selected_rows[0]]
         model_uuid = selected_row_data["uuid"]
-        m = Model(model_uuid)
+        m = Model(model_uuid, legacy=True)
 
         # Model Details Markdown component
         model_plot_fig = model_plot.ModelPlot().generate_figure(m, inference_run)
@@ -182,5 +95,5 @@ def update_plugin(app: Dash, plugin, model_web_view: ModelWebView):
         model_uuid = selected_row_data["uuid"]
 
         # Instantiate the Model and send it to the plugin
-        model = Model(model_uuid)
+        model = Model(model_uuid, legacy=True)
         return plugin.generate_figure(model)

@@ -3,7 +3,6 @@
 from dash import register_page
 import dash
 from dash_bootstrap_templates import load_figure_template
-from dash import dcc
 
 # Local Imports
 from .layout import models_layout
@@ -12,8 +11,7 @@ from . import callbacks
 # SageWorks Imports
 from sageworks.web_components import (
     table,
-    model_details_markdown,
-    model_metrics_markdown,
+    model_details,
     model_plot,
 )
 from sageworks.web_components.plugin_interface import PluginPage
@@ -39,13 +37,8 @@ models_table = table.Table().create_component(
 )
 
 # Create a Markdown component to display the model details
-model_details = model_details_markdown.ModelDetailsMarkdown().create_component("model_details")
-
-# Create a Inference Run Dropdown component
-inference_dropdown = dcc.Dropdown(id="inference_dropdown", className="dropdown")
-
-# Create a Markdown component to display model metrics
-model_metrics = model_metrics_markdown.ModelMetricsMarkdown().create_component("model_metrics")
+model_details = model_details.ModelDetails()
+model_details_component = model_details.create_component("model_details")
 
 # Create a Model Plot component to display the model metrics
 model_plot_component = model_plot.ModelPlot().create_component("model_plot")
@@ -53,9 +46,7 @@ model_plot_component = model_plot.ModelPlot().create_component("model_plot")
 # Capture our components in a dictionary to send off to the layout
 components = {
     "models_table": models_table,
-    "inference_dropdown": inference_dropdown,
-    "model_details": model_details,
-    "model_metrics": model_metrics,
+    "model_details": model_details_component,
     "model_plot": model_plot_component,
 }
 
@@ -74,12 +65,10 @@ layout = models_layout(**components)
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.update_models_table(app)
+model_details.register_callbacks("models_table")
 
 # Callback for the model table
 callbacks.table_row_select(app, "models_table")
-callbacks.update_inference_dropdown(app)
-callbacks.update_model_detail_component(app)
-callbacks.update_model_metrics_component(app)
 callbacks.update_model_plot_component(app)
 
 # For each plugin, set up a callback to update the plugin figure
