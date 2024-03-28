@@ -7,7 +7,6 @@ from dash.dependencies import Input, Output, State
 from sageworks.views.model_web_view import ModelWebView
 from sageworks.web_components import (
     table,
-    model_details,
     model_plot,
 )
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
@@ -58,8 +57,7 @@ def update_model_plot_component(app: Dash):
     @app.callback(
         Output("model_plot", "figure"),
         Input("model_details-dropdown", "value"),
-        [State("models_table", "data"),
-         State("models_table", "derived_viewport_selected_row_ids")],
+        [State("models_table", "data"), State("models_table", "derived_viewport_selected_row_ids")],
         prevent_initial_call=True,
     )
     def generate_model_plot_figure(inference_run, table_data, selected_rows):

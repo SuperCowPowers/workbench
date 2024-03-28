@@ -12,6 +12,7 @@ from sageworks.utils.symbols import health_icons
 
 class ModelDetails(ComponentInterface):
     """Model Markdown Component"""
+
     def __init__(self):
         self.prefix_id = ""
         self.model = None
@@ -43,7 +44,7 @@ class ModelDetails(ComponentInterface):
                 Output(f"{self.prefix_id}-header", "children"),
                 Output(f"{self.prefix_id}-summary", "children"),
                 Output(f"{self.prefix_id}-dropdown", "options"),
-                Output(f"{self.prefix_id}-dropdown", "value")
+                Output(f"{self.prefix_id}-dropdown", "value"),
             ],
             Input(model_table, "derived_viewport_selected_row_ids"),
             State(model_table, "data"),
@@ -83,15 +84,21 @@ class ModelDetails(ComponentInterface):
 
     def model_summary(self):
         """Construct the markdown string for the model summary
-        
+
         Returns:
             str: A markdown string
         """
         # Get these fields from the model
         # Get these fields from the model
-        show_fields = ["health_tags", "input", "sageworks_registered_endpoints",
-                       "sageworks_model_type", "sageworks_tags", "sageworks_model_target",
-                       "sageworks_model_features"]
+        show_fields = [
+            "health_tags",
+            "input",
+            "sageworks_registered_endpoints",
+            "sageworks_model_type",
+            "sageworks_tags",
+            "sageworks_model_target",
+            "sageworks_model_features",
+        ]
 
         # Construct the markdown string
         summary = self.model.summary()
@@ -116,7 +123,7 @@ class ModelDetails(ComponentInterface):
 
             # If the value is a list, convert it to a comma-separated string
             if isinstance(value, list):
-                value = ', '.join(value)
+                value = ", ".join(value)
 
             # Chop off the "sageworks_" prefix
             key = key.replace("sageworks_", "")

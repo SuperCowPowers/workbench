@@ -34,7 +34,6 @@ def models_layout(
                 [
                     # Column 1: Model Details
                     dbc.Col(model_details, width=4),
-
                     # Column 2: Model Plot and Plugins
                     dbc.Col(
                         [
