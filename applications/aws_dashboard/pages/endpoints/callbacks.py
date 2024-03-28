@@ -5,7 +5,7 @@ from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.endpoint_web_view import EndpointWebView
-from sageworks.web_components import table, model_details_markdown, endpoint_metric_plots
+from sageworks.web_components import table, model_details, endpoint_metric_plots
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 from sageworks.api.endpoint import Endpoint
 from sageworks.api.model import Model
@@ -54,13 +54,9 @@ def table_row_select(app: Dash, table_name: str):
 
 
 # Updates the endpoint details when a endpoint row is selected
-def update_endpoint_details_components(app: Dash, endpoint_web_view: EndpointWebView):
+def update_endpoint_metrics(app: Dash, endpoint_web_view: EndpointWebView):
     @app.callback(
-        [
-            Output("endpoint_details_header", "children"),
-            Output("endpoint_details", "children"),
-            Output("endpoint_metrics", "figure"),
-        ],
+        Output("endpoint_metrics", "figure"),
         Input("endpoints_table", "derived_viewport_selected_row_ids"),
         State("endpoints_table", "data"),
         prevent_initial_call=True,
@@ -75,21 +71,14 @@ def update_endpoint_details_components(app: Dash, endpoint_web_view: EndpointWeb
         endpoint_uuid = selected_row_data["uuid"]
         print(f"Endpoint UUID: {endpoint_uuid}")
 
-        # Set the Header Text
-        header = f"Details: {endpoint_uuid}"
-
         # Endpoint Details
         endpoint_details = endpoint_web_view.endpoint_details(endpoint_uuid)
-
-        # Model Details Markdown component (Review This)
-        model = Model(Endpoint(endpoint_uuid).model_name)
-        endpoint_details_markdown = model_details_markdown.ModelDetailsMarkdown().generate_markdown(model)
 
         # Endpoint Metrics
         endpoint_metrics_figure = endpoint_metric_plots.EndpointMetricPlots().generate_figure(endpoint_details)
 
         # Return the details/markdown for these data details
-        return [header, endpoint_details_markdown, endpoint_metrics_figure]
+        return endpoint_metrics_figure
 
 
 # Updates the plugin component when a endpoint row is selected
