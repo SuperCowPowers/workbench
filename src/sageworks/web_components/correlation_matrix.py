@@ -20,9 +20,9 @@ class CorrelationMatrix(ComponentInterface):
         Returns:
             dcc.Graph: The Correlation Matrix Component
         """
-        return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
+        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def generate_figure(self, data_source_details: dict) -> go.Figure:
+    def update_contents(self, data_source_details: dict) -> go.Figure:
         """Create a Correlation Matrix Figure for the numeric columns in the dataframe.
         Args:
             data_source_details (dict): A dictionary containing DataSource details.
@@ -43,16 +43,16 @@ class CorrelationMatrix(ComponentInterface):
 
         # Sanity check the data
         if data_source_details is None:
-            return self.message_figure("No Details Data Found", figure_height=200)
+            return self.display_text("No Details Data Found", figure_height=200)
         if "column_stats" not in data_source_details:
-            return self.message_figure("No column_stats Found", figure_height=200)
+            return self.display_text("No column_stats Found", figure_height=200)
 
         # Convert the data details into a correlation dataframe
         df = self._corr_df_from_data_details(data_source_details)
 
         # If the dataframe is empty then return a message
         if df.empty:
-            return self.message_figure("No Correlations Found", figure_height=200)
+            return self.display_text("No Correlations Found", figure_height=200)
 
         # Okay so the heatmap has inverse y-axis ordering, so we need to flip the dataframe
         df = df.iloc[::-1]
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     corr_plot = CorrelationMatrix()
 
     # Generate the figure
-    fig = corr_plot.generate_figure(ds_details)
+    fig = corr_plot.update_contents(ds_details)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

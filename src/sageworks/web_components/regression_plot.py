@@ -16,14 +16,14 @@ class RegressionPlot(ComponentInterface):
 
     def create_component(self, component_id: str) -> dcc.Graph:
         # Initialize an empty scatter plot figure
-        return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
+        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def generate_figure(self, model: Model, inference_run: str = None) -> go.Figure:
+    def update_contents(self, model: Model, inference_run: str = None) -> go.Figure:
         # Get predictions for specific inference
         df = model.predictions(inference_run)
 
         if df is None:
-            return self.message_figure("No Data")
+            return self.display_text("No Data")
 
         # Get the name of the actual field value column
         actual_col = [col for col in df.columns if col != "prediction"][0]
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     reg_plot = RegressionPlot()
 
     # Generate the figure
-    fig = reg_plot.generate_figure(m, my_inference_run)
+    fig = reg_plot.update_contents(m, my_inference_run)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

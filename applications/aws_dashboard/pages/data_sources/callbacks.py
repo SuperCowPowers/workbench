@@ -87,7 +87,7 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
         header = f"Details: {data_source_uuid}"
 
         # Generate a new correlation matrix figure
-        corr_figure = correlation_matrix.CorrelationMatrix().generate_figure(data_details)
+        corr_figure = correlation_matrix.CorrelationMatrix().update_contents(data_details)
 
         # Return the details/markdown for these data details
         return [header, details_markdown, corr_figure]
@@ -135,7 +135,7 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
             style_cells = table.Table().style_data_conditional(color_column, unique_categories)
 
         # Update the Violin Plot with the new smart sample rows
-        violin_figure = violin_plots.ViolinPlots().generate_figure(
+        violin_figure = violin_plots.ViolinPlots().update_contents(
             smart_sample_rows,
             figure_args={
                 "box_visible": True,
