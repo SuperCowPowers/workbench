@@ -266,11 +266,11 @@ class ModelCore(Artifact):
         return self.latest_model["ModelPackageArn"]
 
     def model_container_info(self) -> dict:
-        """Containiner Info for the Latest Model Package"""
+        """Container Info for the Latest Model Package"""
         return self.latest_model["ModelPackageDetails"]["InferenceSpecification"]["Containers"][0]
 
     def model_image(self) -> str:
-        """Containiner Image for the Latest Model Package"""
+        """Container Image for the Latest Model Package"""
         return self.model_container_info()["Image"]
 
     def aws_url(self):
