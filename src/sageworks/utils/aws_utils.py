@@ -351,6 +351,47 @@ def compute_size(obj: object) -> int:
         return sys.getsizeof(obj)
 
 
+def num_columns_ds(data_info):
+    """Helper: Compute the number of columns from the storage descriptor data"""
+    try:
+        return len(data_info["StorageDescriptor"]["Columns"])
+    except KeyError:
+        return "-"
+
+
+def num_columns_fs(data_info):
+    """Helper: Compute the number of columns from the feature group data"""
+    try:
+        return len(data_info["FeatureDefinitions"])
+    except KeyError:
+        return "-"
+
+
+def aws_url(artifact_info, artifact_type, aws_account_clamp):
+    """Helper: Try to extract the AWS URL from the Artifact Info Object"""
+    if artifact_type == "S3":
+        # Construct the AWS URL for the S3 Bucket
+        name = artifact_info["Name"]
+        region = aws_account_clamp.region
+        s3_prefix = f"incoming-data/{name}"
+        bucket_name = aws_account_clamp.sageworks_bucket_name
+        base_url = "https://s3.console.aws.amazon.com/s3/object"
+        return f"{base_url}/{bucket_name}?region={region}&prefix={s3_prefix}"
+    elif artifact_type == "GlueJob":
+        # Construct the AWS URL for the Glue Job
+        region = aws_account_clamp.region
+        job_name = artifact_info["Name"]
+        base_url = f"https://{region}.console.aws.amazon.com/gluestudio/home"
+        return f"{base_url}?region={region}#/editor/job/{job_name}/details"
+    elif artifact_type == "DataSource":
+        details = artifact_info.get("Parameters", {}).get("sageworks_details", "{}")
+        return json.loads(details).get("aws_url", "unknown")
+    elif artifact_type == "FeatureSet":
+        aws_url = artifact_info.get("sageworks_meta", {}).get("aws_url", "unknown")
+        # Hack for constraints on the SageMaker Feature Group Tags
+        return aws_url.replace("__question__", "?").replace("__pound__", "#")
+
+
 if __name__ == "__main__":
     """Exercise the AWS Utils"""
     from pprint import pprint

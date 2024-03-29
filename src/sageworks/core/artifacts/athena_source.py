@@ -11,7 +11,7 @@ from pprint import pprint
 # SageWorks Imports
 from sageworks.core.artifacts.data_source_abstract import DataSourceAbstract
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.utils.iso_8601 import convert_all_to_iso8601
+from sageworks.utils.datetime_utils import convert_all_to_iso8601
 from sageworks.algorithms.sql import (
     sample_rows,
     value_counts,

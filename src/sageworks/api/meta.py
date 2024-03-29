@@ -6,10 +6,14 @@ Feature Sets, Models, and Endpoints.
 
 import logging
 
+import pandas as pd
+
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker, ServiceCategory
 from sageworks.utils.config_manager import ConfigManager
+from sageworks.utils.datetime_utils import datetime_string
+from sageworks.utils.aws_utils import num_columns_ds, aws_url
 
 
 class Meta:
@@ -49,7 +53,36 @@ class Meta:
         """
         return self.cm.get_all_config()
 
-    def data_sources(self, refresh: bool = False, include_sageworks_meta: bool = False) -> dict:
+    def data_sources(self) -> pd.DataFrame:
+        """Get a summary of the Data Sources in AWS
+
+        Returns:
+            pd.DataFrame: A summary of the Data Sources in AWS
+        """
+        data = self.data_sources_as_dict()
+        data_summary = []
+
+        # Pull in various bits of metadata for each data source
+        for name, info in data.items():
+            size = "-"
+            summary = {
+                "Name": name,
+                "Size(MB)": size,
+                "Modified": datetime_string(info.get("UpdateTime")),
+                "Num Columns": num_columns_ds(info),
+                "DataLake": info.get("IsRegisteredWithLakeFormation", "-"),
+                "Tags": info.get("Parameters", {}).get("sageworks_tags", "-"),
+                "Input": str(
+                    info.get("Parameters", {}).get("sageworks_input", "-"),
+                ),
+                "_aws_url": aws_url(info, "DataSource"),  # Hidden Column
+            }
+            data_summary.append(summary)
+
+        # Return the summary
+        return pd.DataFrame(data_summary)
+
+    def data_sources_as_dict(self, refresh: bool = False, include_sageworks_meta: bool = False) -> dict:
         """Get a summary of the Data Sources in AWS
 
         Args:
@@ -74,7 +107,7 @@ class Meta:
         data = self._remove_sageworks_meta(data)
         return data
 
-    def feature_sets(self, refresh: bool = False) -> dict:
+    def feature_sets_as_dict(self, refresh: bool = False) -> dict:
         """Get a summary of the Feature Sets in AWS
 
         Args:
@@ -87,7 +120,7 @@ class Meta:
             self.aws_broker.refresh_aws_data(ServiceCategory.FEATURE_STORE)
         return self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE)
 
-    def models(self, refresh: bool = False) -> dict:
+    def models_as_dict(self, refresh: bool = False) -> dict:
         """Get a summary of the Models in AWS
 
          Args:
@@ -100,7 +133,7 @@ class Meta:
             self.aws_broker.refresh_aws_data(ServiceCategory.MODELS)
         return self.aws_broker.get_metadata(ServiceCategory.MODELS)
 
-    def endpoints(self, refresh: bool = False) -> dict:
+    def endpoints_ad_dict(self, refresh: bool = False) -> dict:
         """Get a summary of the Endpoints in AWS
 
         Args:

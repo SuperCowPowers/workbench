@@ -8,7 +8,7 @@ from sagemaker.feature_store.feature_group import FeatureGroup, IngestionError
 from sagemaker.feature_store.inputs import TableFormatEnum
 
 # Local imports
-from sageworks.utils.iso_8601 import datetime_to_iso8601
+from sageworks.utils.datetime_utils import datetime_to_iso8601
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.artifacts.artifact import Artifact
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
