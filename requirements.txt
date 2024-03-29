@@ -19,4 +19,4 @@ rdkit>=2023.9.1
 mordred>=1.2.0
 ipython>=8.17.2
 setuptools>=69.0.2
-readline
+pyreadline; sys_platform == 'win32'
