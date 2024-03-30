@@ -13,81 +13,121 @@ class ArtifactsWebView(ArtifactsTextView):
         # Call SuperClass Initialization
         super().__init__()
 
-    def incoming_data_summary(self) -> pd.DataFrame:
-        """Get summary data about the AWS Glue Jobs"""
+    def incoming_data_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
+        """Get summary data about the AWS Glue Jobs
+
+        Args:
+            add_hyperlinks (bool): Whether to add hyperlinks to the Name column
+
+        Returns:
+            pd.DataFrame: Summary data about the AWS Glue Jobs
+        """
 
         # We get the dataframe from the ArtifactsTextView
         s3_data_df = super().incoming_data_summary()
         s3_data_df["uuid"] = s3_data_df["Name"]
 
         # Pull the AWS URLs and construct some hyperlinks
-        hyperlinked_names = []
-        for name, aws_url in zip(s3_data_df["Name"], s3_data_df["_aws_url"]):
-            hyperlinked_names.append(self.hyperlinks(name, "glue_jobs", aws_url))
-        s3_data_df["Name"] = hyperlinked_names
+        if add_hyperlinks:
+            hyperlinked_names = []
+            for name, aws_url in zip(s3_data_df["Name"], s3_data_df["_aws_url"]):
+                hyperlinked_names.append(self.hyperlinks(name, "glue_jobs", aws_url))
+            s3_data_df["Name"] = hyperlinked_names
 
         # Drop the AWS URL column and return the dataframe
         s3_data_df.drop(columns=["_aws_url"], inplace=True)
         return s3_data_df
 
-    def glue_jobs_summary(self) -> pd.DataFrame:
-        """Get summary data about the AWS Glue Jobs"""
+    def glue_jobs_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
+        """Get summary data about the AWS Glue Jobs
+
+        Args:
+            add_hyperlinks (bool): Whether to add hyperlinks to the Name column
+
+        Returns:
+            pd.DataFrame: Summary data about the AWS Glue Jobs
+        """
 
         # We get the dataframe from the ArtifactsTextView
         glue_df = super().glue_jobs_summary()
         glue_df["uuid"] = glue_df["Name"]
 
         # Pull the AWS URLs and construct some hyperlinks
-        hyperlinked_names = []
-        for name, aws_url in zip(glue_df["Name"], glue_df["_aws_url"]):
-            hyperlinked_names.append(self.hyperlinks(name, "glue_jobs", aws_url))
-        glue_df["Name"] = hyperlinked_names
+        if add_hyperlinks:
+            hyperlinked_names = []
+            for name, aws_url in zip(glue_df["Name"], glue_df["_aws_url"]):
+                hyperlinked_names.append(self.hyperlinks(name, "glue_jobs", aws_url))
+            glue_df["Name"] = hyperlinked_names
 
         # Drop the AWS URL column and return the dataframe
         glue_df.drop(columns=["_aws_url"], inplace=True)
         return glue_df
 
-    def data_sources_summary(self) -> pd.DataFrame:
-        """Get summary data about the SageWorks DataSources"""
+    def data_sources_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
+        """Get summary data about the SageWorks DataSources
+
+        Args:
+            add_hyperlinks (bool): Whether to add hyperlinks to the Name column
+
+        Returns:
+            pd.DataFrame: Summary data about the SageWorks DataSources
+        """
 
         # We get the dataframe from the ArtifactsTextView
         data_df = super().data_sources_summary()
         data_df["uuid"] = data_df["Name"]
 
         # Pull the AWS URLs and construct some hyperlinks
-        hyperlinked_names = []
-        for name, aws_url in zip(data_df["Name"], data_df["_aws_url"]):
-            hyperlinked_names.append(self.hyperlinks(name, "data_sources", aws_url))
-        data_df["Name"] = hyperlinked_names
+        if add_hyperlinks:
+            hyperlinked_names = []
+            for name, aws_url in zip(data_df["Name"], data_df["_aws_url"]):
+                hyperlinked_names.append(self.hyperlinks(name, "data_sources", aws_url))
+            data_df["Name"] = hyperlinked_names
 
         # Drop the AWS URL column and return the dataframe
         data_df.drop(columns=["_aws_url"], inplace=True)
         return data_df
 
-    def feature_sets_summary(self) -> pd.DataFrame:
-        """Get summary data about the SageWorks FeatureSets"""
+    def feature_sets_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
+        """Get summary data about the SageWorks FeatureSets
+
+        Args:
+            add_hyperlinks (bool): Whether to add hyperlinks to the Feature Group column
+
+        Returns:
+            pd.DataFrame: Summary data about the SageWorks FeatureSets
+        """
 
         # We get the dataframe from the ArtifactsTextView
         feature_df = super().feature_sets_summary()
         feature_df["uuid"] = feature_df["Feature Group"]
 
         # Pull the AWS URLs and construct some hyperlinks
-        hyperlinked_names = []
-        for group_name, aws_url in zip(feature_df["Feature Group"], feature_df["_aws_url"]):
-            hyperlinked_names.append(self.hyperlinks(group_name, "feature_sets", aws_url))
-        feature_df["Feature Group"] = hyperlinked_names
+        if add_hyperlinks:
+            hyperlinked_names = []
+            for group_name, aws_url in zip(feature_df["Feature Group"], feature_df["_aws_url"]):
+                hyperlinked_names.append(self.hyperlinks(group_name, "feature_sets", aws_url))
+            feature_df["Feature Group"] = hyperlinked_names
 
         # Drop the AWS URL column and return the dataframe
         feature_df.drop(columns=["_aws_url"], inplace=True)
         return feature_df
 
-    def models_summary(self) -> pd.DataFrame:
-        """Get summary data about the SageWorks Models"""
+    def models_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
+        """Get summary data about the SageWorks Models
+
+        Args:
+            add_hyperlinks (bool): Whether to add hyperlinks to the Model Group column
+
+        Returns:
+            pd.DataFrame: Summary data about the SageWorks Models
+        """
 
         # We get the dataframe from the ArtifactsTextView and hyperlink the Model Group column
         model_df = super().models_summary()
         model_df["uuid"] = model_df["Model Group"]
-        model_df["Model Group"] = model_df["Model Group"].map(lambda x: self.hyperlinks(x, "models", ""))
+        if add_hyperlinks:
+            model_df["Model Group"] = model_df["Model Group"].map(lambda x: self.hyperlinks(x, "models", ""))
 
         # Add Health Symbols to the Model Group Name
         if "Health" in model_df.columns:
@@ -95,13 +135,21 @@ class ArtifactsWebView(ArtifactsTextView):
 
         return model_df
 
-    def endpoints_summary(self) -> pd.DataFrame:
-        """Get summary data about the SageWorks Endpoints"""
+    def endpoints_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
+        """Get summary data about the SageWorks Endpoints
+        
+        Args:
+            add_hyperlinks (bool): Whether to add hyperlinks to the Name column
+            
+        Returns:
+            pd.DataFrame: Summary data about the SageWorks Endpoints
+        """
 
         # We get the dataframe from the ArtifactsTextView and hyperlink the Name column
         endpoint_df = super().endpoints_summary()
         endpoint_df["uuid"] = endpoint_df["Name"]
-        endpoint_df["Name"] = endpoint_df["Name"].map(lambda x: self.hyperlinks(x, "endpoints", ""))
+        if add_hyperlinks:
+            endpoint_df["Name"] = endpoint_df["Name"].map(lambda x: self.hyperlinks(x, "endpoints", ""))
 
         # Add Health Symbols to the Endpoint Name
         if "Health" in endpoint_df.columns:
@@ -109,7 +157,8 @@ class ArtifactsWebView(ArtifactsTextView):
 
         return endpoint_df
 
-    def hyperlinks(self, name, detail_type, aws_url):
+    @staticmethod
+    def hyperlinks(name, detail_type, aws_url):
         """Construct a hyperlink for the given name and detail_type"""
         if detail_type == "glue_jobs":
             return f"<a href='{aws_url}' target='_blank'>{name}</a>"
