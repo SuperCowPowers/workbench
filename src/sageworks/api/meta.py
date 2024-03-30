@@ -1,6 +1,6 @@
 """Meta: A class that provides high level information and summaries of SageWorks/AWS Artifacts.
 The Meta class provides 'meta' information, what account are we in, what is the current
-configuration, etc. It also provides summaries of the AWS Artifacts, such as Data Sources,
+configuration, etc. It also provides metadata for AWS Artifacts, such as Data Sources,
 Feature Sets, Models, and Endpoints.
 """
 
@@ -17,7 +17,7 @@ from sageworks.utils.aws_utils import num_columns_ds, num_columns_fs, aws_url
 
 
 class Meta:
-    """Meta: A class that provides high level information and summaries of SageWorks/AWS Artifacts
+    """Meta: A class that provides Metadata for a broad set of AWS Artifacts
 
     Common Usage:
     ```
@@ -52,6 +52,77 @@ class Meta:
             dict: The current SageWorks Configuration
         """
         return self.cm.get_all_config()
+
+    def incoming_data(self) -> pd.DataFrame:
+        """Get summary data about data in the incoming-data S3 Bucket
+
+        Returns:
+            pd.DataFrame: A summary of the data in the incoming-data S3 Bucket
+        """
+        data = self.incoming_data_deep()
+        data_summary = []
+        for name, info in data.items():
+            # Get the name and the size of the S3 Storage Object(s)
+            name = "/".join(name.split("/")[-2:]).replace("incoming-data/", "")
+            info["Name"] = name
+            size = info.get("ContentLength") / 1_000_000
+            summary = {
+                "Name": name,
+                "Size(MB)": f"{size:.2f}",
+                "Modified": datetime_string(info.get("LastModified", "-")),
+                "ContentType": str(info.get("ContentType", "-")),
+                "ServerSideEncryption": info.get("ServerSideEncryption", "-"),
+                "Tags": str(info.get("tags", "-")),
+                "_aws_url": aws_url(info, "S3", self.aws_account_clamp),  # Hidden Column
+            }
+            data_summary.append(summary)
+
+        # Return the summary
+        return pd.DataFrame(data_summary)
+
+    def incoming_data_deep(self, refresh: bool = False) -> dict:
+        """Get a deeper set of data for the Incoming Data in AWS
+
+        Args:
+            refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+
+        Returns:
+            dict: A summary of the Incoming Data in AWS
+        """
+        return self.aws_broker.get_metadata(ServiceCategory.INCOMING_DATA_S3, force_refresh=refresh)
+
+    def glue_jobs(self) -> pd.DataFrame:
+        """Get summary data about AWS Glue Jobs"""
+        glue_meta = self.glue_jobs_deep()
+        glue_summary = []
+
+        # Get the information about each Glue Job
+        for name, info in glue_meta.items():
+            summary = {
+                "Name": info["Name"],
+                "GlueVersion": info["GlueVersion"],
+                "Workers": info.get("NumberOfWorkers", "-"),
+                "WorkerType": info.get("WorkerType", "-"),
+                "Modified": datetime_string(info.get("LastModifiedOn")),
+                "LastRun": datetime_string(info["sageworks_meta"]["last_run"]),
+                "Status": info["sageworks_meta"]["status"],
+                "_aws_url": aws_url(info, "GlueJob", self.aws_account_clamp),  # Hidden Column
+            }
+            glue_summary.append(summary)
+
+        # Return the summary
+        return pd.DataFrame(glue_summary)
+
+    def glue_jobs_deep(self, refresh: bool = False) -> dict:
+        """Get a deeper set of data for the Glue Jobs in AWS
+
+        Args:
+            refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+
+        Returns:
+            dict: A summary of the Glue Jobs in AWS
+        """
+        return self.aws_broker.get_metadata(ServiceCategory.GLUE_JOBS, force_refresh=refresh)
 
     def data_sources(self) -> pd.DataFrame:
         """Get a summary of the Data Sources in AWS
@@ -300,6 +371,14 @@ if __name__ == "__main__":
     # Get the SageWorks Configuration
     print("*** SageWorks Configuration ***")
     pprint(meta.config())
+
+    # Get the Incoming Data
+    print("\n\n*** Incoming Data ***")
+    pprint(meta.incoming_data())
+
+    # Get the Glue Jobs
+    print("\n\n*** Glue Jobs ***")
+    pprint(meta.glue_jobs())
 
     # Get the Data Sources
     print("\n\n*** Data Sources ***")
