@@ -46,7 +46,7 @@ class ModelPluginView(View):
         #    model_group_name_2: [model_1, model_2, ...], ...
         # }
         model_summary = []
-        for model_group_name, model_list in self.meta.models().items():
+        for model_group_name, model_list in self.meta.models_deep().items():
             # Get Summary information for the 'latest' model in the model_list
             latest_model = model_list[0]
             sageworks_meta = latest_model.get("sageworks_meta", {})

@@ -7,7 +7,8 @@ from typing import Dict
 from sageworks.views.view import View
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.datetime_utils import datetime_string
-from sageworks.utils.aws_utils import num_columns_ds, num_columns_fs, aws_url
+from sageworks.utils.aws_utils import aws_url
+from sageworks.api.meta import Meta
 
 
 class ArtifactsTextView(View):
@@ -25,6 +26,9 @@ class ArtifactsTextView(View):
         # Setup Pandas output options
         pd.set_option("display.max_colwidth", 35)
         pd.set_option("display.width", 600)
+
+        # Create a Meta object to get the AWS Account Info
+        self.meta = Meta()
 
     def refresh(self, force_refresh: bool = False) -> None:
         """Refresh data/metadata associated with this view"""
@@ -136,204 +140,19 @@ class ArtifactsTextView(View):
 
     def data_sources_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks DataSources"""
-        data_catalog = ArtifactsTextView.aws_artifact_data[ServiceCategory.DATA_CATALOG]
-        data_summary = []
-
-        # Get the SageWorks DataSources
-        if "sageworks" in data_catalog:
-            for name, info in data_catalog["sageworks"].items():  # Just the sageworks database
-                # Get the size of the S3 Storage Object(s)
-                """Memory Tests
-                size = self.aws_broker.get_s3_object_sizes(
-                    ServiceCategory.DATA_SOURCES_S3,
-                    info["StorageDescriptor"]["Location"],
-                )
-                size = f"{size/1_000_000:.2f}"
-                """
-                size = "-"
-                summary = {
-                    "Name": name,
-                    "Size(MB)": size,
-                    "Modified": datetime_string(info.get("UpdateTime")),
-                    "Num Columns": num_columns_ds(info),
-                    "DataLake": info.get("IsRegisteredWithLakeFormation", "-"),
-                    "Tags": info.get("Parameters", {}).get("sageworks_tags", "-"),
-                    "Input": str(
-                        info.get("Parameters", {}).get("sageworks_input", "-"),
-                    ),
-                    "_aws_url": aws_url(info, "DataSource", self.aws_account_clamp),  # Hidden Column
-                }
-                data_summary.append(summary)
-
-        # Make sure we have data else return just the column names
-        if data_summary:
-            return pd.DataFrame(data_summary)
-        else:
-            columns = [
-                "Name",
-                "Size(MB)",
-                "Modified",
-                "Num Columns",
-                "DataLake",
-                "Tags",
-                "Input",
-                "_aws_url",
-            ]
-            return pd.DataFrame(columns=columns)
+        return self.meta.data_sources()
 
     def feature_sets_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks FeatureSets"""
-        data = ArtifactsTextView.aws_artifact_data[ServiceCategory.FEATURE_STORE]
-        data_summary = []
-        for feature_group, group_info in data.items():
-            # Get the SageWorks metadata for this Feature Group
-            sageworks_meta = group_info.get("sageworks_meta", {})
-
-            # Get the size of the S3 Storage Object(s)
-            """
-            size = self.aws_broker.get_s3_object_sizes(
-                ServiceCategory.FEATURE_SETS_S3,
-                group_info["OfflineStoreConfig"]["S3StorageConfig"]["S3Uri"],
-            )
-            """
-            size = 0
-            size = f"{size / 1_000_000:.2f}"
-            cat_config = group_info["OfflineStoreConfig"].get("DataCatalogConfig", {})
-            summary = {
-                "Feature Group": group_info["FeatureGroupName"],
-                "Size(MB)": size,
-                "Created": datetime_string(group_info.get("CreationTime")),
-                "Num Columns": num_columns_fs(group_info),
-                "Input": sageworks_meta.get("sageworks_input", "-"),
-                "Tags": sageworks_meta.get("sageworks_tags", "-"),
-                "Online": str(group_info.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
-                "Athena Table": cat_config.get("TableName", "-"),
-                "_aws_url": aws_url(group_info, "FeatureSet", self.aws_account_clamp),  # Hidden Column
-            }
-            data_summary.append(summary)
-
-        # Make sure we have data else return just the column names
-        if data_summary:
-            return pd.DataFrame(data_summary)
-        else:
-            columns = [
-                "Feature Group",
-                "Size(MB)",
-                "Created",
-                "Num Columns",
-                "Input",
-                "Tags",
-                "Online",
-                "Athena Table",
-                "_aws_url",
-            ]
-            return pd.DataFrame(columns=columns)
+        return self.meta.feature_sets()
 
     def models_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Models"""
-        data = ArtifactsTextView.aws_artifact_data[ServiceCategory.MODELS]
-        model_summary = []
-        for model_group_name, model_list in data.items():
-            # Special Case for Model Groups without any Models
-            if not model_list:
-                summary = {
-                    "Model Group": model_group_name,
-                    "Health": "No Models!",
-                    "Owner": "-",
-                    "Model Type": None,
-                    "Created": "-",
-                    "Ver": "-",
-                    "Tags": "-",
-                    "Input": "-",
-                    "Status": "Empty",
-                    "Description": "-",
-                }
-                model_summary.append(summary)
-                continue
-
-            # Get Summary information for the 'latest' model in the model_list
-            latest_model = model_list[0]
-            sageworks_meta = latest_model.get("sageworks_meta", {})
-
-            # If the sageworks_health_tags have nothing in them, then the model is healthy
-            health_tags = sageworks_meta.get("sageworks_health_tags", "-")
-            health_tags = health_tags if health_tags else "healthy"
-            summary = {
-                "Model Group": latest_model["ModelPackageGroupName"],
-                "Health": health_tags,
-                "Owner": sageworks_meta.get("sageworks_owner", "-"),
-                "Model Type": sageworks_meta.get("sageworks_model_type"),
-                "Created": datetime_string(latest_model.get("CreationTime")),
-                "Ver": latest_model["ModelPackageVersion"],
-                "Tags": sageworks_meta.get("sageworks_tags", "-"),
-                "Input": sageworks_meta.get("sageworks_input", "-"),
-                "Status": latest_model["ModelPackageStatus"],
-                "Description": latest_model.get("ModelPackageDescription", "-"),
-            }
-            model_summary.append(summary)
-
-        # Make sure we have data else return just the column names
-        if model_summary:
-            return pd.DataFrame(model_summary)
-        else:
-            columns = [
-                "Model Group",
-                "Health",
-                "Owner",
-                "Model Type",
-                "Created",
-                "Ver",
-                "Tags",
-                "Input",
-                "Status",
-                "Description",
-            ]
-            return pd.DataFrame(columns=columns)
+        return self.meta.models()
 
     def endpoints_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Endpoints"""
-        data = ArtifactsTextView.aws_artifact_data[ServiceCategory.ENDPOINTS]
-        data_summary = []
-
-        # Get Summary information for each endpoint
-        for endpoint, endpoint_info in data.items():
-            # Get the SageWorks metadata for this Endpoint
-            sageworks_meta = endpoint_info.get("sageworks_meta", {})
-
-            # If the sageworks_health_tags have nothing in them, then the endpoint is healthy
-            health_tags = sageworks_meta.get("sageworks_health_tags", "-")
-            health_tags = health_tags if health_tags else "healthy"
-            summary = {
-                "Name": endpoint_info["EndpointName"],
-                "Health": health_tags,
-                "Instance": endpoint_info.get("InstanceType", "-"),
-                "Created": datetime_string(endpoint_info.get("CreationTime")),
-                "Tags": sageworks_meta.get("sageworks_tags", "-"),
-                "Input": sageworks_meta.get("sageworks_input", "-"),
-                "Status": endpoint_info["EndpointStatus"],
-                "Variant": endpoint_info.get("ProductionVariants", [{}])[0].get("VariantName", "-"),
-                "Capture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
-                "Samp(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
-            }
-            data_summary.append(summary)
-
-        # Make sure we have data else return just the column names
-        if data_summary:
-            return pd.DataFrame(data_summary)
-        else:
-            columns = [
-                "Name",
-                "Health",
-                "Instance",
-                "Created",
-                "Tags",
-                "Input",
-                "Status",
-                "Variant",
-                "Capture",
-                "Samp(%)",
-            ]
-            return pd.DataFrame(columns=columns)
+        return self.meta.endpoints()
 
 
 if __name__ == "__main__":
