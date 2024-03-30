@@ -143,7 +143,7 @@ class AthenaSource(DataSourceAbstract):
                 self.log.error(new_meta)
             elif error_code == "ConcurrentModificationException":
                 self.log.warning("ConcurrentModificationException... trying again...")
-                time.sleep(1)
+                time.sleep(5)
                 wr.catalog.upsert_table_parameters(
                     parameters=new_meta,
                     database=self.get_database(),

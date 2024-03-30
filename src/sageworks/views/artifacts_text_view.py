@@ -24,7 +24,7 @@ class ArtifactsTextView(View):
 
     def refresh(self, force_refresh: bool = False) -> None:
         """Refresh data/metadata associated with this view"""
-        self.log.error("ArtifactsTextView.refresh() is not implemented")
+        self.log.debug("We don't need to refresh anything for this view.")
 
     def view_data(self) -> Dict[str, pd.DataFrame]:
         """Get all the data that's useful for this view

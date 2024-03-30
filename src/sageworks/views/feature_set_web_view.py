@@ -18,7 +18,6 @@ class FeatureSetWebView(ArtifactsWebView):
 
     def refresh(self):
         """Refresh the data from the AWS Service Broker"""
-        super().refresh()
         self.feature_sets_df = self.feature_sets_summary()
 
     def view_data(self) -> pd.DataFrame:
@@ -89,6 +88,10 @@ if __name__ == "__main__":
     sample_df = feature_view.feature_set_smart_sample(my_feature_uuid)
     print(sample_df.shape)
     print(sample_df.head())
+
+    # Test refresh
+    print("\nRefreshing...")
+    feature_view.refresh()
 
     # Give any broker threads time to finish
     time.sleep(1)
