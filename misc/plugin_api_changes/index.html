@@ -9,8 +9,10 @@
       
       
       
-        <link rel="prev" href="../pypi_release/">
+        <link rel="prev" href="../../aws_setup/aws_access_management/">
       
+      
+        <link rel="next" href="../../admin/pypi_release/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -18,7 +20,7 @@
     
     
       
-        <title>Docker Push - SageWorks</title>
+        <title>API Changes - SageWorks</title>
       
     
     
@@ -72,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#docker-build-and-push" class="md-skip">
+        <a href="#plugin-api-changes" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Docker Push
+              API Changes
             
           </span>
         </div>
@@ -961,7 +963,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../misc/faq/" class="md-nav__link">
+      <a href="../faq/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1229,10 +1231,28 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../misc/plugin_api_changes/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    API Changes
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1241,6 +1261,33 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#plugin-api-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Plugin API Changes
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1249,19 +1296,17 @@
       
   
   
-    
   
   
-  
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
           <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
@@ -1275,7 +1320,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             Admin
@@ -1289,7 +1334,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../pypi_release/" class="md-nav__link">
+      <a href="../../admin/pypi_release/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1307,30 +1352,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Docker Push
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../admin/docker_push/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1339,89 +1364,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#update-sageworks-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      Update SageWorks Version
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#build-the-docker-image" class="md-nav__link">
-    <span class="md-ellipsis">
-      Build the Docker Image
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#test-the-image-locally" class="md-nav__link">
-    <span class="md-ellipsis">
-      Test the Image Locally
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#login-to-ecr" class="md-nav__link">
-    <span class="md-ellipsis">
-      Login to ECR
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tagpush-the-image-to-aws-ecr" class="md-nav__link">
-    <span class="md-ellipsis">
-      Tag/Push the Image to AWS ECR
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#update-the-latest-tag" class="md-nav__link">
-    <span class="md-ellipsis">
-      Update the 'latest' tag
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#test-the-ecr-image" class="md-nav__link">
-    <span class="md-ellipsis">
-      Test the ECR Image
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1451,8 +1393,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1461,63 +1401,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#update-sageworks-version" class="md-nav__link">
+  <a href="#plugin-api-changes" class="md-nav__link">
     <span class="md-ellipsis">
-      Update SageWorks Version
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#build-the-docker-image" class="md-nav__link">
-    <span class="md-ellipsis">
-      Build the Docker Image
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#test-the-image-locally" class="md-nav__link">
-    <span class="md-ellipsis">
-      Test the Image Locally
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#login-to-ecr" class="md-nav__link">
-    <span class="md-ellipsis">
-      Login to ECR
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tagpush-the-image-to-aws-ecr" class="md-nav__link">
-    <span class="md-ellipsis">
-      Tag/Push the Image to AWS ECR
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#update-the-latest-tag" class="md-nav__link">
-    <span class="md-ellipsis">
-      Update the 'latest' tag
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#test-the-ecr-image" class="md-nav__link">
-    <span class="md-ellipsis">
-      Test the ECR Image
+      Plugin API Changes
     </span>
   </a>
   
@@ -1538,43 +1424,18 @@
                   
 
 
-<h1 id="docker-build-and-push">Docker Build and Push</h1>
-<p>Notes and information on how to do the Docker Builds and Push to AWS ECR.</p>
-<p>The following instructions should work, but things change :)</p>
-<h3 id="update-sageworks-version">Update SageWorks Version</h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cd applications/aws_dashboard
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>vi Dockerfile
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a># Install Sageworks (changes often)
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>RUN pip install --no-cache-dir sageworks==0.4.13 &lt;-- change this
-</span></code></pre></div>
-<h3 id="build-the-docker-image">Build the Docker Image</h3>
-<p><strong>Note:</strong> For a client specific config file you'll need to copy it locally so that it's within Dockers 'build context'. If you're building the 'vanilla' open source Docker image, then you can use the <code>open_source_config.json</code> that's in the directory already.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker build --build-arg SAGEWORKS_CONFIG=open_source_config.json -t \
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>sageworks_dashboard:v0_4_13_amd64 --platform linux/amd64 .
-</span></code></pre></div>
-<p><strong>Docker with Custom Plugins:</strong> If you're using custom plugins you may want to change the SAGEWORKS_PLUGINS directory to something like <code>/app/sageworks_plugins</code> and then have Dockerfile copy your plugins into that directory on the Docker image.</p>
-<h3 id="test-the-image-locally">Test the Image Locally</h3>
-<p>You have a <code>docker_local_dashboard</code> alias in your <code>~/.zshrc</code> :)</p>
-<h3 id="login-to-ecr">Login to ECR</h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>aws ecr-public get-login-password --region us-east-1 --profile \
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>scp_sandbox_admin | docker login --username AWS \
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>--password-stdin public.ecr.aws
-</span></code></pre></div>
-<h3 id="tagpush-the-image-to-aws-ecr">Tag/Push the Image to AWS ECR</h3>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker tag sageworks_dashboard:v0_4_13_amd64 \
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_13_amd64
-</span></code></pre></div>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_13_amd64
-</span></code></pre></div></p>
-<h3 id="update-the-latest-tag">Update the 'latest' tag</h3>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker tag public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_13_amd64 \
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
-</span></code></pre></div>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
-</span></code></pre></div></p>
-<h3 id="test-the-ecr-image">Test the ECR Image</h3>
-<p>You have a <code>docker_ecr_dashboard</code> alias in your <code>~/.zshrc</code> :)</p>
+  <h1>API Changes</h1>
+
+<h2 id="plugin-api-changes">Plugin API Changes</h2>
+<p>There were quite a fiew API changes for Plugins between <code>0.4.43</code> and <code>0.5.0</code> versions of SageWorks.</p>
+<p><strong>General:</strong> Classes that inherit from <code>component_interface</code> or <code>plugin_interface</code>  are now 'auto wrapped' with an exception container. This container not only catches errors/crashes so they don't crash the application but it also displays the error in the widget.</p>
+<p><strong>Specific Changes:</strong></p>
+<ul>
+<li>The <code>generate_component_figure</code> method is now <code>update_contents</code></li>
+<li>The <code>message_figure</code> method is now <code>display_text</code></li>
+<li><code>PluginType</code> was changed to <code>PluginPage</code> (use CUSTOM to NOT autoload)</li>
+<li><code>PluginInputType.MODEL_DETAILS</code>  changed to <code>PluginInputType.MODEL</code>  (since your now getting a model object)</li>
+</ul>
 
 
 
