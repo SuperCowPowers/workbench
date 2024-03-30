@@ -34,10 +34,9 @@ class Artifact(ABC):
         self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto_session)
         self.aws_region = self.aws_account_clamp.region
 
-        # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
+        # The Meta() class pulls and collects metadata from a bunch of AWS Services
         self.aws_broker = AWSServiceBroker()
         from sageworks.api.meta import Meta
-
         self.meta_broker = Meta()
 
         # Config Manager Checks
