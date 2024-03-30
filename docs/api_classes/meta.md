@@ -1,13 +1,13 @@
 # Meta
 
-## Important
-Many of the methods below have a `refresh` argument that's defaulted to False. In almost every situation and use case this is the correct default. Setting `refresh` to `True` will lead to fairly substantial performance issues, so don't do it :).
-
 !!! tip inline end "Meta Examples"
     Examples of using the Meta class are listed at the bottom of this page [Examples](#examples).
     
 ::: sageworks.api.meta
 
+
+!!! warning inline end "Refresh"
+    Many of the methods below have a `refresh` argument that's defaulted to False. In almost every situation and use case this is the correct default. Setting `refresh` to `True` will lead to fairly substantial performance issues, so don't do it :).
 
 ## Examples
 These example show how to use the `Meta()` class to pull lists of artifacts from AWS. DataSources, FeatureSets, Models, Endpoints and more. If you're building a web interface plugin, the **Meta** class is a great place to start.
