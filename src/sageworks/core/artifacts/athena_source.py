@@ -53,7 +53,7 @@ class AthenaSource(DataSourceAbstract):
         # Flag for metadata cache refresh logic
         self.metadata_refresh_needed = False
 
-        # Setup our AWS Broker catalog metadata
+        # Setup our AWS Metadata Broker
         self.catalog_table_meta = self.meta_broker.data_source_details(
             data_uuid, self.get_database(), refresh=force_refresh
         )
@@ -165,7 +165,7 @@ class AthenaSource(DataSourceAbstract):
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        sageworks_details = self.sageworks_meta().get("sageworks_details", "{}")
+        sageworks_details = self.sageworks_meta().get("sageworks_details", {})
         return sageworks_details.get("aws_url", "unknown")
 
     def created(self) -> datetime:
@@ -575,7 +575,7 @@ if __name__ == "__main__":
     print("\n\nDisplay Columns")
     print(my_data.get_display_columns())
 
-    # Test an Data Source that doesn't exist
+    # Test a Data Source that doesn't exist
     # The rest of the tests are Disabled for now
     """
     print("\n\nTesting a Data Source that does not exist...")

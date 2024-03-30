@@ -345,17 +345,17 @@ class Artifact(ABC):
         """Get the input data for this artifact"""
         return self.sageworks_meta().get("sageworks_input", "unknown")
 
-    def set_input(self, input: str):
+    def set_input(self, input_data: str):
         """Set the input data for this artifact
 
         Args:
-            input (str): Name of input for this artifact
+            input_data (str): Name of input data for this artifact
         Note:
             This breaks the official provenance of the artifact, so use with caution.
         """
-        self.log.important(f"{self.uuid}: Setting input to {input}...")
+        self.log.important(f"{self.uuid}: Setting input to {input_data}...")
         self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
-        self.upsert_sageworks_meta({"sageworks_input": input})
+        self.upsert_sageworks_meta({"sageworks_input": input_data})
 
     def get_status(self) -> str:
         """Get the status for this artifact"""
