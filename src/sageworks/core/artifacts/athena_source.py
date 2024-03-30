@@ -54,13 +54,11 @@ class AthenaSource(DataSourceAbstract):
         self.metadata_refresh_needed = False
 
         # Setup our AWS Broker catalog metadata
-        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=force_refresh)
-        try:
-            self.catalog_table_meta = _catalog_meta[self.get_database()].get(self.get_table_name())
-        except KeyError:
-            self.log.critical(f"Unable to find {self.get_database()} in Catalogs...")
-            self.log.critical("You must run the sageworks/aws_setup/aws_account_check.py script")
-            raise RuntimeError(f"Unable to find {self.get_database()} in Catalogs...")
+        self.catalog_table_meta = self.meta_broker.data_source_details(
+            data_uuid, self.get_database(), refresh=force_refresh
+        )
+        if self.catalog_table_meta is None:
+            self.log.important(f"Unable to find {self.get_database()}:{self.get_table_name()} in Glue Catalogs...")
 
         # Call superclass post init
         super().__post_init__()

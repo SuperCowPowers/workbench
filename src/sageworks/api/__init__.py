@@ -6,11 +6,13 @@ These class provide high-level APIs for the SageWorks package, offering easy acc
 - FeatureSet: Manages AWS Feature Store and Feature Groups
 - Model: Manages the training and deployment of AWS Model Groups and Packages
 - Endpoint: Manages the deployment and invocations/inference on AWS Endpoints
+- Meta: Provides an API to retrieve AWS Metadata for the above classes
 """
 
 from .data_source import DataSource
 from .feature_set import FeatureSet
 from .model import Model
 from .endpoint import Endpoint
+from .meta import Meta
 
-__all__ = ["DataSource", "FeatureSet", "Model", "Endpoint"]
+__all__ = ["DataSource", "FeatureSet", "Model", "Endpoint", "Meta"]

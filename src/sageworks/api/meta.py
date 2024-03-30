@@ -5,7 +5,7 @@ Feature Sets, Models, and Endpoints.
 """
 
 import logging
-
+from typing import Union
 import pandas as pd
 
 # SageWorks Imports
@@ -79,26 +79,36 @@ class Meta:
         # Return the summary
         return pd.DataFrame(data_summary)
 
-    def data_sources_deep(self, refresh: bool = False, remove_sageworks_meta: bool = False) -> dict:
+    def data_source_details(
+        self, data_source_name: str, database: str = "sageworks", refresh: bool = False
+    ) -> Union[dict, None]:
+        """Get detailed information about a specific data source in AWS
+
+        Args:
+            data_source_name (str): The name of the data source
+            database (str, optional): Glue database. Defaults to 'sageworks'.
+            refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+
+        Returns:
+            dict: Detailed information about the data source (or None if not found)
+        """
+        data = self.data_sources_deep(database=database, refresh=refresh)
+        return data.get(data_source_name)
+
+    def data_sources_deep(self, database: str = "sageworks", refresh: bool = False) -> dict:
         """Get a deeper set of data for the Data Sources in AWS
 
         Args:
+            database (str, optional): Glue database. Defaults to 'sageworks'.
             refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
-            remove_sageworks_meta (bool, optional): Remove the verbose SageWorks Metadata. Defaults to False.
 
         Returns:
             dict: A summary of the Data Sources in AWS
         """
-        if refresh:
-            self.aws_broker.refresh_aws_data(ServiceCategory.DATA_CATALOG)
-        data = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG)
+        data = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=refresh)
 
-        # Data Sources are in the 'sageworks' database
-        data = data["sageworks"]
-
-        # Remove the verbose SageWorks Metadata?
-        if remove_sageworks_meta:
-            data = self._remove_sageworks_meta(data)
+        # Data Sources are in two databases, 'sageworks' and 'sagemaker_featurestore'
+        data = data[database]
 
         # Return the data
         return data
@@ -132,6 +142,18 @@ class Meta:
         # Return the summary
         return pd.DataFrame(data_summary)
 
+    def feature_set_details(self, feature_set_name: str) -> dict:
+        """Get detailed information about a specific feature set in AWS
+
+        Args:
+            feature_set_name (str): The name of the feature set
+
+        Returns:
+            dict: Detailed information about the feature set
+        """
+        data = self.feature_sets_deep()
+        return data.get(feature_set_name, {})
+
     def feature_sets_deep(self, refresh: bool = False) -> dict:
         """Get a deeper set of data for the Feature Sets in AWS
 
@@ -141,9 +163,7 @@ class Meta:
         Returns:
             dict: A summary of the Feature Sets in AWS
         """
-        if refresh:
-            self.aws_broker.refresh_aws_data(ServiceCategory.FEATURE_STORE)
-        return self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE)
+        return self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=refresh)
 
     def models(self, refresh: bool = False) -> pd.DataFrame:
         """Get a summary of the Models in AWS
@@ -182,6 +202,18 @@ class Meta:
         # Return the summary
         return pd.DataFrame(model_summary)
 
+    def model_details(self, model_group_name: str) -> dict:
+        """Get detailed information about a specific model group in AWS
+
+        Args:
+            model_group_name (str): The name of the model group
+
+        Returns:
+            dict: Detailed information about the model group
+        """
+        data = self.models_deep()
+        return data.get(model_group_name, {})
+
     def models_deep(self, refresh: bool = False) -> dict:
         """Get a deeper set of data for Models in AWS
 
@@ -191,9 +223,7 @@ class Meta:
         Returns:
             dict: A summary of the Models in AWS
         """
-        if refresh:
-            self.aws_broker.refresh_aws_data(ServiceCategory.MODELS)
-        return self.aws_broker.get_metadata(ServiceCategory.MODELS)
+        return self.aws_broker.get_metadata(ServiceCategory.MODELS, force_refresh=refresh)
 
     def endpoints(self, refresh: bool = False) -> pd.DataFrame:
         """Get a summary of the Endpoints in AWS
@@ -241,9 +271,7 @@ class Meta:
         Returns:
             dict: A summary of the Endpoints in AWS
         """
-        if refresh:
-            self.aws_broker.refresh_aws_data(ServiceCategory.ENDPOINTS)
-        return self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS)
+        return self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS, force_refresh=refresh)
 
     def _remove_sageworks_meta(self, data: dict) -> dict:
         """Internal: Recursively remove any keys with 'sageworks_' in them"""
@@ -276,6 +304,10 @@ if __name__ == "__main__":
     # Get the Data Sources
     print("\n\n*** Data Sources ***")
     pprint(meta.data_sources())
+
+    # Get the Data Source Details
+    print("\n\n*** Data Source Details ***")
+    pprint(meta.data_source_details("abalone_data"))
 
     # Get the Feature Sets
     print("\n\n*** Feature Sets ***")

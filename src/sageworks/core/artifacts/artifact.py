@@ -36,6 +36,9 @@ class Artifact(ABC):
 
         # AWSServiceBroker pulls and collects metadata from a bunch of AWS Services
         self.aws_broker = AWSServiceBroker()
+        from sageworks.api.meta import Meta
+
+        self.meta_broker = Meta()
 
         # Config Manager Checks
         self.cm = ConfigManager()
