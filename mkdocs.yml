@@ -42,6 +42,7 @@ nav:
     - Dashboard Setup: aws_setup/dashboard_stack.md
     - AWS Tips and Tricks: aws_setup/aws_tips_and_tricks.md
     - AWS Access Management: aws_setup/aws_access_management.md
+  - API Changes: misc/plugin_api_changes.md
   - Admin: 
     - PyPI Release:  admin/pypi_release.md
     - Docker Push:  admin/docker_push.md

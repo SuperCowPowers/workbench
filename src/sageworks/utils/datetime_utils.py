@@ -77,6 +77,34 @@ def convert_all_to_iso8601(data):
         return data
 
 
+def datetime_string(datetime_obj: datetime) -> str:
+    """Helper: Convert DateTime Object into a nicely formatted string.
+
+    Args:
+        datetime_obj (datetime): The datetime object to convert.
+
+    Returns:
+        str: The datetime as a string in the format "YYYY-MM-DD HH:MM", or "-" if input is None or "-".
+    """
+    placeholder = "-"
+    if datetime_obj is None or datetime_obj == placeholder:
+        return placeholder
+
+    if not isinstance(datetime_obj, datetime):
+        log.debug("Expected datetime object.. trying to convert...")
+        try:
+            datetime_obj = iso8601_to_datetime(datetime_obj)
+        except Exception as e:
+            log.error(f"Failed to convert datetime object: {e}")
+            return str(datetime_obj)
+
+    try:
+        return datetime_obj.strftime("%Y-%m-%d %H:%M")
+    except Exception as e:
+        log.error(f"Failed to convert datetime to string: {e}")
+        return str(datetime_obj)
+
+
 if __name__ == "__main__":
     """Exercise the helper functions"""
 
@@ -95,3 +123,6 @@ if __name__ == "__main__":
     print(data)
     data2 = convert_all_to_iso8601(data)
     print(data2)
+
+    # Test the datetime string conversion
+    print(datetime_string(now))

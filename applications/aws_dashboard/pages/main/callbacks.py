@@ -30,7 +30,7 @@ def refresh_data(app: Dash, web_view: ArtifactsWebView):
         # A string of the new time
         new_time = datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
-        web_view.refresh()
+        # Grab all the data from the Web View
         new_broker_data = web_view.view_data()
         serialized_data = serialize_aws_broker_data(new_broker_data)
 

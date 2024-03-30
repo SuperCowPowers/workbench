@@ -23,9 +23,9 @@ class CustomTurbo(PluginInterface):
         Returns:
             dcc.Graph: The CustomTurbo Component
         """
-        return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
+        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def generate_figure(self, model: Model) -> go.Figure:
+    def update_contents(self, model: Model) -> go.Figure:
         """Create a CustomTurbo Figure for the numeric columns in the dataframe.
         Args:
             model (Model): An instantiated Model object
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     turbo = CustomTurbo()
 
     # Generate the figure
-    fig = turbo.generate_figure(model)
+    fig = turbo.update_contents(model)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

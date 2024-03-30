@@ -3,11 +3,11 @@ from sageworks.api.meta import Meta
 # Create our Meta Class and get a list of our Endpoints
 meta = Meta()
 endpoints = meta.endpoints()
+print(f"Number of Endpoints: {len(endpoints)}")
+print(endpoints)
 
-# Print out the list of our Endpoints
-endpoint_list = list(endpoints.keys())
-print(f"Number of Endpoints: {len(endpoint_list)}")
-for name, info in endpoints.items():
-    print(f"{name}")
-    print(f"\tStatus: {info['EndpointStatus']}")
-    print(f"\tInstance: {info['InstanceType']}")
+# Get more details data on the Endpoints
+endpoints_deep = meta.endpoints_deep()
+for name, info in endpoints_deep.items():
+    print(name)
+    print(info.keys())

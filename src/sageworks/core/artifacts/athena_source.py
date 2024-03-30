@@ -11,7 +11,7 @@ from pprint import pprint
 # SageWorks Imports
 from sageworks.core.artifacts.data_source_abstract import DataSourceAbstract
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.utils.iso_8601 import convert_all_to_iso8601
+from sageworks.utils.datetime_utils import convert_all_to_iso8601
 from sageworks.algorithms.sql import (
     sample_rows,
     value_counts,
@@ -53,14 +53,12 @@ class AthenaSource(DataSourceAbstract):
         # Flag for metadata cache refresh logic
         self.metadata_refresh_needed = False
 
-        # Setup our AWS Broker catalog metadata
-        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=force_refresh)
-        try:
-            self.catalog_table_meta = _catalog_meta[self.get_database()].get(self.get_table_name())
-        except KeyError:
-            self.log.critical(f"Unable to find {self.get_database()} in Catalogs...")
-            self.log.critical("You must run the sageworks/aws_setup/aws_account_check.py script")
-            raise RuntimeError(f"Unable to find {self.get_database()} in Catalogs...")
+        # Setup our AWS Metadata Broker
+        self.catalog_table_meta = self.meta_broker.data_source_details(
+            data_uuid, self.get_database(), refresh=force_refresh
+        )
+        if self.catalog_table_meta is None:
+            self.log.important(f"Unable to find {self.get_database()}:{self.get_table_name()} in Glue Catalogs...")
 
         # Call superclass post init
         super().__post_init__()
@@ -145,7 +143,7 @@ class AthenaSource(DataSourceAbstract):
                 self.log.error(new_meta)
             elif error_code == "ConcurrentModificationException":
                 self.log.warning("ConcurrentModificationException... trying again...")
-                time.sleep(1)
+                time.sleep(5)
                 wr.catalog.upsert_table_parameters(
                     parameters=new_meta,
                     database=self.get_database(),
@@ -167,7 +165,7 @@ class AthenaSource(DataSourceAbstract):
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
-        sageworks_details = self.sageworks_meta().get("sageworks_details", "{}")
+        sageworks_details = self.sageworks_meta().get("sageworks_details", {})
         return sageworks_details.get("aws_url", "unknown")
 
     def created(self) -> datetime:
@@ -577,7 +575,7 @@ if __name__ == "__main__":
     print("\n\nDisplay Columns")
     print(my_data.get_display_columns())
 
-    # Test an Data Source that doesn't exist
+    # Test a Data Source that doesn't exist
     # The rest of the tests are Disabled for now
     """
     print("\n\nTesting a Data Source that does not exist...")

@@ -4,8 +4,10 @@ from sageworks.api.meta import Meta
 meta = Meta()
 models = meta.models()
 
-# Print out the list of our Models
-model_list = list(models.keys())
-print(f"Number of Models: {len(model_list)}")
-for model_name in models.keys():
-    print(f"\t{model_name}")
+print(f"Number of Models: {len(models)}")
+print(models)
+
+# Get more details data on the Endpoints
+models_groups = meta.models_deep()
+for name, model_versions in models_groups.items():
+    print(name)

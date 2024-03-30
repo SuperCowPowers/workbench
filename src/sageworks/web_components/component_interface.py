@@ -13,12 +13,10 @@ from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 
 
 class ComponentInterface(ABC):
-    """A Stateless Abstract Web Component Interface
+    """A Abstract Web Component Interface
     Notes:
-      - These methods are ^stateless^, all data should be passed through the
-        arguments and the implementations should not reference 'self' variables
-      - The 'create_component' method must be implemented by the child class
-      - The 'generate_figure' is optional (some components don't use Plotly figures)
+      - The 'create_container' method create a gcc.Graph, html.Div, etc
+      - The 'update_contents' method generates the contents (figure, markdown, etc)
     """
 
     log = logging.getLogger("sageworks")
@@ -30,15 +28,15 @@ class ComponentInterface(ABC):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        # Automatically apply the error handling decorator to the create_component and generate_figure methods
+        # Automatically apply the error handling decorator to the create_component and update_contents methods
         if hasattr(cls, "create_component") and callable(cls.create_component):
-            cls.create_component = component_error_decorator(cls.create_component)
-        if hasattr(cls, "generate_figure") and callable(cls.generate_figure):
-            cls.generate_figure = figure_error_decorator(cls.generate_figure)
+            cls.create_component = create_component_handler(cls.create_component)
+        if hasattr(cls, "update_contents") and callable(cls.update_contents):
+            cls.update_contents = update_contents_handler(cls.update_contents)
 
     @abstractmethod
     def create_component(self, component_id: str, **kwargs: Any) -> ComponentTypes:
-        """Create a Dash Component without any data.
+        """Create a Dash Component/Container without any data.
         Args:
             component_id (str): The ID of the web component
             kwargs (Any): Any additional arguments to pass to the component
@@ -47,8 +45,8 @@ class ComponentInterface(ABC):
         """
         pass
 
-    def generate_figure(self, data_object: SageworksObject) -> FigureTypes:
-        """Generate a figure from the data in the given dataframe.
+    def update_contents(self, data_object: SageworksObject) -> FigureTypes:
+        """Update the contents of the component/container
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.
         Returns:
@@ -70,8 +68,8 @@ class ComponentInterface(ABC):
         return component_id
 
     @staticmethod
-    def message_figure(text_message: str, figure_height: int = None, font_size=32) -> go.Figure:
-        """This helper method creates a waiting figure for the component
+    def display_text(text_message: str, figure_height: int = None, font_size=32) -> go.Figure:
+        """This helper method displays a text message figure for the component
         Args:
             text_message (str): The text message to display
             figure_height (int): The height of the figure (default: None)
@@ -79,8 +77,8 @@ class ComponentInterface(ABC):
         Returns:
             go.Figure: A Plotly Figure
         """
-        text_message_figure = go.Figure()
-        text_message_figure.add_annotation(
+        text_display_text = go.Figure()
+        text_display_text.add_annotation(
             x=0.5, y=0.5, xref="paper", yref="paper", text=text_message, showarrow=False, font=dict(size=font_size)
         )
 
@@ -93,13 +91,13 @@ class ComponentInterface(ABC):
         if figure_height is not None:
             layout_options["height"] = figure_height
 
-        text_message_figure.update_layout(**layout_options)
+        text_display_text.update_layout(**layout_options)
 
-        return text_message_figure
+        return text_display_text
 
 
 # These are helper decorators to catch errors in plugin methods
-def component_error_decorator(func):
+def create_component_handler(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -108,13 +106,13 @@ def component_error_decorator(func):
             # Get the class name of the plugin
             class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
             error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
-            figure = ComponentInterface.message_figure(error_info, figure_height=100, font_size=16)
+            figure = ComponentInterface.display_text(error_info, figure_height=100, font_size=16)
             return dcc.Graph(id="error", figure=figure)
 
     return wrapper
 
 
-def figure_error_decorator(func):
+def update_contents_handler(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -123,6 +121,6 @@ def figure_error_decorator(func):
             # Get the class name of the plugin
             class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
             error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
-            return ComponentInterface.message_figure(error_info, figure_height=100, font_size=16)
+            return ComponentInterface.display_text(error_info, figure_height=100, font_size=16)
 
     return wrapper

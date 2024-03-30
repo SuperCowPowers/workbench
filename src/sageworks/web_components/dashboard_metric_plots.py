@@ -26,9 +26,9 @@ class DashboardMetricPlots(ComponentInterface):
         Returns:
             dcc.Graph: The Dashboard Metrics Component
         """
-        return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
+        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def generate_figure(self, metrics_df: pd.DataFrame) -> go.Figure:
+    def update_contents(self, metrics_df: pd.DataFrame) -> go.Figure:
         """Create a Dashboard Metric Plots Figure.
         Args:
             metrics_df (pd.DataFrame): The dashboard metrics dataframe
@@ -38,7 +38,7 @@ class DashboardMetricPlots(ComponentInterface):
 
         # Grab the Dashboard metrics
         if metrics_df is None or metrics_df.empty:
-            return self.message_figure("No Data")
+            return self.display_text("No Data")
 
         # Let's convert all the timestamps to local timezone
         metrics_df["timestamps"] = metrics_df["timestamps"].dt.tz_convert(local_tz)
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     dashboard_metric_plots = DashboardMetricPlots()
 
     # Generate the figure
-    fig = dashboard_metric_plots.generate_figure(dashboard_metrics)
+    fig = dashboard_metric_plots.update_contents(dashboard_metrics)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

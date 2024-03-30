@@ -71,7 +71,7 @@ def update_model_plot_component(app: Dash):
         m = Model(model_uuid, legacy=True)
 
         # Model Details Markdown component
-        model_plot_fig = model_plot.ModelPlot().generate_figure(m, inference_run)
+        model_plot_fig = model_plot.ModelPlot().update_contents(m, inference_run)
 
         # Return the details/markdown for these data details
         return model_plot_fig
@@ -96,4 +96,4 @@ def update_plugin(app: Dash, plugin, model_web_view: ModelWebView):
 
         # Instantiate the Model and send it to the plugin
         model = Model(model_uuid, legacy=True)
-        return plugin.generate_figure(model)
+        return plugin.update_contents(model)

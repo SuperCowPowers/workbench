@@ -9,7 +9,7 @@ import logging
 from datetime import datetime, date
 
 # Local Imports
-from sageworks.utils.iso_8601 import datetime_to_iso8601, iso8601_to_datetime
+from sageworks.utils.datetime_utils import datetime_to_iso8601, iso8601_to_datetime
 from sageworks.utils.config_manager import ConfigManager
 
 log = logging.getLogger("sageworks")

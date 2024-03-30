@@ -7,7 +7,7 @@ import os
 from datetime import datetime, timezone
 
 # SageWorks Imports
-from sageworks.utils.iso_8601 import datetime_to_iso8601
+from sageworks.utils.datetime_utils import datetime_to_iso8601
 
 # Set up S3 client
 s3 = boto3.client("s3")

@@ -20,9 +20,9 @@ class ViolinPlots(ComponentInterface):
         Returns:
             dcc.Graph: The Violin Plot Component
         """
-        return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
+        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def generate_figure(self, df: pd.DataFrame, figure_args: dict, max_plots: int = 40) -> go.Figure:
+    def update_contents(self, df: pd.DataFrame, figure_args: dict, max_plots: int = 40) -> go.Figure:
         """Create a set of violin plots for the numeric columns in the dataframe.
         Args:
             df (pd.DataFrame): The dataframe containing the data.
@@ -35,7 +35,7 @@ class ViolinPlots(ComponentInterface):
 
         # Sanity check the dataframe
         if df is None or df.empty or list(df.columns) == ["uuid", "status"]:
-            return self.message_figure("No Data Found", figure_height=200)
+            return self.display_text("No Data Found", figure_height=200)
 
         numeric_columns = list(df.select_dtypes("number").columns)
         numeric_columns = [col for col in numeric_columns if df[col].nunique() > 1]  # Only columns > 1 unique value
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     v_plots = ViolinPlots()
 
     # Generate the figure
-    fig = v_plots.generate_figure(
+    fig = v_plots.update_contents(
         smart_sample_rows,
         figure_args={
             "box_visible": True,

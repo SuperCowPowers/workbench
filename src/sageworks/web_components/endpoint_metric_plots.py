@@ -24,9 +24,9 @@ class EndpointMetricPlots(ComponentInterface):
         Returns:
             dcc.Graph: The Endpoint Metrics Component
         """
-        return dcc.Graph(id=component_id, figure=self.message_figure("Waiting for Data..."))
+        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def generate_figure(self, endpoint_details: dict) -> go.Figure:
+    def update_contents(self, endpoint_details: dict) -> go.Figure:
         """Create a Endpoint Metrics Figure for the numeric columns in the dataframe.
         Args:
             endpoint_details (dict): The model details dictionary
@@ -37,7 +37,7 @@ class EndpointMetricPlots(ComponentInterface):
         # Grab the Endpoint metrics from the model details
         metrics_df = endpoint_details.get("endpoint_metrics")
         if metrics_df is None:
-            return self.message_figure("No Data")
+            return self.display_text("No Data")
 
         # Let's convert all the timestamps to local timezone
         metrics_df["timestamps"] = metrics_df["timestamps"].dt.tz_convert(local_tz)
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     endpoint_metric_plots = EndpointMetricPlots()
 
     # Generate the figure
-    fig = endpoint_metric_plots.generate_figure(end_details)
+    fig = endpoint_metric_plots.update_contents(end_details)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

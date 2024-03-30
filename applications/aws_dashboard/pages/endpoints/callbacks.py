@@ -74,7 +74,7 @@ def update_endpoint_metrics(app: Dash, endpoint_web_view: EndpointWebView):
         endpoint_details = endpoint_web_view.endpoint_details(endpoint_uuid)
 
         # Endpoint Metrics
-        endpoint_metrics_figure = endpoint_metric_plots.EndpointMetricPlots().generate_figure(endpoint_details)
+        endpoint_metrics_figure = endpoint_metric_plots.EndpointMetricPlots().update_contents(endpoint_details)
 
         # Return the details/markdown for these data details
         return endpoint_metrics_figure
@@ -101,4 +101,4 @@ def update_plugin(app: Dash, plugin, endpoint_web_view: EndpointWebView):
         endpoint = Endpoint(endpoint_uuid, legacy=True)
 
         # Instantiate the Endpoint and send it to the plugin
-        return plugin.generate_figure(endpoint)
+        return plugin.update_contents(endpoint)

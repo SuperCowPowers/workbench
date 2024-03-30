@@ -100,7 +100,6 @@ class SageWorksShell:
         self.commands["log_info"] = self.log_info
         self.commands["log_important"] = self.log_important
         self.commands["log_warning"] = self.log_warning
-        self.commands["meta_refresh"] = self.meta_refresh
         self.commands["config"] = self.show_config
         self.commands["status"] = self.status_description
 
@@ -242,7 +241,6 @@ class SageWorksShell:
         - feature_sets: List all the FeatureSets in AWS
         - models: List all the Models in AWS
         - endpoints: List all the Endpoints in AWS
-        - meta_refresh: Force a refresh of the AWS Metadata
         - config: Show the current SageWorks Config
         - status: Show the current SageWorks Status
         - log_(debug/info/important/warning): Set the SageWorks log level
@@ -309,14 +307,6 @@ class SageWorksShell:
     @staticmethod
     def log_warning():
         logging.getLogger("sageworks").setLevel(logging.WARNING)
-
-    def meta_refresh(self):
-        """Force a refresh of the AWS Metadata"""
-        spinner = self.spinner_start("Refreshing AWS Metadata:")
-        try:
-            self.artifacts_text_view.refresh(force_refresh=True)
-        finally:
-            spinner.stop()
 
     def status_lights(self) -> list[(Token, str)]:
         """Check the status of AWS, Redis, and API Key and return Token colors

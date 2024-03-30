@@ -5,7 +5,7 @@ import pandas as pd
 from pandas.errors import ParserError
 
 # Local imports
-from sageworks.utils.iso_8601 import datetime_to_iso8601
+from sageworks.utils.datetime_utils import datetime_to_iso8601
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.artifact import Artifact

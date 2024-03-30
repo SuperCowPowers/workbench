@@ -18,7 +18,6 @@ class ModelWebView(ArtifactsWebView):
 
     def refresh(self):
         """Refresh the data from the AWS Service Broker"""
-        super().refresh()
         self.models_df = self.models_summary()
 
     def view_data(self) -> pd.DataFrame:
