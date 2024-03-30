@@ -137,10 +137,10 @@ class ArtifactsWebView(ArtifactsTextView):
 
     def endpoints_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
         """Get summary data about the SageWorks Endpoints
-        
+
         Args:
             add_hyperlinks (bool): Whether to add hyperlinks to the Name column
-            
+
         Returns:
             pd.DataFrame: Summary data about the SageWorks Endpoints
         """
