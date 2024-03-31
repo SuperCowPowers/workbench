@@ -29,7 +29,7 @@ class MyModelPlugin(PluginInterface):
     def update_contents(self, model: Model) -> go.Figure:
         """Create a Figure for the plugin.
         Args:
-            model (Model): An instantiated Endpoint object
+            model (Model): An instantiated Model object
         Returns:
             go.Figure: A Plotly Figure object
         """
@@ -47,7 +47,7 @@ class MyModelPlugin(PluginInterface):
 
 
 if __name__ == "__main__":
-    # This class takes in model details and generates a EndpointTurbo
+    # This class takes in model details and generates a pie chart
     from sageworks.api.model import Model
 
     # Instantiate an Endpoint

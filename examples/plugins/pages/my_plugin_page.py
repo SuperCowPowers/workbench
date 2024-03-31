@@ -5,7 +5,9 @@ from dash import register_page, dcc
 import dash_bootstrap_components as dbc
 import logging
 import plotly.graph_objs as go
-from dash_bootstrap_templates import load_figure_template
+
+# SageWorks Imports
+from sageworks.utils.plugin_manager import PluginManager
 
 
 class MyPluginPage:
@@ -18,8 +20,9 @@ class MyPluginPage:
         self.graph_1 = None
         self.graph_2 = None
 
-        # Put the components into 'dark' mode (this doesn't seems to work for some reason)
-        load_figure_template("darkly")
+        # Get our view from the PluginManager
+        pm = PluginManager()
+        self.my_view = pm.get_view("MyViewPlugin")
 
     def page_setup(self, app: dash.Dash):
         """Required function to set up the page"""
