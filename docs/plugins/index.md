@@ -22,11 +22,11 @@ class MyPlugin(PluginInterface):
     plugin_input_type = PluginInputType.MODEL
     
     # Implement the two methods
-    def create_component(self, component_id: str) -> ComponentInterface.ComponentTypes:
+    def create_component(self, component_id: str) -> ComponentTypes:
         < Function logic which creates a Dash Component >
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def update_content(self, input: PluginInputType) -> ComponentInterface.ContentTypes:
+    def update_content(self, data_object: SageworksObject) -> ContentTypes:
         < Function logic which creates a figure (go.Figure) 
         return figure
 ```
