@@ -12,19 +12,19 @@
         <link rel="prev" href="../core_classes/transforms/transform/">
       
       
-        <link rel="next" href="../misc/faq/">
+        <link rel="next" href="plugin_api_changes/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.15">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.16">
     
     
       
-        <title>Plugins - SageWorks</title>
+        <title>OverView - SageWorks</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.7e359304.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.bcfcd587.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Plugins
+              OverView
             
           </span>
         </div>
@@ -944,6 +944,43 @@
   
   
   
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Plugins
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Plugins
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
     <li class="md-nav__item md-nav__item--active">
       
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
@@ -954,7 +991,7 @@
           
   
   <span class="md-ellipsis">
-    Plugins
+    OverView
   </span>
   
 
@@ -965,7 +1002,7 @@
         
   
   <span class="md-ellipsis">
-    Plugins
+    OverView
   </span>
   
 
@@ -1018,9 +1055,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#s3-bucket-plugins" class="md-nav__link">
+  <a href="#s3-bucket-plugins-work-in-progress" class="md-nav__link">
     <span class="md-ellipsis">
-      S3 Bucket Plugins
+      S3 Bucket Plugins (Work in Progress)
     </span>
   </a>
   
@@ -1038,6 +1075,35 @@
     </ul>
   
 </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="plugin_api_changes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Changes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
       
     </li>
   
@@ -1320,26 +1386,6 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../misc/plugin_api_changes/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    API Changes
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
     
     
     
@@ -1348,10 +1394,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1362,8 +1408,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             Admin
           </label>
@@ -1476,9 +1522,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#s3-bucket-plugins" class="md-nav__link">
+  <a href="#s3-bucket-plugins-work-in-progress" class="md-nav__link">
     <span class="md-ellipsis">
-      S3 Bucket Plugins
+      S3 Bucket Plugins (Work in Progress)
     </span>
   </a>
   
@@ -1508,7 +1554,7 @@
                   
 
 
-  <h1>Plugins</h1>
+  <h1>OverView</h1>
 
 <div class="admonition tip inline end">
 <p class="admonition-title">SageWorks Plugins</p>
@@ -1529,17 +1575,18 @@
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    plugin_input_type = PluginInputType.MODEL
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    # Implement the two methods
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    def create_component(self, component_id: str) -&gt; ComponentInterface.ComponentTypes:
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        &lt; Function logic which creates a Dash Component (Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]) &gt;
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    def create_component(self, component_id: str) -&gt; ComponentTypes:
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        &lt; Function logic which creates a Dash Component &gt;
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        return dcc.Graph(id=component_id, figure=self.waiting_figure())
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    def update_content(self, figure_input: PluginInputType) -&gt; ComponentInterface.FigureTypes:
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    def update_content(self, data_object: SageworksObject) -&gt; ContentTypes:
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>        &lt; Function logic which creates a figure (go.Figure) 
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>        return figure
 </span></code></pre></div>
 <h3 id="required-attributes">Required Attributes</h3>
 <p>The class variable plugin_page determines what type of plugin the MyPlugin class is. This variable is inspected during plugin loading at runtime in order to load the plugin to the correct artifact page in the Sageworks dashboard. The PluginPage class can be DATA_SOURCE, FEATURE_SET, MODEL, or ENDPOINT.</p>
-<h2 id="s3-bucket-plugins">S3 Bucket Plugins</h2>
+<h2 id="s3-bucket-plugins-work-in-progress">S3 Bucket Plugins (Work in Progress)</h2>
+<p>Note: This functionality is coming soon</p>
 <p>Offers the most flexibility and fast prototyping. Simple set your config/env for  blah to an S3 Path and SageWorks will load the plugins from S3 directly.</p>
 <p><strong>Helpful Tip</strong></p>
 <p>You can copy files from your local system up to S3 with this handy AWS CLI call</p>
