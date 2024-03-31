@@ -1,11 +1,10 @@
 """ModelPluginView is a tailored view of the Model Summary data + Details"""
 
-import json
 import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.view import View
-from sageworks.api import Model, Meta
+from sageworks.api import Meta
 
 
 class ModelPluginView(View):
@@ -41,32 +40,6 @@ class ModelPluginView(View):
         models = self.meta.models()
         models["uuid"] = models["Model Group"]
         return models
-
-    @staticmethod
-    def get_performance_metrics(latest_model) -> list[dict]:
-        """Get the metrics for a single model
-
-        Args:
-            latest_model (dict): The latest model from the SageWorks Meta Class
-
-        Returns:
-            list(dict): A list of metrics for the model
-        """
-        sageworks_meta = latest_model.get("sageworks_meta", {})
-        metrics = sageworks_meta.get("sageworks_inference_metrics")
-        return json.dumps(metrics) if metrics else []
-
-    @staticmethod
-    def model_details(model_uuid) -> dict:
-        """Get the details for the given model
-
-        Args:
-            model_uuid (str): The uuid of the model to get details for
-
-        Returns:
-            dict: A dictionary of the model details
-        """
-        return Model(model_uuid).details()
 
 
 if __name__ == "__main__":

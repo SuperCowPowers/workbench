@@ -2,7 +2,6 @@
 
 import dash
 from dash import register_page, no_update
-from dash_bootstrap_templates import load_figure_template
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import logging
@@ -33,9 +32,6 @@ class PluginPageExample:
         # Save the app for later
         self.app = app
 
-        # Put the components into 'dark' mode
-        load_figure_template("darkly")
-
         # Create a table to display the models
         self.models_table = table.Table().create_component(
             "my_model_table", header_color="rgb(60, 60, 60)", row_select="single", max_height=400
@@ -43,7 +39,7 @@ class PluginPageExample:
 
         # Load my custom plugin
         pm = PluginManager()
-        custom_plugin = pm.get_web_plugin("CustomTurbo")
+        custom_plugin = pm.get_web_plugin("CustomPlugin")
 
         # Create a dictionary of plugin components
         component_id = custom_plugin.component_id()
