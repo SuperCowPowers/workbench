@@ -13,7 +13,7 @@ class CustomPlugin(PluginInterface):
     """CustomPlugin Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.CUSTOM
+    plugin_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -33,7 +33,7 @@ class CustomPlugin(PluginInterface):
             go.Figure: A Plotly Figure object
         """
         model_name = f"Model: {model.uuid}"
-        return self.display_text(model_name)
+        return self.display_text(model_name, figure_height=200)
 
 
 if __name__ == "__main__":

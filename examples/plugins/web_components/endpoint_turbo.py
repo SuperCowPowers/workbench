@@ -33,9 +33,6 @@ class EndpointTurbo(PluginInterface):
             go.Figure: A Plotly Figure object
         """
 
-        # Just to make sure we have the right endpoint object
-        print(endpoint.summary())
-
         data = [  # Portfolio (inner donut)
             # Inner ring
             go.Pie(
