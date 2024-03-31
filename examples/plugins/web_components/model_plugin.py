@@ -39,10 +39,7 @@ class MyModelPlugin(PluginInterface):
         pie_values = [random.randint(10, 30) for _ in range(3)]
 
         # Create a pie chart with the endpoint name as the title
-        fig = go.Figure(
-            data=[go.Pie(labels=["A", "B", "C"], values=pie_values)],
-            layout=go.Layout(title=model_name)
-        )
+        fig = go.Figure(data=[go.Pie(labels=["A", "B", "C"], values=pie_values)], layout=go.Layout(title=model_name))
         return fig
 
 

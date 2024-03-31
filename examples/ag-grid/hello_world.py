@@ -7,9 +7,9 @@ df = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/wind_
 app = Dash(__name__)
 
 columnDefs = [
-    { 'field': 'direction' },
-    { 'field': 'strength' },
-    { 'field': 'frequency'},
+    {"field": "direction"},
+    {"field": "strength"},
+    {"field": "frequency"},
 ]
 
 grid = dag.AgGrid(
