@@ -1,7 +1,8 @@
-"""A Custom plugin component"""
+"""An Example Model plugin component"""
 
 from dash import dcc
 import plotly.graph_objects as go
+import random
 
 
 # SageWorks Imports
@@ -9,15 +10,15 @@ from sageworks.web_components.plugin_interface import PluginInterface, PluginPag
 from sageworks.api.model import Model
 
 
-class CustomPlugin(PluginInterface):
-    """CustomPlugin Component"""
+class MyModelPlugin(PluginInterface):
+    """MyModelPlugin Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
     plugin_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
-        """Create a CustomPlugin Component without any data.
+        """Create a EndpointTurbo Component without any data.
         Args:
             component_id (str): The ID of the web component
         Returns:
@@ -26,27 +27,37 @@ class CustomPlugin(PluginInterface):
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
     def update_contents(self, model: Model) -> go.Figure:
-        """Create a CustomPlugin Figure
+        """Create a Figure for the plugin.
         Args:
             model (Model): An instantiated Endpoint object
         Returns:
             go.Figure: A Plotly Figure object
         """
         model_name = f"Model: {model.uuid}"
-        return self.display_text(model_name, figure_height=200)
+
+        # Generate random values for the pie chart
+        pie_values = [random.randint(10, 30) for _ in range(3)]
+
+        # Create a pie chart with the endpoint name as the title
+        fig = go.Figure(
+            data=[go.Pie(labels=["A", "B", "C"], values=pie_values)],
+            layout=go.Layout(title=model_name)
+        )
+        return fig
 
 
 if __name__ == "__main__":
-    # This class takes in a model object
+    # This class takes in model details and generates a EndpointTurbo
+    from sageworks.api.model import Model
 
     # Instantiate an Endpoint
-    my_model = Model("abalone-regression")
+    model = Model("abalone-regression")
 
     # Instantiate the EndpointTurbo class
-    plugin = CustomPlugin()
+    my_plugin = MyModelPlugin()
 
     # Generate the figure
-    fig = plugin.update_contents(my_model)
+    fig = my_plugin.update_contents(model)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")
