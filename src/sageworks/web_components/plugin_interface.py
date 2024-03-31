@@ -48,7 +48,7 @@ class PluginInterface(ComponentInterface):
         pass
 
     @abstractmethod
-    def update_contents(self, data_object: ComponentInterface.SageworksObject) -> ComponentInterface.FigureTypes:
+    def update_contents(self, data_object: ComponentInterface.SageworksObject) -> ComponentInterface.ContentTypes:
         """Generate a figure from the data in the given dataframe.
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.

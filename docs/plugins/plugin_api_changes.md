@@ -9,3 +9,4 @@ There were quite a fiew API changes for Plugins between `0.4.43` and `0.5.0` ver
 * The `message_figure` method is now `display_text`
 * `PluginType` was changed to `PluginPage` (use CUSTOM to NOT autoload)
 * `PluginInputType.MODEL_DETAILS`  changed to `PluginInputType.MODEL`  (since your now getting a model object)
+* `FigureTypes` is now `ContentTypes`

@@ -201,7 +201,7 @@ if __name__ == "__main__":
     import dash
     import dash_bootstrap_components as dbc
     from sageworks.web_components.table import Table
-    from sageworks.views.artifacts_web_view import ArtifactsWebView
+    from sageworks.api.meta import Meta
 
     # Create a model table
     models_table = Table().create_component(
@@ -209,10 +209,10 @@ if __name__ == "__main__":
     )
 
     # Populate the table with data
-    view = ArtifactsWebView()
-    models = view.models_summary()
+    models = Meta().models()
+    models["uuid"] = models["Model Group"]
     models["id"] = range(len(models))
-    column_setup_list = Table().column_setup(models, markdown_columns=["Model Group"])
+    column_setup_list = Table().column_setup(models)
     models_table.columns = column_setup_list
     models_table.data = models.to_dict("records")
 

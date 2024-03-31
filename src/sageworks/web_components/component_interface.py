@@ -23,7 +23,7 @@ class ComponentInterface(ABC):
 
     SageworksObject = Union[DataSource, FeatureSet, Model, Endpoint]
     ComponentTypes = Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]
-    FigureTypes = Union[go.Figure, str]  # str is used for dcc.Markdown
+    ContentTypes = Union[go.Figure, str]  # str is used for dcc.Markdown
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -45,7 +45,7 @@ class ComponentInterface(ABC):
         """
         pass
 
-    def update_contents(self, data_object: SageworksObject) -> FigureTypes:
+    def update_contents(self, data_object: SageworksObject) -> ContentTypes:
         """Update the contents of the component/container
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.

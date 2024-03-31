@@ -95,7 +95,8 @@ class PluginPageExample:
         """Set up the callbacks for the page"""
 
         @self.app.callback(
-            [Output("my_model_table", "columns"), Output("my_model_table", "data")],
+            [Output("my_model_table", "columns"),
+             Output("my_model_table", "data")],
             Input("aws-broker-data", "data"),  # View this as an update trigger
         )
         def models_update(serialized_aws_broker_data):

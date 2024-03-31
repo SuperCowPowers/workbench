@@ -23,10 +23,10 @@ class MyPlugin(PluginInterface):
     
     # Implement the two methods
     def create_component(self, component_id: str) -> ComponentInterface.ComponentTypes:
-        < Function logic which creates a Dash Component (Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]) >
+        < Function logic which creates a Dash Component >
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def update_content(self, figure_input: PluginInputType) -> ComponentInterface.FigureTypes:
+    def update_content(self, input: PluginInputType) -> ComponentInterface.ContentTypes:
         < Function logic which creates a figure (go.Figure) 
         return figure
 ```
@@ -38,7 +38,9 @@ class MyPlugin(PluginInterface):
 
 The class variable plugin_page determines what type of plugin the MyPlugin class is. This variable is inspected during plugin loading at runtime in order to load the plugin to the correct artifact page in the Sageworks dashboard. The PluginPage class can be DATA_SOURCE, FEATURE_SET, MODEL, or ENDPOINT.
 
-## S3 Bucket Plugins
+## S3 Bucket Plugins (Work in Progress)
+Note: This functionality is coming soon
+
 Offers the most flexibility and fast prototyping. Simple set your config/env for  blah to an S3 Path and SageWorks will load the plugins from S3 directly.
 
 **Helpful Tip**

@@ -30,7 +30,9 @@ nav:
       - Model to Endpoint: core_classes/transforms/model_to_endpoint.md
       - Pandas Transforms: core_classes/transforms/pandas_transforms.md
       - Transform: core_classes/transforms/transform.md
-  - Plugins: plugins/index.md
+  - Plugins: 
+      - OverView: plugins/index.md
+      - API Changes: plugins/plugin_api_changes.md
   - FAQ:  misc/faq.md
   - Research:
       - EDA: research/eda.md
@@ -42,7 +44,6 @@ nav:
     - Dashboard Setup: aws_setup/dashboard_stack.md
     - AWS Tips and Tricks: aws_setup/aws_tips_and_tricks.md
     - AWS Access Management: aws_setup/aws_access_management.md
-  - API Changes: misc/plugin_api_changes.md
   - Admin: 
     - PyPI Release:  admin/pypi_release.md
     - Docker Push:  admin/docker_push.md

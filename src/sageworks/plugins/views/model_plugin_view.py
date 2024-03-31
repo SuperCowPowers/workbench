@@ -5,8 +5,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.views.view import View
-from sageworks.api.meta import Meta
-from sageworks.api.model import Model
+from sageworks.api import Model, Meta
 
 
 class ModelPluginView(View):
@@ -39,34 +38,9 @@ class ModelPluginView(View):
 
     def models_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Models"""
-
-        # Note: The data we get from Meta is structured as follows:
-        # {
-        #    model_group_name: [model_1, model_2, ...],
-        #    model_group_name_2: [model_1, model_2, ...], ...
-        # }
-        model_summary = []
-        for model_group_name, model_list in self.meta.models_deep().items():
-            # Get Summary information for the 'latest' model in the model_list
-            latest_model = model_list[0]
-            sageworks_meta = latest_model.get("sageworks_meta", {})
-            summary = {
-                "uuid": latest_model["ModelPackageGroupName"],  # Required for selection
-                "Name": latest_model["ModelPackageGroupName"],
-                "Owner": sageworks_meta.get("sageworks_owner", "-"),
-                "Model Type": sageworks_meta.get("sageworks_model_type"),
-                "Created": latest_model.get("CreationTime"),
-                "Ver": latest_model["ModelPackageVersion"],
-                "Tags": sageworks_meta.get("sageworks_tags", "-"),
-                "Input": sageworks_meta.get("sageworks_input", "-"),
-                "Status": latest_model["ModelPackageStatus"],
-                "Description": latest_model.get("ModelPackageDescription", "-"),
-                "Metrics": self.get_performance_metrics(latest_model),
-            }
-            model_summary.append(summary)
-
-        # Now return a dataframe of the model_summary
-        return pd.DataFrame(model_summary)
+        models = self.meta.models()
+        models["uuid"] = models["Model Group"]
+        return models
 
     @staticmethod
     def get_performance_metrics(latest_model) -> list[dict]:
