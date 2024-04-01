@@ -130,7 +130,6 @@ class PluginManager:
                     else:
                         self.log.warning(f"{fullpath} is not a CSS file")
 
-
     @staticmethod
     def _load_module(dir_path: str, filename: str):
         """Internal: Load a module from a file"""
