@@ -1,5 +1,6 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
-
+import os
+import shutil
 from dash import Dash, page_container, html, dcc
 import dash_bootstrap_components as dbc
 from sageworks.utils.plugin_manager import PluginManager
@@ -14,11 +15,17 @@ pm = PluginManager()
 # Custom CSS
 custom_css_files = pm.get_css_files()
 
+# Load our custom CSS files into the Assets folder
+for css_file in custom_css_files:
+    shutil.copy(css_file, 'assets/')
+
+# Get basename of the CSS files
+css_files = [os.path.basename(css_file) for css_file in custom_css_files]
+
 # Create our Dash Application
 app = Dash(
     __name__,
     title="SageWorks Dashboard",
-    external_stylesheets=[dbc.themes.DARKLY] + custom_css_files,
     use_pages=True,
 )
 server = app.server

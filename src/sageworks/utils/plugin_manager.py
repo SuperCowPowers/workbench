@@ -123,9 +123,12 @@ class PluginManager:
                         self.log.important(f"Storing {plugin_type} plugin: {filename}")
                         # Basename of the filename without the extension
                         basename = os.path.splitext(filename)[0]
-                        self.plugins[plugin_type][basename] = filename
+
+                        # Full path to the CSS file
+                        fullpath = os.path.join(type_dir, filename)
+                        self.plugins[plugin_type][basename] = fullpath
                     else:
-                        self.log.warning(f"{filename} is not a CSS file")
+                        self.log.warning(f"{fullpath} is not a CSS file")
 
 
     @staticmethod
