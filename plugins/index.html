@@ -1562,7 +1562,11 @@
 </div>
 <p>The SageWorks Plugin system allows clients to customize how their AWS Machine Learning Pipeline is displayed, analyzed, and visualized. Our easy to use Python API enables developers to make new <a href="https://plotly.com/">Dash/Plotly</a> components, data views, and entirely new web pages focused on business use cases.</p>
 <h3 id="concept-docs">Concept Docs</h3>
-<p>Many classes in SageWorks need additional high-level material that covers class design and illustrates class usage. Here's the Concept Docs for Plugins <a href="https://docs.google.com/presentation/d/1sByTnZa24lY6d4INRMm7OHmQndIZmLbTxOyTeAJol20/edit?usp=sharing">SageWorks Plugins</a></p>
+<p>Many classes in SageWorks need additional high-level material that covers class design and illustrates class usage. Here's the Concept Docs for Plugins:</p>
+<ul>
+<li><a href="https://docs.google.com/presentation/d/1S_-XapmyTsXIkO6od9AVkTbEU2nqS-mEZwFrtUucUME/edit?usp=sharing">Getting Started</a> </li>
+<li><a href="https://docs.google.com/presentation/d/1sByTnZa24lY6d4INRMm7OHmQndIZmLbTxOyTeAJol20/edit?usp=sharing">Plugins Advanced</a></li>
+</ul>
 <h2 id="make-a-plugin">Make a plugin</h2>
 <p>Each plugin class inherits from the SageWorks PluginInterface class and needs to set two attributes and implement two methods. These requirements are set so that each Plugin will conform to the Sageworks infrastructure; if the required attributes and methods aren’t included in the class definition, errors will be raised during tests and at runtime.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>from sageworks.web_components.plugin_interface import PluginInterface, PluginPage
