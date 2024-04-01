@@ -17,6 +17,7 @@ class ModelDetails(ComponentInterface):
         self.prefix_id = ""
         self.model = None
         super().__init__()
+        self.metrics_just_updated = False
 
     def create_component(self, component_id: str) -> html.Div:
         """Create a Markdown Component without any data.
@@ -70,6 +71,7 @@ class ModelDetails(ComponentInterface):
 
             # Update the metrics for the default inference run
             metrics = self.inference_metrics(default_run)
+            self.metrics_just_updated = True
 
             # Return the updated components
             return header, summary, inference_runs, default_run, metrics
@@ -81,7 +83,8 @@ class ModelDetails(ComponentInterface):
         )
         def update_inference_run(inference_run):
             # Check for no inference run
-            if not inference_run:
+            if not inference_run or self.metrics_just_updated:
+                self.metrics_just_updated = False
                 return no_update
 
             # Update the model metrics
