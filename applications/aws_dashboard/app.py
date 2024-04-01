@@ -17,8 +17,10 @@ pm = PluginManager()
 custom_css_files = pm.get_css_files()
 
 # Load our custom CSS files into the Assets folder
+"""
 for css_file in custom_css_files:
     shutil.copy(css_file, "assets/")
+"""
 
 # Get basename of the CSS files
 css_files = [os.path.basename(css_file) for css_file in custom_css_files]
