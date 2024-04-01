@@ -15,6 +15,7 @@ from constructs import Construct
 # When you want a different version change this line
 dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_5_0_amd64"
 
+
 class SageworksDashboardStackProps(StackProps):
     def __init__(
         self,
