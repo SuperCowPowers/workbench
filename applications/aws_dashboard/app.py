@@ -1,9 +1,7 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
 import os
-import shutil
 from dash import Dash, page_container, html, dcc
-import dash_bootstrap_components as dbc
 from sageworks.utils.plugin_manager import PluginManager
 
 
