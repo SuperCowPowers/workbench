@@ -45,9 +45,11 @@ class ModelDetails(ComponentInterface):
                 Output(f"{self.prefix_id}-summary", "children"),
                 Output(f"{self.prefix_id}-dropdown", "options"),
                 Output(f"{self.prefix_id}-dropdown", "value"),
+                Output(f"{self.prefix_id}-metrics", "children", allow_duplicate=True),
             ],
             Input(model_table, "derived_viewport_selected_row_ids"),
             State(model_table, "data"),
+            prevent_initial_call=True,
         )
         def update_model(selected_rows, table_data):
             # Check for no selected rows
@@ -66,11 +68,16 @@ class ModelDetails(ComponentInterface):
             # Populate the inference runs dropdown
             inference_runs, default_run = self.get_inference_runs()
 
-            return header, summary, inference_runs, default_run
+            # Update the metrics for the default inference run
+            metrics = self.inference_metrics(default_run)
+
+            # Return the updated components
+            return header, summary, inference_runs, default_run, metrics
 
         @callback(
-            Output(f"{self.prefix_id}-metrics", "children"),
+            Output(f"{self.prefix_id}-metrics", "children", allow_duplicate=True),
             Input(f"{self.prefix_id}-dropdown", "value"),
+            prevent_initial_call=True,
         )
         def update_inference_run(inference_run):
             # Check for no inference run
