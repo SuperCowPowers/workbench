@@ -12,6 +12,8 @@ from aws_cdk.aws_certificatemanager import Certificate
 from aws_cdk.aws_ecs_patterns import ApplicationLoadBalancedFargateService
 from constructs import Construct
 
+# When you want a different version change this line
+dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_5_0_amd64"
 
 class SageworksDashboardStackProps(StackProps):
     def __init__(
@@ -104,7 +106,6 @@ class SageworksDashboardStack(Stack):
             memory_limit_mib=2048,
             cpu=512,
         )
-        dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_4_31_amd64"
         container = task_definition.add_container(
             "SageworksContainer",
             image=ecs.ContainerImage.from_registry(dashboard_image),
