@@ -17,7 +17,6 @@ class ModelDetails(ComponentInterface):
         self.prefix_id = ""
         self.model = None
         super().__init__()
-        self.metrics_just_updated = False
 
     def create_component(self, component_id: str) -> html.Div:
         """Create a Markdown Component without any data.
@@ -35,6 +34,7 @@ class ModelDetails(ComponentInterface):
                 html.H3(children="Inference Metrics"),
                 dcc.Dropdown(id=f"{self.prefix_id}-dropdown", className="dropdown"),
                 dcc.Markdown(id=f"{self.prefix_id}-metrics"),
+                dcc.Store(id=f"{self.prefix_id}-model-uuid"),  # Store the model uuid
             ],
         )
         return container
@@ -47,6 +47,7 @@ class ModelDetails(ComponentInterface):
                 Output(f"{self.prefix_id}-dropdown", "options"),
                 Output(f"{self.prefix_id}-dropdown", "value"),
                 Output(f"{self.prefix_id}-metrics", "children", allow_duplicate=True),
+                Output(f"{self.prefix_id}-model-uuid", "data"),
             ],
             Input(model_table, "derived_viewport_selected_row_ids"),
             State(model_table, "data"),
@@ -71,20 +72,19 @@ class ModelDetails(ComponentInterface):
 
             # Update the metrics for the default inference run
             metrics = self.inference_metrics(default_run)
-            self.metrics_just_updated = True
 
             # Return the updated components
-            return header, summary, inference_runs, default_run, metrics
+            return header, summary, inference_runs, default_run, metrics, model_uuid
 
         @callback(
             Output(f"{self.prefix_id}-metrics", "children", allow_duplicate=True),
             Input(f"{self.prefix_id}-dropdown", "value"),
+            State(f"{self.prefix_id}-model-uuid", "data"),
             prevent_initial_call=True,
         )
-        def update_inference_run(inference_run):
+        def update_inference_run(inference_run, model_uuid):
             # Check for no inference run
-            if not inference_run or self.metrics_just_updated:
-                self.metrics_just_updated = False
+            if not inference_run or (self.model.uuid != model_uuid):
                 return no_update
 
             # Update the model metrics
