@@ -8,11 +8,17 @@ from sageworks.utils.plugin_manager import PluginManager
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
 
+# Spin up our Plugin Manager
+pm = PluginManager()
+
+# Custom CSS
+custom_css_files = pm.get_css_files()
+
 # Create our Dash Application
 app = Dash(
     __name__,
     title="SageWorks Dashboard",
-    external_stylesheets=[dbc.themes.DARKLY],
+    external_stylesheets=[dbc.themes.DARKLY] + custom_css_files,
     use_pages=True,
 )
 server = app.server
@@ -26,7 +32,6 @@ app.layout = html.Div(
 )
 
 # Grab any plugin pages
-pm = PluginManager()
 plugin_pages = pm.get_pages()
 
 # Setup each if the plugin pages (call layout and callbacks internally)
