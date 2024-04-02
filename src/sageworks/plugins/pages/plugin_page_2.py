@@ -1,7 +1,7 @@
 """Plugin Page 1:  A 'Hello World' SageWorks Plugin Page"""
 
 import dash
-from dash import html, page_container, register_page, callback, Output, Input
+from dash import html, page_container, register_page
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports

@@ -25,9 +25,7 @@ class PluginPage1:
 
     def page_layout(self) -> dash.html.Div:
         """Set up the layout for the page"""
-        layout = dash.html.Div(
-            children=[dash.html.H1(self.page_name)]
-        )
+        layout = dash.html.Div(children=[dash.html.H1(self.page_name)])
         return layout
 
 

@@ -63,21 +63,23 @@ class PluginPage3:
             children=[
                 dash.html.H1(self.page_name),
                 dbc.Row(self.table_component),
-                dbc.Row([
-                    dbc.Col(self.details_component, width=5),
-                    dbc.Col(self.plot_component, width=7),
-                ]),
+                dbc.Row(
+                    [
+                        dbc.Col(self.details_component, width=5),
+                        dbc.Col(self.plot_component, width=7),
+                    ]
+                ),
             ]
         )
         return layout
 
     def register_callbacks(self):
         """Register the callbacks for the page"""
+
         @callback(
             Output("my_model_plot", "figure"),
             Input("my_model_details-dropdown", "value"),
-            [State("my_model_table", "data"),
-             State("my_model_table", "derived_viewport_selected_row_ids")],
+            [State("my_model_table", "data"), State("my_model_table", "derived_viewport_selected_row_ids")],
             prevent_initial_call=True,
         )
         def generate_model_plot_figure(inference_run, table_data, selected_rows):
