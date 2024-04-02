@@ -82,4 +82,4 @@ if __name__ == "__main__":
     app.layout = plugin_page.page_layout()
 
     # Run the app in debug mode
-    app.run_server(debug=True)
+    app.run(debug=True)

@@ -11,7 +11,7 @@ def start_dashboard(debug: bool):
     webbrowser.open(url)
 
     # Note: This 'main' is purely for running/testing locally
-    app.run_server(host="0.0.0.0", port=8000, debug=debug)
+    app.run(host="0.0.0.0", port=8000, debug=debug)
 
 
 if __name__ == "__main__":

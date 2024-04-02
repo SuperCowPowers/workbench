@@ -215,7 +215,7 @@ if __name__ == "__main__":
 
     # Create a model table
     models_table = Table().create_component(
-        "models_table", header_color="rgb(60, 100, 60)", row_select="single", max_height=270
+        "my_models_table", header_color="rgb(60, 100, 60)", row_select="single", max_height=270
     )
 
     # Populate the table with data
@@ -228,10 +228,10 @@ if __name__ == "__main__":
 
     # Instantiate the ModelDetails class
     md = ModelDetails()
-    details_component = md.create_component("model_details")
+    details_component = md.create_component("my_model_details")
 
     # Register the callbacks
-    md.register_callbacks("models_table")
+    md.register_callbacks("my_models_table")
 
     # Initialize Dash app
     app = dash.Dash(
@@ -241,4 +241,4 @@ if __name__ == "__main__":
     )
 
     app.layout = html.Div([models_table, details_component])
-    app.run_server(debug=True)
+    app.run(debug=True)
