@@ -40,7 +40,7 @@ class MyPlugin(PluginInterface):
 
 ### Required Attributes
 
-The class variable plugin_page determines what type of plugin the MyPlugin class is. This variable is inspected during plugin loading at runtime in order to load the plugin to the correct artifact page in the Sageworks dashboard. The PluginPage class can be DATA_SOURCE, FEATURE_SET, MODEL, or ENDPOINT.
+The class variable plugin\_page determines what type of plugin the MyPlugin class is. This variable is inspected during plugin loading at runtime in order to load the plugin to the correct artifact page in the Sageworks dashboard. The PluginPage class can be DATA_SOURCE, FEATURE\_SET, MODEL, or ENDPOINT.
 
 ## S3 Bucket Plugins (Work in Progress)
 Note: This functionality is coming soon

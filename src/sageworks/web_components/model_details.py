@@ -237,7 +237,6 @@ if __name__ == "__main__":
     app = dash.Dash(
         __name__,
         external_stylesheets=[dbc.themes.DARKLY],
-        assets_folder="/Users/briford/work/sageworks/applications/aws_dashboard/assets",
     )
 
     app.layout = html.Div([models_table, details_component])
