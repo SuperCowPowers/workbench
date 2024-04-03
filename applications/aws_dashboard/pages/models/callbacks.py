@@ -96,4 +96,4 @@ def update_plugin(app: Dash, plugin, model_web_view: ModelWebView):
 
         # Instantiate the Model and send it to the plugin
         model = Model(model_uuid, legacy=True)
-        return plugin.update_contents(model, inference_run)
+        return plugin.update_contents(model, inference_run=inference_run)
