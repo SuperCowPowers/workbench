@@ -81,7 +81,7 @@ def update_endpoint_metrics(app: Dash, endpoint_web_view: EndpointWebView):
 
 
 # Updates the plugin component when a endpoint row is selected
-def update_plugin(app: Dash, plugin, endpoint_web_view: EndpointWebView):
+def update_plugin(app: Dash, plugin):
     @app.callback(
         Output(plugin.component_id(), "figure"),
         Input("endpoints_table", "derived_viewport_selected_row_ids"),

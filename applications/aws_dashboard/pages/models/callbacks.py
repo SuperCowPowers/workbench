@@ -78,7 +78,7 @@ def update_model_plot_component(app: Dash):
 
 
 # Updates the plugin component when a model row is selected
-def update_plugin(app: Dash, plugin, model_web_view: ModelWebView):
+def update_plugin(app: Dash, plugin):
     @app.callback(
         Output(plugin.component_id(), "figure"),
         [Input("model_details-dropdown", "value"), Input("models_table", "derived_viewport_selected_row_ids")],
