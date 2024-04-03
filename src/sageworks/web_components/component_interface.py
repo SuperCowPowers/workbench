@@ -23,7 +23,7 @@ class ComponentInterface(ABC):
 
     SageworksObject = Union[DataSource, FeatureSet, Model, Endpoint]
     ComponentTypes = Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]
-    ContentTypes = Union[go.Figure, str]  # str is used for dcc.Markdown
+    ContentTypes = Union[go.Figure, str, None]  # str = Markdown, None = No Update
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)

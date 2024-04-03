@@ -25,10 +25,11 @@ class MyEndpointPlugin(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, endpoint: Endpoint) -> go.Figure:
+    def update_contents(self, endpoint: Endpoint, **kwargs) -> go.Figure:
         """Create a CustomPlugin Figure
         Args:
             endpoint (Endpoint): An instantiated Endpoint object
+            **kwargs: Additional keyword arguments (unused)
         Returns:
             go.Figure: A Plotly Figure object
         """

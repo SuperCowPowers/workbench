@@ -28,9 +28,6 @@ register_page(
 # Put the components into 'dark' mode
 load_figure_template("darkly")
 
-# Grab a view that gives us a summary of the Models in SageWorks
-model_broker = ModelWebView()
-
 # Create a table to display the models
 models_table = table.Table().create_component(
     "models_table", header_color="rgb(60, 100, 60)", row_select="single", max_height=270
@@ -73,4 +70,4 @@ callbacks.update_model_plot_component(app)
 
 # For each plugin, set up a callback to update the plugin figure
 for plugin in plugins:
-    callbacks.update_plugin(app, plugin, model_broker)
+    callbacks.update_plugin(app, plugin)

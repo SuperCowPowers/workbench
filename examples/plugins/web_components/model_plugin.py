@@ -26,10 +26,11 @@ class MyModelPlugin(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, model: Model) -> go.Figure:
+    def update_contents(self, model: Model, **kwargs) -> go.Figure:
         """Create a Figure for the plugin.
         Args:
             model (Model): An instantiated Model object
+            **kwargs: Additional keyword arguments (unused)
         Returns:
             go.Figure: A Plotly Figure object
         """

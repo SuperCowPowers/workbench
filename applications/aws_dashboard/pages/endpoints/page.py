@@ -69,4 +69,4 @@ callbacks.update_endpoint_metrics(app, endpoint_broker)
 
 # For each plugin, set up a callback to update the plugin figure
 for plugin in plugins:
-    callbacks.update_plugin(app, plugin, endpoint_broker)
+    callbacks.update_plugin(app, plugin)

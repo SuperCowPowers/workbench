@@ -54,6 +54,7 @@ class PluginInterface(ComponentInterface):
         """Generate a figure from the data in the given dataframe.
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.
+            **kwargs: Additional keyword arguments (plugins can define their own arguments)
         Returns:
             Union[go.Figure, str]: A Plotly Figure or a Markdown string
         """
@@ -133,13 +134,23 @@ class PluginInterface(ComponentInterface):
                 # Direct comparison for non-Union types
                 if expected != actual:
                     return f"Expected argument type {expected} does not match actual argument type {actual}"
+
+        # Check for **kwargs in the update_contents method
+        if base_class_method.__name__ == "update_contents":
+            if not any(param.kind == param.VAR_KEYWORD for param in signature(subclass_method).parameters.values()):
+                return "Expected **kwargs in update_contents method arguments, but it was not found."
+
         return None
 
     @classmethod
     def _check_return_type(cls, base_class_method, subclass_method):
         return_annotation = base_class_method.__annotations__["return"]
         expected_return_types = get_args(return_annotation)
-        return_type = signature(subclass_method).return_annotation
+        return_type = subclass_method.__annotations__.get("return", None)
+
+        # Treat None as NoneType for return type comparison
+        if return_type is None:
+            return_type = type(None)
 
         if return_type not in expected_return_types:
             return f"Incorrect return type (expected one of {expected_return_types}, got {return_type})"
