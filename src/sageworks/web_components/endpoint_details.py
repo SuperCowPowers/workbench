@@ -130,4 +130,4 @@ if __name__ == "__main__":
     )
 
     app.layout = html.Div([endpoints_table, details_component])
-    app.run_server(debug=True)
+    app.run(debug=True)

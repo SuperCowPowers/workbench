@@ -37,7 +37,7 @@ class PluginManager:
         self.config_plugin_dir = None
         self.loading_dir = False
         self.plugin_modified_time = None
-        self.plugins: Dict[str, dict] = {"web_components": {}, "transforms": {}, "views": {}, "pages": {}}
+        self.plugins: Dict[str, dict] = {"web_components": {}, "transforms": {}, "views": {}, "pages": {}, "css": {}}
 
         # Get the plugin directory from the config
         cm = ConfigManager()
@@ -114,6 +114,21 @@ class PluginManager:
                         # Unexpected type
                         else:
                             self.log.warning(f"Class {attr_name} in {filename} invalid {plugin_type} plugin")
+
+            # Check for CSS files
+            else:
+                # For CSS, check if the file ends with .css
+                if plugin_type == "css":
+                    if filename.endswith(".css"):
+                        self.log.important(f"Storing {plugin_type} plugin: {filename}")
+                        # Basename of the filename without the extension
+                        basename = os.path.splitext(filename)[0]
+
+                        # Full path to the CSS file
+                        fullpath = os.path.join(type_dir, filename)
+                        self.plugins[plugin_type][basename] = fullpath
+                    else:
+                        self.log.warning(f"{fullpath} is not a CSS file")
 
     @staticmethod
     def _load_module(dir_path: str, filename: str):
@@ -192,6 +207,16 @@ class PluginManager:
         pages = self.plugins["pages"]
         return {name: page() for name, page in pages.items()}
 
+    def get_css_files(self) -> List[str]:
+        """
+        Retrieve a list of CSS files
+
+        Returns:
+            List[str]: A list of CSS files
+        """
+        css_files = list(self.plugins["css"].values())
+        return css_files
+
     def _cleanup_temp_dir(self):
         """Cleans up the temporary directory created for S3 files."""
         if self.loading_dir and os.path.isdir(self.loading_dir):
@@ -269,13 +294,14 @@ if __name__ == "__main__":
 
     # Test Modified Time by modifying a plugin file
     cm = ConfigManager()
-    plugin_path = cm.get_config("SAGEWORKS_PLUGINS") + "/web_components/custom_turbo.py"
+    plugin_path = cm.get_config("SAGEWORKS_PLUGINS") + "/web_components/model_plugin.py"
     print(manager.plugins_modified())
     # Modify the plugin file modified time to now
     os.utime(plugin_path, None)
     print(manager.plugins_modified())
 
     # Test S3 Plugin Loading
+    """
     print("\n\n*** Testing S3 Plugin Loading ***\n\n")
     s3_path = "s3://sandbox-sageworks-artifacts/sageworks_plugins"
     cm = ConfigManager()
@@ -284,6 +310,7 @@ if __name__ == "__main__":
     # Since we're using a singleton, we need to create a new instance
     PluginManager._instance = None
     manager = PluginManager()
+    """
 
     # Get web components for the model view
     model_plugin = manager.get_list_of_web_plugins(PluginPage.MODEL)
@@ -296,6 +323,9 @@ if __name__ == "__main__":
 
     # Get plugin pages
     plugin_pages = manager.get_pages()
+
+    # Get css files
+    plugin_pages = manager.get_css_files()
 
     # Get all the plugins
     pprint(manager.get_all_plugins())

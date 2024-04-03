@@ -91,5 +91,5 @@ callbacks.update_compound_diagram(app)
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
     # Note: This 'main' is purely for running/testing locally
-    app.run_server(host="0.0.0.0", port=8082, debug=True)
-    # app.run_server(host="0.0.0.0", port=8082)
+    app.run(host="0.0.0.0", port=8082, debug=True)
+    # app.run(host="0.0.0.0", port=8082)
