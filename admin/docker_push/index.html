@@ -1454,6 +1454,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#update-the-stable-tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      Update the 'stable' tag
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#test-the-ecr-image" class="md-nav__link">
     <span class="md-ellipsis">
       Test the ECR Image
@@ -1559,6 +1568,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#update-the-stable-tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      Update the 'stable' tag
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#test-the-ecr-image" class="md-nav__link">
     <span class="md-ellipsis">
       Test the ECR Image
@@ -1616,6 +1634,13 @@
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
 </span></code></pre></div>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
+</span></code></pre></div></p>
+<h3 id="update-the-stable-tag">Update the 'stable' tag</h3>
+<p>This is obviously only when you want to mark a version as stable. Meaning that it seems to 'be good and stable (ish)' :)</p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker tag public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_5_4_amd64 \
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>public.ecr.aws/m6i5k1r2/sageworks_dashboard:stable
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:stable
 </span></code></pre></div></p>
 <h3 id="test-the-ecr-image">Test the ECR Image</h3>
 <p>You have a <code>docker_ecr_dashboard</code> alias in your <code>~/.zshrc</code> :)</p>
