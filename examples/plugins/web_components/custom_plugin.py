@@ -1,7 +1,6 @@
 """A Custom plugin component"""
 
 from dash import dcc
-import plotly.graph_objects as go
 
 
 # SageWorks Imports
@@ -16,6 +15,9 @@ class CustomPlugin(PluginInterface):
     plugin_page = PluginPage.CUSTOM
     plugin_input_type = PluginInputType.MODEL
 
+    def __init__(self):
+        self.container = None
+
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a CustomPlugin Component without any data.
         Args:
@@ -23,34 +25,36 @@ class CustomPlugin(PluginInterface):
         Returns:
             dcc.Graph: The EndpointTurbo Component
         """
-        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+        self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+        return self.container
 
-    def update_contents(self, model: Model, **kwargs) -> go.Figure:
+    def update_contents(self, model: Model, **kwargs):
         """Create a CustomPlugin Figure
         Args:
             model (Model): An instantiated Endpoint object
             **kwargs: Additional keyword arguments (unused)
-        Returns:
-            go.Figure: A Plotly Figure object
         """
         model_name = f"Model: {model.uuid}"
-        return self.display_text(model_name)
+        self.container.figure = self.display_text(model_name)
 
 
 if __name__ == "__main__":
-    # This class takes in a model object
+    # Test the custom plugin component
+    from dash import html, Dash
 
-    # Instantiate an Endpoint
-    my_model = Model("abalone-regression")
+    # Test if the Plugin Class is a valid PluginInterface
+    assert issubclass(CustomPlugin, PluginInterface)
 
-    # Instantiate the EndpointTurbo class
-    plugin = CustomPlugin()
+    # Instantiate the CustomPlugin class
+    my_plugin = CustomPlugin()
+    my_component = my_plugin.create_component("custom_plugin")
 
-    # Generate the figure
-    fig = plugin.update_contents(my_model)
+    # Give the model object to the plugin
+    model = Model("abalone-regression")
+    my_plugin.update_contents(model)
 
-    # Apply dark theme
-    fig.update_layout(template="plotly_dark")
+    # Initialize Dash app
+    app = Dash(__name__)
 
-    # Show the figure
-    fig.show()
+    app.layout = html.Div([my_component])
+    app.run(debug=True)

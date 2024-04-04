@@ -16,6 +16,9 @@ class CorrectPlugin(PluginInterface):
     plugin_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
+    def __init__(self):
+        self.container = None
+
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.
         Args:
@@ -23,16 +26,14 @@ class CorrectPlugin(PluginInterface):
         Returns:
             dcc.Graph: The Confusion Matrix Component
         """
-        return dcc.Graph(id=component_id, figure=self.waiting_figure())
+        self.container = dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def update_contents(self, model: Model) -> go.Figure:
+    def update_contents(self, model: Model):
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
              model (Model): An instantiated Model object
-        Returns:
-             go.Figure: A Plotly Figure object
         """
-        return PluginInterface.display_text("I'm a good plugin...")
+        self.container.figure = PluginInterface.display_text("I'm a good plugin...")
 
 
 class IncorrectMethods(PluginInterface):

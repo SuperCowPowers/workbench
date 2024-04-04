@@ -31,8 +31,6 @@ class PluginInputType(Enum):
 class PluginInterface(ComponentInterface):
     """A Web Plugin Interface
     Notes:
-      - These methods are ^stateless^, all data should be passed through the
-        arguments and the implementations should not reference 'self' variables
       - The 'create_component' method must be implemented by the child class
       - The 'update_contents' method must be implemented by the child class
     """
@@ -48,15 +46,13 @@ class PluginInterface(ComponentInterface):
         pass
 
     @abstractmethod
-    def update_contents(
-        self, data_object: ComponentInterface.SageworksObject, **kwargs
-    ) -> ComponentInterface.ContentTypes:
+    def update_contents(self, data_object: ComponentInterface.SageworksObject, **kwargs) -> None:
         """Generate a figure from the data in the given dataframe.
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.
             **kwargs: Additional keyword arguments (plugins can define their own arguments)
         Returns:
-            Union[go.Figure, str]: A Plotly Figure or a Markdown string
+            None
         """
         pass
 
@@ -135,14 +131,6 @@ class PluginInterface(ComponentInterface):
                 if expected != actual:
                     return f"Expected argument type {expected} does not match actual argument type {actual}"
 
-        # Check for **kwargs in the update_contents method
-        # WIP
-        """
-        if base_class_method.__name__ == "update_contents":
-            if not any(param.kind == param.VAR_KEYWORD for param in signature(subclass_method).parameters.values()):
-                return "Expected **kwargs in update_contents method arguments, but it was not found."
-        """
-
         return None
 
     @classmethod
@@ -155,6 +143,10 @@ class PluginInterface(ComponentInterface):
         if return_type is None:
             return_type = type(None)
 
+        if expected_return_types == ():  # Handle the case where expected return type is None
+            expected_return_types = (type(None),)
+
         if return_type not in expected_return_types:
-            return f"Incorrect return type (expected one of {expected_return_types}, got {return_type})"
+            expected_return_str = "None" if expected_return_types == (type(None),) else str(expected_return_types)
+            return f"Incorrect return type (expected {expected_return_str}, got {return_type})"
         return None
