@@ -67,6 +67,5 @@ model_details.register_callbacks("models_table")
 callbacks.table_row_select(app, "models_table")
 callbacks.update_model_plot_component(app)
 
-# For each plugin, set up a callback to update the plugin figure
-for plugin in plugins:
-    callbacks.update_plugin(app, plugin)
+# For all the plugins we have we'll call their update_contents method
+callbacks.update_plugins(app, plugins)

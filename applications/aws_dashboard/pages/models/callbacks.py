@@ -76,15 +76,15 @@ def update_model_plot_component(app: Dash):
         return model_plot_fig
 
 
-# Updates the plugin component when a model row is selected
-def update_plugin(app: Dash, plugin):
+# Updates the plugin components when a model row is selected
+def update_plugins(app: Dash, plugins):
     @app.callback(
-        Output(plugin.component_id(), "figure"),
+        Output("dev_null", "children", allow_duplicate=True),
         [Input("model_details-dropdown", "value"), Input("models_table", "derived_viewport_selected_row_ids")],
         State("models_table", "data"),
         prevent_initial_call=True,
     )
-    def update_plugin_figure(inference_run, selected_rows, table_data):
+    def update_plugin_contents(inference_run, selected_rows, table_data):
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return no_update
@@ -93,6 +93,9 @@ def update_plugin(app: Dash, plugin):
         selected_row_data = table_data[selected_rows[0]]
         model_uuid = selected_row_data["uuid"]
 
-        # Instantiate the Model and send it to the plugin
+        # Instantiate the Model
         model = Model(model_uuid, legacy=True)
-        return plugin.update_contents(model, inference_run=inference_run)
+
+        # Update the plugins
+        for plugin in plugins:
+            plugin.update_contents(model, inference_run=inference_run)
