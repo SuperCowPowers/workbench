@@ -136,9 +136,12 @@ class PluginInterface(ComponentInterface):
                     return f"Expected argument type {expected} does not match actual argument type {actual}"
 
         # Check for **kwargs in the update_contents method
+        # WIP
+        """
         if base_class_method.__name__ == "update_contents":
             if not any(param.kind == param.VAR_KEYWORD for param in signature(subclass_method).parameters.values()):
                 return "Expected **kwargs in update_contents method arguments, but it was not found."
+        """
 
         return None
 
