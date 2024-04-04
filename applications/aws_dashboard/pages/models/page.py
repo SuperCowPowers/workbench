@@ -15,7 +15,6 @@ from sageworks.web_components import (
     model_plot,
 )
 from sageworks.web_components.plugin_interface import PluginPage
-from sageworks.views.model_web_view import ModelWebView
 from sageworks.utils.plugin_manager import PluginManager
 
 # Register this page with Dash

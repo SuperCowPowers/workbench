@@ -4,7 +4,6 @@ from dash import Dash, no_update
 from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
-from sageworks.views.model_web_view import ModelWebView
 from sageworks.web_components import (
     table,
     model_plot,
