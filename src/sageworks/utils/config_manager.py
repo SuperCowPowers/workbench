@@ -315,11 +315,16 @@ class ConfigManager:
 
         # Load site specified configuration file
         try:
+            # Normalize the path
+            self.site_config_path = os.path.normpath(self.site_config_path)
             self.log.info(f"Loading site configuration from {self.site_config_path}...")
             with open(self.site_config_path, "r") as file:
                 return json.load(file)
-        except (FileNotFoundError, json.JSONDecodeError):
-            self.log.error(f"Failed to load config from {self.site_config_path}")
+        except FileNotFoundError:
+            self.log.error(f"Config file not found at {self.site_config_path}. Loading default config.")
+            return self._load_default_config()
+        except json.JSONDecodeError as e:
+            self.log.error(f"Failed to decode JSON from {self.site_config_path}: {e}. Loading default config.")
             return self._load_default_config()
 
     @staticmethod
