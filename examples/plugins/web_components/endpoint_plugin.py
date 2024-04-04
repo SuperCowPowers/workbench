@@ -16,6 +16,9 @@ class MyEndpointPlugin(PluginInterface):
     plugin_page = PluginPage.ENDPOINT
     plugin_input_type = PluginInputType.ENDPOINT
 
+    def __init__(self):
+        self.container = None
+
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a CustomPlugin Component without any data.
         Args:
@@ -23,34 +26,36 @@ class MyEndpointPlugin(PluginInterface):
         Returns:
             dcc.Graph: The EndpointTurbo Component
         """
-        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+        self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+        return self.container
 
-    def update_contents(self, endpoint: Endpoint, **kwargs) -> go.Figure:
+    def update_contents(self, endpoint: Endpoint, **kwargs):
         """Create a CustomPlugin Figure
         Args:
             endpoint (Endpoint): An instantiated Endpoint object
             **kwargs: Additional keyword arguments (unused)
-        Returns:
-            go.Figure: A Plotly Figure object
         """
         endpoint_name = f"Endpoint: {endpoint.uuid}"
-        return self.display_text(endpoint_name, figure_height=200)
+        self.container.figure = self.display_text(endpoint_name)
 
 
 if __name__ == "__main__":
     # This class takes in a model object
+    from dash import html, Dash
 
-    # Instantiate an Endpoint
-    my_endpoint = Endpoint("abalone-regression-end")
+    # Test if the Plugin Class is a valid PluginInterface
+    assert issubclass(MyEndpointPlugin, PluginInterface)
 
-    # Instantiate the EndpointTurbo class
-    plugin = MyEndpointPlugin()
+    # Instantiate the CustomPlugin class
+    my_plugin = MyEndpointPlugin()
+    my_component = my_plugin.create_component("endpoint_plugin")
 
-    # Generate the figure
-    fig = plugin.update_contents(my_endpoint)
+    # Give the Endpoint object to the plugin
+    endpoint = Endpoint("abalone-regression-end")
+    my_plugin.update_contents(endpoint)
 
-    # Apply dark theme
-    fig.update_layout(template="plotly_dark")
+    # Initialize Dash app
+    app = Dash(__name__)
 
-    # Show the figure
-    fig.show()
+    app.layout = html.Div([my_component])
+    app.run(debug=True)
