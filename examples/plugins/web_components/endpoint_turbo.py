@@ -16,6 +16,9 @@ class EndpointTurbo(PluginInterface):
     plugin_page = PluginPage.ENDPOINT
     plugin_input_type = PluginInputType.ENDPOINT
 
+    def __init__(self):
+        self.container = None
+
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a EndpointTurbo Component without any data.
         Args:
@@ -23,15 +26,14 @@ class EndpointTurbo(PluginInterface):
         Returns:
             dcc.Graph: The EndpointTurbo Component
         """
-        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+        self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+        return self.container
 
-    def update_contents(self, endpoint: Endpoint, **kwargs) -> go.Figure:
+    def update_contents(self, endpoint: Endpoint, **kwargs):
         """Create a EndpointTurbo Figure for the numeric columns in the dataframe.
         Args:
             endpoint (Endpoint): An instantiated Endpoint object
             **kwargs: Additional keyword arguments (unused)
-        Returns:
-            go.Figure: A Plotly Figure object
         """
 
         # Just to make sure we have the right endpoint object
@@ -85,25 +87,26 @@ class EndpointTurbo(PluginInterface):
         # Create the nested pie chart plot with custom settings
         fig = go.Figure(data=data)
         fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10}, height=400)
-
-        return fig
+        self.container.figure = fig
 
 
 if __name__ == "__main__":
     # This class takes in model details and generates a EndpointTurbo
     from sageworks.api.endpoint import Endpoint
+    from dash import html, Dash
 
     # Instantiate an Endpoint
     end = Endpoint("abalone-regression-end")
 
     # Instantiate the EndpointTurbo class
-    pie = EndpointTurbo()
+    turbo = EndpointTurbo()
+    my_component = turbo.create_component("endpoint_plugin")
 
-    # Generate the figure
-    fig = pie.update_contents(end)
+    # Give the Endpoint object to the plugin
+    turbo.update_contents(end)
 
-    # Apply dark theme
-    fig.update_layout(template="plotly_dark")
+    # Initialize Dash app
+    app = Dash(__name__)
 
-    # Show the figure
-    fig.show()
+    app.layout = html.Div([my_component])
+    app.run(debug=True)
