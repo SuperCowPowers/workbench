@@ -50,6 +50,17 @@ public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
 docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
 ```
 
+### Update the 'stable' tag
+This is obviously only when you want to mark a version as stable. Meaning that it seems to 'be good and stable (ish)' :)
+
+```
+docker tag public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_5_4_amd64 \
+public.ecr.aws/m6i5k1r2/sageworks_dashboard:stable
+```
+```
+docker push public.ecr.aws/m6i5k1r2/sageworks_dashboard:stable
+```
+
 ### Test the ECR Image
 You have a `docker_ecr_dashboard` alias in your `~/.zshrc` :)
 
