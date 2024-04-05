@@ -1,4 +1,5 @@
 """Callbacks for the Endpoints Subpage Web User Interface"""
+
 import logging
 from dash import Dash, callback, no_update
 from dash.dependencies import Input, Output, State
@@ -87,9 +88,7 @@ def update_endpoint_metrics(app: Dash, endpoint_web_view: EndpointWebView):
 # Updates the plugin components when a model row is selected
 def update_plugins(plugins):
     # Construct a list of Output objects dynamically based on the plugins' slots
-    outputs = [Output(component_id, property)
-               for plugin in plugins
-               for component_id, property in plugin.slots.items()]
+    outputs = [Output(component_id, property) for plugin in plugins for component_id, property in plugin.slots.items()]
 
     @callback(
         outputs,
@@ -117,7 +116,9 @@ def update_plugins(plugins):
 
             # Assume that the length of contents matches the number of slots for the plugin
             if len(updated_contents) != len(plugin.slots):
-                raise ValueError(f"Plugin {plugin} returned {len(updated_contents)} values, but has {len(plugin.slots)} slots.")
+                raise ValueError(
+                    f"Plugin {plugin} returned {len(updated_contents)} values, but has {len(plugin.slots)} slots."
+                )
 
             # Append each value from contents to the updated_properties list
             updated_properties.extend(updated_contents)

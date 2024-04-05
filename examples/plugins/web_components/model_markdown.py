@@ -1,4 +1,5 @@
 """A Markdown Plugin Example for details/information about Models"""
+
 import logging
 
 # Dash Imports
@@ -20,7 +21,8 @@ class MyModelMarkdown(PluginInterface):
     plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> html.Div:
-        """Create a Model Markdown Component without any data.
+        """Create a Model Markdown Component without any data
+
         Args:
             component_id (str): The ID of the web component
         Returns:
@@ -46,7 +48,7 @@ class MyModelMarkdown(PluginInterface):
 
     def update_contents(self, model: Model, **kwargs) -> list:
         """Update the contents for this plugin component
-.
+
         Args:
             model (Model): An instantiated Model object
             **kwargs: Additional keyword arguments (unused)

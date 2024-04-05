@@ -1,5 +1,5 @@
 import dash
-from dash import html, Output, Input, callback
+from dash import html, Output, Input
 from sageworks.web_components.plugin_interface import PluginInterface
 from sageworks.api import Model, Endpoint
 
@@ -20,16 +20,15 @@ class PluginUnitTest:
 
         # Initialize Dash app
         self.app = dash.Dash(__name__)
-        self.app.layout = html.Div([
-            self.component,
-            html.Button("Update Plugin", id="update-button")  # Button to trigger the callback
-        ])
+        self.app.layout = html.Div(
+            [self.component, html.Button("Update Plugin", id="update-button")]  # Button to trigger the callback
+        )
 
         # Set up the test callback
         @self.app.callback(
             [Output(component_id, property) for component_id, property in self.plugin.slots.items()],
             [Input("update-button", "n_clicks")],
-            prevent_initial_call=True
+            prevent_initial_call=True,
         )
         def update_plugin_contents(n_clicks):
             # Simulate updating the plugin with a new Model
@@ -47,4 +46,3 @@ class PluginUnitTest:
 
     def run(self):
         self.app.run_server(debug=True)
-
