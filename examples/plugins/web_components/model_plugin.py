@@ -1,5 +1,5 @@
 """An Example Model plugin component"""
-
+import logging
 from dash import dcc
 import random
 import plotly.graph_objects as go
@@ -7,6 +7,9 @@ import plotly.graph_objects as go
 # SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from sageworks.api.model import Model
+
+# Get the SageWorks logger
+log = logging.getLogger("sageworks")
 
 
 class ModelPlugin(PluginInterface):
@@ -16,9 +19,6 @@ class ModelPlugin(PluginInterface):
     plugin_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
-    def __init__(self):
-        self.container = None
-
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Model Component without any data.
         Args:
@@ -26,42 +26,40 @@ class ModelPlugin(PluginInterface):
         Returns:
             dcc.Graph: The EndpointTurbo Component
         """
+        self.component_id = component_id
         self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+
+        # Fill in slots
+        self.slots = {f"{self.component_id}": "figure"}
+
+        # Return the container
         return self.container
 
-    def update_contents(self, model: Model, **kwargs):
-        """Create a Figure for the plugin.
+    def update_contents(self, model: Model, **kwargs) -> list:
+        """Update the contents for the plugin.
+
         Args:
             model (Model): An instantiated Model object
             **kwargs: Additional keyword arguments (unused)
+
+        Returns:
+            list: A list of the updated contents (children)
         """
+        log.important(f"Updating Model Plugin with Model: {model.uuid} and kwargs: {kwargs}")
         model_name = f"Model: {model.uuid}"
 
         # Generate random values for the pie chart
         pie_values = [random.randint(10, 30) for _ in range(3)]
 
         # Create a pie chart with the endpoint name as the title
-        fig = go.Figure(data=[go.Pie(labels=["A", "B", "C"], values=pie_values)], layout=go.Layout(title=model_name))
-        self.container.figure = fig
+        pie_figure = go.Figure(data=[go.Pie(labels=["A", "B", "C"], values=pie_values)], layout=go.Layout(title=model_name))
+
+        # Return the updated contents
+        return [pie_figure]
 
 
 if __name__ == "__main__":
-    # This class takes in model details and generates a pie chart
-    from dash import html, Dash
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
-    # Test if the Plugin Class is a valid PluginInterface
-    assert issubclass(ModelPlugin, PluginInterface)
-
-    # Instantiate the EndpointTurbo class
-    my_plugin = ModelPlugin()
-    my_container = my_plugin.create_component("model_plugin")
-
-    # Give the model object to the plugin
-    model = Model("abalone-regression")
-    my_plugin.update_contents(model)
-
-    # Initialize Dash app
-    app = Dash(__name__)
-
-    app.layout = html.Div([my_container])
-    app.run(debug=True)
+    # Run the Unit Test on the Plugin
+    PluginUnitTest(ModelPlugin).run()

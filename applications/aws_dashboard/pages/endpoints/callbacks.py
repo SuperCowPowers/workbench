@@ -1,13 +1,17 @@
 """Callbacks for the Endpoints Subpage Web User Interface"""
-
-from dash import Dash, no_update
+import logging
+from dash import Dash, callback, no_update
 from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
 from sageworks.views.endpoint_web_view import EndpointWebView
 from sageworks.web_components import table, endpoint_metric_plots
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 from sageworks.api.endpoint import Endpoint
+
+# Get the SageWorks logger
+log = logging.getLogger("sageworks")
 
 
 def update_endpoints_table(app: Dash):
@@ -80,25 +84,43 @@ def update_endpoint_metrics(app: Dash, endpoint_web_view: EndpointWebView):
         return endpoint_metrics_figure
 
 
-# Updates the plugin component when a endpoint row is selected
-def update_plugin(app: Dash, plugin):
-    @app.callback(
-        Output(plugin.component_id(), "figure"),
+# Updates the plugin components when a model row is selected
+def update_plugins(plugins):
+    # Construct a list of Output objects dynamically based on the plugins' slots
+    outputs = [Output(component_id, property)
+               for plugin in plugins
+               for component_id, property in plugin.slots.items()]
+
+    @callback(
+        outputs,
         Input("endpoints_table", "derived_viewport_selected_row_ids"),
         State("endpoints_table", "data"),
         prevent_initial_call=True,
     )
-    def update_callback(selected_rows, table_data):
+    def update_plugin_contents(selected_rows, table_data):
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
-            return no_update
+            raise PreventUpdate
 
         # Get the selected row data and grab the uuid
         selected_row_data = table_data[selected_rows[0]]
         endpoint_uuid = selected_row_data["uuid"]
 
-        # Instantiate the Endpoint and send it to the plugin
+        # Instantiate the Model
         endpoint = Endpoint(endpoint_uuid, legacy=True)
 
-        # Instantiate the Endpoint and send it to the plugin
-        return plugin.update_contents(endpoint)
+        # Update the plugins and collect the updated properties for each slot
+        updated_properties = []
+        for plugin in plugins:
+            log.important(f"Updating Plugin: {plugin} with Endpoint: {endpoint_uuid}")
+            updated_contents = plugin.update_contents(endpoint)
+
+            # Assume that the length of contents matches the number of slots for the plugin
+            if len(updated_contents) != len(plugin.slots):
+                raise ValueError(f"Plugin {plugin} returned {len(updated_contents)} values, but has {len(plugin.slots)} slots.")
+
+            # Append each value from contents to the updated_properties list
+            updated_properties.extend(updated_contents)
+
+        # Return the updated properties for each slot
+        return updated_properties

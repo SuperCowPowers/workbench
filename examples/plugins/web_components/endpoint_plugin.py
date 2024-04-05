@@ -1,12 +1,16 @@
 """An example Endpoint plugin component"""
 
+import logging
 from dash import dcc
-import plotly.graph_objects as go
 
 
 # SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from sageworks.api.endpoint import Endpoint
+
+
+# Get the SageWorks logger
+log = logging.getLogger("sageworks")
 
 
 class MyEndpointPlugin(PluginInterface):
@@ -16,9 +20,6 @@ class MyEndpointPlugin(PluginInterface):
     plugin_page = PluginPage.ENDPOINT
     plugin_input_type = PluginInputType.ENDPOINT
 
-    def __init__(self):
-        self.container = None
-
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a CustomPlugin Component without any data.
         Args:
@@ -26,36 +27,36 @@ class MyEndpointPlugin(PluginInterface):
         Returns:
             dcc.Graph: The EndpointTurbo Component
         """
+        self.component_id = component_id
         self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+
+        # Fill in slots
+        self.slots = {f"{self.component_id}": "figure"}
+
+        # Return the container
         return self.container
 
-    def update_contents(self, endpoint: Endpoint, **kwargs):
-        """Create a CustomPlugin Figure
+    def update_contents(self, endpoint: Endpoint, **kwargs) -> list:
+        """Create a Endpoint Plugin Figure
+
         Args:
             endpoint (Endpoint): An instantiated Endpoint object
             **kwargs: Additional keyword arguments (unused)
+
+        Returns:
+            list: A list of the updated contents (children)
         """
+        log.important(f"Updating Model Plugin with Model: {endpoint.uuid} and kwargs: {kwargs}")
         endpoint_name = f"Endpoint: {endpoint.uuid}"
-        self.container.figure = self.display_text(endpoint_name)
+        text_figure = self.display_text(endpoint_name, figure_height=100)
+
+        # Return the updated contents
+        return [text_figure]
 
 
 if __name__ == "__main__":
-    # This class takes in a model object
-    from dash import html, Dash
+    # A Unit Test for the Plugin
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
-    # Test if the Plugin Class is a valid PluginInterface
-    assert issubclass(MyEndpointPlugin, PluginInterface)
-
-    # Instantiate the CustomPlugin class
-    my_plugin = MyEndpointPlugin()
-    my_component = my_plugin.create_component("endpoint_plugin")
-
-    # Give the Endpoint object to the plugin
-    endpoint = Endpoint("abalone-regression-end")
-    my_plugin.update_contents(endpoint)
-
-    # Initialize Dash app
-    app = Dash(__name__)
-
-    app.layout = html.Div([my_component])
-    app.run(debug=True)
+    # Run the Unit Test on the Plugin
+    PluginUnitTest(MyEndpointPlugin, test_type="endpoint").run()

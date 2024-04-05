@@ -1,12 +1,15 @@
 """A Markdown Plugin Example for details/information about Models"""
+import logging
 
 # Dash Imports
 from dash import html, dcc
-import plotly.graph_objects as go
 
 # SageWorks Imports
 from sageworks.api import Model
 from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+
+# Get the SageWorks logger
+log = logging.getLogger("sageworks")
 
 
 class MyModelMarkdown(PluginInterface):
@@ -16,11 +19,6 @@ class MyModelMarkdown(PluginInterface):
     plugin_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
-    def __init__(self):
-        self.prefix_id = ""
-        self.container = None
-        super().__init__()
-
     def create_component(self, component_id: str) -> html.Div:
         """Create a Model Markdown Component without any data.
         Args:
@@ -28,27 +26,40 @@ class MyModelMarkdown(PluginInterface):
         Returns:
             dcc.Graph: The EndpointTurbo Component
         """
-        self.prefix_id = component_id
+        self.component_id = component_id
         self.container = html.Div(
-            id=self.prefix_id,
+            id=self.component_id,
             children=[
-                html.H3(id=f"{self.prefix_id}-header", children="Model: Loading..."),
-                dcc.Markdown(id=f"{self.prefix_id}-details"),
+                html.H3(id=f"{self.component_id}-header", children="Model: Loading..."),
+                dcc.Markdown(id=f"{self.component_id}-details"),
             ],
         )
+
+        # Fill in slots
+        self.slots = {
+            f"{self.component_id}-header": "children",
+            f"{self.component_id}-details": "children",
+        }
+
+        # Return the container
         return self.container
 
-    def update_contents(self, model: Model, **kwargs):
-        """Update the contents for this plugin component.
+    def update_contents(self, model: Model, **kwargs) -> list:
+        """Update the contents for this plugin component
+.
         Args:
             model (Model): An instantiated Model object
             **kwargs: Additional keyword arguments (unused)
+
+        Returns:
+            list: A list of the updated contents (children)
         """
+        log.important(f"Updating Model Markdown Plugin with Model: {model.uuid} and kwargs: {kwargs}")
+
         # Update the html header
         header = f"Model: {model.uuid}"
-        self.container.children[0].children = header
 
-        # Get the model summary
+        # Make Markdown for the model summary
         summary = model.summary()
         markdown = ""
         for key, value in summary.items():
@@ -59,27 +70,13 @@ class MyModelMarkdown(PluginInterface):
             # Add to markdown string
             markdown += f"**{key}:** {value}  \n"
 
-        # Update the markdown details
-        self.container.children[1].children = markdown
+        # Return the updated contents
+        return header, markdown
 
 
+# Unit Test for the Plugin
 if __name__ == "__main__":
-    # This class takes in model details and generates a pie chart
-    import dash
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
-    # Test if the Plugin Class is a valid PluginInterface
-    assert issubclass(MyModelMarkdown, PluginInterface)
-
-    # Instantiate the MyModelMarkdown class
-    my_plugin = MyModelMarkdown()
-    my_component = my_plugin.create_component("my_model_markdown")
-
-    # Give the model object to the plugin
-    model = Model("abalone-regression")
-    my_plugin.update_contents(model)
-
-    # Initialize Dash app
-    app = dash.Dash(__name__)
-
-    app.layout = html.Div([my_component])
-    app.run(debug=True)
+    # Run the Unit Test on the Plugin
+    PluginUnitTest(MyModelMarkdown).run()

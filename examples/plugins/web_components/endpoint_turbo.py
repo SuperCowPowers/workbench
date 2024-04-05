@@ -16,9 +16,6 @@ class EndpointTurbo(PluginInterface):
     plugin_page = PluginPage.ENDPOINT
     plugin_input_type = PluginInputType.ENDPOINT
 
-    def __init__(self):
-        self.container = None
-
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a EndpointTurbo Component without any data.
         Args:
@@ -26,18 +23,25 @@ class EndpointTurbo(PluginInterface):
         Returns:
             dcc.Graph: The EndpointTurbo Component
         """
+        self.component_id = component_id
         self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+
+        # Fill in slots
+        self.slots = {f"{self.component_id}": "figure"}
+
+        # Return the container
         return self.container
 
-    def update_contents(self, endpoint: Endpoint, **kwargs):
-        """Create a EndpointTurbo Figure for the numeric columns in the dataframe.
-        Args:
-            endpoint (Endpoint): An instantiated Endpoint object
-            **kwargs: Additional keyword arguments (unused)
-        """
+    def update_contents(self, endpoint: Endpoint, **kwargs) -> list:
+        """Update the contents for the plugin.
 
-        # Just to make sure we have the right endpoint object
-        print(endpoint.summary())
+        Args:
+            endpoint (Endpoint): An instantiated Model object
+            **kwargs: Additional keyword arguments (unused)
+
+        Returns:
+            list: A list of the updated contents (children)
+        """
 
         data = [  # Portfolio (inner donut)
             # Inner ring
@@ -85,28 +89,16 @@ class EndpointTurbo(PluginInterface):
         ]
 
         # Create the nested pie chart plot with custom settings
-        fig = go.Figure(data=data)
-        fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10}, height=400)
-        self.container.figure = fig
+        endpoint_name = f"Endpoint: {endpoint.uuid}"
+        turbo_figure = go.Figure(data=data)
+        turbo_figure.update_layout(margin={"t": 30, "b": 10, "r": 10, "l": 10, "pad": 10}, title=endpoint_name, height=400)
+
+        # Return the updated contents
+        return [turbo_figure]
 
 
 if __name__ == "__main__":
-    # This class takes in model details and generates a EndpointTurbo
-    from sageworks.api.endpoint import Endpoint
-    from dash import html, Dash
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
-    # Instantiate an Endpoint
-    end = Endpoint("abalone-regression-end")
-
-    # Instantiate the EndpointTurbo class
-    turbo = EndpointTurbo()
-    my_component = turbo.create_component("endpoint_plugin")
-
-    # Give the Endpoint object to the plugin
-    turbo.update_contents(end)
-
-    # Initialize Dash app
-    app = Dash(__name__)
-
-    app.layout = html.Div([my_component])
-    app.run(debug=True)
+    # Run the Unit Test on the Plugin
+    PluginUnitTest(EndpointTurbo).run()

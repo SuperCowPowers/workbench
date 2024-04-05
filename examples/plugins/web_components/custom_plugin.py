@@ -15,9 +15,6 @@ class CustomPlugin(PluginInterface):
     plugin_page = PluginPage.CUSTOM
     plugin_input_type = PluginInputType.MODEL
 
-    def __init__(self):
-        self.container = None
-
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a CustomPlugin Component without any data.
         Args:
@@ -25,36 +22,33 @@ class CustomPlugin(PluginInterface):
         Returns:
             dcc.Graph: The EndpointTurbo Component
         """
+        self.component_id = component_id
         self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+
+        # Fill in slots
+        self.slots = {f"{self.component_id}": "figure"}
+
+        # Return the container
         return self.container
 
-    def update_contents(self, model: Model, **kwargs):
-        """Create a CustomPlugin Figure
+    def update_contents(self, model: Model, **kwargs) -> list:
+        """Update the CustomPlugin contents
+
         Args:
             model (Model): An instantiated Endpoint object
             **kwargs: Additional keyword arguments (unused)
+
+        Returns:
+            list: A list of the updated contents (children)
         """
         model_name = f"Model: {model.uuid}"
-        self.container.figure = self.display_text(model_name)
+        text_figure = self.display_text(model_name, figure_height=100)
+        return [text_figure]
 
 
 if __name__ == "__main__":
-    # Test the custom plugin component
-    from dash import html, Dash
+    # A Unit Test for the Plugin
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
-    # Test if the Plugin Class is a valid PluginInterface
-    assert issubclass(CustomPlugin, PluginInterface)
-
-    # Instantiate the CustomPlugin class
-    my_plugin = CustomPlugin()
-    my_component = my_plugin.create_component("custom_plugin")
-
-    # Give the model object to the plugin
-    model = Model("abalone-regression")
-    my_plugin.update_contents(model)
-
-    # Initialize Dash app
-    app = Dash(__name__)
-
-    app.layout = html.Div([my_component])
-    app.run(debug=True)
+    # Run the Unit Test on the Plugin
+    PluginUnitTest(CustomPlugin).run()

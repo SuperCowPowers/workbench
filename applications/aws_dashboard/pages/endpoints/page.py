@@ -52,7 +52,7 @@ plugins = pm.get_list_of_web_plugins(plugin_page=PluginPage.ENDPOINT)
 
 # Add the plugins to the components dictionary
 for plugin in plugins:
-    component_id = plugin.component_id()
+    component_id = plugin.generate_component_id()
     components[component_id] = plugin.create_component(component_id)
 
 # Set up our layout (Dash looks for a var called layout)
@@ -67,6 +67,5 @@ endpoint_details.register_callbacks("endpoints_table")
 callbacks.table_row_select(app, "endpoints_table")
 callbacks.update_endpoint_metrics(app, endpoint_broker)
 
-# For each plugin, set up a callback to update the plugin figure
-for plugin in plugins:
-    callbacks.update_plugin(app, plugin)
+# For all the plugins we have we'll call their update_contents method
+callbacks.update_plugins(plugins)

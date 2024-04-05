@@ -25,6 +25,11 @@ class ComponentInterface(ABC):
     ComponentTypes = Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]
     ContentTypes = Union[go.Figure, str, None]  # str = Markdown, None = No Update
 
+    def __init__(self):
+        self.component_id = None
+        self.container = None
+        self.slots = None
+
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
@@ -54,7 +59,7 @@ class ComponentInterface(ABC):
         """
         pass
 
-    def component_id(self) -> str:
+    def generate_component_id(self) -> str:
         """This helper method returns the component ID for the component
         Returns:
             str: An auto generated component ID

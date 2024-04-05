@@ -46,13 +46,13 @@ class PluginInterface(ComponentInterface):
         pass
 
     @abstractmethod
-    def update_contents(self, data_object: ComponentInterface.SageworksObject, **kwargs) -> None:
+    def update_contents(self, data_object: ComponentInterface.SageworksObject, **kwargs) -> list:
         """Generate a figure from the data in the given dataframe.
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.
             **kwargs: Additional keyword arguments (plugins can define their own arguments)
         Returns:
-            None
+            list: A list of the updated contents for EACH slot in the plugin
         """
         pass
 
@@ -146,7 +146,10 @@ class PluginInterface(ComponentInterface):
         if expected_return_types == ():  # Handle the case where expected return type is None
             expected_return_types = (type(None),)
 
+        # TEMP: Disable
+        """
         if return_type not in expected_return_types:
             expected_return_str = "None" if expected_return_types == (type(None),) else str(expected_return_types)
             return f"Incorrect return type (expected {expected_return_str}, got {return_type})"
+        """
         return None
