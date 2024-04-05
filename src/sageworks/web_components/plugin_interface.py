@@ -135,21 +135,13 @@ class PluginInterface(ComponentInterface):
 
     @classmethod
     def _check_return_type(cls, base_class_method, subclass_method):
-        return_annotation = base_class_method.__annotations__["return"]
-        expected_return_types = get_args(return_annotation)
-        return_type = subclass_method.__annotations__.get("return", None)
+        actual_return_type = subclass_method.__annotations__.get("return", None)
 
-        # Treat None as NoneType for return type comparison
-        if return_type is None:
-            return_type = type(None)
+        if actual_return_type is None:
+            return "Missing return type annotation in subclass method."
 
-        if expected_return_types == ():  # Handle the case where expected return type is None
-            expected_return_types = (type(None),)
+        # Check if the actual return type is a list
+        if not (actual_return_type == list or (getattr(actual_return_type, "__origin__", None) is list)):
+            return f"Incorrect return type (expected list, got {actual_return_type})"
 
-        # TEMP: Disable
-        """
-        if return_type not in expected_return_types:
-            expected_return_str = "None" if expected_return_types == (type(None),) else str(expected_return_types)
-            return f"Incorrect return type (expected {expected_return_str}, got {return_type})"
-        """
         return None
