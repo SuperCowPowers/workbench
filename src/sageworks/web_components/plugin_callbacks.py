@@ -4,6 +4,7 @@ import logging
 
 # SageWorks Imports
 from sageworks.api import Model, Endpoint
+
 log = logging.getLogger("sageworks")
 
 
@@ -20,7 +21,7 @@ def register_callbacks(plugins, input_sources, object_type):
     )
     def update_plugin_contents(*args):
         # Unpack the input arguments
-        if object_type == 'model':
+        if object_type == "model":
             inference_run, selected_rows, table_data = args
         else:  # object_type == 'endpoint'
             selected_rows, table_data = args
@@ -34,7 +35,7 @@ def register_callbacks(plugins, input_sources, object_type):
         object_uuid = selected_row_data["uuid"]
 
         # Instantiate the object (Model or Endpoint)
-        if object_type == 'model':
+        if object_type == "model":
             obj = Model(object_uuid, legacy=True)
         else:  # object_type == 'endpoint'
             obj = Endpoint(object_uuid, legacy=True)
@@ -43,7 +44,7 @@ def register_callbacks(plugins, input_sources, object_type):
         updated_properties = []
         for plugin in plugins:
             log.important(f"Updating Plugin: {plugin} with {object_type.capitalize()}: {object_uuid}")
-            if object_type == 'model':
+            if object_type == "model":
                 updated_contents = plugin.update_contents(obj, inference_run=inference_run)
             else:  # object_type == 'endpoint'
                 updated_contents = plugin.update_contents(obj)

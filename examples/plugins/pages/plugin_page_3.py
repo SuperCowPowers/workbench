@@ -78,8 +78,7 @@ class PluginPage3:
 
         @app.callback(
             Output("my_model_plot", "figure"),
-            [Input("my_model_details-dropdown", "value"),
-             Input("my_model_table", "derived_viewport_selected_row_ids")],
+            [Input("my_model_details-dropdown", "value"), Input("my_model_table", "derived_viewport_selected_row_ids")],
             State("my_model_table", "data"),
             prevent_initial_call=True,
         )

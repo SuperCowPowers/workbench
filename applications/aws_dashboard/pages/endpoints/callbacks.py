@@ -1,15 +1,13 @@
 """Callbacks for the Endpoints Subpage Web User Interface"""
 
 import logging
-from dash import Dash, callback, no_update
+from dash import Dash, no_update
 from dash.dependencies import Input, Output, State
-from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
 from sageworks.views.endpoint_web_view import EndpointWebView
 from sageworks.web_components import table, endpoint_metric_plots, plugin_callbacks
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
-from sageworks.api.endpoint import Endpoint
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
@@ -88,8 +86,5 @@ def update_endpoint_metrics(app: Dash, endpoint_web_view: EndpointWebView):
 # Updates the plugin components when a model row is selected
 def update_plugins(plugins):
     # Setup the inputs for the plugins and register the callbacks
-    endpoint_inputs = [
-        Input("endpoints_table", "derived_viewport_selected_row_ids"),
-        State("endpoints_table", "data")
-    ]
-    plugin_callbacks.register_callbacks(plugins, endpoint_inputs, 'endpoint')
+    endpoint_inputs = [Input("endpoints_table", "derived_viewport_selected_row_ids"), State("endpoints_table", "data")]
+    plugin_callbacks.register_callbacks(plugins, endpoint_inputs, "endpoint")

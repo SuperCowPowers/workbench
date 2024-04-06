@@ -4,19 +4,21 @@ from abc import abstractmethod
 from inspect import signature
 from typing import Union, get_args
 from enum import Enum
+from dash.development.base_component import Component
 
 # Local Imports
 from sageworks.web_components.component_interface import ComponentInterface
 
 
 class PluginPage(Enum):
-    """Plugin Page: Specify which page will autoload the plugin (CUSTOM = Don't autoload)"""
+    """Plugin Page: Specify which page will AUTO load the plugin (CUSTOM/NONE = Don't autoload)"""
 
     DATA_SOURCE = "data_source"
     FEATURE_SET = "feature_set"
     MODEL = "model"
     ENDPOINT = "endpoint"
     CUSTOM = "custom"
+    NONE = "none"
 
 
 class PluginInputType(Enum):
@@ -36,12 +38,14 @@ class PluginInterface(ComponentInterface):
     """
 
     @abstractmethod
-    def create_component(self, component_id: str) -> ComponentInterface.ComponentTypes:
+    def create_component(self, component_id: str) -> Component:
         """Create a Dash Component without any data.
+
         Args:
             component_id (str): The ID of the web component
+
         Returns:
-            Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div] The Dash Web component
+           Component: A Dash Base Component
         """
         pass
 
@@ -68,9 +72,9 @@ class PluginInterface(ComponentInterface):
         if not hasattr(cls, "plugin_input_type") or not isinstance(cls.plugin_input_type, PluginInputType):
             raise TypeError("Subclasses must define a 'plugin_input_type' of type PluginInputType")
 
-    # If any base class method or parameter is missing from a subclass, or if a subclass method parameter is not
-    # correctly typed a call of issubclass(subclass, cls) will return False, allowing runtime checks for plugins
-    # The plugin loader calls issubclass(subclass, cls) to determine if the subclass is a valid plugin
+    # This subclass check ensures that a subclass of PluginInterface has all required attributes, methods,
+    # and signatures. It returns False any thing is incorrect enabling runtime validation for plugins.
+    # The plugin loader uses issubclass(subclass, cls) to verify plugin subclasses.
     @classmethod
     def __subclasshook__(cls, subclass):
         if cls is PluginInterface:
@@ -142,13 +146,9 @@ class PluginInterface(ComponentInterface):
             return "Missing return type annotation in subclass method."
 
         if method_name == "create_component":
-            expected_return_types = get_args(ComponentInterface.ComponentTypes)
-            if actual_return_type not in expected_return_types:
-                expected_return_str = ", ".join([t.__name__ for t in expected_return_types])
+            if not issubclass(actual_return_type, Component):
                 return (
-                    f"Incorrect return type for {method_name} "
-                    f"(expected one of [{expected_return_str}], "
-                    f"got {actual_return_type.__name__})"
+                    f"Incorrect return type for {method_name} (expected Component, got {actual_return_type.__name__})"
                 )
         elif method_name == "update_contents":
             if not (actual_return_type == list or (getattr(actual_return_type, "__origin__", None) is list)):

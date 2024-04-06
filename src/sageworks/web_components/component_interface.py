@@ -6,7 +6,8 @@ import re
 from functools import wraps
 import logging
 import plotly.graph_objects as go
-from dash import dcc, html, dash_table
+from dash import dcc
+from dash.development.base_component import Component
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint
@@ -22,8 +23,6 @@ class ComponentInterface(ABC):
     log = logging.getLogger("sageworks")
 
     SageworksObject = Union[DataSource, FeatureSet, Model, Endpoint]
-    ComponentTypes = Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]
-    ContentTypes = Union[go.Figure, str, None]  # str = Markdown, None = No Update
 
     def __init__(self):
         self.component_id = None
@@ -40,22 +39,26 @@ class ComponentInterface(ABC):
             cls.update_contents = update_contents_handler(cls.update_contents)
 
     @abstractmethod
-    def create_component(self, component_id: str, **kwargs: Any) -> ComponentTypes:
+    def create_component(self, component_id: str, **kwargs: Any) -> Component:
         """Create a Dash Component/Container without any data.
+
         Args:
             component_id (str): The ID of the web component
             kwargs (Any): Any additional arguments to pass to the component
+
         Returns:
-            Union[dcc.Graph, dash_table.DataTable, dcc.Markdown, html.Div]: The Dash Web component
+           Component: A Dash Base Component
         """
         pass
 
-    def update_contents(self, data_object: SageworksObject) -> ContentTypes:
+    def update_contents(self, data_object: SageworksObject) -> list:
         """Update the contents of the component/container
+
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.
+
         Returns:
-            Union[go.Figure, str]: A Plotly Figure or a Markdown string
+            list: A list of the updated contents for EACH slot in the plugin
         """
         pass
 

@@ -83,6 +83,6 @@ def update_plugins(plugins):
     model_inputs = [
         Input("model_details-dropdown", "value"),
         Input("models_table", "derived_viewport_selected_row_ids"),
-        State("models_table", "data")
+        State("models_table", "data"),
     ]
-    plugin_callbacks.register_callbacks(plugins, model_inputs, 'model')
+    plugin_callbacks.register_callbacks(plugins, model_inputs, "model")
