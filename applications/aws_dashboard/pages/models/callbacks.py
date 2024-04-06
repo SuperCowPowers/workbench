@@ -84,7 +84,9 @@ def update_model_plot_component(app: Dash):
 # Updates the plugin components when a model row is selected
 def update_plugins(plugins):
     # Construct a list of Output objects dynamically based on the plugins' slots
-    outputs = [Output(component_id, property) for plugin in plugins for component_id, property in plugin.content_slots.items()]
+    outputs = [
+        Output(component_id, property) for plugin in plugins for component_id, property in plugin.content_slots.items()
+    ]
 
     @callback(
         outputs,
@@ -113,7 +115,7 @@ def update_plugins(plugins):
             # Assume that the length of contents matches the number of slots for the plugin
             if len(updated_contents) != len(plugin.content_slots):
                 raise ValueError(
-                    f"Plugin {plugin} returned {len(updated_contents)} values, but has {len(plugin.content_slots)} slots."
+                    f"Plugin {plugin} has {len(updated_contents)} content values != {len(plugin.content_slots)} slots."
                 )
 
             # Append each value from contents to the updated_properties list
