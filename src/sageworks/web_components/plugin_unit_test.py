@@ -26,7 +26,7 @@ class PluginUnitTest:
 
         # Set up the test callback
         @self.app.callback(
-            [Output(component_id, property) for component_id, property in self.plugin.slots.items()],
+            [Output(component_id, property) for component_id, property in self.pluginself.content_slots.items()],
             [Input("update-button", "n_clicks")],
             prevent_initial_call=True,
         )

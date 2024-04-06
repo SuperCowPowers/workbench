@@ -88,7 +88,7 @@ def update_endpoint_metrics(app: Dash, endpoint_web_view: EndpointWebView):
 # Updates the plugin components when a model row is selected
 def update_plugins(plugins):
     # Construct a list of Output objects dynamically based on the plugins' slots
-    outputs = [Output(component_id, property) for plugin in plugins for component_id, property in plugin.slots.items()]
+    outputs = [Output(component_id, property) for plugin in plugins for component_id, property in plugin.content_slots.items()]
 
     @callback(
         outputs,
@@ -115,9 +115,9 @@ def update_plugins(plugins):
             updated_contents = plugin.update_contents(endpoint)
 
             # Assume that the length of contents matches the number of slots for the plugin
-            if len(updated_contents) != len(plugin.slots):
+            if len(updated_contents) != len(plugin.content_slots):
                 raise ValueError(
-                    f"Plugin {plugin} returned {len(updated_contents)} values, but has {len(plugin.slots)} slots."
+                    f"Plugin {plugin} returned {len(updated_contents)} values, but has {len(plugin.content_slots)} slots."
                 )
 
             # Append each value from contents to the updated_properties list

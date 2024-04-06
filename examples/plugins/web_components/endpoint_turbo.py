@@ -26,8 +26,8 @@ class EndpointTurbo(PluginInterface):
         self.component_id = component_id
         self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-        # Fill in slots
-        self.slots = {f"{self.component_id}": "figure"}
+        # Fill in content slots
+        self.content_slots = {f"{self.component_id}": "figure"}
 
         # Return the container
         return self.container

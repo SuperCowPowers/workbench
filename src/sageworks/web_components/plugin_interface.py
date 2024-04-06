@@ -47,7 +47,7 @@ class PluginInterface(ComponentInterface):
 
     @abstractmethod
     def update_contents(self, data_object: ComponentInterface.SageworksObject, **kwargs) -> list:
-        """Generate a figure from the data in the given dataframe.
+        """Generate the contents for the plugin component
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.
             **kwargs: Additional keyword arguments (plugins can define their own arguments)

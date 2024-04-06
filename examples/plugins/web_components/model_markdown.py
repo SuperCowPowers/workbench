@@ -37,8 +37,8 @@ class MyModelMarkdown(PluginInterface):
             ],
         )
 
-        # Fill in slots
-        self.slots = {
+        # Fill in content slots
+        self.content_slots = {
             f"{self.component_id}-header": "children",
             f"{self.component_id}-details": "children",
         }

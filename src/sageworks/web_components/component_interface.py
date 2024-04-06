@@ -28,7 +28,7 @@ class ComponentInterface(ABC):
     def __init__(self):
         self.component_id = None
         self.container = None
-        self.slots = None
+        self.content_slots = None
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
