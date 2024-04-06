@@ -28,12 +28,13 @@ class CorrectPlugin(PluginInterface):
         """
         self.container = dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def update_contents(self, model: Model):
+    def update_contents(self, model: Model) -> list:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
              model (Model): An instantiated Model object
         """
-        self.container.figure = PluginInterface.display_text("I'm a good plugin...")
+        text_figure = PluginInterface.display_text("I'm a good plugin...")
+        return [text_figure]
 
 
 class IncorrectMethods(PluginInterface):
@@ -97,14 +98,14 @@ class IncorrectReturnType(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def update_contents(self, model: Model) -> list:
+    def update_contents(self, model: Model) -> go.Figure:
         """Create a Figure but give the wrong return type.
         Args:
             model (Model): An instantiated Model object
         Returns:
             list: An incorrect return type
         """
-        return [1, 2, 3]  # Incorrect return type
+        return go.Figure()  # Incorrect return type
 
 
 def test_incorrect_methods():

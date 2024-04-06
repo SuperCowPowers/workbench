@@ -135,13 +135,23 @@ class PluginInterface(ComponentInterface):
 
     @classmethod
     def _check_return_type(cls, base_class_method, subclass_method):
+        method_name = base_class_method.__name__
         actual_return_type = subclass_method.__annotations__.get("return", None)
 
         if actual_return_type is None:
             return "Missing return type annotation in subclass method."
 
-        # Check if the actual return type is a list
-        if not (actual_return_type == list or (getattr(actual_return_type, "__origin__", None) is list)):
-            return f"Incorrect return type (expected list, got {actual_return_type})"
+        if method_name == "create_component":
+            expected_return_types = get_args(ComponentInterface.ComponentTypes)
+            if actual_return_type not in expected_return_types:
+                expected_return_str = ", ".join([t.__name__ for t in expected_return_types])
+                return (
+                    f"Incorrect return type for {method_name} "
+                    f"(expected one of [{expected_return_str}], "
+                    f"got {actual_return_type.__name__})"
+                )
+        elif method_name == "update_contents":
+            if not (actual_return_type == list or (getattr(actual_return_type, "__origin__", None) is list)):
+                return f"Incorrect return type for {method_name} (expected list, got {actual_return_type.__name__})"
 
         return None
