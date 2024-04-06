@@ -10,7 +10,7 @@ from sageworks.api.meta import Meta
 
 
 class PluginPage2:
-    """Plugin Page:  A SageWorks Plugin Web Interface"""
+    """Plugin Page: A SageWorks Plugin Page Interface"""
 
     def __init__(self):
         """Initialize the Plugin Page"""
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     import webbrowser
 
     # Create our Dash Application
-    app = dash.Dash(
+    my_app = dash.Dash(
         __name__,
         title="SageWorks Dashboard",
         use_pages=True,
@@ -67,14 +67,14 @@ if __name__ == "__main__":
     )
 
     # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
-    app.layout = html.Div([page_container])
+    my_app.layout = html.Div([page_container])
 
     # Create the Plugin Page and call page_setup
     plugin_page = PluginPage2()
-    plugin_page.page_setup(app)
+    plugin_page.page_setup(my_app)
 
     # Open the browser to the plugin page
     webbrowser.open("http://localhost:8000/plugin_2")
 
     # Note: This 'main' is purely for running/testing locally
-    app.run(host="localhost", port=8000, debug=True)
+    my_app.run(host="localhost", port=8000, debug=True)

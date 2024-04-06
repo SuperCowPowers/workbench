@@ -54,7 +54,7 @@ class PluginPage3:
         self.table_component.data = models.to_dict("records")
 
         # Register the callbacks
-        self.register_callbacks()
+        self.register_callbacks(app)
         self.model_details.register_callbacks("my_model_table")
 
     def page_layout(self) -> dash.html.Div:
@@ -73,10 +73,10 @@ class PluginPage3:
         )
         return layout
 
-    def register_callbacks(self):
+    def register_callbacks(self, app: dash.Dash):
         """Register the callbacks for the page"""
 
-        @callback(
+        @app.callback(
             Output("my_model_plot", "figure"),
             [Input("my_model_details-dropdown", "value"),
              Input("my_model_table", "derived_viewport_selected_row_ids")],
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     import webbrowser
 
     # Create our Dash Application
-    app = dash.Dash(
+    my_app = dash.Dash(
         __name__,
         title="SageWorks Dashboard",
         use_pages=True,
@@ -115,14 +115,14 @@ if __name__ == "__main__":
     )
 
     # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
-    app.layout = html.Div([page_container])
+    my_app.layout = html.Div([page_container])
 
     # Create the Plugin Page and call page_setup
     plugin_page = PluginPage3()
-    plugin_page.page_setup(app)
+    plugin_page.page_setup(my_app)
 
     # Open the browser to the plugin page
     webbrowser.open("http://localhost:8000/plugin_3")
 
     # Note: This 'main' is purely for running/testing locally
-    app.run(host="localhost", port=8000, debug=True)
+    my_app.run(host="localhost", port=8000, debug=True)
