@@ -31,7 +31,7 @@ class ModelPlugin(PluginInterface):
         self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
         # Fill in content slots
-        self.content_slots = {f"{self.component_id}": "figure"}
+        self.content_slots = [(self.component_id, "figure")]
 
         # Return the container
         return self.container
@@ -50,11 +50,11 @@ class ModelPlugin(PluginInterface):
         model_name = f"Model: {model.uuid}"
 
         # Generate random values for the pie chart
-        pie_values = [random.randint(10, 30) for _ in range(3)]
+        pie_values = [random.randint(10, 30) for _ in range(4)]
 
         # Create a pie chart with the endpoint name as the title
         pie_figure = go.Figure(
-            data=[go.Pie(labels=["A", "B", "C"], values=pie_values)], layout=go.Layout(title=model_name)
+            data=[go.Pie(labels=["A", "B", "C", "D"], values=pie_values)], layout=go.Layout(title=model_name)
         )
 
         # Return the updated contents

@@ -1,16 +1,20 @@
 """An abstract class that defines the web component interface for SageWorks"""
 
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Union
+import textwrap
 import re
 from functools import wraps
-import logging
 import plotly.graph_objects as go
+import pandas as pd
 from dash import dcc
 from dash.development.base_component import Component
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint
+
+log = logging.getLogger("sageworks")
 
 
 class ComponentInterface(ABC):
@@ -22,12 +26,12 @@ class ComponentInterface(ABC):
 
     log = logging.getLogger("sageworks")
 
-    SageworksObject = Union[DataSource, FeatureSet, Model, Endpoint]
+    SageworksObject = Union[DataSource, FeatureSet, Model, Endpoint, pd.DataFrame]
 
     def __init__(self):
         self.component_id = None
         self.container = None
-        self.content_slots = None
+        self.content_slots = []
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -55,7 +59,7 @@ class ComponentInterface(ABC):
         """Update the contents of the component/container
 
         Args:
-            data_object (sageworks_object): The instantiated data object for the plugin type.
+            data_object (sageworks_object/dataframe): A SageWorks object or DataFrame
 
         Returns:
             list: A list of the updated contents for EACH slot in the plugin
@@ -114,7 +118,8 @@ def create_component_handler(func):
             # Get the class name of the plugin
             class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
             error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
-            figure = ComponentInterface.display_text(error_info, figure_height=100, font_size=16)
+            error_info = "<br>".join(textwrap.wrap(error_info, width=120))
+            figure = ComponentInterface.display_text(error_info, figure_height=200, font_size=14)
             return dcc.Graph(id="error", figure=figure)
 
     return wrapper
@@ -122,13 +127,30 @@ def create_component_handler(func):
 
 def update_contents_handler(func):
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(self, *args, **kwargs):
         try:
-            return func(*args, **kwargs)
+            return func(self, *args, **kwargs)
         except Exception as e:
             # Get the class name of the plugin
-            class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
+            class_name = self.__class__.__name__
             error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
-            return ComponentInterface.display_text(error_info, figure_height=100, font_size=16)
+            log.critical(error_info)
+            error_info = "<br>".join(textwrap.wrap(error_info, width=120))
+            figure = ComponentInterface.display_text(error_info, figure_height=200, font_size=14)
+
+            # Prepare the error output to match the content_slots format
+            error_output = []
+            for component_id, property in self.content_slots:
+                if property == "figure":
+                    error_output.append(figure)
+                elif property in ["children", "value", "data"]:
+                    error_output.append(error_info)
+                elif property == "columnDefs":
+                    error_output.append([{"headerName": "Crash", "field": "Crash"}])
+                elif property == "rowData":
+                    error_output.append([{"Crash": error_info}])
+                else:
+                    error_output.append(None)  # Fallback for other properties
+            return error_output
 
     return wrapper

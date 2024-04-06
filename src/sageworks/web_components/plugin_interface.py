@@ -28,6 +28,7 @@ class PluginInputType(Enum):
     FEATURE_SET = "feature_set"
     MODEL = "model"
     ENDPOINT = "endpoint"
+    MODEL_TABLE = "model_table"
 
 
 class PluginInterface(ComponentInterface):

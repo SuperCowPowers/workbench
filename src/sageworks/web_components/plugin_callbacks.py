@@ -10,9 +10,7 @@ log = logging.getLogger("sageworks")
 
 def register_callbacks(plugins, input_sources, object_type):
     # Construct a list of Output objects dynamically based on the plugins' content_slots
-    outputs = [
-        Output(component_id, property) for plugin in plugins for component_id, property in plugin.content_slots.items()
-    ]
+    outputs = [Output(component_id, property) for plugin in plugins for component_id, property in plugin.content_slots]
 
     @callback(
         outputs,

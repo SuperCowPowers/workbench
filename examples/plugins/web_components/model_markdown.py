@@ -38,10 +38,10 @@ class MyModelMarkdown(PluginInterface):
         )
 
         # Fill in content slots
-        self.content_slots = {
-            f"{self.component_id}-header": "children",
-            f"{self.component_id}-details": "children",
-        }
+        self.content_slots = [
+            (f"{self.component_id}-header", "children"),
+            (f"{self.component_id}-details", "children"),
+        ]
 
         # Return the container
         return self.container
@@ -72,7 +72,7 @@ class MyModelMarkdown(PluginInterface):
             # Add to markdown string
             markdown += f"**{key}:** {value}  \n"
 
-        # Return the updated contents
+        # Return the updated contents (must match slots)
         return header, markdown
 
 
