@@ -27,9 +27,9 @@ class PluginPage2:
             "my_model_table", header_color="rgb(60, 60, 60)", row_select="single", max_height=400
         )
 
-        # Register this page with Dash and set up the layout (required)
+        # Register this page with Dash and set up the layout
         register_page(
-            __name__,
+            "plugin",
             path="/plugin_2",
             name=self.page_name,
             layout=self.page_layout(),
@@ -77,4 +77,4 @@ if __name__ == "__main__":
     webbrowser.open("http://localhost:8000/plugin_2")
 
     # Note: This 'main' is purely for running/testing locally
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="localhost", port=8000, debug=True)

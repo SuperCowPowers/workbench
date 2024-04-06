@@ -38,9 +38,9 @@ class PluginPage3:
         self.details_component = self.model_details.create_component("my_model_details")
         self.plot_component = self.model_plot.create_component("my_model_plot")
 
-        # Register this page with Dash and set up the layout (required)
+        # Register this page with Dash and set up the layout
         register_page(
-            __name__,
+            "plugin",
             path="/plugin_3",
             name=self.page_name,
             layout=self.page_layout(),
@@ -78,11 +78,12 @@ class PluginPage3:
 
         @callback(
             Output("my_model_plot", "figure"),
-            Input("my_model_details-dropdown", "value"),
-            [State("my_model_table", "data"), State("my_model_table", "derived_viewport_selected_row_ids")],
+            [Input("my_model_details-dropdown", "value"),
+             Input("my_model_table", "derived_viewport_selected_row_ids")],
+            State("my_model_table", "data"),
             prevent_initial_call=True,
         )
-        def generate_model_plot_figure(inference_run, table_data, selected_rows):
+        def generate_model_plot_figure(inference_run, selected_rows, table_data):
             # Check for no selected rows
             if not selected_rows or selected_rows[0] is None:
                 return no_update
@@ -124,4 +125,4 @@ if __name__ == "__main__":
     webbrowser.open("http://localhost:8000/plugin_3")
 
     # Note: This 'main' is purely for running/testing locally
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="localhost", port=8000, debug=True)

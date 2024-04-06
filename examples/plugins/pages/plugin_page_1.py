@@ -17,7 +17,7 @@ class PluginPage1:
 
         # Register this page with Dash and set up the layout (required)
         register_page(
-            __name__,
+            "plugin",
             path="/plugin_1",
             name=self.page_name,
             layout=self.page_layout(),
@@ -53,4 +53,4 @@ if __name__ == "__main__":
     webbrowser.open("http://localhost:8000/plugin_1")
 
     # Note: This 'main' is purely for running/testing locally
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="localhost", port=8000, debug=True)
