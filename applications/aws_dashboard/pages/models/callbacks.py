@@ -1,15 +1,11 @@
 """Callbacks for the Model Subpage Web User Interface"""
 
 import logging
-from dash import Dash, callback, no_update
+from dash import Dash, no_update
 from dash.dependencies import Input, Output, State
-from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
-from sageworks.web_components import (
-    table,
-    model_plot,
-)
+from sageworks.web_components import table, model_plot, plugin_callbacks
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 from sageworks.api.model import Model
 
@@ -83,43 +79,10 @@ def update_model_plot_component(app: Dash):
 
 # Updates the plugin components when a model row is selected
 def update_plugins(plugins):
-    # Construct a list of Output objects dynamically based on the plugins' slots
-    outputs = [
-        Output(component_id, property) for plugin in plugins for component_id, property in plugin.content_slots.items()
+    # Setup the inputs for the plugins and register the callbacks
+    model_inputs = [
+        Input("model_details-dropdown", "value"),
+        Input("models_table", "derived_viewport_selected_row_ids"),
+        State("models_table", "data")
     ]
-
-    @callback(
-        outputs,
-        [Input("model_details-dropdown", "value"), Input("models_table", "derived_viewport_selected_row_ids")],
-        [State("models_table", "data")],
-        prevent_initial_call=True,
-    )
-    def update_plugin_contents(inference_run, selected_rows, table_data):
-        # Check for no selected rows
-        if not selected_rows or selected_rows[0] is None:
-            raise PreventUpdate
-
-        # Get the selected row data and grab the uuid
-        selected_row_data = table_data[selected_rows[0]]
-        model_uuid = selected_row_data["uuid"]
-
-        # Instantiate the Model
-        model = Model(model_uuid, legacy=True)
-
-        # Update the plugins and collect the updated properties for each slot
-        updated_properties = []
-        for plugin in plugins:
-            log.important(f"Updating Plugin: {plugin} with Model: {model_uuid} and Inference Run: {inference_run}")
-            updated_contents = plugin.update_contents(model, inference_run=inference_run)
-
-            # Assume that the length of contents matches the number of slots for the plugin
-            if len(updated_contents) != len(plugin.content_slots):
-                raise ValueError(
-                    f"Plugin {plugin} has {len(updated_contents)} content values != {len(plugin.content_slots)} slots."
-                )
-
-            # Append each value from contents to the updated_properties list
-            updated_properties.extend(updated_contents)
-
-        # Return the updated properties for each slot
-        return updated_properties
+    plugin_callbacks.register_callbacks(plugins, model_inputs, 'model')
