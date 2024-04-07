@@ -32,6 +32,7 @@ class ComponentInterface(ABC):
         self.component_id = None
         self.container = None
         self.content_slots = []
+        self.output_signals = []
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
