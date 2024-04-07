@@ -1,6 +1,5 @@
 import dash
 from dash import html, Output, Input
-import dash_bootstrap_components as dbc
 
 # SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginInputType
@@ -63,9 +62,9 @@ class PluginUnitTest:
 
         # Set up callbacks for displaying output signals
         for component_id, property in self.plugin.signals:
+
             @self.app.callback(
-                Output(f"test-output-{component_id}-{property}", "children"),
-                Input(component_id, property)
+                Output(f"test-output-{component_id}-{property}", "children"), Input(component_id, property)
             )
             def display_output_signal(signal_value):
                 return f"{signal_value}"

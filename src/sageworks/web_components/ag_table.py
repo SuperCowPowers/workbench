@@ -28,7 +28,7 @@ class TablePlugin(PluginInterface):
         self.component_id = component_id
         self.container = AgGrid(
             id=component_id,
-            # className="ag-theme-balham-dark",
+            # className="ag-theme-balham-dark"
             columnSize="sizeToFit",
             dashGridOptions={
                 "rowHeight": None,
@@ -37,12 +37,14 @@ class TablePlugin(PluginInterface):
                 "filter": True,
             },
             style={"maxHeight": "200px", "overflow": "auto"},
+
         )
 
         # Fill in content slots
         self.slots = [
             (self.component_id, "columnDefs"),
             (self.component_id, "rowData"),
+            (self.component_id, "selectedRows"),
         ]
 
         # Output signals
@@ -69,18 +71,13 @@ class TablePlugin(PluginInterface):
         table_data = model_table.to_dict("records")
 
         # Define column definitions based on the DataFrame
-        column_defs = [
-            {"headerName": col, "field": col, "filter": "agTextColumnFilter"}
-            for col in model_table.columns
-        ]
+        column_defs = [{"headerName": col, "field": col, "filter": "agTextColumnFilter"} for col in model_table.columns]
+
+        # Select the first row by default
+        selected_rows = model_table.head(1).to_dict("records")
 
         # Return the column definitions and table data (must match the content slots)
-        return [column_defs, table_data]
-
-    @staticmethod
-    def select_first_row_js(self):
-        """Return the JavaScript to select the first row in the table"""
-        return """"function(params) { params.api.forEachNode(function(node) { if (node.rowIndex === 0) { node.setSelected(true); } }); }"""
+        return [column_defs, table_data, selected_rows]
 
 
 if __name__ == "__main__":
