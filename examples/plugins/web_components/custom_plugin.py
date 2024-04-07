@@ -26,7 +26,7 @@ class CustomPlugin(PluginInterface):
         self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
         # Fill in content slots
-        self.content_slots = [(self.component_id, "figure")]
+        self.slots = [(self.component_id, "figure")]
 
         # Return the container
         return self.container

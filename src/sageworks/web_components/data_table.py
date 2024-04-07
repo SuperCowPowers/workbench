@@ -31,13 +31,13 @@ class DataTable(PluginInterface):
         )
 
         # Fill in content slots
-        self.content_slots = [
+        self.slots = [
             (self.component_id, "columns"),
             (self.component_id, "data"),
         ]
 
         # Output signals
-        self.output_signals = [
+        self.signals = [
             (self.component_id, "selected_rows"),
         ]
 
@@ -55,6 +55,7 @@ class DataTable(PluginInterface):
 
         # Return the column definitions and table data (must match the content slots)
         return [columns, table_data]
+
 
 if __name__ == "__main__":
     # Run the Unit Test for the Plugin

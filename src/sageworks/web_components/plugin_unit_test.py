@@ -1,7 +1,11 @@
 import dash
 from dash import html, Output, Input
+import dash_bootstrap_components as dbc
+
+# SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginInputType
 from sageworks.api import Model, Endpoint, Meta
+
 
 class PluginUnitTest:
     def __init__(self, plugin_class):
@@ -22,17 +26,21 @@ class PluginUnitTest:
         # Create the Dash app
         self.app = dash.Dash(__name__)
 
-        # Setup the layout
+        # Set up the layout
         layout_children = [self.component, html.Button("Update Plugin", id="update-button")]
-        # Add test output components for each output signal
-        for component_id, property in self.plugin.output_signals:
+
+        # Signal output displays
+        layout_children.append(html.H3("Signals:"))
+        for component_id, property in self.plugin.signals:
+            # A Row with the component ID and property and an output div
+            layout_children.append(html.H4(f"Component: {component_id}   Property: {property}"))
             layout_children.append(html.Div(id=f"test-output-{component_id}-{property}"))
 
         self.app.layout = html.Div(layout_children)
 
         # Set up the test callback for updating the plugin
         @self.app.callback(
-            [Output(component_id, property) for component_id, property in self.plugin.content_slots],
+            [Output(component_id, property) for component_id, property in self.plugin.slots],
             [Input("update-button", "n_clicks")],
             prevent_initial_call=True,
         )
@@ -54,14 +62,13 @@ class PluginUnitTest:
             return updated_contents
 
         # Set up callbacks for displaying output signals
-        for component_id, property in self.plugin.output_signals:
+        for component_id, property in self.plugin.signals:
             @self.app.callback(
                 Output(f"test-output-{component_id}-{property}", "children"),
                 Input(component_id, property)
             )
             def display_output_signal(signal_value):
-                print(f"Signal Value: {signal_value}")
-                return f"Signal Value: {signal_value}"
+                return f"{signal_value}"
 
     def run(self):
         self.app.run_server(debug=True)

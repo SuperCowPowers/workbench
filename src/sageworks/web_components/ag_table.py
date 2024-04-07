@@ -40,13 +40,13 @@ class TablePlugin(PluginInterface):
         )
 
         # Fill in content slots
-        self.content_slots = [
+        self.slots = [
             (self.component_id, "columnDefs"),
             (self.component_id, "rowData"),
         ]
 
         # Output signals
-        self.output_signals = [
+        self.signals = [
             (self.component_id, "selectedRows"),
         ]
 

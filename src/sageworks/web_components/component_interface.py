@@ -31,8 +31,8 @@ class ComponentInterface(ABC):
     def __init__(self):
         self.component_id = None
         self.container = None
-        self.content_slots = []
-        self.output_signals = []
+        self.slots = []
+        self.signals = []
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -141,7 +141,7 @@ def update_contents_handler(func):
 
             # Prepare the error output to match the content_slots format
             error_output = []
-            for component_id, property in self.content_slots:
+            for component_id, property in self.slots:
                 if property == "figure":
                     error_output.append(figure)
                 elif property in ["children", "value", "data"]:
