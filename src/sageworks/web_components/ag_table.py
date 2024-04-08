@@ -11,8 +11,8 @@ from sageworks.web_components.plugin_interface import PluginInterface, PluginPag
 log = logging.getLogger("sageworks")
 
 
-class TablePlugin(PluginInterface):
-    """TablePlugin Component"""
+class AGTable(PluginInterface):
+    """AGTable Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
     plugin_page = PluginPage.NONE
@@ -28,7 +28,7 @@ class TablePlugin(PluginInterface):
         self.component_id = component_id
         self.container = AgGrid(
             id=component_id,
-            # className="ag-theme-balham-dark"
+            # className="ag-theme-balham-dark",
             columnSize="sizeToFit",
             dashGridOptions={
                 "rowHeight": None,
@@ -85,4 +85,4 @@ if __name__ == "__main__":
     from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(TablePlugin).run()
+    PluginUnitTest(AGTable).run()

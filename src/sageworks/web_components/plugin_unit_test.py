@@ -32,7 +32,7 @@ class PluginUnitTest:
         layout_children.append(html.H3("Signals:"))
         for component_id, property in self.plugin.signals:
             # A Row with the component ID and property and an output div
-            layout_children.append(html.H4(f"Component: {component_id}   Property: {property}"))
+            layout_children.append(html.H4(f"Property: {property}"))
             layout_children.append(html.Div(id=f"test-output-{component_id}-{property}"))
 
         self.app.layout = html.Div(layout_children)
