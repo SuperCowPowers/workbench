@@ -12,7 +12,7 @@ class CustomPlugin(PluginInterface):
     """CustomPlugin Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.CUSTOM
+    auto_load_page = PluginPage.CUSTOM
     plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:

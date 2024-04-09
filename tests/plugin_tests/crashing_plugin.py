@@ -13,7 +13,7 @@ class CrashingPlugin(PluginInterface):
     """CrashingPlugin Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.MODEL
+    auto_load_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:

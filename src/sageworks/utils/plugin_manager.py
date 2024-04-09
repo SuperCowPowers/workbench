@@ -167,7 +167,7 @@ class PluginManager:
         plugin_classes = [
             self.plugins["web_components"][x]
             for x in self.plugins["web_components"]
-            if self.plugins["web_components"][x].plugin_page == plugin_page
+            if self.plugins["web_components"][x].auto_load_page == plugin_page
         ]
         return [x() for x in plugin_classes]
 

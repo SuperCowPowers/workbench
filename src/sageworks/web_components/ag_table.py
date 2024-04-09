@@ -15,7 +15,7 @@ class AGTable(PluginInterface):
     """AGTable Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.NONE
+    auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.MODEL_TABLE
 
     def create_component(self, component_id: str) -> AgGrid:

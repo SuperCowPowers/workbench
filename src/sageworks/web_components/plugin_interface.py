@@ -67,7 +67,7 @@ class PluginInterface(ComponentInterface):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        # Ensure the subclass defines the required plugin_page and plugin_input_type
+        # Ensure the subclass defines the required auto_load_page and plugin_input_type
         if not hasattr(cls, "plugin_page") or not isinstance(cls.plugin_page, PluginPage):
             raise TypeError("Subclasses must define a 'plugin_page' of type PluginPage")
         if not hasattr(cls, "plugin_input_type") or not isinstance(cls.plugin_input_type, PluginInputType):

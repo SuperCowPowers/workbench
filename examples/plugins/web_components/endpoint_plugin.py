@@ -17,7 +17,7 @@ class MyEndpointPlugin(PluginInterface):
     """MyEndpointPlugin Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.ENDPOINT
+    auto_load_page = PluginPage.ENDPOINT
     plugin_input_type = PluginInputType.ENDPOINT
 
     def create_component(self, component_id: str) -> dcc.Graph:

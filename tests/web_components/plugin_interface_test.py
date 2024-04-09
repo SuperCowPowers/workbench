@@ -13,7 +13,7 @@ class CorrectPlugin(PluginInterface):
     """Subclass of PluginInterface with correct inputs and returns."""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.MODEL
+    auto_load_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
     def __init__(self):
@@ -42,7 +42,7 @@ class IncorrectMethods(PluginInterface):
     they have create_component but forgot to implement update_contents"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.MODEL
+    auto_load_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -59,7 +59,7 @@ class IncorrectArgTypes(PluginInterface):
     """Subclass of PluginInterface with an incorrectly typed argument."""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.MODEL
+    auto_load_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
     # Component is an incorrectly named keyword argument
@@ -86,7 +86,7 @@ class IncorrectReturnType(PluginInterface):
     """Subclass of PluginInterface with incorrect return type."""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.MODEL
+    auto_load_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
