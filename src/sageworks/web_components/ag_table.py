@@ -37,7 +37,6 @@ class AGTable(PluginInterface):
                 "filter": True,
             },
             style={"maxHeight": "200px", "overflow": "auto"},
-
         )
 
         # Fill in content slots
