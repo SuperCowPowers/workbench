@@ -68,8 +68,8 @@ class PluginInterface(ComponentInterface):
         super().__init_subclass__(**kwargs)
 
         # Ensure the subclass defines the required auto_load_page and plugin_input_type
-        if not hasattr(cls, "plugin_page") or not isinstance(cls.plugin_page, PluginPage):
-            raise TypeError("Subclasses must define a 'plugin_page' of type PluginPage")
+        if not hasattr(cls, "auto_load_page") or not isinstance(cls.plugin_page, PluginPage):
+            raise TypeError("Subclasses must define a 'auto_load_page' of type PluginPage")
         if not hasattr(cls, "plugin_input_type") or not isinstance(cls.plugin_input_type, PluginInputType):
             raise TypeError("Subclasses must define a 'plugin_input_type' of type PluginInputType")
 
@@ -80,7 +80,7 @@ class PluginInterface(ComponentInterface):
     def __subclasshook__(cls, subclass):
         if cls is PluginInterface:
             # Check if the subclass has all the required attributes
-            if not all(hasattr(subclass, attr) for attr in ("plugin_page", "plugin_input_type")):
+            if not all(hasattr(subclass, attr) for attr in ("auto_load_page", "plugin_input_type")):
                 cls.log.warning(f"Subclass {subclass.__name__} is missing required attributes")
                 return False
 
