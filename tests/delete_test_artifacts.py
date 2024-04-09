@@ -63,6 +63,10 @@ if __name__ == "__main__":
     if m.exists():
         print("Deleting abalone-regression model...")
         m.delete()
+    m = Model("abalone-regression-full")
+    if m.exists():
+        print("Deleting abalone-regression-full model...")
+        m.delete()
     end = Endpoint("abalone-regression-end")
     if end.exists():
         print("Deleting abalone-regression-end...")
