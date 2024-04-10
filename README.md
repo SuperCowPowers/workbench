@@ -45,4 +45,4 @@ If you'd like to contribute to the SageWorks project, you're more than welcome. 
 
 <img align="right" src="docs/images/scp.png" width="180">
 
-® Amazon Web Services, AWS, the Powered by AWS logo, are trademarks of Amazon.com, Inc. or its affiliates.
+® Amazon Web Services, AWS, the Powered by AWS logo, are trademarks of Amazon.com, Inc. or its affiliates
