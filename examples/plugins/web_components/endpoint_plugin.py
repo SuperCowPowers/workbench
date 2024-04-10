@@ -1,7 +1,7 @@
 """An example Endpoint plugin component"""
 
+import logging
 from dash import dcc
-import plotly.graph_objects as go
 
 
 # SageWorks Imports
@@ -9,11 +9,15 @@ from sageworks.web_components.plugin_interface import PluginInterface, PluginPag
 from sageworks.api.endpoint import Endpoint
 
 
+# Get the SageWorks logger
+log = logging.getLogger("sageworks")
+
+
 class MyEndpointPlugin(PluginInterface):
     """MyEndpointPlugin Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.ENDPOINT
+    auto_load_page = PluginPage.ENDPOINT
     plugin_input_type = PluginInputType.ENDPOINT
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -23,34 +27,36 @@ class MyEndpointPlugin(PluginInterface):
         Returns:
             dcc.Graph: The EndpointTurbo Component
         """
-        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+        self.component_id = component_id
+        self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, endpoint: Endpoint, **kwargs) -> go.Figure:
-        """Create a CustomPlugin Figure
+        # Fill in content slots
+        self.slots = [(self.component_id, "figure")]
+
+        # Return the container
+        return self.container
+
+    def update_contents(self, endpoint: Endpoint, **kwargs) -> list:
+        """Create a Endpoint Plugin Figure
+
         Args:
             endpoint (Endpoint): An instantiated Endpoint object
             **kwargs: Additional keyword arguments (unused)
+
         Returns:
-            go.Figure: A Plotly Figure object
+            list: A list of the updated contents (children)
         """
+        log.important(f"Updating Model Plugin with Model: {endpoint.uuid} and kwargs: {kwargs}")
         endpoint_name = f"Endpoint: {endpoint.uuid}"
-        return self.display_text(endpoint_name, figure_height=200)
+        text_figure = self.display_text(endpoint_name, figure_height=100)
+
+        # Return the updated contents
+        return [text_figure]
 
 
 if __name__ == "__main__":
-    # This class takes in a model object
+    # A Unit Test for the Plugin
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
-    # Instantiate an Endpoint
-    my_endpoint = Endpoint("abalone-regression-end")
-
-    # Instantiate the EndpointTurbo class
-    plugin = MyEndpointPlugin()
-
-    # Generate the figure
-    fig = plugin.update_contents(my_endpoint)
-
-    # Apply dark theme
-    fig.update_layout(template="plotly_dark")
-
-    # Show the figure
-    fig.show()
+    # Run the Unit Test on the Plugin
+    PluginUnitTest(MyEndpointPlugin, test_type="endpoint").run()

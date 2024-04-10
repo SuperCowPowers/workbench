@@ -6,13 +6,14 @@ import plotly.graph_objects as go
 
 # SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.api.model import Model
 
 
 class CrashingPlugin(PluginInterface):
     """CrashingPlugin Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.MODEL
+    auto_load_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -24,16 +25,16 @@ class CrashingPlugin(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, model_details: dict) -> go.Figure:
+    def update_contents(self, model: Model) -> go.Figure:
         """Create a CrashingPlugin Figure for the numeric columns in the dataframe.
         Args:
-            model_details (dict): The model details dictionary (see Model.details())
+            model (Model): A Model Object
         Returns:
             go.Figure: A Figure object containing the confusion matrix.
         """
 
         # This is where the plugin crashes
-        my_bad = model_details["bad_key"]
+        my_bad = model.summary()["bad_key"]
 
         # Create the nested pie chart plot with custom settings
         fig = go.Figure(my_bad)

@@ -13,7 +13,7 @@ class EndpointTurbo(PluginInterface):
     """EndpointTurbo Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.ENDPOINT
+    auto_load_page = PluginPage.ENDPOINT
     plugin_input_type = PluginInputType.ENDPOINT
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -23,19 +23,25 @@ class EndpointTurbo(PluginInterface):
         Returns:
             dcc.Graph: The EndpointTurbo Component
         """
-        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+        self.component_id = component_id
+        self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, endpoint: Endpoint, **kwargs) -> go.Figure:
-        """Create a EndpointTurbo Figure for the numeric columns in the dataframe.
+        # Fill in content slots
+        self.slots = [(self.component_id, "figure")]
+
+        # Return the container
+        return self.container
+
+    def update_contents(self, endpoint: Endpoint, **kwargs) -> list:
+        """Update the contents for the plugin.
+
         Args:
-            endpoint (Endpoint): An instantiated Endpoint object
+            endpoint (Endpoint): An instantiated Model object
             **kwargs: Additional keyword arguments (unused)
-        Returns:
-            go.Figure: A Plotly Figure object
-        """
 
-        # Just to make sure we have the right endpoint object
-        print(endpoint.summary())
+        Returns:
+            list: A list of the updated contents (children)
+        """
 
         data = [  # Portfolio (inner donut)
             # Inner ring
@@ -83,27 +89,18 @@ class EndpointTurbo(PluginInterface):
         ]
 
         # Create the nested pie chart plot with custom settings
-        fig = go.Figure(data=data)
-        fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10}, height=400)
+        endpoint_name = f"Endpoint: {endpoint.uuid}"
+        turbo_figure = go.Figure(data=data)
+        turbo_figure.update_layout(
+            margin={"t": 30, "b": 10, "r": 10, "l": 10, "pad": 10}, title=endpoint_name, height=400
+        )
 
-        return fig
+        # Return the updated contents
+        return [turbo_figure]
 
 
 if __name__ == "__main__":
-    # This class takes in model details and generates a EndpointTurbo
-    from sageworks.api.endpoint import Endpoint
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
-    # Instantiate an Endpoint
-    end = Endpoint("abalone-regression-end")
-
-    # Instantiate the EndpointTurbo class
-    pie = EndpointTurbo()
-
-    # Generate the figure
-    fig = pie.update_contents(end)
-
-    # Apply dark theme
-    fig.update_layout(template="plotly_dark")
-
-    # Show the figure
-    fig.show()
+    # Run the Unit Test on the Plugin
+    PluginUnitTest(EndpointTurbo).run()

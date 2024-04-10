@@ -38,9 +38,9 @@ class PluginPage3:
         self.details_component = self.model_details.create_component("my_model_details")
         self.plot_component = self.model_plot.create_component("my_model_plot")
 
-        # Register this page with Dash and set up the layout (required)
+        # Register this page with Dash and set up the layout
         register_page(
-            __name__,
+            "plugin",
             path="/plugin_3",
             name=self.page_name,
             layout=self.page_layout(),
@@ -54,7 +54,7 @@ class PluginPage3:
         self.table_component.data = models.to_dict("records")
 
         # Register the callbacks
-        self.register_callbacks()
+        self.register_callbacks(app)
         self.model_details.register_callbacks("my_model_table")
 
     def page_layout(self) -> dash.html.Div:
@@ -73,16 +73,16 @@ class PluginPage3:
         )
         return layout
 
-    def register_callbacks(self):
+    def register_callbacks(self, app: dash.Dash):
         """Register the callbacks for the page"""
 
-        @callback(
+        @app.callback(
             Output("my_model_plot", "figure"),
-            Input("my_model_details-dropdown", "value"),
-            [State("my_model_table", "data"), State("my_model_table", "derived_viewport_selected_row_ids")],
+            [Input("my_model_details-dropdown", "value"), Input("my_model_table", "derived_viewport_selected_row_ids")],
+            State("my_model_table", "data"),
             prevent_initial_call=True,
         )
-        def generate_model_plot_figure(inference_run, table_data, selected_rows):
+        def generate_model_plot_figure(inference_run, selected_rows, table_data):
             # Check for no selected rows
             if not selected_rows or selected_rows[0] is None:
                 return no_update
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     import webbrowser
 
     # Create our Dash Application
-    app = dash.Dash(
+    my_app = dash.Dash(
         __name__,
         title="SageWorks Dashboard",
         use_pages=True,
@@ -114,14 +114,14 @@ if __name__ == "__main__":
     )
 
     # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
-    app.layout = html.Div([page_container])
+    my_app.layout = html.Div([page_container])
 
     # Create the Plugin Page and call page_setup
     plugin_page = PluginPage3()
-    plugin_page.page_setup(app)
+    plugin_page.page_setup(my_app)
 
     # Open the browser to the plugin page
     webbrowser.open("http://localhost:8000/plugin_3")
 
     # Note: This 'main' is purely for running/testing locally
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    my_app.run(host="localhost", port=8000, debug=True)

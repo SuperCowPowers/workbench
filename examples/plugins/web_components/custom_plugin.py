@@ -1,7 +1,6 @@
 """A Custom plugin component"""
 
 from dash import dcc
-import plotly.graph_objects as go
 
 
 # SageWorks Imports
@@ -13,7 +12,7 @@ class CustomPlugin(PluginInterface):
     """CustomPlugin Component"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.CUSTOM
+    auto_load_page = PluginPage.CUSTOM
     plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -23,34 +22,33 @@ class CustomPlugin(PluginInterface):
         Returns:
             dcc.Graph: The EndpointTurbo Component
         """
-        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+        self.component_id = component_id
+        self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, model: Model, **kwargs) -> go.Figure:
-        """Create a CustomPlugin Figure
+        # Fill in content slots
+        self.slots = [(self.component_id, "figure")]
+
+        # Return the container
+        return self.container
+
+    def update_contents(self, model: Model, **kwargs) -> list:
+        """Update the CustomPlugin contents
+
         Args:
             model (Model): An instantiated Endpoint object
             **kwargs: Additional keyword arguments (unused)
+
         Returns:
-            go.Figure: A Plotly Figure object
+            list: A list of the updated contents (children)
         """
         model_name = f"Model: {model.uuid}"
-        return self.display_text(model_name)
+        text_figure = self.display_text(model_name, figure_height=100)
+        return [text_figure]
 
 
 if __name__ == "__main__":
-    # This class takes in a model object
+    # A Unit Test for the Plugin
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
-    # Instantiate an Endpoint
-    my_model = Model("abalone-regression")
-
-    # Instantiate the EndpointTurbo class
-    plugin = CustomPlugin()
-
-    # Generate the figure
-    fig = plugin.update_contents(my_model)
-
-    # Apply dark theme
-    fig.update_layout(template="plotly_dark")
-
-    # Show the figure
-    fig.show()
+    # Run the Unit Test on the Plugin
+    PluginUnitTest(CustomPlugin).run()

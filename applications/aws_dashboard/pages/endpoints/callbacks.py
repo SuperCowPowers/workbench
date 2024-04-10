@@ -1,13 +1,16 @@
 """Callbacks for the Endpoints Subpage Web User Interface"""
 
+import logging
 from dash import Dash, no_update
 from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.views.endpoint_web_view import EndpointWebView
-from sageworks.web_components import table, endpoint_metric_plots
+from sageworks.web_components import table, endpoint_metric_plots, plugin_callbacks
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
-from sageworks.api.endpoint import Endpoint
+
+# Get the SageWorks logger
+log = logging.getLogger("sageworks")
 
 
 def update_endpoints_table(app: Dash):
@@ -80,25 +83,8 @@ def update_endpoint_metrics(app: Dash, endpoint_web_view: EndpointWebView):
         return endpoint_metrics_figure
 
 
-# Updates the plugin component when a endpoint row is selected
-def update_plugin(app: Dash, plugin):
-    @app.callback(
-        Output(plugin.component_id(), "figure"),
-        Input("endpoints_table", "derived_viewport_selected_row_ids"),
-        State("endpoints_table", "data"),
-        prevent_initial_call=True,
-    )
-    def update_callback(selected_rows, table_data):
-        # Check for no selected rows
-        if not selected_rows or selected_rows[0] is None:
-            return no_update
-
-        # Get the selected row data and grab the uuid
-        selected_row_data = table_data[selected_rows[0]]
-        endpoint_uuid = selected_row_data["uuid"]
-
-        # Instantiate the Endpoint and send it to the plugin
-        endpoint = Endpoint(endpoint_uuid, legacy=True)
-
-        # Instantiate the Endpoint and send it to the plugin
-        return plugin.update_contents(endpoint)
+# Updates the plugin components when a model row is selected
+def update_plugins(plugins):
+    # Setup the inputs for the plugins and register the callbacks
+    endpoint_inputs = [Input("endpoints_table", "derived_viewport_selected_row_ids"), State("endpoints_table", "data")]
+    plugin_callbacks.register_callbacks(plugins, endpoint_inputs, "endpoint")

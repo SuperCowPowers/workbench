@@ -13,8 +13,11 @@ class CorrectPlugin(PluginInterface):
     """Subclass of PluginInterface with correct inputs and returns."""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.MODEL
+    auto_load_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
+
+    def __init__(self):
+        self.container = None
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.
@@ -23,16 +26,15 @@ class CorrectPlugin(PluginInterface):
         Returns:
             dcc.Graph: The Confusion Matrix Component
         """
-        return dcc.Graph(id=component_id, figure=self.waiting_figure())
+        self.container = dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def update_contents(self, model: Model) -> go.Figure:
+    def update_contents(self, model: Model) -> list:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
              model (Model): An instantiated Model object
-        Returns:
-             go.Figure: A Plotly Figure object
         """
-        return PluginInterface.display_text("I'm a good plugin...")
+        text_figure = PluginInterface.display_text("I'm a good plugin...")
+        return [text_figure]
 
 
 class IncorrectMethods(PluginInterface):
@@ -40,7 +42,7 @@ class IncorrectMethods(PluginInterface):
     they have create_component but forgot to implement update_contents"""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.MODEL
+    auto_load_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -57,7 +59,7 @@ class IncorrectArgTypes(PluginInterface):
     """Subclass of PluginInterface with an incorrectly typed argument."""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.MODEL
+    auto_load_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
     # Component is an incorrectly named keyword argument
@@ -84,7 +86,7 @@ class IncorrectReturnType(PluginInterface):
     """Subclass of PluginInterface with incorrect return type."""
 
     """Initialize this Plugin Component Class with required attributes"""
-    plugin_page = PluginPage.MODEL
+    auto_load_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -96,14 +98,14 @@ class IncorrectReturnType(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def update_contents(self, model: Model) -> list:
+    def update_contents(self, model: Model) -> go.Figure:
         """Create a Figure but give the wrong return type.
         Args:
             model (Model): An instantiated Model object
         Returns:
             list: An incorrect return type
         """
-        return [1, 2, 3]  # Incorrect return type
+        return go.Figure()  # Incorrect return type
 
 
 def test_incorrect_methods():
