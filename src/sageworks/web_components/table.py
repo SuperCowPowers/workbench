@@ -6,7 +6,7 @@ import plotly.express as px
 import pandas as pd
 
 # Local imports
-from sageworks.web_components.color_maps import color_map_add_alpha
+from sageworks.web_components.experiments.color_maps import color_map_add_alpha
 
 # SageWorks Imports
 from sageworks.web_components.component_interface import ComponentInterface
