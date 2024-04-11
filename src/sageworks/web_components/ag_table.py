@@ -62,7 +62,7 @@ class AGTable(PluginInterface):
             **kwargs: Additional keyword arguments (unused)
 
         Returns:
-            list: A list of the updated contents (children)
+            list: A list of the updated contents (that match the slots)
         """
         log.important(f"Updating Table Plugin with a model table and kwargs: {kwargs}")
 
@@ -73,7 +73,7 @@ class AGTable(PluginInterface):
         column_defs = [{"headerName": col, "field": col, "filter": "agTextColumnFilter"} for col in model_table.columns]
 
         # Select the first row by default
-        selected_rows = model_table.head(1).to_dict("records")
+        selected_rows = {"ids": ["0"]}
 
         # Return the column definitions and table data (must match the content slots)
         return [column_defs, table_data, selected_rows]

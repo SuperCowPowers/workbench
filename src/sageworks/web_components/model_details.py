@@ -98,7 +98,7 @@ class ModelDetails(ComponentInterface):
         Returns:
             str: A markdown string
         """
-        # Get these fields from the model
+
         # Get these fields from the model
         show_fields = [
             "health_tags",
