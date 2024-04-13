@@ -21,7 +21,7 @@ class ComponentInterface(ABC):
     """A Abstract Web Component Interface
     Notes:
       - The 'create_container' method create a gcc.Graph, html.Div, etc
-      - The 'update_contents' method generates the contents (figure, markdown, etc)
+      - The 'update_properties' method generates the contents (figure, markdown, etc)
     """
 
     log = logging.getLogger("sageworks")
@@ -31,17 +31,17 @@ class ComponentInterface(ABC):
     def __init__(self):
         self.component_id = None
         self.container = None
-        self.slots = []
+        self.properties = []
         self.signals = []
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        # Automatically apply the error handling decorator to the create_component and update_contents methods
+        # Automatically apply the error handling decorator to the create_component and update_properties methods
         if hasattr(cls, "create_component") and callable(cls.create_component):
             cls.create_component = create_component_handler(cls.create_component)
-        if hasattr(cls, "update_contents") and callable(cls.update_contents):
-            cls.update_contents = update_contents_handler(cls.update_contents)
+        if hasattr(cls, "update_properties") and callable(cls.update_properties):
+            cls.update_properties = update_properties_handler(cls.update_properties)
 
     @abstractmethod
     def create_component(self, component_id: str, **kwargs: Any) -> Component:
@@ -56,7 +56,7 @@ class ComponentInterface(ABC):
         """
         pass
 
-    def update_contents(self, data_object: SageworksObject) -> list:
+    def update_properties(self, data_object: SageworksObject) -> list:
         """Update the contents of the component/container
 
         Args:
@@ -126,7 +126,7 @@ def create_component_handler(func):
     return wrapper
 
 
-def update_contents_handler(func):
+def update_properties_handler(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         try:
@@ -139,9 +139,9 @@ def update_contents_handler(func):
             error_info = "<br>".join(textwrap.wrap(error_info, width=120))
             figure = ComponentInterface.display_text(error_info, figure_height=200, font_size=14)
 
-            # Prepare the error output to match the content_slots format
+            # Prepare the error output to match the properties format
             error_output = []
-            for component_id, property in self.slots:
+            for component_id, property in self.properties:
                 if property == "figure":
                     error_output.append(figure)
                 elif property in ["children", "value", "data"]:

@@ -28,7 +28,7 @@ class DashboardMetricPlots(ComponentInterface):
         """
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, metrics_df: pd.DataFrame) -> go.Figure:
+    def update_properties(self, metrics_df: pd.DataFrame) -> go.Figure:
         """Create a Dashboard Metric Plots Figure.
         Args:
             metrics_df (pd.DataFrame): The dashboard metrics dataframe
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     dashboard_metric_plots = DashboardMetricPlots()
 
     # Generate the figure
-    fig = dashboard_metric_plots.update_contents(dashboard_metrics)
+    fig = dashboard_metric_plots.update_properties(dashboard_metrics)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

@@ -26,7 +26,7 @@ class EndpointMetricPlots(ComponentInterface):
         """
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, endpoint_details: dict) -> go.Figure:
+    def update_properties(self, endpoint_details: dict) -> go.Figure:
         """Create a Endpoint Metrics Figure for the numeric columns in the dataframe.
         Args:
             endpoint_details (dict): The model details dictionary
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     endpoint_metric_plots = EndpointMetricPlots()
 
     # Generate the figure
-    fig = endpoint_metric_plots.update_contents(end_details)
+    fig = endpoint_metric_plots.update_properties(end_details)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

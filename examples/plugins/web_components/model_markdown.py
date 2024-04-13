@@ -37,8 +37,8 @@ class MyModelMarkdown(PluginInterface):
             ],
         )
 
-        # Fill in content slots
-        self.slots = [
+        # Fill in plugin properties
+        self.properties = [
             (f"{self.component_id}-header", "children"),
             (f"{self.component_id}-details", "children"),
         ]
@@ -46,7 +46,7 @@ class MyModelMarkdown(PluginInterface):
         # Return the container
         return self.container
 
-    def update_contents(self, model: Model, **kwargs) -> list:
+    def update_properties(self, model: Model, **kwargs) -> list:
         """Update the contents for this plugin component
 
         Args:

@@ -39,8 +39,8 @@ class AGTable(PluginInterface):
             style={"maxHeight": "200px", "overflow": "auto"},
         )
 
-        # Fill in content slots
-        self.slots = [
+        # Fill in plugin properties
+        self.properties = [
             (self.component_id, "columnDefs"),
             (self.component_id, "rowData"),
             (self.component_id, "selectedRows"),
@@ -54,7 +54,7 @@ class AGTable(PluginInterface):
         # Return the container
         return self.container
 
-    def update_contents(self, model_table: pd.DataFrame, **kwargs) -> list:
+    def update_properties(self, model_table: pd.DataFrame, **kwargs) -> list:
         """Update the contents for the plugin.
 
         Args:
@@ -62,7 +62,7 @@ class AGTable(PluginInterface):
             **kwargs: Additional keyword arguments (unused)
 
         Returns:
-            list: A list of the updated contents (that match the slots)
+            list: A list of the updated contents (that match the plugin properties)
         """
         log.important(f"Updating Table Plugin with a model table and kwargs: {kwargs}")
 
@@ -75,7 +75,7 @@ class AGTable(PluginInterface):
         # Select the first row by default
         selected_rows = {"ids": ["0"]}
 
-        # Return the column definitions and table data (must match the content slots)
+        # Return the column definitions and table data (must match the plugin properties)
         return [column_defs, table_data, selected_rows]
 
 

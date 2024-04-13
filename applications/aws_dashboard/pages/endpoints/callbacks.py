@@ -77,7 +77,7 @@ def update_endpoint_metrics(app: Dash, endpoint_web_view: EndpointWebView):
         endpoint_details = endpoint_web_view.endpoint_details(endpoint_uuid)
 
         # Endpoint Metrics
-        endpoint_metrics_figure = endpoint_metric_plots.EndpointMetricPlots().update_contents(endpoint_details)
+        endpoint_metrics_figure = endpoint_metric_plots.EndpointMetricPlots().update_properties(endpoint_details)
 
         # Return the details/markdown for these data details
         return endpoint_metrics_figure

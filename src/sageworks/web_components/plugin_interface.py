@@ -35,7 +35,7 @@ class PluginInterface(ComponentInterface):
     """A Web Plugin Interface
     Notes:
       - The 'create_component' method must be implemented by the child class
-      - The 'update_contents' method must be implemented by the child class
+      - The 'update_properties' method must be implemented by the child class
     """
 
     @abstractmethod
@@ -51,7 +51,7 @@ class PluginInterface(ComponentInterface):
         pass
 
     @abstractmethod
-    def update_contents(self, data_object: ComponentInterface.SageworksObject, **kwargs) -> list:
+    def update_properties(self, data_object: ComponentInterface.SageworksObject, **kwargs) -> list:
         """Generate the contents for the plugin component
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.
@@ -151,7 +151,7 @@ class PluginInterface(ComponentInterface):
                 return (
                     f"Incorrect return type for {method_name} (expected Component, got {actual_return_type.__name__})"
                 )
-        elif method_name == "update_contents":
+        elif method_name == "update_properties":
             if not (actual_return_type == list or (getattr(actual_return_type, "__origin__", None) is list)):
                 return f"Incorrect return type for {method_name} (expected list, got {actual_return_type.__name__})"
 

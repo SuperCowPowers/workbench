@@ -19,7 +19,7 @@ class ModelPlot(ComponentInterface):
         # Initialize an empty plot figure
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, model: Model, inference_run: str) -> go.Figure:
+    def update_properties(self, model: Model, inference_run: str) -> go.Figure:
         """Create a Model Plot Figure based on the model type.
         Args:
             model (Model): Sageworks Model object
@@ -38,9 +38,9 @@ class ModelPlot(ComponentInterface):
         # Based on the model type, we'll generate a different plot
         model_type = model_details.get("model_type")
         if model_type == "classifier":
-            return ConfusionMatrix().update_contents(model, inference_run)
+            return ConfusionMatrix().update_properties(model, inference_run)
         elif model_type == "regressor":
-            return RegressionPlot().update_contents(model, inference_run)
+            return RegressionPlot().update_properties(model, inference_run)
         else:
             return self.display_text("Unknown Model Type")
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     model_plot = ModelPlot()
 
     # Generate the figure
-    fig = model_plot.update_contents(m, inference_run)
+    fig = model_plot.update_properties(m, inference_run)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

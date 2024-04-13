@@ -39,7 +39,7 @@ class PluginUnitTest:
 
         # Set up the test callback for updating the plugin
         @self.app.callback(
-            [Output(component_id, property) for component_id, property in self.plugin.slots],
+            [Output(component_id, property) for component_id, property in self.plugin.properties],
             [Input("update-button", "n_clicks")],
             prevent_initial_call=True,
         )
@@ -47,13 +47,13 @@ class PluginUnitTest:
             # Simulate updating the plugin with a new Model, Endpoint, or Model Table
             if plugin_input_type == PluginInputType.MODEL:
                 model = Model("abalone-regression")
-                updated_contents = self.plugin.update_contents(model)
+                updated_contents = self.plugin.update_properties(model)
             elif plugin_input_type == PluginInputType.ENDPOINT:
                 endpoint = Endpoint("abalone-regression-end")
-                updated_contents = self.plugin.update_contents(endpoint)
+                updated_contents = self.plugin.update_properties(endpoint)
             elif plugin_input_type == PluginInputType.MODEL_TABLE:
                 model_table = Meta().models()
-                updated_contents = self.plugin.update_contents(model_table)
+                updated_contents = self.plugin.update_properties(model_table)
             else:
                 raise ValueError(f"Invalid test type: {plugin_input_type}")
 

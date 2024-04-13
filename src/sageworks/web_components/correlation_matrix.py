@@ -22,7 +22,7 @@ class CorrelationMatrix(ComponentInterface):
         """
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, data_source_details: dict) -> go.Figure:
+    def update_properties(self, data_source_details: dict) -> go.Figure:
         """Create a Correlation Matrix Figure for the numeric columns in the dataframe.
         Args:
             data_source_details (dict): A dictionary containing DataSource details.
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     corr_plot = CorrelationMatrix()
 
     # Generate the figure
-    fig = corr_plot.update_contents(ds_details)
+    fig = corr_plot.update_properties(ds_details)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

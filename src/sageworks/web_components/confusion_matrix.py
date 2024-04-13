@@ -21,7 +21,7 @@ class ConfusionMatrix(ComponentInterface):
         """
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, model: Model, inference_run: str) -> go.Figure:
+    def update_properties(self, model: Model, inference_run: str) -> go.Figure:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
             model (Model): Sageworks Model object
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     cm = ConfusionMatrix()
 
     # Generate the figure
-    fig = cm.update_contents(m, inference_run)
+    fig = cm.update_properties(m, inference_run)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

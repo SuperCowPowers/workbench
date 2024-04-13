@@ -15,7 +15,7 @@ def test_correlation_matrix():
     corr_plot = CorrelationMatrix()
 
     # Generate the figure
-    fig = corr_plot.update_contents(ds_details)
+    fig = corr_plot.update_properties(ds_details)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

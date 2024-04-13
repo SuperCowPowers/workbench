@@ -25,13 +25,13 @@ class CustomPlugin(PluginInterface):
         self.component_id = component_id
         self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-        # Fill in content slots
-        self.slots = [(self.component_id, "figure")]
+        # Fill in plugin properties
+        self.properties = [(self.component_id, "figure")]
 
         # Return the container
         return self.container
 
-    def update_contents(self, model: Model, **kwargs) -> list:
+    def update_properties(self, model: Model, **kwargs) -> list:
         """Update the CustomPlugin contents
 
         Args:

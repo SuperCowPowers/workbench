@@ -22,7 +22,7 @@ class ViolinPlots(ComponentInterface):
         """
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, df: pd.DataFrame, figure_args: dict, max_plots: int = 40) -> go.Figure:
+    def update_properties(self, df: pd.DataFrame, figure_args: dict, max_plots: int = 40) -> go.Figure:
         """Create a set of violin plots for the numeric columns in the dataframe.
         Args:
             df (pd.DataFrame): The dataframe containing the data.
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     v_plots = ViolinPlots()
 
     # Generate the figure
-    fig = v_plots.update_contents(
+    fig = v_plots.update_properties(
         smart_sample_rows,
         figure_args={
             "box_visible": True,

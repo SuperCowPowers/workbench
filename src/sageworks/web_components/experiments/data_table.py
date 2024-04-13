@@ -30,8 +30,8 @@ class DataTable(PluginInterface):
             style_table={"maxHeight": "200px", "overflow": "auto"},  # Table styling
         )
 
-        # Fill in content slots
-        self.slots = [
+        # Fill in plugin properties
+        self.properties = [
             (self.component_id, "columns"),
             (self.component_id, "data"),
         ]
@@ -43,7 +43,7 @@ class DataTable(PluginInterface):
 
         return self.container
 
-    def update_contents(self, model_table: pd.DataFrame, **kwargs) -> list:
+    def update_properties(self, model_table: pd.DataFrame, **kwargs) -> list:
         """Update the contents for the plugin."""
         log.important(f"Updating DataTable Plugin with a model table and kwargs: {kwargs}")
 
@@ -53,7 +53,7 @@ class DataTable(PluginInterface):
         # Define column definitions based on the DataFrame
         columns = [{"name": col, "id": col} for col in model_table.columns]
 
-        # Return the column definitions and table data (must match the content slots)
+        # Return the column definitions and table data (must match the plugin properties)
         return [columns, table_data]
 
 

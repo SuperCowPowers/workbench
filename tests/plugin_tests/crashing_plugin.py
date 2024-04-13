@@ -25,7 +25,7 @@ class CrashingPlugin(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_contents(self, model: Model) -> go.Figure:
+    def update_properties(self, model: Model) -> go.Figure:
         """Create a CrashingPlugin Figure for the numeric columns in the dataframe.
         Args:
             model (Model): A Model Object
@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     # Generate the figure
     my_model_details = {"key": "value"}
-    fig = bad_plugin.update_contents(my_model_details)
+    fig = bad_plugin.update_properties(my_model_details)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

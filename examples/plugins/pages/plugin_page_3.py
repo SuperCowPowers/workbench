@@ -93,7 +93,7 @@ class PluginPage3:
             model = Model(model_uuid, legacy=True)
 
             # Model Details Markdown component
-            model_plot_fig = self.model_plot.update_contents(model, inference_run)
+            model_plot_fig = self.model_plot.update_properties(model, inference_run)
 
             # Return the details/markdown for these data details
             return model_plot_fig

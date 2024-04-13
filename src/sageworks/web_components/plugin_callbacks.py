@@ -9,8 +9,8 @@ log = logging.getLogger("sageworks")
 
 
 def register_callbacks(plugins, input_sources, object_type):
-    # Construct a list of Output objects dynamically based on the plugins' content_slots
-    outputs = [Output(component_id, property) for plugin in plugins for component_id, property in plugin.slots]
+    # Construct a list of Output objects dynamically based on the plugins' properties
+    outputs = [Output(component_id, property) for plugin in plugins for component_id, property in plugin.properties]
 
     @callback(
         outputs,
@@ -43,14 +43,14 @@ def register_callbacks(plugins, input_sources, object_type):
         for plugin in plugins:
             log.important(f"Updating Plugin: {plugin} with {object_type.capitalize()}: {object_uuid}")
             if object_type == "model":
-                updated_contents = plugin.update_contents(obj, inference_run=inference_run)
+                updated_contents = plugin.update_properties(obj, inference_run=inference_run)
             else:  # object_type == 'endpoint'
-                updated_contents = plugin.update_contents(obj)
+                updated_contents = plugin.update_properties(obj)
 
             # Assume that the length of contents matches the number of slots for the plugin
-            if len(updated_contents) != len(plugin.slots):
+            if len(updated_contents) != len(plugin.properties):
                 raise ValueError(
-                    f"Plugin {plugin} has {len(updated_contents)} content values != {len(plugin.slots)} slots."
+                    f"Plugin {plugin} has {len(updated_contents)} content values != {len(plugin.properties)} slots."
                 )
 
             # Append each value from contents to the updated_properties list

@@ -28,7 +28,7 @@ class CorrectPlugin(PluginInterface):
         """
         self.container = dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def update_contents(self, model: Model) -> list:
+    def update_properties(self, model: Model) -> list:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
              model (Model): An instantiated Model object
@@ -39,7 +39,7 @@ class CorrectPlugin(PluginInterface):
 
 class IncorrectMethods(PluginInterface):
     """Subclass of PluginInterface with incorrect methods
-    they have create_component but forgot to implement update_contents"""
+    they have create_component but forgot to implement update_properties"""
 
     """Initialize this Plugin Component Class with required attributes"""
     auto_load_page = PluginPage.MODEL
@@ -72,7 +72,7 @@ class IncorrectArgTypes(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def update_contents(self, model: list) -> go.Figure:
+    def update_properties(self, model: list) -> go.Figure:
         """Create a Plotly Figure
         Args:
             model (list): An incorrect argument type
@@ -98,7 +98,7 @@ class IncorrectReturnType(PluginInterface):
         """
         return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def update_contents(self, model: Model) -> go.Figure:
+    def update_properties(self, model: Model) -> go.Figure:
         """Create a Figure but give the wrong return type.
         Args:
             model (Model): An instantiated Model object

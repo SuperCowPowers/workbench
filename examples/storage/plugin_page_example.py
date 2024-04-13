@@ -121,4 +121,4 @@ class PluginPageExample:
 
             # Instantiate the Model and send it to the plugin
             model = Model(model_uuid)
-            return plugin.update_contents(model)
+            return plugin.update_properties(model)
