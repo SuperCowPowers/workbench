@@ -47,14 +47,14 @@ class MyModelMarkdown(PluginInterface):
         return self.container
 
     def update_properties(self, model: Model, **kwargs) -> list:
-        """Update the contents for this plugin component
+        """Update the properties for this plugin component
 
         Args:
             model (Model): An instantiated Model object
             **kwargs: Additional keyword arguments (unused)
 
         Returns:
-            list: A list of the updated contents (children)
+            list: A list of the updated property values for the plugin
         """
         log.important(f"Updating Model Markdown Plugin with Model: {model.uuid} and kwargs: {kwargs}")
 
@@ -72,8 +72,8 @@ class MyModelMarkdown(PluginInterface):
             # Add to markdown string
             markdown += f"**{key}:** {value}  \n"
 
-        # Return the updated contents (must match slots)
-        return header, markdown
+        # Return the updated property values for the plugin
+        return [header, markdown]
 
 
 # Unit Test for the Plugin

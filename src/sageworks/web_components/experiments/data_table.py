@@ -44,7 +44,7 @@ class DataTable(PluginInterface):
         return self.container
 
     def update_properties(self, model_table: pd.DataFrame, **kwargs) -> list:
-        """Update the contents for the plugin."""
+        """Update the properties for the plugin."""
         log.important(f"Updating DataTable Plugin with a model table and kwargs: {kwargs}")
 
         # Convert the DataFrame to a list of dictionaries for DataTable

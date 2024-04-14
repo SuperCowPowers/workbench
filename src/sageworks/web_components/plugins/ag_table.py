@@ -55,14 +55,14 @@ class AGTable(PluginInterface):
         return self.container
 
     def update_properties(self, model_table: pd.DataFrame, **kwargs) -> list:
-        """Update the contents for the plugin.
+        """Update the properties for the plugin.
 
         Args:
             model_table (pd.DataFrame): A DataFrame with the model table data
             **kwargs: Additional keyword arguments (unused)
 
         Returns:
-            list: A list of the updated contents (that match the plugin properties)
+            list: A list of the updated property values for the plugin
         """
         log.important(f"Updating Table Plugin with a model table and kwargs: {kwargs}")
 

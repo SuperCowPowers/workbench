@@ -21,7 +21,7 @@ class ComponentInterface(ABC):
     """A Abstract Web Component Interface
     Notes:
       - The 'create_container' method create a gcc.Graph, html.Div, etc
-      - The 'update_properties' method generates the contents (figure, markdown, etc)
+      - The 'update_properties' method generates the property values
     """
 
     log = logging.getLogger("sageworks")
@@ -57,13 +57,13 @@ class ComponentInterface(ABC):
         pass
 
     def update_properties(self, data_object: SageworksObject) -> list:
-        """Update the contents of the component/container
+        """Update the properties of the component/container
 
         Args:
             data_object (sageworks_object/dataframe): A SageWorks object or DataFrame
 
         Returns:
-            list: A list of the updated contents for EACH slot in the plugin
+            list: A list of the updated property values for the component
         """
         pass
 

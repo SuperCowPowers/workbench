@@ -43,22 +43,22 @@ class PluginUnitTest:
             [Input("update-button", "n_clicks")],
             prevent_initial_call=True,
         )
-        def update_plugin_contents(n_clicks):
+        def update_plugin_properties(n_clicks):
             # Simulate updating the plugin with a new Model, Endpoint, or Model Table
             if plugin_input_type == PluginInputType.MODEL:
                 model = Model("abalone-regression")
-                updated_contents = self.plugin.update_properties(model)
+                updated_proporties = self.plugin.update_properties(model)
             elif plugin_input_type == PluginInputType.ENDPOINT:
                 endpoint = Endpoint("abalone-regression-end")
-                updated_contents = self.plugin.update_properties(endpoint)
+                updated_proporties = self.plugin.update_properties(endpoint)
             elif plugin_input_type == PluginInputType.MODEL_TABLE:
                 model_table = Meta().models()
-                updated_contents = self.plugin.update_properties(model_table)
+                updated_proporties = self.plugin.update_properties(model_table)
             else:
                 raise ValueError(f"Invalid test type: {plugin_input_type}")
 
-            # Return the updated contents based on the plugin's slots
-            return updated_contents
+            # Return the updated properties for the plugin
+            return updated_proporties
 
         # Set up callbacks for displaying output signals
         for component_id, property in self.plugin.signals:

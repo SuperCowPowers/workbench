@@ -37,14 +37,14 @@ class ModelPlugin(PluginInterface):
         return self.container
 
     def update_properties(self, model: Model, **kwargs) -> list:
-        """Update the contents for the plugin.
+        """Update the properties for the plugin.
 
         Args:
             model (Model): An instantiated Model object
             **kwargs: Additional keyword arguments (unused)
 
         Returns:
-            list: A list of the updated contents (children)
+            list: A list of the updated property values for the plugin
         """
         log.important(f"Updating Model Plugin with Model: {model.uuid} and kwargs: {kwargs}")
         model_name = f"Model: {model.uuid}"
@@ -57,7 +57,7 @@ class ModelPlugin(PluginInterface):
             data=[go.Pie(labels=["A", "B", "C", "D"], values=pie_values)], layout=go.Layout(title=model_name)
         )
 
-        # Return the updated contents
+        # Return the updated property values for the plugin
         return [pie_figure]
 
 

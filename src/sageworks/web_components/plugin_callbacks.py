@@ -17,7 +17,7 @@ def register_callbacks(plugins, input_sources, object_type):
         input_sources,
         prevent_initial_call=True,
     )
-    def update_plugin_contents(*args):
+    def update_plugin_properties(*args):
         # Unpack the input arguments
         if object_type == "model":
             inference_run, selected_rows, table_data = args
@@ -43,18 +43,18 @@ def register_callbacks(plugins, input_sources, object_type):
         for plugin in plugins:
             log.important(f"Updating Plugin: {plugin} with {object_type.capitalize()}: {object_uuid}")
             if object_type == "model":
-                updated_contents = plugin.update_properties(obj, inference_run=inference_run)
+                updated_properties = plugin.update_properties(obj, inference_run=inference_run)
             else:  # object_type == 'endpoint'
-                updated_contents = plugin.update_properties(obj)
+                updated_properties = plugin.update_properties(obj)
 
-            # Assume that the length of contents matches the number of slots for the plugin
-            if len(updated_contents) != len(plugin.properties):
+            # Assume that the length of contents matches the number of properties for the plugin
+            if len(updated_properties) != len(plugin.properties):
                 raise ValueError(
-                    f"Plugin {plugin} has {len(updated_contents)} content values != {len(plugin.properties)} slots."
+                    f"Plugin {plugin} has {len(updated_properties)} values != {len(plugin.properties)} properties."
                 )
 
             # Append each value from contents to the updated_properties list
-            updated_properties.extend(updated_contents)
+            updated_properties.extend(updated_properties)
 
         # Return the updated properties for each slot
         return updated_properties

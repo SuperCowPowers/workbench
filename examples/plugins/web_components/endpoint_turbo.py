@@ -33,14 +33,14 @@ class EndpointTurbo(PluginInterface):
         return self.container
 
     def update_properties(self, endpoint: Endpoint, **kwargs) -> list:
-        """Update the contents for the plugin.
+        """Update the properties for the plugin.
 
         Args:
             endpoint (Endpoint): An instantiated Model object
             **kwargs: Additional keyword arguments (unused)
 
         Returns:
-            list: A list of the updated contents (children)
+            list: A list of the updated property values for the plugin
         """
 
         data = [  # Portfolio (inner donut)
@@ -95,7 +95,7 @@ class EndpointTurbo(PluginInterface):
             margin={"t": 30, "b": 10, "r": 10, "l": 10, "pad": 10}, title=endpoint_name, height=400
         )
 
-        # Return the updated contents
+        # Return the updated property values
         return [turbo_figure]
 
 

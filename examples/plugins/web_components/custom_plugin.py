@@ -32,14 +32,14 @@ class CustomPlugin(PluginInterface):
         return self.container
 
     def update_properties(self, model: Model, **kwargs) -> list:
-        """Update the CustomPlugin contents
+        """Update the CustomPlugin property values
 
         Args:
             model (Model): An instantiated Endpoint object
             **kwargs: Additional keyword arguments (unused)
 
         Returns:
-            list: A list of the updated contents (children)
+            list: A list of the updated property values for the plugin
         """
         model_name = f"Model: {model.uuid}"
         text_figure = self.display_text(model_name, figure_height=100)

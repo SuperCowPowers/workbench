@@ -52,12 +52,12 @@ class PluginInterface(ComponentInterface):
 
     @abstractmethod
     def update_properties(self, data_object: ComponentInterface.SageworksObject, **kwargs) -> list:
-        """Generate the contents for the plugin component
+        """Update the property values for the plugin component
         Args:
             data_object (sageworks_object): The instantiated data object for the plugin type.
             **kwargs: Additional keyword arguments (plugins can define their own arguments)
         Returns:
-            list: A list of the updated contents for EACH slot in the plugin
+            list: A list of the updated properties values for the plugin
         """
         pass
 
