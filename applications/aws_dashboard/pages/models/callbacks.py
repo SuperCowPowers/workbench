@@ -1,7 +1,8 @@
 """Callbacks for the Model Subpage Web User Interface"""
 
 import logging
-from dash import Dash, no_update
+from dash import Dash, callback, no_update
+from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
@@ -77,6 +78,7 @@ def update_model_plot_component(app: Dash):
         return model_plot_fig
 
 
+"""
 # Register the plugin callbacks for the model subpage
 def register_plugin_callbacks(plugins):
     # Setup the inputs for the plugins and register the callbacks
@@ -89,3 +91,33 @@ def register_plugin_callbacks(plugins):
     # Sanity check that we have some plugins
     if plugins:
         plugin_callbacks.register_callbacks(plugins, model_inputs, "model")
+"""
+
+
+def setup_plugin_callbacks(plugins):
+    @callback(
+        # Aggregate plugin outputs
+        [Output(component_id, prop) for p in plugins for component_id, prop in p.properties],
+        Input("model_details-dropdown", "value"),
+        Input("models_table", "derived_viewport_selected_row_ids"),
+        State("models_table", "data"),
+    )
+    def update_all_plugin_properties(inference_run, selected_rows, table_data):
+        # Check for no selected rows
+        if not selected_rows or selected_rows[0] is None:
+            raise PreventUpdate
+
+        # Get the selected row data and grab the uuid
+        selected_row_data = table_data[selected_rows[0]]
+        object_uuid = selected_row_data["uuid"]
+
+        # Create the Model object
+        model = Model(object_uuid, legacy=True)
+
+        # Update all the properties for each plugin
+        all_props = []
+        for p in plugins:
+            all_props.extend(p.update_properties(model, inference_run=inference_run))
+
+        # Return all the updated properties
+        return all_props

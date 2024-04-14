@@ -78,8 +78,10 @@ class PluginPage3:
 
         @app.callback(
             Output("plugin_3_model_plot", "figure"),
-            [Input("plugin_3_model_details-dropdown", "value"),
-             Input("plugin_3_model_table", "derived_viewport_selected_row_ids")],
+            [
+                Input("plugin_3_model_details-dropdown", "value"),
+                Input("plugin_3_model_table", "derived_viewport_selected_row_ids"),
+            ],
             State("plugin_3_model_table", "data"),
             prevent_initial_call=True,
         )
@@ -106,11 +108,7 @@ if __name__ == "__main__":
 
     # Create our Dash Application
     my_app = dash.Dash(
-        __name__,
-        title="SageWorks Dashboard",
-        use_pages=True,
-        pages_folder="",
-        external_stylesheets=[dbc.themes.DARKLY]
+        __name__, title="SageWorks Dashboard", use_pages=True, pages_folder="", external_stylesheets=[dbc.themes.DARKLY]
     )
 
     # For Multi-Page Applications, we need to create a 'page container' to hold all the pages

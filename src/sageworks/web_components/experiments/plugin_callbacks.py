@@ -8,7 +8,7 @@ from sageworks.api import Model, Endpoint
 log = logging.getLogger("sageworks")
 
 
-def register_callbacks(plugins, input_sources, object_type):
+def aggregate_callbacks(plugins, input_sources, object_type):
     # Construct a list of Output objects dynamically based on the plugins' properties
     outputs = [Output(component_id, property) for plugin in plugins for component_id, property in plugin.properties]
 
@@ -39,7 +39,7 @@ def register_callbacks(plugins, input_sources, object_type):
             obj = Endpoint(object_uuid, legacy=True)
 
         # Update the plugins and collect the updated properties for each slot
-        all_properties = []
+        all_property_values = []
         for plugin in plugins:
             log.important(f"Updating Plugin: {plugin} with {object_type.capitalize()}: {object_uuid}")
             if object_type == "model":
@@ -54,7 +54,7 @@ def register_callbacks(plugins, input_sources, object_type):
                 )
 
             # Append updated_properties to all_properties
-            all_properties.extend(updated_properties)
+            all_property_values.extend(updated_properties)
 
-        # Return the updated properties for each slot
-        return all_properties
+        # Return all of the updated property values
+        return all_property_values
