@@ -17,7 +17,7 @@ class PluginPage1:
 
         # Register this page with Dash and set up the layout (required)
         register_page(
-            "plugin",
+            __file__,
             path="/plugin_1",
             name=self.page_name,
             layout=self.page_layout(),

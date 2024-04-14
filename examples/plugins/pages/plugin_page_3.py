@@ -31,16 +31,16 @@ class PluginPage3:
 
         # Create a table to display the models
         self.table_component = self.models_table.create_component(
-            "my_model_table", header_color="rgb(60, 60, 60)", row_select="single", max_height=400
+            "plugin_3_model_table", header_color="rgb(60, 60, 60)", row_select="single", max_height=400
         )
 
         # Create a model details panel and model plot
-        self.details_component = self.model_details.create_component("my_model_details")
-        self.plot_component = self.model_plot.create_component("my_model_plot")
+        self.details_component = self.model_details.create_component("plugin_3_model_details")
+        self.plot_component = self.model_plot.create_component("plugin_3_model_plot")
 
         # Register this page with Dash and set up the layout
         register_page(
-            "plugin",
+            __file__,
             path="/plugin_3",
             name=self.page_name,
             layout=self.page_layout(),
@@ -54,8 +54,8 @@ class PluginPage3:
         self.table_component.data = models.to_dict("records")
 
         # Register the callbacks
-        self.register_callbacks(app)
-        self.model_details.register_callbacks("my_model_table")
+        self.register_app_callbacks(app)
+        self.model_details.register_callbacks("plugin_3_model_table")
 
     def page_layout(self) -> dash.html.Div:
         """Set up the layout for the page"""
@@ -73,13 +73,14 @@ class PluginPage3:
         )
         return layout
 
-    def register_callbacks(self, app: dash.Dash):
+    def register_app_callbacks(self, app: dash.Dash):
         """Register the callbacks for the page"""
 
         @app.callback(
-            Output("my_model_plot", "figure"),
-            [Input("my_model_details-dropdown", "value"), Input("my_model_table", "derived_viewport_selected_row_ids")],
-            State("my_model_table", "data"),
+            Output("plugin_3_model_plot", "figure"),
+            [Input("plugin_3_model_details-dropdown", "value"),
+             Input("plugin_3_model_table", "derived_viewport_selected_row_ids")],
+            State("plugin_3_model_table", "data"),
             prevent_initial_call=True,
         )
         def generate_model_plot_figure(inference_run, selected_rows, table_data):
@@ -109,8 +110,7 @@ if __name__ == "__main__":
         title="SageWorks Dashboard",
         use_pages=True,
         pages_folder="",
-        external_stylesheets=[dbc.themes.DARKLY],
-        suppress_callback_exceptions=True,
+        external_stylesheets=[dbc.themes.DARKLY]
     )
 
     # For Multi-Page Applications, we need to create a 'page container' to hold all the pages

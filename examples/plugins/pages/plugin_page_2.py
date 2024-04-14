@@ -29,7 +29,7 @@ class PluginPage2:
 
         # Register this page with Dash and set up the layout
         register_page(
-            "plugin",
+            __file__,
             path="/plugin_2",
             name=self.page_name,
             layout=self.page_layout(),

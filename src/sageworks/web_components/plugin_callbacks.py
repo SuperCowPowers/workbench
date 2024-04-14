@@ -39,7 +39,7 @@ def register_callbacks(plugins, input_sources, object_type):
             obj = Endpoint(object_uuid, legacy=True)
 
         # Update the plugins and collect the updated properties for each slot
-        updated_properties = []
+        all_properties = []
         for plugin in plugins:
             log.important(f"Updating Plugin: {plugin} with {object_type.capitalize()}: {object_uuid}")
             if object_type == "model":
@@ -53,8 +53,8 @@ def register_callbacks(plugins, input_sources, object_type):
                     f"Plugin {plugin} has {len(updated_properties)} values != {len(plugin.properties)} properties."
                 )
 
-            # Append each value from contents to the updated_properties list
-            updated_properties.extend(updated_properties)
+            # Append updated_properties to all_properties
+            all_properties.extend(updated_properties)
 
         # Return the updated properties for each slot
-        return updated_properties
+        return all_properties
