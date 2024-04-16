@@ -1,6 +1,6 @@
-from pprint import pprint
+import json
 from sageworks.api.pipeline import Pipeline
 
 # Retrieve an existing Pipeline
 my_pipeline = Pipeline("abalone_pipeline_v1")
-pprint(my_pipeline.details(recompute=True))
+print(json.dumps(my_pipeline.details(), indent=4))

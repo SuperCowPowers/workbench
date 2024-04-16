@@ -16,7 +16,7 @@ class PipelineManager:
     Common Usage:
         ```
         my_manager = PipelineManager()
-
+        my_manager.list_pipelines()
         abalone_pipeline = my_manager.create_from_endpoint("abalone-regression-end")
         my_manager.save_pipeline("abalone_pipeline_v1", abalone_pipeline)
         ```

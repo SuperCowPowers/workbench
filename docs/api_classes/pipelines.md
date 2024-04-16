@@ -3,9 +3,9 @@
 !!! tip inline end "Pipeline Examples"
     Examples of using the Pipeline classes are listed at the bottom of this page [Examples](#examples).
     
-Pipelines are a sequence of SageWorks transforms. So if you have a nightly ML workflow you can capture that as a Pipeline. Here's an example pipeline:
+Pipelines store sequences of SageWorks transforms. So if you have a nightly ML workflow you can capture that as a Pipeline. Here's an example pipeline:
 
-```py title=nightly_sol_pipeline_v1.json
+```py title="nightly_sol_pipeline_v1.json"
 {
     "data_source": {
          "name": "nightly_data",
@@ -74,31 +74,47 @@ from sageworks.api.pipeline import Pipeline
 
 # Retrieve an existing Pipeline
 my_pipeline = Pipeline("abalone_pipeline_v1")
-pprint(my_pipeline.details(recompute=True))
+pprint(my_pipeline.details())
 ```
 
 **Output**
 
-```py
-{'name': 'abalone_pipeline_v1',
- 'pipeline': {'data_source': {'input': '/Users/briford/work/sageworks/data/abalone.csv',
-                              'name': 'abalone_data',
-                              'tags': ['abalone_data']},
-              'endpoint': {'input': 'abalone-regression',
-                           'name': 'abalone-regression-end',
-                           'tags': ['abalone', 'regression']},
-              'feature_set': {'input': 'abalone_data',
-                              'name': 'abalone_features',
-                              'tags': ['abalone_features']},
-              'model': {'input': 'abalone_features',
-                        'name': 'abalone-regression',
-                        'tags': ['abalone', 'regression']}},
- 's3_path': 's3://sandbox-sageworks-artifacts/pipelines/abalone_pipeline_v1.json'}
+```json
+{
+    "name": "abalone_pipeline_v1",
+    "s3_path": "s3://sandbox/pipelines/abalone_pipeline_v1.json",
+    "pipeline": {
+        "data_source": {
+            "name": "abalone_data",
+            "tags": [
+                "abalone_data"
+            ],
+            "input": "/Users/briford/work/sageworks/data/abalone.csv"
+        },
+        "feature_set": {
+            "name": "abalone_features",
+            "tags": [
+                "abalone_features"
+            ],
+            "input": "abalone_data"
+        },
+        "model": {
+            "name": "abalone-regression",
+            "tags": [
+                "abalone",
+                "regression"
+            ],
+            "input": "abalone_features"
+        },
+        ...
+    }
+}
 ```
 
 **Pipeline Execution**
 
-!!!tip inline end "Executing the Pipeline is obviously the most important reason for creating one. If gives you a reproducible way to capture, inspect, and run the same ML pipeline on different data (nightly).
+!!!tip inline end "Pipeline Execution" 
+    Executing the Pipeline is obviously the most important reason for creating one. If gives you a reproducible way to capture, inspect, and run the same ML pipeline on different data (nightly).
 
 ```py title="pipeline_execution.py"
 from sageworks.api.pipeline import Pipeline
