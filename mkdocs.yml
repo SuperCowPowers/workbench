@@ -9,6 +9,7 @@ nav:
     - FeatureSet: api_classes/feature_set.md
     - Model: api_classes/model.md
     - Endpoint: api_classes/endpoint.md
+    - Pipelines: api_classes/pipelines.md
     - Monitor: api_classes/monitor.md
   - Core Classes: 
     - OverView: core_classes/overview.md
