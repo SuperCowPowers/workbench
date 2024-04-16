@@ -105,6 +105,17 @@ class Pipeline:
         json_object = json.loads(response["Body"].read())
         return json_object
 
+    def __repr__(self) -> str:
+        """String representation of this pipeline
+
+        Returns:
+            str: String representation of this pipeline
+        """
+        # Class name and details
+        class_name = self.__class__.__name__
+        details = json.dumps(self.details(), indent=4)
+        return f"{class_name}({details})"
+
 
 if __name__ == "__main__":
     """Exercise the Pipeline Class"""
@@ -116,3 +127,6 @@ if __name__ == "__main__":
 
     # Execute the Pipeline
     my_pipeline.execute()
+
+    # Print the Representation of the Pipeline
+    print(my_pipeline)

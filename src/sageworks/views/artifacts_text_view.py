@@ -41,6 +41,7 @@ class ArtifactsTextView(View):
             "FEATURE_SETS": self.feature_sets_summary(),
             "MODELS": self.models_summary(),
             "ENDPOINTS": self.endpoints_summary(),
+            "PIPELINES": self.pipelines_summary(),
         }
         return summary_data
 
@@ -78,6 +79,10 @@ class ArtifactsTextView(View):
     def endpoints_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Endpoints"""
         return self.meta.endpoints()
+
+    def pipelines_summary(self) -> pd.DataFrame:
+        """Get summary data about the SageWorks Pipelines"""
+        return self.meta.pipelines()
 
 
 if __name__ == "__main__":

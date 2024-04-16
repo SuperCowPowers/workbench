@@ -14,6 +14,7 @@ from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker, Se
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.datetime_utils import datetime_string
 from sageworks.utils.aws_utils import num_columns_ds, num_columns_fs, aws_url
+from sageworks.api.pipeline_manager import PipelineManager
 
 
 class Meta:
@@ -36,6 +37,9 @@ class Meta:
         self.aws_account_clamp = AWSAccountClamp()
         self.aws_broker = AWSServiceBroker()
         self.cm = ConfigManager()
+
+        # Pipeline Manager
+        self.pipeline_manager = PipelineManager()
 
     def account(self) -> dict:
         """Print out the AWS Account Info
@@ -344,6 +348,20 @@ class Meta:
         """
         return self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS, force_refresh=refresh)
 
+    def pipelines(self, refresh: bool = False) -> pd.DataFrame:
+        """Get a summary of the SageWorks Pipelines
+
+        Args:
+            refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+
+        Returns:
+            pd.DataFrame: A summary of the SageWorks Pipelines
+        """
+        data = self.pipeline_manager.list_pipelines()
+
+        # Return the pipelines summary as a DataFrame
+        return pd.DataFrame(data)
+
     def _remove_sageworks_meta(self, data: dict) -> dict:
         """Internal: Recursively remove any keys with 'sageworks_' in them"""
 
@@ -399,6 +417,10 @@ if __name__ == "__main__":
     # Get the Endpoints
     print("\n\n*** Endpoints ***")
     pprint(meta.endpoints())
+
+    # Get the Pipelines
+    print("\n\n*** Pipelines ***")
+    pprint(meta.pipelines())
 
     # Now do a deep dive on all the Artifacts
     print("\n\n#")

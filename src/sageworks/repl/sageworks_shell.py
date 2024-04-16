@@ -96,6 +96,7 @@ class SageWorksShell:
         self.commands["feature_sets"] = self.feature_sets
         self.commands["models"] = self.models
         self.commands["endpoints"] = self.endpoints
+        self.commands["pipelines"] = self.pipelines
         self.commands["log_debug"] = self.log_debug
         self.commands["log_info"] = self.log_info
         self.commands["log_important"] = self.log_important
@@ -209,6 +210,8 @@ class SageWorksShell:
         self.commands["Endpoint"] = importlib.import_module("sageworks.api.endpoint").Endpoint
         self.commands["Monitor"] = importlib.import_module("sageworks.api.monitor").Monitor
         self.commands["Meta"] = importlib.import_module("sageworks.api.meta").Meta
+        self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline
+        self.commands["PipelineManager"] = importlib.import_module("sageworks.api.pipeline_manager").PipelineManager
         self.commands["PluginManager"] = importlib.import_module("sageworks.utils.plugin_manager").PluginManager
 
         # These are 'nice to have' imports
@@ -241,6 +244,7 @@ class SageWorksShell:
         - feature_sets: List all the FeatureSets in AWS
         - models: List all the Models in AWS
         - endpoints: List all the Endpoints in AWS
+        - pipelines: List all the SageWorks Pipelines
         - config: Show the current SageWorks Config
         - status: Show the current SageWorks Status
         - log_(debug/info/important/warning): Set the SageWorks log level
@@ -266,10 +270,15 @@ class SageWorksShell:
             # Pad the name to 15 characters
             name = (name + " " * 15)[:15]
 
+            # Sanity check the dataframe
+            if df.empty:
+                examples = ""
+
             # Get the first three items in the first column
-            examples = ", ".join(df.iloc[:, 0].tolist())
-            if len(examples) > 70:
-                examples = examples[:70] + "..."
+            else:
+                examples = ", ".join(df.iloc[:, 0].tolist())
+                if len(examples) > 70:
+                    examples = examples[:70] + "..."
 
             # Print the summary
             cprint(["lightpurple", "\t" + name, "lightgreen", str(df.shape[0]) + "  ", "purple_blue", examples])
@@ -291,6 +300,9 @@ class SageWorksShell:
 
     def endpoints(self):
         return self.artifacts_text_view.endpoints_summary()
+
+    def pipelines(self):
+        return self.artifacts_text_view.pipelines_summary()
 
     @staticmethod
     def log_debug():
