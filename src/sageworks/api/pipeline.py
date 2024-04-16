@@ -1,4 +1,6 @@
 """Pipeline: Manages the details around a SageWorks Pipeline, including Execution"""
+
+import sys
 import logging
 import json
 import awswrangler as wr
@@ -7,7 +9,9 @@ import awswrangler as wr
 from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.api import DataSource, FeatureSet, Model, Endpoint
+
+# from sageworks.api import DataSource, FeatureSet, Model, Endpoint
+
 
 class Pipeline:
     """Pipeline: SageWorks Pipeline API Class
@@ -54,7 +58,6 @@ class Pipeline:
         # Data Storage Cache
         self.data_storage = SageWorksCache(prefix="data_storage")
 
-
     def details(self, recompute=False) -> dict:
         """Pipeline Details
 
@@ -99,8 +102,9 @@ class Pipeline:
     def _get_pipeline(self) -> dict:
         """Internal: Get the pipeline as a JSON object from the specified S3 bucket and key."""
         response = self.s3_client.get_object(Bucket=self.bucket, Key=self.key)
-        json_object = json.loads(response['Body'].read())
+        json_object = json.loads(response["Body"].read())
         return json_object
+
 
 if __name__ == "__main__":
     """Exercise the Pipeline Class"""

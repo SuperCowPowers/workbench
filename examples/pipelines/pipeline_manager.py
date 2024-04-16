@@ -1,7 +1,7 @@
 from pprint import pprint
 from sageworks.api.pipeline_manager import PipelineManager
 
- # Create a PipelineManager
+# Create a PipelineManager
 my_manager = PipelineManager()
 
 # List the Pipelines

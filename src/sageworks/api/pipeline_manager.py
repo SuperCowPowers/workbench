@@ -1,8 +1,8 @@
 """PipelineManager: Manages SageWorks Pipelines, listing, creating, and saving them."""
+
+import sys
 import logging
 import json
-import boto3
-import awswrangler as wr
 
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager
@@ -43,13 +43,13 @@ class PipelineManager:
         self.boto_session = AWSAccountClamp().boto_session()
 
         # Read all the Pipelines from this S3 path
-        self.s3_client = self.boto_session.client('s3')
+        self.s3_client = self.boto_session.client("s3")
 
         # List objects using the S3 client
         response = self.s3_client.list_objects_v2(Bucket=self.bucket, Prefix=self.prefix)
 
         # Check if there are objects
-        if 'Contents' in response:
+        if "Contents" in response:
             # Process the list of dictionaries (we only need the filename, the LastModified, and the Size)
             self.pipelines = [
                 {
@@ -57,7 +57,7 @@ class PipelineManager:
                     "last_modified": pipeline["LastModified"],
                     "size": pipeline["Size"],
                 }
-                for pipeline in response['Contents']
+                for pipeline in response["Contents"]
             ]
         else:
             self.pipelines = []
