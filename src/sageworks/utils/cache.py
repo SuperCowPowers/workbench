@@ -5,7 +5,7 @@ from collections import OrderedDict
 import atexit
 
 
-class Cache(object):
+class Cache:
     """In process memory cache. Not thread safe.
     Usage:
          cache = Cache(max_size=5, expire=10)

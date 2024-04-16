@@ -1,7 +1,9 @@
 """Model: Manages AWS Model Package/Group creation and management.
+
 Models are automatically set up and provisioned for deployment into AWS.
 Models can be viewed in the AWS Sagemaker interfaces or in the SageWorks
-Dashboard UI, which provides additional model details and performance metrics"""
+Dashboard UI, which provides additional model details and performance metrics
+"""
 
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
@@ -11,7 +13,7 @@ from sageworks.api.endpoint import Endpoint
 
 
 class Model(ModelCore):
-    """Model: SageWorks Model API Class
+    """Model: SageWorks Model API Class.
 
     Common Usage:
         ```
@@ -22,7 +24,7 @@ class Model(ModelCore):
     """
 
     def details(self, **kwargs) -> dict:
-        """Model Details
+        """Retrieve the Model Details.
 
         Returns:
             dict: A dictionary of details about the Model
@@ -30,7 +32,7 @@ class Model(ModelCore):
         return super().details(**kwargs)
 
     def to_endpoint(self, name: str = None, tags: list = None, serverless: bool = True) -> Endpoint:
-        """Create an Endpoint from the Model
+        """Create an Endpoint from the Model.
 
         Args:
             name (str): Set the name for the endpoint. If not specified, an automatic name will be generated
