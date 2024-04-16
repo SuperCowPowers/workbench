@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../endpoint/">
       
       
-        <link rel="next" href="../../misc/faq/">
+        <link rel="next" href="../monitor/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>API Changes - SageWorks</title>
+        <title>Pipelines - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#plugin-api-changes" class="md-skip">
+        <a href="#pipelines" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              API Changes
+              Pipelines
             
           </span>
         </div>
@@ -266,17 +266,19 @@
       
   
   
+    
   
   
+  
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -290,7 +292,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             API Classes
@@ -304,7 +306,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/overview/" class="md-nav__link">
+      <a href="../overview/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -325,7 +327,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/meta/" class="md-nav__link">
+      <a href="../meta/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -346,7 +348,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/data_source/" class="md-nav__link">
+      <a href="../data_source/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -367,7 +369,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/feature_set/" class="md-nav__link">
+      <a href="../feature_set/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -388,7 +390,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/model/" class="md-nav__link">
+      <a href="../model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -409,7 +411,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/endpoint/" class="md-nav__link">
+      <a href="../endpoint/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -427,10 +429,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../api_classes/pipelines/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Pipelines
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -439,6 +461,35 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sageworks-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      SageWorks UI
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -451,7 +502,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/monitor/" class="md-nav__link">
+      <a href="../monitor/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -961,19 +1012,17 @@
       
   
   
-    
   
   
-  
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
@@ -987,7 +1036,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Plugins
@@ -1001,7 +1050,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../plugins/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1019,28 +1068,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    API Changes
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../plugins/plugin_api_changes/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1049,33 +1080,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#plugin-api-changes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Plugin API Changes
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1460,6 +1464,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1468,9 +1474,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#plugin-api-changes" class="md-nav__link">
+  <a href="#sageworks-ui" class="md-nav__link">
     <span class="md-ellipsis">
-      Plugin API Changes
+      SageWorks UI
     </span>
   </a>
   
@@ -1491,19 +1497,118 @@
                   
 
 
-  <h1>API Changes</h1>
+<h1 id="pipelines">Pipelines</h1>
+<div class="admonition tip inline end">
+<p class="admonition-title">Pipeline Examples</p>
+<p>Examples of using the Pipeline classes are listed at the bottom of this page <a href="#examples">Examples</a>.</p>
+</div>
+<p>Pipelines are a sequence of SageWorks transforms. So if you have a nightly ML workflow you can capture that as a Pipeline. Here's an example pipeline:</p>
+<p>```py title=nightly_sol_pipeline_v1.json
+{
+    "data_source": {
+         "name": "nightly_data",
+         "tags": ["solubility", "foo"],
+         "s3_input": "s3://blah/blah.csv"
+    },
+    "feature_set": {
+          "name": "nightly_features",
+          "tags": ["blah", "blah"],
+          "input": "nightly_data"
+          "schema": "mol_descriptors_v1"
+    },
+    "model": {
+          "name": “nightly_model”,
+          "tags": ["blah", "blah"],
+          "features": ["col1", "col2"],
+          "target": “sol”,
+          "input": “nightly_features”
+    "endpoint": {
+          ...
+}  <br />
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>::: sageworks.api.pipeline_manager
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>::: sageworks.api.pipeline
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>## Examples
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>**Make a Pipeline**
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>Pipelines are just JSON files (see `sageworks/examples/pipelines/`). You can copy one and make changes to fit your objects/use case, or if you have a set of SageWorks artifacts created you can &#39;backtrack&#39; from the Endpoint and have it create the Pipeline for you.
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>```py title=&quot;pipeline_manager.py&quot;
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>from sageworks.api.pipeline_manager import PipelineManager
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a> # Create a PipelineManager
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>my_manager = PipelineManager()
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a># List the Pipelines
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>pprint(my_manager.list_pipelines())
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a># Create a Pipeline from an Endpoint
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>abalone_pipeline = my_manager.create_from_endpoint(&quot;abalone-regression-end&quot;)
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a># Save the Pipeline
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>my_manager.save_pipeline(&quot;abalone_pipeline_v1&quot;, abalone_pipeline)
+</span></code></pre></div></p>
+<p><strong>Output</strong></p>
+<p><div class="language-py highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Listing</span> <span class="n">Pipelines</span><span class="o">...</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="p">[{</span><span class="s1">&#39;last_modified&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2024</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">tzutc</span><span class="p">()),</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;abalone_pipeline_v1&#39;</span><span class="p">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  <span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">445</span><span class="p">}]</span>
+</span></code></pre></div>
+<strong>Pipeline Details</strong></p>
+<div class="admonition tip inline end">
+<p class="admonition-title">The details() method</p>
+<p>The <code>detail()</code> method on the Pipeline class provides a lot of useful information. All of the SageWorks classes have a <code>details()</code> method try it out!</p>
+</div>
+<div class="language-py highlight"><span class="filename">pipeline_details.py</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">sageworks.api.pipeline</span> <span class="kn">import</span> <span class="n">Pipeline</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Retrieve an existing Pipeline</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">my_pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">&quot;abalone_pipeline_v1&quot;</span><span class="p">)</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">pprint</span><span class="p">(</span><span class="n">my_pipeline</span><span class="o">.</span><span class="n">details</span><span class="p">(</span><span class="n">recompute</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</span></code></pre></div>
+<p><strong>Output</strong></p>
+<div class="language-py highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;abalone_pipeline_v1&#39;</span><span class="p">,</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a> <span class="s1">&#39;pipeline&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;data_source&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="s1">&#39;/Users/briford/work/sageworks/data/abalone.csv&#39;</span><span class="p">,</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>                              <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;abalone_data&#39;</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>                              <span class="s1">&#39;tags&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;abalone_data&#39;</span><span class="p">]},</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>              <span class="s1">&#39;endpoint&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="s1">&#39;abalone-regression&#39;</span><span class="p">,</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>                           <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;abalone-regression-end&#39;</span><span class="p">,</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>                           <span class="s1">&#39;tags&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;abalone&#39;</span><span class="p">,</span> <span class="s1">&#39;regression&#39;</span><span class="p">]},</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>              <span class="s1">&#39;feature_set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="s1">&#39;abalone_data&#39;</span><span class="p">,</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>                              <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;abalone_features&#39;</span><span class="p">,</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>                              <span class="s1">&#39;tags&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;abalone_features&#39;</span><span class="p">]},</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>              <span class="s1">&#39;model&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="s1">&#39;abalone_features&#39;</span><span class="p">,</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>                        <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;abalone-regression&#39;</span><span class="p">,</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>                        <span class="s1">&#39;tags&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;abalone&#39;</span><span class="p">,</span> <span class="s1">&#39;regression&#39;</span><span class="p">]}},</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a> <span class="s1">&#39;s3_path&#39;</span><span class="p">:</span> <span class="s1">&#39;s3://sandbox-sageworks-artifacts/pipelines/abalone_pipeline_v1.json&#39;</span><span class="p">}</span>
+</span></code></pre></div>
+<p><strong>Pipeline Execution</strong></p>
+<p>!!!tip inline end "Executing the Pipeline is obviously the most important reason for creating one. If gives you a reproducible way to capture, inspect, and run the same ML pipeline on different data (nightly).</p>
+<div class="language-py highlight"><span class="filename">pipeline_execution.py</span><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span> <span class="nn">sageworks.api.pipeline</span> <span class="kn">import</span> <span class="n">Pipeline</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Retrieve an existing Pipeline</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">my_pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">&quot;abalone_pipeline_v1&quot;</span><span class="p">)</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">pprint</span><span class="p">(</span><span class="n">my_pipeline</span><span class="o">.</span><span class="n">details</span><span class="p">(</span><span class="n">recompute</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Execute the Pipeline</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">my_pipeline</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+</span></code></pre></div>
+<p><strong>Output</strong></p>
+<div class="language-py highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">TBD</span>
+</span></code></pre></div>
+<h2 id="sageworks-ui">SageWorks UI</h2>
+<p>Running a pipeline creates and deploys a set of SageWorks Artifacts, DataSource, FeatureSet, Model and Endpoint. These artifacts can be viewed in the Sagemaker Console/Notebook interfaces or in the SageWorks Dashboard UI.</p>
+<figure>
+<img alt="sageworks_endpoints" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/b5eab741-2c23-4c5e-9495-15fd3ea8155c">
+<figcaption>SageWorks Dashboard: Endpoints</figcaption>
+</figure>
 
-<h2 id="plugin-api-changes">Plugin API Changes</h2>
-<p>There were quite a fiew API changes for Plugins between <code>0.4.43</code> and <code>0.5.0</code> versions of SageWorks.</p>
-<p><strong>General:</strong> Classes that inherit from <code>component_interface</code> or <code>plugin_interface</code>  are now 'auto wrapped' with an exception container. This container not only catches errors/crashes so they don't crash the application but it also displays the error in the widget.</p>
-<p><strong>Specific Changes:</strong></p>
-<ul>
-<li>The <code>generate_component_figure</code> method is now <code>update_contents</code></li>
-<li>The <code>message_figure</code> method is now <code>display_text</code></li>
-<li><code>PluginType</code> was changed to <code>PluginPage</code> (use CUSTOM to NOT autoload)</li>
-<li><code>PluginInputType.MODEL_DETAILS</code>  changed to <code>PluginInputType.MODEL</code>  (since your now getting a model object)</li>
-<li><code>FigureTypes</code> is now <code>ContentTypes</code></li>
-</ul>
+<div class="admonition note">
+<p class="admonition-title">Not Finding a particular method?</p>
+<p>The SageWorks API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: <a href="../../core_classes/overview/">SageWorks Core Classes</a></p>
+</div>
 
 
 
