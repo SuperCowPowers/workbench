@@ -9,7 +9,6 @@ import awswrangler as wr
 from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.core.pipelines.pipeline_executor import PipelineExecutor
 
 
 class Pipeline:
@@ -90,6 +89,8 @@ class Pipeline:
         Raises:
             RunTimeException: If the pipeline execution fails in any way
         """
+        from sageworks.core.pipelines.pipeline_executor import PipelineExecutor
+
         pipeline_executor = PipelineExecutor(self.pipeline)
         pipeline_executor.execute()
 
@@ -102,6 +103,8 @@ class Pipeline:
         Raises:
             RunTimeException: If the pipeline execution fails in any way
         """
+        from sageworks.core.pipelines.pipeline_executor import PipelineExecutor
+
         pipeline_executor = PipelineExecutor(self.pipeline)
         pipeline_executor.execute_partial(subset)
 
