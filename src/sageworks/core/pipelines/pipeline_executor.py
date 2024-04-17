@@ -88,7 +88,7 @@ class PipelineExecutor:
             # Endpoint
             elif class_name == "endpoint":
                 # Check for a transform
-                if "model" in sageworks_objects and not subset and "endpoint" in subset:
+                if "model" in sageworks_objects and not subset or "endpoint" in subset:
                     sageworks_objects["model"].to_endpoint(**kwargs)
 
             # Found something weird
@@ -148,6 +148,6 @@ if __name__ == "__main__":
     # pipeline_executor.execute()
 
     # Execute partial Pipelines
-    pipeline_executor.execute_partial(["data_source"])
+    # pipeline_executor.execute_partial(["data_source"])
     # pipeline_executor.execute_partial(["data_source", "feature_set"])
-    # pipeline_executor.execute_partial(["model", "endpoint"])
+    pipeline_executor.execute_partial(["model", "endpoint"])
