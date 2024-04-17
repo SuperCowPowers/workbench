@@ -91,6 +91,10 @@ class PipelineManager:
         for name in ["data_source", "feature_set", "model", "endpoint"]:
             artifact = locals()[name]
             pipeline[name] = {"name": artifact.uuid, "tags": artifact.get_tags(), "input": artifact.get_input()}
+            if name == "model":
+                pipeline[name]["model_type"] = artifact.model_type.value
+                pipeline[name]["target_column"] = artifact.target()
+                pipeline[name]["feature_list"] = artifact.features()
 
         # Return the Pipeline
         return pipeline

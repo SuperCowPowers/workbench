@@ -106,7 +106,7 @@ class SageWorksShell:
 
     def start(self):
         """Start the SageWorks IPython shell"""
-        cprint("magenta", "Welcome to SageWorks!")
+        cprint("magenta", "\nWelcome to SageWorks!")
         if self.aws_status is False:
             cprint("red", "AWS Account Connection Failed...Review/Fix the SageWorks Config:")
             cprint("red", f"Path: {self.cm.site_config_path}")

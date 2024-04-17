@@ -9,8 +9,7 @@ import awswrangler as wr
 from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-
-# from sageworks.api import DataSource, FeatureSet, Model, Endpoint
+from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 
 
 class Pipeline:
@@ -104,6 +103,14 @@ class Pipeline:
         response = self.s3_client.get_object(Bucket=self.bucket, Key=self.key)
         json_object = json.loads(response["Body"].read())
         return json_object
+
+    def execute(self):
+        """Execute the entire Pipeline
+
+        Raises:
+            RunTimeException: If the pipeline execution fails in any way
+        """
+        self.log.important(f"Executing Pipeline: {self.pipeline_name}...")
 
     def __repr__(self) -> str:
         """String representation of this pipeline
