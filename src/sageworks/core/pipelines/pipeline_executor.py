@@ -1,15 +1,9 @@
 """PipelineExecutor: Executes a SageWorks Pipeline"""
 
-import sys
 import logging
-import json
-import awswrangler as wr
 
 # SageWorks Imports
-from sageworks.utils.sageworks_cache import SageWorksCache
-from sageworks.utils.config_manager import ConfigManager
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.api import DataSource, FeatureSet, Model, Endpoint, Pipeline
+from sageworks.api import DataSource, FeatureSet, Model, Pipeline
 from sageworks.api.model import ModelType
 
 
@@ -55,8 +49,8 @@ class PipelineExecutor:
         for class_name, kwargs in self.pipeline.items():
 
             # Input is a special case
-            input = kwargs['input']
-            del kwargs['input']
+            input = kwargs["input"]
+            del kwargs["input"]
 
             # DataSource
             if class_name == "data_source":
@@ -70,7 +64,7 @@ class PipelineExecutor:
                 if "data_source" in sageworks_objects and not subset or "feature_set" in subset:
                     sageworks_objects["data_source"].to_features(**kwargs)
                 if not subset or "model" in subset:
-                    sageworks_objects["feature_set"] = FeatureSet(kwargs['name'])
+                    sageworks_objects["feature_set"] = FeatureSet(kwargs["name"])
 
             # Model
             elif class_name == "model":
@@ -83,7 +77,7 @@ class PipelineExecutor:
                 if "feature_set" in sageworks_objects:
                     sageworks_objects["feature_set"].to_model(**kwargs)
                 if not subset or "endpoint" in subset:
-                    sageworks_objects["model"] = Model(kwargs['name'])
+                    sageworks_objects["model"] = Model(kwargs["name"])
 
             # Endpoint
             elif class_name == "endpoint":
@@ -109,35 +103,6 @@ class PipelineExecutor:
 
 if __name__ == "__main__":
     """Exercise the PipelineExecutor Class"""
-    from pprint import pprint
-
-    # Example Pipeline
-    pipeline =  {
-        "name": "abalone_pipeline_v1",
-        "s3_path": "s3://sandbox-sageworks-artifacts/pipelines/abalone_pipeline_v1.json",
-        "pipeline": {
-            "data_source": {
-                "name": "abalone_data",
-                "tags": ["abalone_data"],
-                "input": "/Users/briford/work/sageworks/data/abalone.csv"
-            },
-            "feature_set": {
-                "name": "abalone_features",
-                "tags": ["abalone_features"],
-                "input": "abalone_data"
-            },
-            "model": {
-                "name": "abalone-regression",
-                "tags": ["abalone","regression"],
-                "input": "abalone_features"
-            },
-            "endpoint": {
-                "name": "abalone-regression-end",
-                "tags": ["abalone", "regression"],
-                "input": "abalone-regression"
-            }
-        }
-    }
 
     # Retrieve an existing Pipeline
     pipeline = Pipeline("abalone_pipeline_v1")

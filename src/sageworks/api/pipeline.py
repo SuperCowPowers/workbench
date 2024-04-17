@@ -9,7 +9,7 @@ import awswrangler as wr
 from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.api import DataSource, FeatureSet, Model, Endpoint
+from sageworks.core.pipelines.pipeline_executor import PipelineExecutor
 
 
 class Pipeline:
@@ -90,7 +90,20 @@ class Pipeline:
         Raises:
             RunTimeException: If the pipeline execution fails in any way
         """
-        self.log.important(f"Executing Pipeline: {self.pipeline_name}...")
+        pipeline_executor = PipelineExecutor(self.pipeline)
+        pipeline_executor.execute()
+
+    def execute_partial(self, subset: list):
+        """Execute a partial Pipeline
+
+        Args:
+            subset (list): A subset of the pipeline to execute
+
+        Raises:
+            RunTimeException: If the pipeline execution fails in any way
+        """
+        pipeline_executor = PipelineExecutor(self.pipeline)
+        pipeline_executor.execute_partial(subset)
 
     def delete(self):
         """Pipeline Deletion"""
@@ -103,14 +116,6 @@ class Pipeline:
         response = self.s3_client.get_object(Bucket=self.bucket, Key=self.key)
         json_object = json.loads(response["Body"].read())
         return json_object
-
-    def execute(self):
-        """Execute the entire Pipeline
-
-        Raises:
-            RunTimeException: If the pipeline execution fails in any way
-        """
-        self.log.important(f"Executing Pipeline: {self.pipeline_name}...")
 
     def __repr__(self) -> str:
         """String representation of this pipeline
@@ -130,7 +135,7 @@ if __name__ == "__main__":
 
     # Retrieve an existing Pipeline
     my_pipeline = Pipeline("abalone_pipeline_v1")
-    pprint(my_pipeline.details(recompute=True))
+    pprint(my_pipeline.details())
 
     # Execute the Pipeline
     my_pipeline.execute()
