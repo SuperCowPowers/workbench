@@ -3,7 +3,7 @@
 import logging
 
 # SageWorks Imports
-from sageworks.api import DataSource, FeatureSet, Model, Pipeline
+from sageworks.api import DataSource, FeatureSet, Model, Endpoint, Pipeline
 from sageworks.api.model import ModelType
 
 
@@ -84,6 +84,8 @@ class PipelineExecutor:
                 # Check for a transform
                 if "model" in sageworks_objects and not subset or "endpoint" in subset:
                     sageworks_objects["model"].to_endpoint(**kwargs)
+                    endpoint = Endpoint(kwargs["name"])
+                    endpoint.auto_inference(capture=True)
 
             # Found something weird
             else:
