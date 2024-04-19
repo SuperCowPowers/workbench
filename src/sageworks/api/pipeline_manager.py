@@ -45,13 +45,19 @@ class PipelineManager:
         # Read all the Pipelines from this S3 path
         self.s3_client = self.boto_session.client("s3")
 
+    def list_pipelines(self) -> list:
+        """List all the Pipelines in the S3 Bucket
+
+        Returns:
+            list: A list of Pipeline names and details
+        """
         # List objects using the S3 client
         response = self.s3_client.list_objects_v2(Bucket=self.bucket, Prefix=self.prefix)
 
         # Check if there are objects
         if "Contents" in response:
             # Process the list of dictionaries (we only need the filename, the LastModified, and the Size)
-            self.pipelines = [
+            pipelines = [
                 {
                     "name": pipeline["Key"].split("/")[-1].replace(".json", ""),
                     "last_modified": pipeline["LastModified"],
@@ -59,17 +65,10 @@ class PipelineManager:
                 }
                 for pipeline in response["Contents"]
             ]
+            return pipelines
         else:
-            self.pipelines = []
             self.log.warning(f"No pipelines found at {self.pipelines_s3_path}...")
-
-    def list_pipelines(self) -> list:
-        """List all the Pipelines in the S3 Bucket
-
-        Returns:
-            list: A list of Pipeline names and details
-        """
-        return self.pipelines
+            return []
 
     # Create a new Pipeline from an Endpoint
     def create_from_endpoint(self, endpoint_name: str) -> dict:
@@ -99,8 +98,8 @@ class PipelineManager:
         # Return the Pipeline
         return pipeline
 
-    # Save a Pipeline to S3
-    def save_pipeline(self, pipeline_name: str, pipeline: dict):
+    # Publish a Pipeline to SageWorks
+    def publish_pipeline(self, pipeline_name: str, pipeline: dict):
         """Save a Pipeline to S3
 
         Args:
@@ -108,12 +107,71 @@ class PipelineManager:
             pipeline (dict): The Pipeline to save
         """
         key = f"{self.prefix}{pipeline_name}.json"
-        output_path = f"{self.bucket}{key}"
-        self.log.important(f"Saving {pipeline_name} to S3: {output_path}...")
+        self.log.important(f"Saving {pipeline_name} to S3: {self.bucket}/{key}...")
 
         # Save the pipeline as an S3 JSON object
+        self.s3_client.put_object(Body=json.dumps(pipeline, indent=4), Bucket=self.bucket, Key=key)
 
-        self.s3_client.put_object(Body=json.dumps(pipeline), Bucket=self.bucket, Key=key)
+    def delete_pipeline(self, pipeline_name: str):
+        """Delete a Pipeline from S3
+
+        Args:
+            pipeline_name (str): The name of the Pipeline to delete
+        """
+        key = f"{self.prefix}{pipeline_name}.json"
+        self.log.important(f"Deleting {pipeline_name} from S3: {self.bucket}/{key}...")
+
+        # Delete the pipeline object from S3
+        self.s3_client.delete_object(Bucket=self.bucket, Key=key)
+
+    # Save a Pipeline to a local file
+    def save_pipeline_to_file(self, pipeline_name: str, pipeline: dict, filepath: str):
+        """Save a Pipeline to a local file
+
+        Args:
+            pipeline_name (str): The name of the Pipeline
+            pipeline (dict): The Pipeline to save
+            filepath (str): The path to save the Pipeline
+        """
+
+        # Sanity check the filepath
+        if not filepath.endswith(".json"):
+            filepath += ".json"
+
+        # Save the pipeline as a local JSON file
+        with open(filepath, "w") as fp:
+            json.dump(pipeline, fp, indent=4)
+
+    def load_pipeline_from_file(self, filepath: str) -> dict:
+        """Load a Pipeline from a local file
+
+        Args:
+            filepath (str): The path of the Pipeline to load
+
+        Returns:
+            dict: The Pipeline loaded from the file
+        """
+
+        # Load a pipeline as a local JSON file
+        with open(filepath, "r") as fp:
+            pipeline = json.load(fp)
+            return pipeline
+
+    def publish_pipeline_from_file(self, filepath: str):
+        """Publish a Pipeline to SageWorks from a local file
+
+        Args:
+            filepath (str): The path of the Pipeline to publish
+        """
+
+        # Load a pipeline as a local JSON file
+        pipeline = self.load_pipeline_from_file(filepath)
+
+        # Get the pipeline name
+        pipeline_name = filepath.split("/")[-1].replace(".json", "")
+
+        # Publish the Pipeline
+        self.publish_pipeline(pipeline_name, pipeline)
 
 
 if __name__ == "__main__":
@@ -130,5 +188,5 @@ if __name__ == "__main__":
     # Create a Pipeline from an Endpoint
     abalone_pipeline = my_manager.create_from_endpoint("abalone-regression-end")
 
-    # Save the Pipeline
-    my_manager.save_pipeline("abalone_pipeline_v1", abalone_pipeline)
+    # Publish the Pipeline
+    my_manager.publish_pipeline("abalone_pipeline_v1", abalone_pipeline)

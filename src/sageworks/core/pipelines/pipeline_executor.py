@@ -1,14 +1,13 @@
-"""PipelineExecutor: Executes a SageWorks Pipeline"""
-
+"""PipelineExecutor: Internal Class: Executes a SageWorks Pipeline"""
 import logging
 
 # SageWorks Imports
-from sageworks.api import DataSource, FeatureSet, Model, Endpoint, Pipeline
+from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 from sageworks.api.model import ModelType
 
 
 class PipelineExecutor:
-    """PipelineExecutor:Executes a SageWorks Pipeline
+    """PipelineExecutor: Internal Class: Executes a SageWorks Pipeline
 
     Common Usage:
         ```
@@ -19,19 +18,11 @@ class PipelineExecutor:
         ```
     """
 
-    def __init__(self, pipeline: Pipeline):
+    def __init__(self, pipeline):
         """PipelineExecutor Init Method"""
         self.log = logging.getLogger("sageworks")
         self.pipeline_name = pipeline.pipeline_name
         self.pipeline = pipeline.pipeline
-
-    def set_input(self, input):
-        """Set the input for the Pipeline
-
-        Args:
-            input (str): The input for the Pipeline
-        """
-        self.pipeline["data_source"]["input"] = input
 
     def execute(self, subset: list = None):
         """Execute the SageWorks Pipeline
@@ -51,6 +42,10 @@ class PipelineExecutor:
             # Input is a special case
             input = kwargs["input"]
             del kwargs["input"]
+            if isinstance(input, str) and input == "DataFrame":
+                msg = "Call set_input() to set the input DataFrame"
+                self.log.critical(msg)
+                raise RuntimeError(msg)
 
             # DataSource
             if class_name == "data_source":
@@ -60,6 +55,11 @@ class PipelineExecutor:
 
             # FeatureSet
             elif class_name == "feature_set":
+
+                # Special case for hold_out_ids
+                if "hold_out_ids" in kwargs:
+                    del kwargs["hold_out_ids"]
+
                 # Check for a transform and create a FeatureSet
                 if "data_source" in sageworks_objects and not subset or "feature_set" in subset:
                     sageworks_objects["data_source"].to_features(**kwargs)
@@ -78,6 +78,7 @@ class PipelineExecutor:
                     sageworks_objects["feature_set"].to_model(**kwargs)
                 if not subset or "endpoint" in subset:
                     sageworks_objects["model"] = Model(kwargs["name"])
+                    sageworks_objects["model"].set_owner("pipeline")
 
             # Endpoint
             elif class_name == "endpoint":

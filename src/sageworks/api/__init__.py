@@ -14,6 +14,5 @@ from .feature_set import FeatureSet
 from .model import Model
 from .endpoint import Endpoint
 from .meta import Meta
-from .pipeline import Pipeline
 
-__all__ = ["DataSource", "FeatureSet", "Model", "Endpoint", "Meta", "Pipeline"]
+__all__ = ["DataSource", "FeatureSet", "Model", "Endpoint", "Meta"]

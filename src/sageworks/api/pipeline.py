@@ -4,11 +4,14 @@ import sys
 import logging
 import json
 import awswrangler as wr
+from typing import Union
+import pandas as pd
 
 # SageWorks Imports
 from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.pipelines.pipeline_executor import PipelineExecutor
 
 
 class Pipeline:
@@ -56,32 +59,13 @@ class Pipeline:
         # Data Storage Cache
         self.data_storage = SageWorksCache(prefix="data_storage")
 
-    def details(self, recompute=False) -> dict:
-        """Pipeline Details
+    def set_input(self, input: Union[str, pd.DataFrame]):
+        """Set the input for the Pipeline
 
         Args:
-            recompute (bool, optional): Recompute the details (default: False)
-
-        Returns:
-            dict: A dictionary of details about the Pipeline
+            input (Union[str, pd.DataFrame]): The input for the Pipeline
         """
-        # Check if we have cached version of the Pipeline Details
-        storage_key = f"pipeline:{self.pipeline_name}:details"
-        cached_details = self.data_storage.get(storage_key)
-        if cached_details and not recompute:
-            return cached_details
-
-        self.log.important("Recomputing Pipeline Details...")
-        details = {}
-        details["name"] = self.pipeline_name
-        details["s3_path"] = self.s3_path
-        details["pipeline"] = self.pipeline
-
-        # Cache the details
-        self.data_storage.set(storage_key, details)
-
-        # Return the details
-        return details
+        self.pipeline["data_source"]["input"] = input
 
     def execute(self):
         """Execute the entire Pipeline
@@ -89,9 +73,7 @@ class Pipeline:
         Raises:
             RunTimeException: If the pipeline execution fails in any way
         """
-        from sageworks.core.pipelines.pipeline_executor import PipelineExecutor
-
-        pipeline_executor = PipelineExecutor(self.pipeline)
+        pipeline_executor = PipelineExecutor(self)
         pipeline_executor.execute()
 
     def execute_partial(self, subset: list):
@@ -103,9 +85,7 @@ class Pipeline:
         Raises:
             RunTimeException: If the pipeline execution fails in any way
         """
-        from sageworks.core.pipelines.pipeline_executor import PipelineExecutor
-
-        pipeline_executor = PipelineExecutor(self.pipeline)
+        pipeline_executor = PipelineExecutor(self)
         pipeline_executor.execute_partial(subset)
 
     def delete(self):
@@ -128,20 +108,24 @@ class Pipeline:
         """
         # Class name and details
         class_name = self.__class__.__name__
-        details = json.dumps(self.details(), indent=4)
-        return f"{class_name}({details})"
+        pipeline_details = json.dumps(self.pipeline, indent=4)
+        return f"{class_name}({pipeline_details})"
 
 
 if __name__ == "__main__":
     """Exercise the Pipeline Class"""
-    from pprint import pprint
+    from sageworks.api import DataSource
 
     # Retrieve an existing Pipeline
-    my_pipeline = Pipeline("abalone_pipeline_v1")
-    pprint(my_pipeline.details())
+    my_pipeline = Pipeline("test_solubility_class_nightly_80_v0")
+    print(my_pipeline)
+
+    # Set the input for the Pipeline (this is just for testing)
+    ds = DataSource("solubility_featurized_ds")
+    df = ds.pull_dataframe()
+    my_pipeline.set_input(df)
 
     # Execute the Pipeline
-    my_pipeline.execute()
-
-    # Print the Representation of the Pipeline
-    print(my_pipeline)
+    # my_pipeline.execute()
+    # my_pipeline.execute_partial(["data_source", "feature_set"])
+    my_pipeline.execute_partial(["model", "endpoint"])
