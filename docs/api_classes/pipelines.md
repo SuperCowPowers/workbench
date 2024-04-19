@@ -52,8 +52,8 @@ pprint(my_manager.list_pipelines())
 # Create a Pipeline from an Endpoint
 abalone_pipeline = my_manager.create_from_endpoint("abalone-regression-end")
 
-# Save the Pipeline
-my_manager.save_pipeline("abalone_pipeline_v1", abalone_pipeline)
+# Publish the Pipeline
+my_manager.publish_pipeline("abalone_pipeline_v1", abalone_pipeline)
 ```
 
 **Output**
@@ -65,9 +65,6 @@ Listing Pipelines...
   'size': 445}]
 ```
 **Pipeline Details**
-
-!!!tip inline end "The details() method"
-    The `detail()` method on the Pipeline class provides a lot of useful information. All of the SageWorks classes have a `details()` method try it out!
 
 ```py title="pipeline_details.py"
 from sageworks.api.pipeline import Pipeline
@@ -121,19 +118,39 @@ from sageworks.api.pipeline import Pipeline
 
 # Retrieve an existing Pipeline
 my_pipeline = Pipeline("abalone_pipeline_v1")
-pprint(my_pipeline.details(recompute=True))
 
 # Execute the Pipeline
-my_pipeline.execute()
+my_pipeline.execute()  # Full execution
+
+# Partial executions
+my_pipeline.execute_partial(["data_source", "feature_set"])
+my_pipeline.execute_partial(["model", "endpoint"])
 ```
 
-**Output**
+## Pipelines Advanced
+As part of the flexible architecture sometimes DataSources or FeatureSets can be created with a Pandas DataFrame. To support a DataFrame as input to a pipeline we can call the `set_input()` method to the pipeline object.
 
-```py
-TBD
 ```
 
-## SageWorks UI
+
+```
+    def set_input(self, input: Union[str, pd.DataFrame], artifact: str = "data_source"):
+        """Set the input for the Pipeline
+
+        Args:
+            input (Union[str, pd.DataFrame]): The input for the Pipeline
+            artifact (str): The artifact to set the input for (default: "data_source")
+        """
+        self.pipeline[artifact]["input"] = input
+
+    def set_hold_out_ids(self, id_list: list):
+        """Set the input for the Pipeline
+
+        Args:
+           id_list (list): The list of hold out ids
+        """
+        self.pipeline["feature_set"]["hold_out_ids"] = id_list
+```
 Running a pipeline creates and deploys a set of SageWorks Artifacts, DataSource, FeatureSet, Model and Endpoint. These artifacts can be viewed in the Sagemaker Console/Notebook interfaces or in the SageWorks Dashboard UI.
 
 <figure>

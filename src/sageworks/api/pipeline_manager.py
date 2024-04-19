@@ -125,11 +125,10 @@ class PipelineManager:
         self.s3_client.delete_object(Bucket=self.bucket, Key=key)
 
     # Save a Pipeline to a local file
-    def save_pipeline_to_file(self, pipeline_name: str, pipeline: dict, filepath: str):
+    def save_pipeline_to_file(self, pipeline: dict, filepath: str):
         """Save a Pipeline to a local file
 
         Args:
-            pipeline_name (str): The name of the Pipeline
             pipeline (dict): The Pipeline to save
             filepath (str): The path to save the Pipeline
         """
