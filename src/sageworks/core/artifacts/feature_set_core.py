@@ -239,23 +239,8 @@ class FeatureSetCore(Artifact):
         date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
         s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
 
-        # Do we have a training view?
-        training_view = self.get_training_view_table()
-        if training_view:
-            self.log.important(f"Creating S3 Training Data from Training View {training_view}...")
-            table_name = training_view
-        else:
-            self.log.warning(f"No Training View found for {self.uuid}, using FeatureSet directly...")
-            table_name = self.athena_table
-
-        # Make a query that gets all the data from the FeatureSet
-        query = f"SELECT * FROM {table_name}"
-
-        """
-        Note: We're going to circle back to this
-        # Get the snapshot query
-        query = self.snapshot_query(table_name=table_name)
-        """
+        # Get the training data query
+        query = self.get_training_data_query()
 
         # Make the query
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
@@ -266,6 +251,41 @@ class FeatureSetCore(Artifact):
         # Get the full path to the S3 files with the results
         full_s3_path = s3_output_path + f"/{query_execution['QueryExecution']['QueryExecutionId']}.csv"
         return full_s3_path
+
+    def get_training_data_query(self) -> str:
+        """Get the training data query for this FeatureSet
+
+        Returns:
+            str: The training data query for this FeatureSet
+        """
+
+        # Do we have a training view?
+        training_view = self.get_training_view_table()
+        if training_view:
+            self.log.important(f"Pulling Data from Training View {training_view}...")
+            table_name = training_view
+        else:
+            self.log.warning(f"No Training View found for {self.uuid}, using FeatureSet directly...")
+            table_name = self.athena_table
+
+        # Make a query that gets all the data from the FeatureSet
+        return f"SELECT * FROM {table_name}"
+
+    def get_training_data(self, limit=1000) -> pd.DataFrame:
+        """Get the training data for this FeatureSet
+
+        Args:
+            limit (int): The number of rows to limit the query to (default: 1000)
+        Returns:
+            pd.DataFrame: The training data for this FeatureSet
+        """
+
+        # Get the training data query (put a limit on it for now)
+        query = self.get_training_data_query() + " LIMIT {limit}"
+
+        # Make the query
+        return self.query(query)
+
 
     def snapshot_query(self, table_name: str = None) -> str:
         """An Athena query to get the latest snapshot of features

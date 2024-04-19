@@ -68,13 +68,14 @@ class Pipeline:
         """
         self.pipeline[artifact]["input"] = input
 
-    def set_hold_out_ids(self, id_list: list):
+    def set_hold_out_ids(self, id_column: str,  hold_out_ids: list[str]):
         """Set the input for the Pipeline
 
         Args:
            id_list (list): The list of hold out ids
         """
-        self.pipeline["feature_set"]["hold_out_ids"] = id_list
+        self.pipeline["feature_set"]["id_column"] = id_column
+        self.pipeline["feature_set"]["hold_out_ids"] = hold_out_ids
 
     def execute(self):
         """Execute the entire Pipeline
@@ -96,6 +97,27 @@ class Pipeline:
         """
         pipeline_executor = PipelineExecutor(self)
         pipeline_executor.execute_partial(subset)
+
+    def report_settable_fields(self, pipeline: dict = {}, path: str = '') -> None:
+        """
+        Recursively finds and prints keys with settable fields in a JSON-like dictionary.
+
+        Args:
+        pipeline (dict): pipeline (or sub pipeline) to process.
+        path (str): Current path to the key, used for nested dictionaries.
+        """
+        # Grab the entire pipeline if not provided (first call)
+        if not pipeline:
+            self.log.important(f"Checking Pipeline: {self.pipeline_name}...")
+            pipeline = self.pipeline
+        for key, value in pipeline.items():
+            if isinstance(value, dict):
+                # Recurse into sub-dictionary
+                self.report_settable_fields(value, path + key + ' -> ')
+            elif isinstance(value, str) and value.startswith("<<") and value.endswith(">>"):
+                # Check if required or optional
+                required = "[Required]" if "required" in value else "[Optional]"
+                self.log.important(f"{required} Path: {path + key}")
 
     def delete(self):
         """Pipeline Deletion"""
@@ -124,17 +146,44 @@ class Pipeline:
 if __name__ == "__main__":
     """Exercise the Pipeline Class"""
     from sageworks.api import DataSource
+    log = logging.getLogger("sageworks")
 
     # Retrieve an existing Pipeline
-    my_pipeline = Pipeline("test_solubility_class_nightly_80_v0")
+    my_pipeline = Pipeline("abalone_pipeline_v1")
     print(my_pipeline)
 
-    # Set the input for the Pipeline (this is just for testing)
-    ds = DataSource("solubility_featurized_ds")
-    df = ds.pull_dataframe()
-    my_pipeline.set_input(df)
+    # Report on any settable fields in the pipeline
+    my_pipeline.report_settable_fields()
+
+    # Retrieve an existing Pipeline
+    my_pipeline = Pipeline("abalone_pipeline_v2")
+
+    # Report on any settable fields in the pipeline
+    my_pipeline.report_settable_fields()
+
+    # Try running a pipeline without a required field set
+    # Assert that a RuntimeError is raised
+    try:
+        my_pipeline.execute()
+        assert False, "Expected a RuntimeError to be raised!"
+    except RuntimeError as e:
+        log.info(f"Expected Exection AOK!")
+
+    # Set the input for the Pipeline
+    my_pipeline.set_input("s3://sageworks-public-data/common/abalone.csv")
+
+    # Set the hold out ids for the Pipeline
+    my_pipeline.set_hold_out_ids("id", list(range(100)))
+
+    # Now we can execute the pipeline
+    my_pipeline.execute_partial(["data_source", "feature_set"])
+
+
+    # ds = DataSource("solubility_featurized_ds")
+    # df = ds.pull_dataframe()
+    # my_pipeline.set_input(df)
 
     # Execute the Pipeline
     # my_pipeline.execute()
-    my_pipeline.execute_partial(["data_source", "feature_set"])
+    # my_pipeline.execute_partial(["data_source", "feature_set"])
     # my_pipeline.execute_partial(["model", "endpoint"])

@@ -43,30 +43,42 @@ class PipelineExecutor:
             # Input is a special case
             input = kwargs["input"]
             del kwargs["input"]
-            if isinstance(input, str) and input == "DataFrame":
+            if isinstance(input, str) and input == "<<parameter_required>>":
                 msg = "Call set_input() to set the input DataFrame"
                 self.log.critical(msg)
                 raise RuntimeError(msg)
 
             # DataSource
             if class_name == "data_source":
-                # Create a DataSource only when it's implicit or explicitly requested
-                if not subset or "data_source" in subset:
-                    sageworks_objects["data_source"] = DataSource(input, **kwargs)
+                # Create a DataSource (note: this may or may not be used later, which is fine
+                sageworks_objects["data_source"] = DataSource(input, **kwargs)
 
             # FeatureSet
             elif class_name == "feature_set":
 
                 # Special case for hold_out_ids
                 if "hold_out_ids" in kwargs:
-                    if kwargs["hold_out_ids"] == "<<dynamic>>":
-                        self.log.warning("Hold out ids are dynamic and not set, defaulting to 80/20 split")
+                    if kwargs["hold_out_ids"] == "<<parameter_optional>>":
+                        self.log.important("Hold out ids are not set, defaulting to 80/20 split")
+                        hold_out_ids = None
+                        id_column = None
+                    else:
+                        hold_out_ids = kwargs["hold_out_ids"]
+                        if "id_column" not in kwargs or (kwargs["id_column"] == "<<parameter_optional>>"):
+                            self.log.warning("Hold out ids are set, but no id column is provided! Defaulting to 80/20 split")
+                            hold_out_ids = None
+                            id_column = None
+                        else:
+                            id_column = kwargs["id_column"]
+                            del kwargs["id_column"]
+                    del kwargs["hold_out_ids"]
 
                 # Check for a transform and create a FeatureSet
                 if "data_source" in sageworks_objects and not subset or "feature_set" in subset:
                     sageworks_objects["data_source"].to_features(**kwargs)
-                if not subset or "model" in subset:
                     sageworks_objects["feature_set"] = FeatureSet(kwargs["name"])
+                    if hold_out_ids:
+                        sageworks_objects["feature_set"].set_hold_out_ids(id_column, hold_out_ids)
 
             # Model
             elif class_name == "model":
@@ -76,7 +88,7 @@ class PipelineExecutor:
                     kwargs["model_type"] = ModelType(kwargs["model_type"])
 
                 # Check for a transform and create a Model
-                if "feature_set" in sageworks_objects:
+                if "feature_set" in sageworks_objects and not subset or "model" in subset:
                     sageworks_objects["feature_set"].to_model(**kwargs)
                 if not subset or "endpoint" in subset:
                     sageworks_objects["model"] = Model(kwargs["name"])
@@ -113,8 +125,10 @@ if __name__ == "__main__":
     # Retrieve an existing Pipeline
     pipeline = Pipeline("abalone_pipeline_v1")
 
+    # Create a PipelineExecutor
     pipeline_executor = PipelineExecutor(pipeline)
 
+    # Run Tests
     # Execute the PipelineExecutor
     # pipeline_executor.execute()
 
