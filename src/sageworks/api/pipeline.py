@@ -68,7 +68,7 @@ class Pipeline:
         """
         self.pipeline[artifact]["input"] = input
 
-    def set_hold_out_ids(self, id_column: str,  hold_out_ids: list[str]):
+    def set_hold_out_ids(self, id_column: str, hold_out_ids: list[str]):
         """Set the input for the Pipeline
 
         Args:
@@ -98,7 +98,7 @@ class Pipeline:
         pipeline_executor = PipelineExecutor(self)
         pipeline_executor.execute_partial(subset)
 
-    def report_settable_fields(self, pipeline: dict = {}, path: str = '') -> None:
+    def report_settable_fields(self, pipeline: dict = {}, path: str = "") -> None:
         """
         Recursively finds and prints keys with settable fields in a JSON-like dictionary.
 
@@ -113,7 +113,7 @@ class Pipeline:
         for key, value in pipeline.items():
             if isinstance(value, dict):
                 # Recurse into sub-dictionary
-                self.report_settable_fields(value, path + key + ' -> ')
+                self.report_settable_fields(value, path + key + " -> ")
             elif isinstance(value, str) and value.startswith("<<") and value.endswith(">>"):
                 # Check if required or optional
                 required = "[Required]" if "required" in value else "[Optional]"
@@ -146,6 +146,7 @@ class Pipeline:
 if __name__ == "__main__":
     """Exercise the Pipeline Class"""
     from sageworks.api import DataSource
+
     log = logging.getLogger("sageworks")
 
     # Retrieve an existing Pipeline
@@ -177,7 +178,6 @@ if __name__ == "__main__":
 
     # Now we can execute the pipeline
     my_pipeline.execute_partial(["data_source", "feature_set"])
-
 
     # ds = DataSource("solubility_featurized_ds")
     # df = ds.pull_dataframe()

@@ -65,7 +65,9 @@ class PipelineExecutor:
                     else:
                         hold_out_ids = kwargs["hold_out_ids"]
                         if "id_column" not in kwargs or (kwargs["id_column"] == "<<parameter_optional>>"):
-                            self.log.warning("Hold out ids are set, but no id column is provided! Defaulting to 80/20 split")
+                            self.log.warning(
+                                "Hold out ids are set, but no id column is provided! Defaulting to 80/20 split"
+                            )
                             hold_out_ids = None
                             id_column = None
                         else:

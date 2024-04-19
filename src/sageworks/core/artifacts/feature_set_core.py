@@ -286,7 +286,6 @@ class FeatureSetCore(Artifact):
         # Make the query
         return self.query(query)
 
-
     def snapshot_query(self, table_name: str = None) -> str:
         """An Athena query to get the latest snapshot of features
 

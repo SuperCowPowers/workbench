@@ -47,7 +47,9 @@ class PluginUnitTest:
             # Simulate updating the plugin with a new Model, Endpoint, or Model Table
             if plugin_input_type == PluginInputType.MODEL:
                 model = Model("abalone-regression")
-                updated_proporties = self.plugin.update_properties(model, inference_run="training_holdout")  # Hardcoded for now :)
+                updated_proporties = self.plugin.update_properties(
+                    model, inference_run="training_holdout"
+                )  # Hardcoded for now :)
             elif plugin_input_type == PluginInputType.ENDPOINT:
                 endpoint = Endpoint("abalone-regression-end")
                 updated_proporties = self.plugin.update_properties(endpoint)
