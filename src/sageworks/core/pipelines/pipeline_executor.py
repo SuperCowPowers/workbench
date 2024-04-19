@@ -1,9 +1,11 @@
 """PipelineExecutor: Internal Class: Executes a SageWorks Pipeline"""
+
 import logging
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 from sageworks.api.model import ModelType
+from sageworks.api.pipeline import Pipeline
 
 
 class PipelineExecutor:
