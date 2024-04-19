@@ -128,10 +128,7 @@ my_pipeline.execute_partial(["model", "endpoint"])
 ```
 
 ## Pipelines Advanced
-As part of the flexible architecture sometimes DataSources or FeatureSets can be created with a Pandas DataFrame. To support a DataFrame as input to a pipeline we can call the `set_input()` method to the pipeline object.
-
-```
-
+As part of the flexible architecture sometimes DataSources or FeatureSets can be created with a Pandas DataFrame. To support a DataFrame as input to a pipeline we can call the `set_input()` method to the pipeline object. If you'd like to specify the `set_hold_out_ids()` you can also provide a list of ids.
 
 ```
     def set_input(self, input: Union[str, pd.DataFrame], artifact: str = "data_source"):
@@ -151,13 +148,8 @@ As part of the flexible architecture sometimes DataSources or FeatureSets can be
         """
         self.pipeline["feature_set"]["hold_out_ids"] = id_list
 ```
+
 Running a pipeline creates and deploys a set of SageWorks Artifacts, DataSource, FeatureSet, Model and Endpoint. These artifacts can be viewed in the Sagemaker Console/Notebook interfaces or in the SageWorks Dashboard UI.
-
-<figure>
-<img alt="sageworks_endpoints" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/b5eab741-2c23-4c5e-9495-15fd3ea8155c">
-<figcaption>SageWorks Dashboard: Endpoints</figcaption>
-</figure>
-
 
 !!! note "Not Finding a particular method?"
     The SageWorks API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: [SageWorks Core Classes](../core_classes/overview.md)
