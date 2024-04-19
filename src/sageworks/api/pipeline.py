@@ -59,13 +59,22 @@ class Pipeline:
         # Data Storage Cache
         self.data_storage = SageWorksCache(prefix="data_storage")
 
-    def set_input(self, input: Union[str, pd.DataFrame]):
+    def set_input(self, input: Union[str, pd.DataFrame], artifact: str = "data_source"):
         """Set the input for the Pipeline
 
         Args:
             input (Union[str, pd.DataFrame]): The input for the Pipeline
+            artifact (str): The artifact to set the input for (default: "data_source")
         """
-        self.pipeline["data_source"]["input"] = input
+        self.pipeline[artifact]["input"] = input
+
+    def set_hold_out_ids(self, id_list: list):
+        """Set the input for the Pipeline
+
+        Args:
+           id_list (list): The list of hold out ids
+        """
+        self.pipeline["feature_set"]["hold_out_ids"] = id_list
 
     def execute(self):
         """Execute the entire Pipeline
@@ -127,5 +136,5 @@ if __name__ == "__main__":
 
     # Execute the Pipeline
     # my_pipeline.execute()
-    # my_pipeline.execute_partial(["data_source", "feature_set"])
-    my_pipeline.execute_partial(["model", "endpoint"])
+    my_pipeline.execute_partial(["data_source", "feature_set"])
+    # my_pipeline.execute_partial(["model", "endpoint"])

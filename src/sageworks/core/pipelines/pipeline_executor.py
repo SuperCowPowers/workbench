@@ -5,7 +5,6 @@ import logging
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 from sageworks.api.model import ModelType
-from sageworks.api.pipeline import Pipeline
 
 
 class PipelineExecutor:
@@ -60,7 +59,8 @@ class PipelineExecutor:
 
                 # Special case for hold_out_ids
                 if "hold_out_ids" in kwargs:
-                    del kwargs["hold_out_ids"]
+                    if kwargs["hold_out_ids"] == "<<dynamic>>":
+                        self.log.warning("Hold out ids are dynamic and not set, defaulting to 80/20 split")
 
                 # Check for a transform and create a FeatureSet
                 if "data_source" in sageworks_objects and not subset or "feature_set" in subset:
@@ -108,6 +108,7 @@ class PipelineExecutor:
 
 if __name__ == "__main__":
     """Exercise the PipelineExecutor Class"""
+    from sageworks.api.pipeline import Pipeline
 
     # Retrieve an existing Pipeline
     pipeline = Pipeline("abalone_pipeline_v1")
@@ -120,4 +121,4 @@ if __name__ == "__main__":
     # Execute partial Pipelines
     # pipeline_executor.execute_partial(["data_source"])
     # pipeline_executor.execute_partial(["data_source", "feature_set"])
-    pipeline_executor.execute_partial(["model", "endpoint"])
+    # pipeline_executor.execute_partial(["model", "endpoint"])
