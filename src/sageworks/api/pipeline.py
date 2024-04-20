@@ -145,7 +145,6 @@ class Pipeline:
 
 if __name__ == "__main__":
     """Exercise the Pipeline Class"""
-    from sageworks.api import DataSource
 
     log = logging.getLogger("sageworks")
 
@@ -167,8 +166,8 @@ if __name__ == "__main__":
     try:
         my_pipeline.execute()
         assert False, "Expected a RuntimeError to be raised!"
-    except RuntimeError as e:
-        log.info(f"Expected Exection AOK!")
+    except RuntimeError:
+        log.info("Expected Exection = AOK :)")
 
     # Set the input for the Pipeline
     my_pipeline.set_input("s3://sageworks-public-data/common/abalone.csv")

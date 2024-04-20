@@ -53,7 +53,13 @@ def test_validation_predictions():
 
 def test_inference_predictions():
     print("\n\n*** Inference Predictions ***")
+    if model_reg.inference_predictions() is None:
+        print(f"Model {model_reg.uuid} has no inference predictions!")
+        exit(1)
     pprint(model_reg.inference_predictions().head())
+    if model_class.inference_predictions() is None:
+        print(f"Model {model_class.uuid} has no inference predictions!")
+        exit(1)
     pprint(model_class.inference_predictions().head())
 
 
