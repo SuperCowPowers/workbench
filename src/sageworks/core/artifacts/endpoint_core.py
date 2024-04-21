@@ -727,14 +727,18 @@ class EndpointCore(Artifact):
         prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
         y_pred = prediction_df[prediction_col]
 
-        # Compute the confusion matrix
-        conf_mtx = confusion_matrix(y_true, y_pred)
+        # Special case for low, medium, high classes
+        if (set(y_true) | set(y_pred)) == {"low", "medium", "high"}:
+            labels = ["low", "medium", "high"]
+        else:
+            labels = sorted(list(set(y_true) | set(y_pred)))
 
-        # Get unique labels
-        labels = sorted(list(set(y_true) | set(y_pred)))
+        # Compute the confusion matrix
+        conf_mtx = confusion_matrix(y_true, y_pred, labels=labels)
 
         # Create a DataFrame
         conf_mtx_df = pd.DataFrame(conf_mtx, index=labels, columns=labels)
+        conf_mtx_df.index.name = "labels"
         return conf_mtx_df
 
     def endpoint_config_name(self) -> str:
