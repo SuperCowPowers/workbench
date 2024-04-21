@@ -74,9 +74,12 @@ class MolecularDescriptors(DataToFeaturesLight):
         # Compute/add all the Molecular Descriptors
         self.output_df = self.compute_molecular_descriptors(self.input_df)
 
+        # Get the columns that are descriptors
+        desc_columns = set(self.output_df.columns) - set(self.input_df.columns)
+
         # Drop any NaNs (and INFs)
         current_rows = self.output_df.shape[0]
-        self.output_df = pandas_utils.drop_nans(self.output_df, how="any")
+        self.output_df = pandas_utils.drop_nans(self.output_df, how="any", subset=desc_columns)
         self.log.warning(f"Dropped {current_rows - self.output_df.shape[0]} NaN rows")
 
     def compute_molecular_descriptors(self, process_df: pd.DataFrame) -> pd.DataFrame:

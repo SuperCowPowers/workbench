@@ -89,9 +89,13 @@ def numeric_stats(df):
     return df.describe().round(2).T.drop("count", axis=1)
 
 
-def drop_nans(input_df: pd.DataFrame, how: str = "all", nan_drop_percent: float = 50) -> pd.DataFrame:
-    """Dropping NaNs in rows and columns. Obviously lots of ways to do this, so picked some reasonable defaults,
-    we can certainly change this later with a more formal set of operations and arguments
+def drop_nans(input_df: pd.DataFrame, how: str = "all", nan_drop_percent: float = 50, subset: list = None) -> pd.DataFrame:
+    """Dropping NaNs in rows and columns. Optionally, focus on specific columns.
+    Args:
+        input_df (pd.DataFrame): Input data frame.
+        how (str): 'all' to drop rows where all values are NaN, 'any' to drop rows where any value is NaN.
+        nan_drop_percent (float): Percentage threshold to drop columns with missing values exceeding this rate.
+        subset (list): Specific subset of columns to check for NaNs when dropping rows.
     """
 
     # Grab input number of rows
@@ -111,12 +115,17 @@ def drop_nans(input_df: pd.DataFrame, how: str = "all", nan_drop_percent: float 
         if percent > nan_warn_percent:
             log.important(f"Column ({name}) has {percent}% NaN Values")
         if percent > nan_drop_percent:
-            log.warning(f"Dropping Column ({name}) with {percent}% NaN Values!")
+            log.warning(f"Column ({name}) with {percent}% NaN Values!")
 
-    # Drop Rows that have NaNs in them
-    output_df.dropna(axis=0, how=how, inplace=True)
+    # Conditionally drop rows based on NaNs in specified columns
+    if subset is not None:
+        output_df.dropna(axis=0, how=how, subset=subset, inplace=True)
+    else:
+        output_df.dropna(axis=0, how=how, inplace=True)
+
     if len(output_df) != orig_num_rows:
-        log.important(f"Dropping {orig_num_rows - len(output_df)} rows that have a NaN in them")
+        dropped_rows = orig_num_rows - len(output_df)
+        log.important(f"Dropping {dropped_rows} rows that have a NaN in them")
         output_df.reset_index(drop=True, inplace=True)
 
     return output_df
