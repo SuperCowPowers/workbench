@@ -271,7 +271,7 @@ class FeatureSetCore(Artifact):
         # Make a query that gets all the data from the FeatureSet
         return f"SELECT * FROM {table_name}"
 
-    def get_training_data(self, limit=5000) -> pd.DataFrame:
+    def get_training_data(self, limit=50000) -> pd.DataFrame:
         """Get the training data for this FeatureSet
 
         Args:
