@@ -148,6 +148,13 @@ if __name__ == "__main__":
 
     log = logging.getLogger("sageworks")
 
+    # Temp testing
+    my_pipeline = Pipeline("aqsol_pipeline_v1")
+    my_pipeline.set_input("s3://sageworks-public-data/comp_chem/aqsol_public_data.csv")
+    my_pipeline.execute_partial(["model", "endpoint"])
+    exit(0)
+
+
     # Retrieve an existing Pipeline
     my_pipeline = Pipeline("abalone_pipeline_v1")
     print(my_pipeline)

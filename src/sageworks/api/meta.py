@@ -374,6 +374,10 @@ class Meta:
                 summary_data[key] = value
         return summary_data
 
+    def refresh_all_aws_meta(self) -> None:
+        """Force a refresh of all the metadata"""
+        self.aws_broker.get_all_metadata(force_refresh=True)
+
 
 if __name__ == "__main__":
     """Exercise the SageWorks Meta Class"""

@@ -19,6 +19,7 @@ except ImportError:
 from sageworks.utils.repl_utils import cprint, Spinner
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
 from sageworks.utils.config_manager import ConfigManager
+from sageworks.api.meta import Meta
 
 logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
 
@@ -76,6 +77,7 @@ class SageWorksShell:
         self.aws_status = self.check_aws_account()
         self.redis_status = self.check_redis()
         self.open_source_api_key = self.check_open_source_api_key()
+        self.meta = Meta()
         if self.aws_status:
             self.import_sageworks()
 
@@ -101,6 +103,7 @@ class SageWorksShell:
         self.commands["log_info"] = self.log_info
         self.commands["log_important"] = self.log_important
         self.commands["log_warning"] = self.log_warning
+        self.commands["aws_refresh"] = self.aws_refresh
         self.commands["config"] = self.show_config
         self.commands["status"] = self.status_description
 
@@ -247,6 +250,7 @@ class SageWorksShell:
         - pipelines: List all the SageWorks Pipelines
         - config: Show the current SageWorks Config
         - status: Show the current SageWorks Status
+        - aws_refresh: Force a refresh of all AWS Meta Data
         - log_(debug/info/important/warning): Set the SageWorks log level
         - exit: Exit SageWorks REPL"""
         return help_msg
@@ -262,6 +266,14 @@ class SageWorksShell:
         """Open a browser and start the Dash app and open a browser."""
         url = "https://supercowpowers.github.io/sageworks/"
         webbrowser.open(url)
+
+    def aws_refresh(self):
+        """Refresh the AWS Meta Data"""
+        spinner = self.spinner_start("Refreshing AWS Meta Data:")
+        try:
+            self.meta.refresh_all_aws_meta()
+        finally:
+            spinner.stop()
 
     def summary(self):
         cprint("yellow", "\nAWS Artifacts Summary:")

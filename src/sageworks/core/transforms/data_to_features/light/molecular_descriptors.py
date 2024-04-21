@@ -59,11 +59,19 @@ class MolecularDescriptors(DataToFeaturesLight):
         if "smiles" not in self.input_df.columns:
             raise ValueError("Input DataFrame must have a 'smiles' column")
 
+        # FIXME: Try to Guard against 'weird' SMILES that explode Mordred
+        # aromaticity interpretation between PLP and RDKit fix
+        self.input_df['smiles'] = self.input_df['smiles'].replace('[O-]C([O-])=O.[NH4+]CCO.[NH4+]CCO', '[O]C([O])=O.[N]CCO.[N]CCO')
+        self.input_df['smiles'] = self.input_df['smiles'].replace('[NH4+]CCO.[NH4+]CCO.[O-]C([O-])=O', '[N]CCO.[N]CCO.[O]C([O])=O')
+        self.input_df['smiles'] = self.input_df['smiles'].replace('O=S(=O)(Nn1c-nnc1)C1=CC=CC=C1', 'O=S(=O)(NN(C=N1)C=N1)C(C=CC1)=CC=1')
+
         # Compute/add all the Molecular Descriptors
         self.output_df = self.compute_molecular_descriptors(self.input_df)
 
         # Drop any NaNs (and INFs)
-        self.output_df = pandas_utils.drop_nans(self.output_df, how="all")
+        current_rows = self.output_df.shape[0]
+        self.output_df = pandas_utils.drop_nans(self.output_df, how="any")
+        self.log.warning(f"Dropped {current_rows - self.output_df.shape[0]} NaN rows")
 
     def compute_molecular_descriptors(self, process_df: pd.DataFrame) -> pd.DataFrame:
         """Compute and add all the Molecular Descriptors

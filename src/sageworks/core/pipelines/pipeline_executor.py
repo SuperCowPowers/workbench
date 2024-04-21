@@ -5,6 +5,7 @@ import logging
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 from sageworks.api.model import ModelType
+from sageworks.core.transforms.data_to_features.light.molecular_descriptors import MolecularDescriptors
 
 
 class PipelineExecutor:
@@ -41,17 +42,20 @@ class PipelineExecutor:
         for class_name, kwargs in self.pipeline.items():
 
             # Input is a special case
-            input = kwargs["input"]
+            data_input = kwargs["input"]
             del kwargs["input"]
-            if isinstance(input, str) and input == "<<parameter_required>>":
-                msg = "Call set_input() to set the input DataFrame"
+            if isinstance(input, str) and data_input == "<<parameter_required>>":
+                msg = "Call set_input() to set the input (DataFrame, file path or S3 path)"
                 self.log.critical(msg)
                 raise RuntimeError(msg)
 
             # DataSource
             if class_name == "data_source":
-                # Create a DataSource (note: this may or may not be used later, which is fine
-                sageworks_objects["data_source"] = DataSource(input, **kwargs)
+                # Don't create a DataSource if we're only executing a subset
+                if not subset or "data_source" in subset:
+                    sageworks_objects["data_source"] = DataSource(data_input, **kwargs)
+                else:
+                    sageworks_objects["data_source"] = DataSource(source=kwargs["name"])
 
             # FeatureSet
             elif class_name == "feature_set":
@@ -76,11 +80,28 @@ class PipelineExecutor:
                     del kwargs["hold_out_ids"]
 
                 # Check for a transform and create a FeatureSet
-                if "data_source" in sageworks_objects and not subset or "feature_set" in subset:
-                    sageworks_objects["data_source"].to_features(**kwargs)
-                    sageworks_objects["feature_set"] = FeatureSet(kwargs["name"])
-                    if hold_out_ids:
-                        sageworks_objects["feature_set"].set_hold_out_ids(id_column, hold_out_ids)
+                if "data_source" in sageworks_objects and (not subset or "feature_set" in subset):
+                    # Special case for feature_schema
+                    if "feature_schema" in kwargs:
+                        # Hard coded: Cheese sauce for now
+                        if kwargs["feature_schema"] == "molecular_descriptors_v1":
+                            del kwargs["feature_schema"]
+                            self.log.important("Feature Schema: molecular_descriptors_v1")
+                            rdkit_features = MolecularDescriptors(data_input, kwargs["name"])
+                            rdkit_features.set_output_tags(kwargs["tags"])
+                            # query = f"SELECT id, solubility, smiles FROM {data_input}"
+                            # rdkit_features.transform(id_column=kwargs["id_column"], query=query)
+                            rdkit_features.transform(id_column=kwargs["id_column"], query=query)
+                        else:
+                            raise RuntimeError(f"Unsupported feature schema: {kwargs['feature_schema']}")
+                    else:
+                        # Normal case for feature_set
+                        sageworks_objects["data_source"].to_features(**kwargs)
+
+                # Create the FeatureSet and set hold out ids if specified
+                sageworks_objects["feature_set"] = FeatureSet(kwargs["name"])
+                if hold_out_ids:
+                    sageworks_objects["feature_set"].set_hold_out_ids(id_column, hold_out_ids)
 
             # Model
             elif class_name == "model":
@@ -90,7 +111,7 @@ class PipelineExecutor:
                     kwargs["model_type"] = ModelType(kwargs["model_type"])
 
                 # Check for a transform and create a Model
-                if "feature_set" in sageworks_objects and not subset or "model" in subset:
+                if "feature_set" in sageworks_objects and (not subset or "model" in subset):
                     sageworks_objects["feature_set"].to_model(**kwargs)
                 if not subset or "endpoint" in subset:
                     sageworks_objects["model"] = Model(kwargs["name"])
@@ -99,7 +120,7 @@ class PipelineExecutor:
             # Endpoint
             elif class_name == "endpoint":
                 # Check for a transform
-                if "model" in sageworks_objects and not subset or "endpoint" in subset:
+                if "model" in sageworks_objects and (not subset or "endpoint" in subset):
                     sageworks_objects["model"].to_endpoint(**kwargs)
                     endpoint = Endpoint(kwargs["name"])
                     endpoint.auto_inference(capture=True)
