@@ -1,0 +1,66 @@
+{
+    "data_source": {
+        "name": "aqsol_data",
+        "tags": [
+            "aqsol", "public"
+        ],
+        "input": "<<parameter_required>>"
+    },
+    "feature_set": {
+        "name": "aqsol_mol_descriptors",
+        "tags": [
+            "aqsol", "molecular_descriptors"
+        ],
+        "input": "aqsol_data",
+        "id_column": "id",
+        "hold_out_ids": "<<parameter_optional>>",
+        "feature_schema": "molecular_descriptors_v1"
+    },
+    "model": {
+        "name": "aqsol-mol-regression",
+        "tags": [
+            "aqsol",
+            "regression"
+        ],
+        "input": "aqsol_mol_descriptors",
+        "model_type": "regressor",
+        "target_column": "solubility",
+        "feature_list": [
+            "fr_dihydropyridine", "minabsestateindex", "numheteroatoms", "estate_vsa7", "chi2v", "chi1n", "fr_n_o", "fr_furan",
+            "peoe_vsa7", "slogp_vsa2", "numaliphaticcarbocycles", "fr_al_oh_notert", "fr_coo2", "fr_c_s", "nhohcount",
+            "numaromaticrings", "nocount", "fr_ar_nh", "qed", "fr_al_oh", "chi3v", "peoe_vsa10", "fr_halogen", "fr_imide",
+            "fr_alkyl_carbamate", "peoe_vsa2", "fr_ar_n", "peoe_vsa11", "maxpartialcharge", "fr_isocyan", "minabspartialcharge",
+            "chi0", "smr_vsa10", "slogp_vsa3", "fr_term_acetylene", "smr_vsa1", "numsaturatedheterocycles", "bcut2d_chghi", "labuteasa",
+            "estate_vsa2", "estate_vsa5", "estate_vsa9", "fr_diazo", "vsa_estate9", "fr_ketone", "fpdensitymorgan3", "estate_vsa8",
+            "estate_vsa3", "estate_vsa6", "exactmolwt", "fr_ether", "fr_azo", "fr_amide", "tpsa", "minpartialcharge", "numaliphaticrings",
+            "kappa3", "bcut2d_mrhi", "fr_para_hydroxylation", "slogp_vsa4", "peoe_vsa13", "chi0v", "fr_alkyl_halide",
+            "numvalenceelectrons", "fr_ar_oh", "fr_nhpyrrole", "fr_sh", "fr_oxime", "fr_phos_acid", "molwt", "vsa_estate2",
+            "fr_hdrzine", "bcut2d_mrlow", "chi3n", "fr_coo", "vsa_estate5", "maxestateindex", "peoe_vsa3", "bcut2d_logphi",
+            "fr_nh1", "slogp_vsa8", "peoe_vsa4", "numradicalelectrons", "estate_vsa10", "bcut2d_mwhi", "numaliphaticheterocycles",
+            "vsa_estate1", "fractioncsp3", "fr_imidazole", "fr_nitro", "smr_vsa7", "fr_benzene", "numaromaticcarbocycles",
+            "fr_epoxide", "hallkieralpha", "fr_quatn", "sps", "peoe_vsa1", "chi1", "smr_vsa6", "smr_vsa9", "fr_piperdine",
+            "fr_methoxy", "maxabsestateindex", "slogp_vsa7", "fr_prisulfonamd", "fr_thiazole", "heavyatommolwt", "fr_arn",
+            "fr_ketone_topliss", "fr_al_coo", "fr_oxazole", "fr_sulfone", "fr_phenol", "vsa_estate8", "slogp_vsa5",
+            "fr_phos_ester", "fr_urea", "fr_ndealkylation2", "fr_nitroso", "fr_nitrile", "bcut2d_logplow", "fr_nitro_arom_nonortho",
+            "peoe_vsa12", "avgipc", "fr_lactam", "chi1v", "numrotatablebonds", "fr_sulfide", "chi2n", "fr_amidine", "fr_bicyclic",
+            "fr_nh2", "peoe_vsa5", "fr_c_o_nocoo", "smr_vsa3", "kappa2", "fr_nh0", "fr_isothiocyan", "fr_allylic_oxid",
+            "fr_piperzine", "smr_vsa2", "fr_imine", "bcut2d_mwlow", "numaromaticheterocycles", "slogp_vsa11", "chi0n",
+            "fr_nitro_arom", "fr_azide", "vsa_estate10", "smr_vsa5", "balabanj", "estate_vsa11", "fr_thiocyan", "fpdensitymorgan2",
+            "fr_hdrzone", "kappa1", "fr_tetrazole", "fr_phenol_noorthohbond", "peoe_vsa9", "fr_aniline", "heavyatomcount",
+            "fr_benzodiazepine", "vsa_estate4", "smr_vsa8", "fr_morpholine", "maxabspartialcharge", "slogp_vsa1", "estate_vsa1",
+            "estate_vsa4", "vsa_estate3", "fr_hoccn", "fr_ester", "fr_thiophene", "slogp_vsa9", "chi4n", "fr_lactone", "ringcount",
+            "fr_c_o", "fr_priamide", "minestateindex", "fr_ar_coo", "slogp_vsa6", "numsaturatedcarbocycles", "fr_aldehyde",
+            "fr_pyridine", "bcut2d_chglo", "vsa_estate6", "bertzct", "mollogp", "vsa_estate7", "slogp_vsa12", "peoe_vsa6",
+            "chi4v", "fr_guanido", "fr_unbrch_alkane", "fr_sulfonamd", "peoe_vsa8", "fr_aryl_methyl", "slogp_vsa10",
+            "numsaturatedrings", "fr_barbitur", "smr_vsa4", "fpdensitymorgan1", "numhacceptors", "peoe_vsa14", "molmr",
+            "fr_ndealkylation1", "numhdonors", "nacid", "nbase", "naromatom", "narombond", "apol", "bpol", "nrot"]
+    },
+    "endpoint": {
+        "name": "aqsol-mol-regression-end",
+        "tags": [
+            "aqsol",
+            "regression"
+        ],
+        "input": "aqsol-mol-regression"
+    }
+}
