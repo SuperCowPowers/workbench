@@ -91,7 +91,7 @@ class PipelineExecutor:
                             rdkit_features.set_output_tags(kwargs["tags"])
                             # query = f"SELECT id, solubility, smiles FROM {data_input}"
                             # rdkit_features.transform(id_column=kwargs["id_column"], query=query)
-                            rdkit_features.transform(id_column=kwargs["id_column"], query=query)
+                            rdkit_features.transform(id_column=kwargs["id_column"])
                         else:
                             raise RuntimeError(f"Unsupported feature schema: {kwargs['feature_schema']}")
                     else:

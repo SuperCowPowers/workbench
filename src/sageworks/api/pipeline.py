@@ -154,7 +154,6 @@ if __name__ == "__main__":
     my_pipeline.execute_partial(["model", "endpoint"])
     exit(0)
 
-
     # Retrieve an existing Pipeline
     my_pipeline = Pipeline("abalone_pipeline_v1")
     print(my_pipeline)

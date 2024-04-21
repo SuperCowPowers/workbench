@@ -61,9 +61,15 @@ class MolecularDescriptors(DataToFeaturesLight):
 
         # FIXME: Try to Guard against 'weird' SMILES that explode Mordred
         # aromaticity interpretation between PLP and RDKit fix
-        self.input_df['smiles'] = self.input_df['smiles'].replace('[O-]C([O-])=O.[NH4+]CCO.[NH4+]CCO', '[O]C([O])=O.[N]CCO.[N]CCO')
-        self.input_df['smiles'] = self.input_df['smiles'].replace('[NH4+]CCO.[NH4+]CCO.[O-]C([O-])=O', '[N]CCO.[N]CCO.[O]C([O])=O')
-        self.input_df['smiles'] = self.input_df['smiles'].replace('O=S(=O)(Nn1c-nnc1)C1=CC=CC=C1', 'O=S(=O)(NN(C=N1)C=N1)C(C=CC1)=CC=1')
+        self.input_df["smiles"] = self.input_df["smiles"].replace(
+            "[O-]C([O-])=O.[NH4+]CCO.[NH4+]CCO", "[O]C([O])=O.[N]CCO.[N]CCO"
+        )
+        self.input_df["smiles"] = self.input_df["smiles"].replace(
+            "[NH4+]CCO.[NH4+]CCO.[O-]C([O-])=O", "[N]CCO.[N]CCO.[O]C([O])=O"
+        )
+        self.input_df["smiles"] = self.input_df["smiles"].replace(
+            "O=S(=O)(Nn1c-nnc1)C1=CC=CC=C1", "O=S(=O)(NN(C=N1)C=N1)C(C=CC1)=CC=1"
+        )
 
         # Compute/add all the Molecular Descriptors
         self.output_df = self.compute_molecular_descriptors(self.input_df)
