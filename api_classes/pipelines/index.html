@@ -647,9 +647,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sageworks.api.pipeline.Pipeline.set_hold_out_ids" class="md-nav__link">
+  <a href="#sageworks.api.pipeline.Pipeline.set_holdout_ids" class="md-nav__link">
     <span class="md-ellipsis">
-      set_hold_out_ids
+      set_holdout_ids
     </span>
   </a>
   
@@ -1844,9 +1844,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sageworks.api.pipeline.Pipeline.set_hold_out_ids" class="md-nav__link">
+  <a href="#sageworks.api.pipeline.Pipeline.set_holdout_ids" class="md-nav__link">
     <span class="md-ellipsis">
-      set_hold_out_ids
+      set_holdout_ids
     </span>
   </a>
   
@@ -3290,14 +3290,14 @@
 </span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pipeline</span><span class="p">[</span><span class="n">artifact</span><span class="p">][</span><span class="s2">&quot;input&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">input</span>
 </span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a>
-</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="k">def</span> <span class="nf">set_hold_out_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="k">def</span> <span class="nf">set_holdout_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
 </span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the input for the Pipeline</span>
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a><span class="sd">        Args:</span>
 </span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a><span class="sd">           id_list (list): The list of hold out ids</span>
 </span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pipeline</span><span class="p">[</span><span class="s2">&quot;feature_set&quot;</span><span class="p">][</span><span class="s2">&quot;id_column&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">id_column</span>
-</span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pipeline</span><span class="p">[</span><span class="s2">&quot;feature_set&quot;</span><span class="p">][</span><span class="s2">&quot;hold_out_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hold_out_ids</span>
+</span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pipeline</span><span class="p">[</span><span class="s2">&quot;feature_set&quot;</span><span class="p">][</span><span class="s2">&quot;holdout_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">holdout_ids</span>
 </span><span id="__span-0-79"><a id="__codelineno-0-79" name="__codelineno-0-79"></a>
 </span><span id="__span-0-80"><a id="__codelineno-0-80" name="__codelineno-0-80"></a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span id="__span-0-81"><a id="__codelineno-0-81" name="__codelineno-0-81"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute the entire Pipeline</span>
@@ -3790,8 +3790,8 @@ path (str): Current path to the key, used for nested dictionaries.</p>
 
 
 
-<h3 id="sageworks.api.pipeline.Pipeline.set_hold_out_ids" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">set_hold_out_ids</span><span class="p">(</span><span class="n">id_column</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">)</span></code>
+<h3 id="sageworks.api.pipeline.Pipeline.set_holdout_ids" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">set_holdout_ids</span><span class="p">(</span><span class="n">id_column</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">)</span></code>
 
 </h3>
 
@@ -3839,14 +3839,14 @@ path (str): Current path to the key, used for nested dictionaries.</p>
 <span class="normal"><a href="#__codelineno-0-75">75</a></span>
 <span class="normal"><a href="#__codelineno-0-76">76</a></span>
 <span class="normal"><a href="#__codelineno-0-77">77</a></span>
-<span class="normal"><a href="#__codelineno-0-78">78</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="k">def</span> <span class="nf">set_hold_out_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="normal"><a href="#__codelineno-0-78">78</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="k">def</span> <span class="nf">set_holdout_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
 </span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the input for the Pipeline</span>
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a><span class="sd">    Args:</span>
 </span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a><span class="sd">       id_list (list): The list of hold out ids</span>
 </span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">pipeline</span><span class="p">[</span><span class="s2">&quot;feature_set&quot;</span><span class="p">][</span><span class="s2">&quot;id_column&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">id_column</span>
-</span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">pipeline</span><span class="p">[</span><span class="s2">&quot;feature_set&quot;</span><span class="p">][</span><span class="s2">&quot;hold_out_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hold_out_ids</span>
+</span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">pipeline</span><span class="p">[</span><span class="s2">&quot;feature_set&quot;</span><span class="p">][</span><span class="s2">&quot;holdout_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">holdout_ids</span>
 </span></code></pre></div></td></tr></table></div>
           </details>
   </div>

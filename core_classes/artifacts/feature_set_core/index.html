@@ -879,9 +879,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sageworks.core.artifacts.feature_set_core.FeatureSetCore.get_hold_out_ids" class="md-nav__link">
+  <a href="#sageworks.core.artifacts.feature_set_core.FeatureSetCore.get_holdout_ids" class="md-nav__link">
     <span class="md-ellipsis">
-      get_hold_out_ids
+      get_holdout_ids
     </span>
   </a>
   
@@ -1014,9 +1014,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sageworks.core.artifacts.feature_set_core.FeatureSetCore.set_hold_out_ids" class="md-nav__link">
+  <a href="#sageworks.core.artifacts.feature_set_core.FeatureSetCore.set_holdout_ids" class="md-nav__link">
     <span class="md-ellipsis">
-      set_hold_out_ids
+      set_holdout_ids
     </span>
   </a>
   
@@ -2086,9 +2086,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sageworks.core.artifacts.feature_set_core.FeatureSetCore.get_hold_out_ids" class="md-nav__link">
+  <a href="#sageworks.core.artifacts.feature_set_core.FeatureSetCore.get_holdout_ids" class="md-nav__link">
     <span class="md-ellipsis">
-      get_hold_out_ids
+      get_holdout_ids
     </span>
   </a>
   
@@ -2221,9 +2221,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sageworks.core.artifacts.feature_set_core.FeatureSetCore.set_hold_out_ids" class="md-nav__link">
+  <a href="#sageworks.core.artifacts.feature_set_core.FeatureSetCore.set_holdout_ids" class="md-nav__link">
     <span class="md-ellipsis">
-      set_hold_out_ids
+      set_holdout_ids
     </span>
   </a>
   
@@ -3377,12 +3377,12 @@
 </span><span id="__span-0-426"><a id="__codelineno-0-426" name="__codelineno-0-426"></a>        <span class="c1"># Execute the CREATE VIEW query</span>
 </span><span id="__span-0-427"><a id="__codelineno-0-427" name="__codelineno-0-427"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">data_source</span><span class="o">.</span><span class="n">execute_statement</span><span class="p">(</span><span class="n">create_view_query</span><span class="p">)</span>
 </span><span id="__span-0-428"><a id="__codelineno-0-428" name="__codelineno-0-428"></a>
-</span><span id="__span-0-429"><a id="__codelineno-0-429" name="__codelineno-0-429"></a>    <span class="k">def</span> <span class="nf">create_training_view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+</span><span id="__span-0-429"><a id="__codelineno-0-429" name="__codelineno-0-429"></a>    <span class="k">def</span> <span class="nf">create_training_view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
 </span><span id="__span-0-430"><a id="__codelineno-0-430" name="__codelineno-0-430"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a view in Athena that marks hold out ids for this FeatureSet</span>
 </span><span id="__span-0-431"><a id="__codelineno-0-431" name="__codelineno-0-431"></a>
 </span><span id="__span-0-432"><a id="__codelineno-0-432" name="__codelineno-0-432"></a><span class="sd">        Args:</span>
 </span><span id="__span-0-433"><a id="__codelineno-0-433" name="__codelineno-0-433"></a><span class="sd">            id_column (str): The name of the id column in the output DataFrame.</span>
-</span><span id="__span-0-434"><a id="__codelineno-0-434" name="__codelineno-0-434"></a><span class="sd">            hold_out_ids (list[str]): The list of hold out ids.</span>
+</span><span id="__span-0-434"><a id="__codelineno-0-434" name="__codelineno-0-434"></a><span class="sd">            holdout_ids (list[str]): The list of hold out ids.</span>
 </span><span id="__span-0-435"><a id="__codelineno-0-435" name="__codelineno-0-435"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-436"><a id="__codelineno-0-436" name="__codelineno-0-436"></a>
 </span><span id="__span-0-437"><a id="__codelineno-0-437" name="__codelineno-0-437"></a>        <span class="c1"># Create the view name</span>
@@ -3390,16 +3390,16 @@
 </span><span id="__span-0-439"><a id="__codelineno-0-439" name="__codelineno-0-439"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating Training View </span><span class="si">{</span><span class="n">view_name</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-440"><a id="__codelineno-0-440" name="__codelineno-0-440"></a>
 </span><span id="__span-0-441"><a id="__codelineno-0-441" name="__codelineno-0-441"></a>        <span class="c1"># Format the list of hold out ids for SQL IN clause</span>
-</span><span id="__span-0-442"><a id="__codelineno-0-442" name="__codelineno-0-442"></a>        <span class="k">if</span> <span class="n">hold_out_ids</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">hold_out_ids</span><span class="p">):</span>
-</span><span id="__span-0-443"><a id="__codelineno-0-443" name="__codelineno-0-443"></a>            <span class="n">formatted_hold_out_ids</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;&quot;</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">hold_out_ids</span><span class="p">)</span>
+</span><span id="__span-0-442"><a id="__codelineno-0-442" name="__codelineno-0-442"></a>        <span class="k">if</span> <span class="n">holdout_ids</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">holdout_ids</span><span class="p">):</span>
+</span><span id="__span-0-443"><a id="__codelineno-0-443" name="__codelineno-0-443"></a>            <span class="n">formatted_holdout_ids</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;&quot;</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">holdout_ids</span><span class="p">)</span>
 </span><span id="__span-0-444"><a id="__codelineno-0-444" name="__codelineno-0-444"></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="__span-0-445"><a id="__codelineno-0-445" name="__codelineno-0-445"></a>            <span class="n">formatted_hold_out_ids</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">))</span>
+</span><span id="__span-0-445"><a id="__codelineno-0-445" name="__codelineno-0-445"></a>            <span class="n">formatted_holdout_ids</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">))</span>
 </span><span id="__span-0-446"><a id="__codelineno-0-446" name="__codelineno-0-446"></a>
 </span><span id="__span-0-447"><a id="__codelineno-0-447" name="__codelineno-0-447"></a>        <span class="c1"># Construct the CREATE VIEW query</span>
 </span><span id="__span-0-448"><a id="__codelineno-0-448" name="__codelineno-0-448"></a>        <span class="n">create_view_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 </span><span id="__span-0-449"><a id="__codelineno-0-449" name="__codelineno-0-449"></a><span class="s2">        CREATE OR REPLACE VIEW </span><span class="si">{</span><span class="n">view_name</span><span class="si">}</span><span class="s2"> AS</span>
 </span><span id="__span-0-450"><a id="__codelineno-0-450" name="__codelineno-0-450"></a><span class="s2">        SELECT *, CASE</span>
-</span><span id="__span-0-451"><a id="__codelineno-0-451" name="__codelineno-0-451"></a><span class="s2">            WHEN </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2"> IN (</span><span class="si">{</span><span class="n">formatted_hold_out_ids</span><span class="si">}</span><span class="s2">) THEN 0</span>
+</span><span id="__span-0-451"><a id="__codelineno-0-451" name="__codelineno-0-451"></a><span class="s2">            WHEN </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2"> IN (</span><span class="si">{</span><span class="n">formatted_holdout_ids</span><span class="si">}</span><span class="s2">) THEN 0</span>
 </span><span id="__span-0-452"><a id="__codelineno-0-452" name="__codelineno-0-452"></a><span class="s2">            ELSE 1</span>
 </span><span id="__span-0-453"><a id="__codelineno-0-453" name="__codelineno-0-453"></a><span class="s2">        END AS training</span>
 </span><span id="__span-0-454"><a id="__codelineno-0-454" name="__codelineno-0-454"></a><span class="s2">        FROM </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">athena_table</span><span class="si">}</span>
@@ -3408,16 +3408,16 @@
 </span><span id="__span-0-457"><a id="__codelineno-0-457" name="__codelineno-0-457"></a>        <span class="c1"># Execute the CREATE VIEW query</span>
 </span><span id="__span-0-458"><a id="__codelineno-0-458" name="__codelineno-0-458"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">data_source</span><span class="o">.</span><span class="n">execute_statement</span><span class="p">(</span><span class="n">create_view_query</span><span class="p">)</span>
 </span><span id="__span-0-459"><a id="__codelineno-0-459" name="__codelineno-0-459"></a>
-</span><span id="__span-0-460"><a id="__codelineno-0-460" name="__codelineno-0-460"></a>    <span class="k">def</span> <span class="nf">set_hold_out_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+</span><span id="__span-0-460"><a id="__codelineno-0-460" name="__codelineno-0-460"></a>    <span class="k">def</span> <span class="nf">set_holdout_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
 </span><span id="__span-0-461"><a id="__codelineno-0-461" name="__codelineno-0-461"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the hold out ids for this FeatureSet</span>
 </span><span id="__span-0-462"><a id="__codelineno-0-462" name="__codelineno-0-462"></a>
 </span><span id="__span-0-463"><a id="__codelineno-0-463" name="__codelineno-0-463"></a><span class="sd">        Args:</span>
 </span><span id="__span-0-464"><a id="__codelineno-0-464" name="__codelineno-0-464"></a><span class="sd">            id_column (str): The name of the id column in the output DataFrame.</span>
-</span><span id="__span-0-465"><a id="__codelineno-0-465" name="__codelineno-0-465"></a><span class="sd">            hold_out_ids (list[str]): The list of hold out ids.</span>
+</span><span id="__span-0-465"><a id="__codelineno-0-465" name="__codelineno-0-465"></a><span class="sd">            holdout_ids (list[str]): The list of hold out ids.</span>
 </span><span id="__span-0-466"><a id="__codelineno-0-466" name="__codelineno-0-466"></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="__span-0-467"><a id="__codelineno-0-467" name="__codelineno-0-467"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">create_training_view</span><span class="p">(</span><span class="n">id_column</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">)</span>
+</span><span id="__span-0-467"><a id="__codelineno-0-467" name="__codelineno-0-467"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">create_training_view</span><span class="p">(</span><span class="n">id_column</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">)</span>
 </span><span id="__span-0-468"><a id="__codelineno-0-468" name="__codelineno-0-468"></a>
-</span><span id="__span-0-469"><a id="__codelineno-0-469" name="__codelineno-0-469"></a>    <span class="k">def</span> <span class="nf">get_hold_out_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="__span-0-469"><a id="__codelineno-0-469" name="__codelineno-0-469"></a>    <span class="k">def</span> <span class="nf">get_holdout_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 </span><span id="__span-0-470"><a id="__codelineno-0-470" name="__codelineno-0-470"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the hold out ids for this FeatureSet</span>
 </span><span id="__span-0-471"><a id="__codelineno-0-471" name="__codelineno-0-471"></a>
 </span><span id="__span-0-472"><a id="__codelineno-0-472" name="__codelineno-0-472"></a><span class="sd">        Args:</span>
@@ -3429,8 +3429,8 @@
 </span><span id="__span-0-478"><a id="__codelineno-0-478" name="__codelineno-0-478"></a>        <span class="n">training_view_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_training_view_table</span><span class="p">(</span><span class="n">create</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span><span id="__span-0-479"><a id="__codelineno-0-479" name="__codelineno-0-479"></a>        <span class="k">if</span> <span class="n">training_view_table</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="__span-0-480"><a id="__codelineno-0-480" name="__codelineno-0-480"></a>            <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;SELECT </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2"> FROM </span><span class="si">{</span><span class="n">training_view_table</span><span class="si">}</span><span class="s2"> WHERE training = 0&quot;</span>
-</span><span id="__span-0-481"><a id="__codelineno-0-481" name="__codelineno-0-481"></a>            <span class="n">hold_out_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query</span><span class="p">)[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-</span><span id="__span-0-482"><a id="__codelineno-0-482" name="__codelineno-0-482"></a>            <span class="k">return</span> <span class="n">hold_out_ids</span>
+</span><span id="__span-0-481"><a id="__codelineno-0-481" name="__codelineno-0-481"></a>            <span class="n">holdout_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query</span><span class="p">)[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+</span><span id="__span-0-482"><a id="__codelineno-0-482" name="__codelineno-0-482"></a>            <span class="k">return</span> <span class="n">holdout_ids</span>
 </span><span id="__span-0-483"><a id="__codelineno-0-483" name="__codelineno-0-483"></a>        <span class="k">else</span><span class="p">:</span>
 </span><span id="__span-0-484"><a id="__codelineno-0-484" name="__codelineno-0-484"></a>            <span class="k">return</span> <span class="p">[]</span>
 </span><span id="__span-0-485"><a id="__codelineno-0-485" name="__codelineno-0-485"></a>
@@ -4368,7 +4368,7 @@ Returns:
 
 
 <h3 id="sageworks.core.artifacts.feature_set_core.FeatureSetCore.create_training_view" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">create_training_view</span><span class="p">(</span><span class="n">id_column</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">create_training_view</span><span class="p">(</span><span class="n">id_column</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">)</span></code>
 
 </h3>
 
@@ -4405,7 +4405,7 @@ Returns:
           </td>
         </tr>
         <tr class="doc-section-item">
-          <td><code>hold_out_ids</code></td>
+          <td><code>holdout_ids</code></td>
           <td>
                 <code>list[str]</code>
           </td>
@@ -4452,12 +4452,12 @@ Returns:
 <span class="normal"><a href="#__codelineno-0-455">455</a></span>
 <span class="normal"><a href="#__codelineno-0-456">456</a></span>
 <span class="normal"><a href="#__codelineno-0-457">457</a></span>
-<span class="normal"><a href="#__codelineno-0-458">458</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-429"><a id="__codelineno-0-429" name="__codelineno-0-429"></a><span class="k">def</span> <span class="nf">create_training_view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="normal"><a href="#__codelineno-0-458">458</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-429"><a id="__codelineno-0-429" name="__codelineno-0-429"></a><span class="k">def</span> <span class="nf">create_training_view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
 </span><span id="__span-0-430"><a id="__codelineno-0-430" name="__codelineno-0-430"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a view in Athena that marks hold out ids for this FeatureSet</span>
 </span><span id="__span-0-431"><a id="__codelineno-0-431" name="__codelineno-0-431"></a>
 </span><span id="__span-0-432"><a id="__codelineno-0-432" name="__codelineno-0-432"></a><span class="sd">    Args:</span>
 </span><span id="__span-0-433"><a id="__codelineno-0-433" name="__codelineno-0-433"></a><span class="sd">        id_column (str): The name of the id column in the output DataFrame.</span>
-</span><span id="__span-0-434"><a id="__codelineno-0-434" name="__codelineno-0-434"></a><span class="sd">        hold_out_ids (list[str]): The list of hold out ids.</span>
+</span><span id="__span-0-434"><a id="__codelineno-0-434" name="__codelineno-0-434"></a><span class="sd">        holdout_ids (list[str]): The list of hold out ids.</span>
 </span><span id="__span-0-435"><a id="__codelineno-0-435" name="__codelineno-0-435"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-436"><a id="__codelineno-0-436" name="__codelineno-0-436"></a>
 </span><span id="__span-0-437"><a id="__codelineno-0-437" name="__codelineno-0-437"></a>    <span class="c1"># Create the view name</span>
@@ -4465,16 +4465,16 @@ Returns:
 </span><span id="__span-0-439"><a id="__codelineno-0-439" name="__codelineno-0-439"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating Training View </span><span class="si">{</span><span class="n">view_name</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-440"><a id="__codelineno-0-440" name="__codelineno-0-440"></a>
 </span><span id="__span-0-441"><a id="__codelineno-0-441" name="__codelineno-0-441"></a>    <span class="c1"># Format the list of hold out ids for SQL IN clause</span>
-</span><span id="__span-0-442"><a id="__codelineno-0-442" name="__codelineno-0-442"></a>    <span class="k">if</span> <span class="n">hold_out_ids</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">hold_out_ids</span><span class="p">):</span>
-</span><span id="__span-0-443"><a id="__codelineno-0-443" name="__codelineno-0-443"></a>        <span class="n">formatted_hold_out_ids</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;&quot;</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">hold_out_ids</span><span class="p">)</span>
+</span><span id="__span-0-442"><a id="__codelineno-0-442" name="__codelineno-0-442"></a>    <span class="k">if</span> <span class="n">holdout_ids</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">holdout_ids</span><span class="p">):</span>
+</span><span id="__span-0-443"><a id="__codelineno-0-443" name="__codelineno-0-443"></a>        <span class="n">formatted_holdout_ids</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;&quot;</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">holdout_ids</span><span class="p">)</span>
 </span><span id="__span-0-444"><a id="__codelineno-0-444" name="__codelineno-0-444"></a>    <span class="k">else</span><span class="p">:</span>
-</span><span id="__span-0-445"><a id="__codelineno-0-445" name="__codelineno-0-445"></a>        <span class="n">formatted_hold_out_ids</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">))</span>
+</span><span id="__span-0-445"><a id="__codelineno-0-445" name="__codelineno-0-445"></a>        <span class="n">formatted_holdout_ids</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">))</span>
 </span><span id="__span-0-446"><a id="__codelineno-0-446" name="__codelineno-0-446"></a>
 </span><span id="__span-0-447"><a id="__codelineno-0-447" name="__codelineno-0-447"></a>    <span class="c1"># Construct the CREATE VIEW query</span>
 </span><span id="__span-0-448"><a id="__codelineno-0-448" name="__codelineno-0-448"></a>    <span class="n">create_view_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 </span><span id="__span-0-449"><a id="__codelineno-0-449" name="__codelineno-0-449"></a><span class="s2">    CREATE OR REPLACE VIEW </span><span class="si">{</span><span class="n">view_name</span><span class="si">}</span><span class="s2"> AS</span>
 </span><span id="__span-0-450"><a id="__codelineno-0-450" name="__codelineno-0-450"></a><span class="s2">    SELECT *, CASE</span>
-</span><span id="__span-0-451"><a id="__codelineno-0-451" name="__codelineno-0-451"></a><span class="s2">        WHEN </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2"> IN (</span><span class="si">{</span><span class="n">formatted_hold_out_ids</span><span class="si">}</span><span class="s2">) THEN 0</span>
+</span><span id="__span-0-451"><a id="__codelineno-0-451" name="__codelineno-0-451"></a><span class="s2">        WHEN </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2"> IN (</span><span class="si">{</span><span class="n">formatted_holdout_ids</span><span class="si">}</span><span class="s2">) THEN 0</span>
 </span><span id="__span-0-452"><a id="__codelineno-0-452" name="__codelineno-0-452"></a><span class="s2">        ELSE 1</span>
 </span><span id="__span-0-453"><a id="__codelineno-0-453" name="__codelineno-0-453"></a><span class="s2">    END AS training</span>
 </span><span id="__span-0-454"><a id="__codelineno-0-454" name="__codelineno-0-454"></a><span class="s2">    FROM </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">athena_table</span><span class="si">}</span>
@@ -5029,8 +5029,8 @@ See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-data
 
 
 
-<h3 id="sageworks.core.artifacts.feature_set_core.FeatureSetCore.get_hold_out_ids" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">get_hold_out_ids</span><span class="p">(</span><span class="n">id_column</span><span class="p">)</span></code>
+<h3 id="sageworks.core.artifacts.feature_set_core.FeatureSetCore.get_holdout_ids" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">get_holdout_ids</span><span class="p">(</span><span class="n">id_column</span><span class="p">)</span></code>
 
 </h3>
 
@@ -5110,7 +5110,7 @@ See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-data
 <span class="normal"><a href="#__codelineno-0-481">481</a></span>
 <span class="normal"><a href="#__codelineno-0-482">482</a></span>
 <span class="normal"><a href="#__codelineno-0-483">483</a></span>
-<span class="normal"><a href="#__codelineno-0-484">484</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-469"><a id="__codelineno-0-469" name="__codelineno-0-469"></a><span class="k">def</span> <span class="nf">get_hold_out_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="normal"><a href="#__codelineno-0-484">484</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-469"><a id="__codelineno-0-469" name="__codelineno-0-469"></a><span class="k">def</span> <span class="nf">get_holdout_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 </span><span id="__span-0-470"><a id="__codelineno-0-470" name="__codelineno-0-470"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the hold out ids for this FeatureSet</span>
 </span><span id="__span-0-471"><a id="__codelineno-0-471" name="__codelineno-0-471"></a>
 </span><span id="__span-0-472"><a id="__codelineno-0-472" name="__codelineno-0-472"></a><span class="sd">    Args:</span>
@@ -5122,8 +5122,8 @@ See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-data
 </span><span id="__span-0-478"><a id="__codelineno-0-478" name="__codelineno-0-478"></a>    <span class="n">training_view_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_training_view_table</span><span class="p">(</span><span class="n">create</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span><span id="__span-0-479"><a id="__codelineno-0-479" name="__codelineno-0-479"></a>    <span class="k">if</span> <span class="n">training_view_table</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="__span-0-480"><a id="__codelineno-0-480" name="__codelineno-0-480"></a>        <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;SELECT </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2"> FROM </span><span class="si">{</span><span class="n">training_view_table</span><span class="si">}</span><span class="s2"> WHERE training = 0&quot;</span>
-</span><span id="__span-0-481"><a id="__codelineno-0-481" name="__codelineno-0-481"></a>        <span class="n">hold_out_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query</span><span class="p">)[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-</span><span id="__span-0-482"><a id="__codelineno-0-482" name="__codelineno-0-482"></a>        <span class="k">return</span> <span class="n">hold_out_ids</span>
+</span><span id="__span-0-481"><a id="__codelineno-0-481" name="__codelineno-0-481"></a>        <span class="n">holdout_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query</span><span class="p">)[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+</span><span id="__span-0-482"><a id="__codelineno-0-482" name="__codelineno-0-482"></a>        <span class="k">return</span> <span class="n">holdout_ids</span>
 </span><span id="__span-0-483"><a id="__codelineno-0-483" name="__codelineno-0-483"></a>    <span class="k">else</span><span class="p">:</span>
 </span><span id="__span-0-484"><a id="__codelineno-0-484" name="__codelineno-0-484"></a>        <span class="k">return</span> <span class="p">[]</span>
 </span></code></pre></div></td></tr></table></div>
@@ -5979,8 +5979,8 @@ Returns:
 
 
 
-<h3 id="sageworks.core.artifacts.feature_set_core.FeatureSetCore.set_hold_out_ids" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">set_hold_out_ids</span><span class="p">(</span><span class="n">id_column</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">)</span></code>
+<h3 id="sageworks.core.artifacts.feature_set_core.FeatureSetCore.set_holdout_ids" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">set_holdout_ids</span><span class="p">(</span><span class="n">id_column</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">)</span></code>
 
 </h3>
 
@@ -6017,7 +6017,7 @@ Returns:
           </td>
         </tr>
         <tr class="doc-section-item">
-          <td><code>hold_out_ids</code></td>
+          <td><code>holdout_ids</code></td>
           <td>
                 <code>list[str]</code>
           </td>
@@ -6042,14 +6042,14 @@ Returns:
 <span class="normal"><a href="#__codelineno-0-464">464</a></span>
 <span class="normal"><a href="#__codelineno-0-465">465</a></span>
 <span class="normal"><a href="#__codelineno-0-466">466</a></span>
-<span class="normal"><a href="#__codelineno-0-467">467</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-460"><a id="__codelineno-0-460" name="__codelineno-0-460"></a><span class="k">def</span> <span class="nf">set_hold_out_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="normal"><a href="#__codelineno-0-467">467</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-460"><a id="__codelineno-0-460" name="__codelineno-0-460"></a><span class="k">def</span> <span class="nf">set_holdout_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
 </span><span id="__span-0-461"><a id="__codelineno-0-461" name="__codelineno-0-461"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the hold out ids for this FeatureSet</span>
 </span><span id="__span-0-462"><a id="__codelineno-0-462" name="__codelineno-0-462"></a>
 </span><span id="__span-0-463"><a id="__codelineno-0-463" name="__codelineno-0-463"></a><span class="sd">    Args:</span>
 </span><span id="__span-0-464"><a id="__codelineno-0-464" name="__codelineno-0-464"></a><span class="sd">        id_column (str): The name of the id column in the output DataFrame.</span>
-</span><span id="__span-0-465"><a id="__codelineno-0-465" name="__codelineno-0-465"></a><span class="sd">        hold_out_ids (list[str]): The list of hold out ids.</span>
+</span><span id="__span-0-465"><a id="__codelineno-0-465" name="__codelineno-0-465"></a><span class="sd">        holdout_ids (list[str]): The list of hold out ids.</span>
 </span><span id="__span-0-466"><a id="__codelineno-0-466" name="__codelineno-0-466"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-467"><a id="__codelineno-0-467" name="__codelineno-0-467"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">create_training_view</span><span class="p">(</span><span class="n">id_column</span><span class="p">,</span> <span class="n">hold_out_ids</span><span class="p">)</span>
+</span><span id="__span-0-467"><a id="__codelineno-0-467" name="__codelineno-0-467"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">create_training_view</span><span class="p">(</span><span class="n">id_column</span><span class="p">,</span> <span class="n">holdout_ids</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
           </details>
   </div>
