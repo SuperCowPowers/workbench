@@ -60,24 +60,24 @@ class PipelineExecutor:
             # FeatureSet
             elif class_name == "feature_set":
 
-                # Special case for hold_out_ids
-                if "hold_out_ids" in kwargs:
-                    if kwargs["hold_out_ids"] == "<<parameter_optional>>":
+                # Special case for holdout_ids
+                if "holdout_ids" in kwargs:
+                    if kwargs["holdout_ids"] == "<<parameter_optional>>":
                         self.log.important("Hold out ids are not set, defaulting to 80/20 split")
-                        hold_out_ids = None
+                        holdout_ids = None
                         id_column = None
                     else:
-                        hold_out_ids = kwargs["hold_out_ids"]
+                        holdout_ids = kwargs["holdout_ids"]
                         if "id_column" not in kwargs or (kwargs["id_column"] == "<<parameter_optional>>"):
                             self.log.warning(
                                 "Hold out ids are set, but no id column is provided! Defaulting to 80/20 split"
                             )
-                            hold_out_ids = None
+                            holdout_ids = None
                             id_column = None
                         else:
                             id_column = kwargs["id_column"]
                             del kwargs["id_column"]
-                    del kwargs["hold_out_ids"]
+                    del kwargs["holdout_ids"]
 
                 # Check for a transform and create a FeatureSet
                 if "data_source" in sageworks_objects and (not subset or "feature_set" in subset):
@@ -100,8 +100,8 @@ class PipelineExecutor:
 
                 # Create the FeatureSet and set hold out ids if specified
                 sageworks_objects["feature_set"] = FeatureSet(kwargs["name"])
-                if hold_out_ids:
-                    sageworks_objects["feature_set"].set_hold_out_ids(id_column, hold_out_ids)
+                if holdout_ids:
+                    sageworks_objects["feature_set"].set_holdout_ids(id_column, holdout_ids)
 
             # Model
             elif class_name == "model":

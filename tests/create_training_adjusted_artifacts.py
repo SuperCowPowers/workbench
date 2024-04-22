@@ -36,7 +36,7 @@ if __name__ == "__main__":
     # Create a training view of the test_features
     log.important("Creating training view for abalone_features...")
     fs = FeatureSetCore("abalone_features")
-    fs.create_training_view("id", hold_out_ids=range(100))  # Just the first 100 ids
+    fs.create_training_view("id", holdout_ids=range(100))  # Just the first 100 ids
 
     # Create the abalone_regression Model
     if recreate or not ModelCore("abalone-regression-100").exists():

@@ -3,7 +3,6 @@
 import pandas as pd
 from pandas.errors import ParserError
 import numpy as np
-from sklearn.model_selection import train_test_split
 import json
 from io import StringIO
 import logging
@@ -393,7 +392,7 @@ def stratified_split(df, column_name, test_size=0.2, random_state=42):
     """
     # Temporarily replace NaNs with a placeholder to treat them as a category
     df_temp = df.copy()
-    df_temp.loc[:, column_name] = df_temp[column_name].fillna('NaN')  # Use .loc to avoid SettingWithCopyWarning
+    df_temp.loc[:, column_name] = df_temp[column_name].fillna("NaN")  # Use .loc to avoid SettingWithCopyWarning
 
     # Determine minimum number of samples per group in the test set
     min_test_samples = 1
@@ -417,8 +416,8 @@ def stratified_split(df, column_name, test_size=0.2, random_state=42):
     test_df = df_temp[test_mask]
 
     # Convert 'NaN' placeholders back to actual NaNs, using .loc to ensure direct modification
-    train_df.loc[:, column_name] = train_df[column_name].replace('NaN', np.nan)
-    test_df.loc[:, column_name] = test_df[column_name].replace('NaN', np.nan)
+    train_df.loc[:, column_name] = train_df[column_name].replace("NaN", np.nan)
+    test_df.loc[:, column_name] = test_df[column_name].replace("NaN", np.nan)
 
     return train_df, test_df
 

@@ -426,12 +426,12 @@ class FeatureSetCore(Artifact):
         # Execute the CREATE VIEW query
         self.data_source.execute_statement(create_view_query)
 
-    def create_training_view(self, id_column: str, hold_out_ids: list[str]):
+    def create_training_view(self, id_column: str, holdout_ids: list[str]):
         """Create a view in Athena that marks hold out ids for this FeatureSet
 
         Args:
             id_column (str): The name of the id column in the output DataFrame.
-            hold_out_ids (list[str]): The list of hold out ids.
+            holdout_ids (list[str]): The list of hold out ids.
         """
 
         # Create the view name
@@ -439,16 +439,16 @@ class FeatureSetCore(Artifact):
         self.log.important(f"Creating Training View {view_name}...")
 
         # Format the list of hold out ids for SQL IN clause
-        if hold_out_ids and all(isinstance(id, str) for id in hold_out_ids):
-            formatted_hold_out_ids = ", ".join(f"'{id}'" for id in hold_out_ids)
+        if holdout_ids and all(isinstance(id, str) for id in holdout_ids):
+            formatted_holdout_ids = ", ".join(f"'{id}'" for id in holdout_ids)
         else:
-            formatted_hold_out_ids = ", ".join(map(str, hold_out_ids))
+            formatted_holdout_ids = ", ".join(map(str, holdout_ids))
 
         # Construct the CREATE VIEW query
         create_view_query = f"""
         CREATE OR REPLACE VIEW {view_name} AS
         SELECT *, CASE
-            WHEN {id_column} IN ({formatted_hold_out_ids}) THEN 0
+            WHEN {id_column} IN ({formatted_holdout_ids}) THEN 0
             ELSE 1
         END AS training
         FROM {self.athena_table}
@@ -457,16 +457,16 @@ class FeatureSetCore(Artifact):
         # Execute the CREATE VIEW query
         self.data_source.execute_statement(create_view_query)
 
-    def set_hold_out_ids(self, id_column: str, hold_out_ids: list[str]):
+    def set_holdout_ids(self, id_column: str, holdout_ids: list[str]):
         """Set the hold out ids for this FeatureSet
 
         Args:
             id_column (str): The name of the id column in the output DataFrame.
-            hold_out_ids (list[str]): The list of hold out ids.
+            holdout_ids (list[str]): The list of hold out ids.
         """
-        self.create_training_view(id_column, hold_out_ids)
+        self.create_training_view(id_column, holdout_ids)
 
-    def get_hold_out_ids(self, id_column: str) -> list[str]:
+    def get_holdout_ids(self, id_column: str) -> list[str]:
         """Get the hold out ids for this FeatureSet
 
         Args:
@@ -478,8 +478,8 @@ class FeatureSetCore(Artifact):
         training_view_table = self.get_training_view_table(create=False)
         if training_view_table is not None:
             query = f"SELECT {id_column} FROM {training_view_table} WHERE training = 0"
-            hold_out_ids = self.query(query)[id_column].tolist()
-            return hold_out_ids
+            holdout_ids = self.query(query)[id_column].tolist()
+            return holdout_ids
         else:
             return []
 
@@ -721,21 +721,21 @@ if __name__ == "__main__":
     print("Setting hold out ids...")
     table = my_features.get_training_view_table()
     df = my_features.query(f"SELECT id, name FROM {table}")
-    my_hold_out_ids = [id for id in df["id"] if id < 20]
-    my_features.create_training_view("id", my_hold_out_ids)
+    my_holdout_ids = [id for id in df["id"] if id < 20]
+    my_features.create_training_view("id", my_holdout_ids)
 
     # Convenience methods to set and get the hold out ids
     print("Setting hold out ids...")
-    my_features.set_hold_out_ids("id", my_hold_out_ids)
+    my_features.set_holdout_ids("id", my_holdout_ids)
     print("Getting hold out ids...")
-    hold_output = my_features.get_hold_out_ids("id")
-    print(hold_output)
-    assert set(hold_output) == set(my_hold_out_ids)
+    holdoutput = my_features.get_holdout_ids("id")
+    print(holdoutput)
+    assert set(holdoutput) == set(my_holdout_ids)
 
     # Test the hold out set functionality with strings
     print("Setting hold out ids (strings)...")
-    my_hold_out_ids = [name for name in df["name"] if int(name.split(" ")[1]) > 80]
-    my_features.create_training_view("name", my_hold_out_ids)
+    my_holdout_ids = [name for name in df["name"] if int(name.split(" ")[1]) > 80]
+    my_features.create_training_view("name", my_holdout_ids)
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print('Deleting SageWorks Feature Set...')

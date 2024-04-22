@@ -68,14 +68,14 @@ class Pipeline:
         """
         self.pipeline[artifact]["input"] = input
 
-    def set_hold_out_ids(self, id_column: str, hold_out_ids: list[str]):
+    def set_holdout_ids(self, id_column: str, holdout_ids: list[str]):
         """Set the input for the Pipeline
 
         Args:
            id_list (list): The list of hold out ids
         """
         self.pipeline["feature_set"]["id_column"] = id_column
-        self.pipeline["feature_set"]["hold_out_ids"] = hold_out_ids
+        self.pipeline["feature_set"]["holdout_ids"] = holdout_ids
 
     def execute(self):
         """Execute the entire Pipeline
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     my_pipeline.set_input("s3://sageworks-public-data/common/abalone.csv")
 
     # Set the hold out ids for the Pipeline
-    my_pipeline.set_hold_out_ids("id", list(range(100)))
+    my_pipeline.set_holdout_ids("id", list(range(100)))
 
     # Now we can execute the pipeline
     my_pipeline.execute_partial(["data_source", "feature_set"])
