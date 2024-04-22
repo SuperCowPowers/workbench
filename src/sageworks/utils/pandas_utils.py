@@ -3,6 +3,7 @@
 import pandas as pd
 from pandas.errors import ParserError
 import numpy as np
+from sklearn.model_selection import train_test_split
 import json
 from io import StringIO
 import logging
@@ -89,7 +90,9 @@ def numeric_stats(df):
     return df.describe().round(2).T.drop("count", axis=1)
 
 
-def drop_nans(input_df: pd.DataFrame, how: str = "all", nan_drop_percent: float = 50, subset: list = None) -> pd.DataFrame:
+def drop_nans(
+    input_df: pd.DataFrame, how: str = "all", nan_drop_percent: float = 50, subset: list = None
+) -> pd.DataFrame:
     """Dropping NaNs in rows and columns. Optionally, focus on specific columns.
     Args:
         input_df (pd.DataFrame): Input data frame.
@@ -372,6 +375,52 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     # Concatenate the new columns with the original DataFrame
     df = pd.concat([df, proba_df], axis=1)
     return df
+
+
+def stratified_split(df, column_name, test_size=0.2, random_state=42):
+    """
+    Stratified train-test split based on a categorical column, including handling NaNs as a separate category.
+
+    Args:
+        df (pd.DataFrame): DataFrame to split
+        column_name (str): Column name to stratify the split on
+        test_size (float): Proportion of the test set
+        random_state (int): Random seed for reproducibility
+
+    Returns:
+        pd.DataFrame, pd.DataFrame: Train and Test DataFrames
+
+    """
+    # Temporarily replace NaNs with a placeholder to treat them as a category
+    df_temp = df.copy()
+    df_temp.loc[:, column_name] = df_temp[column_name].fillna('NaN')  # Use .loc to avoid SettingWithCopyWarning
+
+    # Determine minimum number of samples per group in the test set
+    min_test_samples = 1
+
+    # Calculate the number of samples each group should ideally have in the test set
+    group_counts = df_temp[column_name].value_counts()
+
+    # This ensures at least one sample per group
+    test_counts = (group_counts * test_size).clip(lower=min_test_samples).astype(int)
+
+    # Create a mask to identify test samples
+    test_mask = pd.Series(False, index=df_temp.index)
+
+    # Assign samples to test set ensuring each group has at least one sample
+    grouped = df_temp.groupby(column_name)
+    for name, group in grouped:
+        test_indices = group.sample(n=test_counts[name], random_state=random_state).index
+        test_mask.loc[test_indices] = True
+
+    train_df = df_temp[~test_mask]
+    test_df = df_temp[test_mask]
+
+    # Convert 'NaN' placeholders back to actual NaNs, using .loc to ensure direct modification
+    train_df.loc[:, column_name] = train_df[column_name].replace('NaN', np.nan)
+    test_df.loc[:, column_name] = test_df[column_name].replace('NaN', np.nan)
+
+    return train_df, test_df
 
 
 if __name__ == "__main__":
