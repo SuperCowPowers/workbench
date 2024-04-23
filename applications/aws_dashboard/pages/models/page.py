@@ -68,4 +68,5 @@ callbacks.table_row_select(app, "models_table")
 callbacks.update_model_plot_component(app)
 
 # Set up callbacks for all the plugins
-callbacks.setup_plugin_callbacks(plugins)
+if plugins:
+    callbacks.setup_plugin_callbacks(plugins)

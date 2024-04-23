@@ -78,22 +78,6 @@ def update_model_plot_component(app: Dash):
         return model_plot_fig
 
 
-"""
-# Register the plugin callbacks for the model subpage
-def register_plugin_callbacks(plugins):
-    # Setup the inputs for the plugins and register the callbacks
-    model_inputs = [
-        Input("model_details-dropdown", "value"),
-        Input("models_table", "derived_viewport_selected_row_ids"),
-        State("models_table", "data"),
-    ]
-
-    # Sanity check that we have some plugins
-    if plugins:
-        plugin_callbacks.register_callbacks(plugins, model_inputs, "model")
-"""
-
-
 def setup_plugin_callbacks(plugins):
     @callback(
         # Aggregate plugin outputs

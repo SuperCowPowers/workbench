@@ -68,4 +68,5 @@ callbacks.table_row_select(app, "endpoints_table")
 callbacks.update_endpoint_metrics(app, endpoint_broker)
 
 # For all the plugins we have we'll call their update_properties method
-callbacks.setup_plugin_callbacks(plugins)
+if plugins:
+    callbacks.setup_plugin_callbacks(plugins)
