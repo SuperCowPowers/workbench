@@ -59,8 +59,8 @@ class MolecularDescriptors(DataToFeaturesLight):
         if "smiles" not in self.input_df.columns:
             raise ValueError("Input DataFrame must have a 'smiles' column")
 
-        # FIXME: Try to Guard against 'weird' SMILES that explode Mordred
-        # aromaticity interpretation between PLP and RDKit fix
+        # There are certain smiles that cause Mordred to crash
+        # We'll replace them with 'equivalent' smiles (these need to be verified)
         self.input_df["smiles"] = self.input_df["smiles"].replace(
             "[O-]C([O-])=O.[NH4+]CCO.[NH4+]CCO", "[O]C([O])=O.[N]CCO.[N]CCO"
         )
