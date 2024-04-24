@@ -9,7 +9,7 @@ Models:
 Endpoints:
     - aqsol-regression-end
 """
-
+import logging
 import pandas as pd
 import awswrangler as wr
 
@@ -20,6 +20,8 @@ from sageworks.api.endpoint import Endpoint
 
 from sageworks.core.transforms.data_to_features.light.molecular_descriptors import MolecularDescriptors
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
+log = logging.getLogger("sageworks")
+
 
 if __name__ == "__main__":
     # This forces a refresh on all the data we get from the AWs Broker
@@ -94,7 +96,7 @@ if __name__ == "__main__":
         rdkit_features = MolecularDescriptors("aqsol_data", "aqsol_mol_descriptors")
         rdkit_features.set_output_tags(["aqsol", "public"])
         query = "SELECT id, solubility, solubility_class, smiles FROM aqsol_data"
-        rdkit_features.transform(target_column="solubility", id_column="id", query=query, auto_one_hot=False)
+        rdkit_features.transform(target_column="solubility", id_column="id", query=query)
 
     # Create the Molecular Descriptor based Regression Model
     if recreate or not Model("aqsol-mol-regression").exists():
@@ -129,9 +131,15 @@ if __name__ == "__main__":
     # Create the Molecular Descriptor Regression Endpoint
     if recreate or not Endpoint("aqsol-mol-regression-end").exists():
         m = Model("aqsol-mol-regression")
-        m.to_endpoint(name="aqsol-mol-regression-end", tags=["aqsol", "mol", "regression"])
+        end = m.to_endpoint(name="aqsol-mol-regression-end", tags=["aqsol", "mol", "regression"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
 
     # Create the Molecular Descriptor Classification Endpoint
     if recreate or not Endpoint("aqsol-mol-class-end").exists():
         m = Model("aqsol-mol-class")
-        m.to_endpoint(name="aqsol-mol-class-end", tags=["aqsol", "mol", "classification"])
+        end = m.to_endpoint(name="aqsol-mol-class-end", tags=["aqsol", "mol", "classification"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
