@@ -16,7 +16,7 @@ class AGTable(PluginInterface):
 
     """Initialize this Plugin Component Class with required attributes"""
     auto_load_page = PluginPage.NONE
-    plugin_input_type = PluginInputType.MODEL_TABLE
+    plugin_input_type = PluginInputType.PIPELINE_TABLE
 
     def create_component(self, component_id: str) -> AgGrid:
         """Create a Table Component without any data.
@@ -29,12 +29,10 @@ class AGTable(PluginInterface):
         self.container = AgGrid(
             id=component_id,
             # className="ag-theme-balham-dark",
+            className="ag-theme-alpine-auto-dark",
             columnSize="sizeToFit",
             dashGridOptions={
-                "rowHeight": None,
-                "domLayout": "normal",
-                "rowSelection": "single",
-                "filter": True,
+                "rowSelection": "single"
             },
             style={"maxHeight": "200px", "overflow": "auto"},
         )
@@ -54,26 +52,26 @@ class AGTable(PluginInterface):
         # Return the container
         return self.container
 
-    def update_properties(self, model_table: pd.DataFrame, **kwargs) -> list:
+    def update_properties(self, table_df: pd.DataFrame, **kwargs) -> list:
         """Update the properties for the plugin.
 
         Args:
-            model_table (pd.DataFrame): A DataFrame with the model table data
+            table_df (pd.DataFrame): A DataFrame with the table data
             **kwargs: Additional keyword arguments (unused)
 
         Returns:
             list: A list of the updated property values for the plugin
         """
-        log.important(f"Updating Table Plugin with a model table and kwargs: {kwargs}")
+        log.important(f"Updating Table Plugin with a table dataframe and kwargs: {kwargs}")
 
         # Convert the DataFrame to a list of dictionaries for AG Grid
-        table_data = model_table.to_dict("records")
+        table_data = table_df.to_dict("records")
 
         # Define column definitions based on the DataFrame
-        column_defs = [{"headerName": col, "field": col, "filter": "agTextColumnFilter"} for col in model_table.columns]
+        column_defs = [{"headerName": col, "field": col, "filter": "agTextColumnFilter"} for col in table_df.columns]
 
         # Select the first row by default
-        selected_rows = {"ids": ["0"]}
+        selected_rows = table_df.head(1).to_dict("records")
 
         # Return the column definitions and table data (must match the plugin properties)
         return [column_defs, table_data, selected_rows]

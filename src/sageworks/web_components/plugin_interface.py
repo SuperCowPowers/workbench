@@ -17,6 +17,7 @@ class PluginPage(Enum):
     FEATURE_SET = "feature_set"
     MODEL = "model"
     ENDPOINT = "endpoint"
+    PIPELINE = "pipeline"
     CUSTOM = "custom"
     NONE = "none"
 
@@ -28,7 +29,9 @@ class PluginInputType(Enum):
     FEATURE_SET = "feature_set"
     MODEL = "model"
     ENDPOINT = "endpoint"
+    PIPELINE = "pipeline"
     MODEL_TABLE = "model_table"
+    PIPELINE_TABLE = "pipeline_table"
 
 
 class PluginInterface(ComponentInterface):

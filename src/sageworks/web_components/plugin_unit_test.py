@@ -4,6 +4,7 @@ from dash import html, Output, Input
 # SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginInputType
 from sageworks.api import Model, Endpoint, Meta
+from sageworks.api.pipeline import Pipeline
 
 
 class PluginUnitTest:
@@ -47,15 +48,19 @@ class PluginUnitTest:
             # Simulate updating the plugin with a new Model, Endpoint, or Model Table
             if plugin_input_type == PluginInputType.MODEL:
                 model = Model("abalone-regression")
-                updated_proporties = self.plugin.update_properties(
-                    model, inference_run="training_holdout"
-                )  # Hardcoded for now :)
+                updated_proporties = self.plugin.update_properties(model, inference_run="training_holdout")
             elif plugin_input_type == PluginInputType.ENDPOINT:
                 endpoint = Endpoint("abalone-regression-end")
                 updated_proporties = self.plugin.update_properties(endpoint)
+            elif plugin_input_type == PluginInputType.PIPELINE:
+                pipeline = Pipeline("abalone_pipeline_v1")
+                updated_proporties = self.plugin.update_properties(pipeline)
             elif plugin_input_type == PluginInputType.MODEL_TABLE:
-                model_table = Meta().models()
-                updated_proporties = self.plugin.update_properties(model_table)
+                model_df = Meta().models()
+                updated_proporties = self.plugin.update_properties(model_df)
+            elif plugin_input_type == PluginInputType.PIPELINE_TABLE:
+                pipeline_df = Meta().pipelines()
+                updated_proporties = self.plugin.update_properties(pipeline_df)
             else:
                 raise ValueError(f"Invalid test type: {plugin_input_type}")
 
