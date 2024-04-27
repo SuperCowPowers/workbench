@@ -34,7 +34,7 @@ nav:
   - Plugins: 
       - OverView: plugins/index.md
       - API Changes: plugins/plugin_api_changes.md
-  - SageWorks Enterprise:  enterprise.md
+  - SageWorks Enterprise:  enterprise/enterprise.md
   - FAQ:  misc/faq.md
   - Research:
       - EDA: research/eda.md
