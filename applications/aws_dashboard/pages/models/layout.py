@@ -24,6 +24,7 @@ def models_layout(
             dbc.Row(
                 [
                     html.H2("SageWorks: Models"),
+                    # html.H2("Project Awesome", style={'color': '#88cc88', 'font-style': 'italic'}),
                     dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                     html.Div(id="dev_null", style={"display": "none"}),  # Output for callbacks without outputs
                 ]
