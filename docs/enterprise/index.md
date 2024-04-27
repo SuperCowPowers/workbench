@@ -10,9 +10,9 @@ The SageWorks API and User Interfaces cover a broad set of AWS Machine Learning 
 | **[AWS Onboarding](https://supercowpowers.github.io/sageworks/aws_setup/core_stack/)**      | ➖ | 🟢  | 🟢  | 🟢 |
 | **[Dashboard Plugins](https://supercowpowers.github.io/sageworks/plugins/)** | ➖  | 🟢  | 🟢  | 🟢 |
 | **[Custom Pages](https://supercowpowers.github.io/sageworks/plugins/)**        | ➖  | ➖  | 🟢  | 🟢 |
-| **Themes**              | ➖  | ➖  | 🟢  | 🟢 |
+| **[Themes](https://supercowpowers.github.io/sageworks/enterprise/themes/)**              | ➖  | ➖  | 🟢  | 🟢 |
 | **[ML Pipelines](https://supercowpowers.github.io/sageworks/api_classes/pipelines/)**        | ➖  | ➖  | 🟢  | 🟢 |
-| **UI Project Branding** | ➖  | ➖  | ➖  | 🟢 |
+| **[Project Branding](https://supercowpowers.github.io/sageworks/enterprise/project_branding/)** | ➖  | ➖  | ➖  | 🟢 |
 | **Prioritized Feature Requests** | ➖| ➖| ➖ |🟢|
 | **Support/Training/Dev Credits**   | ➖ | 10/month | 20/month | 40/month |
 | **Pricing**            | ➖ | $1500*| $3000* | $4000* |
