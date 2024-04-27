@@ -25,9 +25,9 @@ We encourage new users to try out the **free** version, first. We offer support 
 
 ## Data Engineering/Science Consulting
 
-Alongside our SageWorks Enterprise offerings, we provide comprehensive consulting services and domain expertise through our partnerships [Partnerships](https://www.supercowpowers.com/home#h.qau620rju99x). We specialize in **AWS Machine Learning Systems** and our extended team of Data Scientists and Engineers, holds Masters and Ph.D. degrees in relevant fields such as Computer Science, Chemistry, and Pharmacology. We also have a parntership with [Nomic Networks](https://nomicnetworks.com) to support our Network Security Clients.
+Alongside our SageWorks Enterprise offerings, we provide comprehensive consulting services and domain expertise through our [Partnerships](https://www.supercowpowers.com/home#h.qau620rju99x). We specialize in **AWS Machine Learning Systems** and our extended team of Data Scientists and Engineers, have Masters and Ph.D. degrees in Computer Science, Chemistry, and Pharmacology. We also have a parntership with [Nomic Networks](https://nomicnetworks.com) to support our Network Security Clients.
 
 Using **AWS** and **SageWorks**, our experts are equipped to deliver tailored solutions that are focused on your project needs and deliverables. For more information please touch base and we'll set up a free initial consultation [SageWorks Consulting](mailto:consulting@supercowpowers.com)
 
 ## Contact Us
-Contact us on our [Discord](https://discord.gg/WHAJuz8sw8) channel, we're happy to answer any questions that you might have about **SageWorks** and accelerating your AWS ML Pipelines. You can also send us email at [SageWorks Info](mailto:sageworks@supercowpowers.com) or  [SageWorks Sales](mailto:sales@supercowpowers.com).
+Contact us on our [Discord](https://discord.gg/WHAJuz8sw8) channel, we're happy to answer any questions that you might have about **SageWorks** and accelerating your AWS ML Pipelines. You can also send us email at [SageWorks Info](mailto:sageworks@supercowpowers.com) or  [SageWorks Sales](mailto:sales@supercowpowers.com)
