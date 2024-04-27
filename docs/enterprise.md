@@ -4,13 +4,14 @@ The SageWorks API and User Interfaces cover a broad set of AWS Machine Learning 
 
 |   | Free           | Enterprise: Lite  | Enterprise: Standard | Enterprise: Pro  |
 |---|----------------|-------------|-----------------|------------------|
-| **Python API**          | 🟢  | 🟢  | 🟢  | 🟢 |
-| **Dashboard**           | 🟢  | 🟢  | 🟢 | 🟢 |
-| **AWS Onboarding**      | ➖ | 🟢  | 🟢  | 🟢 |
-| **Dashboard Plugins**   | ➖  | 🟢  | 🟢  | 🟢 |
-| **Custom Pages**        | ➖  | ➖  | 🟢  | 🟢 |
+| **[Python API](https://supercowpowers.github.io/sageworks/api_classes/overview/)** | 🟢  | 🟢  | 🟢  | 🟢 |
+| **[SageWorks REPL](https://supercowpowers.github.io/sageworks/repl/)** | 🟢  | 🟢  | 🟢 | 🟢 |
+| **[Dashboard](https://supercowpowers.github.io/sageworks/)** | 🟢  | 🟢  | 🟢 | 🟢 |
+| **[AWS Onboarding](https://supercowpowers.github.io/sageworks/aws_setup/core_stack/)**      | ➖ | 🟢  | 🟢  | 🟢 |
+| **[Dashboard Plugins](https://supercowpowers.github.io/sageworks/plugins/)** | ➖  | 🟢  | 🟢  | 🟢 |
+| **[Custom Pages](https://supercowpowers.github.io/sageworks/plugins/)**        | ➖  | ➖  | 🟢  | 🟢 |
 | **Themes**              | ➖  | ➖  | 🟢  | 🟢 |
-| **ML Pipelines**        | ➖  | ➖  | 🟢  | 🟢 |
+| **[ML Pipelines](https://supercowpowers.github.io/sageworks/api_classes/pipelines/)**        | ➖  | ➖  | 🟢  | 🟢 |
 | **UI Project Branding** | ➖  | ➖  | ➖  | 🟢 |
 | **Prioritized Feature Requests** | ➖| ➖| ➖ |🟢|
 | **Support/Training/Dev Credits**   | ➖ | 10/month | 20/month | 40/month |
