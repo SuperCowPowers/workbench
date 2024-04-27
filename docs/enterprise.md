@@ -1,5 +1,5 @@
 # SageWorks Enterprise
-The SageWorks API and User Interfaces cover a broad set of AWS Machine Learning services and provide easy to use abstraction and visualizations of your AWS ML data. We offer a wide range of options to best fit your companies needs.
+The SageWorks API and User Interfaces cover a broad set of AWS Machine Learning services and provide easy to use abstractions and visualizations of your AWS ML data. We offer a wide range of options to best fit your companies needs.
 
 
 |   | Free           | Enterprise: Lite  | Enterprise: Standard | Enterprise: Pro  |
@@ -20,10 +20,10 @@ The SageWorks API and User Interfaces cover a broad set of AWS Machine Learning 
 \*<small>*Cost per month, we offer discounts for longer term agreements.*</small>
 
 ## Try SageWorks
-We encourage new users to try out the **free** version, first. We offer support in our [Discord](https://discord.gg/WHAJuz8sw8) channel, our [Documentation](https://supercowpowers.github.io/sageworks/) has instructions for how to get started with SageWorks. So try it out and when you're ready to accelerate your AWS ML Adventure with an **Enterprise** licence contact us at [SageWorks Sales](mailto:sales@supercowpowers.com)
+We encourage new users to try out the **free** version, first. We offer support in our [Discord](https://discord.gg/WHAJuz8sw8) channel and our [Documentation](https://supercowpowers.github.io/sageworks/) has instructions for how to get started with SageWorks. So try it out and when you're ready to accelerate your AWS ML Adventure with an **Enterprise** licence contact us at [SageWorks Sales](mailto:sales@supercowpowers.com)
 
 
-## Data Engineering and Science Consulting
+## Data Engineering/Science Consulting
 
 Alongside our SageWorks Enterprise offerings, we provide comprehensive consulting services and domain expertise through our partnerships [Partnerships](https://www.supercowpowers.com/home#h.qau620rju99x). We specialize in **AWS Machine Learning Systems** and our extended team of Data Scientists and Engineers, holds Masters and Ph.D. degrees in relevant fields such as Computer Science, Chemistry, and Pharmacology. We also have a parntership with [Nomic Networks](https://nomicnetworks.com) to support our Network Security Clients.
 
