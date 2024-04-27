@@ -99,27 +99,27 @@ class PipelineManager:
         return pipeline
 
     # Publish a Pipeline to SageWorks
-    def publish_pipeline(self, pipeline_name: str, pipeline: dict):
+    def publish_pipeline(self, name: str, pipeline: dict):
         """Save a Pipeline to S3
 
         Args:
-            pipeline_name (str): The name of the Pipeline
+            name (str): The name of the Pipeline
             pipeline (dict): The Pipeline to save
         """
-        key = f"{self.prefix}{pipeline_name}.json"
-        self.log.important(f"Saving {pipeline_name} to S3: {self.bucket}/{key}...")
+        key = f"{self.prefix}{name}.json"
+        self.log.important(f"Saving {name} to S3: {self.bucket}/{key}...")
 
         # Save the pipeline as an S3 JSON object
         self.s3_client.put_object(Body=json.dumps(pipeline, indent=4), Bucket=self.bucket, Key=key)
 
-    def delete_pipeline(self, pipeline_name: str):
+    def delete_pipeline(self, name: str):
         """Delete a Pipeline from S3
 
         Args:
-            pipeline_name (str): The name of the Pipeline to delete
+            name (str): The name of the Pipeline to delete
         """
-        key = f"{self.prefix}{pipeline_name}.json"
-        self.log.important(f"Deleting {pipeline_name} from S3: {self.bucket}/{key}...")
+        key = f"{self.prefix}{name}.json"
+        self.log.important(f"Deleting {name} from S3: {self.bucket}/{key}...")
 
         # Delete the pipeline object from S3
         self.s3_client.delete_object(Bucket=self.bucket, Key=key)

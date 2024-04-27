@@ -19,7 +19,7 @@ class Pipeline:
 
     Common Usage:
         ```
-        my_pipeline = Pipeline("pipeline_name")
+        my_pipeline = Pipeline("name")
         my_pipeline.details()
         my_pipeline.execute()  # Execute entire pipeline
         my_pipeline.execute_partial(["data_source", "feature_set"])
@@ -30,7 +30,7 @@ class Pipeline:
     def __init__(self, name: str):
         """Pipeline Init Method"""
         self.log = logging.getLogger("sageworks")
-        self.pipeline_name = name
+        self.name = name
 
         # Grab our SageWorks Bucket from Config
         self.cm = ConfigManager()
@@ -42,7 +42,7 @@ class Pipeline:
 
         # Set the S3 Path for this Pipeline
         self.bucket = self.sageworks_bucket
-        self.key = f"pipelines/{self.pipeline_name}.json"
+        self.key = f"pipelines/{self.name}.json"
         self.s3_path = f"s3://{self.bucket}/{self.key}"
 
         # Grab a SageWorks Session (this allows us to assume the SageWorks ExecutionRole)
@@ -53,7 +53,7 @@ class Pipeline:
         if wr.s3.does_object_exist(self.s3_path):
             self.pipeline = self._get_pipeline()
         else:
-            self.log.warning(f"Pipeline {self.pipeline_name} not found at {self.s3_path}")
+            self.log.warning(f"Pipeline {self.name} not found at {self.s3_path}")
             self.pipeline = None
 
         # Data Storage Cache
@@ -108,7 +108,7 @@ class Pipeline:
         """
         # Grab the entire pipeline if not provided (first call)
         if not pipeline:
-            self.log.important(f"Checking Pipeline: {self.pipeline_name}...")
+            self.log.important(f"Checking Pipeline: {self.name}...")
             pipeline = self.pipeline
         for key, value in pipeline.items():
             if isinstance(value, dict):
@@ -121,8 +121,8 @@ class Pipeline:
 
     def delete(self):
         """Pipeline Deletion"""
-        self.log.info(f"Deleting Pipeline: {self.pipeline_name}...")
-        self.data_storage.delete(f"pipeline:{self.pipeline_name}:details")
+        self.log.info(f"Deleting Pipeline: {self.name}...")
+        self.data_storage.delete(f"pipeline:{self.name}:details")
         wr.s3.delete_objects(self.s3_path)
 
     def _get_pipeline(self) -> dict:

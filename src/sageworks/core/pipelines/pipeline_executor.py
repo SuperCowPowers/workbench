@@ -23,7 +23,7 @@ class PipelineExecutor:
     def __init__(self, pipeline):
         """PipelineExecutor Init Method"""
         self.log = logging.getLogger("sageworks")
-        self.pipeline_name = pipeline.pipeline_name
+        self.pipeline_name = pipeline.name
         self.pipeline = pipeline.pipeline
 
     def execute(self, subset: list = None):

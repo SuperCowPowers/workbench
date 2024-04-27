@@ -1,32 +1,16 @@
 """Callbacks for the Pipelines Subpage Dashboard Interface"""
 
 import logging
-from dash import Dash, callback, no_update
+from dash import callback
 from dash.exceptions import PreventUpdate
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 
 # SageWorks Imports
-from sageworks.web_components.plugins import ag_table
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 from sageworks.api.pipeline import Pipeline
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
-
-"""
-
-        # Fill in plugin properties
-        self.properties = [
-            (self.component_id, "columnDefs"),
-            (self.component_id, "rowData"),
-            (self.component_id, "selectedRows"),
-        ]
-
-        # Output signals
-        self.signals = [
-            (self.component_id, "selectedRows"),
-        ]
-"""
 
 
 def update_pipelines_table(table_object):

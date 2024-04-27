@@ -31,9 +31,7 @@ class AGTable(PluginInterface):
             # className="ag-theme-balham-dark",
             className="ag-theme-alpine-auto-dark",
             columnSize="sizeToFit",
-            dashGridOptions={
-                "rowSelection": "single"
-            },
+            dashGridOptions={"rowSelection": "single"},
             style={"maxHeight": "200px", "overflow": "auto"},
         )
 
