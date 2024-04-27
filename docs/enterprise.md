@@ -17,7 +17,7 @@ The SageWorks API and User Interfaces cover a broad set of AWS Machine Learning 
 | **Support/Training/Dev Credits**   | ➖ | 10/month | 20/month | 40/month |
 | **Pricing**            | ➖ | $1500*| $3000* | $4000* |
 
-*\*Per month, discounts for longer term agreements*
+*\*Cost per month, we offer discounts for longer term agreements.
 
 ## Try SageWorks
 We encourage new users to try out the **free** version, first. We offer support in our [Discord](https://discord.gg/WHAJuz8sw8) channel, our [Documentation](https://supercowpowers.github.io/sageworks/) has instructions for how to get started with SageWorks. So try it out and when you're ready to accelerate your AWS ML Adventure with an **Enterprise** licence contact us at [SageWorks Sales](mailto:sales@supercowpowers.com)
