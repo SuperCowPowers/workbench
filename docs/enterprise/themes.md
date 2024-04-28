@@ -1,8 +1,8 @@
 # SageWorks Themes
 
-<img src="https://github.com/SuperCowPowers/sageworks/assets/4806709/4cdd3700-a9d8-441f-a27d-3da1038c7c4d" style="float: right; width: 400px; height: auto; padding: 10px 0px 0px 20px">
+<img src="https://github.com/SuperCowPowers/sageworks/assets/4806709/4cdd3700-a9d8-441f-a27d-3da1038c7c4d" style="float: right; width: 500px; height: auto; padding: 10px 0px 0px 20px">
 
-The SageWorks Dashboard can be customized extensively. Using SageWorks **Themes** allows you to customize the User Interfaces to suit your preferences, including completely customized color palettes and fonts.
+The SageWorks Dashboard can be customized extensively. Using SageWorks **Themes** allows you to customize the User Interfaces to suit your preferences, including completely customized color palettes and fonts. We offer a set of default 'dark' and 'light' themes, but we'll also customize the theme to match your companies color palette and logos.
 
 
 ## Contact Us

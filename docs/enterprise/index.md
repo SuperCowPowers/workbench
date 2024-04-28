@@ -24,7 +24,7 @@ The SageWorks API and User Interfaces cover a broad set of AWS Machine Learning 
 | **Prioritized Feature Requests** | ➖| ➖| ➖ |🟢|
 | **Pricing**            | ➖ | $1500*| $3000* | $4000* |
 
-\*<small>*USD per month, includes AWS setup, support, and training: Everything needed to accelerate your AWS ML Development team. Interested in Data Science/Engineering consulting? We have top notch [Consultants](https://supercowpowers.github.io/sageworks/enterprise/#data-engineeringscience-consulting) ready to *</small>
+\*<small>*USD per month, includes AWS setup, support, and training: Everything needed to accelerate your AWS ML Development team. Interested in Data Science/Engineering consulting? We have top notch [Consultants](https://supercowpowers.github.io/sageworks/enterprise/#data-engineeringscience-consulting) with a depth and breadth of AWS ML/DS/Engineering expertise.*</small>
 
 ## Try SageWorks
 We encourage new users to try out the **free** version, first. We offer support in our [Discord](https://discord.gg/WHAJuz8sw8) channel and our [Documentation](https://supercowpowers.github.io/sageworks/) has instructions for how to get started with SageWorks. So try it out and when you're ready to accelerate your AWS ML Adventure with an **Enterprise** licence contact us at [SageWorks Sales](mailto:sales@supercowpowers.com)
