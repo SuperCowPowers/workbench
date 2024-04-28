@@ -25,6 +25,12 @@ class ArtifactsWebView(ArtifactsTextView):
 
         # We get the dataframe from the ArtifactsTextView
         s3_data_df = super().incoming_data_summary()
+
+        # We might get an empty dataframe
+        if s3_data_df.empty:
+            return s3_data_df
+
+        # Add a UUID column
         s3_data_df["uuid"] = s3_data_df["Name"]
 
         # Pull the AWS URLs and construct some hyperlinks
@@ -50,6 +56,12 @@ class ArtifactsWebView(ArtifactsTextView):
 
         # We get the dataframe from the ArtifactsTextView
         glue_df = super().glue_jobs_summary()
+
+        # We might get an empty dataframe
+        if glue_df.empty:
+            return glue_df
+
+        # Add a UUID column
         glue_df["uuid"] = glue_df["Name"]
 
         # Pull the AWS URLs and construct some hyperlinks
@@ -75,6 +87,12 @@ class ArtifactsWebView(ArtifactsTextView):
 
         # We get the dataframe from the ArtifactsTextView
         data_df = super().data_sources_summary()
+
+        # We might get an empty dataframe
+        if data_df.empty:
+            return data_df
+
+        # Add a UUID column
         data_df["uuid"] = data_df["Name"]
 
         # Pull the AWS URLs and construct some hyperlinks
@@ -100,6 +118,12 @@ class ArtifactsWebView(ArtifactsTextView):
 
         # We get the dataframe from the ArtifactsTextView
         feature_df = super().feature_sets_summary()
+
+        # We might get an empty dataframe
+        if feature_df.empty:
+            return feature_df
+
+        # Add a UUID column
         feature_df["uuid"] = feature_df["Feature Group"]
 
         # Pull the AWS URLs and construct some hyperlinks
@@ -125,6 +149,12 @@ class ArtifactsWebView(ArtifactsTextView):
 
         # We get the dataframe from the ArtifactsTextView and hyperlink the Model Group column
         model_df = super().models_summary()
+
+        # We might get an empty dataframe
+        if model_df.empty:
+            return model_df
+
+        # Add a UUID column
         model_df["uuid"] = model_df["Model Group"]
         if add_hyperlinks:
             model_df["Model Group"] = model_df["Model Group"].map(lambda x: self.hyperlinks(x, "models", ""))
@@ -147,6 +177,12 @@ class ArtifactsWebView(ArtifactsTextView):
 
         # We get the dataframe from the ArtifactsTextView and hyperlink the Name column
         endpoint_df = super().endpoints_summary()
+
+        # We might get an empty dataframe
+        if endpoint_df.empty:
+            return endpoint_df
+
+        # Add a UUID column
         endpoint_df["uuid"] = endpoint_df["Name"]
         if add_hyperlinks:
             endpoint_df["Name"] = endpoint_df["Name"].map(lambda x: self.hyperlinks(x, "endpoints", ""))
