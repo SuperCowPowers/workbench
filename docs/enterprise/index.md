@@ -6,7 +6,7 @@ The SageWorks API and User Interfaces cover a broad set of AWS Machine Learning 
 
 <figure style="width: 550px;">
 <img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4">
-<figcaption>SageWorks Dashboard: AWS Pipelines in a Whole New Light!</figcaption>
+<figcaption>Accelerate ML Pipeline development with an Enterprise License!</figcaption>
 </figure>
 
 
