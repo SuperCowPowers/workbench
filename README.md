@@ -20,7 +20,7 @@ The SageWorks framework makes AWS® both easier to use and more powerful. SageWo
 ## Private SaaS Architecture
 *Secure your Data, Empower your ML Pipelines*
 
-SageWorks is architected as a **Private SaaS**. This hybrid architecture is the ultimate solution for businesses that prioritize data control and security. SageWorks deploys as an AWS Stack within your own cloud environment, ensuring compliance with stringent corporate and regulatory standards. It offers the flexibility to tailor solutions to your specific business needs through our comprehensive plugin support, both components and full web interfaces. By using SageWorks, you maintain absolute control over your data while benefiting from the power and scalability of AWS cloud services.
+SageWorks is architected as a **Private SaaS**. This hybrid architecture is the ultimate solution for businesses that prioritize data control and security. SageWorks deploys as an AWS Stack within your own cloud environment, ensuring compliance with stringent corporate and regulatory standards. It offers the flexibility to tailor solutions to your specific business needs through our comprehensive plugin support, both components and full web interfaces. By using SageWorks, you maintain absolute control over your data while benefiting from the power, security, and scalability of AWS cloud services.
 
 
 ### API Installation
