@@ -4,11 +4,9 @@
 """
 
 import sys
-from dash import dash_table
-from dash.dash_table.Format import Format
-import plotly.express as px
 import pandas as pd
 from dash_ag_grid import AgGrid
+import webbrowser
 
 # SageWorks Imports
 try:
@@ -132,5 +130,6 @@ if __name__ == "__main__":
     # Set up the layout
     app.layout = html.Div([existing_table, ag_table_component])
 
-    if __name__ == "__main__":
-        app.run(debug=True)
+    # Run the app
+    webbrowser.open("http://localhost:8050")
+    app.run(debug=True)
