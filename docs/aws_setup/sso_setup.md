@@ -23,7 +23,7 @@
 
 **Windows**
 
-Download the MSI installer from <https://aws.amazon.com/cli/> and follow the installation instructions.
+Download the MSI installer (top right corner on this page) <https://aws.amazon.com/cli/> and follow the installation instructions.
 
 ## Running the SSO Configuration 
 **Note:** You only need to do this once!
