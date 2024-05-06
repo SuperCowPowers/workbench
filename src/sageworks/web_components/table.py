@@ -34,6 +34,14 @@ class Table(ComponentInterface):
         Returns:
             dash_table.DataTable: A Dash DataTable Component
         """
+        # Check for transparency
+        if "transparent" in kwargs and kwargs["transparent"] is False:
+            background_color = "rgb(60, 60, 60)"
+            del kwargs["transparent"]
+        else:
+            background_color = "rgba(60, 60, 60, 0.5)"
+
+        # Create the table component
         table = dash_table.DataTable(
             id=component_id,
             columns=[{"name": "Status", "id": "status"}],
@@ -66,7 +74,7 @@ class Table(ComponentInterface):
             },
             style_data={
                 "fontSize": 13,
-                "backgroundColor": "rgba(60, 60, 60, 0.5)",
+                "backgroundColor": background_color,
                 "color": "rgb(200, 200, 200)",
                 "border": "0px",
             },
