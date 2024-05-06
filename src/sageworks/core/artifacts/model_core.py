@@ -323,6 +323,22 @@ class ModelCore(Artifact):
             self.log.warning(f"No registered endpoints found for {self.model_name}!")
             return None
 
+    def set_target(self, target_column: str):
+        """Set the target for this Model
+
+        Args:
+            target_column (str): Target column for this Model
+        """
+        self.upsert_sageworks_meta({"sageworks_model_target": target_column})
+
+    def set_features(self, feature_columns: list[str]):
+        """Set the features for this Model
+
+        Args:
+            feature_columns (list[str]): List of feature columns
+        """
+        self.upsert_sageworks_meta({"sageworks_model_features": feature_columns})
+
     def target(self) -> Union[str, None]:
         """Return the target for this Model (if supervised, else None)
 
