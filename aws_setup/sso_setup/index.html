@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../dashboard_stack/">
+        <link rel="prev" href="../../glue/">
       
       
-        <link rel="next" href="../aws_access_management/">
+        <link rel="next" href="../full_pipeline/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>AWS Tips and Tricks - SageWorks</title>
+        <title>Developer SSO Setup - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#aws-tips-and-tricks" class="md-skip">
+        <a href="#aws-sso-setup" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              AWS Tips and Tricks
+              Developer SSO Setup
             
           </span>
         </div>
@@ -1311,10 +1311,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../sso_setup/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Developer SSO Setup
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1323,6 +1343,80 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#get-some-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      Get some information
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-aws-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      Install AWS CLI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-sso-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running the SSO Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-up-some-aliases-for-bashzsh" class="md-nav__link">
+    <span class="md-ellipsis">
+      Setting up some aliases for bash/zsh
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-your-new-aws-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      Testing your new AWS Profile
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      AWS Resources
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1395,30 +1489,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    AWS Tips and Tricks
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../aws_tips_and_tricks/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1427,44 +1501,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#new-aws-account-with-aws-organizations-easy" class="md-nav__link">
-    <span class="md-ellipsis">
-      New AWS Account (with AWS Organizations: easy)
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#new-aws-account-without-aws-organizations-a-bit-harder" class="md-nav__link">
-    <span class="md-ellipsis">
-      New AWS Account (without AWS Organizations: a bit harder)
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1609,18 +1645,54 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#new-aws-account-with-aws-organizations-easy" class="md-nav__link">
+  <a href="#get-some-information" class="md-nav__link">
     <span class="md-ellipsis">
-      New AWS Account (with AWS Organizations: easy)
+      Get some information
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#new-aws-account-without-aws-organizations-a-bit-harder" class="md-nav__link">
+  <a href="#install-aws-cli" class="md-nav__link">
     <span class="md-ellipsis">
-      New AWS Account (without AWS Organizations: a bit harder)
+      Install AWS CLI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-sso-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running the SSO Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-up-some-aliases-for-bashzsh" class="md-nav__link">
+    <span class="md-ellipsis">
+      Setting up some aliases for bash/zsh
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-your-new-aws-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      Testing your new AWS Profile
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      AWS Resources
     </span>
   </a>
   
@@ -1641,70 +1713,81 @@
                   
 
 
-<h1 id="aws-tips-and-tricks">AWS Tips and Tricks</h1>
+<h1 id="aws-sso-setup">AWS SSO Setup</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need AWS Help?</p>
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
-<p>This page tries to give helpful guidance when setting up AWS Accounts, Users, and Groups. In general AWS can be a bit tricky to set up the first time. Feel free to use any material in this guide but we're more than happy to help clients get their AWS Setup ready to go for FREE. Below are some guides for setting up a new AWS account for SageWorks and also setting up SSO Users and Groups within AWS.</p>
-<h2 id="new-aws-account-with-aws-organizations-easy">New AWS Account (with AWS Organizations: easy)</h2>
+<h2 id="get-some-information">Get some information</h2>
 <ul>
-<li>If you already have an AWS Account you can activate the AWS Identity Center/Organization functionality.</li>
-<li>Now go to AWS Organizations page and hit 'Add an AWS Account' button</li>
-<li>Add a new User with permissions that <strong>allows AWS Stack creation</strong></li>
+<li>Goto your AWS Identity Center in the AWS Console</li>
+<li>On the right side there will be two important pieces of information<ul>
+<li>Start URL</li>
+<li>Region </li>
 </ul>
-<div class="admonition note inline end">
-<p class="admonition-title">Email Trick</p>
-<p>AWS will often not allow the same email to be used for different accounts. If you need a 'new' email just add a plus sign '+' at the end of your existing email (e.g. bob.smith<strong>+aws</strong>@gmail.com). This email will 'auto forward' to bob.smith@gmail.com.</p>
-</div>
-<h2 id="new-aws-account-without-aws-organizations-a-bit-harder">New AWS Account (without AWS Organizations: a bit harder)</h2>
-<ul>
-<li>Goto: https://aws.amazon.com/free and hit the big button 'Create a Free Account'</li>
-<li>Enter email and the account name you'd like (anything is fine)</li>
-<li>You'll get a validation email and go through the rest of the Account setup procedure</li>
-<li>Add a new User with permissions that <strong>allows AWS Stack creation</strong></li>
-</ul>
-<h1 id="sso-users-and-groups">SSO Users and Groups</h1>
-<p>AWS SSO (Single Sign-On) is a cloud-based service that allows users to manage access to multiple AWS accounts and business applications using a single set of credentials. It simplifies the authentication process for users and provides centralized management of permissions and access control across various AWS resources. With AWS SSO, users can log in once and access all the applications and accounts they need, streamlining the user experience and increasing productivity. AWS SSO also enables IT administrators to manage access more efficiently by providing a single point of control for managing user access, permissions, and policies, reducing the risk of unauthorized access or security breaches.</p>
-<h2 id="setting-up-sso-users">Setting up SSO Users</h2>
-<ul>
-<li>Log in to your AWS account and go to the AWS Identity Center console.</li>
-<li>Click on the "Users" tab and then click on the "Add user" button.</li>
-</ul>
-<p>The 'Add User' setup is fairly straight forward but here are some screen shots:</p>
-<p>On the first panel you can fill in the users information.</p>
-<p><img width="800" alt="Screenshot 2023-05-03 at 9 31 30 AM" src="https://user-images.githubusercontent.com/4806709/235965493-eaa5f879-df04-473b-b98d-03d422db7272.png"></p>
-<h2 id="groups">Groups</h2>
-<p>On the second panel we suggest that you have at LEAST two groups:</p>
-<ul>
-<li>Admin group</li>
-<li>DataScientists group</li>
-</ul>
-<h3 id="setting-up-groups">Setting up Groups</h3>
-<p>This allows you to put most of the users into the DataScientists group that has AWS policies based on their job role. AWS uses 'permission sets' and you assign AWS Policies. This approach makes it easy to give a group of users a set of relevant policies for their tasks. </p>
-<p>Our standard setup is to have two permission sets with the following policies:</p>
-<ul>
-<li>IAM Identity Center --&gt; Permission sets --&gt; DataScientist </li>
-<li>
-<p>Add Policy: arn:aws:iam::aws:policy/job-function/DataScientist</p>
 </li>
-<li>
-<p>IAM Identity Center --&gt; Permission sets --&gt; AdministratorAccess </p>
-</li>
-<li>Add Policy: arn:aws:iam::aws:policy/job-function/AdministratorAccess</li>
 </ul>
-<p>See: <a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/permissionsetsconcept.html">Permission Sets</a> for more details and instructions.</p>
-<p>Another benefit of creating groups is that you can include that group in 'Trust Policy (assume_role)' for the SageWorks-ExecutionRole (this gets deployed as part of the SageWorks AWS Stack). This means that the management of what SageWorks can do/see/read/write is completely done through the SageWorks-ExecutionRole.</p>
-<h2 id="back-to-adding-user">Back to Adding User</h2>
-<p>Okay now that we have our groups set up we can go back to our original goal of adding a user. So here's the second panel with the groups and now we can hit 'Next'</p>
-<p><img width="800" alt="Screenshot 2023-05-03 at 9 31 49 AM" src="https://user-images.githubusercontent.com/4806709/235965818-fa44bb58-6e58-49df-93df-ba582148b3f4.png"></p>
-<p>On the third panel just review the details and hit the 'Add User' button at the bottom. The user will get an email giving them instructions on how to log on to their AWS account.</p>
-<p><img width="600" alt="Screenshot 2023-05-03 at 9 32 28 AM" src="https://user-images.githubusercontent.com/4806709/235967585-d772d2f9-13ac-4795-aca3-429fbb1b7311.png"></p>
-<h3 id="aws-console">AWS Console</h3>
-<p>Now when the user logs onto the AWS Console they should see something like this:
-<img width="800" alt="Screenshot 2023-05-03 at 9 21 27 AM" src="https://user-images.githubusercontent.com/4806709/235970829-d1fdf1a8-84a2-46ca-a20e-143664715531.png"></p>
-<h3 id="sso-setup-for-command-linepython-usage">SSO Setup for Command Line/Python Usage</h3>
-<p>Please see our <a href="../sso_setup/">SSO Setup</a></p>
+<p>If you're connecting to the SCP AWS Account you can use these values</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Start URL: https://supercowpowers.awsapps.com/start 
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Region: us-west-2
+</span></code></pre></div>
+<h2 id="install-aws-cli">Install AWS CLI</h2>
+<p><strong>Mac</strong> <code>brew install awscli</code></p>
+<p><strong>Linux</strong> <code>pip install awscli</code></p>
+<p><strong>Windows</strong></p>
+<p>Download the MSI installer from <a href="https://aws.amazon.com/cli/">https://aws.amazon.com/cli/</a> and follow the installation instructions.</p>
+<h2 id="running-the-sso-configuration">Running the SSO Configuration</h2>
+<p><strong>Note:</strong> You only need to do this once!</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>aws configure sso --profile &lt;whatever you want&gt; (e.g. aws_sso)
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>SSO session name (Recommended): sso-session
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>SSO start URL []: &lt;the Start URL from info above&gt;
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>SSO region []: &lt;the Region from info above&gt;
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>SSO registration scopes [sso:account:access]: &lt;just hit return&gt;
+</span></code></pre></div>
+<p>You will get a browser open/redirect at this point and get a list of available accounts.. something like below, just pick the correct account</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>There are 2 AWS accounts available to you.
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>&gt; SCP_Sandbox, briford+sandbox@supercowpowers.com (XXXX40646YYY)
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  SCP_Main, briford@supercowpowers.com (XXX576391YYY)
+</span></code></pre></div>
+<p>Now pick the role that you're going to use</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>There are 2 roles available to you.
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>&gt; DataScientist
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  AdministratorAccess
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>CLI default client Region [None]: &lt;same region as above&gt;
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>CLI default output format [None]: json
+</span></code></pre></div>
+<h2 id="setting-up-some-aliases-for-bashzsh">Setting up some aliases for bash/zsh</h2>
+<p>Edit your favorite ~/.bashrc ~/.zshrc and add these nice aliases/helper</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a># AWS Aliases
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>alias bob_sso=&#39;export AWS_PROFILE=bob_sso&#39;
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a># Default AWS Profile
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>export AWS_PROFILE=bob_sso
+</span></code></pre></div>
+<h2 id="testing-your-new-aws-profile">Testing your new AWS Profile</h2>
+<p>Make sure your profile is active/set</p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>env | grep AWS
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>AWS_PROFILE=&lt;bob_sso or whatever&gt;
+</span></code></pre></div>
+Now you can list the S3 buckets in the AWS Account</p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>aws ls s3
+</span></code></pre></div>
+If you get some message like this...</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>The SSO session associated with this profile has
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>expired or is otherwise invalid. To refresh this SSO
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>session run aws sso login with the corresponding
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>profile.
+</span></code></pre></div>
+<p>This is fine/good, a browser will open up and you can refresh your SSO Token.</p>
+<p>After that you should get a listing of the S3 buckets without needed to refresh your token.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>aws s3 ls
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>❯ aws s3 ls
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>2023-03-20 20:06:53 aws-athena-query-results-XXXYYY-us-west-2
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>2023-03-30 13:22:28 sagemaker-studio-XXXYYY-dbgyvq8ruka
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>2023-03-24 22:05:55 sagemaker-us-west-2-XXXYYY
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>2023-04-30 13:43:29 scp-sageworks-artifacts
+</span></code></pre></div>
 <h2 id="aws-resources">AWS Resources</h2>
 <ul>
 <li><a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html">AWS Identity Center</a></li>
