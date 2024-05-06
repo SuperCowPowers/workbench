@@ -44,8 +44,9 @@ nav:
       - HTG: research/htg.md
   - AWS Glue Jobs: glue/index.md 
   - AWS Setup: 
-    - Initial Setup: aws_setup/core_stack.md
+    - Developer SSO Setup: aws_setup/sso_setup.md
     - Full Pipeline Testing: aws_setup/full_pipeline.md
+    - AWS Admin Initial Setup: aws_setup/core_stack.md
     - Dashboard Setup: aws_setup/dashboard_stack.md
     - AWS Tips and Tricks: aws_setup/aws_tips_and_tricks.md
     - AWS Access Management: aws_setup/aws_access_management.md

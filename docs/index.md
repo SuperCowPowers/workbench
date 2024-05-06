@@ -43,7 +43,7 @@ SageWorks API Documentation: [SageWorks API Classes](api_classes/overview.md)
 The main functionality of the Python API is to encapsulate and manage a set of AWS services underneath a Python Object interface. The Python Classes are used to create and interact with Machine Learning Pipeline Artifacts.
 
 ### Initial Setup/Config
-**Note:** Use the SageWorks REPL to setup your AWS connection for both API Usage (Data Scientists/Engineers) and AWS Initial Setup (AWS Folks).
+**Notes:** Use the SageWorks REPL to setup your AWS connection for both API Usage (Data Scientists/Engineers) and AWS Initial Setup (AWS Folks). Also if you don't already have an AWS Profile or SSO Setup you'll need to do that first [Developer SSO Setup](aws_setup/sso_setup.md) 
 
 ```
 > pip install sageworks
@@ -61,7 +61,7 @@ SAGEWORKS_BUCKET: my-company-sageworks
 ```
 **That's It:** You're now all set. This configuration only needs to be **ONCE** :)
 
-### AWS Folks (initial setup)
+### AWS Administrators (initial setup)
 Setting up SageWorks on your AWS Account: [AWS Setup](aws_setup/core_stack.md)
 
 ### Data Scientists/Engineers
