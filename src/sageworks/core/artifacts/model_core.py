@@ -300,7 +300,7 @@ class ModelCore(Artifact):
         time.sleep(2)  # Give the AWS Metadata a chance to update
         self.endpoint_inference_path = self.get_endpoint_inference_path()
 
-    def get_endpoints(self) -> list[str]:
+    def endpoints(self) -> list[str]:
         """Get the list of registered endpoints for this Model
 
         Returns:
@@ -471,53 +471,82 @@ class ModelCore(Artifact):
             self.log.warning(f"Unknown Model Type {model_type}!")
             self._set_model_type(ModelType.UNKNOWN)
 
-    def onboard(self, interactive: bool = True) -> bool:
-        """This is a BLOCKING method that will onboard the Model (make it ready)
+    def onboard(self, ask_everything=False) -> bool:
+        """This is an interactive method that will onboard the Model (make it ready)
 
         Args:
-            interactive (bool, optional): If True, will prompt the user for information. Defaults to True.
+            ask_everything (bool, optional): Ask for all the details. Defaults to False.
+
         Returns:
             bool: True if the Model is successfully onboarded, False otherwise
         """
         # Set the status to onboarding
         self.set_status("onboarding")
 
-        # Interactive Stuff
-        if interactive:
-            # Determine the Model Type
-            while self.is_model_unknown():
-                self._determine_model_type()
+        # Determine the Model Type
+        while self.is_model_unknown():
+            self._determine_model_type()
 
-            # Determine the Target Column (can be None)
-            if self.target() is None:
-                target_column = input("Target Column? (for unsupervised/transformer just type None): ")
-                if target_column in ["None", "none", ""]:
-                    target_column = None
-                self.upsert_sageworks_meta({"sageworks_model_target": target_column})
+        # Determine the Target Column (can be None)
+        target_column = self.target()
+        if target_column is None or ask_everything:
+            target_column = input("Target Column? (for unsupervised/transformer just type None): ")
+            if target_column in ["None", "none", ""]:
+                target_column = None
 
-            # Determine the Feature Columns
-            if self.features() is None:
-                feature_columns = input("Feature Columns? (use commas): ")
-                feature_columns = [e.strip() for e in feature_columns.split(",")]
-                if feature_columns not in [["None"], ["none"], [""]]:
-                    self.upsert_sageworks_meta({"sageworks_model_features": feature_columns})
+        # Determine the Feature Columns
+        feature_columns = self.features()
+        if feature_columns is None or ask_everything:
+            feature_columns = input("Feature Columns? (use commas): ")
+            feature_columns = [e.strip() for e in feature_columns.split(",")]
+            if feature_columns in [["None"], ["none"], [""]]:
+                feature_columns = None
 
-            # Registered Endpoints?
-            if not self.get_endpoints():
-                endpoints = input("Register Endpoints? (use commas for multiple): ")
-                endpoints = [e.strip() for e in endpoints.split(",")]
-                if endpoints not in [["None"], ["none"], [""]]:
-                    for endpoint in endpoints:
-                        self.log.info(f"Registering Endpoint {endpoint}...")
-                        self.register_endpoint(endpoint)
+        # Registered Endpoints?
+        endpoints = self.endpoints()
+        if not endpoints or ask_everything:
+            endpoints = input("Register Endpoints? (use commas for multiple): ")
+            endpoints = [e.strip() for e in endpoints.split(",")]
+            if endpoints in [["None"], ["none"], [""]]:
+                endpoints = None
 
-            # Model Owner?
-            if self.get_owner() in [None, "unknown"]:
-                owner = input("Model Owner: ")
-                if owner in ["None", "none", ""]:
-                    self.set_owner("unknown")
-                else:
-                    self.set_owner(owner)
+        # Model Owner?
+        owner = self.get_owner()
+        if owner in [None, "unknown"] or ask_everything:
+            owner = input("Model Owner: ")
+            if owner in ["None", "none", ""]:
+                owner = "unknown"
+
+        # Now that we have all the details, let's onboard the Model with all the args
+        return self.onboard_with_args(self.model_type, target_column, feature_columns, endpoints, owner)
+
+    def onboard_with_args(self, model_type: ModelType, target_column: str = None, feature_list: list = None,
+                          endpoints: list = None, owner: str = None) -> bool:
+        """Onboard the Model with the given arguments
+
+        Args:
+            model_type (ModelType): Model Type
+            target_column (str): Target Column
+            feature_list (list): List of Feature Columns
+            endpoints (list, optional): List of Endpoints. Defaults to None.
+            owner (str, optional): Model Owner. Defaults to None.
+        Returns:
+            bool: True if the Model is successfully onboarded, False otherwise
+        """
+        # Set the status to onboarding
+        self.set_status("onboarding")
+
+        # Set All the Details
+        self._set_model_type(model_type)
+        if target_column:
+            self.set_target(target_column)
+        if feature_list:
+            self.set_features(feature_list)
+        if endpoints:
+            for endpoint in endpoints:
+                self.register_endpoint(endpoint)
+        if owner:
+            self.set_owner(owner)
 
         # Load the training metrics and inference metrics
         self._load_training_metrics()
