@@ -64,6 +64,12 @@ class AWSServiceBroker:
         cm = ConfigManager()
         cls.sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
 
+        # Sanity check our SageWorks Bucket
+        if cls.sageworks_bucket is None:
+            cls.log.critical("SAGEWORKS_BUCKET is not defined")
+            cls.log.critical("Run Initial Setup here: https://supercowpowers.github.io/sageworks/#initial-setupconfig ")
+            sys.exit(1)
+
         # Construct bucket paths
         cls.incoming_data_bucket = "s3://" + cls.sageworks_bucket + "/incoming-data/"
         cls.data_sources_bucket = "s3://" + cls.sageworks_bucket + "/data-sources/"
