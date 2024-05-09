@@ -43,13 +43,13 @@ SageWorks API Documentation: [SageWorks API Classes](api_classes/overview.md)
 The main functionality of the Python API is to encapsulate and manage a set of AWS services underneath a Python Object interface. The Python Classes are used to create and interact with Machine Learning Pipeline Artifacts.
 
 ## Getting Started
-SageWorks will need some initial setup when you first start using it. See our [Getting Started](getting_started/getting_started.md) guide on how to connect SageWorks to your AWS Account.
+SageWorks will need some initial setup when you first start using it. See our [Getting Started](getting_started/index.md) guide on how to connect SageWorks to your AWS Account.
 
 
 ## Additional Resources
 
 <img align="right" src="images/scp.png" width="180">
 
-- Getting Started: [Getting Started](getting_started/getting_started.md) 
+- Getting Started: [Getting Started](getting_started/index.md) 
 - SageWorks API Classes: [API Classes](api_classes/overview.md)
 - Consulting Available: [SuperCowPowers LLC](https://www.supercowpowers.com)

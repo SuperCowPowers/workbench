@@ -101,7 +101,7 @@ aws s3 ls
 ```
 
 ## Back to Initial Setup
-If you're doing the initial setup of SageWorks you should now go back and finish that process: [Getting Started](../getting_started/getting_started.md)
+If you're doing the initial setup of SageWorks you should now go back and finish that process: [Getting Started](../getting_started/index.md)
 
  
 ## AWS Resources
