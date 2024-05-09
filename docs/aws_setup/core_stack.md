@@ -44,7 +44,7 @@ For more information on Linux installs see [Digital Ocean NodeJS](https://www.di
 SageWorks pushes and pulls data from AWS, it will use this S3 Bucket for storage and processing. You should create a **NEW** S3 Bucket, we suggest a name like `<company_name>-sageworks`
 
 ## Deploying the SageWorks Core Stack
-Do the initial setup/config here: [Getting Started: Initial Setup](../index.md#initial-setupconfig). After you've done that come back to this section. For Stack Deployment additional things need to be added to your config file. The config file will be located in your home directory `~/.sageworks/sageworks_config.json`. Edit this file and add addition stuff for the deployment. Specifically there are two additional fields to be added (optional for both)
+Do the initial setup/config here: [Getting Started](../getting_started/index.md). After you've done that come back to this section. For Stack Deployment additional things need to be added to your config file. The config file will be located in your home directory `~/.sageworks/sageworks_config.json`. Edit this file and add addition stuff for the deployment. Specifically there are two additional fields to be added (optional for both)
 
 ```
 "SAGEWORKS_SSO_GROUP": DataScientist (or whatever)

@@ -31,7 +31,7 @@ SageWorks is architected as a **Private SaaS**. This hybrid architecture is the 
 
 For the full instructions for connecting your AWS Account see:
 
-- Initial Setup/Config: [Initial Setup](https://supercowpowers.github.io/sageworks/#initial-setupconfig) 
+- Getting Started: [Initial Setup](https://supercowpowers.github.io/sageworks/getting_started/) 
 - One time AWS Onboarding: [AWS Setup](https://supercowpowers.github.io/sageworks/aws_setup/core_stack/)
 
 

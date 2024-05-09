@@ -67,7 +67,7 @@ class AWSServiceBroker:
         # Sanity check our SageWorks Bucket
         if cls.sageworks_bucket is None:
             cls.log.critical("SAGEWORKS_BUCKET is not defined")
-            cls.log.critical("Run Initial Setup here: https://supercowpowers.github.io/sageworks/#initial-setupconfig ")
+            cls.log.critical("Run Initial Setup here: https://supercowpowers.github.io/sageworks/getting_started/")
             sys.exit(1)
 
         # Construct bucket paths
