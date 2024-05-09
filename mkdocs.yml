@@ -1,6 +1,7 @@
 site_name: SageWorks
 nav:
   - Welcome: index.md
+  - Getting Started: getting_started/getting_started.md
   - SageWorks REPL: repl/index.md
   - API Classes: 
     - OverView: api_classes/overview.md

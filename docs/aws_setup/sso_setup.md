@@ -100,6 +100,9 @@ aws s3 ls
 2023-04-30 13:43:29 scp-sageworks-artifacts
 ```
 
+## Back to Initial Setup
+If you're doing the initial setup of SageWorks you should now go back and finish that process: [Getting Started](../getting_started/getting_started.md)
+
  
 ## AWS Resources
 - [AWS Identity Center](https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html)
