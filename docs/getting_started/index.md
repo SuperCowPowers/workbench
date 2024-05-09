@@ -23,14 +23,14 @@ SAGEWORKS_BUCKET: my-company-sageworks
 ```
 **That's It:** You're now all set. This configuration only needs to be **ONCE** :)
 
-### AWS Administrators (initial setup)
-Setting up SageWorks on your AWS Account: [AWS Setup](../aws_setup/core_stack.md)
-
 ### Data Scientists/Engineers
 - SageWorks REPL: [SageWorks REPL](../repl/index.md)
 - Using SageWorks for ML Pipelines: [SageWorks API Classes](../api_classes/overview.md)
 - SCP SageWorks Github: [Github Repo](https://github.com/SuperCowPowers/sageworks)
 
+
+### AWS Administrators
+For companies that are setting up SageWorks on an internal AWS Account: [Company AWS Setup](../aws_setup/core_stack.md)
 
 ## Additional Resources
 
