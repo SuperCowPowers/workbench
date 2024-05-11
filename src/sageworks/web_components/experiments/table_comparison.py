@@ -28,20 +28,20 @@ class AGTable:
         self.properties = []
         self.signals = []
 
-    def create_component(self, component_id: str) -> AgGrid:
+    def create_component(self, component_id: str, theme: str) -> AgGrid:
         """Create a Table Component without any data.
         Args:
             component_id (str): The ID of the web component
+            theme (str): The class of the web component
         Returns:
             AgGrid: The Table Component using AG Grid
         """
         self.component_id = component_id
         self.container = AgGrid(
             id=component_id,
-            # className="ag-theme-balham-dark",
-            className="ag-theme-alpine-auto-dark",
-            columnSize="sizeToFit",
+            className=theme,
             dashGridOptions={"rowSelection": "single"},
+            defaultColDef={"flex": 1, "filter": True},
             style={"maxHeight": "200px", "overflow": "auto"},
         )
 
@@ -76,7 +76,14 @@ class AGTable:
         table_data = table_df.to_dict("records")
 
         # Define column definitions based on the DataFrame
-        column_defs = [{"headerName": col, "field": col, "filter": "agTextColumnFilter"} for col in table_df.columns]
+        column_defs = [
+            {"field": col, "valueFormatter": {"function": "d3.format(',')(params.value)"}} if col == 'Salary'
+            else {"field": col, "valueFormatter": {"function": "d3.format('.2f')(params.value)"}} if col == 'Bonus'
+            else {"field": col, "valueFormatter": {"function": "params.value.toUpperCase()"}} if col == 'Name'
+            else {"field": col, "cellRenderer": "Link"} if col == 'Company'
+            else {"field": col}
+            for col in table_df.columns
+        ]
 
         # Select the first row by default
         selected_rows = table_df.head(1).to_dict("records")
@@ -97,38 +104,44 @@ if __name__ == "__main__":
         "Age": [10, 20, 30, 40, 50, 60],
         "Company": ["IBM", "Google", "Amazon", "Facebook", "Apple", "Microsoft"],
         "Title": ["CEO", "CFO", "CTO", "CIO", "COO", "CMO"],
-        "Salary": [100, 200, 300, 400, 500, 600],
-        "Bonus": [10, 20, 30, 40, 50, 60],
+        "Salary": [1000, 2000, 3000, 4000, 5000, 6000],
+        "Bonus": [0.2445, 0.3641, 0.5647, 0.7865, 0.4565, 0.2956],
     }
     df = pd.DataFrame(data)
 
-    # Testing HTML Links
-    df["Company"] = df["Company"].map(lambda x: f"<a href='https://www.google.com' target='_blank'>{x}</a>")
+    # Create the new AG Table component
+    AG_grid_themes = ['alpine', 'balham', 'material', 'quartz']
+    dag_tables = []
 
-    # Create a Dash app
-    app = Dash(__name__)
+    for ag_theme in AG_grid_themes:
+        dag_tables += [html.Hr(), html.Div(f"Dash AG Grid - {ag_theme}:")]
+        for light_dark in ['', '-dark']:
+            ag_table = AGTable()
+            theme = f'ag-theme-{ag_theme + light_dark} ag-theme-custom{light_dark}'
+            ag_table_component = ag_table.create_component("ag-table", theme)
+            # This would normally be a callback, but we're just testing
+            ag_table_component.columnDefs, ag_table_component.rowData, ag_table_component.selectedRows = (
+                ag_table.update_properties(df)
+            )
+            dag_tables += [ag_table_component, html.Br()]
 
     # Create the existing table component
     my_table = Table()
-    existing_table = my_table.create_component(
+    data_table = my_table.create_component(
         "current-table", header_color="rgb(60, 100, 60)", row_select="single", transparent=False
     )
 
     # Note: This is old style API, but will be replaced anyway
-    existing_table.columns = my_table.column_setup(df, markdown_columns=["Company"])
-    existing_table.data = df.to_dict("records")
+    data_table.columns = my_table.column_setup(df, markdown_columns=["Company"])
+    # Testing HTML Links
+    df["Company"] = df["Company"].map(lambda x: f"<a href='https://www.google.com' target='_blank'>{x}</a>")
+    data_table.data = df.to_dict("records")
 
-    # Create the new AG Table component
-    ag_table = AGTable()
-    ag_table_component = ag_table.create_component("ag-table")
-
-    # This would normally be a callback, but we're just testing
-    ag_table_component.columnDefs, ag_table_component.rowData, ag_table_component.selectedRows = (
-        ag_table.update_properties(df)
-    )
+    # Create a Dash app
+    app = Dash(__name__)
 
     # Set up the layout
-    app.layout = html.Div([existing_table, ag_table_component])
+    app.layout = html.Div([html.Div("Current DataTable:"), data_table] + dag_tables)
 
     # Run the app
     webbrowser.open("http://localhost:8050")
