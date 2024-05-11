@@ -1,0 +1,28 @@
+
+/*.ag-theme-custom {*/
+/*    --ag-header-height: 30px !important;*/
+/*}*/
+
+.ag-theme-custom .ag-header {
+    background: linear-gradient(rgba(255, 255, 255, 0.5), rgb(115, 190, 115));
+}
+.ag-theme-custom-dark .ag-header {
+    background: linear-gradient(rgb(60, 100, 60), rgba(0, 0, 0, 0.5));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
