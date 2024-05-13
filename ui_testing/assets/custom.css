@@ -1,29 +1,11 @@
-/* General styling for the page */
-body {
-    font-family: Arial, sans-serif;
-}
-
-/* Light theme styling for the scatter plot */
 .dash-graph.scatter-plot-light {
     background-color: #ffffff; /* White background */
     color: #000000; /* Black text for titles and labels */
 }
 
-/* Dark theme styling for the scatter plot */
 .dash-graph.scatter-plot-dark {
     background-color: #333333; /* Dark gray background */
     color: #ffffff; /* White text for titles and labels */
-}
-
-/* Additional styling for the plots can include specific axis, grid, and marker colors */
-.dash-graph.scatter-plot-light .plotly {
-    --plotly-axis-color: #000000;
-    --plotly-grid-color: #cccccc;
-}
-
-.dash-graph.scatter-plot-dark .plotly {
-    --plotly-axis-color: #ffffff;
-    --plotly-grid-color: #555555;
 }
 
 /*.ag-theme-custom {*/
