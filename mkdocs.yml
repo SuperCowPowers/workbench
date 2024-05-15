@@ -49,6 +49,7 @@ nav:
     - Full Pipeline Testing: aws_setup/full_pipeline.md
     - AWS Admin Initial Setup: aws_setup/core_stack.md
     - Dashboard Setup: aws_setup/dashboard_stack.md
+    - Domain/SSL Cert Setup: aws_setup/domain_cert_setup.md
     - AWS Tips and Tricks: aws_setup/aws_tips_and_tricks.md
     - AWS Access Management: aws_setup/aws_access_management.md
   - Admin: 
