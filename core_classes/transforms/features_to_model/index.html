@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.22">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.23">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.732c4fb1.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.6543a935.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
@@ -1529,6 +1529,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../aws_setup/domain_cert_setup/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Domain/SSL Cert Setup
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../aws_setup/aws_tips_and_tricks/" class="md-nav__link">
         
   
@@ -1777,11 +1798,11 @@
 
 
 <a id="sageworks.core.transforms.features_to_model.features_to_model"></a>
-  <div class="doc doc-contents first">
-  
+    <div class="doc doc-contents first">
+
       <p>FeaturesToModel: Train/Create a Model from a Feature Set</p>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -1797,18 +1818,19 @@
 
 
 <h2 id="sageworks.core.transforms.features_to_model.features_to_model.FeaturesToModel" class="doc doc-heading">
-          <code>FeaturesToModel</code>
+            <code>FeaturesToModel</code>
 
 
 </h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
 
-  
+
       <p>FeaturesToModel: Train/Create a Model from a FeatureSet</p>
+
 
 <details class="common-usage" open>
   <summary>Common Usage</summary>
@@ -1818,9 +1840,9 @@
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                   input_feature_list=[feature_list])
 </span></code></pre></div>
 </details>
-            <details class="quote">
-              <summary>Source code in <code>src/sageworks/core/transforms/features_to_model/features_to_model.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-17"> 17</a></span>
+              <details class="quote">
+                <summary>Source code in <code>src/sageworks/core/transforms/features_to_model/features_to_model.py</code></summary>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-17"> 17</a></span>
 <span class="normal"><a href="#__codelineno-0-18"> 18</a></span>
 <span class="normal"><a href="#__codelineno-0-19"> 19</a></span>
 <span class="normal"><a href="#__codelineno-0-20"> 20</a></span>
@@ -2334,12 +2356,11 @@
 </span><span id="__span-0-272"><a id="__codelineno-0-272" name="__codelineno-0-272"></a>            <span class="n">description</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_description</span><span class="p">,</span>
 </span><span id="__span-0-273"><a id="__codelineno-0-273" name="__codelineno-0-273"></a>        <span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-            </details>
+              </details>
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -2352,24 +2373,23 @@
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.features_to_model.features_to_model.FeaturesToModel.__init__" class="doc doc-heading">
-          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">feature_uuid</span><span class="p">,</span> <span class="n">model_uuid</span><span class="p">,</span> <span class="n">model_type</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">feature_uuid</span><span class="p">,</span> <span class="n">model_uuid</span><span class="p">,</span> <span class="n">model_type</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>FeaturesToModel Initialization
 Args:
     feature_uuid (str): UUID of the FeatureSet to use as input
     model_uuid (str): UUID of the Model to create as output
     model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/features_to_model/features_to_model.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-29">29</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/features_to_model/features_to_model.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-29">29</a></span>
 <span class="normal"><a href="#__codelineno-0-30">30</a></span>
 <span class="normal"><a href="#__codelineno-0-31">31</a></span>
 <span class="normal"><a href="#__codelineno-0-32">32</a></span>
@@ -2419,29 +2439,27 @@ Args:
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">class_labels</span> <span class="o">=</span> <span class="kc">None</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.features_to_model.features_to_model.FeaturesToModel.create_and_register_model" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">create_and_register_model</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">create_and_register_model</span><span class="p">()</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Create and Register the Model</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/features_to_model/features_to_model.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-249">249</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/features_to_model/features_to_model.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-249">249</a></span>
 <span class="normal"><a href="#__codelineno-0-250">250</a></span>
 <span class="normal"><a href="#__codelineno-0-251">251</a></span>
 <span class="normal"><a href="#__codelineno-0-252">252</a></span>
@@ -2491,24 +2509,22 @@ Args:
 </span><span id="__span-0-272"><a id="__codelineno-0-272" name="__codelineno-0-272"></a>        <span class="n">description</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_description</span><span class="p">,</span>
 </span><span id="__span-0-273"><a id="__codelineno-0-273" name="__codelineno-0-273"></a>    <span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.features_to_model.features_to_model.FeaturesToModel.generate_model_script" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">generate_model_script</span><span class="p">(</span><span class="n">target_column</span><span class="p">,</span> <span class="n">feature_list</span><span class="p">,</span> <span class="n">model_type</span><span class="p">,</span> <span class="n">train_all_data</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">generate_model_script</span><span class="p">(</span><span class="n">target_column</span><span class="p">,</span> <span class="n">feature_list</span><span class="p">,</span> <span class="n">model_type</span><span class="p">,</span> <span class="n">train_all_data</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Fill in the model template with specific target and feature_list
 Args:
     target_column (str): Column name of the target variable
@@ -2518,9 +2534,9 @@ Args:
 Returns:
    str: The name of the generated model script</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/features_to_model/features_to_model.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-55">55</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/features_to_model/features_to_model.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-55">55</a></span>
 <span class="normal"><a href="#__codelineno-0-56">56</a></span>
 <span class="normal"><a href="#__codelineno-0-57">57</a></span>
 <span class="normal"><a href="#__codelineno-0-58">58</a></span>
@@ -2590,29 +2606,27 @@ Returns:
 </span><span id="__span-0-88"><a id="__codelineno-0-88" name="__codelineno-0-88"></a>        <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">xgb_script</span><span class="p">)</span>
 </span><span id="__span-0-89"><a id="__codelineno-0-89" name="__codelineno-0-89"></a>    <span class="k">return</span> <span class="n">script_name</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.features_to_model.features_to_model.FeaturesToModel.post_transform" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Post-Transform: Calling onboard() on the Model</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/features_to_model/features_to_model.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-233">233</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/features_to_model/features_to_model.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-233">233</a></span>
 <span class="normal"><a href="#__codelineno-0-234">234</a></span>
 <span class="normal"><a href="#__codelineno-0-235">235</a></span>
 <span class="normal"><a href="#__codelineno-0-236">236</a></span>
@@ -2642,24 +2656,22 @@ Returns:
 </span><span id="__span-0-246"><a id="__codelineno-0-246" name="__codelineno-0-246"></a>    <span class="c1"># Call the Model onboard method</span>
 </span><span id="__span-0-247"><a id="__codelineno-0-247" name="__codelineno-0-247"></a>    <span class="n">output_model</span><span class="o">.</span><span class="n">onboard</span><span class="p">(</span><span class="n">interactive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.features_to_model.features_to_model.FeaturesToModel.transform_impl" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">(</span><span class="n">target_column</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">feature_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">train_all_data</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">(</span><span class="n">target_column</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">feature_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">train_all_data</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Generic Features to Model: Note you should create a new class and inherit from
 this one to include specific logic for your Feature Set/Model
 Args:
@@ -2668,9 +2680,9 @@ Args:
     feature_list (list[str]): A list of columns for the features (default None, will try to guess)
     train_all_data (bool): Train on ALL (100%) of the data (default False)</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/features_to_model/features_to_model.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-91"> 91</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/features_to_model/features_to_model.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-91"> 91</a></span>
 <span class="normal"><a href="#__codelineno-0-92"> 92</a></span>
 <span class="normal"><a href="#__codelineno-0-93"> 93</a></span>
 <span class="normal"><a href="#__codelineno-0-94"> 94</a></span>
@@ -2952,8 +2964,8 @@ Args:
 </span><span id="__span-0-230"><a id="__codelineno-0-230" name="__codelineno-0-230"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating new model </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-231"><a id="__codelineno-0-231" name="__codelineno-0-231"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">create_and_register_model</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -2961,8 +2973,7 @@ Args:
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -2971,7 +2982,7 @@ Args:
 
   </div>
 
-  </div>
+    </div>
 
 </div>
 
@@ -3023,7 +3034,7 @@ Args:
     <script id="__config" type="application/json">{"base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.5cfa9459.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.ebd0bdb7.min.js"></script>
       
     
   </body>

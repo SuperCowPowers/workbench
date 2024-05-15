@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.22">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.23">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.732c4fb1.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.6543a935.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
@@ -1850,6 +1850,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../aws_setup/domain_cert_setup/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Domain/SSL Cert Setup
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../aws_setup/aws_tips_and_tricks/" class="md-nav__link">
         
   
@@ -2431,8 +2452,8 @@
 
 
 <a id="sageworks.core.transforms.pandas_transforms"></a>
-  <div class="doc doc-contents first">
-  
+    <div class="doc doc-contents first">
+
       <p>Welcome to the SageWorks Pandas Transform Classes</p>
 <p>These classes provide low-level APIs for using Pandas DataFrames</p>
 <ul>
@@ -2443,7 +2464,7 @@
 <li>PandasToFeaturesChunked: Create a SageWorks FeatureSet using a Chunked/Streaming Pandas DataFrame as the source</li>
 </ul>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -2459,18 +2480,19 @@
 
 
 <h2 id="sageworks.core.transforms.pandas_transforms.DataToPandas" class="doc doc-heading">
-          <code>DataToPandas</code>
+            <code>DataToPandas</code>
 
 
 </h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
 
-  
+
       <p>DataToPandas: Class to transform a Data Source into a Pandas DataFrame</p>
+
 
 <details class="common-usage" open>
   <summary>Common Usage</summary>
@@ -2482,9 +2504,9 @@
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>Note: query is the best way to use this class, so use it :)
 </span></code></pre></div>
 </details>
-            <details class="quote">
-              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
+              <details class="quote">
+                <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
 <span class="normal"><a href="#__codelineno-0-11">11</a></span>
 <span class="normal"><a href="#__codelineno-0-12">12</a></span>
 <span class="normal"><a href="#__codelineno-0-13">13</a></span>
@@ -2612,12 +2634,11 @@
 </span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the DataFrame Output from this Transform&quot;&quot;&quot;</span>
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span>
 </span></code></pre></div></td></tr></table></div>
-            </details>
+              </details>
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -2630,20 +2651,19 @@
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.DataToPandas.__init__" class="doc doc-heading">
-          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">input_uuid</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">input_uuid</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>DataToPandas Initialization</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-24">24</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-24">24</a></span>
 <span class="normal"><a href="#__codelineno-0-25">25</a></span>
 <span class="normal"><a href="#__codelineno-0-26">26</a></span>
 <span class="normal"><a href="#__codelineno-0-27">27</a></span>
@@ -2663,57 +2683,53 @@
 </span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span> <span class="o">=</span> <span class="n">TransformOutput</span><span class="o">.</span><span class="n">PANDAS_DF</span>
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="kc">None</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.DataToPandas.get_output" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">get_output</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">get_output</span><span class="p">()</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Get the DataFrame Output from this Transform</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-71">71</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-71">71</a></span>
 <span class="normal"><a href="#__codelineno-0-72">72</a></span>
 <span class="normal"><a href="#__codelineno-0-73">73</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="k">def</span> <span class="nf">get_output</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 </span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the DataFrame Output from this Transform&quot;&quot;&quot;</span>
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.DataToPandas.post_transform" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Post-Transform: Any checks on the Pandas DataFrame that need to be done</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-66">66</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-66">66</a></span>
 <span class="normal"><a href="#__codelineno-0-67">67</a></span>
 <span class="normal"><a href="#__codelineno-0-68">68</a></span>
 <span class="normal"><a href="#__codelineno-0-69">69</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="k">def</span> <span class="nf">post_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -2721,32 +2737,30 @@
 </span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Post-Transform: Checking Pandas DataFrame...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DataFrame Shape: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_df</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.DataToPandas.transform_impl" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_rows</span><span class="o">=</span><span class="mi">100000</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_rows</span><span class="o">=</span><span class="mi">100000</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Convert the DataSource into a Pandas DataFrame
 Args:
     query(str): The query to run against the DataSource (default: None)
     max_rows(int): The maximum number of rows to return (default: 100000)</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-35">35</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-35">35</a></span>
 <span class="normal"><a href="#__codelineno-0-36">36</a></span>
 <span class="normal"><a href="#__codelineno-0-37">37</a></span>
 <span class="normal"><a href="#__codelineno-0-38">38</a></span>
@@ -2806,8 +2820,8 @@ Args:
 </span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a>    <span class="c1"># Mark the transform as complete and set the output DataFrame</span>
 </span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -2815,8 +2829,7 @@ Args:
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -2825,18 +2838,19 @@ Args:
 
 
 <h2 id="sageworks.core.transforms.pandas_transforms.FeaturesToPandas" class="doc doc-heading">
-          <code>FeaturesToPandas</code>
+            <code>FeaturesToPandas</code>
 
 
 </h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
 
-  
+
       <p>FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame</p>
+
 
 <details class="common-usage" open>
   <summary>Common Usage</summary>
@@ -2845,9 +2859,9 @@ Args:
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>my_df = feature_to_df.get_output()
 </span></code></pre></div>
 </details>
-            <details class="quote">
-              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
+              <details class="quote">
+                <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
 <span class="normal"><a href="#__codelineno-0-11">11</a></span>
 <span class="normal"><a href="#__codelineno-0-12">12</a></span>
 <span class="normal"><a href="#__codelineno-0-13">13</a></span>
@@ -2977,12 +2991,11 @@ Args:
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span>
 </span></code></pre></div></td></tr></table></div>
-            </details>
+              </details>
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -2995,20 +3008,19 @@ Args:
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.FeaturesToPandas.__init__" class="doc doc-heading">
-          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">feature_set_name</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">feature_set_name</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>FeaturesToPandas Initialization</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-21">21</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-21">21</a></span>
 <span class="normal"><a href="#__codelineno-0-22">22</a></span>
 <span class="normal"><a href="#__codelineno-0-23">23</a></span>
 <span class="normal"><a href="#__codelineno-0-24">24</a></span>
@@ -3030,29 +3042,27 @@ Args:
 </span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">transform_run</span> <span class="o">=</span> <span class="kc">False</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.FeaturesToPandas.get_output" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">get_output</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">get_output</span><span class="p">()</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Get the DataFrame Output from this Transform</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-70">70</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-70">70</a></span>
 <span class="normal"><a href="#__codelineno-0-71">71</a></span>
 <span class="normal"><a href="#__codelineno-0-72">72</a></span>
 <span class="normal"><a href="#__codelineno-0-73">73</a></span>
@@ -3062,29 +3072,27 @@ Args:
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.FeaturesToPandas.post_transform" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Post-Transform: Any checks on the Pandas DataFrame that need to be done</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-65">65</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-65">65</a></span>
 <span class="normal"><a href="#__codelineno-0-66">66</a></span>
 <span class="normal"><a href="#__codelineno-0-67">67</a></span>
 <span class="normal"><a href="#__codelineno-0-68">68</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="k">def</span> <span class="nf">post_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -3092,29 +3100,27 @@ Args:
 </span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Post-Transform: Checking Pandas DataFrame...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DataFrame Shape: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_df</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.FeaturesToPandas.transform_impl" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">(</span><span class="n">max_rows</span><span class="o">=</span><span class="mi">100000</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">(</span><span class="n">max_rows</span><span class="o">=</span><span class="mi">100000</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Convert the FeatureSet into a Pandas DataFrame</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-33">33</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-33">33</a></span>
 <span class="normal"><a href="#__codelineno-0-34">34</a></span>
 <span class="normal"><a href="#__codelineno-0-35">35</a></span>
 <span class="normal"><a href="#__codelineno-0-36">36</a></span>
@@ -3176,8 +3182,8 @@ Args:
 </span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">transform_run</span> <span class="o">=</span> <span class="kc">True</span>
 </span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -3185,8 +3191,7 @@ Args:
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -3195,18 +3200,19 @@ Args:
 
 
 <h2 id="sageworks.core.transforms.pandas_transforms.PandasToData" class="doc doc-heading">
-          <code>PandasToData</code>
+            <code>PandasToData</code>
 
 
 </h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
 
-  
+
       <p>PandasToData: Class to publish a Pandas DataFrame as a DataSource</p>
+
 
 <details class="common-usage" open>
   <summary>Common Usage</summary>
@@ -3216,9 +3222,9 @@ Args:
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>df_to_data.transform()
 </span></code></pre></div>
 </details>
-            <details class="quote">
-              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-14"> 14</a></span>
+              <details class="quote">
+                <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-14"> 14</a></span>
 <span class="normal"><a href="#__codelineno-0-15"> 15</a></span>
 <span class="normal"><a href="#__codelineno-0-16"> 16</a></span>
 <span class="normal"><a href="#__codelineno-0-17"> 17</a></span>
@@ -3522,12 +3528,11 @@ Args:
 </span><span id="__span-0-164"><a id="__codelineno-0-164" name="__codelineno-0-164"></a>        <span class="n">output_data_source</span> <span class="o">=</span> <span class="n">DataSourceFactory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span><span id="__span-0-165"><a id="__codelineno-0-165" name="__codelineno-0-165"></a>        <span class="n">output_data_source</span><span class="o">.</span><span class="n">onboard</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
-            </details>
+              </details>
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -3540,23 +3545,22 @@ Args:
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToData.__init__" class="doc doc-heading">
-          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">output_format</span><span class="o">=</span><span class="s1">&#39;parquet&#39;</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">output_format</span><span class="o">=</span><span class="s1">&#39;parquet&#39;</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>PandasToData Initialization
 Args:
     output_uuid (str): The UUID of the DataSource to create
     output_format (str): The file format to store the S3 object data in (default: "parquet")</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-26">26</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-26">26</a></span>
 <span class="normal"><a href="#__codelineno-0-27">27</a></span>
 <span class="normal"><a href="#__codelineno-0-28">28</a></span>
 <span class="normal"><a href="#__codelineno-0-29">29</a></span>
@@ -3600,19 +3604,17 @@ Args:
 </span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Parquet format works the best in most cases please consider using it&quot;</span><span class="p">)</span>
 </span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_format</span> <span class="o">=</span> <span class="n">output_format</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToData.convert_datetime_columns" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">convert_datetime_columns</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></code>
-  
+            <code class="highlight language-python"><span class="n">convert_datetime_columns</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></code>
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
   </span>
@@ -3620,13 +3622,13 @@ Args:
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Convert datetime columns to ISO-8601 string</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-72">72</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-72">72</a></span>
 <span class="normal"><a href="#__codelineno-0-73">73</a></span>
 <span class="normal"><a href="#__codelineno-0-74">74</a></span>
 <span class="normal"><a href="#__codelineno-0-75">75</a></span>
@@ -3642,29 +3644,27 @@ Args:
 </span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a>        <span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">StringDtype</span><span class="p">())</span>
 </span><span id="__span-0-79"><a id="__codelineno-0-79" name="__codelineno-0-79"></a>    <span class="k">return</span> <span class="n">df</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToData.convert_object_to_datetime" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">convert_object_to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">convert_object_to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Try to automatically convert object columns to datetime or string columns</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-63">63</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-63">63</a></span>
 <span class="normal"><a href="#__codelineno-0-64">64</a></span>
 <span class="normal"><a href="#__codelineno-0-65">65</a></span>
 <span class="normal"><a href="#__codelineno-0-66">66</a></span>
@@ -3680,29 +3680,27 @@ Args:
 </span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2"> could not be converted to datetime...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a>    <span class="k">return</span> <span class="n">df</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToData.convert_object_to_string" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">convert_object_to_string</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">convert_object_to_string</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Try to automatically convert object columns to string columns</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-53">53</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-53">53</a></span>
 <span class="normal"><a href="#__codelineno-0-54">54</a></span>
 <span class="normal"><a href="#__codelineno-0-55">55</a></span>
 <span class="normal"><a href="#__codelineno-0-56">56</a></span>
@@ -3720,29 +3718,27 @@ Args:
 </span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2"> could not be converted to string...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>    <span class="k">return</span> <span class="n">df</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToData.post_transform" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Post-Transform: Calling onboard() fnr the DataSource</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-159">159</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-159">159</a></span>
 <span class="normal"><a href="#__codelineno-0-160">160</a></span>
 <span class="normal"><a href="#__codelineno-0-161">161</a></span>
 <span class="normal"><a href="#__codelineno-0-162">162</a></span>
@@ -3756,88 +3752,83 @@ Args:
 </span><span id="__span-0-164"><a id="__codelineno-0-164" name="__codelineno-0-164"></a>    <span class="n">output_data_source</span> <span class="o">=</span> <span class="n">DataSourceFactory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span><span id="__span-0-165"><a id="__codelineno-0-165" name="__codelineno-0-165"></a>    <span class="n">output_data_source</span><span class="o">.</span><span class="n">onboard</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToData.set_input" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">set_input</span><span class="p">(</span><span class="n">input_df</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">set_input</span><span class="p">(</span><span class="n">input_df</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Set the DataFrame Input for this Transform</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-49">49</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-49">49</a></span>
 <span class="normal"><a href="#__codelineno-0-50">50</a></span>
 <span class="normal"><a href="#__codelineno-0-51">51</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="k">def</span> <span class="nf">set_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
 </span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the DataFrame Input for this Transform&quot;&quot;&quot;</span>
 </span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="n">input_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToData.transform_impl" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">(</span><span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">(</span><span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
 store the information about the data to the AWS Data Catalog sageworks database</p>
 
 
-
-  <p><span class="doc-section-title">Parameters:</span></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr class="doc-section-item">
-          <td><code>overwrite</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Overwrite the existing data in the SageWorks S3 Bucket</p>
-            </div>
-          </td>
-          <td>
-                <code>True</code>
-          </td>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>overwrite</code></td>
+            <td>
+                  <code>bool</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Overwrite the existing data in the SageWorks S3 Bucket</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-81"> 81</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-81"> 81</a></span>
 <span class="normal"><a href="#__codelineno-0-82"> 82</a></span>
 <span class="normal"><a href="#__codelineno-0-83"> 83</a></span>
 <span class="normal"><a href="#__codelineno-0-84"> 84</a></span>
@@ -3991,8 +3982,8 @@ store the information about the data to the AWS Data Catalog sageworks database<
 </span><span id="__span-0-156"><a id="__codelineno-0-156" name="__codelineno-0-156"></a>    <span class="k">else</span><span class="p">:</span>
 </span><span id="__span-0-157"><a id="__codelineno-0-157" name="__codelineno-0-157"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported file format: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_format</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -4000,8 +3991,7 @@ store the information about the data to the AWS Data Catalog sageworks database<
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4010,18 +4000,19 @@ store the information about the data to the AWS Data Catalog sageworks database<
 
 
 <h2 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures" class="doc doc-heading">
-          <code>PandasToFeatures</code>
+            <code>PandasToFeatures</code>
 
 
 </h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
 
-  
+
       <p>PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet</p>
+
 
 <details class="common-usage" open>
   <summary>Common Usage</summary>
@@ -4031,9 +4022,9 @@ store the information about the data to the AWS Data Catalog sageworks database<
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>to_features.transform()
 </span></code></pre></div>
 </details>
-            <details class="quote">
-              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-17"> 17</a></span>
+              <details class="quote">
+                <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-17"> 17</a></span>
 <span class="normal"><a href="#__codelineno-0-18"> 18</a></span>
 <span class="normal"><a href="#__codelineno-0-19"> 19</a></span>
 <span class="normal"><a href="#__codelineno-0-20"> 20</a></span>
@@ -4769,12 +4760,11 @@ store the information about the data to the AWS Data Catalog sageworks database<
 </span><span id="__span-0-383"><a id="__codelineno-0-383" name="__codelineno-0-383"></a>                <span class="sa">f</span><span class="s2">&quot;Did not reach expected rows (</span><span class="si">{</span><span class="n">rows</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">expected_rows</span><span class="si">}</span><span class="s2">) but we&#39;re not sweating the small stuff...&quot;</span>
 </span><span id="__span-0-384"><a id="__codelineno-0-384" name="__codelineno-0-384"></a>            <span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-            </details>
+              </details>
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -4787,23 +4777,22 @@ store the information about the data to the AWS Data Catalog sageworks database<
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.__init__" class="doc doc-heading">
-          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">auto_one_hot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">auto_one_hot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>PandasToFeatures Initialization
 Args:
     output_uuid (str): The UUID of the FeatureSet to create
     auto_one_hot (bool): Should we automatically one-hot encode categorical columns?</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-29">29</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-29">29</a></span>
 <span class="normal"><a href="#__codelineno-0-30">30</a></span>
 <span class="normal"><a href="#__codelineno-0-31">31</a></span>
 <span class="normal"><a href="#__codelineno-0-32">32</a></span>
@@ -4865,29 +4854,27 @@ Args:
 </span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_feature_set</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">expected_rows</span> <span class="o">=</span> <span class="mi">0</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.auto_convert_columns_to_categorical" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">auto_convert_columns_to_categorical</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">auto_convert_columns_to_categorical</span><span class="p">()</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Convert object and string types to Categorical</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-199">199</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-199">199</a></span>
 <span class="normal"><a href="#__codelineno-0-200">200</a></span>
 <span class="normal"><a href="#__codelineno-0-201">201</a></span>
 <span class="normal"><a href="#__codelineno-0-202">202</a></span>
@@ -4921,19 +4908,17 @@ Args:
 </span><span id="__span-0-214"><a id="__codelineno-0-214" name="__codelineno-0-214"></a>    <span class="c1"># Now run one hot encoding on categorical columns</span>
 </span><span id="__span-0-215"><a id="__codelineno-0-215" name="__codelineno-0-215"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">one_hot_encoding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_df</span><span class="p">,</span> <span class="n">categorical_columns</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.convert_column_types" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">convert_column_types</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></code>
-  
+            <code class="highlight language-python"><span class="n">convert_column_types</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></code>
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
   </span>
@@ -4941,13 +4926,13 @@ Args:
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Convert the types of the DataFrame to the correct types for the Feature Store</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-232">232</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-232">232</a></span>
 <span class="normal"><a href="#__codelineno-0-233">233</a></span>
 <span class="normal"><a href="#__codelineno-0-234">234</a></span>
 <span class="normal"><a href="#__codelineno-0-235">235</a></span>
@@ -4989,29 +4974,27 @@ Args:
 </span><span id="__span-0-251"><a id="__codelineno-0-251" name="__codelineno-0-251"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-252"><a id="__codelineno-0-252" name="__codelineno-0-252"></a>    <span class="k">return</span> <span class="n">df</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.create_feature_group" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">create_feature_group</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">create_feature_group</span><span class="p">()</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Create a Feature Group, load our Feature Definitions, and wait for it to be ready</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-282">282</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-282">282</a></span>
 <span class="normal"><a href="#__codelineno-0-283">283</a></span>
 <span class="normal"><a href="#__codelineno-0-284">284</a></span>
 <span class="normal"><a href="#__codelineno-0-285">285</a></span>
@@ -5065,25 +5048,24 @@ Args:
 </span><span id="__span-0-307"><a id="__codelineno-0-307" name="__codelineno-0-307"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">ensure_feature_group_created</span><span class="p">(</span><span class="n">my_feature_group</span><span class="p">)</span>
 </span><span id="__span-0-308"><a id="__codelineno-0-308" name="__codelineno-0-308"></a>    <span class="k">return</span> <span class="n">my_feature_group</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.manual_categorical_converter" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">manual_categorical_converter</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">manual_categorical_converter</span><span class="p">()</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Convert object and string types to Categorical</p>
+
 
 <details class="note" open>
   <summary>Note</summary>
@@ -5091,9 +5073,9 @@ Args:
 categorical_dtypes attribute to a dictionary of column names and
 their respective categorical types.</p>
 </details>
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-217">217</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-217">217</a></span>
 <span class="normal"><a href="#__codelineno-0-218">218</a></span>
 <span class="normal"><a href="#__codelineno-0-219">219</a></span>
 <span class="normal"><a href="#__codelineno-0-220">220</a></span>
@@ -5121,29 +5103,27 @@ their respective categorical types.</p>
 </span><span id="__span-0-229"><a id="__codelineno-0-229" name="__codelineno-0-229"></a>    <span class="n">categorical_columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_dtypes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 </span><span id="__span-0-230"><a id="__codelineno-0-230" name="__codelineno-0-230"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">one_hot_encoding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_df</span><span class="p">,</span> <span class="n">categorical_columns</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.one_hot_encoding" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">one_hot_encoding</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">categorical_columns</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">one_hot_encoding</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">categorical_columns</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>One Hot Encoding for Categorical Columns with additional column name management</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-177">177</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-177">177</a></span>
 <span class="normal"><a href="#__codelineno-0-178">178</a></span>
 <span class="normal"><a href="#__codelineno-0-179">179</a></span>
 <span class="normal"><a href="#__codelineno-0-180">180</a></span>
@@ -5183,29 +5163,27 @@ their respective categorical types.</p>
 </span><span id="__span-0-195"><a id="__codelineno-0-195" name="__codelineno-0-195"></a>
 </span><span id="__span-0-196"><a id="__codelineno-0-196" name="__codelineno-0-196"></a>    <span class="k">return</span> <span class="n">df</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.post_transform" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Post-Transform: Populating Offline Storage and onboard()</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-344">344</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-344">344</a></span>
 <span class="normal"><a href="#__codelineno-0-345">345</a></span>
 <span class="normal"><a href="#__codelineno-0-346">346</a></span>
 <span class="normal"><a href="#__codelineno-0-347">347</a></span>
@@ -5231,57 +5209,53 @@ their respective categorical types.</p>
 </span><span id="__span-0-355"><a id="__codelineno-0-355" name="__codelineno-0-355"></a>    <span class="c1"># Call the FeatureSet onboard method to compute a bunch of EDA stuff</span>
 </span><span id="__span-0-356"><a id="__codelineno-0-356" name="__codelineno-0-356"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_feature_set</span><span class="o">.</span><span class="n">onboard</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.pre_transform" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">pre_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">pre_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Pre-Transform: Create the Feature Group</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-310">310</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-310">310</a></span>
 <span class="normal"><a href="#__codelineno-0-311">311</a></span>
 <span class="normal"><a href="#__codelineno-0-312">312</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-310"><a id="__codelineno-0-310" name="__codelineno-0-310"></a><span class="k">def</span> <span class="nf">pre_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 </span><span id="__span-0-311"><a id="__codelineno-0-311" name="__codelineno-0-311"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Pre-Transform: Create the Feature Group&quot;&quot;&quot;</span>
 </span><span id="__span-0-312"><a id="__codelineno-0-312" name="__codelineno-0-312"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_feature_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_feature_group</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.prep_dataframe" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">prep_dataframe</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">prep_dataframe</span><span class="p">()</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Prep the DataFrame for Feature Store Creation</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-254">254</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-254">254</a></span>
 <span class="normal"><a href="#__codelineno-0-255">255</a></span>
 <span class="normal"><a href="#__codelineno-0-256">256</a></span>
 <span class="normal"><a href="#__codelineno-0-257">257</a></span>
@@ -5335,32 +5309,30 @@ their respective categorical types.</p>
 </span><span id="__span-0-279"><a id="__codelineno-0-279" name="__codelineno-0-279"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column name </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2"> converted to lowercase: </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span><span id="__span-0-280"><a id="__codelineno-0-280" name="__codelineno-0-280"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.process_column_name" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">process_column_name</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="n">shorten</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">process_column_name</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="n">shorten</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Call various methods to make sure the column is ready for Feature Store
 Args:
     column (str): The column name to process
     shorten (bool): Should we shorten the column name? (default: False)</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-128">128</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-128">128</a></span>
 <span class="normal"><a href="#__codelineno-0-129">129</a></span>
 <span class="normal"><a href="#__codelineno-0-130">130</a></span>
 <span class="normal"><a href="#__codelineno-0-131">131</a></span>
@@ -5392,24 +5364,22 @@ Args:
 </span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a>
 </span><span id="__span-0-143"><a id="__codelineno-0-143" name="__codelineno-0-143"></a>    <span class="k">return</span> <span class="n">column</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.set_input" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">set_input</span><span class="p">(</span><span class="n">input_df</span><span class="p">,</span> <span class="n">target_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">set_input</span><span class="p">(</span><span class="n">input_df</span><span class="p">,</span> <span class="n">target_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Set the Input DataFrame for this Transform
 Args:
     input_df (pd.DataFrame): The input DataFrame
@@ -5417,9 +5387,9 @@ Args:
     id_column (str): The name of the id column (default: None)
     event_time_column (str): The name of the event_time column (default: None)</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-61">61</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-61">61</a></span>
 <span class="normal"><a href="#__codelineno-0-62">62</a></span>
 <span class="normal"><a href="#__codelineno-0-63">63</a></span>
 <span class="normal"><a href="#__codelineno-0-64">64</a></span>
@@ -5449,29 +5419,27 @@ Args:
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="c1"># Now Prepare the DataFrame for its journey into an AWS FeatureGroup</span>
 </span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">prep_dataframe</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.transform_impl" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">()</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Transform Implementation: Ingest the data into the Feature Group</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-314">314</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-314">314</a></span>
 <span class="normal"><a href="#__codelineno-0-315">315</a></span>
 <span class="normal"><a href="#__codelineno-0-316">316</a></span>
 <span class="normal"><a href="#__codelineno-0-317">317</a></span>
@@ -5529,29 +5497,27 @@ Args:
 </span><span id="__span-0-341"><a id="__codelineno-0-341" name="__codelineno-0-341"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed rows: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ingest_manager</span><span class="o">.</span><span class="n">failed_rows</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span><span id="__span-0-342"><a id="__codelineno-0-342" name="__codelineno-0-342"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total rows to be ingested: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_rows</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeatures.wait_for_rows" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">wait_for_rows</span><span class="p">(</span><span class="n">expected_rows</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">wait_for_rows</span><span class="p">(</span><span class="n">expected_rows</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Wait for AWS Feature Group to fully populate the Offline Storage</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-366">366</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-366">366</a></span>
 <span class="normal"><a href="#__codelineno-0-367">367</a></span>
 <span class="normal"><a href="#__codelineno-0-368">368</a></span>
 <span class="normal"><a href="#__codelineno-0-369">369</a></span>
@@ -5589,8 +5555,8 @@ Args:
 </span><span id="__span-0-383"><a id="__codelineno-0-383" name="__codelineno-0-383"></a>            <span class="sa">f</span><span class="s2">&quot;Did not reach expected rows (</span><span class="si">{</span><span class="n">rows</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">expected_rows</span><span class="si">}</span><span class="s2">) but we&#39;re not sweating the small stuff...&quot;</span>
 </span><span id="__span-0-384"><a id="__codelineno-0-384" name="__codelineno-0-384"></a>        <span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -5598,8 +5564,7 @@ Args:
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -5608,18 +5573,19 @@ Args:
 
 
 <h2 id="sageworks.core.transforms.pandas_transforms.PandasToFeaturesChunked" class="doc doc-heading">
-          <code>PandasToFeaturesChunked</code>
+            <code>PandasToFeaturesChunked</code>
 
 
 </h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
 
-  
+
       <p>PandasToFeaturesChunked:  Class to manage a bunch of chunked Pandas DataFrames into a FeatureSet</p>
+
 
 <details class="common-usage" open>
   <summary>Common Usage</summary>
@@ -5633,9 +5599,9 @@ Args:
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>to_features.finalize()
 </span></code></pre></div>
 </details>
-            <details class="quote">
-              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-13">13</a></span>
+              <details class="quote">
+                <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-13">13</a></span>
 <span class="normal"><a href="#__codelineno-0-14">14</a></span>
 <span class="normal"><a href="#__codelineno-0-15">15</a></span>
 <span class="normal"><a href="#__codelineno-0-16">16</a></span>
@@ -5781,12 +5747,11 @@ Args:
 </span><span id="__span-0-84"><a id="__codelineno-0-84" name="__codelineno-0-84"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Post-Transform: Any Post Transform Steps&quot;&quot;&quot;</span>
 </span><span id="__span-0-85"><a id="__codelineno-0-85" name="__codelineno-0-85"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pandas_to_features</span><span class="o">.</span><span class="n">post_transform</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
-            </details>
+              </details>
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -5799,20 +5764,19 @@ Args:
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeaturesChunked.__init__" class="doc doc-heading">
-          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>PandasToFeaturesChunked Initialization</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-29">29</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-29">29</a></span>
 <span class="normal"><a href="#__codelineno-0-30">30</a></span>
 <span class="normal"><a href="#__codelineno-0-31">31</a></span>
 <span class="normal"><a href="#__codelineno-0-32">32</a></span>
@@ -5840,29 +5804,27 @@ Args:
 </span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">first_chunk</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">pandas_to_features</span> <span class="o">=</span> <span class="n">PandasToFeatures</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">auto_one_hot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeaturesChunked.add_chunk" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">add_chunk</span><span class="p">(</span><span class="n">chunk_df</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">add_chunk</span><span class="p">(</span><span class="n">chunk_df</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Add a Chunk of Data to the FeatureSet</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-58">58</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-58">58</a></span>
 <span class="normal"><a href="#__codelineno-0-59">59</a></span>
 <span class="normal"><a href="#__codelineno-0-60">60</a></span>
 <span class="normal"><a href="#__codelineno-0-61">61</a></span>
@@ -5890,57 +5852,53 @@ Args:
 </span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pandas_to_features</span><span class="o">.</span><span class="n">set_input</span><span class="p">(</span><span class="n">chunk_df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_time_column</span><span class="p">)</span>
 </span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pandas_to_features</span><span class="o">.</span><span class="n">transform_impl</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeaturesChunked.post_transform" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Post-Transform: Any Post Transform Steps</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-83">83</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-83">83</a></span>
 <span class="normal"><a href="#__codelineno-0-84">84</a></span>
 <span class="normal"><a href="#__codelineno-0-85">85</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-83"><a id="__codelineno-0-83" name="__codelineno-0-83"></a><span class="k">def</span> <span class="nf">post_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 </span><span id="__span-0-84"><a id="__codelineno-0-84" name="__codelineno-0-84"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Post-Transform: Any Post Transform Steps&quot;&quot;&quot;</span>
 </span><span id="__span-0-85"><a id="__codelineno-0-85" name="__codelineno-0-85"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">pandas_to_features</span><span class="o">.</span><span class="n">post_transform</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeaturesChunked.pre_transform" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">pre_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">pre_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Pre-Transform: Create the Feature Group with Chunked Data</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-73">73</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-73">73</a></span>
 <span class="normal"><a href="#__codelineno-0-74">74</a></span>
 <span class="normal"><a href="#__codelineno-0-75">75</a></span>
 <span class="normal"><a href="#__codelineno-0-76">76</a></span>
@@ -5950,31 +5908,29 @@ Args:
 </span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a>    <span class="c1"># Loading data into a Feature Group takes a while, so set status to loading</span>
 </span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a>    <span class="n">FeatureSetCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span><span class="o">.</span><span class="n">set_status</span><span class="p">(</span><span class="s2">&quot;loading&quot;</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeaturesChunked.set_categorical_info" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">set_categorical_info</span><span class="p">(</span><span class="n">cat_column_info</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">set_categorical_info</span><span class="p">(</span><span class="n">cat_column_info</span><span class="p">)</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Set the Categorical Columns
 Args:
     cat_column_info (dict[list[str]]): Dictionary of categorical columns and their possible values</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-44">44</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-44">44</a></span>
 <span class="normal"><a href="#__codelineno-0-45">45</a></span>
 <span class="normal"><a href="#__codelineno-0-46">46</a></span>
 <span class="normal"><a href="#__codelineno-0-47">47</a></span>
@@ -6000,36 +5956,34 @@ Args:
 </span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="c1"># Now set the CategoricalDtypes on our underlying PandasToFeatures</span>
 </span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">pandas_to_features</span><span class="o">.</span><span class="n">categorical_dtypes</span> <span class="o">=</span> <span class="n">cat_d_types</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="sageworks.core.transforms.pandas_transforms.PandasToFeaturesChunked.transform_impl" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">transform_impl</span><span class="p">()</span></code>
 
 </h3>
 
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Required implementation of the Transform interface</p>
 
-          <details class="quote">
-            <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
-            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-79">79</a></span>
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-79">79</a></span>
 <span class="normal"><a href="#__codelineno-0-80">80</a></span>
 <span class="normal"><a href="#__codelineno-0-81">81</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-79"><a id="__codelineno-0-79" name="__codelineno-0-79"></a><span class="k">def</span> <span class="nf">transform_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span id="__span-0-80"><a id="__codelineno-0-80" name="__codelineno-0-80"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Required implementation of the Transform interface&quot;&quot;&quot;</span>
 </span><span id="__span-0-81"><a id="__codelineno-0-81" name="__codelineno-0-81"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;PandasToFeaturesChunked.transform_impl() called.  This is a no-op.&quot;</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -6037,8 +5991,7 @@ Args:
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -6047,7 +6000,7 @@ Args:
 
   </div>
 
-  </div>
+    </div>
 
 </div>
 
@@ -6099,7 +6052,7 @@ Args:
     <script id="__config" type="application/json">{"base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.5cfa9459.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.ebd0bdb7.min.js"></script>
       
     
   </body>

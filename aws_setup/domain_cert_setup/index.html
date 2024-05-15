@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../full_pipeline/">
+        <link rel="prev" href="../dashboard_stack/">
       
       
-        <link rel="next" href="../dashboard_stack/">
+        <link rel="next" href="../aws_tips_and_tricks/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>AWS Admin Initial Setup - SageWorks</title>
+        <title>Domain/SSL Cert Setup - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#initial-aws-setup" class="md-skip">
+        <a href="#aws-domain-and-certificate-instructions" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              AWS Admin Initial Setup
+              Domain/SSL Cert Setup
             
           </span>
         </div>
@@ -1373,30 +1373,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    AWS Admin Initial Setup
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../core_stack/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1405,89 +1385,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#two-main-options-when-using-sageworks" class="md-nav__link">
-    <span class="md-ellipsis">
-      Two main options when using SageWorks
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#setting-up-users-and-groups" class="md-nav__link">
-    <span class="md-ellipsis">
-      Setting up Users and Groups
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#onboarding-sageworks-to-your-aws-account" class="md-nav__link">
-    <span class="md-ellipsis">
-      Onboarding SageWorks to your AWS Account
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sageworks-uses-aws-python-cdk-for-deployments" class="md-nav__link">
-    <span class="md-ellipsis">
-      SageWorks uses AWS Python CDK for Deployments
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#create-an-s3-bucket-for-sageworks" class="md-nav__link">
-    <span class="md-ellipsis">
-      Create an S3 Bucket for SageWorks
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#deploying-the-sageworks-core-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      Deploying the SageWorks Core Stack
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#aws-account-setup-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      AWS Account Setup Check
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1518,10 +1415,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../domain_cert_setup/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Domain/SSL Cert Setup
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1530,6 +1447,128 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#new-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Domain
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="New Domain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multiple-aws-accounts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multiple AWS Accounts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#register-the-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      Register the Domain
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#request-a-ssl-certificate-from-acm" class="md-nav__link">
+    <span class="md-ellipsis">
+      Request a SSL Certificate from ACM
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-cname-records-to-route-53" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding CNAME Records to Route 53
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Adding CNAME Records to Route 53">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#finding-cname-record-names-and-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      Finding CNAME Record Names and Values
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-cname-records-to-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding CName Records to Domain
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#certificate-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      Certificate States
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#retrieving-the-certificate-arn" class="md-nav__link">
+    <span class="md-ellipsis">
+      Retrieving the Certificate ARN
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      AWS Resources
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1695,63 +1734,102 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#two-main-options-when-using-sageworks" class="md-nav__link">
+  <a href="#new-domain" class="md-nav__link">
     <span class="md-ellipsis">
-      Two main options when using SageWorks
+      New Domain
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="New Domain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multiple-aws-accounts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multiple AWS Accounts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#register-the-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      Register the Domain
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#request-a-ssl-certificate-from-acm" class="md-nav__link">
+    <span class="md-ellipsis">
+      Request a SSL Certificate from ACM
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#setting-up-users-and-groups" class="md-nav__link">
+  <a href="#adding-cname-records-to-route-53" class="md-nav__link">
     <span class="md-ellipsis">
-      Setting up Users and Groups
+      Adding CNAME Records to Route 53
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Adding CNAME Records to Route 53">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#finding-cname-record-names-and-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      Finding CNAME Record Names and Values
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-cname-records-to-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding CName Records to Domain
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#certificate-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      Certificate States
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#retrieving-the-certificate-arn" class="md-nav__link">
+    <span class="md-ellipsis">
+      Retrieving the Certificate ARN
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#onboarding-sageworks-to-your-aws-account" class="md-nav__link">
+  <a href="#aws-resources" class="md-nav__link">
     <span class="md-ellipsis">
-      Onboarding SageWorks to your AWS Account
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sageworks-uses-aws-python-cdk-for-deployments" class="md-nav__link">
-    <span class="md-ellipsis">
-      SageWorks uses AWS Python CDK for Deployments
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#create-an-s3-bucket-for-sageworks" class="md-nav__link">
-    <span class="md-ellipsis">
-      Create an S3 Bucket for SageWorks
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#deploying-the-sageworks-core-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      Deploying the SageWorks Core Stack
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#aws-account-setup-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      AWS Account Setup Check
+      AWS Resources
     </span>
   </a>
   
@@ -1772,69 +1850,196 @@
                   
 
 
-<h1 id="initial-aws-setup">Initial AWS Setup</h1>
-<p>Welcome to the SageWorks AWS Setup Guide. SageWorks is deployed as an AWS <strong>Stack</strong> following the well architected system practices of AWS. </p>
+<h1 id="aws-domain-and-certificate-instructions">AWS Domain and Certificate Instructions</h1>
+<div class="admonition tip inline end">
+<p class="admonition-title">Need AWS Help?</p>
+<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
+</div>
+<p>This page tries to give helpful guidance when setting up a new domain and SSL Certificate in your AWS Account.</p>
+<h2 id="new-domain">New Domain</h2>
+<p>You'll want the SageWorks Dashboard to have a domain for your companies internal use. Customers will typically use a domain like <code>&lt;company_name&gt;-ml-dashboard.com</code> but you are free to choose any domain you'd like.</p>
 <div class="admonition warning">
-<p class="admonition-title">AWS Setup can be a bit complex</p>
-<p>Setting up SageWorks with AWS can be a bit complex, but this only needs to be done ONCE for your entire company. The install uses standard CDK --&gt; AWS Stacks and SageWorks tries to make it straight forward. If you have any troubles at all feel free to contact us a <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> and we're happy to help you with AWS for FREE.</p>
+<p class="admonition-title">Domains are tied to AWS Accounts</p>
+<p>When you create a new domain in AWS Route 53, that domain is tied to that AWS Account. You can do a cross account setup for domains but it's a bit more tricky. We recommend that each account where SageWorks gets deployed owns the domain for that Dashboard.</p>
 </div>
-<h2 id="two-main-options-when-using-sageworks">Two main options when using SageWorks</h2>
-<ol>
-<li>Spin up a new AWS Account for the SageWorks Stacks (<a href="../aws_tips_and_tricks/">Make a New Account</a>)</li>
-<li>Deploy SageWorks Stacks into your existing AWS Account</li>
-</ol>
-<p>Either of these options are fully supported, but we highly suggest a NEW account as it gives the following benefits:</p>
+<h3 id="multiple-aws-accounts">Multiple AWS Accounts</h3>
+<p>Many customers will have a dev/stage/prod set of AWS accounts, if that the case then the best practice is to make a domain specific to each account. So for instance:</p>
 <ul>
-<li><strong>AWS Data Isolation:</strong> Data Scientists will feel empowered to play in the sandbox without impacting production services.</li>
-<li><strong>AWS Cost Accounting:</strong> Monitor and Track all those new ML Pipelines that your team creates with SageWorks :)</li>
+<li>The AWS Dev Account gets: <code>&lt;company_name&gt;-ml-dashboard-dev.com</code> </li>
+<li>The AWS Prod Account gets:  <code>&lt;company_name&gt;-ml-dashboard-prod.com</code>.</li>
 </ul>
-<h2 id="setting-up-users-and-groups">Setting up Users and Groups</h2>
-<p>If your AWS Account already has users and groups set up you can skip this but here's our recommendations on setting up <a href="../aws_tips_and_tricks/">SSO Users and Groups</a></p>
-<h2 id="onboarding-sageworks-to-your-aws-account">Onboarding SageWorks to your AWS Account</h2>
-<p>Pulling down the SageWorks Repo
-  <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git clone https://github.com/SuperCowPowers/sageworks.git
-</span></code></pre></div></p>
-<h2 id="sageworks-uses-aws-python-cdk-for-deployments">SageWorks uses AWS Python CDK for Deployments</h2>
-<p>If you don't have AWS CDK already installed you can do these steps:</p>
-<p>Mac</p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>brew install node 
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>npm install -g aws-cdk
-</span></code></pre></div>
-Linux</p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sudo apt install nodejs
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>sudo npm install -g aws-cdk
-</span></code></pre></div>
-For more information on Linux installs see <a href="https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04">Digital Ocean NodeJS</a></p>
-<h2 id="create-an-s3-bucket-for-sageworks">Create an S3 Bucket for SageWorks</h2>
-<p>SageWorks pushes and pulls data from AWS, it will use this S3 Bucket for storage and processing. You should create a <strong>NEW</strong> S3 Bucket, we suggest a name like <code>&lt;company_name&gt;-sageworks</code></p>
-<h2 id="deploying-the-sageworks-core-stack">Deploying the SageWorks Core Stack</h2>
-<p>Do the initial setup/config here: <a href="../../getting_started/">Getting Started</a>. After you've done that come back to this section. For Stack Deployment additional things need to be added to your config file. The config file will be located in your home directory <code>~/.sageworks/sageworks_config.json</code>. Edit this file and add addition stuff for the deployment. Specifically there are two additional fields to be added (optional for both)</p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>&quot;SAGEWORKS_SSO_GROUP&quot;: DataScientist (or whatever)
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>&quot;SAGEWORKS_ADDITIONAL_BUCKETS&quot;: &quot;bucket1, bucket2
-</span></code></pre></div>
-These are optional but are set/used by most SageWorks users.</p>
-<div class="admonition note">
-<p class="admonition-title">AWS Stuff</p>
-<p>Activate your AWS Account that's used for SageWorks deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)</p>
+<p>This means that when you go to that Dashboard it's super obvious which environment your on.</p>
+<h3 id="register-the-domain">Register the Domain</h3>
+<ul>
+<li>
+<p><strong>Open Route 53 Console</strong> <a href="https://console.aws.amazon.com/route53/">Route 53 Console</a></p>
+</li>
+<li>
+<p><strong>Register your New Domain</strong></p>
+<ul>
+<li>Click on <strong>Registered domains</strong> in the left navigation pane.</li>
+<li>Click on <strong>Register Domain</strong>.</li>
+<li>Enter your desired domain name and check for availability.</li>
+<li>Follow the prompts to complete the domain registration process.</li>
+<li>After registration, your domain will be listed under <strong>Registered domains</strong>.</li>
+</ul>
+</li>
+</ul>
+<h2 id="request-a-ssl-certificate-from-acm">Request a SSL Certificate from ACM</h2>
+<ol>
+<li>
+<p><strong>Open ACM Console:</strong> <a href="https://console.aws.amazon.com/acm/home">AWS Certificate Manager (ACM) Console</a></p>
+</li>
+<li>
+<p><strong>Request a Certificate:</strong></p>
+<ul>
+<li>Click on <strong>Request a certificate</strong>.</li>
+<li>Select <strong>Request a public certificate</strong> and click <strong>Next</strong>.</li>
+</ul>
+</li>
+<li>
+<p><strong>Add Domain Names:</strong></p>
+<ul>
+<li>Enter the domain name you registered (e.g., <code>yourdomain.com</code>).</li>
+<li>Add any additional subdomains if needed (e.g., <code>www.yourdomain.com</code>).</li>
+</ul>
+</li>
+<li>
+<p><strong>Validation Method:</strong></p>
+<ul>
+<li>Choose <strong>DNS validation</strong> (recommended).</li>
+<li>ACM will provide CNAME records that you need to add to your Route 53 hosted zone.</li>
+</ul>
+</li>
+<li>
+<p><strong>Add Tags (Optional):</strong></p>
+<ul>
+<li>Add any tags if you want to organize your resources.</li>
+</ul>
+</li>
+<li>
+<p><strong>Review and Request:</strong></p>
+<ul>
+<li>Review your request and click <strong>Confirm and request</strong>.</li>
+</ul>
+</li>
+</ol>
+<h2 id="adding-cname-records-to-route-53">Adding CNAME Records to Route 53</h2>
+<p>To complete the domain validation process for your SSL/TLS certificate, you need to add the CNAME records provided by AWS Certificate Manager (ACM) to your Route 53 hosted zone. This step ensures that you own the domain and allows ACM to issue the certificate.</p>
+<h3 id="finding-cname-record-names-and-values">Finding CNAME Record Names and Values</h3>
+<p>You can find the CNAME record names and values in the AWS Certificate Manager (ACM) console:</p>
+<ol>
+<li>
+<p><strong>Open ACM Console:</strong> <a href="https://console.aws.amazon.com/acm/home">AWS Certificate Manager (ACM) Console</a></p>
+</li>
+<li>
+<p><strong>Select Your Certificate:</strong></p>
+<ul>
+<li>Click on the certificate that is in the <strong>Pending Validation</strong> state.</li>
+</ul>
+</li>
+<li>
+<p><strong>View Domains Section:</strong></p>
+<ul>
+<li>Under the <strong>Domains</strong> section, you will see the CNAME record names and values that you need to add to your Route 53 hosted zone.</li>
+</ul>
+</li>
+</ol>
+<h3 id="adding-cname-records-to-domain">Adding CName Records to Domain</h3>
+<ol>
+<li>
+<p><strong>Open Route 53 Console:</strong> <a href="https://console.aws.amazon.com/route53/">Route 53 Console</a></p>
+</li>
+<li>
+<p><strong>Select Your Hosted Zone:</strong></p>
+<ul>
+<li>Find and select the hosted zone for your domain (e.g., <code>yourdomain.com</code>).</li>
+<li>Click on <strong>Create record</strong>.</li>
+</ul>
+</li>
+<li>
+<p><strong>Add the First CNAME Record:</strong></p>
+<ul>
+<li>For the <strong>Record name</strong>, enter the name provided by ACM (e.g., <code>_3e8623442477e9eeec.your-domain.com</code>).</li>
+<li>For the <strong>Record type</strong>, select <code>CNAME</code>.</li>
+<li>For the <strong>Value</strong>, enter the value provided by ACM (e.g., <code>_0908c89646d92.sdgjtdhdhz.acm-validations.aws.</code>) (include the trailing dot).</li>
+<li>Leave the default settings for TTL.</li>
+<li>Click on <strong>Create records</strong>.</li>
+</ul>
+</li>
+<li>
+<p><strong>Add the Second CNAME Record:</strong></p>
+<ul>
+<li>Repeat the process for the second CNAME record.</li>
+<li>For the <strong>Record name</strong>, enter the second name provided by ACM (e.g., <code>_75cd9364c643caa.www.your-domain.com</code>).</li>
+<li>For the <strong>Record type</strong>, select <code>CNAME</code>.</li>
+<li>For the <strong>Value</strong>, enter the second value provided by ACM (e.g., <code>_f72f8cff4fb20f4.sdgjhdhz.acm-validations.aws.</code>)  (include the trailing dot).</li>
+<li>Leave the default settings for TTL.</li>
+<li>Click on <strong>Create records</strong>.</li>
+</ul>
+</li>
+</ol>
+<div class="admonition tip">
+<p class="admonition-title">DNS Propagation and Cert Validation</p>
+<p>After adding the CNAME records, these DNS records will propagate through the DNS system and ACM will automatically detect the validation records and validate the domain. This process can take a few minutes or up to an hour.</p>
 </div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">cd</span><span class="w"> </span>sageworks/aws_setup/sageworks_core
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>cdk<span class="w"> </span>bootstrap
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>cdk<span class="w"> </span>deploy
-</span></code></pre></div>
-<h2 id="aws-account-setup-check">AWS Account Setup Check</h2>
-<p>After setting up SageWorks config/AWS Account you can run this test/checking script. If the results ends with <code>INFO AWS Account Clamp: AOK!</code> you're in good shape. If not feel free to contact us on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> and we'll get it straightened out for you :)</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>sageworks<span class="w"> </span><span class="o">(</span><span class="k">if</span><span class="w"> </span>not<span class="w"> </span>already<span class="w"> </span>installed<span class="o">)</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nb">cd</span><span class="w"> </span>sageworks/aws_setup
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>python<span class="w"> </span>aws_account_check.py
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>&lt;lot<span class="w"> </span>of<span class="w"> </span>print<span class="w"> </span>outs<span class="w"> </span><span class="k">for</span><span class="w"> </span>various<span class="w"> </span>checks&gt;
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="m">2023</span>-04-12<span class="w"> </span><span class="m">11</span>:17:09<span class="w"> </span><span class="o">(</span>aws_account_check.py:48<span class="o">)</span><span class="w"> </span>INFO<span class="w"> </span>AWS<span class="w"> </span>Account<span class="w"> </span>Clamp:<span class="w"> </span>AOK!
-</span></code></pre></div>
-<div class="admonition success">
-<p class="admonition-title">Success</p>
-<p>Congratulations: SageWorks is now deployed to your AWS Account. Deploying the AWS Stack only needs to be done once. Now that this is complete your developers can simply <code>pip install sageworks</code> and start using the API.</p>
-</div>
-<p>If you ran into any issues with this procedure please contact us via <a href="https://discord.gg/WHAJuz8sw8">Discord</a> or email <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> and the SCP team will provide <strong>free</strong> setup and support for new SageWorks users.</p>
+<h3 id="certificate-states">Certificate States</h3>
+<p>After requesting a certificate, it will go through the following states:</p>
+<ul>
+<li>
+<p><strong>Pending Validation</strong>: The initial state after you request a certificate and before you complete the validation process. ACM is waiting for you to prove domain ownership by adding the CNAME records.</p>
+</li>
+<li>
+<p><strong>Issued</strong>: This state indicates that the certificate has been successfully validated and issued. You can now use this certificate with your AWS resources.</p>
+</li>
+<li>
+<p><strong>Validation Timed Out</strong>: If you do not complete the validation process within a specified period (usually 72 hours), the certificate request times out and enters this state.</p>
+</li>
+<li>
+<p><strong>Revoked</strong>: This state indicates that the certificate has been revoked and is no longer valid.</p>
+</li>
+<li>
+<p><strong>Failed</strong>: If the validation process fails for any reason, the certificate enters this state.</p>
+</li>
+<li>
+<p><strong>Inactive</strong>: This state indicates that the certificate is not currently in use.</p>
+</li>
+</ul>
+<p>The certificate status should obviously be in the <strong>Issued</strong> state, if not please contact SageWorks Support Team.</p>
+<h2 id="retrieving-the-certificate-arn">Retrieving the Certificate ARN</h2>
+<ol>
+<li>
+<p><strong>Open ACM Console:</strong></p>
+<ul>
+<li>Go back to the <a href="https://console.aws.amazon.com/acm/home">AWS Certificate Manager (ACM) Console</a>.</li>
+</ul>
+</li>
+<li>
+<p><strong>Check the Status:</strong></p>
+<ul>
+<li>Once the CNAME records are added, ACM will automatically validate the domain.</li>
+<li>Refresh the ACM console to see the updated status.</li>
+<li>The status will change to "Issued" once validation is complete.</li>
+</ul>
+</li>
+<li>
+<p><strong>Copy the Certificate ARN:</strong></p>
+<ul>
+<li>Click on your issued certificate.</li>
+<li>Copy the <strong>Amazon Resource Name (ARN)</strong> from the certificate details.</li>
+</ul>
+</li>
+</ol>
+<p>You now have the ARN for your certificate, which you can use in your AWS resources such as API Gateway, CloudFront, etc.</p>
+<h2 id="aws-resources">AWS Resources</h2>
+<ul>
+<li><a href="https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-creating.html">AWS Adding or Changing DNS Records</a></li>
+<li><a href="https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html">AWS Certificate Manager (ACM) Documentation</a></li>
+<li><a href="https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-request-public.html">Requesting a Public Certificate</a></li>
+<li><a href="https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html">Validating Domain Ownership</a></li>
+<li><a href="https://docs.aws.amazon.com/route53/">AWS Route 53 Documentation</a></li>
+<li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html">AWS API Gateway Documentation</a></li>
+</ul>
 
 
 
