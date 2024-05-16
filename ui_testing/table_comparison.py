@@ -43,6 +43,7 @@ class AGTable:
             dashGridOptions={"rowSelection": "single"},
             defaultColDef={"flex": 1, "filter": True},
             style={"maxHeight": "200px", "overflow": "auto"},
+            dangerously_allow_code=True  # to allow hyperlinks in dag
         )
 
         # Fill in plugin properties
@@ -80,7 +81,7 @@ class AGTable:
             {"field": col, "valueFormatter": {"function": "d3.format(',')(params.value)"}} if col == 'Salary'
             else {"field": col, "valueFormatter": {"function": "d3.format('.2f')(params.value)"}} if col == 'Bonus'
             else {"field": col, "valueFormatter": {"function": "params.value.toUpperCase()"}} if col == 'Name'
-            else {"field": col, "cellRenderer": "Link"} if col == 'Company'
+            else {"field": col, "cellRenderer": "markdown"} if col == 'Company'
             else {"field": col}
             for col in table_df.columns
         ]
@@ -108,6 +109,8 @@ if __name__ == "__main__":
         "Bonus": [0.2445, 0.3641, 0.5647, 0.7865, 0.4565, 0.2956],
     }
     df = pd.DataFrame(data)
+    # Testing HTML Links
+    df["Company"] = df["Company"].map(lambda x: f"<a href='https://www.google.com' target='_blank'>{x}</a>")
 
     # Create the new AG Table component
     AG_grid_themes = ['alpine', 'balham', 'material', 'quartz']
@@ -118,7 +121,7 @@ if __name__ == "__main__":
         for light_dark in ['', '-dark']:
             ag_table = AGTable()
             theme = f'ag-theme-{ag_theme + light_dark} ag-theme-custom{light_dark}'
-            ag_table_component = ag_table.create_component("ag-table", theme)
+            ag_table_component = ag_table.create_component(f"ag-table-{ag_theme}{light_dark}", theme)
             # This would normally be a callback, but we're just testing
             ag_table_component.columnDefs, ag_table_component.rowData, ag_table_component.selectedRows = (
                 ag_table.update_properties(df)
@@ -130,11 +133,8 @@ if __name__ == "__main__":
     data_table = my_table.create_component(
         "current-table", header_color="rgb(60, 100, 60)", row_select="single", transparent=False
     )
-
     # Note: This is old style API, but will be replaced anyway
     data_table.columns = my_table.column_setup(df, markdown_columns=["Company"])
-    # Testing HTML Links
-    df["Company"] = df["Company"].map(lambda x: f"<a href='https://www.google.com' target='_blank'>{x}</a>")
     data_table.data = df.to_dict("records")
 
     # Create a Dash app
