@@ -4,6 +4,7 @@ import sys
 import base64
 import json
 import logging
+import requests
 from typing import Union
 import importlib.resources as resources
 from datetime import datetime
@@ -35,6 +36,9 @@ class LicenseManager:
         Returns:
             dict/None: The SageWorks API License Information or None if the license is invalid
         """
+
+        # Store the API Key for later use
+        cls.api_key = api_key
 
         # Decode the API Key
         try:
@@ -134,6 +138,19 @@ class LicenseManager:
         public_key = serialization.load_pem_public_key(public_key_data, backend=default_backend())
         return public_key
 
+    @classmethod
+    def contact_license_server(cls) -> requests.Response:
+        """Contact the SageWorks License Server to verify the license."""
+        server_url = "https://sageworks-keyserver.com/decode-key"
+        headers = {
+            "Content-Type": "application/json",
+            "x-api-key": "Z3dDGm4392V3klijcBbT3ccEutwwWMp82IbYa5i0"
+        }
+        data = {
+            "api_key": cls.api_key
+        }
+        return requests.post(server_url, headers=headers, json=data)
+
 
 if __name__ == "__main__":
     """Exercise the License Manager class"""
@@ -148,3 +165,7 @@ if __name__ == "__main__":
     print(my_license_info)
     LicenseManager.print_license_info()
     print(LicenseManager.get_license_id())
+
+    # Test the license server
+    response = LicenseManager.contact_license_server()
+    print(response.json())
