@@ -520,8 +520,14 @@ class ModelCore(Artifact):
         # Now that we have all the details, let's onboard the Model with all the args
         return self.onboard_with_args(self.model_type, target_column, feature_columns, endpoints, owner)
 
-    def onboard_with_args(self, model_type: ModelType, target_column: str = None, feature_list: list = None,
-                          endpoints: list = None, owner: str = None) -> bool:
+    def onboard_with_args(
+        self,
+        model_type: ModelType,
+        target_column: str = None,
+        feature_list: list = None,
+        endpoints: list = None,
+        owner: str = None,
+    ) -> bool:
         """Onboard the Model with the given arguments
 
         Args:

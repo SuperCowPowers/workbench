@@ -31,7 +31,7 @@ class LicenseDetails(PluginInterface):
             id=component_id,
             children=[
                 html.H3(id=f"{component_id}-header", children="License: Loading..."),
-                dcc.Markdown(id=f"{component_id}-details", children="Waiting for Data...", dangerously_allow_html=True)
+                dcc.Markdown(id=f"{component_id}-details", children="Waiting for Data...", dangerously_allow_html=True),
             ],
         )
 
@@ -72,7 +72,7 @@ class LicenseDetails(PluginInterface):
         details += f"**Expiration:** {license['expires']}<br>"
         details += f"**License Tier:** {license.get('tier', 'Open Source')}<br>"
         details += "**Features:**\n"
-        for feature, value in license['features'].items():
+        for feature, value in license["features"].items():
             details += f"  - **{feature}:** {value}\n"
 
         # Return the updated property values for the plugin
@@ -83,7 +83,6 @@ if __name__ == "__main__":
     # This class takes in license details and generates a details Markdown component
     import dash
     from sageworks.utils.config_manager import ConfigManager
-
 
     # Grab the API Key from the SageWorks ConfigManager
     cm = ConfigManager()

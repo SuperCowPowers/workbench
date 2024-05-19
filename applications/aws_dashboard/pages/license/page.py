@@ -1,4 +1,5 @@
 """License:  A SageWorks Web Interface to view License Details"""
+
 from dash import register_page
 from dash import html
 from dash_bootstrap_templates import load_figure_template
@@ -41,5 +42,5 @@ layout = html.Div(
         html.H2("SageWorks: License"),
         details_component,
     ],
-    style={"padding": "12px 30px 30px 30px"}
+    style={"padding": "12px 30px 30px 30px"},
 )

@@ -142,13 +142,8 @@ class LicenseManager:
     def contact_license_server(cls) -> requests.Response:
         """Contact the SageWorks License Server to verify the license."""
         server_url = "https://sageworks-keyserver.com/decode-key"
-        headers = {
-            "Content-Type": "application/json",
-            "x-api-key": "Z3dDGm4392V3klijcBbT3ccEutwwWMp82IbYa5i0"
-        }
-        data = {
-            "api_key": cls.api_key
-        }
+        headers = {"Content-Type": "application/json", "x-api-key": "Z3dDGm4392V3klijcBbT3ccEutwwWMp82IbYa5i0"}
+        data = {"api_key": cls.api_key}
         return requests.post(server_url, headers=headers, json=data)
 
 

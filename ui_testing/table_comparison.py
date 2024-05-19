@@ -43,7 +43,7 @@ class AGTable:
             dashGridOptions={"rowSelection": "single"},
             defaultColDef={"flex": 1, "filter": True},
             style={"maxHeight": "200px", "overflow": "auto"},
-            dangerously_allow_code=True  # to allow hyperlinks in dag
+            dangerously_allow_code=True,  # to allow hyperlinks in dag
         )
 
         # Fill in plugin properties
@@ -78,11 +78,19 @@ class AGTable:
 
         # Define column definitions based on the DataFrame
         column_defs = [
-            {"field": col, "valueFormatter": {"function": "d3.format(',')(params.value)"}} if col == 'Salary'
-            else {"field": col, "valueFormatter": {"function": "d3.format('.2f')(params.value)"}} if col == 'Bonus'
-            else {"field": col, "valueFormatter": {"function": "params.value.toUpperCase()"}} if col == 'Name'
-            else {"field": col, "cellRenderer": "markdown"} if col == 'Company'
-            else {"field": col}
+            (
+                {"field": col, "valueFormatter": {"function": "d3.format(',')(params.value)"}}
+                if col == "Salary"
+                else (
+                    {"field": col, "valueFormatter": {"function": "d3.format('.2f')(params.value)"}}
+                    if col == "Bonus"
+                    else (
+                        {"field": col, "valueFormatter": {"function": "params.value.toUpperCase()"}}
+                        if col == "Name"
+                        else {"field": col, "cellRenderer": "markdown"} if col == "Company" else {"field": col}
+                    )
+                )
+            )
             for col in table_df.columns
         ]
 
@@ -113,14 +121,14 @@ if __name__ == "__main__":
     df["Company"] = df["Company"].map(lambda x: f"<a href='https://www.google.com' target='_blank'>{x}</a>")
 
     # Create the new AG Table component
-    AG_grid_themes = ['alpine', 'balham', 'material', 'quartz']
+    AG_grid_themes = ["alpine", "balham", "material", "quartz"]
     dag_tables = []
 
     for ag_theme in AG_grid_themes:
         dag_tables += [html.Hr(), html.Div(f"Dash AG Grid - {ag_theme}:")]
-        for light_dark in ['', '-dark']:
+        for light_dark in ["", "-dark"]:
             ag_table = AGTable()
-            theme = f'ag-theme-{ag_theme + light_dark} ag-theme-custom{light_dark}'
+            theme = f"ag-theme-{ag_theme + light_dark} ag-theme-custom{light_dark}"
             ag_table_component = ag_table.create_component(f"ag-table-{ag_theme}{light_dark}", theme)
             # This would normally be a callback, but we're just testing
             ag_table_component.columnDefs, ag_table_component.rowData, ag_table_component.selectedRows = (
