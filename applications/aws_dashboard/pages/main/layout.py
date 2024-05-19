@@ -38,7 +38,15 @@ def main_layout(
                                 },
                             ),
                             html.Span(
-                                f" ({license_id})",
+                                html.A(
+                                    f" ({license_id})",
+                                    href="/license",
+                                    style={
+                                        "color": "rgb(140, 140, 200)",
+                                        "fontSize": 15,
+                                        "textDecoration": "none",
+                                    },
+                                ),
                                 style={
                                     "color": "rgb(140, 140, 200)",
                                     "fontSize": 15,
