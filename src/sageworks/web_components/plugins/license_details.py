@@ -55,7 +55,7 @@ class LicenseDetails(PluginInterface):
             list: A list of the updated property values for the plugin
         """
         # Update the header and the details
-        header = "SageWorks: License Details"
+        header = "License Details"
 
         # See if we can connect to the License Server
         response = LicenseManager.contact_license_server()

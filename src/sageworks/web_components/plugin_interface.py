@@ -32,6 +32,7 @@ class PluginInputType(Enum):
     PIPELINE = "pipeline"
     MODEL_TABLE = "model_table"
     PIPELINE_TABLE = "pipeline_table"
+    CUSTOM = "custom"
 
 
 class PluginInterface(ComponentInterface):
