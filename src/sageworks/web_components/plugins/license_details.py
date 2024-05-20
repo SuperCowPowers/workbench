@@ -33,7 +33,9 @@ class LicenseDetails(PluginInterface):
                 html.H3(id=f"{component_id}-header", children="License: Loading..."),
                 dcc.Markdown(id=f"{component_id}-details", children="Waiting for Data...", dangerously_allow_html=True),
                 html.H3(id=f"{component_id}-support-header", children="Support: Loading..."),
-                dcc.Markdown(id=f"{component_id}-support-details", children="Waiting for Data...", dangerously_allow_html=True),
+                dcc.Markdown(
+                    id=f"{component_id}-support-details", children="Waiting for Data...", dangerously_allow_html=True
+                ),
             ],
         )
 
