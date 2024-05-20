@@ -12,6 +12,15 @@ from sageworks.utils.license_manager import LicenseManager
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
 
+# Feature Information Dictionary
+FEATURES = {
+    "plugins": "Component Plugins",
+    "pages": "Fully Customizable Pages",
+    "themes": "Dark, Light, and Custom Themes",
+    "pipelines": "Machine Learning Pipelines (beta)",
+    "branding": "Company/Project User Interface Branding"
+}
+
 
 class LicenseDetails(PluginInterface):
     """License Details Markdown Component"""
@@ -82,7 +91,11 @@ class LicenseDetails(PluginInterface):
             for feature, value in license["features"].items():
                 details += f"  - **{feature}:** {value}\n"
         else:
-            details += f"  - {license['features']}\n"
+            for feature, description in FEATURES.items():
+                if feature in license["features"]:
+                    details += f"  - {description}  (**YES**)\n"
+                else:
+                    details += f"  - {description}  ([UPGRADE](https://supercowpowers.github.io/sageworks/enterprise/))\n"
 
         # Fill in the support details
         support_header = "Support Information"
