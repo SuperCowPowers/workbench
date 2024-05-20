@@ -32,6 +32,8 @@ class LicenseDetails(PluginInterface):
             children=[
                 html.H3(id=f"{component_id}-header", children="License: Loading..."),
                 dcc.Markdown(id=f"{component_id}-details", children="Waiting for Data...", dangerously_allow_html=True),
+                html.H3(id=f"{component_id}-support-header", children="Support: Loading..."),
+                dcc.Markdown(id=f"{component_id}-support-details", children="Waiting for Data...", dangerously_allow_html=True),
             ],
         )
 
@@ -39,6 +41,8 @@ class LicenseDetails(PluginInterface):
         self.properties = [
             (f"{component_id}-header", "children"),
             (f"{component_id}-details", "children"),
+            (f"{component_id}-support-header", "children"),
+            (f"{component_id}-support-details", "children"),
         ]
 
         # Return the container
@@ -75,8 +79,14 @@ class LicenseDetails(PluginInterface):
         for feature, value in license["features"].items():
             details += f"  - **{feature}:** {value}\n"
 
+        # Fill in the support details
+        support_header = "Support Information"
+        support_details = "- **Support Rep:** Brian Wylie\n"
+        support_details += "- **Support Email:** [support@supercowpowers.com](mailto:support@supercowpowers.com)\n"
+        support_details += "- **Support Chat:** [Discord](https://discord.gg/WHAJuz8sw8)\n"
+
         # Return the updated property values for the plugin
-        return [header, details]
+        return [header, details, support_header, support_details]
 
 
 if __name__ == "__main__":
