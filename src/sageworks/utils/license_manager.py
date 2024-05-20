@@ -42,7 +42,7 @@ class LicenseManager:
 
         # Decode the API Key
         try:
-            decoded_license_key = base64.b64decode(api_key)
+            decoded_license_key = base64.urlsafe_b64decode(api_key)
             _license_data, signature = cls.extract_data_and_signature(decoded_license_key)
         except Exception as e:
             cls.log.critical(f"Failed to decode API Key: {e}")

@@ -64,26 +64,28 @@ class LicenseDetails(PluginInterface):
         # See if we can connect to the License Server
         response = LicenseManager.contact_license_server()
         if response.status_code == 200:
-            details = "**License Server:** Connected<br>"
+            details = "**License Server:** 🟢 Connected<br>"
         else:
             # Note: This is 100% fine/expected (connecting to the license server is optional)
-            details = "**License Server:** Not connected<br>"
+            details = "**License Server:** 🔵 Not connected<br>"
 
         # Fill in the license details
         details += f"**License Id:** {license['license_id']}<br>"
-        details += f"**Company:** {license['license_id']}<br>"
+        details += f"**Company:** {license.get('company', 'Unknown')}<br>"
         details += f"**AWS Account:** {license['aws_account_id']}<br>"
         details += f"**Expiration:** {license['expires']}<br>"
         details += f"**License Tier:** {license.get('tier', 'Open Source')}<br>"
         details += "**Features:**\n"
-        for feature, value in license["features"].items():
-            details += f"  - **{feature}:** {value}\n"
+        if isinstance(license["features"], dict):
+            for feature, value in license["features"].items():
+                details += f"  - **{feature}:** {value}\n"
+        else:
+            details += f"  - {license['features']}\n"
 
         # Fill in the support details
         support_header = "Support Information"
-        support_details = "- **Support Rep:** Brian Wylie\n"
-        support_details += "- **Support Email:** [support@supercowpowers.com](mailto:support@supercowpowers.com)\n"
-        support_details += "- **Support Chat:** [Discord](https://discord.gg/WHAJuz8sw8)\n"
+        support_details = "- **Email:** [support@supercowpowers.com](mailto:support@supercowpowers.com)\n"
+        support_details += "- **Chat:** [Discord](https://discord.gg/WHAJuz8sw8)\n"
 
         # Return the updated property values for the plugin
         return [header, details, support_header, support_details]
