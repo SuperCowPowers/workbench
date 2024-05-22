@@ -18,7 +18,7 @@ FEATURES = {
     "pages": "Fully Customizable Pages",
     "themes": "Dark, Light, and Custom Themes",
     "pipelines": "Machine Learning Pipelines (beta)",
-    "branding": "Company/Project User Interface Branding"
+    "branding": "Company/Project User Interface Branding",
 }
 
 
@@ -95,7 +95,9 @@ class LicenseDetails(PluginInterface):
                 if feature in license["features"]:
                     details += f"  - {description}  (**YES**)\n"
                 else:
-                    details += f"  - {description}  ([UPGRADE](https://supercowpowers.github.io/sageworks/enterprise/))\n"
+                    details += (
+                        f"  - {description}  ([UPGRADE](https://supercowpowers.github.io/sageworks/enterprise/))\n"
+                    )
 
         # Fill in the support details
         support_header = "Support Information"
