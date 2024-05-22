@@ -12,6 +12,9 @@ nav:
     - Endpoint: api_classes/endpoint.md
     - Pipelines: api_classes/pipelines.md
     - Monitor: api_classes/monitor.md
+  - SageWorks Blogs: 
+    - OverView: blogs/index.md
+    - Residual Analysis: blogs/residual_analysis.md 
   - Core Classes: 
     - OverView: core_classes/overview.md
     - Artifacts: 
