@@ -12,9 +12,11 @@ nav:
     - Endpoint: api_classes/endpoint.md
     - Pipelines: api_classes/pipelines.md
     - Monitor: api_classes/monitor.md
-  - SageWorks Blogs: 
-    - OverView: blogs/index.md
-    - Residual Analysis: blogs/residual_analysis.md 
+  - Blogs/Research: 
+    - OverView: blogs_research/index.md
+    - Residual Analysis: blogs_research/residual_analysis.md 
+    - Exploratory Data Analysis(EDA): blogs_research/eda.md
+    - High Target Gradients (HTG): blogs_research/htg.md
   - Core Classes: 
     - OverView: core_classes/overview.md
     - Artifacts: 
@@ -43,9 +45,6 @@ nav:
       - Themes: enterprise/themes.md
       - Project Branding: enterprise/project_branding.md
   - FAQ:  misc/faq.md
-  - Research:
-      - EDA: research/eda.md
-      - HTG: research/htg.md
   - AWS Glue Jobs: glue/index.md 
   - AWS Setup: 
     - Developer SSO Setup: aws_setup/sso_setup.md
