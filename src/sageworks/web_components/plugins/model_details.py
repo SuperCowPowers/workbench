@@ -4,7 +4,7 @@ import logging
 
 # Dash Imports
 from dash import html, callback, no_update, dcc
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.api import Model
