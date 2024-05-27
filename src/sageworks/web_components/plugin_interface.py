@@ -37,9 +37,11 @@ class PluginInputType(Enum):
 
 class PluginInterface(ComponentInterface):
     """A Web Plugin Interface
+
     Notes:
-      - The 'create_component' method must be implemented by the child class
-      - The 'update_properties' method must be implemented by the child class
+        - The 'create_component' method must be implemented by the child class
+        - The 'update_properties' method must be implemented by the child class
+        - The 'register_internal_callbacks' method is optional
     """
 
     @abstractmethod
@@ -47,21 +49,33 @@ class PluginInterface(ComponentInterface):
         """Create a Dash Component without any data.
 
         Args:
-            component_id (str): The ID of the web component
+            component_id (str): The ID of the web component.
 
         Returns:
-           Component: A Dash Base Component
+            Component: A Dash Base Component.
         """
         pass
 
     @abstractmethod
     def update_properties(self, data_object: ComponentInterface.SageworksObject, **kwargs) -> list:
-        """Update the property values for the plugin component
+        """Update the property values for the plugin component.
+
         Args:
-            data_object (sageworks_object): The instantiated data object for the plugin type.
-            **kwargs: Additional keyword arguments (plugins can define their own arguments)
+            data_object (ComponentInterface.SageworksObject): The instantiated data object for the plugin type.
+            **kwargs: Additional keyword arguments (plugins can define their own arguments).
+
         Returns:
-            list: A list of the updated properties values for the plugin
+            list: A list of the updated property values for the plugin.
+        """
+        pass
+
+    def register_internal_callbacks(self):
+        """Register any internal callbacks for the plugin.
+
+        Notes:
+            Implementing this method is optional. This method is useful for registering internal callbacks
+            that are specific to the plugin. For example, a plugin that needs to update some properties based
+            on a dropdown selection.
         """
         pass
 

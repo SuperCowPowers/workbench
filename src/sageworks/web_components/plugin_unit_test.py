@@ -48,24 +48,24 @@ class PluginUnitTest:
             # Simulate updating the plugin with a new Model, Endpoint, or Model Table
             if plugin_input_type == PluginInputType.MODEL:
                 model = Model("abalone-regression")
-                updated_proporties = self.plugin.update_properties(model, inference_run="training_holdout")
+                updated_properties = self.plugin.update_properties(model, inference_run="training_holdout")
             elif plugin_input_type == PluginInputType.ENDPOINT:
                 endpoint = Endpoint("abalone-regression-end")
-                updated_proporties = self.plugin.update_properties(endpoint)
+                updated_properties = self.plugin.update_properties(endpoint)
             elif plugin_input_type == PluginInputType.PIPELINE:
                 pipeline = Pipeline("abalone_pipeline_v1")
-                updated_proporties = self.plugin.update_properties(pipeline)
+                updated_properties = self.plugin.update_properties(pipeline)
             elif plugin_input_type == PluginInputType.MODEL_TABLE:
                 model_df = Meta().models()
-                updated_proporties = self.plugin.update_properties(model_df)
+                updated_properties = self.plugin.update_properties(model_df)
             elif plugin_input_type == PluginInputType.PIPELINE_TABLE:
                 pipeline_df = Meta().pipelines()
-                updated_proporties = self.plugin.update_properties(pipeline_df)
+                updated_properties = self.plugin.update_properties(pipeline_df)
             else:
                 raise ValueError(f"Invalid test type: {plugin_input_type}")
 
             # Return the updated properties for the plugin
-            return updated_proporties
+            return updated_properties
 
         # Set up callbacks for displaying output signals
         for component_id, property in self.plugin.signals:
@@ -75,6 +75,9 @@ class PluginUnitTest:
             )
             def display_output_signal(signal_value):
                 return f"{signal_value}"
+
+        # Now register any internal callbacks
+        self.plugin.register_internal_callbacks()
 
     def run(self):
         self.app.run_server(debug=True)

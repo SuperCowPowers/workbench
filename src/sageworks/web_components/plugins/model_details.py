@@ -1,14 +1,18 @@
 """A Markdown Component for details/information about Models"""
 
+import logging
+
 # Dash Imports
 from dash import html, callback, no_update, dcc
 from dash.dependencies import Input, Output, State
-import pandas as pd
 
 # SageWorks Imports
 from sageworks.api import Model
 from sageworks.utils.markdown_utils import health_tag_markdown
 from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+
+# Get the SageWorks logger
+log = logging.getLogger("sageworks")
 
 
 class ModelDetails(PluginInterface):
@@ -19,8 +23,11 @@ class ModelDetails(PluginInterface):
     plugin_input_type = PluginInputType.MODEL
 
     def __init__(self):
-        self.prefix_id = ""
-        self.model = None
+        """Initialize the ModelDetails plugin class"""
+        self.component_id = None
+        self.current_model = None
+
+        # Call the parent class constructor
         super().__init__()
 
     def create_component(self, component_id: str) -> html.Div:
@@ -30,96 +37,62 @@ class ModelDetails(PluginInterface):
         Returns:
             html.Div: A Container of Components for the Model Details
         """
-        self.prefix_id = component_id
+        self.component_id = component_id
         container = html.Div(
-            id=self.prefix_id,
+            id=self.component_id,
             children=[
-                html.H3(id=f"{self.prefix_id}-header", children="Model: Loading..."),
-                dcc.Markdown(id=f"{self.prefix_id}-summary"),
+                html.H3(id=f"{self.component_id}-header", children="Model: Loading..."),
+                dcc.Markdown(id=f"{self.component_id}-summary"),
                 html.H3(children="Inference Metrics"),
-                dcc.Dropdown(id=f"{self.prefix_id}-dropdown", className="dropdown"),
-                dcc.Markdown(id=f"{self.prefix_id}-metrics"),
-                dcc.Store(id=f"{self.prefix_id}-model-uuid"),  # Store the model uuid
+                dcc.Dropdown(id=f"{self.component_id}-dropdown", className="dropdown"),
+                dcc.Markdown(id=f"{self.component_id}-metrics"),
             ],
         )
 
         # Fill in plugin properties
         self.properties = [
-            (f"{self.prefix_id}-header", "children"),
-            (f"{self.prefix_id}-summary", "rowData"),
-            (self.component_id, "selectedRows"),
+            (f"{self.component_id}-header", "children"),
+            (f"{self.component_id}-summary", "children"),
+            (f"{self.component_id}-dropdown", "options"),
+            (f"{self.component_id}-dropdown", "value"),
         ]
-
-        # Output signals
-        self.signals = [
-            (self.component_id, "selectedRows"),
-        ]
+        self.signals = [(f"{self.component_id}-dropdown", "value")]
 
         # Return the container
         return container
 
-    def update_properties(self, model_table: pd.DataFrame, **kwargs) -> list:
+    def update_properties(self, model: Model, **kwargs) -> list:
         """Update the properties for the plugin.
 
         Args:
-            model_table (pd.DataFrame): A DataFrame with the model table data
+            model (Model): An instantiated Model object
             **kwargs: Additional keyword arguments (unused)
 
         Returns:
             list: A list of the updated property values for the plugin
         """
+        log.important(f"Updating Plugin with Model: {model.uuid} and kwargs: {kwargs}")
 
-    def register_callbacks(self, model_table):
-        @callback(
-            [
-                Output(f"{self.prefix_id}-header", "children"),
-                Output(f"{self.prefix_id}-summary", "children"),
-                Output(f"{self.prefix_id}-dropdown", "options"),
-                Output(f"{self.prefix_id}-dropdown", "value"),
-                Output(f"{self.prefix_id}-metrics", "children", allow_duplicate=True),
-                Output(f"{self.prefix_id}-model-uuid", "data"),
-            ],
-            Input(model_table, "derived_viewport_selected_row_ids"),
-            State(model_table, "data"),
-            prevent_initial_call=True,
-        )
-        def update_model(selected_rows, table_data):
-            # Check for no selected rows
-            if not selected_rows or selected_rows[0] is None:
-                return no_update
+        # Update the header and the details
+        self.current_model = model
+        header = f"{self.current_model.uuid}"
+        details = self.model_summary()
 
-            # Get the selected row data, grab the uuid, and set the Model object
-            selected_row_data = table_data[selected_rows[0]]
-            model_uuid = selected_row_data["uuid"]
-            self.model = Model(model_uuid, legacy=True)
+        # Populate the inference runs dropdown
+        inference_runs, default_run = self.get_inference_runs()
 
-            # Update the header, the summary, and the details
-            header = f"Model: {self.model.uuid}"
-            summary = self.model_summary()
+        # Return the updated property values for the plugin
+        return [header, details, inference_runs, default_run]
 
-            # Populate the inference runs dropdown
-            inference_runs, default_run = self.get_inference_runs()
-
-            # Update the metrics for the default inference run
-            metrics = self.inference_metrics(default_run)
-
-            # Return the updated components
-            return header, summary, inference_runs, default_run, metrics, model_uuid
-
-        @callback(
-            Output(f"{self.prefix_id}-metrics", "children", allow_duplicate=True),
-            Input(f"{self.prefix_id}-dropdown", "value"),
-            State(f"{self.prefix_id}-model-uuid", "data"),
-            prevent_initial_call=True,
-        )
-        def update_inference_run(inference_run, model_uuid):
+    def register_internal_callbacks(self):
+        @callback(Output(f"{self.component_id}-metrics", "children"), Input(f"{self.component_id}-dropdown", "value"))
+        def update_inference_run(inference_run):
             # Check for no inference run
-            if not inference_run or (self.model.uuid != model_uuid):
+            if not inference_run:
                 return no_update
 
             # Update the model metrics
             metrics = self.inference_metrics(inference_run)
-
             return metrics
 
     def model_summary(self):
@@ -141,7 +114,7 @@ class ModelDetails(PluginInterface):
         ]
 
         # Construct the markdown string
-        summary = self.model.summary()
+        summary = self.current_model.summary()
         markdown = ""
         for key in show_fields:
 
@@ -182,7 +155,7 @@ class ModelDetails(PluginInterface):
             str: A markdown string
         """
         # Model Metrics
-        meta_df = self.model.inference_metadata(inference_run)
+        meta_df = self.current_model.inference_metadata(inference_run)
         if meta_df is None:
             test_data = "Inference Metadata Not Found"
             test_data_hash = " N/A "
@@ -203,7 +176,7 @@ class ModelDetails(PluginInterface):
         markdown += f"**Description:** {description}  \n"
 
         # Grab the Metrics from the model details
-        metrics = self.model.performance_metrics(capture_uuid=inference_run)
+        metrics = self.current_model.performance_metrics(capture_uuid=inference_run)
         if metrics is None:
             markdown += "  \nNo Data  \n"
         else:
@@ -223,7 +196,7 @@ class ModelDetails(PluginInterface):
         """
 
         # Inference runs
-        inference_runs = self.model.list_inference_runs()
+        inference_runs = self.current_model.list_inference_runs()
 
         # Check if there are any inference runs to select
         if not inference_runs:
@@ -238,36 +211,8 @@ class ModelDetails(PluginInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a details Markdown component
-    import dash
-    import dash_bootstrap_components as dbc
-    from sageworks.web_components.table import Table
-    from sageworks.api.meta import Meta
+    # This class takes in pipeline details and generates a details Markdown component
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
-    # Create a model table
-    models_table = Table().create_component(
-        "my_models_table", header_color="rgb(60, 100, 60)", row_select="single", max_height=270
-    )
-
-    # Populate the table with data
-    models = Meta().models()
-    models["uuid"] = models["Model Group"]
-    models["id"] = range(len(models))
-    column_setup_list = Table().column_setup(models)
-    models_table.columns = column_setup_list
-    models_table.data = models.to_dict("records")
-
-    # Instantiate the ModelDetails class
-    md = ModelDetails()
-    details_component = md.create_component("my_model_details")
-
-    # Register the callbacks
-    md.register_callbacks("my_models_table")
-
-    # Initialize Dash app
-    app = dash.Dash(
-        __name__,
-        external_stylesheets=[dbc.themes.DARKLY],
-    )
-
-    app.layout = html.Div([models_table, details_component])
-    app.run(debug=True)
+    # Run the Unit Test on the Plugin
+    PluginUnitTest(ModelDetails).run()

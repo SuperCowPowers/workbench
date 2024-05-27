@@ -2,12 +2,13 @@
 
 import dash
 from dash import html, page_container, register_page, callback, Output, Input, State, no_update
+from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
 from sageworks.web_components import table
 from sageworks.api.meta import Meta
-from sageworks.web_components.model_details import ModelDetails
+from sageworks.web_components.plugins.model_details import ModelDetails
 from sageworks.web_components.model_plot import ModelPlot
 from sageworks.api.model import Model
 
@@ -25,6 +26,7 @@ class PluginPage3:
         self.model_plot = ModelPlot()
         self.plot_component = None
         self.meta = Meta()
+        self.plugins = [self.model_details]  # Add any additional plugins here
 
     def page_setup(self, app: dash.Dash):
         """Required function to set up the page"""
@@ -55,7 +57,8 @@ class PluginPage3:
 
         # Register the callbacks
         self.register_app_callbacks(app)
-        self.model_details.register_callbacks("plugin_3_model_table")
+        self.setup_plugin_callbacks()
+        self.model_details.register_internal_callbacks()
 
     def page_layout(self) -> dash.html.Div:
         """Set up the layout for the page"""
@@ -76,16 +79,14 @@ class PluginPage3:
     def register_app_callbacks(self, app: dash.Dash):
         """Register the callbacks for the page"""
 
-        @app.callback(
+        @callback(
             Output("plugin_3_model_plot", "figure"),
-            [
-                Input("plugin_3_model_details-dropdown", "value"),
-                Input("plugin_3_model_table", "derived_viewport_selected_row_ids"),
-            ],
+            Input("plugin_3_model_details-dropdown", "value"),
             State("plugin_3_model_table", "data"),
+            State("plugin_3_model_table", "derived_viewport_selected_row_ids"),
             prevent_initial_call=True,
         )
-        def generate_model_plot_figure(inference_run, selected_rows, table_data):
+        def generate_model_plot_figure(inference_run, table_data, selected_rows):
             # Check for no selected rows
             if not selected_rows or selected_rows[0] is None:
                 return no_update
@@ -93,13 +94,41 @@ class PluginPage3:
             # Get the selected row data and grab the uuid
             selected_row_data = table_data[selected_rows[0]]
             model_uuid = selected_row_data["uuid"]
-            model = Model(model_uuid, legacy=True)
+            m = Model(model_uuid, legacy=True)
 
             # Model Details Markdown component
-            model_plot_fig = self.model_plot.update_properties(model, inference_run)
+            model_plot_fig = self.model_plot.update_properties(m, inference_run)
 
             # Return the details/markdown for these data details
             return model_plot_fig
+
+    def setup_plugin_callbacks(self):
+        @callback(
+            # Aggregate plugin outputs
+            [Output(component_id, prop) for p in self.plugins for component_id, prop in p.properties],
+            State("plugin_3_model_details-dropdown", "value"),
+            Input("plugin_3_model_table", "derived_viewport_selected_row_ids"),
+            State("plugin_3_model_table", "data"),
+        )
+        def update_all_plugin_properties(inference_run, selected_rows, table_data):
+            # Check for no selected rows
+            if not selected_rows or selected_rows[0] is None:
+                raise PreventUpdate
+
+            # Get the selected row data and grab the uuid
+            selected_row_data = table_data[selected_rows[0]]
+            object_uuid = selected_row_data["uuid"]
+
+            # Create the Model object
+            model = Model(object_uuid, legacy=True)
+
+            # Update all the properties for each plugin
+            all_props = []
+            for p in self.plugins:
+                all_props.extend(p.update_properties(model, inference_run=inference_run))
+
+            # Return all the updated properties
+            return all_props
 
 
 # Unit Test for your Plugin Page

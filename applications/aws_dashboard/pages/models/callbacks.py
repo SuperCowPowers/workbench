@@ -53,12 +53,13 @@ def table_row_select(app: Dash, table_name: str):
         return row_style
 
 
-# Updates the model plot when a model row is selected
+# Updates the model plot when the model inference run is changed
 def update_model_plot_component(app: Dash):
     @app.callback(
         Output("model_plot", "figure"),
         Input("model_details-dropdown", "value"),
-        [State("models_table", "data"), State("models_table", "derived_viewport_selected_row_ids")],
+        State("models_table", "data"),
+        State("models_table", "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
     )
     def generate_model_plot_figure(inference_run, table_data, selected_rows):
@@ -82,7 +83,7 @@ def setup_plugin_callbacks(plugins):
     @callback(
         # Aggregate plugin outputs
         [Output(component_id, prop) for p in plugins for component_id, prop in p.properties],
-        Input("model_details-dropdown", "value"),
+        State("model_details-dropdown", "value"),
         Input("models_table", "derived_viewport_selected_row_ids"),
         State("models_table", "data"),
     )

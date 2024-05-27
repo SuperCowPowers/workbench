@@ -9,11 +9,8 @@ from .layout import models_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import (
-    table,
-    model_details,
-    model_plot,
-)
+from sageworks.web_components import table, model_plot
+from sageworks.web_components.plugins import model_details
 from sageworks.web_components.plugin_interface import PluginPage
 from sageworks.utils.plugin_manager import PluginManager
 
@@ -50,6 +47,9 @@ components = {
 pm = PluginManager()
 plugins = pm.get_list_of_web_plugins(plugin_page=PluginPage.MODEL)
 
+# Our model details is a plugin, so we need to add it to the list
+plugins.append(model_details)
+
 # Add the plugins to the components dictionary
 for plugin in plugins:
     component_id = plugin.generate_component_id()
@@ -61,7 +61,7 @@ layout = models_layout(**components)
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.update_models_table(app)
-model_details.register_callbacks("models_table")
+model_details.register_internal_callbacks()
 
 # Callback for the model table
 callbacks.table_row_select(app, "models_table")
