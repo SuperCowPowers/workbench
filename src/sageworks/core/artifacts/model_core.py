@@ -213,7 +213,7 @@ class ModelCore(Artifact):
                 self.log.warning(f"Confusion Matrix {capture_uuid} not found for {self.model_name}!")
                 return None
 
-    def predictions(self, capture_uuid: str = "training_holdout") -> Union[pd.DataFrame, None]:
+    def get_predictions(self, capture_uuid: str = "training_holdout") -> Union[pd.DataFrame, None]:
         """Retrieve the predictions for this model
 
         Args:
@@ -222,10 +222,10 @@ class ModelCore(Artifact):
             pd.DataFrame: DataFrame of the Predictions (might be None)
         """
         # Grab the metrics from the SageWorks Metadata (try inference first, then training)
-        inference_preds = self.inference_predictions(capture_uuid)
+        inference_preds = self.get_inference_predictions(capture_uuid)
         if inference_preds is not None:
             return inference_preds
-        return self.validation_predictions()
+        return self._get_validation_predictions()
 
     def set_input(self, input: str, force: bool = False):
         """Override: Set the input data for this artifact
@@ -420,7 +420,7 @@ class ModelCore(Artifact):
             details["predictions"] = None
         else:
             details["confusion_matrix"] = None
-            details["predictions"] = self.predictions()
+            details["predictions"] = self.get_predictions()
 
         # Grab the inference metadata
         details["inference_meta"] = self.inference_metadata()
@@ -733,7 +733,7 @@ class ModelCore(Artifact):
             self.log.info(f"Could not find model inference meta at {s3_path}...")
             return None
 
-    def inference_predictions(self, capture_uuid: str = "training_holdout") -> Union[pd.DataFrame, None]:
+    def get_inference_predictions(self, capture_uuid: str = "training_holdout") -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
@@ -746,7 +746,7 @@ class ModelCore(Artifact):
         s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_predictions.csv"
         return pull_s3_data(s3_path)
 
-    def validation_predictions(self) -> Union[pd.DataFrame, None]:
+    def _get_validation_predictions(self) -> Union[pd.DataFrame, None]:
         """Internal: Retrieve the captured prediction results for this model
 
         Returns:

@@ -47,20 +47,20 @@ def test_retrieval_with_capture_uuid():
 
 def test_validation_predictions():
     print("\n\n*** Validation Predictions ***")
-    pprint(model_reg.validation_predictions().head())
-    pprint(model_class.validation_predictions().head())
+    pprint(model_reg._get_validation_predictions().head())
+    pprint(model_class._get_validation_predictions().head())
 
 
 def test_inference_predictions():
     print("\n\n*** Inference Predictions ***")
-    if model_reg.inference_predictions() is None:
+    if model_reg.get_inference_predictions() is None:
         print(f"Model {model_reg.uuid} has no inference predictions!")
         exit(1)
-    pprint(model_reg.inference_predictions().head())
-    if model_class.inference_predictions() is None:
+    pprint(model_reg.get_inference_predictions().head())
+    if model_class.get_inference_predictions() is None:
         print(f"Model {model_class.uuid} has no inference predictions!")
         exit(1)
-    pprint(model_class.inference_predictions().head())
+    pprint(model_class.get_inference_predictions().head())
 
 
 def test_confusion_matrix():
