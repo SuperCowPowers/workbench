@@ -85,7 +85,8 @@ class ModelDetails(PluginInterface):
         return [header, details, inference_runs, default_run]
 
     def register_internal_callbacks(self):
-        @callback(Output(f"{self.component_id}-metrics", "children"), Input(f"{self.component_id}-dropdown", "value"))
+        @callback(Output(f"{self.component_id}-metrics", "children"),
+                  Input(f"{self.component_id}-dropdown", "value"))
         def update_inference_run(inference_run):
             # Check for no inference run
             if not inference_run:
@@ -211,7 +212,6 @@ class ModelDetails(PluginInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a details Markdown component
-    # This class takes in pipeline details and generates a details Markdown component
     from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin

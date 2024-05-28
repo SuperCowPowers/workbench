@@ -61,7 +61,6 @@ layout = models_layout(**components)
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.update_models_table(app)
-model_details.register_internal_callbacks()
 
 # Callback for the model table
 callbacks.table_row_select(app, "models_table")

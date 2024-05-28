@@ -80,6 +80,12 @@ def update_model_plot_component(app: Dash):
 
 
 def setup_plugin_callbacks(plugins):
+
+    # First we'll register internal callbacks for the plugins
+    for plugin in plugins:
+        plugin.register_internal_callbacks()
+
+    # Now we'll set up the plugin callbacks for their main inputs (models in this case)
     @callback(
         # Aggregate plugin outputs
         [Output(component_id, prop) for p in plugins for component_id, prop in p.properties],

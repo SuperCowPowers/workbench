@@ -87,6 +87,12 @@ def update_endpoint_metrics(app: Dash, endpoint_web_view: EndpointWebView):
 
 # Set up the plugin callbacks that take an endpoint
 def setup_plugin_callbacks(plugins):
+
+    # First we'll register internal callbacks for the plugins
+    for plugin in plugins:
+        plugin.register_internal_callbacks()
+
+    # Now we'll set up the plugin callbacks for their main inputs (endpoints in this case)
     @callback(
         # Aggregate plugin outputs
         [Output(component_id, prop) for p in plugins for component_id, prop in p.properties],

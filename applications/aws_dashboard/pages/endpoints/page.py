@@ -9,7 +9,8 @@ from .layout import endpoints_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, endpoint_details, endpoint_metric_plots
+from sageworks.web_components import table, endpoint_metric_plots
+from sageworks.web_components.plugins import endpoint_details
 from sageworks.web_components.plugin_interface import PluginPage
 from sageworks.views.endpoint_web_view import EndpointWebView
 from sageworks.utils.plugin_manager import PluginManager
@@ -50,6 +51,9 @@ components = {
 pm = PluginManager()
 plugins = pm.get_list_of_web_plugins(plugin_page=PluginPage.ENDPOINT)
 
+# Our endpoint details is a plugin, so we need to add it to the list
+plugins.append(endpoint_details)
+
 # Add the plugins to the components dictionary
 for plugin in plugins:
     component_id = plugin.generate_component_id()
@@ -61,7 +65,6 @@ layout = endpoints_layout(**components)
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.update_endpoints_table(app)
-endpoint_details.register_callbacks("endpoints_table")
 
 # Callback for the endpoints table
 callbacks.table_row_select(app, "endpoints_table")
