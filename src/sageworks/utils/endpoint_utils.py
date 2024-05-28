@@ -24,7 +24,7 @@ def predictions_using_fs(end: Endpoint) -> pd.DataFrame:
     """
     # Grab the FeatureSet evaluation data
     feature_df = fs_evaluation_data(end)
-    return end.predict(feature_df)
+    return end._predict(feature_df)
 
 
 def fs_training_data(end: Endpoint) -> pd.DataFrame:

@@ -151,7 +151,7 @@ class EndpointCore(Artifact):
         return health_issues
 
     def is_serverless(self):
-        """ Check if the current endpoint is serverless.
+        """Check if the current endpoint is serverless.
 
         Returns:
             bool: True if the endpoint is serverless, False otherwise.
