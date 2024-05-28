@@ -150,63 +150,9 @@ class EndpointCore(Artifact):
             self.remove_health_tag("no_activity")
         return health_issues
 
-    def predict(self, eval_df: pd.DataFrame) -> pd.DataFrame:
-        """Run inference/prediction on the given Feature DataFrame
-        Args:
-            eval_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
-        Returns:
-            pd.DataFrame: Return the DataFrame with additional columns, prediction and any _proba
-        """
-
-        # Make sure the eval_df has the features used to train the model
-        features = ModelCore(self.model_name).features()
-        if features and not set(features).issubset(eval_df.columns):
-            raise ValueError(f"DataFrame does not contain required features: {features}")
-
-        # Create our Endpoint Predictor Class
-        predictor = Predictor(
-            self.endpoint_name,
-            sagemaker_session=self.sm_session,
-            serializer=CSVSerializer(),
-            deserializer=CSVDeserializer(),
-        )
-
-        # Now split up the dataframe into 500 row chunks, send those chunks to our
-        # endpoint (with error handling) and stitch all the chunks back together
-        df_list = []
-        for index in range(0, len(eval_df), 500):
-            print("Processing...")
-
-            # Compute partial DataFrames, add them to a list, and concatenate at the end
-            partial_df = self._endpoint_error_handling(predictor, eval_df[index : index + 500])
-            df_list.append(partial_df)
-
-        # Concatenate the dataframes
-        combined_df = pd.concat(df_list, ignore_index=True)
-
-        # Convert data to numeric
-        # Note: Since we're using CSV serializers numeric columns often get changed to generic 'object' types
-
-        # Hard Conversion
-        # Note: We explicitly catch exceptions for columns that cannot be converted to numeric
-        converted_df = combined_df.copy()
-        for column in combined_df.columns:
-            try:
-                converted_df[column] = pd.to_numeric(combined_df[column])
-            except ValueError:
-                # If a ValueError is raised, the column cannot be converted to numeric, so we keep it as is
-                pass
-
-        # Soft Conversion
-        # Convert columns to the best possible dtype that supports the pd.NA missing value.
-        converted_df = converted_df.convert_dtypes()
-
-        # Return the Dataframe
-        return converted_df
-
     def is_serverless(self):
-        """
-        Check if the current endpoint is serverless.
+        """ Check if the current endpoint is serverless.
+
         Returns:
             bool: True if the endpoint is serverless, False otherwise.
         """
@@ -221,59 +167,6 @@ class EndpointCore(Artifact):
         from sageworks.core.artifacts.monitor_core import MonitorCore
 
         return MonitorCore(self.endpoint_name)
-
-    def _endpoint_error_handling(self, predictor, feature_df):
-        """Internal: Method that handles Errors, Retries, and Binary Search for Error Row(s)"""
-
-        # Convert the DataFrame into a CSV buffer
-        csv_buffer = StringIO()
-        feature_df.to_csv(csv_buffer, index=False)
-
-        # Error Handling if the Endpoint gives back an error
-        try:
-            # Send the CSV Buffer to the predictor
-            results = predictor.predict(csv_buffer.getvalue())
-
-            # Construct a DataFrame from the results
-            results_df = pd.DataFrame.from_records(results[1:], columns=results[0])
-
-            # Capture the return columns
-            self.endpoint_return_columns = results_df.columns.tolist()
-
-            # Return the results dataframe
-            return results_df
-
-        except botocore.exceptions.ClientError as err:
-            if err.response["Error"]["Code"] == "ModelError":  # Model Error
-                # Report the error and raise an exception
-                self.log.critical(f"Endpoint prediction error: {err.response.get('Message')}")
-                raise err
-
-            # Base case: DataFrame with 1 Row
-            if len(feature_df) == 1:
-                # If we don't have ANY known good results we're kinda screwed
-                if not self.endpoint_return_columns:
-                    raise err
-
-                # Construct an Error DataFrame (one row of NaNs in the return columns)
-                results_df = self._error_df(feature_df, self.endpoint_return_columns)
-                return results_df
-
-            # Recurse on binary splits of the dataframe
-            num_rows = len(feature_df)
-            split = int(num_rows / 2)
-            first_half = self._endpoint_error_handling(predictor, feature_df[0:split])
-            second_half = self._endpoint_error_handling(predictor, feature_df[split:num_rows])
-            return pd.concat([first_half, second_half], ignore_index=True)
-
-    def _error_df(self, df, all_columns):
-        """Internal: Method to construct an Error DataFrame (a Pandas DataFrame with one row of NaNs)"""
-        # Create a new dataframe with all NaNs
-        error_df = pd.DataFrame(dict(zip(all_columns, [[np.NaN]] * len(self.endpoint_return_columns))))
-        # Now set the original values for the incoming dataframe
-        for column in df.columns:
-            error_df[column] = df[column].values
-        return error_df
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -422,7 +315,7 @@ class EndpointCore(Artifact):
             capture (bool, optional): Capture the inference results and metrics (default=False)
         """
 
-        # This Utility needs to be loaded now to avoid circular imports
+        # This import needs to happen here (instead of top of file) to avoid circular imports
         from sageworks.utils.endpoint_utils import fs_evaluation_data
 
         eval_data_df = fs_evaluation_data(self)
@@ -444,7 +337,7 @@ class EndpointCore(Artifact):
         """
 
         # Run predictions on the evaluation data
-        prediction_df = self.predict(eval_df)
+        prediction_df = self._predict(eval_df)
 
         # Get the target column
         target_column = ModelCore(self.model_name).target()
@@ -478,6 +371,113 @@ class EndpointCore(Artifact):
 
         # Return the prediction DataFrame
         return prediction_df
+
+    def _predict(self, eval_df: pd.DataFrame) -> pd.DataFrame:
+        """Internal: Run prediction on the given observations in the given DataFrame
+        Args:
+            eval_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
+        Returns:
+            pd.DataFrame: Return the DataFrame with additional columns, prediction and any _proba columns
+        """
+
+        # Make sure the eval_df has the features used to train the model
+        features = ModelCore(self.model_name).features()
+        if features and not set(features).issubset(eval_df.columns):
+            raise ValueError(f"DataFrame does not contain required features: {features}")
+
+        # Create our Endpoint Predictor Class
+        predictor = Predictor(
+            self.endpoint_name,
+            sagemaker_session=self.sm_session,
+            serializer=CSVSerializer(),
+            deserializer=CSVDeserializer(),
+        )
+
+        # Now split up the dataframe into 500 row chunks, send those chunks to our
+        # endpoint (with error handling) and stitch all the chunks back together
+        df_list = []
+        for index in range(0, len(eval_df), 500):
+            print("Processing...")
+
+            # Compute partial DataFrames, add them to a list, and concatenate at the end
+            partial_df = self._endpoint_error_handling(predictor, eval_df[index : index + 500])
+            df_list.append(partial_df)
+
+        # Concatenate the dataframes
+        combined_df = pd.concat(df_list, ignore_index=True)
+
+        # Convert data to numeric
+        # Note: Since we're using CSV serializers numeric columns often get changed to generic 'object' types
+
+        # Hard Conversion
+        # Note: We explicitly catch exceptions for columns that cannot be converted to numeric
+        converted_df = combined_df.copy()
+        for column in combined_df.columns:
+            try:
+                converted_df[column] = pd.to_numeric(combined_df[column])
+            except ValueError:
+                # If a ValueError is raised, the column cannot be converted to numeric, so we keep it as is
+                pass
+
+        # Soft Conversion
+        # Convert columns to the best possible dtype that supports the pd.NA missing value.
+        converted_df = converted_df.convert_dtypes()
+
+        # Return the Dataframe
+        return converted_df
+
+    def _endpoint_error_handling(self, predictor, feature_df):
+        """Internal: Method that handles Errors, Retries, and Binary Search for Error Row(s)"""
+
+        # Convert the DataFrame into a CSV buffer
+        csv_buffer = StringIO()
+        feature_df.to_csv(csv_buffer, index=False)
+
+        # Error Handling if the Endpoint gives back an error
+        try:
+            # Send the CSV Buffer to the predictor
+            results = predictor.predict(csv_buffer.getvalue())
+
+            # Construct a DataFrame from the results
+            results_df = pd.DataFrame.from_records(results[1:], columns=results[0])
+
+            # Capture the return columns
+            self.endpoint_return_columns = results_df.columns.tolist()
+
+            # Return the results dataframe
+            return results_df
+
+        except botocore.exceptions.ClientError as err:
+            if err.response["Error"]["Code"] == "ModelError":  # Model Error
+                # Report the error and raise an exception
+                self.log.critical(f"Endpoint prediction error: {err.response.get('Message')}")
+                raise err
+
+            # Base case: DataFrame with 1 Row
+            if len(feature_df) == 1:
+                # If we don't have ANY known good results we're kinda screwed
+                if not self.endpoint_return_columns:
+                    raise err
+
+                # Construct an Error DataFrame (one row of NaNs in the return columns)
+                results_df = self._error_df(feature_df, self.endpoint_return_columns)
+                return results_df
+
+            # Recurse on binary splits of the dataframe
+            num_rows = len(feature_df)
+            split = int(num_rows / 2)
+            first_half = self._endpoint_error_handling(predictor, feature_df[0:split])
+            second_half = self._endpoint_error_handling(predictor, feature_df[split:num_rows])
+            return pd.concat([first_half, second_half], ignore_index=True)
+
+    def _error_df(self, df, all_columns):
+        """Internal: Method to construct an Error DataFrame (a Pandas DataFrame with one row of NaNs)"""
+        # Create a new dataframe with all NaNs
+        error_df = pd.DataFrame(dict(zip(all_columns, [[np.NaN]] * len(self.endpoint_return_columns))))
+        # Now set the original values for the incoming dataframe
+        for column in df.columns:
+            error_df[column] = df[column].values
+        return error_df
 
     def _capture_inference_results(
         self,
