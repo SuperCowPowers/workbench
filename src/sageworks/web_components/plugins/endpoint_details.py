@@ -1,8 +1,9 @@
 """A Markdown Component for details/information about Endpoints"""
+
 import logging
 
 # Dash Imports
-from dash import html, callback, no_update, dcc
+from dash import html, dcc
 
 # SageWorks Imports
 from sageworks.api import Endpoint
@@ -45,10 +46,7 @@ class EndpointDetails(PluginInterface):
         )
 
         # Fill in plugin properties
-        self.properties = [
-            (f"{self.component_id}-header", "children"),
-            (f"{self.component_id}-details", "children")
-        ]
+        self.properties = [(f"{self.component_id}-header", "children"), (f"{self.component_id}-details", "children")]
 
         # Return the container
         return container
