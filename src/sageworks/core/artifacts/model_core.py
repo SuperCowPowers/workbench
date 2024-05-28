@@ -876,7 +876,7 @@ if __name__ == "__main__":
 
     # Grab our regression predictions from S3
     print("Captured Predictions: (might be None)")
-    print(my_model.predictions())
+    print(my_model.get_predictions())
 
     # Grab our Shapley values from S3
     print("Shapley Values: (might be None)")

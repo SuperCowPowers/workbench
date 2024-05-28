@@ -20,7 +20,7 @@ class RegressionPlot(ComponentInterface):
 
     def update_properties(self, model: Model, inference_run: str = None) -> go.Figure:
         # Get predictions for specific inference
-        df = model.predictions(inference_run)
+        df = model.get_predictions(inference_run)
 
         if df is None:
             return self.display_text("No Data")
