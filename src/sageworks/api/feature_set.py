@@ -92,8 +92,8 @@ class FeatureSet(FeatureSetCore):
 
         # If the model_name wasn't given generate it
         else:
-            model_name = self.uuid.replace("_features", "") + "-model"
-            model_name = Artifact.generate_valid_name(model_name, delimiter="-")
+            name = self.uuid.replace("_features", "") + "-model"
+            name = Artifact.generate_valid_name(name, delimiter="-")
 
         # Create the Model Tags
         tags = [name] if tags is None else tags

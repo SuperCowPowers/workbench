@@ -322,12 +322,13 @@ class EndpointCore(Artifact):
         capture_uuid = "training_holdout" if capture else None
         return self.inference(eval_data_df, capture_uuid)
 
-    def inference(self, eval_df: pd.DataFrame, capture_uuid: str = None) -> pd.DataFrame:
+    def inference(self, eval_df: pd.DataFrame, capture_uuid: str = None, id_column: str = None) -> pd.DataFrame:
         """Run inference and compute performance metrics with optional capture
 
         Args:
             eval_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
             capture_uuid (str, optional): UUID of the inference capture (default=None)
+            id_column (str, optional): Name of the ID column (default=None)
 
         Returns:
             pd.DataFrame: DataFrame with the inference results
@@ -367,7 +368,7 @@ class EndpointCore(Artifact):
         # Capture the inference results and metrics
         if capture_uuid is not None:
             description = capture_uuid.replace("_", " ").title()
-            self._capture_inference_results(capture_uuid, prediction_df, target_column, metrics, description)
+            self._capture_inference_results(capture_uuid, prediction_df, target_column, metrics, description, id_column)
 
         # Return the prediction DataFrame
         return prediction_df
@@ -486,6 +487,7 @@ class EndpointCore(Artifact):
         target_column: str,
         metrics: pd.DataFrame,
         description: str,
+        id_column: str = None,
     ):
         """Internal: Capture the inference results and metrics to S3
 
@@ -495,6 +497,7 @@ class EndpointCore(Artifact):
             target_column (str): Name of the target column
             metrics (pd.DataFrame): DataFrame with the performance metrics
             description (str): Description of the inference results
+            id_column (str, optional): Name of the ID column (default=None)
         """
 
         # Compute a dataframe hash (just use the last 8)
@@ -520,11 +523,15 @@ class EndpointCore(Artifact):
         self.log.info(f"Writing metrics to {inference_capture_path}/inference_metrics.csv")
         wr.s3.to_csv(metrics, f"{inference_capture_path}/inference_metrics.csv", index=False)
 
-        # Write the predictions to our S3 Model Inference Folder (just the target and prediction columns)
-        self.log.info(f"Writing predictions to {inference_capture_path}/inference_predictions.csv")
+        # Grab the target column, prediction column, any _proba columns, and the ID column (if present)
         prediction_col = "prediction" if "prediction" in pred_results_df.columns else "predictions"
         output_columns = [target_column, prediction_col]
         output_columns += [col for col in pred_results_df.columns if col.endswith("_proba")]
+        if id_column and id_column in pred_results_df.columns:
+            output_columns.append(id_column)
+
+        # Write the predictions to our S3 Model Inference Folder
+        self.log.info(f"Writing predictions to {inference_capture_path}/inference_predictions.csv")
         subset_df = pred_results_df[output_columns]
         wr.s3.to_csv(subset_df, f"{inference_capture_path}/inference_predictions.csv", index=False)
 
