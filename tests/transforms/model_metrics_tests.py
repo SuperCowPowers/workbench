@@ -25,8 +25,8 @@ def test_performance_metrics():
     """Test the Model Performance Metrics"""
     print("\n\n*** Performance Metrics ***")
     pprint(model_reg.get_inference_metadata())
-    pprint(model_reg.performance_metrics())
-    pprint(model_class.performance_metrics())
+    pprint(model_reg.get_inference_metrics())
+    pprint(model_class.get_inference_metrics())
 
 
 def test_retrieval_with_capture_uuid():
@@ -35,7 +35,7 @@ def test_retrieval_with_capture_uuid():
     for capture_uuid in capture_list:
         print(f"\n\n*** Retrieval with Capture UUID ({capture_uuid}) ***")
         pprint(model_class.get_inference_metadata(capture_uuid).head())
-        pprint(model_class.performance_metrics(capture_uuid).head())
+        pprint(model_class.get_inference_metrics(capture_uuid).head())
         pprint(model_class.get_inference_predictions(capture_uuid).head())
         pprint(model_class.confusion_matrix(capture_uuid))
         # Classifiers have a list of dataframes for shap values
@@ -82,10 +82,10 @@ def test_shap_values():
 
 def test_metrics_with_capture_uuid():
     """Test the Performance Metrics using a Capture UUID"""
-    metrics = model_reg.performance_metrics("training_holdout")
+    metrics = model_reg.get_inference_metrics("training_holdout")
     print("\n\n*** Performance Metrics with Capture UUID ***")
     pprint(metrics)
-    metrics = model_class.performance_metrics("training_holdout")
+    metrics = model_class.get_inference_metrics("training_holdout")
     pprint(metrics)
 
 

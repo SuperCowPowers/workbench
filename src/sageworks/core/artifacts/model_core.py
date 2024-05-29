@@ -125,7 +125,7 @@ class ModelCore(Artifact):
             self.remove_health_tag("model_type_unknown")
 
         # Model Performance Metrics
-        if self.performance_metrics() is None:
+        if self.get_inference_metrics() is None:
             health_issues.append("metrics_needed")
         else:
             self.remove_health_tag("metrics_needed")
@@ -156,8 +156,8 @@ class ModelCore(Artifact):
         inference_runs.insert(0, "model_training")
         return inference_runs
 
-    def performance_metrics(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
-        """Retrieve the performance metrics for this model
+    def get_inference_metrics(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
+        """Retrieve the inference performance metrics for this model
 
         Args:
             capture_uuid (str, optional): Specific capture_uuid or "training" (default: "latest")
@@ -169,8 +169,8 @@ class ModelCore(Artifact):
         """
         # Try to get the auto_capture 'training_holdout' or the training
         if capture_uuid == "latest":
-            metrics_df = self.performance_metrics("training_holdout")
-            return metrics_df if metrics_df is not None else self.performance_metrics("model_training")
+            metrics_df = self.get_inference_metrics("training_holdout")
+            return metrics_df if metrics_df is not None else self.get_inference_metrics("model_training")
 
         # Grab the metrics captured during model training (could return None)
         if capture_uuid == "model_training":
@@ -400,7 +400,7 @@ class ModelCore(Artifact):
         details["transform_types"] = inference_spec["SupportedTransformInstanceTypes"]
         details["content_types"] = inference_spec["SupportedContentTypes"]
         details["response_types"] = inference_spec["SupportedResponseMIMETypes"]
-        details["model_metrics"] = self.performance_metrics()
+        details["model_metrics"] = self.get_inference_metrics()
         if self.model_type == ModelType.CLASSIFIER:
             details["confusion_matrix"] = self.confusion_matrix()
             details["predictions"] = None
@@ -861,7 +861,7 @@ if __name__ == "__main__":
 
     # Get any captured metrics from the training job
     print("Model Metrics:")
-    print(my_model.performance_metrics())
+    print(my_model.get_inference_metrics())
 
     print("Confusion Matrix: (might be None)")
     print(my_model.confusion_matrix())

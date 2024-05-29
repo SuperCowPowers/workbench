@@ -176,7 +176,7 @@ class ModelDetails(PluginInterface):
         markdown += f"**Description:** {description}  \n"
 
         # Grab the Metrics from the model details
-        metrics = self.current_model.performance_metrics(capture_uuid=inference_run)
+        metrics = self.current_model.get_inference_metrics(capture_uuid=inference_run)
         if metrics is None:
             markdown += "  \nNo Data  \n"
         else:
