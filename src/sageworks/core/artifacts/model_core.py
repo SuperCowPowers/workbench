@@ -409,7 +409,7 @@ class ModelCore(Artifact):
             details["predictions"] = self.get_inference_predictions()
 
         # Grab the inference metadata
-        details["inference_meta"] = self.inference_metadata()
+        details["inference_meta"] = self.get_inference_metadata()
 
         # Cache the details
         self.data_storage.set(storage_key, details)
@@ -681,7 +681,7 @@ class ModelCore(Artifact):
         cm_storage = None if inference_cm is None else inference_cm.to_dict("records")
         self.upsert_sageworks_meta({"sageworks_inference_cm": cm_storage})
 
-    def inference_metadata(self, capture_uuid: str = "training_holdout") -> Union[pd.DataFrame, None]:
+    def get_inference_metadata(self, capture_uuid: str = "training_holdout") -> Union[pd.DataFrame, None]:
         """Retrieve the inference metadata for this model
 
         Args:

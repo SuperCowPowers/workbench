@@ -24,7 +24,7 @@ def test_list_inference_runs():
 def test_performance_metrics():
     """Test the Model Performance Metrics"""
     print("\n\n*** Performance Metrics ***")
-    pprint(model_reg.inference_metadata())
+    pprint(model_reg.get_inference_metadata())
     pprint(model_reg.performance_metrics())
     pprint(model_class.performance_metrics())
 
@@ -34,7 +34,7 @@ def test_retrieval_with_capture_uuid():
     capture_list = model_class.list_inference_runs()
     for capture_uuid in capture_list:
         print(f"\n\n*** Retrieval with Capture UUID ({capture_uuid}) ***")
-        pprint(model_class.inference_metadata(capture_uuid).head())
+        pprint(model_class.get_inference_metadata(capture_uuid).head())
         pprint(model_class.performance_metrics(capture_uuid).head())
         pprint(model_class.get_inference_predictions(capture_uuid).head())
         pprint(model_class.confusion_matrix(capture_uuid))
