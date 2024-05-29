@@ -213,20 +213,6 @@ class ModelCore(Artifact):
                 self.log.warning(f"Confusion Matrix {capture_uuid} not found for {self.model_name}!")
                 return None
 
-    def get_predictions(self, capture_uuid: str = "training_holdout") -> Union[pd.DataFrame, None]:
-        """Retrieve the predictions for this model
-
-        Args:
-            capture_uuid (str, optional): Specific capture_uuid or "training" (default: "training_holdout")
-        Returns:
-            pd.DataFrame: DataFrame of the Predictions (might be None)
-        """
-        # Grab the metrics from the SageWorks Metadata (try inference first, then training)
-        inference_preds = self.get_inference_predictions(capture_uuid)
-        if inference_preds is not None:
-            return inference_preds
-        return self._get_validation_predictions()
-
     def set_input(self, input: str, force: bool = False):
         """Override: Set the input data for this artifact
 
@@ -420,7 +406,7 @@ class ModelCore(Artifact):
             details["predictions"] = None
         else:
             details["confusion_matrix"] = None
-            details["predictions"] = self.get_predictions()
+            details["predictions"] = self.get_inference_predictions()
 
         # Grab the inference metadata
         details["inference_meta"] = self.inference_metadata()
@@ -743,6 +729,12 @@ class ModelCore(Artifact):
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)
         """
         self.log.important(f"Grabbing {capture_uuid} predictions for {self.model_name}...")
+
+        # Special case for model_training
+        if capture_uuid == "model_training":
+            return self._get_validation_predictions()
+
+        # Construct the S3 path for the Inference Predictions
         s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_predictions.csv"
         return pull_s3_data(s3_path)
 
@@ -876,7 +868,7 @@ if __name__ == "__main__":
 
     # Grab our regression predictions from S3
     print("Captured Predictions: (might be None)")
-    print(my_model.get_predictions())
+    print(my_model.get_inference_predictions())
 
     # Grab our Shapley values from S3
     print("Shapley Values: (might be None)")
