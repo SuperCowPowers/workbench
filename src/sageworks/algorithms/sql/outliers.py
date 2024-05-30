@@ -48,10 +48,6 @@ class Outliers:
         # Get the top N outliers for each outlier group
         outlier_df = self.get_top_n_outliers(outlier_df)
 
-        # Drop duplicates
-        all_except_outlier_group = [col for col in outlier_df.columns if col != "outlier_group"]
-        outlier_df = outlier_df.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
-
         # Make sure the dataframe isn't too big, if it's too big sample it down
         if len(outlier_df) > 300:
             log.important(f"Outliers DataFrame is too large {len(outlier_df)}, sampling down to 300 rows")
@@ -196,20 +192,18 @@ class Outliers:
             pd.DataFrame: A DataFrame containing the top N outliers for each outlier group
         """
 
-        def get_extreme_values(group):
+        def get_extreme_values(group: pd.DataFrame) -> pd.DataFrame:
             """Helper function to get the top N extreme values from a group."""
-
-            # Get the column and extreme type (high or low)
             col, extreme_type = group.name.rsplit("_", 1)
-
-            # Sort values depending on whether they are 'high' or 'low' outliers
-            group = group.sort_values(by=col, ascending=(extreme_type == "low"))
-
-            return group.head(n)
+            if extreme_type == "low":
+                return group.nsmallest(n, col)
+            else:
+                return group.nlargest(n, col)
 
         # Group by 'outlier_group' and apply the helper function to get top N extreme values
-        top_outliers = outlier_df.groupby("outlier_group").apply(get_extreme_values).reset_index(drop=True)
-        return top_outliers
+        top_outliers = outlier_df.groupby("outlier_group", group_keys=False).apply(get_extreme_values, include_groups=True)
+
+        return top_outliers.reset_index(drop=True)
 
 
 if __name__ == "__main__":
