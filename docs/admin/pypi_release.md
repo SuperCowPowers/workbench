@@ -8,8 +8,7 @@ The following instructions should work, but things change :)
 ### Package Requirements
 
 -   pip install tox
--   pip install \--upgrade setuptools wheel
--   pip install twine
+-   pip install \--upgrade wheel build twine
 
 ### Setup pypirc
 
@@ -58,7 +57,7 @@ git push --tags
 ### Create the TEST PyPI Release
 
 ``` {.bash}
-python setup.py sdist bdist_wheel
+python -m build
 twine upload dist/* -r testpypi
 ```
 
