@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Setup.py for SageWorks: Sagemaker Workbench"""
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 # Readme
 with open("README.md", "r") as f:
@@ -19,9 +19,8 @@ setup(
     author="SuperCowPowers LLC",
     author_email="support@supercowpowers.com",
     url="https://github.com/SuperCowPowers/sageworks",
-    use_scm_version=True,
     package_dir={"": "src"},
-    packages=find_packages(where="src"),
+    packages=find_namespace_packages(where="src"),
     include_package_data=True,
     package_data={
         "sageworks": [
