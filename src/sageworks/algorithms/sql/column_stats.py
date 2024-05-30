@@ -107,7 +107,8 @@ def column_stats(data_source: DataSourceAbstract, recompute: bool = False) -> di
     data_source.log.info("Computing Null values...")
     null_counts = data_source.query(count_nulls_query(all_columns, table))
     data_source.log.info("Computing Zero values...")
-    zero_counts = data_source.query(count_zeros_query(numeric, table))
+    if len(numeric) > 0:
+        zero_counts = data_source.query(count_zeros_query(numeric, table))
 
     # Okay now we take the results of the queries and add them to the column_data
     for column in all_columns:

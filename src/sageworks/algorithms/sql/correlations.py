@@ -61,6 +61,7 @@ def correlations(data_source: DataSourceAbstract) -> dict[dict]:
     query = correlation_query(numeric, table)
 
     # Run the query
+    log.debug(query)
     result_df = data_source.query(query)
 
     # Drop any columns that have NaNs

@@ -55,10 +55,18 @@ def descriptive_stats(data_source: DataSourceAbstract) -> dict[dict]:
     details = data_source.column_details(view="computation")
     numeric = [column for column, data_type in details.items() if data_type in num_type]
 
+    # Sanity Check for numeric columns
+    if len(numeric) == 0:
+        log.warning("No numeric columns found in the current computation view of the DataSource")
+        log.warning("If the data source was created from a DataFrame, ensure that the DataFrame was properly typed")
+        log.warning("Recommendation: Properly type the DataFrame and recreate the SageWorks artifact")
+        return {}
+
     # Build the query
     query = descriptive_stats_query(numeric, table)
 
     # Run the query
+    log.debug(query)
     result_df = data_source.query(query)
 
     # Process the results

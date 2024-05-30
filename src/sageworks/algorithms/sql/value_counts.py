@@ -40,6 +40,7 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
                 f"FROM {table} "
                 f'GROUP BY "{column}" ORDER BY sageworks_count ASC LIMIT 20)'
             )
+            log.debug(query)
             result_df = data_source.query(query)
 
             # Convert Int64 (nullable) to int32 so that we can serialize to JSON

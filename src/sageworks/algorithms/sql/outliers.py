@@ -74,6 +74,13 @@ class Outliers:
         column_stats = data_source.column_stats()
         descriptive_stats = data_source.descriptive_stats()
 
+        # If there are no numeric columns, return None
+        if not descriptive_stats:
+            log.warning("No numeric columns found in the current computation view of the DataSource")
+            log.warning("If the data source was created from a DataFrame, ensure that the DataFrame was properly typed")
+            log.warning("Recommendation: Properly type the DataFrame and recreate the SageWorks artifact")
+            return None
+
         # Get the column names and types from the DataSource
         column_details = data_source.column_details(view="computation")
 
