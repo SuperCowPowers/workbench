@@ -1,0 +1,6 @@
+-r requirements.txt
+pytest
+pytest-sugar
+coverage
+pytest-cov
+black
