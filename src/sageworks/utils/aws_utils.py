@@ -61,7 +61,7 @@ def list_tags_with_throttle(arn: str, sm_session: SageSession) -> dict:
         except botocore.exceptions.ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code == "ThrottlingException":
-                log.warning(f"ThrottlingException: list_tags on {arn}")
+                log.info(f"ThrottlingException: list_tags on {arn}")
                 time.sleep(sleep_time)
                 sleep_time *= 2
             else:
