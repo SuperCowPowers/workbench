@@ -473,6 +473,12 @@ class ModelCore(Artifact):
         while self.is_model_unknown():
             self._determine_model_type()
 
+        # Is our input data set?
+        if self.get_input() in ["", "unknown"] or ask_everything:
+            input_data = input("Input Data?: ")
+            if input_data not in ["None", "none", "", "unknown"]:
+                self.set_input(input_data)
+
         # Determine the Target Column (can be None)
         target_column = self.target()
         if target_column is None or ask_everything:
@@ -838,7 +844,7 @@ if __name__ == "__main__":
     print(f"Model Check: {my_model.exists()}")
 
     # Make sure the model is 'ready'
-    my_model.onboard(interactive=False)
+    my_model.onboard()
 
     # Get the ARN of the Model Group
     print(f"Model Group ARN: {my_model.group_arn()}")

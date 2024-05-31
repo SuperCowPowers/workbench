@@ -244,7 +244,7 @@ class FeaturesToModel(Transform):
             output_model.set_class_labels(self.class_labels)
 
         # Call the Model onboard method
-        output_model.onboard(interactive=False)
+        output_model.onboard()
 
     def create_and_register_model(self):
         """Create and Register the Model"""
