@@ -563,8 +563,17 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Residual Analysis
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         
@@ -575,6 +584,32 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#residual-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Residual Analysis
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1634,8 +1669,23 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#residual-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Residual Analysis
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -1650,18 +1700,23 @@
                   
 
 
-<h1 id="residual-analysis">Residual Analysis</h1>
-<p>Important Reasons for High Residuals, most of these are common across domains and different modeling use cases. The <strong>Activity Cliff</strong> is specific to chemical compounds and drug discovery.</p>
-<p><strong>Sparse Data Regions</strong></p>
-<p>The observation is in a 'chemical space' with little or no nearby training observations, leading to poor generalization in these regions and resulting in high prediction errors.</p>
-<p><strong>Noisy or Inconsistent Data</strong></p>
-<p>The observation is in a chemical space where the training data is noisy, incorrect, or has high variance in the target variable, leading to unreliable predictions and high residuals.</p>
-<p><strong>Activity Cliffs</strong></p>
-<p>Structurally similar compounds exhibiting significantly different activities, making accurate prediction challenging due to steep changes in activity with minor structural modifications.</p>
-<p><strong>Feature Engineering Issues</strong></p>
-<p>Irrelevant or redundant features and poor feature scaling can negatively impact the model's performance and accuracy, resulting in higher residuals.</p>
-<p><strong>Model Over/Under Fit</strong></p>
-<p>Overfitting occurs when the model is too complex and captures noise, while underfitting happens when the model is too simple and misses underlying patterns, both leading to inaccurate predictions.</p>
+  <h1>Residual Analysis</h1>
+
+<h3 id="residual-analysis">Residual Analysis</h3>
+<p><strong>Overview and Definition</strong><br />
+Residual analysis involves examining the differences between observed and predicted values, known as residuals, to assess the performance of a predictive model. It is a critical step in model evaluation as it helps identify patterns of errors, diagnose potential problems, and improve model performance. By understanding where and why a model's predictions deviate from actual values, we can make informed adjustments to the model or the data to enhance accuracy and robustness.</p>
+<p><strong>Sparse Data Regions</strong><br />
+The observation is in a part of feature space with little or no nearby training observations, leading to poor generalization in these regions and resulting in high prediction errors.</p>
+<p><strong>Noisy/Inconsistent Data and Preprocessing Issues</strong><br />
+The observation is in a part of feature space where the training data is noisy, incorrect, or has high variance in the target variable. Additionally, missing values or incorrect data transformations can introduce errors, leading to unreliable predictions and high residuals.</p>
+<p><strong>Feature Resolution</strong><br />
+The current feature set may not fully resolve the compounds, leading to ‘collisions’ where different compounds are assigned identical features. Such unresolved features can result in different compounds exhibiting the same features, causing high residuals due to unaccounted structural or chemical nuances.</p>
+<p><strong>Activity Cliffs</strong><br />
+Structurally similar compounds exhibit significantly different activities, making accurate prediction challenging due to steep changes in activity with minor structural modifications.</p>
+<p><strong>Feature Engineering Issues</strong><br />
+Irrelevant or redundant features and poor feature scaling can negatively impact the model's performance and accuracy, resulting in higher residuals.</p>
+<p><strong>Model Overfitting or Underfitting</strong><br />
+Overfitting occurs when the model is too complex and captures noise, while underfitting happens when the model is too simple and misses underlying patterns, both leading to inaccurate predictions.</p>
 
 
 
