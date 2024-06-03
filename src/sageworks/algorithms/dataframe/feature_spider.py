@@ -43,10 +43,6 @@ class FeatureSpider:
         self.df = self.df.dropna(subset=features).reset_index(drop=True)
         print(f"Dataframe Shape after NaN/INF removal {self.df.shape}")
 
-        # Impute NaNs with the mean value for each feature
-        # imputer = SimpleImputer(strategy="mean")
-        # df[features] = imputer.fit_transform(df[features])
-
         # Build our KNN model pipeline with StandardScalar
         knn = KNeighborsRegressor(n_neighbors=neighbors, weights="distance")
         self.pipe = make_pipeline(StandardScaler(), knn)
