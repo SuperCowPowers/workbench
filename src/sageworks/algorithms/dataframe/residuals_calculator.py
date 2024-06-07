@@ -17,7 +17,6 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         random_state (int): Random state for reproducibility.
         model (XGBRegressor): The machine learning model used for predictions.
     """
-
     def __init__(self, n_splits: int = 5, random_state: int = 42):
         """
         Initializes the ResidualsCalculator with the specified parameters.
@@ -29,8 +28,10 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         self.n_splits = n_splits
         self.random_state = random_state
         self.model = XGBRegressor()
+        self.X = None
+        self.y = None
 
-    def fit(self, X: pd.DataFrame, y: pd.Series = None):
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> BaseEstimator:
         """
         Fits the model. In this case, fitting involves storing the input data.
 
@@ -55,9 +56,6 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         Returns:
             pd.DataFrame: The transformed DataFrame with additional columns.
         """
-        if self.y is None:
-            raise ValueError("Target variable 'y' is not provided. Please call 'fit' with both 'X' and 'y'.")
-
         kf = KFold(n_splits=self.n_splits, shuffle=True, random_state=self.random_state)
 
         prediction_list = []
@@ -83,8 +81,8 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
             residuals_list.extend(residuals)
             residuals_abs_list.extend(residuals_abs)
 
-        # Create a copy of the input DataFrame and add the new columns
-        result_df = self.X.copy()
+        # Create a copy of the provided DataFrame and add the new columns
+        result_df = X.copy()
         result_df['prediction'] = prediction_list
         result_df['residuals'] = residuals_list
         result_df['residuals_abs'] = residuals_abs_list
@@ -100,7 +98,7 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
 
         return result_df
 
-    def fit_transform(self, X: pd.DataFrame, y: pd.Series = None, **fit_params) -> pd.DataFrame:
+    def fit_transform(self, X: pd.DataFrame, y: pd.Series, **fit_params) -> pd.DataFrame:
         """
         Fits the model and transforms the input DataFrame by adding 'prediction', 'residuals',
         'residuals_abs', 'residuals_100', and 'residuals_100_abs' columns.
@@ -138,7 +136,37 @@ if __name__ == "__main__":
     # Print the result DataFrame
     print(result_df)
 
-    # Now do the AQSol data
+    # Compute percentage of observations with residuals_100_abs > residual_abs
+    percentage = (result_df['residuals_100_abs'] > result_df['residuals_abs']).mean()
+    print(f"Percentage of observations with residuals_100_abs > residuals_abs: {percentage:.2f}")
+
+    # Now do the AQSol data (with given features)
+    fs = FeatureSet("aqsol_features")
+    if not fs.exists():
+        exit(0)
+    df = fs.pull_dataframe()
+
+    # Grab the target and feature columns from the model
+    model = Model("aqsol-regression")
+    target_column = model.target()
+    feature_columns = model.features()
+
+    # Initialize the ResidualsCalculator
+    residuals_calculator = ResidualsCalculator(n_splits=5, random_state=42)
+    result_df = residuals_calculator.fit_transform(df[feature_columns], df[target_column])
+
+    # Grab the residuals and residuals_abs columns
+    residual_columns = ["residuals", "residuals_abs", "residuals_100", "residuals_100_abs"]
+    residual_df = result_df[residual_columns]
+
+    # Compute percentage of observations with residuals_100_abs > residual_abs
+    percentage = (result_df['residuals_100_abs'] > result_df['residuals_abs']).mean()
+    print(f"Percentage of observations with residuals_100_abs > residuals_abs: {percentage:.2f}")
+
+    # Print the residual DataFrame
+    print(residual_df)
+
+    # Now do the AQSol data (with computed molecular descriptors)
     fs = FeatureSet("aqsol_mol_descriptors")
     if not fs.exists():
         exit(0)
@@ -156,6 +184,10 @@ if __name__ == "__main__":
     # Grab the residuals and residuals_abs columns
     residual_columns = ["residuals", "residuals_abs", "residuals_100", "residuals_100_abs"]
     residual_df = result_df[residual_columns]
+
+    # Compute percentage of observations with residuals_100_abs > residual_abs
+    percentage = (result_df['residuals_100_abs'] > result_df['residuals_abs']).mean()
+    print(f"Percentage of observations with residuals_100_abs > residuals_abs: {percentage:.2f}")
 
     # Print the residual DataFrame
     print(residual_df)

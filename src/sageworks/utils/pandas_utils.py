@@ -93,11 +93,15 @@ def drop_nans(
     input_df: pd.DataFrame, how: str = "all", nan_drop_percent: float = 50, subset: list = None
 ) -> pd.DataFrame:
     """Dropping NaNs in rows and columns. Optionally, focus on specific columns.
+
     Args:
         input_df (pd.DataFrame): Input data frame.
         how (str): 'all' to drop rows where all values are NaN, 'any' to drop rows where any value is NaN.
         nan_drop_percent (float): Percentage threshold to drop columns with missing values exceeding this rate.
         subset (list): Specific subset of columns to check for NaNs when dropping rows.
+
+    Returns:
+        pd.DataFrame: DataFrame with NaNs dropped.
     """
 
     # Grab input number of rows
