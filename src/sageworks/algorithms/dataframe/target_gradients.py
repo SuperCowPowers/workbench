@@ -111,7 +111,8 @@ class TargetGradients(BaseEstimator, TransformerMixin):
 
     def fit_transform(self, X: pd.DataFrame, y: pd.Series, **fit_params):
         """
-        Fits the model and transforms the input DataFrame by adding 'feature_diff', 'target_diff' and 'target_gradient'  columns.
+        Fits the model and transforms the input DataFrame by adding 'feature_diff',
+        'target_diff' and 'target_gradient'  columns.
 
         Args:
             X (pd.DataFrame): The input features.
@@ -122,7 +123,7 @@ class TargetGradients(BaseEstimator, TransformerMixin):
 
 
 if __name__ == "__main__":
-    """ Example usage of the TargetGradients class"""
+    """Example usage of the TargetGradients class"""
     from sageworks.api.feature_set import FeatureSet
     from sageworks.api.model import Model
 
