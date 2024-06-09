@@ -10,6 +10,9 @@ Models:
     - abalone-regression
 Endpoints:
     - abalone-regression-end
+
+Graphs:
+    - karate_club
 """
 
 import sys
@@ -19,6 +22,7 @@ from sageworks.api.data_source import DataSource
 from sageworks.api.feature_set import FeatureSet
 from sageworks.api.model import Model, ModelType
 from sageworks.api.endpoint import Endpoint
+from sageworks.core.artifacts.graph_core import GraphCore
 
 from sageworks.utils.test_data_generator import TestDataGenerator
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
@@ -32,6 +36,7 @@ if __name__ == "__main__":
 
     # Get the path to the dataset in the repository data directory
     abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
+    karate_graph = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "karate_graph.json"
 
     # Recreate Flag in case you want to recreate the artifacts
     recreate = False
@@ -89,3 +94,8 @@ if __name__ == "__main__":
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
+
+    # Create the karate_club Graph
+    if recreate or not GraphCore("karate_club").exists():
+        GraphCore(karate_graph, name="karate_club")
+        log.info("Created karate_club graph")
