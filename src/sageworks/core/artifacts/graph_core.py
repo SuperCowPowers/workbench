@@ -1,6 +1,5 @@
 import os
 import networkx as nx
-import boto3
 import json
 from datetime import datetime
 from pathlib import Path
@@ -11,22 +10,6 @@ from sageworks.core.artifacts.artifact import Artifact
 
 class GraphCore(Artifact):
     """GraphCore: A class to handle graph artifacts in SageWorks"""
-
-    def __init__(self, uuid: str):
-        """Initialize the GraphCore class
-
-        Args:
-            uuid (str): The UUID of this graph artifact
-        """
-        super().__init__(uuid)
-        self.s3_client = boto3.client('s3')
-        self.graph = None  # Placeholder for the NetworkX graph object
-
-        # Attempt to load the graph from S3
-        if self.exists():
-            self.load_graph()
-        else:
-            self.log.warning(f"Graph {self.uuid} does not exist in S3.")
 
     def __init__(self, source: str, name: str = None, tags: list = None):
         """
@@ -109,7 +92,7 @@ class GraphCore(Artifact):
             "name": self.graph.name,
             "nodes": self.graph.number_of_nodes(),
             "edges": self.graph.number_of_edges(),
-            "density": nx.density(self.graph)
+            "density": nx.density(self.graph),
         }
 
     def size(self) -> float:
@@ -117,7 +100,7 @@ class GraphCore(Artifact):
         if not self.graph:
             return 0.0
         graph_str = json.dumps(nx.readwrite.json_graph.node_link_data(self.graph))
-        return len(graph_str.encode('utf-8')) / (1024 * 1024)
+        return len(graph_str.encode("utf-8")) / (1024 * 1024)
 
     def created(self) -> datetime:
         """Return the datetime when this graph artifact was created"""
@@ -169,7 +152,7 @@ class GraphCore(Artifact):
 
         # Load the graph from S3
         response = self.s3_client.get_object(Bucket=bucket, Key=key)
-        graph_str = response['Body'].read().decode('utf-8')
+        graph_str = response["Body"].read().decode("utf-8")
         graph_json = json.loads(graph_str)
         self.graph = nx.readwrite.json_graph.node_link_graph(graph_json)
         return self.graph
@@ -177,7 +160,7 @@ class GraphCore(Artifact):
     def _load_graph_from_file(self, file_path: str):
         """Helper method to load the graph from a file path"""
         try:
-            with open(file_path, 'r') as file:
+            with open(file_path, "r") as file:
                 graph_json = json.load(file)
             self.graph = nx.readwrite.json_graph.node_link_graph(graph_json)
         except FileNotFoundError:
