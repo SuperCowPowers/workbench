@@ -88,7 +88,7 @@ class DataSource(AthenaSource):
             pd.DataFrame: A DataFrame of ALL the data from this DataSource
 
         Note:
-            Obviously, this is not recommended for large datasets :)
+            Obviously this is not recommended for large datasets :)
         """
 
         # Get the table associated with the data

@@ -83,7 +83,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Create the FeatureSet to DF Transform
-    feature_to_df = FeaturesToPandas("test-feature-set")
+    feature_to_df = FeaturesToPandas("test_features")
 
     # Transform the DataSource into a Pandas DataFrame (with max_rows = 1000)
     feature_to_df.transform(max_rows=1000)
