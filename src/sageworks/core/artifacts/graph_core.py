@@ -72,8 +72,7 @@ class GraphCore(Artifact):
 
     def refresh_meta(self):
         """Refresh the metadata for the graph"""
-        # TBD implementation to refresh metadata
-        pass
+        pass  # There's really nothing to refresh
 
     def onboard(self) -> bool:
         """Onboard this graph into SageWorks"""
@@ -89,7 +88,7 @@ class GraphCore(Artifact):
         if not self.graph:
             return {}
         return {
-            "name": self.graph.name,
+            "description": self.graph.name,
             "nodes": self.graph.number_of_nodes(),
             "edges": self.graph.number_of_edges(),
             "density": nx.density(self.graph),
@@ -103,12 +102,14 @@ class GraphCore(Artifact):
         return len(graph_str.encode("utf-8")) / (1024 * 1024)
 
     def created(self) -> datetime:
-        """Return the datetime when this graph artifact was created"""
-        return datetime.now()  # TBD implementation
+        """Get the creation date for this graph artifact"""
+        # Note: Since S3 does not store creation date, we will use the last modified date
+        return self.modified()
 
     def modified(self) -> datetime:
-        """Return the datetime when this graph artifact was last modified"""
-        return datetime.now()  # TBD implementation
+        """Get the last modified date for this graph artifact"""
+        response = self.s3_client.head_object(Bucket=self.sageworks_bucket, Key=f"graphs/{self.uuid}.json")
+        return response['LastModified']
 
     def arn(self):
         """AWS ARN (Amazon Resource Name) for this graph artifact"""
@@ -120,7 +121,6 @@ class GraphCore(Artifact):
 
     def aws_meta(self) -> dict:
         """Get the full AWS metadata for this graph artifact"""
-        # TBD implementation
         return {}
 
     def delete(self):
@@ -128,8 +128,12 @@ class GraphCore(Artifact):
         self.s3_client.delete_object(Bucket=self.sageworks_bucket, Key=f"graphs/{self.uuid}.json")
         self.log.info(f"Graph {self.uuid} deleted from S3")
 
+    def get_nx_graph(self) -> nx.Graph:
+        """Return the NetworkX graph"""
+        return self.graph
+
     def save_graph(self, graph: nx.Graph) -> None:
-        """Save the graph to S3
+        """Save the NetworkX graph to S3
 
         Args:
             graph (nx.Graph): The NetworkX graph to save
@@ -140,7 +144,7 @@ class GraphCore(Artifact):
         self.s3_client.put_object(Bucket=self.sageworks_bucket, Key=f"graphs/{self.uuid}.json", Body=graph_str)
 
     def load_graph(self, s3_path: str = None) -> nx.Graph:
-        """Load the graph from S3"""
+        """Load the NetworkX graph from S3"""
 
         # Is the S3 path provided?
         if s3_path:
