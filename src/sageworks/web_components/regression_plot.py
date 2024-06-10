@@ -49,7 +49,7 @@ class RegressionPlot(ComponentInterface):
             color_continuous_scale=color_scale,
         )
 
-        # Just fine tuning the dots on the scatter plot
+        # Just fine-tuning the dots on the scatter plot
         fig.update_traces(
             marker=dict(size=14, line=dict(width=1, color="Black")),
             selector=dict(mode="markers"),
@@ -67,7 +67,7 @@ class RegressionPlot(ComponentInterface):
             y1=max_val,
         )
 
-        # Just some fine tuning of the plot
+        # Just some fine-tuning of the plot
         fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10}, height=400)
 
         return fig
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     m = Model("abalone-regression")
     my_inference_run = "model_training"
 
-    # Instantiate the ConfusionMatrix class
+    # Instantiate the RegressionPlot class
     reg_plot = RegressionPlot()
 
     # Generate the figure

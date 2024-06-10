@@ -143,6 +143,35 @@ class GraphCore(Artifact):
         graph_str = json.dumps(graph_json)
         self.s3_client.put_object(Bucket=self.sageworks_bucket, Key=f"graphs/{self.uuid}.json", Body=graph_str)
 
+    def graph_layout(self, layout: str = "spring") -> dict:
+        """Compute the layout of the graph using the specified algorithm"""
+        if layout == "spring":
+            pos = nx.spring_layout(self.graph)
+        elif layout == "kamada_kawai":
+            pos = nx.kamada_kawai_layout(self.graph)
+        elif layout == "spectral":
+            pos = nx.spectral_layout(self.graph)
+        elif layout == "shell":
+            pos = nx.shell_layout(self.graph)
+        elif layout == "circular":
+            pos = nx.circular_layout(self.graph)
+        else:
+            pos = nx.spring_layout(self.graph)
+
+        # Now store the positions in the graph and save the graph
+        self.store_node_positions(pos)
+        self.save_graph(self.graph)
+
+    def store_node_properties(self, node_properties: dict) -> None:
+        """Store node properties as attributes in the NetworkX graph"""
+        for node, properties in node_properties.items():
+            self.graph.nodes[node].update(properties)
+
+    def store_node_positions(self, node_positions: dict) -> None:
+        """Store node positions in the NetworkX graph"""
+        for node, coords in node_positions.items():
+            self.graph.nodes[node]["pos"] = list(coords)
+
     def load_graph(self, s3_path: str = None) -> nx.Graph:
         """Load the NetworkX graph from S3"""
 
@@ -186,3 +215,10 @@ if __name__ == "__main__":
 
     # Print the details
     print(graph.details())
+
+    # Layout the graph using the spring algorithm
+    graph.graph_layout(layout="spring")
+
+    # Note: You can set the node positions which allows you to use any layout algorithm
+    pos = nx.spring_layout(graph.get_nx_graph())
+    graph.store_node_positions(pos)
