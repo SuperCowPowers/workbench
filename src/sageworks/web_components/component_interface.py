@@ -14,6 +14,7 @@ from dash.development.base_component import Component
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 from sageworks.api.pipeline import Pipeline
+from sageworks.core.artifacts.graph_core import GraphCore
 
 log = logging.getLogger("sageworks")
 
@@ -27,7 +28,7 @@ class ComponentInterface(ABC):
 
     log = logging.getLogger("sageworks")
 
-    SageworksObject = Union[DataSource, FeatureSet, Model, Endpoint, Pipeline, pd.DataFrame]
+    SageworksObject = Union[DataSource, FeatureSet, Model, Endpoint, Pipeline, GraphCore, pd.DataFrame]
 
     def __init__(self):
         self.component_id = None

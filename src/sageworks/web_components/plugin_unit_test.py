@@ -5,6 +5,7 @@ from dash import html, Output, Input
 from sageworks.web_components.plugin_interface import PluginInterface, PluginInputType
 from sageworks.api import Model, Endpoint, Meta
 from sageworks.api.pipeline import Pipeline
+from sageworks.core.artifacts.graph_core import GraphCore
 
 
 class PluginUnitTest:
@@ -38,6 +39,11 @@ class PluginUnitTest:
 
         self.app.layout = html.Div(layout_children)
 
+        # Make sure the plugin has a properties attribute (non-empty list of tuples)
+        assert hasattr(self.plugin, "properties"), "Plugin must have a 'properties' attribute"
+        if not self.plugin.properties:
+            raise ValueError("Plugin must have a non-empty 'properties' attribute")
+
         # Set up the test callback for updating the plugin
         @self.app.callback(
             [Output(component_id, property) for component_id, property in self.plugin.properties],
@@ -55,6 +61,9 @@ class PluginUnitTest:
             elif plugin_input_type == PluginInputType.PIPELINE:
                 pipeline = Pipeline("abalone_pipeline_v1")
                 updated_properties = self.plugin.update_properties(pipeline)
+            elif plugin_input_type == PluginInputType.GRAPH:
+                graph = GraphCore("karate_club")
+                updated_properties = self.plugin.update_properties(graph)
             elif plugin_input_type == PluginInputType.MODEL_TABLE:
                 model_df = Meta().models()
                 updated_properties = self.plugin.update_properties(model_df)

@@ -25,7 +25,7 @@ FEATURES = {
 class LicenseDetails(PluginInterface):
     """License Details Markdown Component"""
 
-    """Initialize this Plugin Component Class with required attributes"""
+    # Initialize this Plugin Component Class with required attributes
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.CUSTOM
 

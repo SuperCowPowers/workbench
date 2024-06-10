@@ -43,7 +43,7 @@ class GraphCore(Artifact):
         elif isinstance(source, nx.Graph):
             self.graph = source
             self.graph.name = name
-            self.save_graph(self.graph)
+            self.save()
         elif source.startswith("s3://"):
             self.graph = self.load_graph(source)
         else:
@@ -52,7 +52,7 @@ class GraphCore(Artifact):
                 self._load_graph_from_file(source)
                 if self.graph:
                     self.graph.name = name
-                    self.save_graph(self.graph)
+                    self.save()
             else:
                 self.log.warning(f"Could not find graph: {source}")
                 self.graph = None
@@ -132,21 +132,20 @@ class GraphCore(Artifact):
         """Return the NetworkX graph"""
         return self.graph
 
-    def save_graph(self, graph: nx.Graph) -> None:
-        """Save the NetworkX graph to S3
-
-        Args:
-            graph (nx.Graph): The NetworkX graph to save
-        """
+    def set_nx_graph(self, graph: nx.Graph) -> None:
+        """Set the NetworkX graph"""
         self.graph = graph
-        graph_json = nx.readwrite.json_graph.node_link_data(graph)
+
+    def save(self) -> None:
+        """Save the internal NetworkX graph to S3"""
+        graph_json = nx.readwrite.json_graph.node_link_data(self.graph)
         graph_str = json.dumps(graph_json)
         self.s3_client.put_object(Bucket=self.sageworks_bucket, Key=f"graphs/{self.uuid}.json", Body=graph_str)
 
     def graph_layout(self, layout: str = "spring") -> dict:
         """Compute the layout of the graph using the specified algorithm"""
         if layout == "spring":
-            pos = nx.spring_layout(self.graph)
+            pos = nx.spring_layout(self.graph, iterations=1000)
         elif layout == "kamada_kawai":
             pos = nx.kamada_kawai_layout(self.graph)
         elif layout == "spectral":
@@ -156,11 +155,11 @@ class GraphCore(Artifact):
         elif layout == "circular":
             pos = nx.circular_layout(self.graph)
         else:
-            pos = nx.spring_layout(self.graph)
+            pos = nx.spring_layout(self.graph, iterations=1000)
 
         # Now store the positions in the graph and save the graph
         self.store_node_positions(pos)
-        self.save_graph(self.graph)
+        self.save()
 
     def store_node_properties(self, node_properties: dict) -> None:
         """Store node properties as attributes in the NetworkX graph"""
@@ -209,6 +208,7 @@ class GraphCore(Artifact):
 
 # Example usage
 if __name__ == "__main__":
+    from sageworks.web_components.plugins.graph_plot import GraphPlot
 
     # Create a GraphCore object
     graph = GraphCore("karate_club")
@@ -220,5 +220,10 @@ if __name__ == "__main__":
     graph.graph_layout(layout="spring")
 
     # Note: You can set the node positions which allows you to use any layout algorithm
-    pos = nx.spring_layout(graph.get_nx_graph())
-    graph.store_node_positions(pos)
+    # pos = nx.spring_layout(graph.get_nx_graph())
+    # graph.store_node_positions(pos)
+
+    # View the graph
+    graph_plot = GraphPlot()
+    [figure] = graph_plot.update_properties(graph)
+    figure.show()
