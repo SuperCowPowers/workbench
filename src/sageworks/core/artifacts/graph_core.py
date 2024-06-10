@@ -109,7 +109,7 @@ class GraphCore(Artifact):
     def modified(self) -> datetime:
         """Get the last modified date for this graph artifact"""
         response = self.s3_client.head_object(Bucket=self.sageworks_bucket, Key=f"graphs/{self.uuid}.json")
-        return response['LastModified']
+        return response["LastModified"]
 
     def arn(self):
         """AWS ARN (Amazon Resource Name) for this graph artifact"""

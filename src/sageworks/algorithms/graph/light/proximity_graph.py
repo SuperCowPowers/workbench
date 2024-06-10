@@ -70,7 +70,7 @@ class ProximityGraph:
                     weight = 1.0 - (distances[i][j] / max_distance)  # Scale to [0, 1]
 
                     # Raising the weight to a power tends give better proximity weights
-                    weight = weight ** 10
+                    weight = weight**10
 
                     # Add the edge to the graph (if the weight is greater than 0.01)
                     if weight > 0.1 or not one_edge_added:
@@ -102,18 +102,18 @@ if __name__ == "__main__":
     # Pick a specific node and print its features and its neighbors' features
     node = 1
     print(f"Node {node} Features:")
-    print(my_graph.nodes[node]['features'])
+    print(my_graph.nodes[node]["features"])
     print(f"Number of Neighbors: {len(list(my_graph.neighbors(node)))}")
     print(f"Node {node} Neighbors Features:")
 
     # Get all neighbors and sort them by the edge weight
-    neighbors_with_weights = [(neighbor, my_graph[node][neighbor]['weight']) for neighbor in my_graph.neighbors(node)]
+    neighbors_with_weights = [(neighbor, my_graph[node][neighbor]["weight"]) for neighbor in my_graph.neighbors(node)]
     sorted_neighbors = sorted(neighbors_with_weights, key=lambda x: x[1], reverse=True)
 
     for neighbor, weight in sorted_neighbors:
         # Edge Weights and Neighbor Features
         print(f"Neighbor: {neighbor} Edge Weight: {weight}")
-        print(my_graph.nodes[neighbor]['features'])
+        print(my_graph.nodes[neighbor]["features"])
 
     # Visualize a subgraph of the graph
 
@@ -134,47 +134,49 @@ if __name__ == "__main__":
     for edge in subgraph.edges(data=True):
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
-        weight = edge[2]['weight']
+        weight = edge[2]["weight"]
         width = weight * 4.9 + 0.1  # Scale to [0.1, 5]
         alpha = weight * 0.9 + 0.1  # Scale to [0.1, 1.0]
 
-        edge_traces.append(go.Scatter(
-            x=[x0, x1, None], y=[y0, y1, None],
-            line=dict(width=width, color=f'rgba(0, 0, 0, {alpha})'),
-            hoverinfo='none',
-            mode='lines'))
+        edge_traces.append(
+            go.Scatter(
+                x=[x0, x1, None],
+                y=[y0, y1, None],
+                line=dict(width=width, color=f"rgba(0, 0, 0, {alpha})"),
+                hoverinfo="none",
+                mode="lines",
+            )
+        )
 
     # Create node traces
     node_trace = go.Scatter(
-        x=[], y=[],
-        text=[], mode='markers+text',
-        hoverinfo='text',
-        marker=dict(
-            showscale=False,
-            color='skyblue',
-            size=20,
-            line_width=2))
+        x=[],
+        y=[],
+        text=[],
+        mode="markers+text",
+        hoverinfo="text",
+        marker=dict(showscale=False, color="skyblue", size=20, line_width=2),
+    )
 
     for node in subgraph.nodes(data=True):
         x, y = pos[node[0]]
-        node_trace['x'] += tuple([x])
-        node_trace['y'] += tuple([y])
-        node_trace['text'] += tuple([str(node[0])])
+        node_trace["x"] += tuple([x])
+        node_trace["y"] += tuple([y])
+        node_trace["text"] += tuple([str(node[0])])
 
     # Create figure
-    fig = go.Figure(data=edge_traces + [node_trace],
-                    layout=go.Layout(
-                        title=f'Subgraph around node {node_id}',
-                        titlefont_size=16,
-                        showlegend=False,
-                        hovermode='closest',
-                        margin=dict(b=20, l=5, r=5, t=40),
-                        annotations=[dict(
-                            text="",
-                            showarrow=False,
-                            xref="paper", yref="paper")],
-                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
-                    )
+    fig = go.Figure(
+        data=edge_traces + [node_trace],
+        layout=go.Layout(
+            title=f"Subgraph around node {node_id}",
+            titlefont_size=16,
+            showlegend=False,
+            hovermode="closest",
+            margin=dict(b=20, l=5, r=5, t=40),
+            annotations=[dict(text="", showarrow=False, xref="paper", yref="paper")],
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        ),
+    )
 
     fig.show()
