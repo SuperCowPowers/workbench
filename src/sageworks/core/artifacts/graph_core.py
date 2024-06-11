@@ -17,7 +17,7 @@ class GraphCore(Artifact):
         Initializes a new GraphCore object.
 
         Args:
-            source (str): The source of the graph. This can be an S3 path, file path, nx_graph, or an existing Graph object.
+            source (str): The source of the graph. S3 path, file path, nx_graph, or an existing Graph object.
             name (str): The name of the graph (must be lowercase). If not specified, a name will be generated.
             tags (list[str]): A list of tags associated with the graph. If not specified, tags will be generated.
         """

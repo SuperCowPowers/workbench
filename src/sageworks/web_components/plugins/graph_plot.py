@@ -49,7 +49,7 @@ class GraphPlot(PluginInterface):
             graph = input_graph
 
         # Check to make sure the graph nodes have a 'pos' attribute
-        if not all('pos' in graph.nodes[node] for node in graph.nodes):
+        if not all("pos" in graph.nodes[node] for node in graph.nodes):
             if len(graph.nodes) > 100:
                 self.log.warning("Graph nodes do not have 'pos' attribute. Running spring layout...")
             else:
@@ -59,33 +59,35 @@ class GraphPlot(PluginInterface):
                 graph.nodes[node]["pos"] = list(coords)
 
         # Extract positions for plotting
-        x_nodes = [data['pos'][0] for node, data in graph.nodes(data=True)]
-        y_nodes = [data['pos'][1] for node, data in graph.nodes(data=True)]
+        x_nodes = [data["pos"][0] for node, data in graph.nodes(data=True)]
+        y_nodes = [data["pos"][1] for node, data in graph.nodes(data=True)]
 
         # Check if the degree attribute exists, and if not, compute it
-        if 'degree' not in graph.nodes[0]:
+        if "degree" not in graph.nodes[0]:
             self.log.important("Computing node degrees...")
             degrees = dict(graph.degree())
-            nx.set_node_attributes(graph, degrees, 'degree')
+            nx.set_node_attributes(graph, degrees, "degree")
 
         # Now we can extract the node degrees and define a color scale based on min/max degrees
-        node_degrees = [data['degree'] for node, data in graph.nodes(data=True)]
+        node_degrees = [data["degree"] for node, data in graph.nodes(data=True)]
 
         # Is the label field specified in the kwargs?
         label_field = kwargs.get("labels", "id")
 
         # Fill in the labels
-        labels = [data.get(label_field, '') for node, data in graph.nodes(data=True)]
+        labels = [data.get(label_field, "") for node, data in graph.nodes(data=True)]
 
         # Are the hover_text fields specified in the kwargs?
         hover_text_fields = kwargs.get("hover_text", ["id", "degree"])
         if hover_text_fields == "all":
             # All fields except for 'pos'
-            hover_text_fields = [key for key in graph.nodes[0] if key != 'pos']
+            hover_text_fields = [key for key in graph.nodes[0] if key != "pos"]
 
         # Fill in the hover text
-        hover_text = [f"<br>".join([f"{key}: {data.get(key, '')}" for key in hover_text_fields])
-                      for node, data in graph.nodes(data=True)]
+        hover_text = [
+            "<br>".join([f"{key}: {data.get(key, '')}" for key in hover_text_fields])
+            for node, data in graph.nodes(data=True)
+        ]
 
         # Define a color scale for the nodes based on a normalized node degree
         color_scale = [
@@ -97,34 +99,32 @@ class GraphPlot(PluginInterface):
 
         # Create Plotly trace for nodes
         node_trace = go.Scatter(
-            x=x_nodes, y=y_nodes,
-            mode='markers+text',  # Include text mode for labels
+            x=x_nodes,
+            y=y_nodes,
+            mode="markers+text",  # Include text mode for labels
             text=labels,  # Set text for labels
-            textposition='top center',  # Position labels
+            textposition="top center",  # Position labels
             hovertext=hover_text,  # Set hover text
-            hovertemplate='%{hovertext}<extra></extra>',  # Define hover template and remove extra info
-            textfont=dict(
-                family="Arial Black",
-                size=14  # Set font size
-            ),
+            hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
+            textfont=dict(family="Arial Black", size=14),  # Set font size
             marker=dict(
                 size=20,
                 color=node_degrees,
                 colorscale=color_scale,
                 colorbar=dict(title="Degree"),
-                line=dict(color="Black", width=1)
-            )
+                line=dict(color="Black", width=1),
+            ),
         )
 
         # Create Plotly traces for edges
         edge_traces = []
         for edge in graph.edges():
-            x0, y0 = graph.nodes[edge[0]]['pos']
-            x1, y1 = graph.nodes[edge[1]]['pos']
+            x0, y0 = graph.nodes[edge[0]]["pos"]
+            x1, y1 = graph.nodes[edge[1]]["pos"]
 
             # Check to see if edge has a weight attribute
-            if 'weight' in graph.edges[edge]:
-                weight = graph.edges[edge]['weight']
+            if "weight" in graph.edges[edge]:
+                weight = graph.edges[edge]["weight"]
             else:
                 weight = 0.5
 
@@ -133,8 +133,11 @@ class GraphPlot(PluginInterface):
             alpha = min(1.0, weight * 0.9 + 0.1)  # Scale to [0.1, 1.0]
 
             # Create the edge trace and append to the list
-            edge_traces.append(go.Scatter(x=[x0, x1], y=[y0, y1], mode='lines',
-                                          line=dict(width=width, color=f"rgba(150, 150, 150, {alpha})")))
+            edge_traces.append(
+                go.Scatter(
+                    x=[x0, x1], y=[y0, y1], mode="lines", line=dict(width=width, color=f"rgba(150, 150, 150, {alpha})")
+                )
+            )
 
         # Create figure
         fig = go.Figure(data=edge_traces + [node_trace])
@@ -145,7 +148,7 @@ class GraphPlot(PluginInterface):
             height=400,
             xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),  # Remove X axis grid and tick marks
             yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),  # Remove Y axis grid and tick marks
-            showlegend=False  # Remove legend
+            showlegend=False,  # Remove legend
         )
 
         # Apply dark theme

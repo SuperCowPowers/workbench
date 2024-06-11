@@ -40,7 +40,7 @@ class ProximityGraph:
         X = drop_nans(X)
 
         # Select only numeric columns
-        numeric_cols = X.select_dtypes(include=['number']).columns
+        numeric_cols = X.select_dtypes(include=["number"]).columns
         X_numeric = X[numeric_cols]
 
         # Standardize the features
