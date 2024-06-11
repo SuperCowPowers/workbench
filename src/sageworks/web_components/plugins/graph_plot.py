@@ -23,30 +23,40 @@ class GraphPlot(PluginInterface):
         Returns:
             dcc.Graph: A Dash Graph Component.
         """
-        # Fill in plugin properties
+        # Fill in plugin properties and signals
         self.properties = [(f"{component_id}", "figure")]
+        self.signals = [(f"{component_id}", "hoverData")]
 
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_properties(self, input_graph: GraphCore , **kwargs) -> list:
+    def update_properties(self, input_graph: GraphCore, **kwargs) -> list:
         """Update the property values for the plugin component.
 
         Args:
-            input_graph (GraphCore): The input graph data object.
+            input_graph (GraphCore or NetworkX Graph): The input graph data object.
             **kwargs: Additional keyword arguments (plugins can define their own arguments).
 
         Returns:
             list: A list of updated property values (just [go.Figure] for now).
         """
-        # Get the NetworkX graph from our GraphCore object
-        graph = input_graph.get_nx_graph()
+
+        # Check if the input graph is a GraphCore object
+        if isinstance(input_graph, GraphCore):
+            # Get the NetworkX graph from the GraphCore object
+            graph = input_graph.get_nx_graph()
+        else:
+            # The input graph is already a NetworkX graph
+            graph = input_graph
 
         # Check to make sure the graph nodes have a 'pos' attribute
         if not all('pos' in graph.nodes[node] for node in graph.nodes):
-            self.log.warning("Graph nodes do not have 'pos' attribute. Running spring layout...")
-            pos = nx.spring_layout(graph, dim=2)
-            input_graph.store_node_positions(pos)
-            graph = input_graph.get_nx_graph()
+            if len(graph.nodes) > 100:
+                self.log.warning("Graph nodes do not have 'pos' attribute. Running spring layout...")
+            else:
+                self.log.important("Graph nodes do not have 'pos' attribute. Running spring layout...")
+            pos = nx.spring_layout(graph, iterations=500)
+            for node, coords in pos.items():
+                graph.nodes[node]["pos"] = list(coords)
 
         # Extract positions for plotting
         x_nodes = [data['pos'][0] for node, data in graph.nodes(data=True)]
@@ -61,6 +71,22 @@ class GraphPlot(PluginInterface):
         # Now we can extract the node degrees and define a color scale based on min/max degrees
         node_degrees = [data['degree'] for node, data in graph.nodes(data=True)]
 
+        # Is the label field specified in the kwargs?
+        label_field = kwargs.get("labels", "id")
+
+        # Fill in the labels
+        labels = [data.get(label_field, '') for node, data in graph.nodes(data=True)]
+
+        # Are the hover_text fields specified in the kwargs?
+        hover_text_fields = kwargs.get("hover_text", ["id", "degree"])
+        if hover_text_fields == "all":
+            # All fields except for 'pos'
+            hover_text_fields = [key for key in graph.nodes[0] if key != 'pos']
+
+        # Fill in the hover text
+        hover_text = [f"<br>".join([f"{key}: {data.get(key, '')}" for key in hover_text_fields])
+                      for node, data in graph.nodes(data=True)]
+
         # Define a color scale for the nodes based on a normalized node degree
         color_scale = [
             [0.0, "rgb(64,64,160)"],
@@ -72,9 +98,17 @@ class GraphPlot(PluginInterface):
         # Create Plotly trace for nodes
         node_trace = go.Scatter(
             x=x_nodes, y=y_nodes,
-            mode='markers',
+            mode='markers+text',  # Include text mode for labels
+            text=labels,  # Set text for labels
+            textposition='top center',  # Position labels
+            hovertext=hover_text,  # Set hover text
+            hovertemplate='%{hovertext}<extra></extra>',  # Define hover template and remove extra info
+            textfont=dict(
+                family="Arial Black",
+                size=14  # Set font size
+            ),
             marker=dict(
-                size=16,
+                size=20,
                 color=node_degrees,
                 colorscale=color_scale,
                 colorbar=dict(title="Degree"),
@@ -115,7 +149,7 @@ class GraphPlot(PluginInterface):
         )
 
         # Apply dark theme
-        fig.update_layout(template="plotly_dark")
+        # fig.update_layout(template="plotly_dark")
 
         # Return the figure
         return [fig]

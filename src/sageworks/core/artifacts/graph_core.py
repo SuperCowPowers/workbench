@@ -6,6 +6,7 @@ from pathlib import Path
 
 # Sageworks imports
 from sageworks.core.artifacts.artifact import Artifact
+from sageworks.utils.redis_cache import CustomEncoder
 
 
 class GraphCore(Artifact):
@@ -16,7 +17,7 @@ class GraphCore(Artifact):
         Initializes a new GraphCore object.
 
         Args:
-            source (str): The source of the graph. This can be an S3 path, file path, or an existing Graph object.
+            source (str): The source of the graph. This can be an S3 path, file path, nx_graph, or an existing Graph object.
             name (str): The name of the graph (must be lowercase). If not specified, a name will be generated.
             tags (list[str]): A list of tags associated with the graph. If not specified, tags will be generated.
         """
@@ -37,26 +38,32 @@ class GraphCore(Artifact):
         if isinstance(source, Path):
             source = str(source)
 
-        # Check if the source is an existing SageWorks graph, a NetworkX graph, a S3 path, or a file path
-        if self.exists():
-            self.graph = self.load_graph()
-        elif isinstance(source, nx.Graph):
+        # Check if the source is a NetworkX graph, a S3 path, file path, or an existing SageWorks graph
+        if isinstance(source, nx.Graph):
             self.graph = source
-            self.graph.name = name
+            self.graph.name = name if name else self.graph.name
             self.save()
+
+        # Check if we have an S3 path
         elif source.startswith("s3://"):
             self.graph = self.load_graph(source)
+
+        # Check if the source is a file path
+        elif os.path.exists(source):
+            self._load_graph_from_file(source)
+            if self.graph:
+                self.graph.name = name
+                self.save()
+
+        # Check if the source is an existing SageWorks graph
+        elif self.exists():
+            self.graph = self.load_graph()
+
+        # Otherwise, we could not find the graph
         else:
-            # Check if the source is a file path
-            if os.path.exists(source):
-                self._load_graph_from_file(source)
-                if self.graph:
-                    self.graph.name = name
-                    self.save()
-            else:
-                self.log.warning(f"Could not find graph: {source}")
-                self.graph = None
-                return
+            self.log.warning(f"Could not find graph: {source}")
+            self.graph = None
+            return
 
         # Set the tags
         tags = [name] if tags is None else tags
@@ -139,13 +146,13 @@ class GraphCore(Artifact):
     def save(self) -> None:
         """Save the internal NetworkX graph to S3"""
         graph_json = nx.readwrite.json_graph.node_link_data(self.graph)
-        graph_str = json.dumps(graph_json)
+        graph_str = json.dumps(graph_json, cls=CustomEncoder)
         self.s3_client.put_object(Bucket=self.sageworks_bucket, Key=f"graphs/{self.uuid}.json", Body=graph_str)
 
     def graph_layout(self, layout: str = "spring") -> dict:
         """Compute the layout of the graph using the specified algorithm"""
         if layout == "spring":
-            pos = nx.spring_layout(self.graph, iterations=1000)
+            pos = nx.spring_layout(self.graph, iterations=500)
         elif layout == "kamada_kawai":
             pos = nx.kamada_kawai_layout(self.graph)
         elif layout == "spectral":
@@ -155,7 +162,7 @@ class GraphCore(Artifact):
         elif layout == "circular":
             pos = nx.circular_layout(self.graph)
         else:
-            pos = nx.spring_layout(self.graph, iterations=1000)
+            pos = nx.spring_layout(self.graph, iterations=500)
 
         # Now store the positions in the graph and save the graph
         self.store_node_positions(pos)

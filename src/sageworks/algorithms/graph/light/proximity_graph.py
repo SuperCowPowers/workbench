@@ -36,10 +36,15 @@ class ProximityGraph:
         Returns:
             nx.Graph: The proximity graph as a NetworkX graph.
         """
+        # Drop any NaN values
         X = drop_nans(X)
 
+        # Select only numeric columns
+        numeric_cols = X.select_dtypes(include=['number']).columns
+        X_numeric = X[numeric_cols]
+
         # Standardize the features
-        X_norm = self.scaler.fit_transform(X)
+        X_norm = self.scaler.fit_transform(X_numeric)
 
         # Fit the NearestNeighbors model
         self.nn_model.fit(X_norm)
@@ -56,7 +61,7 @@ class ProximityGraph:
         # Add nodes with their features as attributes
         if store_features:
             for i in range(X.shape[0]):
-                graph.add_node(i, features=X.iloc[i].to_dict())
+                graph.add_node(i, **X.iloc[i].to_dict())
         else:
             for i in range(X.shape[0]):
                 graph.add_node(i)
@@ -84,99 +89,31 @@ class ProximityGraph:
 if __name__ == "__main__":
     """Example usage of the ProximityGraph class"""
     from sageworks.api.feature_set import FeatureSet
-    from sageworks.api.model import Model
-    import plotly.graph_objects as go
+    from sageworks.core.artifacts.graph_core import GraphCore
+    from sageworks.web_components.plugins.graph_plot import GraphPlot
 
     # Load the Abalone FeatureSet
     fs = FeatureSet("abalone_features")
     df = fs.pull_dataframe()
 
-    # Grab the feature columns from the model
-    model = Model("abalone-regression")
-    feature_columns = model.features()
+    # Drop any columns generated from AWS
+    aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time", "training"]
+    df = df.drop(columns=aws_cols, errors="ignore")
 
     # Initialize the ProximityGraph
     proximity_graph = ProximityGraph(n_neighbors=5)
-    my_graph = proximity_graph.build_graph(df[feature_columns])
+    nx_graph = proximity_graph.build_graph(df)
 
-    # Pick a specific node and print its features and its neighbors' features
-    node = 1
-    print(f"Node {node} Features:")
-    print(my_graph.nodes[node]["features"])
-    print(f"Number of Neighbors: {len(list(my_graph.neighbors(node)))}")
-    print(f"Node {node} Neighbors Features:")
+    # Create a SageWorks GraphCore object
+    my_graph = GraphCore(nx_graph, "abalone_proximity_graph")
+    print(my_graph.details())
 
-    # Get all neighbors and sort them by the edge weight
-    neighbors_with_weights = [(neighbor, my_graph[node][neighbor]["weight"]) for neighbor in my_graph.neighbors(node)]
-    sorted_neighbors = sorted(neighbors_with_weights, key=lambda x: x[1], reverse=True)
+    # Grab a subgraph of the graph
+    nx_graph = my_graph.get_nx_graph()
+    two_hop_neighbors = set(nx.single_source_shortest_path_length(nx_graph, 0, cutoff=2).keys())
+    subgraph = nx_graph.subgraph(two_hop_neighbors)
 
-    for neighbor, weight in sorted_neighbors:
-        # Edge Weights and Neighbor Features
-        print(f"Neighbor: {neighbor} Edge Weight: {weight}")
-        print(my_graph.nodes[neighbor]["features"])
-
-    # Visualize a subgraph of the graph
-
-    # Pick a specific node
-    node_id = 1
-
-    # Get nodes within 2 hops
-    two_hop_neighbors = set(nx.single_source_shortest_path_length(my_graph, node_id, cutoff=2).keys())
-
-    # Create a subgraph
-    subgraph = my_graph.subgraph(two_hop_neighbors)
-
-    # Get positions for the nodes
-    pos = nx.spring_layout(subgraph)
-
-    # Create edge traces
-    edge_traces = []
-    for edge in subgraph.edges(data=True):
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
-        weight = edge[2]["weight"]
-        width = weight * 4.9 + 0.1  # Scale to [0.1, 5]
-        alpha = weight * 0.9 + 0.1  # Scale to [0.1, 1.0]
-
-        edge_traces.append(
-            go.Scatter(
-                x=[x0, x1, None],
-                y=[y0, y1, None],
-                line=dict(width=width, color=f"rgba(0, 0, 0, {alpha})"),
-                hoverinfo="none",
-                mode="lines",
-            )
-        )
-
-    # Create node traces
-    node_trace = go.Scatter(
-        x=[],
-        y=[],
-        text=[],
-        mode="markers+text",
-        hoverinfo="text",
-        marker=dict(showscale=False, color="skyblue", size=20, line_width=2),
-    )
-
-    for node in subgraph.nodes(data=True):
-        x, y = pos[node[0]]
-        node_trace["x"] += tuple([x])
-        node_trace["y"] += tuple([y])
-        node_trace["text"] += tuple([str(node[0])])
-
-    # Create figure
-    fig = go.Figure(
-        data=edge_traces + [node_trace],
-        layout=go.Layout(
-            title=f"Subgraph around node {node_id}",
-            titlefont_size=16,
-            showlegend=False,
-            hovermode="closest",
-            margin=dict(b=20, l=5, r=5, t=40),
-            annotations=[dict(text="", showarrow=False, xref="paper", yref="paper")],
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        ),
-    )
-
+    # Plot the subgraph
+    graph_plot = GraphPlot()
+    [fig] = graph_plot.update_properties(subgraph, labels="id", hover_text="all")
     fig.show()

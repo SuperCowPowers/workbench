@@ -63,7 +63,7 @@ class PluginUnitTest:
                 updated_properties = self.plugin.update_properties(pipeline)
             elif plugin_input_type == PluginInputType.GRAPH:
                 graph = GraphCore("karate_club")
-                updated_properties = self.plugin.update_properties(graph)
+                updated_properties = self.plugin.update_properties(graph, labels="club", hover_text=["club", "degree"])
             elif plugin_input_type == PluginInputType.MODEL_TABLE:
                 model_df = Meta().models()
                 updated_properties = self.plugin.update_properties(model_df)
