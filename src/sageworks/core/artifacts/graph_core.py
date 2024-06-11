@@ -28,7 +28,7 @@ class GraphCore(Artifact):
         else:
             Artifact.ensure_valid_name(name)
 
-        # Base class initialization
+        # Call our parent class constructor
         super().__init__(name)
 
         # Grab our S3 client
@@ -66,8 +66,7 @@ class GraphCore(Artifact):
             return
 
         # Set the tags
-        tags = [name] if tags is None else tags
-        # FIXME: self.set_tags(tags)
+        self.tags = [name] if tags is None else tags
 
     def exists(self) -> bool:
         """Check if the graph exists in S3"""
@@ -77,9 +76,20 @@ class GraphCore(Artifact):
         except self.s3_client.exceptions.ClientError:
             return False
 
+    def get_tags(self, tag_type: str = "user") -> list:
+        """Get the tags for this graph"""
+        if tag_type == "user":
+            return self.tags
+        else:
+            return []
+
     def refresh_meta(self):
         """Refresh the metadata for the graph"""
-        pass  # There's really nothing to refresh
+        self.sageworks_meta()
+
+    def sageworks_meta(self) -> dict:
+        """Get the SageWorks specific metadata for this Graph"""
+        return {"tags": self.tags}
 
     def onboard(self) -> bool:
         """Onboard this graph into SageWorks"""
@@ -216,6 +226,7 @@ class GraphCore(Artifact):
 # Example usage
 if __name__ == "__main__":
     from sageworks.web_components.plugins.graph_plot import GraphPlot
+    from sageworks.core.artifacts.graph_core import GraphCore
 
     # Create a GraphCore object
     graph = GraphCore("karate_club")

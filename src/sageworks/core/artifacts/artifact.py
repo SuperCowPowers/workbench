@@ -131,7 +131,7 @@ class Artifact(ABC):
     def sageworks_meta(self) -> dict:
         """Get the SageWorks specific metadata for this Artifact
         Note: This functionality will work for FeatureSets, Models, and Endpoints
-              but not for DataSources. The DataSource (or child) class overrides this method.
+              but not for DataSources/Graphs. DataSource/Graph classes need to override this method.
         """
         # First, check our cache
         meta_data_key = f"{self.uuid}_sageworks_meta"
