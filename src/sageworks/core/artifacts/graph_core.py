@@ -226,7 +226,7 @@ class GraphCore(Artifact):
 # Example usage
 if __name__ == "__main__":
     from sageworks.web_components.plugins.graph_plot import GraphPlot
-    from sageworks.core.artifacts.graph_core import GraphCore
+    from sageworks.core.artifacts.graph_core import GraphCore  # noqa
 
     # Create a GraphCore object
     graph = GraphCore("karate_club")
