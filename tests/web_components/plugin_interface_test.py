@@ -27,6 +27,7 @@ class CorrectPlugin(PluginInterface):
             dcc.Graph: The Confusion Matrix Component
         """
         self.container = dcc.Graph(id=component_id, figure=self.waiting_figure())
+        return self.container
 
     def update_properties(self, model: Model) -> list:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
