@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from inspect import signature
-from typing import Union, get_args
+from typing import Union, get_args, get_origin
 from enum import Enum
 from dash.development.base_component import Component
 
@@ -134,6 +134,16 @@ class PluginInterface(ComponentInterface):
             return True
         return NotImplemented
 
+    # Helper function to check if an actual type is a subtype of any expected types
+    @staticmethod
+    def _is_subtype_of_any(actual, expected_types):
+        # If the actual type is a Union, check each type in the Union
+        if get_origin(actual) is Union:
+            actual_types = get_args(actual)
+            return all(any(issubclass(act, exp) for exp in expected_types) for act in actual_types)
+        # Otherwise, check the single actual type
+        return any(issubclass(actual, exp) for exp in expected_types)
+
     @classmethod
     def _check_argument_types(cls, base_class_method, subclass_method):
         # Extract expected argument types, excluding 'self'
@@ -145,10 +155,10 @@ class PluginInterface(ComponentInterface):
         # Iterate over expected and actual argument types together
         for expected, actual in zip(expected_arg_types, actual_arg_types):
             # If the expected type is a Union, use get_args to extract its arguments
-            if getattr(expected, "__origin__", None) is Union:
+            if get_origin(expected) is Union:
                 expected_types = get_args(expected)
                 # Check if the actual type is a subtype of any of the expected types
-                if not any(issubclass(actual, exp) for exp in expected_types):
+                if not cls._is_subtype_of_any(actual, expected_types):
                     return f"Expected argument types {expected_types} do not include the actual argument type {actual}"
             else:
                 # Direct comparison for non-Union types

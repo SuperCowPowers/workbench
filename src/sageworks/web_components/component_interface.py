@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 import pandas as pd
 from dash import dcc
 from dash.development.base_component import Component
+import networkx as nx
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint
@@ -28,7 +29,7 @@ class ComponentInterface(ABC):
 
     log = logging.getLogger("sageworks")
 
-    SageworksObject = Union[DataSource, FeatureSet, Model, Endpoint, Pipeline, GraphCore, pd.DataFrame]
+    SageworksObject = Union[DataSource, FeatureSet, Model, Endpoint, Pipeline, GraphCore, nx.Graph, pd.DataFrame]
 
     def __init__(self):
         self.component_id = None

@@ -1,3 +1,4 @@
+from typing import Union
 from dash import dcc
 import plotly.graph_objects as go
 import networkx as nx
@@ -29,7 +30,7 @@ class GraphPlot(PluginInterface):
 
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_properties(self, input_graph: GraphCore, **kwargs) -> list:
+    def update_properties(self, input_graph: Union[GraphCore, nx.Graph], **kwargs) -> list:
         """Update the property values for the plugin component.
 
         Args:
