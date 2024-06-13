@@ -36,22 +36,47 @@ class ScatterPlot(PluginInterface):
             (f"{component_id}-color-dropdown", "options"),
             (f"{component_id}-x-dropdown", "value"),
             (f"{component_id}-y-dropdown", "value"),
-            (f"{component_id}-color-dropdown", "value")
+            (f"{component_id}-color-dropdown", "value"),
         ]
         self.signals = [(f"{component_id}-graph", "hoverData")]
 
-        return html.Div([
-            dcc.Graph(id=f"{component_id}-graph", figure=self.display_text("Waiting for Data...")),
-            html.Div([
-                html.Label("X", style={'marginRight': '5px'}),
-                dcc.Dropdown(id=f"{component_id}-x-dropdown", placeholder="Select X-axis", value=None, style={'flex': '1'}),
-                html.Label("Y", style={'marginLeft': '20px', 'marginRight': '5px'}),
-                dcc.Dropdown(id=f"{component_id}-y-dropdown", placeholder="Select Y-axis", value=None, style={'flex': '1'}),
-                html.Label("Color", style={'marginLeft': '20px', 'marginRight': '5px'}),
-                dcc.Dropdown(id=f"{component_id}-color-dropdown", placeholder="Select Color", value=None, style={'flex': '1'})
-            ], style={'display': 'flex', 'flexDirection': 'row', 'alignItems': 'center', 'justifyContent': 'space-between',
-                      'padding': '10px 0'})
-        ])
+        return html.Div(
+            [
+                dcc.Graph(id=f"{component_id}-graph", figure=self.display_text("Waiting for Data...")),
+                html.Div(
+                    [
+                        html.Label("X", style={"marginRight": "5px"}),
+                        dcc.Dropdown(
+                            id=f"{component_id}-x-dropdown",
+                            placeholder="Select X-axis",
+                            value=None,
+                            style={"flex": "1"},
+                        ),
+                        html.Label("Y", style={"marginLeft": "20px", "marginRight": "5px"}),
+                        dcc.Dropdown(
+                            id=f"{component_id}-y-dropdown",
+                            placeholder="Select Y-axis",
+                            value=None,
+                            style={"flex": "1"},
+                        ),
+                        html.Label("Color", style={"marginLeft": "20px", "marginRight": "5px"}),
+                        dcc.Dropdown(
+                            id=f"{component_id}-color-dropdown",
+                            placeholder="Select Color",
+                            value=None,
+                            style={"flex": "1"},
+                        ),
+                    ],
+                    style={
+                        "display": "flex",
+                        "flexDirection": "row",
+                        "alignItems": "center",
+                        "justifyContent": "space-between",
+                        "padding": "10px 0",
+                    },
+                ),
+            ]
+        )
 
     def update_properties(self, input_data: Union[DataSource, FeatureSet, pd.DataFrame], **kwargs) -> list:
         """Update the property values for the plugin component.
@@ -113,21 +138,23 @@ class ScatterPlot(PluginInterface):
             [1.0, "rgb(160, 64, 64)"],
         ]
         # Create Plotly Scatter Plot
-        figure = go.Figure(data=go.Scatter(
-            x=df[x_col],
-            y=df[y_col],
-            mode="markers",
-            hovertext=df.apply(lambda row: "<br>".join([f"{col}: {row[col]}" for col in df.columns]), axis=1),
-            hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
-            textfont=dict(family="Arial Black", size=14),  # Set font size
-            marker=dict(
-                size=20,
-                color=df[color_col],  # Use the selected field for color
-                colorscale=color_scale,
-                colorbar=dict(title=color_col),
-                line=dict(color="Black", width=1),
-            ),
-        ))
+        figure = go.Figure(
+            data=go.Scatter(
+                x=df[x_col],
+                y=df[y_col],
+                mode="markers",
+                hovertext=df.apply(lambda row: "<br>".join([f"{col}: {row[col]}" for col in df.columns]), axis=1),
+                hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
+                textfont=dict(family="Arial Black", size=14),  # Set font size
+                marker=dict(
+                    size=20,
+                    color=df[color_col],  # Use the selected field for color
+                    colorscale=color_scale,
+                    colorbar=dict(title=color_col),
+                    line=dict(color="Black", width=1),
+                ),
+            )
+        )
 
         # Just some fine-tuning of the plot
         figure.update_layout(
@@ -145,10 +172,12 @@ class ScatterPlot(PluginInterface):
 
         @callback(
             Output(f"{self.component_id}-graph", "figure", allow_duplicate=True),
-            [Input(f"{self.component_id}-x-dropdown", "value"),
-             Input(f"{self.component_id}-y-dropdown", "value"),
-             Input(f"{self.component_id}-color-dropdown", "value")],
-            prevent_initial_call=True
+            [
+                Input(f"{self.component_id}-x-dropdown", "value"),
+                Input(f"{self.component_id}-y-dropdown", "value"),
+                Input(f"{self.component_id}-color-dropdown", "value"),
+            ],
+            prevent_initial_call=True,
         )
         def update_graph(x_value, y_value, color_value):
             # Get the latest dataframe

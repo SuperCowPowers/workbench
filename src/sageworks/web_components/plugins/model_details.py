@@ -85,8 +85,7 @@ class ModelDetails(PluginInterface):
         return [header, details, inference_runs, default_run]
 
     def register_internal_callbacks(self):
-        @callback(Output(f"{self.component_id}-metrics", "children"),
-                  Input(f"{self.component_id}-dropdown", "value"))
+        @callback(Output(f"{self.component_id}-metrics", "children"), Input(f"{self.component_id}-dropdown", "value"))
         def update_inference_run(inference_run):
             # Check for no inference run
             if not inference_run:
