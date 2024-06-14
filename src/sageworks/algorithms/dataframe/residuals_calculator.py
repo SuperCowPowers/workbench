@@ -1,7 +1,9 @@
+from typing import Union
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.model_selection import KFold
+from sklearn.base import RegressorMixin
 from xgboost import XGBRegressor
 
 
@@ -14,22 +16,25 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
     columns to the input DataFrame.
 
     Attributes:
+        model (Union[RegressorMixin, XGBRegressor]): The machine learning model used for predictions.
         n_splits (int): Number of splits for cross-validation.
         random_state (int): Random state for reproducibility.
-        model (XGBRegressor): The machine learning model used for predictions.
     """
 
-    def __init__(self, n_splits: int = 5, random_state: int = 42):
+    def __init__(
+        self, model: Union[RegressorMixin, XGBRegressor] = XGBRegressor, n_splits: int = 5, random_state: int = 42
+    ):
         """
         Initializes the ResidualsCalculator with the specified parameters.
 
         Args:
+            model (Union[RegressorMixin, XGBRegressor]): The machine learning model used for predictions.
             n_splits (int): Number of splits for cross-validation.
             random_state (int): Random state for reproducibility.
         """
         self.n_splits = n_splits
         self.random_state = random_state
-        self.model = XGBRegressor()
+        self.model = model()
         self.X = None
         self.y = None
 
@@ -61,9 +66,10 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         """
         kf = KFold(n_splits=self.n_splits, shuffle=True, random_state=self.random_state)
 
-        prediction_list = []
-        residuals_list = []
-        residuals_abs_list = []
+        # Initialize arrays to store predictions and residuals
+        predictions = np.empty_like(self.y)
+        residuals = np.empty_like(self.y, dtype=float)
+        residuals_abs = np.empty_like(self.y, dtype=float)
 
         # Perform cross-validation and collect predictions and residuals
         for train_index, test_index in kf.split(self.X):
@@ -72,23 +78,24 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
 
             # Fit the model on the training data
             self.model.fit(X_train, y_train)
+
             # Predict on the test data
             y_pred = self.model.predict(X_test)
 
             # Compute residuals and absolute residuals
-            residuals = y_test - y_pred
-            residuals_abs = np.abs(residuals)
+            residuals_fold = y_test - y_pred
+            residuals_abs_fold = np.abs(residuals_fold)
 
-            # Collect predictions and residuals
-            prediction_list.extend(y_pred)
-            residuals_list.extend(residuals)
-            residuals_abs_list.extend(residuals_abs)
+            # Place the predictions and residuals in the correct positions
+            predictions[test_index] = y_pred
+            residuals[test_index] = residuals_fold
+            residuals_abs[test_index] = residuals_abs_fold
 
         # Create a copy of the provided DataFrame and add the new columns
         result_df = X.copy()
-        result_df["prediction"] = prediction_list
-        result_df["residuals"] = residuals_list
-        result_df["residuals_abs"] = residuals_abs_list
+        result_df["prediction"] = predictions
+        result_df["residuals"] = residuals
+        result_df["residuals_abs"] = residuals_abs
 
         # Train on all data and compute residuals for 100% training
         self.model.fit(self.X, self.y)
@@ -176,13 +183,16 @@ if __name__ == "__main__":
     df = fs.pull_dataframe()
 
     # Grab the target and feature columns from the model
-    model = Model("aqsol-mol-regression")
-    target_column = model.target()
-    feature_columns = model.features()
+    aqsol_model = Model("aqsol-mol-regression")
+    target_column = aqsol_model.target()
+    feature_columns = aqsol_model.features()
 
     # Initialize the ResidualsCalculator
     residuals_calculator = ResidualsCalculator(n_splits=5, random_state=42)
     result_df = residuals_calculator.fit_transform(df[feature_columns], df[target_column])
+
+    # Add the target column back to the result DataFrame
+    result_df[target_column] = df[target_column]
 
     # Grab the residuals and residuals_abs columns
     residual_columns = ["residuals", "residuals_abs", "residuals_100", "residuals_100_abs"]
@@ -194,3 +204,10 @@ if __name__ == "__main__":
 
     # Print the residual DataFrame
     print(residual_df)
+
+    # Show a scatter plot of the residuals
+    from sageworks.web_components.plugins.scatter_plot import ScatterPlot
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+
+    # Run the Unit Test on the Plugin
+    PluginUnitTest(ScatterPlot, input_data=result_df[:1000]).run()
