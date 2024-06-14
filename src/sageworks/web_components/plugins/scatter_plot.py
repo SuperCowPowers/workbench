@@ -84,6 +84,11 @@ class ScatterPlot(PluginInterface):
         Args:
             input_data (DataSource or FeatureSet): The input data object.
             **kwargs: Additional keyword arguments (plugins can define their own arguments).
+                      Note: The current argument processed are:
+                            - x: The default x-axis column
+                            - y: The default y-axis column
+                            - color: The default color column
+                            - dropdown_columns: The columns to use for the x, y, color options
 
         Returns:
             list: A list of updated property values (figure, x options, y options, color options).
@@ -112,8 +117,11 @@ class ScatterPlot(PluginInterface):
         # Create default Plotly Scatter Plot
         figure = self.create_scatter_plot(self.df, x_default, y_default, color_default)
 
-        # Dropdown options (just numeric columns)
-        options = [{"label": col, "value": col} for col in numeric_columns]
+        # Dropdown options for x, y, and color
+        if "dropdown_columns" in kwargs:
+            dropdown_columns = kwargs["dropdown_columns"]
+            dropdown_columns = [col for col in dropdown_columns if col in numeric_columns]
+        options = [{"label": col, "value": col} for col in dropdown_columns]
 
         return [figure, options, options, options, x_default, y_default, color_default]
 
@@ -143,7 +151,7 @@ class ScatterPlot(PluginInterface):
                 x=df[x_col],
                 y=df[y_col],
                 mode="markers",
-                hovertext=df.apply(lambda row: "<br>".join([f"{col}: {row[col]}" for col in df.columns]), axis=1),
+                hovertext=df.apply(lambda row: "<br>".join([f"{col}: {row[col]}" for col in df.columns[:5]]), axis=1),
                 hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
                 textfont=dict(family="Arial Black", size=14),  # Set font size
                 marker=dict(
