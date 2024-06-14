@@ -14,7 +14,7 @@ def test_scatter_plot():
     # Instantiate the ScatterPlot class
     plot = ScatterPlot()
 
-    # Generate the figure (it's the first element in the property list)
+    # Update the properties (the figure is the first element in the property list)
     all_properties = plot.update_properties(fs)
     figure = all_properties[0]
     figure.show()
