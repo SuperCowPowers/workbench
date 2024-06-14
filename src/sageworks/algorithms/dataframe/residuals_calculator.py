@@ -216,8 +216,12 @@ if __name__ == "__main__":
     dropdown_columns = ["residuals_abs", "residuals_100_abs", "prediction", "prediction_100", "solubility"]
 
     # Run the Unit Test on the Plugin
-    unit_test = PluginUnitTest(ScatterPlot,
-                               input_data=result_df[dropdown_columns],
-                               x="solubility", y="prediction", color="residuals_abs",
-                               dropdown_columns=dropdown_columns)
+    unit_test = PluginUnitTest(
+        ScatterPlot,
+        input_data=result_df[dropdown_columns],
+        x="solubility",
+        y="prediction",
+        color="residuals_abs",
+        dropdown_columns=dropdown_columns,
+    )
     unit_test.run()

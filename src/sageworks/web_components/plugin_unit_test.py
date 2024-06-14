@@ -63,7 +63,9 @@ class PluginUnitTest:
                 updated_properties = self.plugin.update_properties(feature_set, **self.kwargs)
             elif plugin_input_type == PluginInputType.MODEL:
                 model = self.input_data if self.input_data is not None else Model("abalone-regression")
-                updated_properties = self.plugin.update_properties(model, inference_run="training_holdout", **self.kwargs)
+                updated_properties = self.plugin.update_properties(
+                    model, inference_run="training_holdout", **self.kwargs
+                )
             elif plugin_input_type == PluginInputType.ENDPOINT:
                 endpoint = self.input_data if self.input_data is not None else Endpoint("abalone-regression-end")
                 updated_properties = self.plugin.update_properties(endpoint, **self.kwargs)
@@ -72,7 +74,9 @@ class PluginUnitTest:
                 updated_properties = self.plugin.update_properties(pipeline, **self.kwargs)
             elif plugin_input_type == PluginInputType.GRAPH:
                 graph = self.input_data if self.input_data is not None else GraphCore("karate_club")
-                updated_properties = self.plugin.update_properties(graph, labels="club", hover_text=["club", "degree"], **self.kwargs)
+                updated_properties = self.plugin.update_properties(
+                    graph, labels="club", hover_text=["club", "degree"], **self.kwargs
+                )
             elif plugin_input_type == PluginInputType.MODEL_TABLE:
                 model_df = self.input_data if self.input_data is not None else Meta().models()
                 updated_properties = self.plugin.update_properties(model_df, **self.kwargs)
