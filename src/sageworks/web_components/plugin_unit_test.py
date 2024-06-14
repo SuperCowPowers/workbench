@@ -9,12 +9,13 @@ from sageworks.core.artifacts.graph_core import GraphCore
 
 
 class PluginUnitTest:
-    def __init__(self, plugin_class, input_data=None):
+    def __init__(self, plugin_class, input_data=None, **kwargs):
         """A class to unit test a PluginInterface class.
 
         Args:
             plugin_class (PluginInterface): The PluginInterface class to test
             input_data (Optional): The input data for this plugin (FeatureSet, Model, Endpoint, etc.)
+            **kwargs: Additional keyword arguments
         """
         assert issubclass(plugin_class, PluginInterface), "Plugin class must be a subclass of PluginInterface"
 
@@ -23,6 +24,7 @@ class PluginUnitTest:
 
         # If the input data is provided, let's store it for when update_properties is called
         self.input_data = input_data
+        self.kwargs = kwargs
 
         # Instantiate the plugin
         self.plugin = plugin_class()
@@ -58,25 +60,25 @@ class PluginUnitTest:
             # Simulate updating the plugin with a FeatureSet, Model, Endpoint, or Model Table
             if plugin_input_type == PluginInputType.FEATURE_SET:
                 feature_set = self.input_data if self.input_data is not None else FeatureSet("abalone_features")
-                updated_properties = self.plugin.update_properties(feature_set)
+                updated_properties = self.plugin.update_properties(feature_set, **self.kwargs)
             elif plugin_input_type == PluginInputType.MODEL:
                 model = self.input_data if self.input_data is not None else Model("abalone-regression")
-                updated_properties = self.plugin.update_properties(model, inference_run="training_holdout")
+                updated_properties = self.plugin.update_properties(model, inference_run="training_holdout", **self.kwargs)
             elif plugin_input_type == PluginInputType.ENDPOINT:
                 endpoint = self.input_data if self.input_data is not None else Endpoint("abalone-regression-end")
-                updated_properties = self.plugin.update_properties(endpoint)
+                updated_properties = self.plugin.update_properties(endpoint, **self.kwargs)
             elif plugin_input_type == PluginInputType.PIPELINE:
                 pipeline = self.input_data if self.input_data is not None else Pipeline("abalone_pipeline_v1")
-                updated_properties = self.plugin.update_properties(pipeline)
+                updated_properties = self.plugin.update_properties(pipeline, **self.kwargs)
             elif plugin_input_type == PluginInputType.GRAPH:
                 graph = self.input_data if self.input_data is not None else GraphCore("karate_club")
-                updated_properties = self.plugin.update_properties(graph, labels="club", hover_text=["club", "degree"])
+                updated_properties = self.plugin.update_properties(graph, labels="club", hover_text=["club", "degree"], **self.kwargs)
             elif plugin_input_type == PluginInputType.MODEL_TABLE:
                 model_df = self.input_data if self.input_data is not None else Meta().models()
-                updated_properties = self.plugin.update_properties(model_df)
+                updated_properties = self.plugin.update_properties(model_df, **self.kwargs)
             elif plugin_input_type == PluginInputType.PIPELINE_TABLE:
                 pipeline_df = self.input_data if self.input_data is not None else Meta().pipelines()
-                updated_properties = self.plugin.update_properties(pipeline_df)
+                updated_properties = self.plugin.update_properties(pipeline_df, **self.kwargs)
             else:
                 raise ValueError(f"Invalid test type: {plugin_input_type}")
 
