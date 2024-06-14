@@ -103,6 +103,7 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         residuals_100 = self.y - y_pred_100
         residuals_100_abs = np.abs(residuals_100)
 
+        result_df["prediction_100"] = y_pred_100
         result_df["residuals_100"] = residuals_100
         result_df["residuals_100_abs"] = residuals_100_abs
 
@@ -130,6 +131,7 @@ if __name__ == "__main__":
     from sageworks.api.feature_set import FeatureSet
     from sageworks.api.model import Model
 
+    """
     # Load the Abalone FeatureSet
     fs = FeatureSet("abalone_features")
     df = fs.pull_dataframe()
@@ -175,6 +177,7 @@ if __name__ == "__main__":
 
     # Print the residual DataFrame
     print(residual_df)
+    """
 
     # Now do the AQSol data (with computed molecular descriptors)
     fs = FeatureSet("aqsol_mol_descriptors")
@@ -209,5 +212,12 @@ if __name__ == "__main__":
     from sageworks.web_components.plugins.scatter_plot import ScatterPlot
     from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
+    # Columns of Interest
+    dropdown_columns = ["residuals_abs", "residuals_100_abs", "prediction", "prediction_100", "solubility"]
+
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ScatterPlot, input_data=result_df[:1000]).run()
+    unit_test = PluginUnitTest(ScatterPlot,
+                               input_data=result_df[dropdown_columns],
+                               x="solubility", y="prediction", color="residuals_abs",
+                               dropdown_columns=dropdown_columns)
+    unit_test.run()
