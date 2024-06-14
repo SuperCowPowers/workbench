@@ -104,10 +104,10 @@ class ScatterPlot(PluginInterface):
         if len(numeric_columns) < 3:
             raise ValueError("At least three numeric columns are required for x, y, and color.")
 
-        # Default selections for x, y, and color
-        x_default = numeric_columns[0]
-        y_default = numeric_columns[1]
-        color_default = numeric_columns[2]
+        # Check if the kwargs are provided for x, y, and color
+        x_default = kwargs.get("x", numeric_columns[0])
+        y_default = kwargs.get("y", numeric_columns[1])
+        color_default = kwargs.get("color", numeric_columns[2])
 
         # Create default Plotly Scatter Plot
         figure = self.create_scatter_plot(self.df, x_default, y_default, color_default)
@@ -147,7 +147,7 @@ class ScatterPlot(PluginInterface):
                 hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
                 textfont=dict(family="Arial Black", size=14),  # Set font size
                 marker=dict(
-                    size=20,
+                    size=10,
                     color=df[color_col],  # Use the selected field for color
                     colorscale=color_scale,
                     colorbar=dict(title=color_col),
@@ -192,7 +192,7 @@ class ScatterPlot(PluginInterface):
 
 
 if __name__ == "__main__":
-    # This class takes in graph details and generates a Graph Plot (go.Figure)
+    """Run the Unit Test for the Plugin."""
     from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
