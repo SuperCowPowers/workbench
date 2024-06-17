@@ -264,16 +264,19 @@ class EndpointCore(Artifact):
         # Return the details
         return details
 
-    def onboard(self, interactive: bool = True) -> bool:
+    def onboard(self, interactive: bool = False) -> bool:
         """This is a BLOCKING method that will onboard the Endpoint (make it ready)
         Args:
-            interactive (bool, optional): If True, will prompt the user for information. (default: True)
+            interactive (bool, optional): If True, will prompt the user for information. (default: False)
         Returns:
             bool: True if the Endpoint is successfully onboarded, False otherwise
         """
         self.log.important(f"Onboarding {self.uuid}...")
         self.set_status("onboarding")
         self.remove_health_tag("needs_onboard")
+
+        # Give the AWS Metadata a chance to update
+        time.sleep(5)
 
         # Make sure our input is defined
         if self.get_input() == "unknown":
