@@ -287,7 +287,9 @@ def integration_test():
     feature_columns = m.features()
 
     # Create the class and run the report
-    feature_spider = FeatureSpider(feature_df, features=feature_columns, target_column=target_column, id_column="id", neighbors=2)
+    feature_spider = FeatureSpider(
+        feature_df, features=feature_columns, target_column=target_column, id_column="id", neighbors=2
+    )
     feature_spider.coincident(1.0)
 
     # Now run predictions on the endpoint

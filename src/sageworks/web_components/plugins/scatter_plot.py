@@ -42,7 +42,11 @@ class ScatterPlot(PluginInterface):
 
         return html.Div(
             [
-                dcc.Graph(id=f"{component_id}-graph", figure=self.display_text("Waiting for Data..."), config={"scrollZoom": True}),
+                dcc.Graph(
+                    id=f"{component_id}-graph",
+                    figure=self.display_text("Waiting for Data..."),
+                    config={"scrollZoom": True},
+                ),
                 html.Div(
                     [
                         html.Label("X", style={"marginRight": "5px"}),
@@ -168,7 +172,8 @@ class ScatterPlot(PluginInterface):
                     colorscale=color_scale,
                     colorbar=dict(title=color_col),
                     opacity=df[color_col].apply(
-                        lambda x: 0.5 + 0.5 * (x - df[color_col].min()) / (df[color_col].max() - df[color_col].min())),
+                        lambda x: 0.5 + 0.5 * (x - df[color_col].min()) / (df[color_col].max() - df[color_col].min())
+                    ),
                     line=dict(color="Black", width=1),
                 ),
             )
@@ -177,10 +182,10 @@ class ScatterPlot(PluginInterface):
         # Just some fine-tuning of the plot
         figure.update_layout(
             margin={"t": 40, "b": 40, "r": 40, "l": 40, "pad": 0},
-            xaxis=dict(title=x_col, tickformat='.2f'),  # Add x-axis title
-            yaxis=dict(title=y_col, tickformat='.2f'),  # Add y-axis title
+            xaxis=dict(title=x_col, tickformat=".2f"),  # Add x-axis title
+            yaxis=dict(title=y_col, tickformat=".2f"),  # Add y-axis title
             showlegend=False,  # Remove legend
-            dragmode='pan',
+            dragmode="pan",
         )
 
         return figure
