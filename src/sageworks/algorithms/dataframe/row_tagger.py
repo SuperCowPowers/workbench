@@ -65,7 +65,6 @@ class RowTagger:
 
     def tag_rows(self) -> pd.DataFrame:
         """Run all the current registered taggers"""
-        # The taggers that all take file names we want to run
         taggers = [self.coincident, self.high_gradients]
         for tagger in taggers:
             tagger()

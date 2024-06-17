@@ -68,7 +68,7 @@ class FeatureSpider:
         """Provide a prediction from the KNN Pipeline model (knn_prediction)"""
         return self.pipe.predict(pred_df[self.features])
 
-    def confidence_scores(self, pred_df: pd.DataFrame, model_preds=None) -> list:
+    def confidence_scores(self, pred_df: pd.DataFrame, model_preds: pd.Series = None) -> list:
         """Compute Confidence Scores for each Prediction"""
 
         # Get all the KNN information relevant to this calculation
@@ -275,20 +275,46 @@ def test():
 def integration_test():
     """Integration Test for the FeatureResolution Class"""
     from sageworks.api.feature_set import FeatureSet
-    from sageworks.api.model import Model
+    from sageworks.api.model import Model, Endpoint
 
     # Grab a test dataframe
-    fs = FeatureSet("aqsol_mol_descriptors")
-    test_df = fs.pull_dataframe()
+    fs = FeatureSet("aqsol_features")
+    feature_df = fs.pull_dataframe()
 
     # Get the target and feature columns
-    m = Model("aqsol-mol-regression")
+    m = Model("aqsol-regression")
     target_column = m.target()
     feature_columns = m.features()
 
     # Create the class and run the report
-    feature_spider = FeatureSpider(test_df, features=feature_columns, target_column=target_column, id_column="id")
+    feature_spider = FeatureSpider(feature_df, features=feature_columns, target_column=target_column, id_column="id", neighbors=2)
     feature_spider.coincident(1.0)
+
+    # Now run predictions on the endpoint
+    endpoint = Endpoint("aqsol-regression-end")
+    pred_df = endpoint.inference(feature_df)
+    print(len(pred_df))
+
+    # Now get confidence scores
+    pred_df["confidence"] = feature_spider.confidence_scores(feature_df, model_preds=pred_df["prediction"])
+
+    # Show a scatter plot of the confidence scores
+    from sageworks.web_components.plugins.scatter_plot import ScatterPlot
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+
+    # Columns of Interest
+    dropdown_columns = ["residuals_abs", "prediction", "solubility", "confidence"]
+
+    # Run the Unit Test on the Plugin
+    unit_test = PluginUnitTest(
+        ScatterPlot,
+        input_data=pred_df[dropdown_columns],
+        x="solubility",
+        y="prediction",
+        color="confidence",
+        dropdown_columns=dropdown_columns,
+    )
+    unit_test.run()
 
 
 if __name__ == "__main__":
