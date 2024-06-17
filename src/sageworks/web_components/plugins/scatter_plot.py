@@ -42,7 +42,7 @@ class ScatterPlot(PluginInterface):
 
         return html.Div(
             [
-                dcc.Graph(id=f"{component_id}-graph", figure=self.display_text("Waiting for Data...")),
+                dcc.Graph(id=f"{component_id}-graph", figure=self.display_text("Waiting for Data..."), config={"scrollZoom": True}),
                 html.Div(
                     [
                         html.Label("X", style={"marginRight": "5px"}),
@@ -121,6 +121,8 @@ class ScatterPlot(PluginInterface):
         if "dropdown_columns" in kwargs:
             dropdown_columns = kwargs["dropdown_columns"]
             dropdown_columns = [col for col in dropdown_columns if col in numeric_columns]
+        else:
+            dropdown_columns = numeric_columns
         options = [{"label": col, "value": col} for col in dropdown_columns]
 
         return [figure, options, options, options, x_default, y_default, color_default]
@@ -138,6 +140,12 @@ class ScatterPlot(PluginInterface):
         Returns:
             go.Figure: A Plotly Figure object.
         """
+
+        # Put in a hard limit on the number of rows to plot
+        if len(df) > 10000:
+            print(f"Too many rows to plot ({len(df)}), limiting to 10000 rows.")
+        df = df.head(10000)
+
         # Define a custom color scale (blue -> yellow -> orange -> red)
         color_scale = [
             [0.0, "rgb(64,64,160)"],
@@ -147,7 +155,7 @@ class ScatterPlot(PluginInterface):
         ]
         # Create Plotly Scatter Plot
         figure = go.Figure(
-            data=go.Scatter(
+            data=go.Scattergl(
                 x=df[x_col],
                 y=df[y_col],
                 mode="markers",
@@ -155,10 +163,12 @@ class ScatterPlot(PluginInterface):
                 hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
                 textfont=dict(family="Arial Black", size=14),  # Set font size
                 marker=dict(
-                    size=10,
+                    size=15,
                     color=df[color_col],  # Use the selected field for color
                     colorscale=color_scale,
                     colorbar=dict(title=color_col),
+                    opacity=df[color_col].apply(
+                        lambda x: 0.5 + 0.5 * (x - df[color_col].min()) / (df[color_col].max() - df[color_col].min())),
                     line=dict(color="Black", width=1),
                 ),
             )
@@ -166,11 +176,11 @@ class ScatterPlot(PluginInterface):
 
         # Just some fine-tuning of the plot
         figure.update_layout(
-            margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10},
-            height=400,
-            xaxis=dict(title=x_col),  # Add x-axis title
-            yaxis=dict(title=y_col),  # Add y-axis title
+            margin={"t": 40, "b": 40, "r": 40, "l": 40, "pad": 0},
+            xaxis=dict(title=x_col, tickformat='.2f'),  # Add x-axis title
+            yaxis=dict(title=y_col, tickformat='.2f'),  # Add y-axis title
             showlegend=False,  # Remove legend
+            dragmode='pan',
         )
 
         return figure
