@@ -255,8 +255,8 @@ def test():
 
     # Create the class and run the taggers
     f_spider = FeatureSpider(data_df, ["feat1", "feat2", "feat3"], id_column="ID", target_column="price")
-    preds = f_spider.predict(data_df)
-    print(preds)
+    knn_preds = f_spider.predict(data_df)
+    print(knn_preds)
     coincident = f_spider.coincident(2)
     print("COINCIDENT")
     print(coincident)
@@ -270,6 +270,30 @@ def test():
 
     # Feature matrix
     print(f_spider.get_feature_matrix())
+
+    # Fake predictions
+    predictions = [31, 60, 62, 40, 20, 31, 61, 60, 40, 20]
+
+    # Now get confidence scores
+    data_df["confidence"] = f_spider.confidence_scores(data_df, model_preds=predictions)
+
+    # Show a scatter plot of the confidence scores
+    from sageworks.web_components.plugins.scatter_plot import ScatterPlot
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+
+    # Columns of Interest
+    dropdown_columns = ["feat1", "feat2", "feat3", "price", "confidence"]
+
+    # Run the Unit Test on the Plugin
+    unit_test = PluginUnitTest(
+        ScatterPlot,
+        input_data=data_df[dropdown_columns][:100],
+        x="feat1",
+        y="feat2",
+        color="confidence",
+        dropdown_columns=dropdown_columns,
+    )
+    unit_test.run()
 
 
 def integration_test():
@@ -310,7 +334,7 @@ def integration_test():
     # Run the Unit Test on the Plugin
     unit_test = PluginUnitTest(
         ScatterPlot,
-        input_data=pred_df[dropdown_columns],
+        input_data=pred_df[dropdown_columns][:100],
         x="solubility",
         y="prediction",
         color="confidence",
@@ -321,4 +345,4 @@ def integration_test():
 
 if __name__ == "__main__":
     test()
-    integration_test()
+    # integration_test()
