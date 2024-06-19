@@ -163,7 +163,7 @@ class ScatterPlot(PluginInterface):
                 x=df[x_col],
                 y=df[y_col],
                 mode="markers",
-                hovertext=df.apply(lambda row: "<br>".join([f"{col}: {row[col]}" for col in df.columns[:5]]), axis=1),
+                hovertext=df.apply(lambda row: "<br>".join([f"{col}: {row[col]}" for col in df.columns[:10]]), axis=1),
                 hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
                 textfont=dict(family="Arial Black", size=14),  # Set font size
                 marker=dict(
@@ -172,7 +172,7 @@ class ScatterPlot(PluginInterface):
                     colorscale=color_scale,
                     colorbar=dict(title=color_col),
                     opacity=df[color_col].apply(
-                        lambda x: 0.5 + 0.5 * (x - df[color_col].min()) / (df[color_col].max() - df[color_col].min())
+                        lambda x: 0.25 + 0.74 * (x - df[color_col].min()) / (df[color_col].max() - df[color_col].min())
                     ),
                     line=dict(color="Black", width=1),
                 ),
