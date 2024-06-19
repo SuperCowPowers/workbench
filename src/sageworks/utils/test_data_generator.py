@@ -56,15 +56,16 @@ class TestDataGenerator:
         # Generate a simple regression dataset with one feature and one target
         # Both the feature and the target vary from 0 to 100, the target is the feature plus 10% noise
         feature = np.float32(range(0, 1000))
-        target = [x+1000.0 + x*np.random.uniform(-.1, .1) for x in feature]
+        target = [x + 1000.0 + x * np.random.uniform(-0.1, 0.1) for x in feature]
 
         # Create a DataFrame
-        df = pd.DataFrame({'feature': feature, 'target': target})
+        df = pd.DataFrame({"feature": feature, "target": target})
         return df
 
         """
         # Generate basic synthetic data
-        X, y = make_regression(n_samples=n_samples, n_features=n_features, n_informative=n_features, noise=0.0, random_state=42)
+        X, y = make_regression(n_samples=n_samples, n_features=n_features, n_informative=n_features,
+                               noise=0.0, random_state=42)
 
         # Normalize target values to the range [0, 100]
         y = (y - y.min()) / (y.max() - y.min()) * 100

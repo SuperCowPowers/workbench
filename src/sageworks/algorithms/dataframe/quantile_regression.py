@@ -4,7 +4,6 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.base import RegressorMixin
 from xgboost import XGBRegressor
-from sklearn.model_selection import train_test_split
 
 
 class QuantileRegressor(BaseEstimator, TransformerMixin):
@@ -52,9 +51,9 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
         # Train models for each of the quantiles
         for q in self.quantiles:
             params = {
-                'objective': 'reg:quantileerror',
-                'eval_metric': 'rmse',
-                'quantile_alpha': q,
+                "objective": "reg:quantileerror",
+                "eval_metric": "rmse",
+                "quantile_alpha": q,
                 # 'n_estimators': 400,     # More trees
                 # 'max_depth': 1,         # Shallow trees
                 # 'learning_rate': 0.1,   # Lower learning rate
@@ -95,7 +94,8 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
 
     def fit_transform(self, X: pd.DataFrame, y: pd.Series, **fit_params) -> pd.DataFrame:
         """
-        Fits the model and transforms the input DataFrame by adding 'quantile_05', 'quantile_50', and 'quantile_95' columns.
+        Fits the model and transforms the input DataFrame by adding 'quantile_05', 'quantile_50',
+        and 'quantile_95' columns.
 
         Args:
             X (pd.DataFrame): The input features.
@@ -136,7 +136,15 @@ def unit_test():
     confidence_df["interval"] = confidence_df["quantile_95"] - confidence_df["quantile_05"]
 
     # Columns of Interest
-    dropdown_columns = ["quantile_05", "quantile_25", "quantile_50", "quantile_75", "quantile_95", "interval", target_column]
+    dropdown_columns = [
+        "quantile_05",
+        "quantile_25",
+        "quantile_50",
+        "quantile_75",
+        "quantile_95",
+        "interval",
+        target_column,
+    ]
 
     # Run the Unit Test on the Plugin
     plugin_test = PluginUnitTest(
@@ -186,7 +194,16 @@ def integration_test():
     confidence_df["confidence"] = 1.0 - (np.clip(confidence_df["interval"], 0, 4) * 0.25)
 
     # Columns of Interest
-    dropdown_columns = ["quantile_05", "quantile_25", "quantile_50", "quantile_75", "quantile_95", "interval", "confidence", target_column]
+    dropdown_columns = [
+        "quantile_05",
+        "quantile_25",
+        "quantile_50",
+        "quantile_75",
+        "quantile_95",
+        "interval",
+        "confidence",
+        target_column,
+    ]
 
     # Run the Unit Test on the Plugin
     plugin_test = PluginUnitTest(

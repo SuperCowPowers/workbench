@@ -10,11 +10,7 @@ y_train = X_train[:, 0] * 300 + X_train[:, 1] * 50000 + np.random.randn(100) * 5
 quantiles = [0.1, 0.50, 0.9]
 models = {}
 for q in quantiles:
-    params = {
-        'objective': 'reg:quantileerror',
-        'eval_metric': 'mae',
-        'quantile_alpha': q
-    }
+    params = {"objective": "reg:quantileerror", "eval_metric": "mae", "quantile_alpha": q}
     model = xgb.XGBRegressor(**params)
     model.fit(X_train, y_train)
     models[q] = model
