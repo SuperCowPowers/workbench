@@ -102,4 +102,4 @@ class PluginUnitTest:
         self.plugin.register_internal_callbacks()
 
     def run(self):
-        self.app.run_server(debug=True)
+        self.app.run_server(debug=True, use_reloader=False)
