@@ -39,24 +39,23 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
         """
         """
         params = {
-            'objective': 'reg:quantileerror',
-            'quantile_alpha': 0.5,  # Adjust as needed for different quantiles
-            'n_estimators': 50,     # Fewer trees for less refinement
-            'max_depth': 3,         # Shallow trees
-            'learning_rate': 0.1,   # Lower learning rate
-            'subsample': 0.8,       # Subsample data to introduce randomness
-            'colsample_bytree': 0.8 # Subsample features
+            "objective": "reg:quantileerror",
+            "quantile_alpha": 0.5,  # Adjust as needed for different quantiles
+            "n_estimators": 50,     # Fewer trees for less refinement
+            "max_depth": 3,         # Shallow trees
+            "learning_rate": 0.1,   # Lower learning rate
+            "subsample": 0.8,       # Subsample data to introduce randomness
+            "colsample_bytree": 0.8 # Subsample features
         }
         """
         # Train models for each of the quantiles
         for q in self.quantiles:
             params = {
                 "objective": "reg:quantileerror",
-                "eval_metric": "rmse",
+                "eval_metric": "mae",
                 "quantile_alpha": q,
-                # 'n_estimators': 400,     # More trees
-                # 'max_depth': 1,         # Shallow trees
-                # 'learning_rate': 0.1,   # Lower learning rate
+                "n_estimators": 400,  # Many estimators
+                # "max_depth": 1,  # Shallow trees
             }
             model = self.model_factory(**params)
             model.fit(X, y)
@@ -190,7 +189,7 @@ def integration_test():
     # Compute the intervals
     confidence_df["interval"] = confidence_df["quantile_95"] - confidence_df["quantile_05"]
 
-    # Confidence is domain specific (in this case any interval > 2 logS unit is considered low confidence)
+    # Confidence is domain specific (in this case any interval > 4 logS unit is considered low confidence)
     confidence_df["confidence"] = 1.0 - (np.clip(confidence_df["interval"], 0, 4) * 0.25)
 
     # Columns of Interest
