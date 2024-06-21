@@ -13,7 +13,7 @@ dash-bootstrap-templates == 1.1.1
 dash_ag_grid
 tabulate >= 0.9.0
 shap>=0.43.0
-xgboost>=2.0.2
+xgboost==2.0.3
 joblib>=1.3.2
 cryptography>=42.0.5
 rdkit>=2023.9.1
