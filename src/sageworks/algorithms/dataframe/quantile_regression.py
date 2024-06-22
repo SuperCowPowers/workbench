@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.base import RegressorMixin
 from xgboost import XGBRegressor
+import xgboost as xgb
 
 
 class QuantileRegressor(BaseEstimator, TransformerMixin):
@@ -24,7 +25,7 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
         """
         self.model_factory = model
         self.models = {}
-        self.quantiles = [0.05, 0.25, 0.50, 0.75, 0.95]
+        self.quantiles = [0.1, 0.25, 0.50, 0.75, 0.9]
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> BaseEstimator:
         """
@@ -52,10 +53,13 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
         for q in self.quantiles:
             params = {
                 "objective": "reg:quantileerror",
-                "eval_metric": "mae",
+                " : "rmse",
                 "quantile_alpha": q,
-                "n_estimators": 400,  # Many estimators
-                # "max_depth": 1,  # Shallow trees
+                "n_estimators": 1000,  # Many estimators
+                "max_depth": 1,  # Shallow trees
+                #"min_child_weight": 1,
+                #"gamma": 0.5,
+                #"lambda": 1,
             }
             model = self.model_factory(**params)
             model.fit(X, y)
@@ -82,11 +86,11 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
 
         # Create a copy of the provided DataFrame and add the new columns
         result_df = X.copy()
-        result_df["quantile_05"] = quantile_predictions[self.quantiles[0]]
+        result_df["quantile_10"] = quantile_predictions[self.quantiles[0]]
         result_df["quantile_25"] = quantile_predictions[self.quantiles[1]]
         result_df["quantile_50"] = quantile_predictions[self.quantiles[2]]
         result_df["quantile_75"] = quantile_predictions[self.quantiles[3]]
-        result_df["quantile_95"] = quantile_predictions[self.quantiles[4]]
+        result_df["quantile_90"] = quantile_predictions[self.quantiles[4]]
 
         # Return the transformed DataFrame
         return result_df
@@ -116,7 +120,7 @@ def unit_test():
 
     # Generate some random data
     generator = TestDataGenerator()
-    df = generator.regression_with_varying_noise(n_samples=1000, n_features=1)
+    df = generator.confidence_data(n_samples=1000)
 
     # Grab the target and feature columns
     target_column = "target"
@@ -132,25 +136,34 @@ def unit_test():
     confidence_df[target_column] = y
 
     # Compute the intervals
-    confidence_df["interval"] = confidence_df["quantile_95"] - confidence_df["quantile_05"]
+    confidence_df["interval"] = confidence_df["quantile_90"] - confidence_df["quantile_10"]
 
     # Columns of Interest
     dropdown_columns = [
-        "quantile_05",
+        "quantile_10",
         "quantile_25",
         "quantile_50",
         "quantile_75",
-        "quantile_95",
+        "quantile_90",
         "interval",
         target_column,
     ]
+    dropdown_columns += feature_columns
+
+    # Temp plot the first tree
+    """
+    import matplotlib.pyplot as plt
+    q_05_model = residuals_calculator.models[0.05]
+    xgb.plot_tree(q_05_model, num_trees=0)
+    plt.show()
+    """
 
     # Run the Unit Test on the Plugin
     plugin_test = PluginUnitTest(
         ScatterPlot,
         input_data=confidence_df[dropdown_columns],
-        x=target_column,
-        y="quantile_50",
+        x=feature_columns[0],
+        y=target_column,
         color="interval",
         dropdown_columns=dropdown_columns,
     )
@@ -187,18 +200,18 @@ def integration_test():
     confidence_df[target_column] = y
 
     # Compute the intervals
-    confidence_df["interval"] = confidence_df["quantile_95"] - confidence_df["quantile_05"]
+    confidence_df["interval"] = confidence_df["quantile_90"] - confidence_df["quantile_10"]
 
     # Confidence is domain specific (in this case any interval > 4 logS unit is considered low confidence)
     confidence_df["confidence"] = 1.0 - (np.clip(confidence_df["interval"], 0, 4) * 0.25)
 
     # Columns of Interest
     dropdown_columns = [
-        "quantile_05",
+        "quantile_10",
         "quantile_25",
         "quantile_50",
         "quantile_75",
-        "quantile_95",
+        "quantile_90",
         "interval",
         "confidence",
         target_column,

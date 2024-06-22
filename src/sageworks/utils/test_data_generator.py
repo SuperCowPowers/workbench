@@ -42,6 +42,43 @@ class TestDataGenerator:
         return df
 
     @staticmethod
+    def confidence_data(n_samples=400, n_features=1):
+        # np.random.seed(42)  # for reproducibility
+        segment_size = n_samples // 2
+
+        # Generate the x values with varying density, making the sparse parts slightly more sparse
+        base_x = np.concatenate([
+            np.linspace(0, 1, segment_size // 4),
+            np.linspace(1, 3, segment_size // 4),
+            np.linspace(3, 6, segment_size // 4),
+            np.linspace(6, 10, segment_size // 4)
+        ])
+
+        # Create the first segment by flipping and offsetting
+        sparse_to_dense_x = -np.flip(base_x)
+
+        # Create the second segment by adding an offset
+        dense_to_sparse_x = base_x
+
+        # Compute the target values using x**2 and flatten both sides by scaling
+        sparse_y = 0.1 * (sparse_to_dense_x ** 2)  # Flatten the curve for sparse part
+        noise = np.linspace(0, 0.1, dense_to_sparse_x.shape[0]) * dense_to_sparse_x  # Linearly increasing noise
+        dense_to_sparse_y = 0.1 * (dense_to_sparse_x ** 2) + np.random.normal(0, noise)
+
+        # Concatenate all parts
+        x = np.concatenate([sparse_to_dense_x, dense_to_sparse_x])
+        y = np.concatenate([sparse_y, dense_to_sparse_y])
+
+        # Add a bit of noise to all y
+        # y += np.random.normal(0, 0.05, y.shape[0])
+
+        # Create DataFrame
+        data = pd.DataFrame(x.reshape(-1, 1), columns=[f'feature_{i + 1}' for i in range(n_features)])
+        data['target'] = y
+
+        return data
+
+    @staticmethod
     def regression_with_varying_noise(n_samples: int = 1000, n_features: int = 4) -> pd.DataFrame:
         """Generate a Pandas DataFrame with regression data and varying noise
 
@@ -200,6 +237,7 @@ class TestDataGenerator:
 
 if __name__ == "__main__":
     """Exercise the TestDataGenerator class"""
+    import matplotlib.pyplot as plt
 
     # Create a TestDataGenerator
     test_data = TestDataGenerator()
@@ -214,3 +252,15 @@ if __name__ == "__main__":
 
     df = test_data.person_data(100)
     print(df.head())
+
+    # Test and plot the confidence data
+    synthetic_data = test_data.confidence_data()
+    print(f"Synthetic Data Shape: {synthetic_data.shape}")
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    plt.scatter(synthetic_data['feature_1'], synthetic_data['target'], alpha=0.7, c='b', label='Data')
+    plt.xlabel('Feature 1')
+    plt.ylabel('Target')
+    plt.title('Synthetic Data with Sparse to Dense and Dense to Sparse with Noise Segments')
+    plt.show()
