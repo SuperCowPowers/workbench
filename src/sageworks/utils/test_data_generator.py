@@ -47,12 +47,14 @@ class TestDataGenerator:
         segment_size = n_samples // 2
 
         # Generate the x values with varying density, making the sparse parts slightly more sparse
-        base_x = np.concatenate([
-            np.linspace(0, 1, segment_size // 4),
-            np.linspace(1, 3, segment_size // 4),
-            np.linspace(3, 6, segment_size // 4),
-            np.linspace(6, 10, segment_size // 4)
-        ])
+        base_x = np.concatenate(
+            [
+                np.linspace(0, 1, segment_size // 4),
+                np.linspace(1, 3, segment_size // 4),
+                np.linspace(3, 6, segment_size // 4),
+                np.linspace(6, 10, segment_size // 4),
+            ]
+        )
 
         # Create the first segment by flipping and offsetting
         sparse_to_dense_x = -np.flip(base_x)
@@ -61,9 +63,9 @@ class TestDataGenerator:
         dense_to_sparse_x = base_x
 
         # Compute the target values using x**2 and flatten both sides by scaling
-        sparse_y = 0.1 * (sparse_to_dense_x ** 2)  # Flatten the curve for sparse part
+        sparse_y = 0.1 * (sparse_to_dense_x**2)  # Flatten the curve for sparse part
         noise = np.linspace(0, 0.1, dense_to_sparse_x.shape[0]) * dense_to_sparse_x  # Linearly increasing noise
-        dense_to_sparse_y = 0.1 * (dense_to_sparse_x ** 2) + np.random.normal(0, noise)
+        dense_to_sparse_y = 0.1 * (dense_to_sparse_x**2) + np.random.normal(0, noise)
 
         # Concatenate all parts
         x = np.concatenate([sparse_to_dense_x, dense_to_sparse_x])
@@ -73,8 +75,8 @@ class TestDataGenerator:
         # y += np.random.normal(0, 0.05, y.shape[0])
 
         # Create DataFrame
-        data = pd.DataFrame(x.reshape(-1, 1), columns=[f'feature_{i + 1}' for i in range(n_features)])
-        data['target'] = y
+        data = pd.DataFrame(x.reshape(-1, 1), columns=[f"feature_{i + 1}" for i in range(n_features)])
+        data["target"] = y
 
         return data
 
@@ -259,8 +261,8 @@ if __name__ == "__main__":
 
     # Plotting
     plt.figure(figsize=(10, 6))
-    plt.scatter(synthetic_data['feature_1'], synthetic_data['target'], alpha=0.7, c='b', label='Data')
-    plt.xlabel('Feature 1')
-    plt.ylabel('Target')
-    plt.title('Synthetic Data with Sparse to Dense and Dense to Sparse with Noise Segments')
+    plt.scatter(synthetic_data["feature_1"], synthetic_data["target"], alpha=0.7, c="b", label="Data")
+    plt.xlabel("Feature 1")
+    plt.ylabel("Target")
+    plt.title("Synthetic Data with Sparse to Dense and Dense to Sparse with Noise Segments")
     plt.show()

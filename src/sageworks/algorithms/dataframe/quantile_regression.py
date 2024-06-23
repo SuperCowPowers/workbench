@@ -4,7 +4,6 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.base import RegressorMixin
 from xgboost import XGBRegressor
-import xgboost as xgb
 
 
 class QuantileRegressor(BaseEstimator, TransformerMixin):
@@ -53,13 +52,12 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
         for q in self.quantiles:
             params = {
                 "objective": "reg:quantileerror",
-                " : "rmse",
                 "quantile_alpha": q,
                 "n_estimators": 1000,  # Many estimators
                 "max_depth": 1,  # Shallow trees
-                #"min_child_weight": 1,
-                #"gamma": 0.5,
-                #"lambda": 1,
+                # "min_child_weight": 1,
+                # "gamma": 0.5,
+                # "lambda": 1,
             }
             model = self.model_factory(**params)
             model.fit(X, y)

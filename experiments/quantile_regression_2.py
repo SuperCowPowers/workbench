@@ -12,17 +12,14 @@ y_train = y
 
 # Function to train quantile model and predict
 def train_quantile_model(X, y, quantile, n_estimators):
-    model = XGBRegressor(objective='reg:quantileerror',
-                         quantile_alpha=quantile,
-                         n_estimators=100,
-                         max_depth=1)
+    model = XGBRegressor(objective="reg:quantileerror", quantile_alpha=quantile, n_estimators=100, max_depth=1)
     model.fit(X, y)
     return model.predict(X)
 
 
 # Function to train RMSE model and predict
 def train_rmse_model(X, y, n_estimators):
-    model = XGBRegressor(objective='reg:squarederror')
+    model = XGBRegressor(objective="reg:squarederror")
     model.fit(X, y)
     return model.predict(X)
 
@@ -42,13 +39,13 @@ rmse_predictions = train_rmse_model(X_train, y_train, n_estimators)
 
 # Plot the results
 plt.figure(figsize=(10, 6))
-plt.scatter(X_train, y_train, label='Data', alpha=0.5)
-colors = ['blue', 'green', 'red', 'purple', 'orange']
+plt.scatter(X_train, y_train, label="Data", alpha=0.5)
+colors = ["blue", "green", "red", "purple", "orange"]
 for q, color in zip(quantiles, colors):
-    plt.plot(X_train, predictions[q], label=f'Quantile {int(q*100)}', color=color)
-plt.plot(X_train, rmse_predictions, label='RMSE Prediction', color='black', linestyle='--')
-plt.xlabel('X')
-plt.ylabel('Y')
-plt.title('Quantile Regression and RMSE Prediction with XGBoost')
+    plt.plot(X_train, predictions[q], label=f"Quantile {int(q*100)}", color=color)
+plt.plot(X_train, rmse_predictions, label="RMSE Prediction", color="black", linestyle="--")
+plt.xlabel("X")
+plt.ylabel("Y")
+plt.title("Quantile Regression and RMSE Prediction with XGBoost")
 plt.legend()
 plt.show()
