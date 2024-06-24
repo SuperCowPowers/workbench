@@ -94,21 +94,7 @@ def calculate_confidence(y, quantile_models, X):
 
     # Now combine the two confidence values
     confidence = (q_conf + iqr_conf) / 2
-    # confidence = q_conf * 2
     return confidence
-
-    """
-    confidence = np.zeros_like(preds)
-    for i, pred in enumerate(preds):
-        if pred < lower_25[i]:
-            confidence[i] = (pred - lower_05[i]) / (lower_25[i] - lower_05[i])
-        elif pred > upper_75[i]:
-            confidence[i] = (upper_95[i] - pred) / (upper_95[i] - upper_75[i])
-        else:
-            confidence[i] = 1.0  # High confidence if the prediction is between the 25th and 75th percentiles
-
-    return confidence
-    """
 
 
 # Train models
