@@ -1,4 +1,5 @@
 """A Test Data Generator Class"""
+
 import os
 import logging
 import pandas as pd
@@ -56,8 +57,8 @@ class TestDataGenerator:
         """
 
         # Generate synthetic data with even spacing from -10 to 5 and sparse spacing from 5 to 10
-        x_even = np.linspace(-10, 5, int(n_samples*7/8))  # Evenly spaced from -10 to 5
-        x_sparse = 5 + (np.linspace(0, 1, int(n_samples*1/8)) ** 2) * 5  # Increasingly sparse from 5 to 10
+        x_even = np.linspace(-10, 5, int(n_samples * 7 / 8))  # Evenly spaced from -10 to 5
+        x_sparse = 5 + (np.linspace(0, 1, int(n_samples * 1 / 8)) ** 2) * 5  # Increasingly sparse from 5 to 10
         x = np.concatenate([x_even, x_sparse])
 
         # Ensure no values are exactly zero or negative in the input to the log function
@@ -124,7 +125,7 @@ class TestDataGenerator:
         """Generate a Pandas DataFrame of AQSol Data"""
 
         # Define a temporary file path
-        temp_file_path = os.path.join(tempfile.gettempdir(), 'aqsol_data.csv')
+        temp_file_path = os.path.join(tempfile.gettempdir(), "aqsol_data.csv")
 
         # First check if the data is already stored in a local temporary file
         if os.path.exists(temp_file_path):
@@ -145,9 +146,25 @@ class TestDataGenerator:
 
     def aqsol_features(self) -> list:
         """Get the AQSol Feature List"""
-        return ['molwt', 'mollogp', 'molmr', 'heavyatomcount', 'numhacceptors', 'numhdonors', 'numheteroatoms',
-                'numrotatablebonds', 'numvalenceelectrons', 'numaromaticrings', 'numsaturatedrings', 'numaliphaticrings',
-                'ringcount', 'tpsa', 'labuteasa', 'balabanj', 'bertzct']
+        return [
+            "molwt",
+            "mollogp",
+            "molmr",
+            "heavyatomcount",
+            "numhacceptors",
+            "numhdonors",
+            "numheteroatoms",
+            "numrotatablebonds",
+            "numvalenceelectrons",
+            "numaromaticrings",
+            "numsaturatedrings",
+            "numaliphaticrings",
+            "ringcount",
+            "tpsa",
+            "labuteasa",
+            "balabanj",
+            "bertzct",
+        ]
 
     def aqsol_target(self) -> str:
         """Get the AQSol Target"""

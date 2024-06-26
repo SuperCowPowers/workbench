@@ -11,7 +11,11 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
     A class for training regression models over a set of quantiles. Useful for calculating confidence intervals.
     """
 
-    def __init__(self, model: Union[RegressorMixin, XGBRegressor] = XGBRegressor, quantiles: list = [0.05, 0.25, 0.50, 0.75, 0.95]):
+    def __init__(
+        self,
+        model: Union[RegressorMixin, XGBRegressor] = XGBRegressor,
+        quantiles: list = [0.05, 0.25, 0.50, 0.75, 0.95],
+    ):
         """
         Initializes the QuantileRegressor with the specified parameters.
 
@@ -114,7 +118,7 @@ def example_confidence(q_dataframe, target="target", target_sensitivity=0.25):
     # If the interval with is greater than target_sensitivity with have 0 confidence
     # anything below that is a linear scale from 0 to 1
     confidence_interval = upper_95 - lower_05
-    q_conf = np.clip(1 - confidence_interval/(target_sensitivity * 4.0), 0, 1)
+    q_conf = np.clip(1 - confidence_interval / (target_sensitivity * 4.0), 0, 1)
 
     # Now lets look at the IQR distance for each observation
     epsilon_iqr = target_sensitivity * 0.5
@@ -206,8 +210,9 @@ def integration_test():
     confidence_df["interval"] = confidence_df["q_95"] - confidence_df["q_05"]
 
     # Compute the confidence
-    confidence_df["conf"], confidence_df["q_conf"], confidence_df["iqr_conf"] = example_confidence(confidence_df, target_column,
-                                                                                                   target_sensitivity=1.5)
+    confidence_df["conf"], confidence_df["q_conf"], confidence_df["iqr_conf"] = example_confidence(
+        confidence_df, target_column, target_sensitivity=1.5
+    )
 
     # Columns of Interest
     q_columns = [c for c in confidence_df.columns if c.startswith("q_")]

@@ -914,4 +914,3 @@ if __name__ == "__main__":
     # Run Inference and metrics for a Classification Endpoint
     class_endpoint = EndpointCore("wine-classification-end")
     class_endpoint.auto_inference()
-
