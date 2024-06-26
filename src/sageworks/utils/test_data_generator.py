@@ -1,8 +1,10 @@
 """A Test Data Generator Class"""
-
+import os
 import logging
 import pandas as pd
 import numpy as np
+import awswrangler as wr
+import tempfile
 from sklearn.datasets import make_classification, make_regression
 
 
@@ -42,43 +44,60 @@ class TestDataGenerator:
         return df
 
     @staticmethod
-    def confidence_data(n_samples=400, n_features=1):
-        # np.random.seed(42)  # for reproducibility
-        segment_size = n_samples // 2
+    def confidence_data(n_samples=2000, n_features=1) -> pd.DataFrame:
+        """Generate a Pandas DataFrame with synthetic data for used with confidence models
 
-        # Generate the x values with varying density, making the sparse parts slightly more sparse
-        base_x = np.concatenate(
-            [
-                np.linspace(0, 1, segment_size // 4),
-                np.linspace(1, 3, segment_size // 4),
-                np.linspace(3, 6, segment_size // 4),
-                np.linspace(6, 10, segment_size // 4),
-            ]
+        Args:
+            n_samples: number of samples (default: 2000)
+            n_features: number of features (default: 1)
+
+        Returns:
+            pd.DataFrame: DataFrame with synthetic data for confidence models
+        """
+
+        # Generate synthetic data with even spacing from -10 to 5 and sparse spacing from 5 to 10
+        x_even = np.linspace(-10, 5, int(n_samples*7/8))  # Evenly spaced from -10 to 5
+        x_sparse = 5 + (np.linspace(0, 1, int(n_samples*1/8)) ** 2) * 5  # Increasingly sparse from 5 to 10
+        x = np.concatenate([x_even, x_sparse])
+
+        # Ensure no values are exactly zero or negative in the input to the log function
+        epsilon = 1e-6  # Small value to avoid log(0)
+        x_adjusted = np.where(x >= 0, x + 1 + epsilon, -x + 1 + epsilon)
+
+        # Generate non-linear 'S' shape y values
+        np.random.seed(42)
+        y = np.where(x >= 0, np.log(x_adjusted) / np.log(100), -np.log(x_adjusted) / np.log(100)) + np.random.normal(
+            scale=0.02 * np.abs(x), size=x.shape
         )
 
-        # Create the first segment by flipping and offsetting
-        sparse_to_dense_x = -np.flip(base_x)
+        # Add pairs coincident points in X to test IQR functionality
+        for i in range(3):
+            x_coincident = np.array([-0.5, -0.5, 0, 0, 0.5, 0.5])
 
-        # Create the second segment by adding an offset
-        dense_to_sparse_x = base_x
+            # Increasing deltas for the y values
+            y_delta = 0.1 + 0.05 * i
+            y_offsets = [-0.1, 0, 0.1]
 
-        # Compute the target values using x**2 and flatten both sides by scaling
-        sparse_y = 0.1 * (sparse_to_dense_x**2)  # Flatten the curve for sparse part
-        noise = np.linspace(0, 0.1, dense_to_sparse_x.shape[0]) * dense_to_sparse_x  # Linearly increasing noise
-        dense_to_sparse_y = 0.1 * (dense_to_sparse_x**2) + np.random.normal(0, noise)
+            # Now create pairs of y values (-delta + offset and +delta + offset) for each x value
+            y_coincident = np.concatenate([[-y_delta + y_offset, y_delta + y_offset] for y_offset in y_offsets])
 
-        # Concatenate all parts
-        x = np.concatenate([sparse_to_dense_x, dense_to_sparse_x])
-        y = np.concatenate([sparse_y, dense_to_sparse_y])
+            # Add the coincident points to the data`
+            x = np.concatenate([x, x_coincident])
+            y = np.concatenate([y, y_coincident])
 
-        # Add a bit of noise to all y
-        # y += np.random.normal(0, 0.05, y.shape[0])
+        # Reshape the data
+        x = x.reshape(-1, 1)
+
+        # Sort X for plotting (also sorts y)
+        sort_idx = np.argsort(x[:, 0])
+        x = x[sort_idx]
+        y = y[sort_idx]
 
         # Create DataFrame
-        data = pd.DataFrame(x.reshape(-1, 1), columns=[f"feature_{i + 1}" for i in range(n_features)])
-        data["target"] = y
+        df = pd.DataFrame(x.reshape(-1, 1), columns=[f"feature_{i + 1}" for i in range(n_features)])
+        df["target"] = y
 
-        return data
+        return df
 
     @staticmethod
     def regression_with_varying_noise(n_samples: int = 1000, n_features: int = 4) -> pd.DataFrame:
@@ -101,32 +120,38 @@ class TestDataGenerator:
         df = pd.DataFrame({"feature": feature, "target": target})
         return df
 
-        """
-        # Generate basic synthetic data
-        X, y = make_regression(n_samples=n_samples, n_features=n_features, n_informative=n_features,
-                               noise=0.0, random_state=42)
+    def aqsol_data(self) -> pd.DataFrame:
+        """Generate a Pandas DataFrame of AQSol Data"""
 
-        # Normalize target values to the range [0, 100]
-        y = (y - y.min()) / (y.max() - y.min()) * 100
+        # Define a temporary file path
+        temp_file_path = os.path.join(tempfile.gettempdir(), 'aqsol_data.csv')
 
+        # First check if the data is already stored in a local temporary file
+        if os.path.exists(temp_file_path):
+            aqsol_data = pd.read_csv(temp_file_path)
+        else:
+            # If not, read the data from S3
+            s3_path = "s3://sageworks-public-data/comp_chem/aqsol_public_data.csv"
+            aqsol_data = wr.s3.read_csv(s3_path)
 
-        # Introduce varying noise
-        def add_varying_noise(y, max_noise_percentage=0.5):
-            noise_level = (max_noise_percentage / 100) * y  # noise is a percentage of the target value
-            noisy_y = y + noise_level * np.random.randn(len(y))
-            return noisy_y
+            # Lower case all columns
+            aqsol_data.columns = aqsol_data.columns.str.lower()
 
-        # Apply varying noise to the target values
-        y_noisy = add_varying_noise(y, max_noise_percentage=50.0)
-
-        # Create a DataFrame
-        feature_columns = [f'feature_{i + 1}' for i in range(n_features)]
-        df = pd.DataFrame(X, columns=feature_columns)
-        df['target'] = y
+            # Now store the data in a local temporary file
+            aqsol_data.to_csv(temp_file_path, index=False)
 
         # Return the DataFrame
-        return df
-        """
+        return aqsol_data
+
+    def aqsol_features(self) -> list:
+        """Get the AQSol Feature List"""
+        return ['molwt', 'mollogp', 'molmr', 'heavyatomcount', 'numhacceptors', 'numhdonors', 'numheteroatoms',
+                'numrotatablebonds', 'numvalenceelectrons', 'numaromaticrings', 'numsaturatedrings', 'numaliphaticrings',
+                'ringcount', 'tpsa', 'labuteasa', 'balabanj', 'bertzct']
+
+    def aqsol_target(self) -> str:
+        """Get the AQSol Target"""
+        return "solubility"
 
     def person_data(self, rows: int = 100) -> pd.DataFrame:
         """Generate a Pandas DataFrame of Person Data
@@ -258,6 +283,10 @@ if __name__ == "__main__":
     # Test and plot the confidence data
     synthetic_data = test_data.confidence_data()
     print(f"Synthetic Data Shape: {synthetic_data.shape}")
+
+    # AQSol Data
+    aqsol_data = test_data.aqsol_data()
+    print(f"AQSol Data Shape: {aqsol_data.shape}")
 
     # Plotting
     plt.figure(figsize=(10, 6))

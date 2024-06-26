@@ -8,23 +8,21 @@ from xgboost import XGBRegressor
 
 class QuantileRegressor(BaseEstimator, TransformerMixin):
     """
-    A custom transformer for calculating residuals using cross-validation.
-
-    This transformer performs K-Fold cross-validation, generates predictions, computes residuals,
-    and adds 'prediction', 'residuals', 'residuals_abs', 'residuals_100', and 'residuals_100_abs'
-    columns to the input DataFrame.
+    A class for training regression models over a set of quantiles. Useful for calculating confidence intervals.
     """
 
-    def __init__(self, model: Union[RegressorMixin, XGBRegressor] = XGBRegressor):
+    def __init__(self, model: Union[RegressorMixin, XGBRegressor] = XGBRegressor, quantiles: list = [0.05, 0.25, 0.50, 0.75, 0.95]):
         """
         Initializes the QuantileRegressor with the specified parameters.
 
         Args:
             model (Union[RegressorMixin, XGBRegressor]): The machine learning model used for predictions.
+            quantiles (list): The quantiles to calculate (default: [0.05, 0.25, 0.50, 0.75, 0.95]).
         """
         self.model_factory = model
-        self.models = {}
-        self.quantiles = [0.1, 0.25, 0.50, 0.75, 0.9]
+        self.q_models = {}
+        self.quantiles = quantiles
+        self.rmse_model = None
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> BaseEstimator:
         """
@@ -37,33 +35,25 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
         Returns:
             self: Returns an instance of self.
         """
-        """
-        params = {
-            "objective": "reg:quantileerror",
-            "quantile_alpha": 0.5,  # Adjust as needed for different quantiles
-            "n_estimators": 50,     # Fewer trees for less refinement
-            "max_depth": 3,         # Shallow trees
-            "learning_rate": 0.1,   # Lower learning rate
-            "subsample": 0.8,       # Subsample data to introduce randomness
-            "colsample_bytree": 0.8 # Subsample features
-        }
-        """
+
         # Train models for each of the quantiles
         for q in self.quantiles:
             params = {
                 "objective": "reg:quantileerror",
                 "quantile_alpha": q,
-                "n_estimators": 1000,  # Many estimators
+                "n_estimators": 100,  # Fewer estimators
                 "max_depth": 1,  # Shallow trees
-                # "min_child_weight": 1,
-                # "gamma": 0.5,
-                # "lambda": 1,
             }
             model = self.model_factory(**params)
             model.fit(X, y)
 
             # Store the model
-            self.models[q] = model
+            self.q_models[q] = model
+
+        # Train a model for RMSE predictions
+        params = {"objective": "reg:squarederror"}
+        self.rmse_model = self.model_factory(**params)
+        self.rmse_model.fit(X, y)
 
         # Return the instance of self (for method chaining)
         return self
@@ -80,23 +70,24 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
         """
 
         # Run predictions for each quantile
-        quantile_predictions = {q: self.models[q].predict(X) for q in self.quantiles}
+        quantile_predictions = {q: self.q_models[q].predict(X) for q in self.quantiles}
 
         # Create a copy of the provided DataFrame and add the new columns
         result_df = X.copy()
-        result_df["quantile_10"] = quantile_predictions[self.quantiles[0]]
-        result_df["quantile_25"] = quantile_predictions[self.quantiles[1]]
-        result_df["quantile_50"] = quantile_predictions[self.quantiles[2]]
-        result_df["quantile_75"] = quantile_predictions[self.quantiles[3]]
-        result_df["quantile_90"] = quantile_predictions[self.quantiles[4]]
+
+        # Add the quantile predictions to the DataFrame
+        for q in self.quantiles:
+            result_df[f"q_{int(q*100):02}"] = quantile_predictions[q]
+
+        # Add the RMSE predictions to the DataFrame
+        result_df["prediction"] = self.rmse_model.predict(X)
 
         # Return the transformed DataFrame
         return result_df
 
     def fit_transform(self, X: pd.DataFrame, y: pd.Series, **fit_params) -> pd.DataFrame:
         """
-        Fits the model and transforms the input DataFrame by adding 'quantile_05', 'quantile_50',
-        and 'quantile_95' columns.
+        Fits the model and transforms the input DataFrame by adding quantile columns and a prediction column.
 
         Args:
             X (pd.DataFrame): The input features.
@@ -108,6 +99,32 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
         """
         self.fit(X, y)
         return self.transform(X)
+
+
+# Calculate confidence based on the quantile predictions
+def example_confidence(q_dataframe, target="target", target_sensitivity=0.25):
+    lower_05 = q_dataframe["q_05"]
+    lower_25 = q_dataframe["q_25"]
+    quant_50 = q_dataframe["q_50"]
+    upper_75 = q_dataframe["q_75"]
+    upper_95 = q_dataframe["q_95"]
+    y = q_dataframe[target]
+
+    # Domain specific logic for calculating confidence
+    # If the interval with is greater than target_sensitivity with have 0 confidence
+    # anything below that is a linear scale from 0 to 1
+    confidence_interval = upper_95 - lower_05
+    q_conf = np.clip(1 - confidence_interval/(target_sensitivity * 4.0), 0, 1)
+
+    # Now lets look at the IQR distance for each observation
+    epsilon_iqr = target_sensitivity * 0.5
+    iqr = np.maximum(epsilon_iqr, np.abs(upper_75 - lower_25))
+    iqr_distance = np.abs(y - quant_50) / iqr
+    iqr_conf = np.clip(1 - iqr_distance, 0, 1)
+
+    # Now combine the two confidence values
+    confidence = (q_conf + iqr_conf) / 2
+    return confidence, q_conf, iqr_conf
 
 
 def unit_test():
@@ -134,27 +151,15 @@ def unit_test():
     confidence_df[target_column] = y
 
     # Compute the intervals
-    confidence_df["interval"] = confidence_df["quantile_90"] - confidence_df["quantile_10"]
+    confidence_df["interval"] = confidence_df["q_95"] - confidence_df["q_05"]
+
+    # Compute the confidence
+    confidence_df["conf"], confidence_df["q_conf"], confidence_df["iqr_conf"] = example_confidence(confidence_df)
 
     # Columns of Interest
-    dropdown_columns = [
-        "quantile_10",
-        "quantile_25",
-        "quantile_50",
-        "quantile_75",
-        "quantile_90",
-        "interval",
-        target_column,
-    ]
+    q_columns = [c for c in confidence_df.columns if c.startswith("q_")]
+    dropdown_columns = q_columns + ["interval", "conf", "q_conf", "iqr_conf", "prediction", target_column]
     dropdown_columns += feature_columns
-
-    # Temp plot the first tree
-    """
-    import matplotlib.pyplot as plt
-    q_05_model = residuals_calculator.models[0.05]
-    xgb.plot_tree(q_05_model, num_trees=0)
-    plt.show()
-    """
 
     # Run the Unit Test on the Plugin
     plugin_test = PluginUnitTest(
@@ -162,7 +167,7 @@ def unit_test():
         input_data=confidence_df[dropdown_columns],
         x=feature_columns[0],
         y=target_column,
-        color="interval",
+        color="conf",
         dropdown_columns=dropdown_columns,
     )
     plugin_test.run()
@@ -198,30 +203,24 @@ def integration_test():
     confidence_df[target_column] = y
 
     # Compute the intervals
-    confidence_df["interval"] = confidence_df["quantile_90"] - confidence_df["quantile_10"]
+    confidence_df["interval"] = confidence_df["q_95"] - confidence_df["q_05"]
 
-    # Confidence is domain specific (in this case any interval > 4 logS unit is considered low confidence)
-    confidence_df["confidence"] = 1.0 - (np.clip(confidence_df["interval"], 0, 4) * 0.25)
+    # Compute the confidence
+    confidence_df["conf"], confidence_df["q_conf"], confidence_df["iqr_conf"] = example_confidence(confidence_df, target_column,
+                                                                                                   target_sensitivity=1.5)
 
     # Columns of Interest
-    dropdown_columns = [
-        "quantile_10",
-        "quantile_25",
-        "quantile_50",
-        "quantile_75",
-        "quantile_90",
-        "interval",
-        "confidence",
-        target_column,
-    ]
+    q_columns = [c for c in confidence_df.columns if c.startswith("q_")]
+    dropdown_columns = q_columns + ["interval", "conf", "q_conf", "iqr_conf", "prediction", target_column]
+    dropdown_columns += feature_columns
 
     # Run the Unit Test on the Plugin
     plugin_test = PluginUnitTest(
         ScatterPlot,
         input_data=confidence_df[dropdown_columns],
-        x=target_column,
-        y="quantile_50",
-        color="confidence",
+        x="prediction",
+        y="solubility",
+        color="conf",
         dropdown_columns=dropdown_columns,
     )
     plugin_test.run()
@@ -231,5 +230,5 @@ if __name__ == "__main__":
     """Example usage of the QuantileRegressor"""
 
     # Run the tests
-    # unit_test()
-    integration_test()
+    unit_test()
+    # integration_test()
