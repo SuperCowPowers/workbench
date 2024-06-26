@@ -553,13 +553,13 @@ class ModelCore(Artifact):
 
         # Remove the needs_onboard tag
         self.remove_health_tag("needs_onboard")
+        self.set_status("ready")
 
         # Run a health check and refresh the meta
         time.sleep(2)  # Give the AWS Metadata a chance to update
         self.health_check()
         self.refresh_meta()
         self.details(recompute=True)
-        self.set_status("ready")
         return True
 
     def delete(self):

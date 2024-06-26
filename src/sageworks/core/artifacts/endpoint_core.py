@@ -271,22 +271,19 @@ class EndpointCore(Artifact):
         Returns:
             bool: True if the Endpoint is successfully onboarded, False otherwise
         """
-        self.log.important(f"Onboarding {self.uuid}...")
-        self.set_status("onboarding")
-        self.remove_health_tag("needs_onboard")
-
-        # Give the AWS Metadata a chance to update
-        time.sleep(5)
 
         # Make sure our input is defined
         if self.get_input() == "unknown":
             if interactive:
                 input_model = input("Input Model?: ")
-                self.upsert_sageworks_meta({"sageworks_input": input_model})
-                self.model_name = input_model
             else:
                 self.log.error("Input Model is not defined!")
                 return False
+        else:
+            input_model = self.get_input()
+
+        # Now that we have the details, let's onboard the Endpoint with args
+        return self.onboard_with_args(input_model)
 
         # Run a health check and refresh the meta
         time.sleep(2)  # Give the AWS Metadata a chance to update
@@ -294,6 +291,31 @@ class EndpointCore(Artifact):
         self.refresh_meta()
         self.details(recompute=True)
         self.set_status("ready")
+        return True
+
+    def onboard_with_args(self, input_model: str) -> bool:
+        """Onboard the Endpoint with the given arguments
+
+        Args:
+            input_model (str): The input model for this endpoint
+        Returns:
+            bool: True if the Endpoint is successfully onboarded, False otherwise
+        """
+        # Set the status to onboarding
+        self.set_status("onboarding")
+
+        self.upsert_sageworks_meta({"sageworks_input": input_model})
+        self.model_name = input_model
+
+        # Remove the needs_onboard tag
+        self.remove_health_tag("needs_onboard")
+        self.set_status("ready")
+
+        # Run a health check and refresh the meta
+        time.sleep(2)  # Give the AWS Metadata a chance to update
+        self.health_check()
+        self.refresh_meta()
+        self.details(recompute=True)
         return True
 
     def model_details(self) -> dict:
@@ -860,6 +882,9 @@ if __name__ == "__main__":
     print(my_endpoint.created())
     print(my_endpoint.modified())
 
+    # Test onboarding
+    my_endpoint.onboard()
+
     # Get the tags associated with this Endpoint
     print(f"Tags: {my_endpoint.get_tags()}")
 
@@ -889,3 +914,4 @@ if __name__ == "__main__":
     # Run Inference and metrics for a Classification Endpoint
     class_endpoint = EndpointCore("wine-classification-end")
     class_endpoint.auto_inference()
+
