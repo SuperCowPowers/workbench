@@ -28,17 +28,19 @@ class LicenseManager:
     log = logging.getLogger("sageworks")
 
     @classmethod
-    def load_api_license(cls, aws_account_id: Union[str, None], api_key: str) -> Union[dict, None]:
+    def load_api_license(cls, aws_account_id: Union[str, None], api_key: str, license_api_key: str = None) -> Union[dict, None]:
         """Internal: Load the SageWorks API License, verify it, and return the licensed features
         Args:
             aws_account_id(str): The AWS Account ID to verify the license against (None for Open Source)
             api_key(str): The SageWorks API Key to verify (base64 encoded)
+            license_api_key(str): The SageWorks License API Key (default: None)
         Returns:
             dict/None: The SageWorks API License Information or None if the license is invalid
         """
 
         # Store the API Key for later use
         cls.api_key = api_key
+        cls.license_api_key = license_api_key
 
         # Decode the API Key
         try:
@@ -142,7 +144,7 @@ class LicenseManager:
     def contact_license_server(cls) -> requests.Response:
         """Contact the SageWorks License Server to verify the license."""
         server_url = "https://sageworks-keyserver.com/decode-key"
-        headers = {"Content-Type": "application/json", "x-api-key": "Z3dDGm4392V3klijcBbT3ccEutwwWMp82IbYa5i0"}
+        headers = {"Content-Type": "application/json", "x-api-key": cls.license_api_key}
         data = {"api_key": cls.api_key}
         return requests.post(server_url, headers=headers, json=data)
 
@@ -154,9 +156,10 @@ if __name__ == "__main__":
     # Grab the API Key from the SageWorks ConfigManager
     cm = ConfigManager()
     api_key = cm.get_config("SAGEWORKS_API_KEY")
+    license_api_key = cm.get_config("LICENSE_API_KEY")
     print(LicenseManager.get_license_id())
 
-    my_license_info = LicenseManager.load_api_license(aws_account_id=None, api_key=api_key)
+    my_license_info = LicenseManager.load_api_license(aws_account_id=None, api_key=api_key, license_api_key=license_api_key)
     print(my_license_info)
     LicenseManager.print_license_info()
     print(LicenseManager.get_license_id())
