@@ -122,6 +122,7 @@ def domain_specific_confidence_norm(quantile_models, X, predictions):
     confidence = (q_conf + iqr_conf) / 2
     return confidence, conf_interval, iqr_distance
 
+
 def domain_specific_confidence_2(quantile_models, X, predictions):
     lower_05 = quantile_models[0.05].predict(X)
     lower_25 = quantile_models[0.25].predict(X)

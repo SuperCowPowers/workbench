@@ -28,7 +28,9 @@ class LicenseManager:
     log = logging.getLogger("sageworks")
 
     @classmethod
-    def load_api_license(cls, aws_account_id: Union[str, None], api_key: str, license_api_key: str = None) -> Union[dict, None]:
+    def load_api_license(
+        cls, aws_account_id: Union[str, None], api_key: str, license_api_key: str = None
+    ) -> Union[dict, None]:
         """Internal: Load the SageWorks API License, verify it, and return the licensed features
         Args:
             aws_account_id(str): The AWS Account ID to verify the license against (None for Open Source)
@@ -159,7 +161,9 @@ if __name__ == "__main__":
     license_api_key = cm.get_config("LICENSE_API_KEY")
     print(LicenseManager.get_license_id())
 
-    my_license_info = LicenseManager.load_api_license(aws_account_id=None, api_key=api_key, license_api_key=license_api_key)
+    my_license_info = LicenseManager.load_api_license(
+        aws_account_id=None, api_key=api_key, license_api_key=license_api_key
+    )
     print(my_license_info)
     LicenseManager.print_license_info()
     print(LicenseManager.get_license_id())
