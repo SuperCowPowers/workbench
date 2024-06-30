@@ -26,8 +26,8 @@ setup(
         "sageworks": [
             "resources/signature_verify_pub.pem",
             "resources/open_source_api.key",
-            "core/transforms/features_to_model/light_model_harness/xgb_model.template",
-            "core/transforms/features_to_model/light_model_harness/requirements.txt",
+            "core/transforms/features_to_model/light_xgb_model/xgb_model.template",
+            "core/transforms/features_to_model/light_xgb_model/requirements.txt",
         ]
     },
     install_requires=install_requires,
