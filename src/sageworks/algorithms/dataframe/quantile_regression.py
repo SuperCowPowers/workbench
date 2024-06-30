@@ -51,8 +51,11 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
             model = self.model_factory(**params)
             model.fit(X, y)
 
+            # Convert quantile to string
+            q_str = f"q_{int(q * 100):02}"
+
             # Store the model
-            self.q_models[q] = model
+            self.q_models[q_str] = model
 
         # Train a model for RMSE predictions
         params = {"objective": "reg:squarederror"}
@@ -74,14 +77,14 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
         """
 
         # Run predictions for each quantile
-        quantile_predictions = {q: self.q_models[q].predict(X) for q in self.quantiles}
+        quantile_predictions = {q: model.predict(X) for q, model in self.q_models.items()}
 
         # Create a copy of the provided DataFrame and add the new columns
         result_df = X.copy()
 
         # Add the quantile predictions to the DataFrame
-        for q in self.quantiles:
-            result_df[f"q_{int(q*100):02}"] = quantile_predictions[q]
+        for name, preds in quantile_predictions.items():
+            result_df[name] = preds
 
         # Add the RMSE predictions to the DataFrame
         result_df["mean"] = self.rmse_model.predict(X)
@@ -365,5 +368,5 @@ if __name__ == "__main__":
     """Example usage of the QuantileRegressor"""
 
     # Run the tests
-    # unit_test()
-    integration_test()
+    unit_test()
+    # integration_test()
