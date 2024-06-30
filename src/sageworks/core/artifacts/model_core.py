@@ -605,9 +605,9 @@ class ModelCore(Artifact):
             Use the model_type attribute instead
         """
         model_type = self.sageworks_meta().get("sageworks_model_type")
-        if model_type and model_type != "unknown":
+        try:
             return ModelType(model_type)
-        else:
+        except ValueError:
             self.log.warning(f"Could not determine model type for {self.model_name}!")
             return ModelType.UNKNOWN
 
