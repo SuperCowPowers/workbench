@@ -445,11 +445,13 @@ class ModelCore(Artifact):
 
     def _determine_model_type(self):
         """Internal: Determine the Model Type"""
-        model_type = input("Model Type? (classifier, regressor, unsupervised, transformer): ")
+        model_type = input("Model Type? (classifier, regressor, quantile_regressor, unsupervised, transformer): ")
         if model_type == "classifier":
             self._set_model_type(ModelType.CLASSIFIER)
         elif model_type == "regressor":
             self._set_model_type(ModelType.REGRESSOR)
+        elif model_type == "quantile_regressor":
+            self._set_model_type(ModelType.QUANTILE_REGRESSOR)
         elif model_type == "unsupervised":
             self._set_model_type(ModelType.UNSUPERVISED)
         elif model_type == "transformer":
@@ -624,7 +626,7 @@ class ModelCore(Artifact):
                 self.log.warning(f"No training job metrics found for {self.training_job_name}")
                 self.upsert_sageworks_meta({"sageworks_training_metrics": None, "sageworks_training_cm": None})
                 return
-            if self.model_type == ModelType.REGRESSOR:
+            if self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]:
                 if "timestamp" in df.columns:
                     df = df.drop(columns=["timestamp"])
 
@@ -828,7 +830,7 @@ class ModelCore(Artifact):
             return [pull_s3_data(f) for f in s3_paths if "inference_shap_values" in f]
 
         # One CSV if regressor
-        if self.model_type == ModelType.REGRESSOR:
+        if self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]:
             s3_path = f"{shapley_s3_path}/inference_shap_values.csv"
             return pull_s3_data(s3_path)
 

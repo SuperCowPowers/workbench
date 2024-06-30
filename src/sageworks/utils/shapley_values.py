@@ -28,7 +28,7 @@ def generate_shap_values(endpoint_name: str, model_type: str, pred_results_df: p
 
     # Do we have a model artifact?
     if model_artifact is None:
-        self.log.error(f"Could not find model artifact for {endpoint_name}")
+        log.error(f"Could not find model artifact for {endpoint_name}")
         return
 
     # Get the exact features used to train the model

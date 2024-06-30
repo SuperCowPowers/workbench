@@ -31,7 +31,7 @@ class FeaturesToModel(Transform):
         Args:
             feature_uuid (str): UUID of the FeatureSet to use as input
             model_uuid (str): UUID of the Model to create as output
-            model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER
+            model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.
         """
 
         # Make sure the model_uuid is a valid name
@@ -59,33 +59,50 @@ class FeaturesToModel(Transform):
         Args:
             target_column (str): Column name of the target variable
             feature_list (list[str]): A list of columns for the features
-            model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER
+            model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.
             train_all_data (bool): Train on ALL (100%) of the data
         Returns:
            str: The name of the generated model script
         """
 
         # FIXME: Revisit all of this since it's a bit wonky
-        script_name = "generated_xgb_model.py"
-        dir_path = Path(__file__).parent.absolute()
-        self.model_script_dir = os.path.join(dir_path, "light_xgb_model")
-        template_path = os.path.join(self.model_script_dir, "xgb_model.template")
-        output_path = os.path.join(self.model_script_dir, script_name)
-        with open(template_path, "r") as fp:
-            xgb_template = fp.read()
+        if model_type == ModelType.REGRESSOR or model_type == ModelType.CLASSIFIER:
+            script_name = "generated_xgb_model.py"
+            dir_path = Path(__file__).parent.absolute()
+            self.model_script_dir = os.path.join(dir_path, "light_xgb_model")
+            template_path = os.path.join(self.model_script_dir, "xgb_model.template")
+            output_path = os.path.join(self.model_script_dir, script_name)
+            with open(template_path, "r") as fp:
+                xgb_template = fp.read()
 
-        # Template replacements
-        xgb_script = xgb_template.replace("{{target_column}}", target_column)
-        feature_list_str = json.dumps(feature_list)
-        xgb_script = xgb_script.replace("{{feature_list}}", feature_list_str)
-        xgb_script = xgb_script.replace("{{model_type}}", model_type)
-        metrics_s3_path = f"{self.model_training_root}/{self.output_uuid}"
-        xgb_script = xgb_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
-        xgb_script = xgb_script.replace("{{train_all_data}}", str(train_all_data))
+            # Template replacements
+            aws_script = xgb_template.replace("{{target_column}}", target_column)
+            feature_list_str = json.dumps(feature_list)
+            aws_script = aws_script.replace("{{feature_list}}", feature_list_str)
+            aws_script = aws_script.replace("{{model_type}}", model_type.value)
+            metrics_s3_path = f"{self.model_training_root}/{self.output_uuid}"
+            aws_script = aws_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
+            aws_script = aws_script.replace("{{train_all_data}}", str(train_all_data))
+
+        elif model_type == ModelType.QUANTILE_REGRESSOR:
+            script_name = "generated_quantile_model.py"
+            dir_path = Path(__file__).parent.absolute()
+            self.model_script_dir = os.path.join(dir_path, "light_quant_regression")
+            template_path = os.path.join(self.model_script_dir, "quant_regression.template")
+            output_path = os.path.join(self.model_script_dir, script_name)
+            with open(template_path, "r") as fp:
+                quant_template = fp.read()
+
+            # Template replacements
+            aws_script = quant_template.replace("{{target_column}}", target_column)
+            feature_list_str = json.dumps(feature_list)
+            aws_script = aws_script.replace("{{feature_list}}", feature_list_str)
+            metrics_s3_path = f"{self.model_training_root}/{self.output_uuid}"
+            aws_script = aws_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
 
         # Now write out the generated model script and return the name
         with open(output_path, "w") as fp:
-            fp.write(xgb_script)
+            fp.write(aws_script)
         return script_name
 
     def transform_impl(
@@ -161,11 +178,11 @@ class FeaturesToModel(Transform):
 
         # Generate our model script
         script_path = self.generate_model_script(
-            self.target_column, self.model_feature_list, self.model_type.value, train_all_data
+            self.target_column, self.model_feature_list, self.model_type, train_all_data
         )
 
         # Metric Definitions for Regression and Classification
-        if self.model_type == ModelType.REGRESSOR:
+        if self.model_type == ModelType.REGRESSOR or self.model_type == ModelType.QUANTILE_REGRESSOR:
             metric_definitions = [
                 {"Name": "RMSE", "Regex": "RMSE: ([0-9.]+)"},
                 {"Name": "MAE", "Regex": "MAE: ([0-9.]+)"},
@@ -276,16 +293,25 @@ class FeaturesToModel(Transform):
 if __name__ == "__main__":
     """Exercise the FeaturesToModel Class"""
 
-    # Create the class with inputs and outputs and invoke the transform
+    """
+    # Regression Model
     input_uuid = "abalone_features"
     output_uuid = "abalone-regression"
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.REGRESSOR)
     to_model.set_output_tags(["abalone", "public"])
-    to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")
+    to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
 
-    # Now a classification model
+    # Classification Model
     input_uuid = "wine_features"
     output_uuid = "wine-classification"
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.CLASSIFIER)
     to_model.set_output_tags(["wine", "public"])
-    to_model.transform(target_column="wine_class", description="Wine Classification Model")
+    to_model.transform(target_column="wine_class", description="Wine Classification")
+    """
+
+    # Quantile Regression Model
+    input_uuid = "abalone_features"
+    output_uuid = "abalone-quantile-reg"
+    to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.QUANTILE_REGRESSOR)
+    to_model.set_output_tags(["abalone", "quantiles"])
+    to_model.transform(target_column="class_number_of_rings", description="Abalone Quantile Regression")
