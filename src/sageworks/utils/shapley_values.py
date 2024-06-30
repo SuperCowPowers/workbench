@@ -1,4 +1,3 @@
-import os
 import shap
 import pandas as pd
 import awswrangler as wr
@@ -8,10 +7,13 @@ from sageworks.utils.extract_model_artifact import ExtractModelArtifact
 
 # SageWorks logging
 import logging
+
 log = logging.getLogger("sageworks")
 
 
-def generate_shap_values(endpoint_name: str, model_type: str, pred_results_df: pd.DataFrame, inference_capture_path: str):
+def generate_shap_values(
+    endpoint_name: str, model_type: str, pred_results_df: pd.DataFrame, inference_capture_path: str
+):
     """Compute the SHAP values for this Model associated with this Endpoint
 
     Args:
