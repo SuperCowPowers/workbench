@@ -332,6 +332,10 @@ def pull_s3_data(s3_path: str, embedded_index=False) -> Union[pd.DataFrame, None
     except NoFilesFound:
         log.info(f"Could not find S3 data at {s3_path}...")
         return None
+    except Exception as e:
+        log.error(f"Failed to pull data from {s3_path}!")
+        log.error(e)
+        return None
 
 
 def compute_size(obj: object) -> int:
