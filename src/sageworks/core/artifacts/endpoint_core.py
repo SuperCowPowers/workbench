@@ -8,7 +8,6 @@ import numpy as np
 from io import StringIO
 import awswrangler as wr
 from typing import Union
-import shap
 import joblib
 
 # Model Performance Scores
@@ -32,7 +31,7 @@ from sageworks.core.artifacts.artifact import Artifact
 from sageworks.core.artifacts.model_core import ModelCore, ModelType
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.endpoint_metrics import EndpointMetrics
-from sageworks.utils.extract_model_artifact import ExtractModelArtifact
+from sageworks.utils.shapley_values import generate_shap_values
 
 
 class EndpointCore(Artifact):
@@ -376,7 +375,7 @@ class EndpointCore(Artifact):
 
         # Compute the standard performance metrics for this model
         model_type = self.model_type()
-        if model_type == ModelType.REGRESSOR.value:
+        if model_type in [ModelType.REGRESSOR.value, ModelType.QUANTILE_REGRESSOR.value]:
             prediction_df = self.residuals(target_column, prediction_df)
             metrics = self.regression_metrics(target_column, prediction_df)
         elif model_type == ModelType.CLASSIFIER.value:
@@ -568,43 +567,8 @@ class EndpointCore(Artifact):
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
             wr.s3.to_csv(conf_mtx, f"{inference_capture_path}/inference_cm.csv", index=True)
 
-        #
         # Generate SHAP values for our Prediction Dataframe
-        #
-
-        # Grab the model artifact from AWS
-        model_artifact = ExtractModelArtifact(self.endpoint_name).get_model_artifact()
-
-        # Get the exact features used to train the model
-        model_features = model_artifact.feature_names_in_
-        X_pred = pred_results_df[model_features]
-
-        # Compute the SHAP values
-        try:
-            shap_vals = self.shap_values(model_artifact, X_pred)
-
-            # Multiple shap vals CSV for classifiers
-            if model_type == ModelType.CLASSIFIER.value:
-                # Need a separate shapley values CSV for each class
-                for i, class_shap_vals in enumerate(shap_vals):
-                    df_shap = pd.DataFrame(class_shap_vals, columns=X_pred.columns)
-
-                    # Write shap vals to S3 Model Inference Folder
-                    shap_file_path = f"{inference_capture_path}/inference_shap_values_class_{i}.csv"
-                    self.log.info(f"Writing SHAP values to {shap_file_path}")
-                    wr.s3.to_csv(df_shap, shap_file_path, index=False)
-
-            # Single shap vals CSV for regressors
-            if model_type == ModelType.REGRESSOR.value:
-                # Format shap values into single dataframe
-                df_shap = pd.DataFrame(shap_vals, columns=X_pred.columns)
-
-                # Write shap vals to S3 Model Inference Folder
-                self.log.debug(f"Writing SHAP values to {inference_capture_path}/inference_shap_values.csv")
-                wr.s3.to_csv(df_shap, f"{inference_capture_path}/inference_shap_values.csv", index=False)
-
-        except Exception as e:
-            self.log.error(f"Error computing SHAP values: {e}")
+        generate_shap_values(self.endpoint_name, model_type, pred_results_df, inference_capture_path)
 
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
@@ -615,22 +579,6 @@ class EndpointCore(Artifact):
         # Recompute the details so that inference model metrics are updated
         self.log.important(f"Recomputing Details for {self.uuid} to show latest Inference Results...")
         self.details(recompute=True)
-
-    @staticmethod
-    def shap_values(model, X: pd.DataFrame) -> np.array:
-        """Compute the SHAP values for this Model
-
-        Args:
-            model (Model): Model object
-            X (pd.DataFrame): DataFrame with the prediction results
-
-        Returns:
-            pd.DataFrame: DataFrame with the SHAP values
-        """
-        # Note: For Tree-based models like decision trees, random forests, XGBoost, LightGBM,
-        explainer = shap.TreeExplainer(model)
-        shap_vals = explainer.shap_values(X)
-        return shap_vals
 
     @staticmethod
     def regression_metrics(target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
@@ -675,7 +623,7 @@ class EndpointCore(Artifact):
             pd.DataFrame: DataFrame with two new columns called 'residuals' and 'residuals_abs'
         """
         # Sanity Check that this is a regression model
-        if self.model_type() != ModelType.REGRESSOR.value:
+        if self.model_type() not in [ModelType.REGRESSOR.value, ModelType.QUANTILE_REGRESSOR.value]:
             self.log.warning("Residuals are only computed for regression models")
             return prediction_df
 
