@@ -154,19 +154,16 @@ class ExtractModelArtifact:
                 tar.extractall(path=tmpdir)
 
             # Try loading from joblib first
-            joblib_model_return = self.load_from_joblib(tmpdir)
-            if joblib_model_return:
+            model_return = self.load_from_joblib(tmpdir)
+            if model_return:
                 log.warning("Joblib is being deprecated as an XGBoost model format.")
                 log.warning(
                     "Please recreate this model using the Sageworks API or the xgb.XGBModel.save_model() method."
                 )
-                model_return = joblib_model_return
 
-            # If no joblibs, load from json
+            # If no joblib model, load from json
             else:
-                json_model_return = self.load_from_json(tmpdir)
-                if json_model_return:
-                    model_return = json_model_return
+                model_return = self.load_from_json(tmpdir)
 
         # Return the model after exiting the temporary directory context
         return model_return
