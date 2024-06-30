@@ -74,6 +74,8 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
 
 
 if __name__ == "__main__":
+    """The main function is for training the XGBoost model"""
+
     # Harness Template Parameters
     target = "{{target_column}}"
     feature_list = {{feature_list}}
@@ -164,7 +166,6 @@ if __name__ == "__main__":
         # Decode the target and prediction labels
         df_val[target] = label_encoder.inverse_transform(df_val[target])
         preds = label_encoder.inverse_transform(preds)
-
 
     # Save predictions to S3 (just the target, prediction, and '_proba' columns)
     df_val["prediction"] = preds
