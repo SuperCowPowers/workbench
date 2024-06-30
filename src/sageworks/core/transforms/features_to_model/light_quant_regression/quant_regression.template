@@ -1,0 +1,220 @@
+# Imports for XGB Model
+import xgboost as xgb
+import awswrangler as wr
+
+# Model Performance Scores
+from sklearn.metrics import (
+    mean_absolute_error,
+    r2_score,
+    mean_squared_error
+)
+
+from io import StringIO
+import json
+import argparse
+import os
+import pandas as pd
+
+
+# Function to check if dataframe is empty
+def check_dataframe(df: pd.DataFrame) -> None:
+    """
+    Check if the provided dataframe is empty and raise an exception if it is.
+
+    Args:
+        df (pd.DataFrame): DataFrame to check
+    """
+    if df.empty:
+        msg = f"*** The training data has 0 rows! ***STOPPING***"
+        print(msg)
+        raise ValueError(msg)
+
+
+if __name__ == "__main__":
+    """The main function is for training the XGBoost Quantile Regression models"""
+    # Harness Template Parameters
+    target = "{{target_column}}"
+    feature_list = {{feature_list}}
+    model_metrics_s3_path = "{{model_metrics_s3_path}}"
+    quantiles = [0.05, 0.25, 0.50, 0.75, 0.95]
+    q_models = {}
+
+    # Sagemaker specific arguments. Defaults are set in the environment variables.
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ["SM_OUTPUT_DATA_DIR"]
+    )
+    parser.add_argument("--model-dir", type=str, default=os.environ["SM_MODEL_DIR"])
+    parser.add_argument("--train", type=str, default=os.environ["SM_CHANNEL_TRAIN"])
+    args = parser.parse_args()
+
+    # Read the training data into DataFrames
+    training_files = [
+        os.path.join(args.train, file)
+        for file in os.listdir(args.train)
+        if file.endswith(".csv")
+    ]
+    print(f"Training Files: {training_files}")
+
+    # Combine files and read them all into a single pandas dataframe
+    df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
+
+    # Check if the dataframe is empty
+    check_dataframe(df)
+
+    # Features/Target output
+    print(f"Target: {target}")
+    print(f"Features: {str(feature_list)}")
+    print(f"Data Shape: {df.shape}")
+
+    # Grab our Features and Target with traditional X, y handles
+    y = df[target]
+    X = df[feature_list]
+
+    # Train models for each of the quantiles
+    for q in quantiles:
+        params = {
+            "objective": "reg:quantileerror",
+            "quantile_alpha": q,
+        }
+        model = xgb.XGBRegressor(**params)
+        model.fit(X, y)
+
+        # Convert quantile to string
+        q_str = f"q_{int(q * 100):02}"
+
+        # Store the model
+        q_models[q_str] = model
+
+    # Train a model for RMSE predictions
+    params = {"objective": "reg:squarederror"}
+    rmse_model = xgb.XGBRegressor(**params)
+    rmse_model.fit(X, y)
+
+    # Run predictions for each quantile
+    quantile_predictions = {q: model.predict(X) for q, model in q_models.items()}
+
+    # Create a copy of the provided DataFrame and add the new columns
+    result_df = df[[target]].copy()
+
+    # Add the quantile predictions to the DataFrame
+    for name, preds in quantile_predictions.items():
+        result_df[name] = preds
+
+    # Add the RMSE predictions (mean) to the DataFrame
+    result_df["mean"] = rmse_model.predict(X)
+    result_df["prediction"] = result_df["mean"]
+
+    # Save the quantile and RMSE predictions to S3
+    wr.s3.to_csv(
+        result_df,
+        path=f"{model_metrics_s3_path}/validation_predictions.csv",
+        index=False,
+    )
+
+    # Report Performance Metrics
+    rmse = mean_squared_error(result_df[target], result_df["prediction"], squared=False)
+    mae = mean_absolute_error(result_df[target], result_df["prediction"])
+    r2 = r2_score(result_df[target], result_df["prediction"])
+    print(f"RMSE: {rmse:.3f}")
+    print(f"MAE: {mae:.3f}")
+    print(f"R2: {r2:.3f}")
+    print(f"NumRows: {len(result_df)}")
+
+    # Now save the Quantile models to the standard place
+    for name, model in q_models.items():
+        model_path = os.path.join(args.model_dir, f"{name}.json")
+        print(f"Saving model:  {model_path}")
+        model.save_model(model_path)
+
+    # Save the RMSE model
+    model_path = os.path.join(args.model_dir, "rmse.json")
+    print(f"Saving model:  {model_path}")
+    rmse_model.save_model(model_path)
+
+    # Also save the features (this will validate input during predictions)
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
+        json.dump(feature_list, fp)
+
+
+def model_fn(model_dir) -> dict:
+    """Deserialized and return all the fitted models from the model directory.
+
+    Args:
+        model_dir (str): The directory where the models are stored.
+
+    Returns:
+        dict: A dictionary of the models.
+    """
+
+    # Load ALL the Quantile models from the model directory
+    models = {}
+    for file in os.listdir(model_dir):
+        if file.startswith("q_") and file.endswith(".json"):  # The Quantile models
+            # Load the model
+            model_path = os.path.join(model_dir, file)
+            print(f"Loading model: {model_path}")
+            model = xgb.XGBRegressor()
+            model.load_model(model_path)
+
+            # Store the quantile model
+            q_name = os.path.splitext(file)[0]
+            models[q_name] = model
+
+    # Now load the RMSE model
+    models["rsme"] = xgb.XGBRegressor()
+    model_path = os.path.join(model_dir, "rmse.json")
+    print(f"Loading model: {model_path}")
+    models["rsme"].load_model(model_path)
+
+    # Return all the models
+    return models
+
+
+def input_fn(input_data, content_type):
+    """We only take CSV Input"""
+    if content_type == "text/csv":
+        # Read the input buffer as a CSV file.
+        input_df = pd.read_csv(StringIO(input_data))
+        return input_df
+    else:
+        raise ValueError(f"{content_type} not supported by script!")
+
+
+def output_fn(output_df, accept_type):
+    """We only give CSV Output"""
+    if accept_type == "text/csv":
+        return output_df.to_csv(index=False), "text/csv"  # Return a CSV String and the content type
+    else:
+        raise RuntimeError(
+            f"{accept_type} accept type is not supported by this script."
+        )
+
+
+def predict_fn(df, models) -> pd.DataFrame:
+    """Make Predictions with our XGB Model
+
+    Args:
+        df (pd.DataFrame): The input DataFrame
+        models (dict): The dictionary of models to use for predictions
+
+    Returns:
+        pd.DataFrame: The DataFrame with the predictions added
+    """
+
+    # Grab our feature columns (from training)
+    model_dir = os.environ["SM_MODEL_DIR"]
+    with open(os.path.join(model_dir, "feature_columns.json")) as fp:
+        features = json.load(fp)
+    print(f"Features: {features}")
+
+    # Predict the features against all the models
+    for name, model in models.items():
+        if name == "rsme":
+            df["mean"] = model.predict(df[features])
+            df["prediction"] = df["mean"]
+        else:
+            df[name] = model.predict(df[features])
+
+    # All done, return the DataFrame
+    return df
