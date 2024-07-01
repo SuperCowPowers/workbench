@@ -1,10 +1,6 @@
 
 # SageWorks Presentations
-The SageWorks framework makes AWS® both easier to use and more powerful. SageWorks handles all the details around updating and managing a complex set of AWS Services. With a simple-to-use Python API and a beautiful set of web interfaces, SageWorks makes creating AWS ML pipelines a snap. It also dramatically improves both the usability and visibility across the entire spectrum of services: Glue Job, Athena, Feature Store, Models, and Endpoints, SageWorks makes it easy to build production ready, AWS powered, machine learning pipelines.
-
-<img width="600" alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/ed2ed1bd-e2d8-49a1-b350-b2e19e2b7832">
-
-Even though SageWorks makes AWS easier, it's taking something very complex (200+ AWS Services) and making it less complex. SageWorks has a depth and breadth of functionality so we've provided higher level conceptual documentation as well as lower level code/API documentation.
+The SageWorks framework makes AWS® both easier to use and more powerful. SageWorks handles all the details around updating and managing a complex set of AWS Services. With a simple-to-use Python API and a beautiful set of web interfaces, SageWorks makes creating AWS ML pipelines a snap.
 
 ### SageWorks Presentations
 - [Why SageWorks?](https://docs.google.com/presentation/d/1JCUzCtjQLGoQ7HJA_jhEHy3Q2o_j-ibkCCN864CvcVE/edit?usp=drive_link)
