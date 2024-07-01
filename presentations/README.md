@@ -22,13 +22,12 @@ Even though SageWorks makes AWS easier, it's taking something very complex (200+
 - [SageWorks REPL](https://docs.google.com/presentation/d/1H9OY94kLwB6dgXjWoKBf3fmE7b6fZMm5-Iex8LDr4xk/edit?usp=drive_link)
 
 ### SageWorks Python API Docs
-<img align="right" width="340" alt="sageworks_api" style="padding-left: 10px;"  src="https://github.com/SuperCowPowers/sageworks/assets/4806709/bf0e8591-75d4-44c1-be05-4bfdee4b7186">
+<img align="right" width="300" alt="sageworks_api" style="padding-left: 10px;"  src="https://github.com/SuperCowPowers/sageworks/assets/4806709/bf0e8591-75d4-44c1-be05-4bfdee4b7186">
 
-[SageWorks Documentation](https://supercowpowers.github.io/sageworks/): The documentation contains examples from the SageWorks source code in this repository under the `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
+The SageWorks API documentation [SageWorks API](https://supercowpowers.github.io/sageworks/) covers our in-depth Python API and contains code examples. The code examples are provided in the Github repo `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
 
 ### Questions?
 The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
-
 
 <img align="right" src="../docs/images/scp.png" width="180">
 
