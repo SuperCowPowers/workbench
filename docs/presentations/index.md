@@ -2,6 +2,9 @@
 # SageWorks Presentations
 The SageWorks framework makes AWS® both easier to use and more powerful. SageWorks handles all the details around updating and managing a complex set of AWS Services. With a simple-to-use Python API and a beautiful set of web interfaces, SageWorks makes creating AWS ML pipelines a snap.
 
+!!!tip inline end "Need Help?"
+    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+
 ### SageWorks Presentations
 - [Why SageWorks?](https://docs.google.com/presentation/d/1JCUzCtjQLGoQ7HJA_jhEHy3Q2o_j-ibkCCN864CvcVE/edit?usp=drive_link)
 - [SageWorks Overview](https://docs.google.com/presentation/d/14cxMl3G5r4dM_RLUIS372SWD959xNbTBaExOnIK4qOQ/edit?usp=drive_link)
