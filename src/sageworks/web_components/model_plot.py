@@ -39,7 +39,7 @@ class ModelPlot(ComponentInterface):
         model_type = model_details.get("model_type")
         if model_type == "classifier":
             return ConfusionMatrix().update_properties(model, inference_run)
-        elif model_type == "regressor":
+        elif model_type in ["regressor", "quantile_regressor"]:
             return RegressionPlot().update_properties(model, inference_run)
         else:
             return self.display_text("Unknown Model Type")
