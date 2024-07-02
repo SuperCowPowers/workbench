@@ -6,7 +6,7 @@ The SageWorks framework makes AWS® both easier to use and more powerful. SageWo
     The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 ### SageWorks Presentations
-- [SageWorks Overview](https://docs.google.com/presentation/d/14cxMl3G5r4dM_RLUIS372SWD959xNbTBaExOnIK4qOQ/edit?usp=drive_link)
+- [SageWorks Overview](https://docs.google.com/presentation/d/1JCUzCtjQLGoQ7HJA_jhEHy3Q2o_j-ibkCCN864CvcVE/edit?usp=sharing)
 - [Private SaaS Architecture](https://docs.google.com/presentation/d/1f_1gmE4-UAeUDDsoNdzK_d_MxALFXIkxORZwbJBjPq4/edit?usp=drive_link)
 - [Python API](https://docs.google.com/presentation/d/1dvk7JoNcssEVEh7eWI-Qrh7lJbVOMM2qvrn60SrAFI8/edit?usp=drive_link)
 - [Plugins Overview](https://docs.google.com/presentation/d/1RjpMmJW1i9auPztn2xXYmYKXsZjsnG7vVaCQQ4FLIMM/edit?usp=drive_link)
