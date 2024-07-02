@@ -7,7 +7,6 @@ The SageWorks framework makes AWS® both easier to use and more powerful. SageWo
 Even though SageWorks makes AWS easier, it's taking something very complex (200+ AWS Services) and making it less complex. SageWorks has a depth and breadth of functionality so we've provided higher level conceptual documentation as well as lower level coee/API documentation.
 
 ### SageWorks Presentations
-- [Why SageWorks?](https://docs.google.com/presentation/d/1JCUzCtjQLGoQ7HJA_jhEHy3Q2o_j-ibkCCN864CvcVE/edit?usp=drive_link)
 - [SageWorks Overview](https://docs.google.com/presentation/d/14cxMl3G5r4dM_RLUIS372SWD959xNbTBaExOnIK4qOQ/edit?usp=drive_link)
 - [Private SaaS Architecture](https://docs.google.com/presentation/d/1f_1gmE4-UAeUDDsoNdzK_d_MxALFXIkxORZwbJBjPq4/edit?usp=drive_link)
 - [Python API](https://docs.google.com/presentation/d/1dvk7JoNcssEVEh7eWI-Qrh7lJbVOMM2qvrn60SrAFI8/edit?usp=drive_link)
