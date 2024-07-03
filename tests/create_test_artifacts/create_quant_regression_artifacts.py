@@ -7,15 +7,9 @@ Endpoints:
 """
 
 import logging
-import pandas as pd
-import awswrangler as wr
-
-from sageworks.api.data_source import DataSource
 from sageworks.api.feature_set import FeatureSet
 from sageworks.api.model import Model, ModelType
 from sageworks.api.endpoint import Endpoint
-
-from sageworks.core.transforms.data_to_features.light.molecular_descriptors import MolecularDescriptors
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 log = logging.getLogger("sageworks")
