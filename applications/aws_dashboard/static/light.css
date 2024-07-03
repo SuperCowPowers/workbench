@@ -1,0 +1,22 @@
+body {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+.card {
+    background-color: #ffffff;
+    border-color: #f8f9fa;
+}
+
+.table {
+    border-color: #f8f9fa;
+}
+
+.table thead {
+    background-color: #f8f9fa;
+}
+
+.table tbody tr {
+    background-color: #ffffff;
+}
+
