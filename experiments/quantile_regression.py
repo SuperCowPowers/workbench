@@ -42,7 +42,10 @@ def train_quantile_models(X, y, quantiles, n_estimators=100):
     quantile_models = {}
     for quantile in quantiles:
         model = XGBRegressor(
-            objective="reg:quantileerror", quantile_alpha=quantile, n_estimators=n_estimators, max_depth=1
+            objective="reg:quantileerror",
+            quantile_alpha=quantile,
+            n_estimators=n_estimators,
+            max_depth=1,
         )
         model.fit(X, y)
         quantile_models[quantile] = model
@@ -128,7 +131,9 @@ sort_order = np.argsort(x_values)
 x_values = x_values[sort_order]
 y_train = y_train[sort_order]
 """
-sc = plt.scatter(x_values, y_train, c=confidence_values, cmap="coolwarm", label="Data", alpha=0.5)
+sc = plt.scatter(
+    x_values, y_train, c=confidence_values, cmap="coolwarm", label="Data", alpha=0.5
+)
 plt.colorbar(sc, label="Confidence")
 
 # Sort x_values and the corresponding y-values for each quantile
@@ -139,7 +144,13 @@ for q in quantiles:
     plt.plot(sorted_x_values, sorted_y_values, label=f"Quantile {int(q * 100):02}")
 
 # Plot the RMSE predictions
-plt.plot(sorted_x_values, rmse_predictions[sorted_indices], label="RMSE Prediction", color="black", linestyle="--")
+plt.plot(
+    sorted_x_values,
+    rmse_predictions[sorted_indices],
+    label="RMSE Prediction",
+    color="black",
+    linestyle="--",
+)
 plt.xlabel("X")
 plt.ylabel("Y")
 plt.title("Quantile Regression and Confidence with XGBoost")

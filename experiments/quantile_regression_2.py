@@ -44,7 +44,10 @@ def train_quantile_models(X, y, quantiles, n_estimators=100):
     quantile_models = {}
     for quantile in quantiles:
         model = XGBRegressor(
-            objective="reg:quantileerror", quantile_alpha=quantile, n_estimators=n_estimators, max_depth=1
+            objective="reg:quantileerror",
+            quantile_alpha=quantile,
+            n_estimators=n_estimators,
+            max_depth=1,
         )
         model.fit(X, y)
         quantile_models[quantile] = model
@@ -98,10 +101,14 @@ def domain_specific_confidence_norm(quantile_models, X, predictions):
     # If the interval with is greater than target_sensitivity with have 0 confidence
     # anything below that is a linear scale from 0 to 1
     conf_interval = upper_95 - lower_05
-    print(f"confidence_interval: {np.min(conf_interval):.2f} {np.max(conf_interval):.2f}")
+    print(
+        f"confidence_interval: {np.min(conf_interval):.2f} {np.max(conf_interval):.2f}"
+    )
 
     # Normalize the confidence_interval between 0 and 1
-    norm_conf_interval = (conf_interval - np.min(conf_interval)) / (np.max(conf_interval) - np.min(conf_interval))
+    norm_conf_interval = (conf_interval - np.min(conf_interval)) / (
+        np.max(conf_interval) - np.min(conf_interval)
+    )
 
     # Confidence is just 1 - conf_interval
     q_conf = 1 - norm_conf_interval
@@ -113,7 +120,9 @@ def domain_specific_confidence_norm(quantile_models, X, predictions):
     print(f"iqr_distance: {np.min(iqr_distance):.2f} {np.max(iqr_distance):.2f}")
 
     # Normalize the iqr_distance between 0 and 1
-    norm_iqr_distance = (iqr_distance - np.min(iqr_distance)) / (np.max(iqr_distance) - np.min(iqr_distance))
+    norm_iqr_distance = (iqr_distance - np.min(iqr_distance)) / (
+        np.max(iqr_distance) - np.min(iqr_distance)
+    )
 
     # Confidence is just 1 - iqr_distance
     iqr_conf = 1 - norm_iqr_distance
@@ -185,7 +194,9 @@ quantile_models = train_quantile_models(X_train, y_train, quantiles)
 rmse_predictions = prediction_model.predict(X_train)
 
 # Calculate confidence for the array of predictions
-conf, conf_interval, iqr_distance = domain_specific_confidence_norm(quantile_models, X_train, rmse_predictions)
+conf, conf_interval, iqr_distance = domain_specific_confidence_norm(
+    quantile_models, X_train, rmse_predictions
+)
 
 # Now we're going to use the KNN model to calculate confidence
 knn = fit_knn_model(X_train, y_train)
@@ -213,7 +224,9 @@ print(f"RMSE Filtered: {rmse_filtered} support: {len(rmse_predictions_filtered)}
 plt.figure(figsize=(10, 6))
 actual_values = y_train
 actual_values = df["mollogp"]
-sc = plt.scatter(actual_values, y_train, c=conf, cmap="coolwarm", label="Data", alpha=0.5)
+sc = plt.scatter(
+    actual_values, y_train, c=conf, cmap="coolwarm", label="Data", alpha=0.5
+)
 plt.colorbar(sc, label="Confidence")
 
 # Sort x_values and the corresponding y-values for each quantile
