@@ -245,7 +245,9 @@ if __name__ == "__main__":
 
     # Run an integration test
     from sageworks.api import Endpoint
+    from sageworks.utils.endpoint_utils import backtrack_to_fs
 
     end = Endpoint("abalone-qr-end")
-    df = end.auto_inference()
-    PluginUnitTest(ScatterPlot, input_data=df).run()
+    fs_data = backtrack_to_fs(end).pull_dataframe()
+    pred_df = end.inference(fs_data)
+    PluginUnitTest(ScatterPlot, input_data=pred_df).run()
