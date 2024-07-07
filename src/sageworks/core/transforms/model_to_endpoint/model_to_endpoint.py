@@ -165,7 +165,7 @@ class ModelToEndpoint(Transform):
             while describe_endpoint_response["EndpointStatus"] == "Creating":
                 time.sleep(30)
                 describe_endpoint_response = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
-                self.log.info(describe_endpoint_response["EndpointStatus"])
+                self.log.info(f"Endpoint Status: {describe_endpoint_response['EndpointStatus']}")
             status = describe_endpoint_response["EndpointStatus"]
             if status != "InService":
                 msg = f"Endpoint {endpoint_name} failed to be created. Status: {status}"
