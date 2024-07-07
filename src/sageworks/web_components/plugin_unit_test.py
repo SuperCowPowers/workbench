@@ -14,7 +14,7 @@ class PluginUnitTest:
 
         Args:
             plugin_class (PluginInterface): The PluginInterface class to test
-            input_data (Optional): The input data for this plugin (FeatureSet, Model, Endpoint, etc.)
+            input_data (Optional): The input data for this plugin (FeatureSet, Model, Endpoint, or DataFrame)
             **kwargs: Additional keyword arguments
         """
         assert issubclass(plugin_class, PluginInterface), "Plugin class must be a subclass of PluginInterface"

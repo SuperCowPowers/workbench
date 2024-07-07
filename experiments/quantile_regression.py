@@ -131,9 +131,7 @@ sort_order = np.argsort(x_values)
 x_values = x_values[sort_order]
 y_train = y_train[sort_order]
 """
-sc = plt.scatter(
-    x_values, y_train, c=confidence_values, cmap="coolwarm", label="Data", alpha=0.5
-)
+sc = plt.scatter(x_values, y_train, c=confidence_values, cmap="coolwarm", label="Data", alpha=0.5)
 plt.colorbar(sc, label="Confidence")
 
 # Sort x_values and the corresponding y-values for each quantile

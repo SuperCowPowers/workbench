@@ -73,7 +73,7 @@ class ScatterPlot(PluginInterface):
                         ),
                         dcc.Checklist(
                             id=f"{component_id}-regression-line",
-                            options=[{'label': 'Regression Line', 'value': 'show'}],
+                            options=[{"label": "Regression Line", "value": "show"}],
                             value=[],
                             style={"flex": "1"},
                         ),

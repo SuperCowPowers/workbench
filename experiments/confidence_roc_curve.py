@@ -16,21 +16,15 @@ actual_values_medium = actual_values[split_index1:split_index2]
 actual_values_low = actual_values[split_index2:]
 
 # High confidence -> low error
-high_confidence_predictions = actual_values_high + np.random.normal(
-    0, 0.1, split_index1
-)
+high_confidence_predictions = actual_values_high + np.random.normal(0, 0.1, split_index1)
 high_confidence_scores = np.random.uniform(0.8, 1.0, split_index1)
 
 # Medium confidence -> moderate error
-medium_confidence_predictions = actual_values_medium + np.random.normal(
-    0, 0.3, split_index2 - split_index1
-)
+medium_confidence_predictions = actual_values_medium + np.random.normal(0, 0.3, split_index2 - split_index1)
 medium_confidence_scores = np.random.uniform(0.5, 0.8, split_index2 - split_index1)
 
 # Low confidence -> high error
-low_confidence_predictions = actual_values_low + np.random.normal(
-    0, 0.5, n_samples - split_index2
-)
+low_confidence_predictions = actual_values_low + np.random.normal(0, 0.5, n_samples - split_index2)
 low_confidence_scores = np.random.uniform(0.0, 0.5, n_samples - split_index2)
 
 # Combine all predictions and confidence scores
@@ -41,24 +35,17 @@ predictions = np.concatenate(
         low_confidence_predictions,
     ]
 )
-confidence_scores = np.concatenate(
-    [high_confidence_scores, medium_confidence_scores, low_confidence_scores]
-)
+confidence_scores = np.concatenate([high_confidence_scores, medium_confidence_scores, low_confidence_scores])
 
 # Define accuracy threshold (e.g., absolute error < 0.5)
 accuracy_threshold = 0.5
-absolute_errors = np.abs(
-    predictions
-    - np.concatenate([actual_values_high, actual_values_medium, actual_values_low])
-)
+absolute_errors = np.abs(predictions - np.concatenate([actual_values_high, actual_values_medium, actual_values_low]))
 accurate = absolute_errors < accuracy_threshold
 
 # Categorize confidence scores into high, medium, and low
 confidence_bins = np.percentile(confidence_scores, [33, 66])
 low_confidence = confidence_scores <= confidence_bins[0]
-medium_confidence = (confidence_scores > confidence_bins[0]) & (
-    confidence_scores <= confidence_bins[1]
-)
+medium_confidence = (confidence_scores > confidence_bins[0]) & (confidence_scores <= confidence_bins[1])
 high_confidence = confidence_scores > confidence_bins[1]
 
 
