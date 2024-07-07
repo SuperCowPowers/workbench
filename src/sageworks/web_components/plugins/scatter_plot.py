@@ -10,7 +10,7 @@ from sageworks.web_components.plugin_interface import PluginInterface, PluginPag
 
 
 class ScatterPlot(PluginInterface):
-    """A Graph Plot Plugin for NetworkX Graphs."""
+    """A Scatter Plot Plugin for Feature Sets."""
 
     # Initialize this Plugin Component Class with required attributes
     auto_load_page = PluginPage.NONE
@@ -37,6 +37,7 @@ class ScatterPlot(PluginInterface):
             (f"{component_id}-x-dropdown", "value"),
             (f"{component_id}-y-dropdown", "value"),
             (f"{component_id}-color-dropdown", "value"),
+            (f"{component_id}-regression-line", "value"),
         ]
         self.signals = [(f"{component_id}-graph", "hoverData")]
 
@@ -68,6 +69,12 @@ class ScatterPlot(PluginInterface):
                             id=f"{component_id}-color-dropdown",
                             placeholder="Select Color",
                             value=None,
+                            style={"flex": "1"},
+                        ),
+                        dcc.Checklist(
+                            id=f"{component_id}-regression-line",
+                            options=[{'label': 'Regression Line', 'value': 'show'}],
+                            value=[],
                             style={"flex": "1"},
                         ),
                     ],
@@ -129,10 +136,10 @@ class ScatterPlot(PluginInterface):
             dropdown_columns = numeric_columns
         options = [{"label": col, "value": col} for col in dropdown_columns]
 
-        return [figure, options, options, options, x_default, y_default, color_default]
+        return [figure, options, options, options, x_default, y_default, color_default, []]
 
     @staticmethod
-    def create_scatter_plot(df, x_col, y_col, color_col):
+    def create_scatter_plot(df, x_col, y_col, color_col, regression_line=False):
         """Create a Plotly Scatter Plot figure.
 
         Args:
@@ -140,6 +147,7 @@ class ScatterPlot(PluginInterface):
             x_col (str): The column to use for the x-axis.
             y_col (str): The column to use for the y-axis.
             color_col (str): The column to use for the color scale.
+            regression_line (bool): Whether to include a regression line.
 
         Returns:
             go.Figure: A Plotly Figure object.
@@ -179,6 +187,19 @@ class ScatterPlot(PluginInterface):
             )
         )
 
+        # Add 45-degree line
+        if regression_line:
+            min_val = min(df[x_col].min(), df[y_col].min())
+            max_val = max(df[x_col].max(), df[y_col].max())
+            figure.add_shape(
+                type="line",
+                line=dict(width=5, color="rgba(1.0, 1.0, 1.0, 0.5)"),
+                x0=min_val,
+                x1=max_val,
+                y0=min_val,
+                y1=max_val,
+            )
+
         # Just some fine-tuning of the plot
         figure.update_layout(
             margin={"t": 40, "b": 40, "r": 40, "l": 40, "pad": 0},
@@ -199,16 +220,17 @@ class ScatterPlot(PluginInterface):
                 Input(f"{self.component_id}-x-dropdown", "value"),
                 Input(f"{self.component_id}-y-dropdown", "value"),
                 Input(f"{self.component_id}-color-dropdown", "value"),
+                Input(f"{self.component_id}-regression-line", "value"),
             ],
             prevent_initial_call=True,
         )
-        def update_graph(x_value, y_value, color_value):
+        def update_graph(x_value, y_value, color_value, regression_line):
             # Get the latest dataframe
             df = self.df
 
             if not df.empty and x_value and y_value and color_value:
                 # Update Plotly Scatter Plot
-                figure = self.create_scatter_plot(df, x_value, y_value, color_value)
+                figure = self.create_scatter_plot(df, x_value, y_value, color_value, regression_line)
                 return figure
 
             raise PreventUpdate
@@ -219,4 +241,11 @@ if __name__ == "__main__":
     from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ScatterPlot).run()
+    # PluginUnitTest(ScatterPlot).run()
+
+    # Run an integration test
+    from sageworks.api import Endpoint
+
+    end = Endpoint("abalone-qr-end")
+    df = end.auto_inference()
+    PluginUnitTest(ScatterPlot, input_data=df).run()
