@@ -238,5 +238,8 @@ def predict_fn(df, models) -> pd.DataFrame:
         else:
             df[name] = model.predict(df[features])
 
+    # Reorganize the columns so they are in alphabetical order
+    df = df.reindex(sorted(df.columns), axis=1)
+
     # All done, return the DataFrame
     return df
