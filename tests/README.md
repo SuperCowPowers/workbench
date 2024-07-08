@@ -18,5 +18,5 @@ tox
 ```
 
 ### Questions?
-The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/8jY2yBZX) 
 <img align="right" src="../docs/images/scp.png" width="180">

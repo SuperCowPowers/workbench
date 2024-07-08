@@ -1,6 +1,6 @@
 # AWS Tips and Tricks
 !!!tip inline end "Need AWS Help?"
-    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/8jY2yBZX) 
 
 This page tries to give helpful guidance when setting up AWS Accounts, Users, and Groups. In general AWS can be a bit tricky to set up the first time. Feel free to use any material in this guide but we're more than happy to help clients get their AWS Setup ready to go for FREE. Below are some guides for setting up a new AWS account for SageWorks and also setting up SSO Users and Groups within AWS.
 

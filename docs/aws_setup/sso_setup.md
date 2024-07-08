@@ -1,6 +1,6 @@
 # AWS SSO Setup
 !!!tip inline end "Need AWS Help?"
-    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/8jY2yBZX) 
 
 ## Get some information
   - Goto your AWS Identity Center in the AWS Console
