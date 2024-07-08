@@ -244,10 +244,34 @@ if __name__ == "__main__":
     # PluginUnitTest(ScatterPlot).run()
 
     # Run an integration test
+    from pprint import pprint
+    import numpy as np
     from sageworks.api import Endpoint
     from sageworks.utils.endpoint_utils import backtrack_to_fs
 
     end = Endpoint("abalone-qr-end")
     fs_data = backtrack_to_fs(end).pull_dataframe()
     pred_df = end.inference(fs_data)
+
+    # Domain specific confidence
+    pred_df["target_spread"] = pred_df["q_95"] - pred_df["q_05"]
+    pred_df["target_confidence"] = np.clip(1 - (pred_df["target_spread"] / 8.0), 0, 1)
+
+    # - any interval greater than 2.0 we have no confidence
+    # - anything less than 2.0 is a linear gradient from 0.0 to 1.0
+    # pred_df["confidence"] = np.clip(1 - (pred_df["interval"] / 2.0), 0, 1)
+    # regression_outliers = np.max(np.abs(pred_df["qr_05"]), np.abs(pred_df["qr_95"]))
+    # pred_df["residual_confidence"] = np.clip(1 - (regression_outliers / 2.0), 0, 1)
+    # pred_df["confidence"] = pred_df["residual_confidence"]  # * pred_df["target_confidence"]
+
+    # Compute the regression outliers
+    regression_outliers = np.maximum(np.abs(pred_df["qr_05"]), np.abs(pred_df["qr_95"]))
+
+    # Compute residual confidence
+    pred_df["residual_confidence"] = np.clip(1 - (regression_outliers / 2.0), 0, 1)
+
+    # Grab observations with length == 0.705
+    inspect_df = pred_df[(pred_df["length"] == 0.62) & (pred_df["whole_weight"] == 1.221)]
+    pprint(inspect_df.to_dict())
+
     PluginUnitTest(ScatterPlot, input_data=pred_df).run()
