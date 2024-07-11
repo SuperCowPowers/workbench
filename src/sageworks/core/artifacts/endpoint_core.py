@@ -654,7 +654,7 @@ class EndpointCore(Artifact):
 
         # Add the residuals and the absolute values to the DataFrame
         prediction_df["residuals"] = y_true - y_pred
-        prediction_df["residuals_abs"] = np.abs(y_true - y_pred)
+        prediction_df["residuals_abs"] = np.abs(prediction_df["residuals"])
         return prediction_df
 
     def classification_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
