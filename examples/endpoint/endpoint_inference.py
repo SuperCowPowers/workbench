@@ -16,7 +16,7 @@ df = fs.query(f"SELECT * FROM {athena_table} where training = 0")
 results_df = endpoint.inference(df)
 
 # Run inference/predictions and capture the results
-results_df = endpoint.inference(df, capture=True)
+results_df = endpoint.inference(df, capture_uuid="test_inference")
 
 # Run inference/predictions using the FeatureSet evaluation data
 results_df = endpoint.auto_inference(capture=True)
