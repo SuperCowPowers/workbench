@@ -26,6 +26,7 @@ class ScatterPlot(PluginInterface):
             html.Div: A Dash Div Component containing the graph and dropdowns.
         """
         self.component_id = component_id
+        self.hover_columns = []
         self.df = None
 
         # Fill in plugin properties and signals
@@ -100,6 +101,7 @@ class ScatterPlot(PluginInterface):
                             - y: The default y-axis column
                             - color: The default color column
                             - dropdown_columns: The columns to use for the x, y, color options
+                            - hover_columns: The columns to show when hovering over a point
 
         Returns:
             list: A list of updated property values (figure, x options, y options, color options).
@@ -110,6 +112,9 @@ class ScatterPlot(PluginInterface):
             self.df = input_data.pull_dataframe()
         else:
             self.df = input_data
+
+        # Set the default hover columns
+        self.hover_columns = kwargs.get("hover_columns", self.df.columns.tolist()[:10])
 
         # AWS Feature Groups will also add these implicit columns, so remove these columns
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time", "training"]
@@ -138,8 +143,7 @@ class ScatterPlot(PluginInterface):
 
         return [figure, options, options, options, x_default, y_default, color_default, []]
 
-    @staticmethod
-    def create_scatter_plot(df, x_col, y_col, color_col, regression_line=False):
+    def create_scatter_plot(self, df, x_col, y_col, color_col, regression_line=False):
         """Create a Plotly Scatter Plot figure.
 
         Args:
@@ -171,7 +175,7 @@ class ScatterPlot(PluginInterface):
                 x=df[x_col],
                 y=df[y_col],
                 mode="markers",
-                hovertext=df.apply(lambda row: "<br>".join([f"{col}: {row[col]}" for col in df.columns[:10]]), axis=1),
+                hovertext=df.apply(lambda row: "<br>".join([f"{col}: {row[col]}" for col in self.hover_columns]), axis=1),
                 hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
                 textfont=dict(family="Arial Black", size=14),  # Set font size
                 marker=dict(
@@ -246,16 +250,22 @@ if __name__ == "__main__":
     # Run an integration test
     from pprint import pprint
     import numpy as np
-    from sageworks.api import Endpoint
+    from sageworks.api import Model, Endpoint
     from sageworks.utils.endpoint_utils import backtrack_to_fs
 
-    end = Endpoint("abalone-qr-end")
+    # Grab the endpoint of interest
+    # end = Endpoint("abalone-qr-end")
+    end = Endpoint("aqsol-qr-end")
+
+    # Domain specific error_distance (if we got it wrong by this much, we have low confidence)
+    error_distance = 1.0
+
     fs_data = backtrack_to_fs(end).pull_dataframe()
     pred_df = end.inference(fs_data)
 
     # Domain specific confidence
     pred_df["target_spread"] = pred_df["q_95"] - pred_df["q_05"]
-    pred_df["target_confidence"] = np.clip(1 - (pred_df["target_spread"] / 8.0), 0, 1)
+    pred_df["target_confidence"] = np.clip(1 - (pred_df["target_spread"] / error_distance), 0, 1)
 
     # - any interval greater than 2.0 we have no confidence
     # - anything less than 2.0 is a linear gradient from 0.0 to 1.0
@@ -267,11 +277,42 @@ if __name__ == "__main__":
     # Compute the regression outliers
     regression_outliers = np.maximum(np.abs(pred_df["qr_05"]), np.abs(pred_df["qr_95"]))
 
+    # Compute regression IQR distance
+    pred_df["iqr"] = pred_df["qr_75"] - pred_df["qr_25"]
+
     # Compute residual confidence
-    pred_df["residual_confidence"] = np.clip(1 - (regression_outliers / 2.0), 0, 1)
+    pred_df["residual_confidence"] = np.clip(1 - (regression_outliers / error_distance), 0, 1)
+    #pred_df["residual_confidence"] = np.clip(1 - (pred_df["iqr"] / 2.0), 0, 1)
 
-    # Grab observations with length == 0.705
-    inspect_df = pred_df[(pred_df["length"] == 0.62) & (pred_df["whole_weight"] == 1.221)]
-    pprint(inspect_df.to_dict())
+    # Compute the median delta for the prediction
+    pred_df["median_delta"] = np.abs(pred_df["q_50"] - pred_df["prediction"])
+    pred_df["median_confidence"] = np.clip(1 - (pred_df["median_delta"] / (error_distance*2)), 0, 1)
 
-    PluginUnitTest(ScatterPlot, input_data=pred_df).run()
+    # Confidence is the product of target, residual, and median confidence
+    # pred_df["confidence"] = pred_df["target_confidence"] * pred_df["residual_confidence"] * pred_df["median_confidence"]
+    pred_df["confidence"] = pred_df["residual_confidence"] * pred_df["median_confidence"]
+
+    # Get the endpoint model and target column
+    model = Model(end.get_input())
+    target = model.target()
+
+    # Grab the performance metrics
+    metrics = model.get_inference_metrics()
+    pprint(metrics)
+
+    # Confidence Threshold
+    confidence_thres = 0.2
+
+    # Now filter the data based on confidence and give RMSE for the filtered data
+    predictions_filtered = pred_df[pred_df["confidence"] > confidence_thres]
+    rmse_filtered = np.sqrt(np.mean((predictions_filtered[target] - predictions_filtered["prediction"]) ** 2))
+    print(f"RMSE Filtered: {rmse_filtered} support: {len(predictions_filtered)}")
+
+    # Columns that we want to show when we hover above a point
+    hover_columns = ["q_05", "q_25", "q_50", "q_75", "q_95",
+                     "qr_05", "qr_25", "qr_50", "qr_75", "qr_95",
+                     "prediction", target, "confidence",
+                     "target_spread", "residual_confidence",
+                     "median_delta", "median_confidence"]
+
+    PluginUnitTest(ScatterPlot, input_data=pred_df, hover_columns=hover_columns).run()
