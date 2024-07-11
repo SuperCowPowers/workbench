@@ -38,4 +38,35 @@ if __name__ == "__main__":
     # Create the Abalone Quantile Regression Endpoint
     if recreate or not Endpoint("abalone-qr-end").exists():
         m = Model("abalone-quantile-reg")
-        m.to_endpoint(name="abalone-qr-end", tags=["abalone", "quantiles"])
+        end = m.to_endpoint(name="abalone-qr-end", tags=["abalone", "quantiles"])
+
+        # Run auto-inference on the Abalone Quantile Regression Endpoint
+        end.auto_inference(capture=True)
+
+    # Create the AQSol Quantile Regression Model
+    if recreate or not Model("aqsol-quantile-reg").exists():
+
+        # AQSol Features
+        features = ['molwt', 'mollogp', 'molmr', 'heavyatomcount', 'numhacceptors', 'numhdonors', 'numheteroatoms',
+                    'numrotatablebonds', 'numvalenceelectrons', 'numaromaticrings', 'numsaturatedrings',
+                    'numaliphaticrings', 'ringcount', 'tpsa', 'labuteasa', 'balabanj', 'bertzct']
+
+        # Transform FeatureSet into Quantile Regression Model
+        feature_set = FeatureSet("aqsol_features")
+        feature_set.to_model(
+            ModelType.REGRESSOR,
+            target_column="solubility",
+            feature_list=features,
+            name="aqsol-quantile-reg",
+            description="AQSol Quantile Regression",
+            tags=["aqsol", "quantiles"],
+        )
+
+    # Create the AQSol Quantile Regression Endpoint
+    if recreate or not Endpoint("aqsol-qr-end").exists():
+        m = Model("aqsol-quantile-reg")
+        end = m.to_endpoint(name="aqsol-qr-end", tags=["aqsol", "quantiles"])
+
+        # Run auto-inference on the AQSol Quantile Regression Endpoint
+        end.auto_inference(capture=True)
+
