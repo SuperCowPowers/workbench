@@ -93,14 +93,14 @@ def calculate_confidence(quantile_models, X, y):
     confidence = (q_conf + iqr_conf) / 2
     return confidence
 
-
-# Train models
+# Train the Prediction Model
 prediction_model = train_prediction_model(X_train, y_train)
+rmse_predictions = prediction_model.predict(X_train)
+residuals = y_train - rmse_predictions
+
+# Train the Quantiles Models (on the residuals)
 quantiles = [0.05, 0.25, 0.50, 0.75, 0.95]
 quantile_models = train_quantile_models(X_train, y_train, quantiles)
-
-# Predictions
-rmse_predictions = prediction_model.predict(X_train)
 
 # Calculate confidence for the array of predictions
 confidence_values = calculate_confidence(quantile_models, X_train, y_train)
