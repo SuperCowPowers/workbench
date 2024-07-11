@@ -91,6 +91,7 @@ class EndpointCore(Artifact):
 
         # This is for endpoint error handling later
         self.endpoint_return_columns = None
+        self.endpoint_retry = 0
 
         # Call SuperClass Post Initialization
         super().__post_init__()
@@ -494,6 +495,18 @@ class EndpointCore(Artifact):
             first_half = self._endpoint_error_handling(predictor, feature_df[0:split])
             second_half = self._endpoint_error_handling(predictor, feature_df[split:num_rows])
             return pd.concat([first_half, second_half], ignore_index=True)
+
+        # Catch the botocore.errorfactory.ModelNotReadyException
+        # Note: This is a SageMaker specific error that sometimes occurs
+        #       when the endpoint hasn't been used in a long time.
+        except botocore.errorfactory.ModelNotReadyException as err:
+            if self.endpoint_retry >= 3:
+                raise err
+            self.endpoint_retry += 1
+            self.log.critical(f"Endpoint model not ready: {err}")
+            self.log.critical(f"Waiting and Retrying...")
+            time.sleep(30)
+            return self._endpoint_error_handling(predictor, feature_df)
 
     def _error_df(self, df, all_columns):
         """Internal: Method to construct an Error DataFrame (a Pandas DataFrame with one row of NaNs)"""
