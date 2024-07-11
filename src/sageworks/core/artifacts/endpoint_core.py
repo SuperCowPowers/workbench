@@ -563,7 +563,14 @@ class EndpointCore(Artifact):
         # Grab the target column, prediction column, any _proba columns, and the ID column (if present)
         prediction_col = "prediction" if "prediction" in pred_results_df.columns else "predictions"
         output_columns = [target_column, prediction_col]
+
+        # Add any _proba columns to the output columns
         output_columns += [col for col in pred_results_df.columns if col.endswith("_proba")]
+
+        # Add any quantile columns to the output columns
+        output_columns += [col for col in pred_results_df.columns if col.startswith("q_") or col.startswith("qr_")]
+
+        # Add the ID column
         if id_column and id_column in pred_results_df.columns:
             output_columns.append(id_column)
 
