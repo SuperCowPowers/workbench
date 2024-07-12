@@ -323,7 +323,23 @@ if __name__ == "__main__":
     output_uuid = "aqsol-quantile-reg"
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.QUANTILE_REGRESSOR)
     to_model.set_output_tags(["aqsol", "quantiles"])
-    features = ['molwt', 'mollogp', 'molmr', 'heavyatomcount', 'numhacceptors', 'numhdonors', 'numheteroatoms',
-                'numrotatablebonds', 'numvalenceelectrons', 'numaromaticrings', 'numsaturatedrings',
-                'numaliphaticrings', 'ringcount', 'tpsa', 'labuteasa', 'balabanj', 'bertzct']
+    features = [
+        "molwt",
+        "mollogp",
+        "molmr",
+        "heavyatomcount",
+        "numhacceptors",
+        "numhdonors",
+        "numheteroatoms",
+        "numrotatablebonds",
+        "numvalenceelectrons",
+        "numaromaticrings",
+        "numsaturatedrings",
+        "numaliphaticrings",
+        "ringcount",
+        "tpsa",
+        "labuteasa",
+        "balabanj",
+        "bertzct",
+    ]
     to_model.transform(target_column="solubility", feature_list=features, description="AQSol Quantile Regression")

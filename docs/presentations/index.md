@@ -3,7 +3,7 @@
 The SageWorks framework makes AWS® both easier to use and more powerful. SageWorks handles all the details around updating and managing a complex set of AWS Services. With a simple-to-use Python API and a beautiful set of web interfaces, SageWorks makes creating AWS ML pipelines a snap.
 
 !!!tip inline end "Need Help?"
-    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/8jY2yBZX) 
+    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 ### SageWorks Presentations
 - [SageWorks Overview](https://docs.google.com/presentation/d/1JCUzCtjQLGoQ7HJA_jhEHy3Q2o_j-ibkCCN864CvcVE/edit?usp=sharing)
@@ -25,7 +25,7 @@ The SageWorks framework makes AWS® both easier to use and more powerful. SageWo
 The SageWorks API documentation [SageWorks API](https://supercowpowers.github.io/sageworks/) covers our in-depth Python API and contains code examples. The code examples are provided in the Github repo `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
 
 ### Questions?
-The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/8jY2yBZX) 
+The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 
 <img align="right" src="../images/scp.png" width="180">

@@ -102,7 +102,7 @@ class LicenseDetails(PluginInterface):
         # Fill in the support details
         support_header = "Support Information"
         support_details = "- **Email:** [support@supercowpowers.com](mailto:support@supercowpowers.com)\n"
-        support_details += "- **Chat:** [Discord](https://discord.gg/8jY2yBZX)\n"
+        support_details += "- **Chat:** [Discord](https://discord.gg/WHAJuz8sw8)\n"
 
         # Return the updated property values for the plugin
         return [header, details, support_header, support_details]

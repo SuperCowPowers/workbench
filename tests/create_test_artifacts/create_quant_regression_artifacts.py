@@ -47,9 +47,25 @@ if __name__ == "__main__":
     if recreate or not Model("aqsol-quantile-reg").exists():
 
         # AQSol Features
-        features = ['molwt', 'mollogp', 'molmr', 'heavyatomcount', 'numhacceptors', 'numhdonors', 'numheteroatoms',
-                    'numrotatablebonds', 'numvalenceelectrons', 'numaromaticrings', 'numsaturatedrings',
-                    'numaliphaticrings', 'ringcount', 'tpsa', 'labuteasa', 'balabanj', 'bertzct']
+        features = [
+            "molwt",
+            "mollogp",
+            "molmr",
+            "heavyatomcount",
+            "numhacceptors",
+            "numhdonors",
+            "numheteroatoms",
+            "numrotatablebonds",
+            "numvalenceelectrons",
+            "numaromaticrings",
+            "numsaturatedrings",
+            "numaliphaticrings",
+            "ringcount",
+            "tpsa",
+            "labuteasa",
+            "balabanj",
+            "bertzct",
+        ]
 
         # Transform FeatureSet into Quantile Regression Model
         feature_set = FeatureSet("aqsol_features")
@@ -69,4 +85,3 @@ if __name__ == "__main__":
 
         # Run auto-inference on the AQSol Quantile Regression Endpoint
         end.auto_inference(capture=True)
-

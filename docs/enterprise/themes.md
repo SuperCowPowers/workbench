@@ -6,4 +6,4 @@ The SageWorks Dashboard can be customized extensively. Using SageWorks **Themes*
 
 
 ## Contact Us
-Contact us on our [Discord](https://discord.gg/8jY2yBZX) channel, we're happy to answer any questions that you might have about **SageWorks** and accelerating your AWS ML Pipelines. You can also send us email at [SageWorks Info](mailto:sageworks@supercowpowers.com) or  [SageWorks Sales](mailto:sales@supercowpowers.com).
+Contact us on our [Discord](https://discord.gg/WHAJuz8sw8) channel, we're happy to answer any questions that you might have about **SageWorks** and accelerating your AWS ML Pipelines. You can also send us email at [SageWorks Info](mailto:sageworks@supercowpowers.com) or  [SageWorks Sales](mailto:sales@supercowpowers.com).

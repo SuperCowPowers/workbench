@@ -504,7 +504,7 @@ class EndpointCore(Artifact):
                 raise err
             self.endpoint_retry += 1
             self.log.critical(f"Endpoint model not ready: {err}")
-            self.log.critical(f"Waiting and Retrying...")
+            self.log.critical("Waiting and Retrying...")
             time.sleep(30)
             return self._endpoint_error_handling(predictor, feature_df)
 

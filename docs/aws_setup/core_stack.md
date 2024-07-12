@@ -2,7 +2,7 @@
 Welcome to the SageWorks AWS Setup Guide. SageWorks is deployed as an AWS **Stack** following the well architected system practices of AWS. 
 
 !!! warning "AWS Setup can be a bit complex"
-    Setting up SageWorks with AWS can be a bit complex, but this only needs to be done ONCE for your entire company. The install uses standard CDK --> AWS Stacks and SageWorks tries to make it straight forward. If you have any troubles at all feel free to contact us a [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on [Discord](https://discord.gg/8jY2yBZX) and we're happy to help you with AWS for FREE.
+    Setting up SageWorks with AWS can be a bit complex, but this only needs to be done ONCE for your entire company. The install uses standard CDK --> AWS Stacks and SageWorks tries to make it straight forward. If you have any troubles at all feel free to contact us a [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on [Discord](https://discord.gg/WHAJuz8sw8) and we're happy to help you with AWS for FREE.
     
 ## Two main options when using SageWorks
 1. Spin up a new AWS Account for the SageWorks Stacks ([Make a New Account](aws_tips_and_tricks.md))
@@ -63,7 +63,7 @@ These are optional but are set/used by most SageWorks users.
   ```
 
 ## AWS Account Setup Check
-After setting up SageWorks config/AWS Account you can run this test/checking script. If the results ends with `INFO AWS Account Clamp: AOK!` you're in good shape. If not feel free to contact us on [Discord](https://discord.gg/8jY2yBZX) and we'll get it straightened out for you :)
+After setting up SageWorks config/AWS Account you can run this test/checking script. If the results ends with `INFO AWS Account Clamp: AOK!` you're in good shape. If not feel free to contact us on [Discord](https://discord.gg/WHAJuz8sw8) and we'll get it straightened out for you :)
 
 ```bash
 pip install sageworks (if not already installed)
@@ -76,4 +76,4 @@ python aws_account_check.py
 !!! success
     Congratulations: SageWorks is now deployed to your AWS Account. Deploying the AWS Stack only needs to be done once. Now that this is complete your developers can simply `pip install sageworks` and start using the API.
     
-If you ran into any issues with this procedure please contact us via [Discord](https://discord.gg/8jY2yBZX) or email [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) and the SCP team will provide **free** setup and support for new SageWorks users.
+If you ran into any issues with this procedure please contact us via [Discord](https://discord.gg/WHAJuz8sw8) or email [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) and the SCP team will provide **free** setup and support for new SageWorks users.

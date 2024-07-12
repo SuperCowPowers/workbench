@@ -175,7 +175,9 @@ class ScatterPlot(PluginInterface):
                 x=df[x_col],
                 y=df[y_col],
                 mode="markers",
-                hovertext=df.apply(lambda row: "<br>".join([f"{col}: {row[col]}" for col in self.hover_columns]), axis=1),
+                hovertext=df.apply(
+                    lambda row: "<br>".join([f"{col}: {row[col]}" for col in self.hover_columns]), axis=1
+                ),
                 hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
                 textfont=dict(family="Arial Black", size=14),  # Set font size
                 marker=dict(
@@ -251,7 +253,8 @@ if __name__ == "__main__":
     from pprint import pprint
     import numpy as np
     from sageworks.api import Model, Endpoint
-    from sageworks.utils.endpoint_utils import backtrack_to_fs
+
+    # from sageworks.utils.endpoint_utils import backtrack_to_fs
 
     # Grab the endpoint of interest
     # end = Endpoint("abalone-qr-end")
@@ -273,7 +276,7 @@ if __name__ == "__main__":
 
     # Domain specific confidence
     pred_df["target_spread"] = pred_df["q_95"] - pred_df["q_05"]
-    pred_df["target_confidence"] = np.clip(1 - (pred_df["target_spread"] / (error_distance*4.0)), 0, 1)
+    pred_df["target_confidence"] = np.clip(1 - (pred_df["target_spread"] / (error_distance * 4.0)), 0, 1)
 
     # - any interval greater than 2.0 we have no confidence
     # - anything less than 2.0 is a linear gradient from 0.0 to 1.0
@@ -290,14 +293,13 @@ if __name__ == "__main__":
 
     # Compute residual confidence
     pred_df["residual_confidence"] = np.clip(1 - (regression_outliers / error_distance), 0, 1)
-    #pred_df["residual_confidence"] = np.clip(1 - (pred_df["iqr"] / 2.0), 0, 1)
+    # pred_df["residual_confidence"] = np.clip(1 - (pred_df["iqr"] / 2.0), 0, 1)
 
     # Compute the median delta for the prediction
     pred_df["median_delta"] = np.abs(pred_df["q_50"] - pred_df["prediction"])
-    pred_df["median_confidence"] = np.clip(1 - (pred_df["median_delta"] / (error_distance/2)), 0, 1)
+    pred_df["median_confidence"] = np.clip(1 - (pred_df["median_delta"] / (error_distance / 2)), 0, 1)
 
     # Confidence is the product of target, residual, and median confidence
-    # pred_df["confidence"] = pred_df["target_confidence"] * pred_df["residual_confidence"] * pred_df["median_confidence"]
     # pred_df["confidence"] = pred_df["residual_confidence"] * pred_df["median_confidence"]
     # pred_df["confidence"] = pred_df["residual_confidence"] * pred_df["target_confidence"]
     pred_df["confidence"] = pred_df["residual_confidence"]
@@ -315,10 +317,27 @@ if __name__ == "__main__":
     print(f"RMSE Filtered: {rmse_filtered} support: {len(predictions_filtered)}")
 
     # Columns that we want to show when we hover above a point
-    hover_columns = ["q_05", "q_25", "q_50", "q_75", "q_95",
-                     "qr_05", "qr_25", "qr_50", "qr_75", "qr_95",
-                     "prediction", target, "confidence",
-                     "target_spread", "target_confidence", "residual_confidence",
-                     "median_delta", "median_confidence"]
+    hover_columns = [
+        "q_05",
+        "q_25",
+        "q_50",
+        "q_75",
+        "q_95",
+        "qr_05",
+        "qr_25",
+        "qr_50",
+        "qr_75",
+        "qr_95",
+        "prediction",
+        target,
+        "confidence",
+        "target_spread",
+        "target_confidence",
+        "residual_confidence",
+        "median_delta",
+        "median_confidence",
+    ]
 
-    PluginUnitTest(ScatterPlot, input_data=pred_df, x="solubility", y="prediction", color="confidence", hover_columns=hover_columns).run()
+    PluginUnitTest(
+        ScatterPlot, input_data=pred_df, x="solubility", y="prediction", color="confidence", hover_columns=hover_columns
+    ).run()

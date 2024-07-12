@@ -93,6 +93,7 @@ def calculate_confidence(quantile_models, X, y):
     confidence = (q_conf + iqr_conf) / 2
     return confidence
 
+
 # Train the Prediction Model
 prediction_model = train_prediction_model(X_train, y_train)
 rmse_predictions = prediction_model.predict(X_train)
