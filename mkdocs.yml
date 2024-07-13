@@ -43,6 +43,7 @@ nav:
       - API Changes: plugins/plugin_api_changes.md
   - SageWorks Enterprise: 
       - OverView: enterprise/index.md
+      - Private SaaS: enterprise/private_saas.md
       - Themes: enterprise/themes.md
       - Project Branding: enterprise/project_branding.md
   - FAQ:  misc/faq.md
