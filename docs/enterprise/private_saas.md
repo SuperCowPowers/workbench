@@ -1,7 +1,7 @@
 # Benefits of a Private SaaS Architecture
 
 
-### Self Hosted vs Private Saas vs Public SaaS?
+### Self Hosted vs Private SaaS vs Public SaaS?
 At the top level your team/project is making a decision about how they are going to build, expand, support, and maintain a machine learning pipeline.
 
 **Conceptual ML Pipeline**
@@ -35,7 +35,7 @@ The other choice, that we're not going to cover here, is whether you use AWS, Az
 | **Customization**      | High                                  | Moderate to High                          | Low                              |
 | **Data Privacy**       | High (controlled by company)          | High (controlled by company)              | Low (potential issues with sensitive data)    |
 | **Security**           | High (controlled by company)          | High (controlled by company)              | Varies (depends on the provider)              |
-| **End-User Application Integration**           | Role your own          | LiveDesign, StarDrop, and More              | None |
+| **End-User Application Integration**           | Roll your own          | LiveDesign, StarDrop, and More              | None |
 | **Cost**    | **High** <br>X months * Y FTEs = **$$$** | Low (<< FTEs)                          | Low to Moderate  |
 | **Support & Training** | Limited (internal)                    | High (SaaS provider)      | High (SaaS provider)              |
 
