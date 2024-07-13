@@ -22,8 +22,7 @@ The SageWorks framework makes AWS® both easier to use and more powerful. SageWo
 
 SageWorks is architected as a **Private SaaS** (also called BYOC: Bring Your Own Cloud). This hybrid architecture is the ultimate solution for businesses that prioritize data control and security. SageWorks deploys as an AWS Stack within your own cloud environment, ensuring compliance with stringent corporate and regulatory standards. It offers the flexibility to tailor solutions to your specific business needs through our comprehensive plugin support, both components and full web interfaces. By using SageWorks, you maintain absolute control over your data while benefiting from the power, security, and scalability of AWS cloud services. [SageWorks Private SaaS Architecture](https://docs.google.com/presentation/d/1f_1gmE4-UAeUDDsoNdzK_d_MxALFXIkxORZwbJBjPq4/edit?usp=sharing)
 
-<img alt="private_saas_compare" src="
-https://github.com/user-attachments/assets/8ad9c781-f222-4ab3-9e45-6d07a3977f44">
+<img alt="private_saas_compare" src="https://github.com/user-attachments/assets/2f6d3724-e340-4a70-bb97-d05383917cfe">
 
 ### API Installation
 

@@ -25,8 +25,7 @@ When building out a framework to support ML Pipelines there are three main optio
 
 The other choice, that we're not going to cover here, is whether you use AWS, Azure, GCP, or something else. SageWorks is architected and powered by a broad and rich set of AWS ML Pipeline services. We believe that AWS provides the best set of functionality and APIs for flexible, real world ML architectures.
 
-<img alt="private_saas_compare" src="
-https://github.com/user-attachments/assets/8ad9c781-f222-4ab3-9e45-6d07a3977f44">
+<img alt="private_saas_compare" src="https://github.com/user-attachments/assets/2f6d3724-e340-4a70-bb97-d05383917cfe">
 
 
 ### Resources
