@@ -81,8 +81,11 @@ class DataSource(AthenaSource):
         """
         return super().query(query)
 
-    def pull_dataframe(self) -> pd.DataFrame:
+    def pull_dataframe(self, include_aws_columns=False) -> pd.DataFrame:
         """Return a DataFrame of ALL the data from this DataSource
+
+        Args:
+            include_aws_columns (bool): Include the AWS columns in the DataFrame (default: False)
 
         Returns:
             pd.DataFrame: A DataFrame of ALL the data from this DataSource
@@ -95,7 +98,13 @@ class DataSource(AthenaSource):
         self.log.info(f"Pulling all data from {self.uuid}...")
         table = super().get_table_name()
         query = f"SELECT * FROM {table}"
-        return self.query(query)
+        df = self.query(query)
+
+        # Drop any columns generated from AWS
+        if not include_aws_columns:
+            aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
+            df = df.drop(columns=aws_cols, errors="ignore")
+        return df
 
     def to_features(
         self,
