@@ -16,6 +16,15 @@ class ScatterPlot(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.FEATURE_SET
 
+    def __init__(self):
+        """Initialize the Scatter Plot Plugin."""
+        self.component_id = None
+        self.hover_columns = []
+        self.df = None
+
+        # Call the parent class constructor
+        super().__init__()
+
     def create_component(self, component_id: str) -> html.Div:
         """Create a Dash Graph Component without any data.
 
@@ -26,8 +35,6 @@ class ScatterPlot(PluginInterface):
             html.Div: A Dash Div Component containing the graph and dropdowns.
         """
         self.component_id = component_id
-        self.hover_columns = []
-        self.df = None
 
         # Fill in plugin properties and signals
         self.properties = [
@@ -247,97 +254,4 @@ if __name__ == "__main__":
     from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    # PluginUnitTest(ScatterPlot).run()
-
-    # Run an integration test
-    from pprint import pprint
-    import numpy as np
-    from sageworks.api import Model, Endpoint
-
-    # from sageworks.utils.endpoint_utils import backtrack_to_fs
-
-    # Grab the endpoint of interest
-    # end = Endpoint("abalone-qr-end")
-    end = Endpoint("aqsol-qr-end")
-
-    # Domain specific error_distance (if we got it wrong by this much, we have low confidence)
-    error_distance = 1.5
-
-    # Run inference on the endpoint (only need to do this if the model has changed)
-    # fs_data = backtrack_to_fs(end).pull_dataframe()
-    # end.inference(fs_data, capture_uuid="qrr_2024_07_11", id_column="id")
-
-    # Get the endpoint model and target column
-    model = Model(end.get_input())
-    target = model.target()
-
-    # Grab the inference data
-    pred_df = model.get_inference_predictions("qrr_2024_07_11")
-
-    # Domain specific confidence
-    pred_df["target_spread"] = pred_df["q_95"] - pred_df["q_05"]
-    pred_df["target_confidence"] = np.clip(1 - (pred_df["target_spread"] / (error_distance * 4.0)), 0, 1)
-
-    # - any interval greater than 2.0 we have no confidence
-    # - anything less than 2.0 is a linear gradient from 0.0 to 1.0
-    # pred_df["confidence"] = np.clip(1 - (pred_df["interval"] / 2.0), 0, 1)
-    # regression_outliers = np.max(np.abs(pred_df["qr_05"]), np.abs(pred_df["qr_95"]))
-    # pred_df["residual_confidence"] = np.clip(1 - (regression_outliers / 2.0), 0, 1)
-    # pred_df["confidence"] = pred_df["residual_confidence"]  # * pred_df["target_confidence"]
-
-    # Compute the regression outliers
-    regression_outliers = np.maximum(np.abs(pred_df["qr_05"]), np.abs(pred_df["qr_95"]))
-
-    # Compute regression IQR distance
-    pred_df["iqr"] = pred_df["qr_75"] - pred_df["qr_25"]
-
-    # Compute residual confidence
-    pred_df["residual_confidence"] = np.clip(1 - (regression_outliers / error_distance), 0, 1)
-    # pred_df["residual_confidence"] = np.clip(1 - (pred_df["iqr"] / 2.0), 0, 1)
-
-    # Compute the median delta for the prediction
-    pred_df["median_delta"] = np.abs(pred_df["q_50"] - pred_df["prediction"])
-    pred_df["median_confidence"] = np.clip(1 - (pred_df["median_delta"] / (error_distance / 2)), 0, 1)
-
-    # Confidence is the product of target, residual, and median confidence
-    # pred_df["confidence"] = pred_df["residual_confidence"] * pred_df["median_confidence"]
-    # pred_df["confidence"] = pred_df["residual_confidence"] * pred_df["target_confidence"]
-    pred_df["confidence"] = pred_df["residual_confidence"]
-
-    # Grab the performance metrics
-    metrics = model.get_inference_metrics()
-    pprint(metrics)
-
-    # Confidence Threshold
-    confidence_thres = 0.5
-
-    # Now filter the data based on confidence and give RMSE for the filtered data
-    predictions_filtered = pred_df[pred_df["confidence"] > confidence_thres]
-    rmse_filtered = np.sqrt(np.mean((predictions_filtered[target] - predictions_filtered["prediction"]) ** 2))
-    print(f"RMSE Filtered: {rmse_filtered} support: {len(predictions_filtered)}")
-
-    # Columns that we want to show when we hover above a point
-    hover_columns = [
-        "q_05",
-        "q_25",
-        "q_50",
-        "q_75",
-        "q_95",
-        "qr_05",
-        "qr_25",
-        "qr_50",
-        "qr_75",
-        "qr_95",
-        "prediction",
-        target,
-        "confidence",
-        "target_spread",
-        "target_confidence",
-        "residual_confidence",
-        "median_delta",
-        "median_confidence",
-    ]
-
-    PluginUnitTest(
-        ScatterPlot, input_data=pred_df, x="solubility", y="prediction", color="confidence", hover_columns=hover_columns
-    ).run()
+    PluginUnitTest(ScatterPlot).run()
