@@ -64,8 +64,7 @@ class FeaturesToModel(Transform):
         self.target_column = None
         self.class_labels = None
 
-    @staticmethod
-    def _determine_model_type(model_class: str) -> ModelType:
+    def _determine_model_type(self, model_class: str) -> ModelType:
         """Determine the ModelType from the model_class
         Args:
             model_class (str): The class of the model
@@ -79,6 +78,7 @@ class FeaturesToModel(Transform):
         elif "quantile" in model_class.lower():
             return ModelType.QUANTILE_REGRESSOR
         else:
+            self.log.critical(f"Unknown ModelType for model_class: {model_class}")
             return ModelType.UNKNOWN
 
     def generate_model_script(self, target_column: str, feature_list: list[str], train_all_data: bool) -> str:

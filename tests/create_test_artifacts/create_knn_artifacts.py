@@ -30,7 +30,6 @@ if __name__ == "__main__":
         # Transform FeatureSet into KNN Regression Model
         feature_set = FeatureSet("abalone_features")
         feature_set.to_model(
-            ModelType.REGRESSOR,
             model_class="KNeighborsRegressor",
             target_column="class_number_of_rings",
             name="abalone-knn-reg",
