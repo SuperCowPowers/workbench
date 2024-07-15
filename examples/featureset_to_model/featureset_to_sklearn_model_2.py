@@ -12,6 +12,6 @@ my_model = my_features.to_model(
     target_column="wine_class",
     name="wine-rfc-class",
     description="Wine RandomForest Classification",
-    tags=["wine", "rfc"]
+    tags=["wine", "rfc"],
 )
 pprint(my_model.details())
