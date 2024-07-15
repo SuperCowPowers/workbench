@@ -96,7 +96,6 @@ if __name__ == "__main__":
     # Harness Template Parameters
     target = "{{target_column}}"
     feature_list = {{feature_list}}
-    model_type = "{{model_type}}"
     model_class = {{model_class}}
     model_metrics_s3_path = "{{model_metrics_s3_path}}"
     train_all_data = "{{train_all_data}}"
@@ -152,6 +151,12 @@ if __name__ == "__main__":
     # Initialize our Sckit-Learn model
     model = model_class()
 
+    # Determine if the model is a classifier, regressor, clusterer, or transformer
+    if hasattr(model_class, "_estimator_type"):
+        model_type = model_class._estimator_type
+    else:
+        raise ValueError("Model type could not be determined.")
+
     # Handle classification specifics
     if model_type == "classifier":
         # Encode the target column
@@ -159,7 +164,7 @@ if __name__ == "__main__":
         df_train[target] = label_encoder.fit_transform(df_train[target])
         df_val[target] = label_encoder.transform(df_val[target])
     else:
-        label_encoder = None  # We don't need this for regression
+        label_encoder = None  # We don't need this for other model types
 
     # Grab our Features, Target and Train the Model
     y = df_train[target]

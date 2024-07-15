@@ -26,7 +26,7 @@ class FeaturesToModel(Transform):
         ```
     """
 
-    def __init__(self, feature_uuid: str, model_uuid: str, model_type: ModelType, model_class=None):
+    def __init__(self, feature_uuid: str, model_uuid: str, model_type: ModelType = ModelType.UNKNOWN, model_class=None):
         """FeaturesToModel Initialization
         Args:
             feature_uuid (str): UUID of the FeatureSet to use as input
@@ -41,6 +41,16 @@ class FeaturesToModel(Transform):
         # Call superclass init
         super().__init__(feature_uuid, model_uuid)
 
+        # If the model_type is UNKNOWN the model_class must be specified
+        if model_type == ModelType.UNKNOWN:
+            if model_class is None:
+                msg = "ModelType is UNKNOWN, must specify a model_class!"
+                self.log.critical(msg)
+                raise ValueError(msg)
+            else:
+                self.log.info("ModelType is UNKNOWN, using model_class to determine the type...")
+                model_type = self._determine_model_type(model_class)
+
         # Set up all my instance attributes
         self.input_type = TransformInput.FEATURE_SET
         self.output_type = TransformOutput.MODEL
@@ -53,6 +63,23 @@ class FeaturesToModel(Transform):
         self.model_feature_list = None
         self.target_column = None
         self.class_labels = None
+
+    @staticmethod
+    def _determine_model_type(model_class: str) -> ModelType:
+        """Determine the ModelType from the model_class
+        Args:
+            model_class (str): The class of the model
+        Returns:
+            ModelType: The determined ModelType
+        """
+        if "regressor" in model_class.lower():
+            return ModelType.REGRESSOR
+        elif "classifier" in model_class.lower():
+            return ModelType.CLASSIFIER
+        elif "quantile" in model_class.lower():
+            return ModelType.QUANTILE_REGRESSOR
+        else:
+            return ModelType.UNKNOWN
 
     def generate_model_script(self, target_column: str, feature_list: list[str], train_all_data: bool) -> str:
         """Fill in the model template with specific target and feature_list
@@ -199,7 +226,7 @@ class FeaturesToModel(Transform):
         # Generate our model script
         script_path = self.generate_model_script(self.target_column, self.model_feature_list, train_all_data)
 
-        # Metric Definitions for Regression and Classification
+        # Metric Definitions for Regression
         if self.model_type == ModelType.REGRESSOR or self.model_type == ModelType.QUANTILE_REGRESSOR:
             metric_definitions = [
                 {"Name": "RMSE", "Regex": "RMSE: ([0-9.]+)"},
@@ -207,7 +234,9 @@ class FeaturesToModel(Transform):
                 {"Name": "R2", "Regex": "R2: ([0-9.]+)"},
                 {"Name": "NumRows", "Regex": "NumRows: ([0-9]+)"},
             ]
-        else:
+
+        # Metric Definitions for Classification
+        elif self.model_type == ModelType.CLASSIFIER:
             # We need to get creative with the Classification Metrics
 
             # Grab all the target column class values (class labels)
@@ -235,6 +264,11 @@ class FeaturesToModel(Transform):
                     metric_definitions.append(
                         {"Name": f"ConfusionMatrix:{row}:{col}", "Regex": f"ConfusionMatrix:{row}:{col} ([0-9.]+)"}
                     )
+
+        # If the model type is UNKNOWN, our metric_definitions will be empty
+        else:
+            self.log.warning("ModelType is UNKNOWN, skipping metric_definitions...")
+            metric_definitions = []
 
         # Create a Sagemaker Model with our script
         self.estimator = SKLearn(
@@ -336,58 +370,22 @@ if __name__ == "__main__":
     to_model.transform(target_column="class_number_of_rings", description="Abalone Quantile Regression")
     """
 
-    # Quantile Regression Model (AQSol)
+    # Scikit-Learn KNN Regression Model (Abalone)
     """
-    input_uuid = "aqsol_features"
-    output_uuid = "aqsol-quantile-reg"
-    to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.QUANTILE_REGRESSOR)
-    to_model.set_output_tags(["aqsol", "quantiles"])
-    features = [
-        "molwt",
-        "mollogp",
-        "molmr",
-        "heavyatomcount",
-        "numhacceptors",
-        "numhdonors",
-        "numheteroatoms",
-        "numrotatablebonds",
-        "numvalenceelectrons",
-        "numaromaticrings",
-        "numsaturatedrings",
-        "numaliphaticrings",
-        "ringcount",
-        "tpsa",
-        "labuteasa",
-        "balabanj",
-        "bertzct",
-    ]
-    to_model.transform(target_column="solubility", feature_list=features, description="AQSol Quantile Regression")
+    input_uuid = "abalone_features"
+    output_uuid = "abalone-knn-reg"
+    to_model = FeaturesToModel(input_uuid, output_uuid, model_class="KNeighborsRegressor")
+    to_model.set_output_tags(["abalone", "knn"])
+    new_model = to_model.transform(
+        target_column="class_number_of_rings", description="Abalone KNN Regression", train_all_data=True
+    )
     """
 
-    # Scikit-Learn Regression Model (AQSol)
-    input_uuid = "aqsol_features"
-    output_uuid = "aqsol-knn"
-    to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.REGRESSOR, model_class="KNeighborsRegressor")
-    to_model.set_output_tags(["aqsol", "knn"])
-    features = [
-        "molwt",
-        "mollogp",
-        "molmr",
-        "heavyatomcount",
-        "numhacceptors",
-        "numhdonors",
-        "numheteroatoms",
-        "numrotatablebonds",
-        "numvalenceelectrons",
-        "numaromaticrings",
-        "numsaturatedrings",
-        "numaliphaticrings",
-        "ringcount",
-        "tpsa",
-        "labuteasa",
-        "balabanj",
-        "bertzct",
-    ]
-    to_model.transform(
-        target_column="solubility", feature_list=features, description="AQSol KNN Regression", train_all_data=True
+    # Scikit-Learn Random Forest Classification Model (Wine)
+    input_uuid = "wine_features"
+    output_uuid = "wine-rfc-class"
+    to_model = FeaturesToModel(input_uuid, output_uuid, model_class="RandomForestClassifier")
+    to_model.set_output_tags(["wine", "rfc"])
+    new_model = to_model.transform(
+        target_column="wine_class", description="Wine RF Classification", train_all_data=True
     )

@@ -73,25 +73,25 @@ class FeatureSet(FeatureSetCore):
 
     def to_model(
         self,
-        model_type: ModelType,
         target_column: str,
+        model_type: ModelType = ModelType.UNKNOWN,
+        model_class: str = None,
         name: str = None,
         tags: list = None,
         description: str = None,
         feature_list: list = None,
-        model_class: str = None,
         **kwargs,
     ) -> Model:
         """Create a Model from the FeatureSet
 
         Args:
-            model_type (ModelType): The type of model to create (See sageworks.model.ModelType)
             target_column (str): The target column for the model (use None for unsupervised model)
+            model_type (ModelType): The type of model to create (See sageworks.model.ModelType)
+            model_class (str): The model class to use for the model (e.g. "KNeighborsRegressor", default: None)
             name (str): Set the name for the model. If not specified, a name will be generated
             tags (list): Set the tags for the model.  If not specified tags will be generated.
             description (str): Set the description for the model. If not specified a description is generated.
             feature_list (list): Set the feature list for the model. If not specified a feature list is generated.
-            model_class (str): The model class to use for the model (e.g. "KNeighborsRegressor", default: None)
 
         Returns:
             Model: The Model created from the FeatureSet
