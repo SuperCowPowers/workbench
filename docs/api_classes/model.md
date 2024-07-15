@@ -20,8 +20,7 @@ from pprint import pprint
 my_features = FeatureSet("test_features")
 
 # Create a Model from the FeatureSet
-# Note: ModelTypes can be CLASSIFIER, REGRESSOR, 
-#       UNSUPERVISED, or TRANSFORMER
+# Note: ModelTypes can be CLASSIFIER, REGRESSOR (XGBoost is default)
 my_model = my_features.to_model(model_type=ModelType.REGRESSOR, 
                                 target_column="iq_score")
 pprint(my_model.details())
@@ -55,6 +54,51 @@ pprint(my_model.details())
  'transform_types': ['ml.m5.large'],
  'uuid': 'test-model',
  'version': 1}
+```
+
+**Use a specific Scikit-Learn Model**
+
+```py title="featureset_to_sklearn_model.py"
+from sageworks.api.feature_set import FeatureSet
+from pprint import pprint
+
+# Grab a FeatureSet
+my_features = FeatureSet("abalone_features")
+
+# Transform FeatureSet into KNN Regression Model
+# Note: model_class can be any sckit-learn model 
+#  "KNeighborsRegressor", "BayesianRidge",
+#  "GaussianNB", "AdaBoostClassifier", etc
+my_model = my_features.to_model(
+    model_class="KNeighborsRegressor",
+    target_column="class_number_of_rings",
+    name="abalone-knn-reg",
+    description="Abalone KNN Regression",
+    tags=["abalone", "knn"],
+    train_all_data=True,
+)
+pprint(my_model.details())
+```
+**Another Scikit-Learn Example**
+
+```py title="featureset_to_sklearn_model_2.py"
+from sageworks.api.feature_set import FeatureSet
+from pprint import pprint
+
+# Grab a FeatureSet
+my_features = FeatureSet("wine_features")
+
+# Using a Scikit-Learn Model
+# Note: model_class can be any sckit-learn model ("KNeighborsRegressor", "BayesianRidge",
+#       "GaussianNB", "AdaBoostClassifier", "Ridge, "Lasso", "SVC", "SVR", etc...)
+my_model = my_features.to_model(
+    model_class="RandomForestClassifier",
+    target_column="wine_class",
+    name="wine-rfc-class",
+    description="Wine RandomForest Classification",
+    tags=["wine", "rfc"]
+)
+pprint(my_model.details())
 ```
 
 **Create an Endpoint from a Model**
