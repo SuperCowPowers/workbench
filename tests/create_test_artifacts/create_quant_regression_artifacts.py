@@ -1,9 +1,11 @@
-"""This Script creates the Abalone Quantile Regression Artifacts in AWS/SageWorks
+"""This Script creates the Abalone and AQSol Quantile Regression Artifacts in AWS/SageWorks
 
 Models:
     - abalone-quantile-reg
+    - aqsol-quantile-reg
 Endpoints:
     - abalone-qr-end
+    - aqsol-qr-end
 """
 
 import logging

@@ -1,5 +1,21 @@
-# Imports for XGB Model
-import xgboost as xgb
+# Comprehensive Imports for scikit-learn models
+from sklearn.ensemble import (
+    RandomForestClassifier, RandomForestRegressor,
+    GradientBoostingClassifier, GradientBoostingRegressor,
+    AdaBoostClassifier, AdaBoostRegressor,
+    BaggingClassifier, BaggingRegressor,
+    VotingClassifier, VotingRegressor,
+    StackingClassifier, StackingRegressor
+)
+from sklearn.linear_model import (
+    LogisticRegression, LinearRegression, Ridge, Lasso,
+    ElasticNet, BayesianRidge
+)
+from sklearn.svm import SVC, SVR
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 import awswrangler as wr
 
 # Model Performance Scores
@@ -75,12 +91,13 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
 
 
 if __name__ == "__main__":
-    """The main function is for training the XGBoost model"""
+    """The main function is for training the Scikit-Learn model"""
 
     # Harness Template Parameters
     target = "{{target_column}}"
     feature_list = {{feature_list}}
     model_type = "{{model_type}}"
+    model_class = {{model_class}}
     model_metrics_s3_path = "{{model_metrics_s3_path}}"
     train_all_data = "{{train_all_data}}"
     validation_split = 0.2
@@ -132,31 +149,30 @@ if __name__ == "__main__":
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATiON: {df_val.shape}")
 
-    # Now spin up our XGB Model
-    if model_type == "classifier":
-        xgb_model = xgb.XGBClassifier()
+    # Initialize our Sckit-Learn model
+    model = model_class()
 
+    # Handle classification specifics
+    if model_type == "classifier":
         # Encode the target column
         label_encoder = LabelEncoder()
         df_train[target] = label_encoder.fit_transform(df_train[target])
         df_val[target] = label_encoder.transform(df_val[target])
-
     else:
-        xgb_model = xgb.XGBRegressor()
         label_encoder = None  # We don't need this for regression
 
     # Grab our Features, Target and Train the Model
     y = df_train[target]
     X = df_train[feature_list]
-    xgb_model.fit(X, y)
+    model.fit(X, y)
 
     # Make Predictions on the Validation Set
     print(f"Making Predictions on Validation Set...")
-    preds = xgb_model.predict(df_val[feature_list])
+    preds = model.predict(df_val[feature_list])
     if model_type == "classifier":
         # Also get the probabilities for each class
         print("Processing Probabilities...")
-        probs = xgb_model.predict_proba(df_val[feature_list])
+        probs = model.predict_proba(df_val[feature_list])
         df_val["pred_proba"] = [p.tolist() for p in probs]
 
         # Expand the pred_proba column into separate columns for each class
@@ -224,7 +240,7 @@ if __name__ == "__main__":
         print(f"NumRows: {len(df_val)}")
 
     # Now save the model to the standard place/name
-    xgb_model.save_model(os.path.join(args.model_dir, "xgb_model.json"))
+    joblib.dump(model, os.path.join(args.model_dir, "scikit_model.joblib"))
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
@@ -234,22 +250,11 @@ if __name__ == "__main__":
 
 
 def model_fn(model_dir):
-    """Deserialized and return fitted model"""
+    """Deserialize and return fitted model"""
 
-    # Load our XGBoost model from the model directory
-    model_path = os.path.join(model_dir, "xgb_model.json")
-    with open(model_path, "r") as f:
-        model_json = json.load(f)
-    saved_model_type = json.loads(model_json.get('learner').get('attributes').get('scikit_learn')).get('_estimator_type')
-    if saved_model_type == "classifier":
-        model = xgb.XGBClassifier()
-    elif saved_model_type == "regressor":
-        model = xgb.XGBRegressor()
-    else:
-        msg = f"Model type ({saved_model_type}) not recognized. Expected 'classifier' or 'regressor'"
-        raise ValueError(msg)
-
-    model.load_model(model_path)
+    # Load our model from the model directory
+    model_path = os.path.join(model_dir, "scikit_model.joblib")
+    model = joblib.load(model_path)
     return model
 
 

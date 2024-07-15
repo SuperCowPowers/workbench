@@ -26,12 +26,13 @@ class FeaturesToModel(Transform):
         ```
     """
 
-    def __init__(self, feature_uuid: str, model_uuid: str, model_type: ModelType):
+    def __init__(self, feature_uuid: str, model_uuid: str, model_type: ModelType, model_class=None):
         """FeaturesToModel Initialization
         Args:
             feature_uuid (str): UUID of the FeatureSet to use as input
             model_uuid (str): UUID of the Model to create as output
             model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.
+            model_class (str): The class of the model (optional)
         """
 
         # Make sure the model_uuid is a valid name
@@ -44,6 +45,7 @@ class FeaturesToModel(Transform):
         self.input_type = TransformInput.FEATURE_SET
         self.output_type = TransformOutput.MODEL
         self.model_type = model_type
+        self.model_class = model_class
         self.estimator = None
         self.model_script_dir = None
         self.model_description = None
@@ -52,21 +54,39 @@ class FeaturesToModel(Transform):
         self.target_column = None
         self.class_labels = None
 
-    def generate_model_script(
-        self, target_column: str, feature_list: list[str], model_type: ModelType, train_all_data: bool
-    ) -> str:
+    def generate_model_script(self, target_column: str, feature_list: list[str], train_all_data: bool) -> str:
         """Fill in the model template with specific target and feature_list
         Args:
             target_column (str): Column name of the target variable
             feature_list (list[str]): A list of columns for the features
-            model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.
             train_all_data (bool): Train on ALL (100%) of the data
         Returns:
            str: The name of the generated model script
         """
 
         # FIXME: Revisit all of this since it's a bit wonky
-        if model_type == ModelType.REGRESSOR or model_type == ModelType.CLASSIFIER:
+        # Did they specify a Scikit-Learn model class?
+        if self.model_class:
+            self.log.info(f"Using Scikit-Learn model class: {self.model_class}")
+            script_name = "generated_scikit_model.py"
+            dir_path = Path(__file__).parent.absolute()
+            self.model_script_dir = os.path.join(dir_path, "light_scikit_learn")
+            template_path = os.path.join(self.model_script_dir, "scikit_learn.template")
+            output_path = os.path.join(self.model_script_dir, script_name)
+            with open(template_path, "r") as fp:
+                scikit_template = fp.read()
+
+            # Template replacements
+            aws_script = scikit_template.replace("{{model_class}}", self.model_class)
+            aws_script = aws_script.replace("{{target_column}}", target_column)
+            feature_list_str = json.dumps(feature_list)
+            aws_script = aws_script.replace("{{feature_list}}", feature_list_str)
+            aws_script = aws_script.replace("{{model_type}}", self.model_type.value)
+            metrics_s3_path = f"{self.model_training_root}/{self.output_uuid}"
+            aws_script = aws_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
+            aws_script = aws_script.replace("{{train_all_data}}", str(train_all_data))
+
+        elif self.model_type == ModelType.REGRESSOR or self.model_type == ModelType.CLASSIFIER:
             script_name = "generated_xgb_model.py"
             dir_path = Path(__file__).parent.absolute()
             self.model_script_dir = os.path.join(dir_path, "light_xgb_model")
@@ -79,12 +99,12 @@ class FeaturesToModel(Transform):
             aws_script = xgb_template.replace("{{target_column}}", target_column)
             feature_list_str = json.dumps(feature_list)
             aws_script = aws_script.replace("{{feature_list}}", feature_list_str)
-            aws_script = aws_script.replace("{{model_type}}", model_type.value)
+            aws_script = aws_script.replace("{{model_type}}", self.model_type.value)
             metrics_s3_path = f"{self.model_training_root}/{self.output_uuid}"
             aws_script = aws_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
             aws_script = aws_script.replace("{{train_all_data}}", str(train_all_data))
 
-        elif model_type == ModelType.QUANTILE_REGRESSOR:
+        elif self.model_type == ModelType.QUANTILE_REGRESSOR:
             script_name = "generated_quantile_model.py"
             dir_path = Path(__file__).parent.absolute()
             self.model_script_dir = os.path.join(dir_path, "light_quant_regression")
@@ -177,9 +197,7 @@ class FeaturesToModel(Transform):
         self.log.important(f"Feature List for Modeling: {self.model_feature_list}")
 
         # Generate our model script
-        script_path = self.generate_model_script(
-            self.target_column, self.model_feature_list, self.model_type, train_all_data
-        )
+        script_path = self.generate_model_script(self.target_column, self.model_feature_list, train_all_data)
 
         # Metric Definitions for Regression and Classification
         if self.model_type == ModelType.REGRESSOR or self.model_type == ModelType.QUANTILE_REGRESSOR:
@@ -319,6 +337,7 @@ if __name__ == "__main__":
     """
 
     # Quantile Regression Model (AQSol)
+    """
     input_uuid = "aqsol_features"
     output_uuid = "aqsol-quantile-reg"
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.QUANTILE_REGRESSOR)
@@ -343,3 +362,32 @@ if __name__ == "__main__":
         "bertzct",
     ]
     to_model.transform(target_column="solubility", feature_list=features, description="AQSol Quantile Regression")
+    """
+
+    # Scikit-Learn Regression Model (AQSol)
+    input_uuid = "aqsol_features"
+    output_uuid = "aqsol-knn"
+    to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.REGRESSOR, model_class="KNeighborsRegressor")
+    to_model.set_output_tags(["aqsol", "knn"])
+    features = [
+        "molwt",
+        "mollogp",
+        "molmr",
+        "heavyatomcount",
+        "numhacceptors",
+        "numhdonors",
+        "numheteroatoms",
+        "numrotatablebonds",
+        "numvalenceelectrons",
+        "numaromaticrings",
+        "numsaturatedrings",
+        "numaliphaticrings",
+        "ringcount",
+        "tpsa",
+        "labuteasa",
+        "balabanj",
+        "bertzct",
+    ]
+    to_model.transform(
+        target_column="solubility", feature_list=features, description="AQSol KNN Regression", train_all_data=True
+    )

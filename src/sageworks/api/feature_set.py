@@ -79,6 +79,7 @@ class FeatureSet(FeatureSetCore):
         tags: list = None,
         description: str = None,
         feature_list: list = None,
+        model_class: str = None,
         **kwargs,
     ) -> Model:
         """Create a Model from the FeatureSet
@@ -90,6 +91,7 @@ class FeatureSet(FeatureSetCore):
             tags (list): Set the tags for the model.  If not specified tags will be generated.
             description (str): Set the description for the model. If not specified a description is generated.
             feature_list (list): Set the feature list for the model. If not specified a feature list is generated.
+            model_class (str): The model class to use for the model (e.g. "KNeighborsRegressor", default: None)
 
         Returns:
             Model: The Model created from the FeatureSet
@@ -108,7 +110,7 @@ class FeatureSet(FeatureSetCore):
         tags = [name] if tags is None else tags
 
         # Transform the FeatureSet into a Model
-        features_to_model = FeaturesToModel(self.uuid, name, model_type=model_type)
+        features_to_model = FeaturesToModel(self.uuid, name, model_type=model_type, model_class=model_class)
         features_to_model.set_output_tags(tags)
         features_to_model.transform(
             target_column=target_column, description=description, feature_list=feature_list, **kwargs
