@@ -2,17 +2,16 @@ from sageworks.api.feature_set import FeatureSet
 from pprint import pprint
 
 # Grab a FeatureSet
-my_features = FeatureSet("abalone_features")
+my_features = FeatureSet("win_features")
 
-# Transform FeatureSet into KNN Regression Model
+# Using a Scikit-Learn Model
 # Note: model_class can be any sckit-learn model ("KNeighborsRegressor", "BayesianRidge",
 #       "GaussianNB", "AdaBoostClassifier", "Ridge, "Lasso", "SVC", "SVR", etc...)
 my_model = my_features.to_model(
-    model_class="KNeighborsRegressor",
-    target_column="class_number_of_rings",
-    name="abalone-knn-reg",
-    description="Abalone KNN Regression",
-    tags=["abalone", "knn"],
-    train_all_data=True,
+    model_class="RandomForestClassifier",
+    target_column="wine_class",
+    name="wine-rfc-class",
+    description="Wine RandomForest Classification",
+    tags=["wine", "rfc"]
 )
 pprint(my_model.details())
