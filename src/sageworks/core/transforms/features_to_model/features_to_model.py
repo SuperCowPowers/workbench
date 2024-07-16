@@ -81,6 +81,49 @@ class FeaturesToModel(Transform):
             self.log.critical(f"Unknown ModelType for model_class: {model_class}")
             return ModelType.UNKNOWN
 
+    def _determine_model_type(self, model_class: str) -> ModelType:
+        """Determine the ModelType from the model_class
+        Args:
+            model_class (str): The class of the model
+        Returns:
+            ModelType: The determined ModelType
+        """
+        model_class_lower = model_class.lower()
+
+        # Direct mapping for specific models
+        specific_model_mapping = {
+            "logisticregression": ModelType.CLASSIFIER,
+            "linearregression": ModelType.REGRESSOR,
+            "ridge": ModelType.REGRESSOR,
+            "lasso": ModelType.REGRESSOR,
+            "elasticnet": ModelType.REGRESSOR,
+            "bayesianridge": ModelType.REGRESSOR,
+            "svc": ModelType.CLASSIFIER,
+            "svr": ModelType.REGRESSOR,
+            "gaussiannb": ModelType.CLASSIFIER,
+            "kmeans": ModelType.CLUSTERER,
+            "dbscan": ModelType.CLUSTERER,
+            "meanshift": ModelType.CLUSTERER
+        }
+
+        if model_class_lower in specific_model_mapping:
+            return specific_model_mapping[model_class_lower]
+
+        # General pattern matching
+        if "regressor" in model_class_lower:
+            return ModelType.REGRESSOR
+        elif "classifier" in model_class_lower:
+            return ModelType.CLASSIFIER
+        elif "quantile" in model_class_lower:
+            return ModelType.QUANTILE_REGRESSOR
+        elif "cluster" in model_class_lower:
+            return ModelType.CLUSTERER
+        elif "transform" in model_class_lower:
+            return ModelType.TRANSFORMER
+        else:
+            self.log.critical(f"Unknown ModelType for model_class: {model_class}")
+            return ModelType.UNKNOWN
+
     def generate_model_script(self, target_column: str, feature_list: list[str], train_all_data: bool) -> str:
         """Fill in the model template with specific target and feature_list
         Args:

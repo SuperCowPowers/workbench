@@ -26,7 +26,7 @@ class ModelType(Enum):
 
     CLASSIFIER = "classifier"
     REGRESSOR = "regressor"
-    UNSUPERVISED = "unsupervised"
+    CLUSTERER = "clusterer"
     TRANSFORMER = "transformer"
     QUANTILE_REGRESSOR = "quantile_regressor"
     UNKNOWN = "unknown"
