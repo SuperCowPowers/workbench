@@ -2298,7 +2298,7 @@ Dashboard UI, which provides additional model details and performance metrics</p
 </span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a> <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
 </span></code></pre></div>
 <p><strong>Use a specific Scikit-Learn Model</strong></p>
-<p><div class="language-py highlight"><span class="filename">featureset_to_sklearn_model.py</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">sageworks.api.feature_set</span> <span class="kn">import</span> <span class="n">FeatureSet</span>
+<p><div class="language-py highlight"><span class="filename">featureset_to_knn.py</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">sageworks.api.feature_set</span> <span class="kn">import</span> <span class="n">FeatureSet</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Grab a FeatureSet</span>
@@ -2319,7 +2319,7 @@ Dashboard UI, which provides additional model details and performance metrics</p
 </span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="n">pprint</span><span class="p">(</span><span class="n">my_model</span><span class="o">.</span><span class="n">details</span><span class="p">())</span>
 </span></code></pre></div>
 <strong>Another Scikit-Learn Example</strong></p>
-<div class="language-py highlight"><span class="filename">featureset_to_sklearn_model_2.py</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">sageworks.api.feature_set</span> <span class="kn">import</span> <span class="n">FeatureSet</span>
+<div class="language-py highlight"><span class="filename">featureset_to_rfc.py</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">sageworks.api.feature_set</span> <span class="kn">import</span> <span class="n">FeatureSet</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Grab a FeatureSet</span>
