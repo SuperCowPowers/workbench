@@ -147,9 +147,9 @@ if __name__ == "__main__":
             all_df, test_size=validation_split, random_state=42
         )
     print(f"FIT/TRAIN: {df_train.shape}")
-    print(f"VALIDATiON: {df_val.shape}")
+    print(f"VALIDATION: {df_val.shape}")
 
-    # Initialize our Sckit-Learn model
+    # Initialize our Scikit-Learn model
     model = model_class()
 
     # Determine if the model is a classifier, regressor, clusterer, or transformer
@@ -164,86 +164,103 @@ if __name__ == "__main__":
         label_encoder = LabelEncoder()
         df_train[target] = label_encoder.fit_transform(df_train[target])
         df_val[target] = label_encoder.transform(df_val[target])
+        y_train = df_train[target]
+        y_val = df_val[target]
     else:
         label_encoder = None  # We don't need this for other model types
+        y_train = df_train[target]
+        y_val = df_val[target]
 
     # Grab our Features, Target and Train the Model
-    y = df_train[target]
-    X = df_train[feature_list]
-    model.fit(X, y)
+    X_train = df_train[feature_list]
+    X_val = df_val[feature_list]
+
+    if model_type in ["classifier", "regressor"]:
+        model.fit(X_train, y_train)
+    elif model_type == "clusterer":
+        df_train["cluster"] = model.fit_predict(X_train)
+        df_val["cluster"] = model.fit_predict(X_val)
+        print(f"Cluster labels in training data: {df_train['cluster'].unique()}")
+        print(f"Cluster labels in validation data: {df_val['cluster'].unique()}")
+    elif model_type == "transformer":
+        X_train_transformed = model.fit_transform(X_train)
+        X_val_transformed = model.transform(X_val)
+        print(f"Transformed training data shape: {X_train_transformed.shape}")
+        print(f"Transformed validation data shape: {X_val_transformed.shape}")
 
     # Make Predictions on the Validation Set
-    print(f"Making Predictions on Validation Set...")
-    preds = model.predict(df_val[feature_list])
-    if model_type == "classifier":
-        # Also get the probabilities for each class
-        print("Processing Probabilities...")
-        probs = model.predict_proba(df_val[feature_list])
-        df_val["pred_proba"] = [p.tolist() for p in probs]
+    if model_type in ["classifier", "regressor"]:
+        print(f"Making Predictions on Validation Set...")
+        preds = model.predict(X_val)
+        if model_type == "classifier":
+            # Also get the probabilities for each class
+            print("Processing Probabilities...")
+            probs = model.predict_proba(X_val)
+            df_val["pred_proba"] = [p.tolist() for p in probs]
 
-        # Expand the pred_proba column into separate columns for each class
-        print(df_val.columns)
-        df_val = expand_proba_column(df_val, label_encoder.classes_)
-        print(df_val.columns)
+            # Expand the pred_proba column into separate columns for each class
+            print(df_val.columns)
+            df_val = expand_proba_column(df_val, label_encoder.classes_)
+            print(df_val.columns)
 
-        # Decode the target and prediction labels
-        df_val[target] = label_encoder.inverse_transform(df_val[target])
-        preds = label_encoder.inverse_transform(preds)
+            # Decode the target and prediction labels
+            df_val[target] = label_encoder.inverse_transform(df_val[target])
+            preds = label_encoder.inverse_transform(preds)
 
-    # Save predictions to S3 (just the target, prediction, and '_proba' columns)
-    df_val["prediction"] = preds
-    output_columns = [target, "prediction"]
-    output_columns += [col for col in df_val.columns if col.endswith("_proba")]
-    wr.s3.to_csv(
-        df_val[output_columns],
-        path=f"{model_metrics_s3_path}/validation_predictions.csv",
-        index=False,
-    )
-
-    # Report Performance Metrics
-    if model_type == "classifier":
-        # Get the label names and their integer mapping
-        label_names = label_encoder.classes_
-
-        # Calculate various model performance metrics
-        scores = precision_recall_fscore_support(
-            df_val[target], preds, average=None, labels=label_names
+        # Save predictions to S3 (just the target, prediction, and '_proba' columns)
+        df_val["prediction"] = preds
+        output_columns = [target, "prediction"]
+        output_columns += [col for col in df_val.columns if col.endswith("_proba")]
+        wr.s3.to_csv(
+            df_val[output_columns],
+            path=f"{model_metrics_s3_path}/validation_predictions.csv",
+            index=False,
         )
 
-        # Put the scores into a dataframe
-        score_df = pd.DataFrame(
-            {
-                target: label_names,
-                "precision": scores[0],
-                "recall": scores[1],
-                "fscore": scores[2],
-                "support": scores[3],
-            }
-        )
+        # Report Performance Metrics
+        if model_type == "classifier":
+            # Get the label names and their integer mapping
+            label_names = label_encoder.classes_
 
-        # We need to get creative with the Classification Metrics
-        metrics = ["precision", "recall", "fscore", "support"]
-        for t in label_names:
-            for m in metrics:
-                value = score_df.loc[score_df[target] == t, m].iloc[0]
-                print(f"Metrics:{t}:{m} {value}")
+            # Calculate various model performance metrics
+            scores = precision_recall_fscore_support(
+                df_val[target], preds, average=None, labels=label_names
+            )
 
-        # Compute and output the confusion matrix
-        conf_mtx = confusion_matrix(df_val[target], preds, labels=label_names)
-        for i, row_name in enumerate(label_names):
-            for j, col_name in enumerate(label_names):
-                value = conf_mtx[i, j]
-                print(f"ConfusionMatrix:{row_name}:{col_name} {value}")
+            # Put the scores into a dataframe
+            score_df = pd.DataFrame(
+                {
+                    target: label_names,
+                    "precision": scores[0],
+                    "recall": scores[1],
+                    "fscore": scores[2],
+                    "support": scores[3],
+                }
+            )
 
-    else:
-        # Calculate various model performance metrics (regression)
-        rmse = mean_squared_error(df_val[target], preds, squared=False)
-        mae = mean_absolute_error(df_val[target], preds)
-        r2 = r2_score(df_val[target], preds)
-        print(f"RMSE: {rmse:.3f}")
-        print(f"MAE: {mae:.3f}")
-        print(f"R2: {r2:.3f}")
-        print(f"NumRows: {len(df_val)}")
+            # We need to get creative with the Classification Metrics
+            metrics = ["precision", "recall", "fscore", "support"]
+            for t in label_names:
+                for m in metrics:
+                    value = score_df.loc[score_df[target] == t, m].iloc[0]
+                    print(f"Metrics:{t}:{m} {value}")
+
+            # Compute and output the confusion matrix
+            conf_mtx = confusion_matrix(df_val[target], preds, labels=label_names)
+            for i, row_name in enumerate(label_names):
+                for j, col_name in enumerate(label_names):
+                    value = conf_mtx[i, j]
+                    print(f"ConfusionMatrix:{row_name}:{col_name} {value}")
+
+        else:
+            # Calculate various model performance metrics (regression)
+            rmse = mean_squared_error(df_val[target], preds, squared=False)
+            mae = mean_absolute_error(df_val[target], preds)
+            r2 = r2_score(df_val[target], preds)
+            print(f"RMSE: {rmse:.3f}")
+            print(f"MAE: {mae:.3f}")
+            print(f"R2: {r2:.3f}")
+            print(f"NumRows: {len(df_val)}")
 
     # Now save the model to the standard place/name
     joblib.dump(model, os.path.join(args.model_dir, "scikit_model.joblib"))
@@ -285,7 +302,7 @@ def output_fn(output_df, accept_type):
 
 
 def predict_fn(df, model):
-    """Make Predictions with our XGB Model"""
+    """Make Predictions with our Scikit-Learn Model"""
 
     # Grab our feature columns (from training)
     model_dir = os.environ["SM_MODEL_DIR"]
@@ -298,18 +315,28 @@ def predict_fn(df, model):
     if os.path.exists(os.path.join(model_dir, "label_encoder.joblib")):
         label_encoder = joblib.load(os.path.join(model_dir, "label_encoder.joblib"))
 
-    # Predict the features against our XGB Model
-    predictions = model.predict(df[features])
+    # Determine the appropriate method for making predictions
+    if hasattr(model, "predict"):
+        # Use predict method for prediction
+        predictions = model.predict(df[features])
+    elif hasattr(model, "fit_predict"):
+        # Use fit_predict method for clustering models like DBSCAN
+        predictions = model.fit_predict(df[features])
+    elif hasattr(model, "transform"):
+        # Use transform method for transformers like PCA
+        predictions = model.transform(df[features])
+    else:
+        raise ValueError("Model does not have a predict, fit_predict, or transform method.")
 
     # If we have a label encoder, decode the predictions
-    if label_encoder:
+    if label_encoder and hasattr(label_encoder, "inverse_transform"):
         predictions = label_encoder.inverse_transform(predictions)
 
     # Set the predictions on the DataFrame
     df["prediction"] = predictions
 
     # Does our model have a 'predict_proba' method? If so we will call it and add the results to the DataFrame
-    if getattr(model, "predict_proba", None):
+    if hasattr(model, "predict_proba"):
         probs = model.predict_proba(df[features])
         df["pred_proba"] = [p.tolist() for p in probs]
 

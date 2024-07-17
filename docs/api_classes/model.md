@@ -58,7 +58,7 @@ pprint(my_model.details())
 
 **Use a specific Scikit-Learn Model**
 
-```py title="featureset_to_sklearn_model.py"
+```py title="featureset_to_knn.py"
 from sageworks.api.feature_set import FeatureSet
 from pprint import pprint
 
@@ -81,7 +81,7 @@ pprint(my_model.details())
 ```
 **Another Scikit-Learn Example**
 
-```py title="featureset_to_sklearn_model_2.py"
+```py title="featureset_to_rfc.py"
 from sageworks.api.feature_set import FeatureSet
 from pprint import pprint
 

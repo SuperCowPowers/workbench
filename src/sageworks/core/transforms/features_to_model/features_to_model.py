@@ -71,23 +71,6 @@ class FeaturesToModel(Transform):
         Returns:
             ModelType: The determined ModelType
         """
-        if "regressor" in model_class.lower():
-            return ModelType.REGRESSOR
-        elif "classifier" in model_class.lower():
-            return ModelType.CLASSIFIER
-        elif "quantile" in model_class.lower():
-            return ModelType.QUANTILE_REGRESSOR
-        else:
-            self.log.critical(f"Unknown ModelType for model_class: {model_class}")
-            return ModelType.UNKNOWN
-
-    def _determine_model_type(self, model_class: str) -> ModelType:
-        """Determine the ModelType from the model_class
-        Args:
-            model_class (str): The class of the model
-        Returns:
-            ModelType: The determined ModelType
-        """
         model_class_lower = model_class.lower()
 
         # Direct mapping for specific models
@@ -103,7 +86,7 @@ class FeaturesToModel(Transform):
             "gaussiannb": ModelType.CLASSIFIER,
             "kmeans": ModelType.CLUSTERER,
             "dbscan": ModelType.CLUSTERER,
-            "meanshift": ModelType.CLUSTERER
+            "meanshift": ModelType.CLUSTERER,
         }
 
         if model_class_lower in specific_model_mapping:
@@ -310,7 +293,7 @@ class FeaturesToModel(Transform):
 
         # If the model type is UNKNOWN, our metric_definitions will be empty
         else:
-            self.log.warning("ModelType is UNKNOWN, skipping metric_definitions...")
+            self.log.warning(f"ModelType is {self.model_type}, skipping metric_definitions...")
             metric_definitions = []
 
         # Create a Sagemaker Model with our script
