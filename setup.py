@@ -26,7 +26,7 @@ extras_require = {
         "dash_ag_grid",
         "tabulate>=0.9.0",
     ],
-    "dev": ["pytest", "flake8", "black"],
+    "dev": ["pytest", "pytest-sugar", "coverage", "pytest-cov", "flake8", "black"],
     "all": [
         "shap>=0.43.0",
         "networkx>=3.2",
@@ -39,6 +39,9 @@ extras_require = {
         "dash_ag_grid",
         "tabulate>=0.9.0",
         "pytest",
+        "pytest-sugar",
+        "coverage",
+        "pytest-cov",
         "flake8",
         "black",
     ],
