@@ -1,8 +1,14 @@
 import os
-import networkx as nx
 import json
 from datetime import datetime
 from pathlib import Path
+
+# NetworkX import
+try:
+    import networkx as nx
+except ImportError:
+    print("NetworkX Python module not found! pip install networkx")
+    raise ImportError("NetworkX Python module not found! pip install networkx")
 
 # Sageworks imports
 from sageworks.core.artifacts.artifact import Artifact
