@@ -213,9 +213,10 @@ class SageWorksShell:
         self.commands["Endpoint"] = importlib.import_module("sageworks.api.endpoint").Endpoint
         self.commands["Monitor"] = importlib.import_module("sageworks.api.monitor").Monitor
         self.commands["Meta"] = importlib.import_module("sageworks.api.meta").Meta
-        self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline
-        self.commands["PipelineManager"] = importlib.import_module("sageworks.api.pipeline_manager").PipelineManager
-        self.commands["PluginManager"] = importlib.import_module("sageworks.utils.plugin_manager").PluginManager
+
+        # We're going to include these classes/imports later
+        # self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline
+        # self.commands["PipelineManager"] = importlib.import_module("sageworks.api.pipeline_manager").PipelineManager
 
         # These are 'nice to have' imports
         self.commands["pd"] = importlib.import_module("pandas")
