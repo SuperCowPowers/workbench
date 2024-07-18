@@ -1,6 +1,5 @@
 """MolecularDescriptors: Compute a Feature Set based on RDKit Descriptors"""
 
-import sys
 import pandas as pd
 
 # Local Imports
@@ -15,6 +14,7 @@ try:
     from rdkit.Chem import Descriptors
     from rdkit.ML.Descriptors import MoleculeDescriptors
     from rdkit import RDLogger
+
     RDKIT_AVAILABLE = True
 except ImportError:
     print("RDKit Python module not found! pip install rdkit")
@@ -23,6 +23,7 @@ except ImportError:
 try:
     from mordred import Calculator
     from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
+
     MORDRED_AVAILABLE = True
 except ImportError:
     print("Mordred Python module not found! pip install mordred")

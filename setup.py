@@ -13,42 +13,35 @@ with open("requirements.txt", "r") as f:
 
 # Extra requirements
 extras_require = {
-    'ml-tools': [
-        'shap>=0.43.0',
-        'networkx>=3.2',
+    "ml-tools": [
+        "shap>=0.43.0",
+        "networkx>=3.2",
     ],
-    'chem': [
-        'rdkit>=2023.9.1',
-        'mordredcommunity>=2.0'
+    "chem": ["rdkit>=2023.9.1", "mordredcommunity>=2.0"],
+    "ui": [
+        "plotly>=5.18.0",
+        "dash>=2.16.1",
+        "dash-bootstrap-components>=1.5.0",
+        "dash-bootstrap-templates==1.1.1",
+        "dash_ag_grid",
+        "tabulate>=0.9.0",
     ],
-    'ui': [
-        'plotly>=5.18.0',
-        'dash>=2.16.1',
-        'dash-bootstrap-components>=1.5.0',
-        'dash-bootstrap-templates==1.1.1',
-        'dash_ag_grid',
-        'tabulate>=0.9.0'
+    "dev": ["pytest", "flake8", "black"],
+    "all": [
+        "shap>=0.43.0",
+        "networkx>=3.2",
+        "rdkit>=2023.9.1",
+        "mordredcommunity>=2.0",
+        "plotly>=5.18.0",
+        "dash>=2.16.1",
+        "dash-bootstrap-components>=1.5.0",
+        "dash-bootstrap-templates==1.1.1",
+        "dash_ag_grid",
+        "tabulate>=0.9.0",
+        "pytest",
+        "flake8",
+        "black",
     ],
-    'dev': [
-        'pytest',
-        'flake8',
-        'black'
-    ],
-    'all': [
-        'shap>=0.43.0',
-        'networkx>=3.2',
-        'rdkit>=2023.9.1',
-        'mordredcommunity>=2.0',
-        'plotly>=5.18.0',
-        'dash>=2.16.1',
-        'dash-bootstrap-components>=1.5.0',
-        'dash-bootstrap-templates==1.1.1',
-        'dash_ag_grid',
-        'tabulate>=0.9.0',
-        'pytest',
-        'flake8',
-        'black'
-    ]
 }
 
 setup(

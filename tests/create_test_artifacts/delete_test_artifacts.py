@@ -148,7 +148,6 @@ if __name__ == "__main__":
         print("Deleting aqsol-mol-class-end endpoint...")
         end.delete()
 
-
     # Quantile Regressors
     m = Model("abalone-quantile-reg")
     if m.exists():
@@ -177,7 +176,7 @@ if __name__ == "__main__":
     if end.exists():
         print("Deleting abalone-knn-end endpoint...")
         end.delete()
-    
+
     m = Model("abalone-clusters")
     if m.exists():
         print("Deleting abalone-clusters model...")
