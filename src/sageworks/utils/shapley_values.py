@@ -1,4 +1,9 @@
-import shap
+try:
+    import shap
+    SHAP_AVAILABLE = True
+except ImportError:
+    SHAP_AVAILABLE = False
+    print("Please install the shap package: pip install shap")
 import pandas as pd
 import awswrangler as wr
 
@@ -25,6 +30,12 @@ def generate_shap_values(
     Notes:
         Writes the SHAP values to the S3 Inference Capture Folder
     """
+
+    # Check if SHAP is available
+    if not SHAP_AVAILABLE:
+        log.warning("SHAP is not available. Please install the shap package: pip install shap")
+        return
+
     # Grab the model artifact from AWS
     model_artifact = ExtractModelArtifact(endpoint_name).get_model_artifact()
 
