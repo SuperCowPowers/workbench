@@ -3,28 +3,23 @@
 ### Step 1: Build the Docker Container
 
 ```bash
-docker build -t sageworks-lambda-layer .
+docker build --platform linux/amd64 -t sageworks-lambda-layer .
 ```
 
 ### Step 2: Run the Docker Container with an Interactive Shell
 
 ```bash
-docker run --platform linux/amd64 -it sageworks-lambda-layer /bin/bash
+docker run --name sageworks-layer-container -it sageworks-lambda-layer
 ```
 
-### Step 3: Verify the Installation
+### Step 3: Look at the size of the Python Packages Installation
 
-Inside the container, check the contents of the `/asset-output/python` directory:
-
-```bash
-ls -l /asset-output/python
 ```
-
-Ensure the `sageworks` package and its dependencies are installed correctly.
+cd python
+du -sh * | sort -h
+```
 
 ### Step 4: Exit the Container
-
-Exit the interactive shell:
 
 ```bash
 exit
@@ -32,16 +27,8 @@ exit
 
 ### Step 5: Copy the Results to Your Local Disk
 
-First, find the container ID:
-
 ```bash
-docker ps -a
-```
-
-Locate the container ID of the `sageworks-lambda-layer` container, then copy the contents:
-
-```bash
-docker cp <container_id>:/asset-output ./sageworks_lambda_layer_output/
+docker cp sageworks-layer-container:/asset-output ./sageworks_lambda_layer_output/
 ```
 
 ## Publish the Lambda Layer
@@ -49,7 +36,7 @@ docker cp <container_id>:/asset-output ./sageworks_lambda_layer_output/
 Run the `publish_lambda_layer.sh` script to create a ZIP archive, publish the Lambda layer, and make it public:
 
 ```bash
-./publish_lambda_layer.sh
+./publish_sageworks_layer.sh
 ```
 
 The script will output the ARN of the published Lambda layer.
