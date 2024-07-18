@@ -3,37 +3,28 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-LAYER_NAME="sageworks-lambda-layer"
+BUCKET_NAME="sageworks-lambda-layer"
+LAYER_NAME="sageworks_lambda_layer"
+ZIP_FILE="sageworks_lambda_layer.zip"
+S3_KEY="sageworks_lambda_layer.zip"
 
 # Step 6: Create a ZIP Archive
 echo "Creating ZIP archive..."
+
+# Navigate to the output directory
 cd sageworks_lambda_layer_output
-zip -r9 sageworks_lambda_layer.zip python
 
-# Step 7: Publish the Lambda Layer
-echo "Publishing Lambda layer..."
-LAYER_VERSION=$(aws lambda publish-layer-version \
-    --layer-name $LAYER_NAME \
-    --description "SageWorks Lambda Layer" \
-    --zip-file fileb://sageworks_lambda_layer.zip \
-    --compatible-runtimes python3.10 python3.11 python3.12 \
-    --query 'Version' \
-    --output text)
+# Remove existing ZIP file if it exists
+if [ -f $ZIP_FILE ]; then
+    echo "Removing existing ZIP file..."
+    rm $ZIP_FILE
+fi
 
-# Step 9: Make the Lambda Layer Public
-echo "Making Lambda layer public..."
-aws lambda add-layer-version-permission \
-    --layer-name $LAYER_NAME \
-    --version-number $LAYER_VERSION \
-    --statement-id public-access \
-    --action lambda:GetLayerVersion \
-    --principal '*'
+# Create new ZIP file with quiet mode
+zip -rq9 $ZIP_FILE python
 
-# Output the ARN of the published Lambda layer
-LAYER_ARN=$(aws lambda list-layer-versions \
-    --layer-name $LAYER_NAME \
-    --query 'LayerVersions[0].LayerVersionArn' \
-    --output text)
+# Step 7: Upload the ZIP file to S3
+echo "Uploading ZIP file to S3..."
+aws s3 cp $ZIP_FILE s3://$BUCKET_NAME/$S3_KEY
 
-echo "Lambda layer published successfully!"
-echo "Layer ARN: $LAYER_ARN"
+echo "Lambda layer ZIP file uploaded successfully to S3!"
