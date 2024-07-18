@@ -71,7 +71,11 @@ def test_confusion_matrix():
 
 def test_shap_values():
     print("\n\n*** SHAP Values ***")
-    pprint(model_reg.shapley_values().head())
+    shap_value = model_reg.shapley_values()
+    if shap_value is None:
+        print(f"Model {model_reg.uuid} has no SHAP values!")
+    else:
+        pprint(model_reg.shapley_values().head())
 
     # Classifiers have a list of dataframes
     shap_list = model_class.shapley_values()
