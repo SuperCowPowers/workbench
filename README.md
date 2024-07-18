@@ -39,10 +39,10 @@ For the full instructions for connecting your AWS Account see:
 ### SageWorks Presentations
 Even though SageWorks makes AWS easier, it's taking something very complex (Full AWS ML Pipelines/Services) and making it less complex. SageWorks has a depth and breadth of functionality so we've provided higher level conceptual documentation See: [SageWorks Presentations](https://supercowpowers.github.io/sageworks/presentations/)
 
-### SageWorks Python API Docs
+### SageWorks Documentation
 <img align="right" width="300" alt="sageworks_api" style="padding-left: 10px;"  src="https://github.com/SuperCowPowers/sageworks/assets/4806709/bf0e8591-75d4-44c1-be05-4bfdee4b7186">
 
-The SageWorks API documentation [SageWorks API](https://supercowpowers.github.io/sageworks/) covers our in-depth Python API and contains code examples. The code examples are provided in the Github repo `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
+The SageWorks documentation [SageWorks Docs](https://supercowpowers.github.io/sageworks/) covers our in-depth Python API and contains code examples. The code examples are provided in the Github repo `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
 
 ### Questions?
 The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
@@ -50,6 +50,18 @@ The SuperCowPowers team is happy to anser any questions you may have about AWS a
 
 ### SageWorks Beta Program
 Using SageWorks will minimize the time and manpower needed to incorporate AWS ML into your organization. If your company would like to be a SageWorks Beta Tester, contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com).
+
+
+### Using SageWorks with Additional Packages
+
+```
+pip install sageworks           # Installs SageWorks with Core Dependencies
+pip install sageworks[ml-tools] # + Shap and NetworkX
+pip install sageworks[chem]     # + RDKIT and Mordred (community)
+pip install sageworks[ui]       # + Plotly/Dash
+pip install sageworks[dev]      # + Pytest/flake8/black
+pip install sageworks[all]      # + All the things :)
+```
 
 ### Contributions
 If you'd like to contribute to the SageWorks project, you're more than welcome. All contributions will fall under the existing project [license](https://github.com/SuperCowPowers/sageworks/blob/main/LICENSE). If you are interested in contributing or have questions please feel free to contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com).
