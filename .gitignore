@@ -142,3 +142,6 @@ cdk.context.json
 
 # CDK Output files
 cdk.out/
+
+# SageWorks Lambda Layer Output files
+sagework-lambda-layer-output/
