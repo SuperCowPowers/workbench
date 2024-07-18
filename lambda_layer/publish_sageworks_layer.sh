@@ -3,20 +3,20 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-LAYER_NAME="sageworks-layer"
+LAYER_NAME="sageworks-lambda-layer"
 
 # Step 6: Create a ZIP Archive
 echo "Creating ZIP archive..."
-cd sageworks-lambda-layer-output
-zip -r9 sageworks-lambda-layer.zip python
+cd sageworks_lambda_layer_output
+zip -r9 sageworks_lambda_layer.zip python
 
 # Step 7: Publish the Lambda Layer
 echo "Publishing Lambda layer..."
 LAYER_VERSION=$(aws lambda publish-layer-version \
     --layer-name $LAYER_NAME \
     --description "SageWorks Lambda Layer" \
-    --zip-file fileb://sageworks-lambda-layer.zip \
-    --compatible-runtimes python3.10 \
+    --zip-file fileb://sageworks_lambda_layer.zip \
+    --compatible-runtimes python3.10 python3.11 python3.12 \
     --query 'Version' \
     --output text)
 
