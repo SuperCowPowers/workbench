@@ -62,7 +62,7 @@ pip install 'sageworks[ui]'       # + Plotly/Dash
 pip install 'sageworks[dev]'      # + Pytest/flake8/black
 pip install 'sageworks[all]'      # + All the things :)
 
-*Note: Shells my interpret square brackets as globs, so the quotes are needed
+*Note: Shells may interpret square brackets as globs, so the quotes are needed
 ```
 
 ### Contributions
