@@ -129,7 +129,7 @@ if __name__ == "__main__":
     """Exercise the MolecularDescriptors Class"""
     from sageworks.api.data_source import DataSource
 
-    full_test = True
+    full_test = False
 
     # Unit Test: Create the class with inputs
     unit_test = MolecularDescriptors("aqsol_data", "aqsol_mol_descriptors")
