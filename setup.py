@@ -29,6 +29,11 @@ extras_require = {
         'dash_ag_grid',
         'tabulate>=0.9.0'
     ],
+    'dev': [
+        'pytest',
+        'flake8',
+        'black'
+    ],
     'all': [
         'shap>=0.43.0',
         'networkx>=3.2',
@@ -39,13 +44,10 @@ extras_require = {
         'dash-bootstrap-components>=1.5.0',
         'dash-bootstrap-templates==1.1.1',
         'dash_ag_grid',
-        'tabulate>=0.9.0'
-    ],
-    'dev': [
+        'tabulate>=0.9.0',
         'pytest',
         'flake8',
-        'black',
-        'mypy'
+        'black'
     ]
 }
 
