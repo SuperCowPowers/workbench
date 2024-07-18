@@ -55,12 +55,14 @@ Using SageWorks will minimize the time and manpower needed to incorporate AWS ML
 ### Using SageWorks with Additional Packages
 
 ```
-pip install sageworks           # Installs SageWorks with Core Dependencies
-pip install sageworks[ml-tools] # + Shap and NetworkX
-pip install sageworks[chem]     # + RDKIT and Mordred (community)
-pip install sageworks[ui]       # + Plotly/Dash
-pip install sageworks[dev]      # + Pytest/flake8/black
-pip install sageworks[all]      # + All the things :)
+pip install sageworks             # Installs SageWorks with Core Dependencies
+pip install 'sageworks[ml-tools]' # + Shap, Mordred, and NetworkX
+pip install 'sageworks[chem]'     # + RDKIT and Mordred (community)
+pip install 'sageworks[ui]'       # + Plotly/Dash
+pip install 'sageworks[dev]'      # + Pytest/flake8/black
+pip install 'sageworks[all]'      # + All the things :)
+
+*Note: Certain shells will interprets square brackets as glob patterns, so the quotes are needed
 ```
 
 ### Contributions
