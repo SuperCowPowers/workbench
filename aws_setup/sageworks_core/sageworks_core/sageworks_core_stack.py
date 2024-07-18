@@ -2,7 +2,6 @@ from aws_cdk import (
     Environment,
     Stack,
     aws_iam as iam,
-    aws_s3 as s3,
 )
 from constructs import Construct
 from typing import Any, List
