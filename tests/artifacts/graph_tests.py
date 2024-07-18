@@ -1,10 +1,5 @@
-import pytest
+from sageworks.core.artifacts.graph_core import GraphCore
 
-# Try to import the GraphCore class, and if it fails, skip the test
-try:
-    from sageworks.core.artifacts.graph_core import GraphCore
-except ImportError as e:
-    pytest.skip(f"Skipping test: {e}", allow_module_level=True)
 
 def test_general_info():
     """Simple test of the Endpoint functionality"""
@@ -26,5 +21,10 @@ def test_general_info():
     # Get the tags associated with this Graph
     print(f"Tags: {test_graph.get_tags()}")
 
+
 if __name__ == "__main__":
-    pytest.main()
+
+    # Run the tests
+    test_general_info()
+
+    print("All tests passed!")
