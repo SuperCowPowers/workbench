@@ -1,0 +1,11 @@
+-r requirements.txt
+plotly >= 5.18.0
+dash >= 2.16.1
+dash-bootstrap-components >= 1.5.0
+dash-bootstrap-templates == 1.1.1
+dash_ag_grid
+tabulate >= 0.9.0
+shap>=0.43.0
+rdkit>=2023.9.1
+mordredcommunity>= 2.0
+networkx>=3.2

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Setup.py for SageWorks: Sagemaker Workbench"""
+"""Setup.py for SageWorks: AWS ML Pipeline Workbench"""
 
 from setuptools import setup, find_namespace_packages
 
