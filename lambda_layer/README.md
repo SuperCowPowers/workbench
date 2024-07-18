@@ -31,15 +31,15 @@ exit
 docker cp sageworks-layer-container:/asset-output ./sageworks_lambda_layer_output/
 ```
 
-## Publish the Lambda Layer
+## Push the Lambda Layer to S3
 
-Run the `publish_lambda_layer.sh` script to create a ZIP archive, publish the Lambda layer, and make it public:
+Run the `push_layer_to_s3.sh` script to create a ZIP archive and pushes it to our layer S3 bucket
 
 ```bash
-./publish_sageworks_layer.sh
+./push_layer_to_s3.sh
 ```
 
-The script will output the ARN of the published Lambda layer.
+## Publish the Layer to 
 
 ### Using the Lambda Layer in Other AWS Accounts
 
