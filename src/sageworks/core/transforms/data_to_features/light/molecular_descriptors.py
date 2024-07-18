@@ -15,16 +15,18 @@ try:
     from rdkit.Chem import Descriptors
     from rdkit.ML.Descriptors import MoleculeDescriptors
     from rdkit import RDLogger
+    RDKIT_AVAILABLE = True
 except ImportError:
     print("RDKit Python module not found! pip install rdkit")
-    sys.exit(0)
+    RDKIT_AVAILABLE = False
 
 try:
     from mordred import Calculator
     from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
+    MORDRED_AVAILABLE = True
 except ImportError:
     print("Mordred Python module not found! pip install mordred")
-    sys.exit(0)
+    MORDRED_AVAILABLE = False
 
 
 class MolecularDescriptors(DataToFeaturesLight):
