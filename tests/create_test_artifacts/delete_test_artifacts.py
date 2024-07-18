@@ -129,13 +129,75 @@ if __name__ == "__main__":
     if fs.exists():
         print("Deleting aqsol_mol_descriptors...")
         fs.delete()
-    m = Model("aqsol-descriptors-regression")
+    m = Model("aqsol-mol-regression")
     if m.exists():
         print("Deleting aqsol-mol-regression model...")
         m.delete()
     end = Endpoint("aqsol-mol-regression-end")
     if end.exists():
         print("Deleting aqsol-mol-regression-end endpoint...")
+        end.delete()
+
+    # AQSol Artifacts (Classification)
+    m = Model("aqsol-mol-class")
+    if m.exists():
+        print("Deleting aqsol-mol-class model...")
+        m.delete()
+    end = Endpoint("aqsol-mol-class-end")
+    if end.exists():
+        print("Deleting aqsol-mol-class-end endpoint...")
+        end.delete()
+
+
+    # Quantile Regressors
+    m = Model("abalone-quantile-reg")
+    if m.exists():
+        print("Deleting abalone-quantile-reg model...")
+        m.delete()
+    end = Endpoint("abalone-qr-end")
+    if end.exists():
+        print("Deleting abalone-qr-end endpoint...")
+        end.delete()
+
+    m = Model("aqsol-quantile-reg")
+    if m.exists():
+        print("Deleting aqsol-quantile-reg model...")
+        m.delete()
+    end = Endpoint("aqsol-qr-end")
+    if end.exists():
+        print("Deleting aqsol-qr-end endpoint...")
+        end.delete()
+
+    # Scikit Learn Models
+    m = Model("abalone-knn-reg")
+    if m.exists():
+        print("Deleting abalone-knn-reg model...")
+        m.delete()
+    end = Endpoint("abalone-knn-end")
+    if end.exists():
+        print("Deleting abalone-knn-end endpoint...")
+        end.delete()
+    
+    m = Model("abalone-clusters")
+    if m.exists():
+        print("Deleting abalone-clusters model...")
+        m.delete()
+    end = Endpoint("abalone-clusters-end")
+    if end.exists():
+        print("Deleting abalone-clusters-end endpoint...")
+        end.delete()
+
+    m = Model("wine-rfc-class")
+    if m.exists():
+        print("Deleting wine-rfc-class model...")
+        m.delete()
+    m = Model("aqsol-knn-reg")
+    if m.exists():
+        print("Deleting aqsol-knn-reg model...")
+        m.delete()
+    end = Endpoint("aqsol-qr-end")
+    if end.exists():
+        print("Deleting aqsol-qr-end endpoint...")
         end.delete()
 
     time.sleep(5)
