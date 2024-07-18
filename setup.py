@@ -11,6 +11,44 @@ with open("README.md", "r") as f:
 with open("requirements.txt", "r") as f:
     install_requires = f.read().strip().split("\n")
 
+# Extra requirements
+extras_require = {
+    'ml-tools': [
+        'shap>=0.43.0',
+        'networkx>=3.2',
+    ],
+    'chem': [
+        'rdkit>=2023.9.1',
+        'mordredcommunity>=2.0'
+    ],
+    'ui': [
+        'plotly>=5.18.0',
+        'dash>=2.16.1',
+        'dash-bootstrap-components>=1.5.0',
+        'dash-bootstrap-templates==1.1.1',
+        'dash_ag_grid',
+        'tabulate>=0.9.0'
+    ],
+    'all': [
+        'shap>=0.43.0',
+        'networkx>=3.2',
+        'rdkit>=2023.9.1',
+        'mordredcommunity>=2.0',
+        'plotly>=5.18.0',
+        'dash>=2.16.1',
+        'dash-bootstrap-components>=1.5.0',
+        'dash-bootstrap-templates==1.1.1',
+        'dash_ag_grid',
+        'tabulate>=0.9.0'
+    ],
+    'dev': [
+        'pytest',
+        'flake8',
+        'black',
+        'mypy'
+    ]
+}
+
 setup(
     name="sageworks",
     description="SageWorks: A Python WorkBench for creating and deploying AWS SageMaker Models",
@@ -31,6 +69,7 @@ setup(
         ]
     },
     install_requires=install_requires,
+    extras_require=extras_require,
     license="MIT",
     keywords="SageMaker, Machine Learning, AWS, Python, Utilities",
     classifiers=[
