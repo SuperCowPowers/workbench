@@ -3,12 +3,13 @@
 ### Step 1: Build the Docker Container
 
 ```bash
-docker build --platform linux/amd64 -t sageworks-lambda-layer .
+docker build --platform linux/amd64 --no-cache -t sageworks-lambda-layer .
 ```
 
 ### Step 2: Run the Docker Container with an Interactive Shell
 
 ```bash
+docker rm -f sageworks-layer-container || true && \
 docker run --name sageworks-layer-container -it sageworks-lambda-layer
 ```
 
@@ -31,12 +32,12 @@ exit
 docker cp sageworks-layer-container:/asset-output ./sageworks_lambda_layer_output/
 ```
 
-## Push the Lambda Layer to S3
+## Publish the Lambda Layer
 
-Run the `push_layer_to_s3.sh` script to create a ZIP archive and pushes it to our layer S3 bucket
+Run the `publish_layer.sh` script to create a ZIP archive and pushes it to our layer S3 bucket, create the SageWorks Layer, set public permissions, and output the ARN
 
 ```bash
-./push_layer_to_s3.sh
+./publish_layer.sh
 ```
 
 ## Publish the Layer to 
