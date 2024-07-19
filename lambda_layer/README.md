@@ -40,16 +40,12 @@ Run the `publish_layer.sh` script to create a ZIP archive and pushes it to our l
 ./publish_layer.sh
 ```
 
-## Publish the Layer to 
+## Update the ARN in SageWorks Docs 
+Make sure to take note of the ARN and update that in the various SageWorks documentation and examples.
 
-### Using the Lambda Layer in Other AWS Accounts
+The current ARN is:
 
-To use the Lambda layer in other AWS accounts, include the layer ARN in your Lambda function configuration:
-
-```bash
-aws lambda update-function-configuration \
-    --function-name your-lambda-function-name \
-    --layers <layer-arn>
+```
+arn:aws:lambda:us-west-2:507740646243:layer:sageworks_lambda_layer:1
 ```
 
-Replace `<layer-arn>` with the ARN provided by the script.

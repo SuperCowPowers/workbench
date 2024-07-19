@@ -11,7 +11,7 @@ WORKDIR /asset-output/python
 RUN pip install --no-cache-dir sageworks==0.7.0 -t .
 
 # Remove specific dependencies that are included in the AWSWrangler layer
-RUN rm -rf awswrangler* boto3* botocore* numpy* packaging* pandas* pyarrow*
+RUN rm -rf awswrangler* scipy* sklearn* boto3* botocore* numpy* packaging* pandas* pyarrow*
 
 # Strip binary files to reduce size
 RUN find . -name "*.so" -exec strip --strip-unneeded {} \;
