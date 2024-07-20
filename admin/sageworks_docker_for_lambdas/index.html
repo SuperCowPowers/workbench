@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../../glue/">
+        <link rel="prev" href="../base_docker_push/">
       
       
-        <link rel="next" href="../full_pipeline/">
+        <link rel="next" href="../dashboard_docker_push/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Developer SSO Setup - SageWorks</title>
+        <title>Using SageWorks Image for Lambdas - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#aws-sso-setup" class="md-skip">
+        <a href="#sageworks-docker-image-for-lambdas" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Developer SSO Setup
+              Using SageWorks Image for Lambdas
             
           </span>
         </div>
@@ -1377,19 +1377,17 @@
       
   
   
-    
   
   
-  
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
         
           
           <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
@@ -1403,7 +1401,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             AWS Setup
@@ -1414,30 +1412,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Developer SSO Setup
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../aws_setup/sso_setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1446,89 +1424,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#get-some-information" class="md-nav__link">
-    <span class="md-ellipsis">
-      Get some information
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#install-aws-cli" class="md-nav__link">
-    <span class="md-ellipsis">
-      Install AWS CLI
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#running-the-sso-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Running the SSO Configuration
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#setting-up-some-aliases-for-bashzsh" class="md-nav__link">
-    <span class="md-ellipsis">
-      Setting up some aliases for bash/zsh
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#testing-your-new-aws-profile" class="md-nav__link">
-    <span class="md-ellipsis">
-      Testing your new AWS Profile
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#back-to-initial-setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      Back to Initial Setup
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#aws-resources" class="md-nav__link">
-    <span class="md-ellipsis">
-      AWS Resources
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1541,7 +1436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../full_pipeline/" class="md-nav__link">
+      <a href="../../aws_setup/full_pipeline/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1562,7 +1457,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_stack/" class="md-nav__link">
+      <a href="../../aws_setup/core_stack/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1583,7 +1478,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dashboard_stack/" class="md-nav__link">
+      <a href="../../aws_setup/dashboard_stack/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1604,7 +1499,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../domain_cert_setup/" class="md-nav__link">
+      <a href="../../aws_setup/domain_cert_setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1625,7 +1520,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws_tips_and_tricks/" class="md-nav__link">
+      <a href="../../aws_setup/aws_tips_and_tricks/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1646,7 +1541,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws_access_management/" class="md-nav__link">
+      <a href="../../aws_setup/aws_access_management/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1671,17 +1566,19 @@
       
   
   
+    
   
   
+  
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13" checked>
         
           
           <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
@@ -1695,7 +1592,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_13">
             <span class="md-nav__icon md-icon"></span>
             Admin
@@ -1709,7 +1606,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/pypi_release/" class="md-nav__link">
+      <a href="../pypi_release/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1730,7 +1627,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/base_docker_push/" class="md-nav__link">
+      <a href="../base_docker_push/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1748,10 +1645,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../admin/sageworks_docker_for_lambdas/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Using SageWorks Image for Lambdas
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1760,6 +1677,125 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creating-a-private-ecr" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating a Private ECR
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Creating a Private ECR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#aws-console-to-create-private-ecr" class="md-nav__link">
+    <span class="md-ellipsis">
+      AWS Console to create Private ECR
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#command-line-to-create-private-ecr" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command Line to create Private ECR
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pulling-docker-image-into-private-ecr" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pulling Docker Image into Private ECR
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pulling Docker Image into Private ECR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-the-docker-image-for-your-lambdas" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using the Docker Image for your Lambdas
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using the Docker Image for your Lambdas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#aws-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      AWS Console
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#command-line" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command Line
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-cdk" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python CDK
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cloudformation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cloudformation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1772,7 +1808,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/dashboard_docker_push/" class="md-nav__link">
+      <a href="../dashboard_docker_push/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1820,65 +1856,101 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#get-some-information" class="md-nav__link">
+  <a href="#creating-a-private-ecr" class="md-nav__link">
     <span class="md-ellipsis">
-      Get some information
+      Creating a Private ECR
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Creating a Private ECR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#aws-console-to-create-private-ecr" class="md-nav__link">
+    <span class="md-ellipsis">
+      AWS Console to create Private ECR
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#install-aws-cli" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#command-line-to-create-private-ecr" class="md-nav__link">
     <span class="md-ellipsis">
-      Install AWS CLI
+      Command Line to create Private ECR
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#running-the-sso-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Running the SSO Configuration
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#setting-up-some-aliases-for-bashzsh" class="md-nav__link">
+  <a href="#pulling-docker-image-into-private-ecr" class="md-nav__link">
     <span class="md-ellipsis">
-      Setting up some aliases for bash/zsh
+      Pulling Docker Image into Private ECR
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pulling Docker Image into Private ECR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-the-docker-image-for-your-lambdas" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using the Docker Image for your Lambdas
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using the Docker Image for your Lambdas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#aws-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      AWS Console
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#testing-your-new-aws-profile" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#command-line" class="md-nav__link">
     <span class="md-ellipsis">
-      Testing your new AWS Profile
+      Command Line
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#back-to-initial-setup" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#python-cdk" class="md-nav__link">
     <span class="md-ellipsis">
-      Back to Initial Setup
+      Python CDK
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#aws-resources" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#cloudformation" class="md-nav__link">
     <span class="md-ellipsis">
-      AWS Resources
+      Cloudformation
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1897,90 +1969,88 @@
                   
 
 
-<h1 id="aws-sso-setup">AWS SSO Setup</h1>
-<div class="admonition tip inline end">
-<p class="admonition-title">Need AWS Help?</p>
-<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
-</div>
-<h2 id="get-some-information">Get some information</h2>
-<ul>
-<li>Goto your AWS Identity Center in the AWS Console</li>
-<li>On the right side there will be two important pieces of information<ul>
-<li>Start URL</li>
-<li>Region </li>
-</ul>
-</li>
-</ul>
-<p>If you're connecting to the SCP AWS Account you can use these values</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Start URL: https://supercowpowers.awsapps.com/start 
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Region: us-west-2
+<h1 id="sageworks-docker-image-for-lambdas">SageWorks Docker Image for Lambdas</h1>
+<p>Using the SageWorks Docker Image for AWS Lambda Jobs allows your Lambda Jobs to use and create AWS ML Pipeline Artifacts with SageWorks.</p>
+<p>AWS, for some reason, does not allow Public ECRs to be used for Lambda Docker images. So you'll have to copy the Docker image into your private ECR. </p>
+<h2 id="creating-a-private-ecr">Creating a Private ECR</h2>
+<p>You only need to do this if you don't already have a private ECR.</p>
+<h4 id="aws-console-to-create-private-ecr">AWS Console to create Private ECR</h4>
+<ol>
+<li>Open the Amazon ECR console.</li>
+<li>Choose "Create repository".</li>
+<li>For "Repository name", enter <code>sageworks_base</code>.</li>
+<li>Ensure "Private" is selected.</li>
+<li>Choose "Create repository".</li>
+</ol>
+<h4 id="command-line-to-create-private-ecr">Command Line to create Private ECR</h4>
+<p>Create the ECR repository using the AWS CLI:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>aws<span class="w"> </span>ecr<span class="w"> </span>create-repository<span class="w"> </span>--repository-name<span class="w"> </span>sageworks_base<span class="w"> </span>--region<span class="w"> </span>&lt;region&gt;
 </span></code></pre></div>
-<h2 id="install-aws-cli">Install AWS CLI</h2>
-<p><strong>Mac</strong> <code>brew install awscli</code></p>
-<p><strong>Linux</strong> <code>pip install awscli</code></p>
-<p><strong>Windows</strong></p>
-<p>Download the MSI installer (top right corner on this page) <a href="https://aws.amazon.com/cli/">https://aws.amazon.com/cli/</a> and follow the installation instructions.</p>
-<h2 id="running-the-sso-configuration">Running the SSO Configuration</h2>
-<p><strong>Note:</strong> You only need to do this once!</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>aws configure sso --profile &lt;whatever you want&gt; (e.g. aws_sso)
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>SSO session name (Recommended): sso-session
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>SSO start URL []: &lt;the Start URL from info above&gt;
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>SSO region []: &lt;the Region from info above&gt;
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>SSO registration scopes [sso:account:access]: &lt;just hit return&gt;
+<h2 id="pulling-docker-image-into-private-ecr">Pulling Docker Image into Private ECR</h2>
+<p><strong>Note: You'll only need to do this when you want to update the SageWorks Docker image</strong></p>
+<p><strong>Pull the SageWorks Public ECR Image</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker pull public.ecr.aws/m6i5k1r2/sageworks_base:latest
 </span></code></pre></div>
-<p>You will get a browser open/redirect at this point and get a list of available accounts.. something like below, just pick the correct account</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>There are 2 AWS accounts available to you.
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>&gt; SCP_Sandbox, briford+sandbox@supercowpowers.com (XXXX40646YYY)
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  SCP_Main, briford@supercowpowers.com (XXX576391YYY)
+<p><strong>Tag the image for your private ECR</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker tag public.ecr.aws/m6i5k1r2/sageworks_base:latest \
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>&lt;your-account-id&gt;.dkr.ecr.&lt;region&gt;.amazonaws.com/&lt;private-repo&gt;:latest
 </span></code></pre></div>
-<p>Now pick the role that you're going to use</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>There are 2 roles available to you.
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>&gt; DataScientist
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  AdministratorAccess
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>CLI default client Region [None]: &lt;same region as above&gt;
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>CLI default output format [None]: json
+<p><strong>Push the image to your private ECR</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>aws ecr get-login-password --region &lt;region&gt; --profile &lt;profile&gt; | \
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>docker login --username AWS --password-stdin &lt;account-id&gt;.dkr.ecr.&lt;region&gt;.amazonaws.com
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>docker push &lt;account-id&gt;.dkr.ecr.&lt;region&gt;.amazonaws.com/&lt;private-repo&gt;:&lt;tag&gt;
 </span></code></pre></div>
-<h2 id="setting-up-some-aliases-for-bashzsh">Setting up some aliases for bash/zsh</h2>
-<p>Edit your favorite ~/.bashrc ~/.zshrc and add these nice aliases/helper</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a># AWS Aliases
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>alias bob_sso=&#39;export AWS_PROFILE=bob_sso&#39;
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a># Default AWS Profile
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>export AWS_PROFILE=bob_sso
+<h3 id="using-the-docker-image-for-your-lambdas">Using the Docker Image for your Lambdas</h3>
+<p>Okay, now that you have the SageWorks Docker image in your private ECR, here's how you use that image for your Lambda jobs.</p>
+<h4 id="aws-console">AWS Console</h4>
+<ol>
+<li>Open the AWS Lambda console.</li>
+<li>Create a new function.</li>
+<li>Select "Container image".</li>
+<li>Use the ECR image URI: <code>&lt;account-id&gt;.dkr.ecr.&lt;region&gt;.amazonaws.com/&lt;private-repo&gt;:&lt;tag&gt;</code>.</li>
+</ol>
+<h4 id="command-line">Command Line</h4>
+<p>Create the Lambda function using the AWS CLI:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>aws<span class="w"> </span>lambda<span class="w"> </span>create-function<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w"> </span>--region<span class="w"> </span>&lt;region&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w"> </span>--function-name<span class="w"> </span>myLambdaFunction<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w"> </span>--package-type<span class="w"> </span>Image<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w"> </span>--code<span class="w"> </span><span class="nv">ImageUri</span><span class="o">=</span>&lt;account-id&gt;.dkr.ecr.&lt;region&gt;.amazonaws.com/&lt;private-repo&gt;:&lt;tag&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w"> </span>--role<span class="w"> </span>arn:aws:iam::&lt;account-id&gt;:role/&lt;execution-role&gt;
 </span></code></pre></div>
-<h2 id="testing-your-new-aws-profile">Testing your new AWS Profile</h2>
-<p>Make sure your profile is active/set</p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>env | grep AWS
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>AWS_PROFILE=&lt;bob_sso or whatever&gt;
+<h4 id="python-cdk">Python CDK</h4>
+<p>Define the Lambda function in your CDK app:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span> <span class="nn">aws_cdk</span> <span class="kn">import</span> <span class="p">(</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>   <span class="n">aws_lambda</span> <span class="k">as</span> <span class="n">_lambda</span><span class="p">,</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>   <span class="n">core</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="p">)</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="k">class</span> <span class="nc">MyLambdaStack</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">Stack</span><span class="p">):</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>   <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">:</span> <span class="n">core</span><span class="o">.</span><span class="n">Construct</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>       <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>       <span class="n">_lambda</span><span class="o">.</span><span class="n">Function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;MyLambdaFunction&quot;</span><span class="p">,</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>                        <span class="n">code</span><span class="o">=</span><span class="n">_lambda</span><span class="o">.</span><span class="n">Code</span><span class="o">.</span><span class="n">from_ecr_image</span><span class="p">(</span><span class="s2">&quot;&lt;account-id&gt;.dkr.ecr.&lt;region&gt;.amazonaws.com/&lt;private-repo&gt;:&lt;tag&gt;&quot;</span><span class="p">),</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>                        <span class="n">handler</span><span class="o">=</span><span class="n">_lambda</span><span class="o">.</span><span class="n">Handler</span><span class="o">.</span><span class="n">FROM_IMAGE</span><span class="p">,</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>                        <span class="n">runtime</span><span class="o">=</span><span class="n">_lambda</span><span class="o">.</span><span class="n">Runtime</span><span class="o">.</span><span class="n">FROM_IMAGE</span><span class="p">,</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>                        <span class="n">role</span><span class="o">=</span><span class="n">iam</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">from_role_arn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;LambdaRole&quot;</span><span class="p">,</span> <span class="s2">&quot;arn:aws:iam::&lt;account-id&gt;:role/&lt;execution-role&gt;&quot;</span><span class="p">))</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="n">app</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">App</span><span class="p">()</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="n">MyLambdaStack</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;MyLambdaStack&quot;</span><span class="p">)</span>
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="n">app</span><span class="o">.</span><span class="n">synth</span><span class="p">()</span>
 </span></code></pre></div>
-Now you can list the S3 buckets in the AWS Account</p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>aws ls s3
+<h4 id="cloudformation">Cloudformation</h4>
+<p>Define the Lambda function in your CloudFormation template.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">Resources</span><span class="p">:</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w"> </span><span class="nt">MyLambdaFunction</span><span class="p">:</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AWS::Lambda::Function</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">   </span><span class="nt">Properties</span><span class="p">:</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">     </span><span class="nt">Code</span><span class="p">:</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">       </span><span class="nt">ImageUri</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;account-id&gt;.dkr.ecr.&lt;region&gt;.amazonaws.com/&lt;private-repo&gt;:&lt;tag&gt;</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">     </span><span class="nt">Role</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">arn:aws:iam::&lt;account-id&gt;:role/&lt;execution-role&gt;</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">     </span><span class="nt">PackageType</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Image</span>
 </span></code></pre></div>
-If you get some message like this...</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>The SSO session associated with this profile has
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>expired or is otherwise invalid. To refresh this SSO
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>session run aws sso login with the corresponding
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>profile.
-</span></code></pre></div>
-<p>This is fine/good, a browser will open up and you can refresh your SSO Token.</p>
-<p>After that you should get a listing of the S3 buckets without needed to refresh your token.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>aws s3 ls
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>❯ aws s3 ls
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>2023-03-20 20:06:53 aws-athena-query-results-XXXYYY-us-west-2
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>2023-03-30 13:22:28 sagemaker-studio-XXXYYY-dbgyvq8ruka
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>2023-03-24 22:05:55 sagemaker-us-west-2-XXXYYY
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>2023-04-30 13:43:29 scp-sageworks-artifacts
-</span></code></pre></div>
-<h2 id="back-to-initial-setup">Back to Initial Setup</h2>
-<p>If you're doing the initial setup of SageWorks you should now go back and finish that process: <a href="../../getting_started/">Getting Started</a></p>
-<h2 id="aws-resources">AWS Resources</h2>
-<ul>
-<li><a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html">AWS Identity Center</a></li>
-<li><a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/users-groups-provisioning.html">Users and Groups</a></li>
-<li><a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/permissionsetsconcept.html">Permission Sets</a></li>
-<li><a href="https://docs.aws.amazon.com/cli/latest/userguide/sso-configure-profile-token.html">SSO Command Line/Python Configure</a></li>
-</ul>
 
 
 
