@@ -59,6 +59,7 @@ nav:
   - Admin: 
     - PyPI Release:  admin/pypi_release.md
     - Base Docker Push:  admin/base_docker_push.md
+    - Using SageWorks Image for Lambdas:  admin/sageworks_docker_for_lambdas.md
     - Dashboard Docker Push:  admin/dashboard_docker_push.md
 
 theme:

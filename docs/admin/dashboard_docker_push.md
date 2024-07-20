@@ -1,8 +1,6 @@
-# Docker Build and Push
+# Dashboard Docker Build and Push
 
-Notes and information on how to do the Docker Builds and Push to AWS ECR.
-
-The following instructions should work, but things change :)
+Notes and information on how to do the Dashboard Docker Builds and Push to AWS ECR.
 
 ### Update SageWorks Version
 ```
