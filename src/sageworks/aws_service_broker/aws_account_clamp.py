@@ -167,6 +167,7 @@ class AWSAccountClamp:
         """
         try:
             import awsglue  # noqa: F401
+
             cls.log.info("Running in AWS Glue Environment...")
             return True
         except ImportError:
@@ -180,7 +181,7 @@ class AWSAccountClamp:
         Returns:
             bool: True if running in AWS Lambda environment, False otherwise.
         """
-        if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
+        if "AWS_LAMBDA_FUNCTION_NAME" in os.environ:
             cls.log.info("Running in AWS Lambda Environment...")
             return True
         else:
