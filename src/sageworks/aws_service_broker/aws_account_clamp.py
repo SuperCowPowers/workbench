@@ -1,7 +1,6 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
 
 import os
-
 import boto3
 import awswrangler as wr
 from botocore.exceptions import (
@@ -13,7 +12,6 @@ from botocore.client import BaseClient
 from botocore.credentials import RefreshableCredentials
 from botocore.session import get_session
 from sagemaker.session import Session as SageSession
-from datetime import timedelta
 import logging
 
 # SageWorks Imports
@@ -21,9 +19,20 @@ from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
 
 class AWSAccountClamp:
+
+    # Initialize Class Attributes
+    log = None
+    cm = None
+    role_name = None
+    sageworks_bucket_name = None
+    account_id = None
+    region = None
+    boto3_session = None
+    instance = None
+
     def __new__(cls):
         """AWSAccountClamp Singleton Pattern"""
-        if not hasattr(cls, "instance"):
+        if cls.instance is None:
             # Initialize class attributes here
             cls.log = logging.getLogger("sageworks")
             cls.log.info("Creating the AWSAccountClamp Singleton...")
@@ -54,9 +63,15 @@ class AWSAccountClamp:
             cls.cm.load_and_check_license(cls.account_id)
             cls.cm.print_license_info()
 
-            # Initialize the boto3 session (this is a refreshable session)
-            cls.session_time_delta = timedelta(minutes=50)
-            cls.boto3_session = cls._init_boto3_session()
+            # Check if this code is running in AWS Lambda, Glue, or already has the SageWorks Role
+            cls.log.info("Checking Execution Environment...")
+            if cls.running_on_lambda() or cls.running_on_glue() or cls.is_sageworks_role():
+                cls.boto3_session = boto3.Session()
+            else:
+                # Assume the SageWorks Role and set up our AWS Session credentials with automatic refresh
+                cls.boto3_session = cls._sageworks_role_boto3_session()
+
+            # Create the Singleton Instance
             cls.instance = super(AWSAccountClamp, cls).__new__(cls)
 
         # Return the singleton
@@ -119,6 +134,8 @@ class AWSAccountClamp:
         try:
             if cls.role_name in sts.get_caller_identity()["Arn"]:
                 return True
+            else:
+                return False
         except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
             msg = "SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
             cls.log.critical(msg)
@@ -141,7 +158,7 @@ class AWSAccountClamp:
             raise RuntimeError(msg)
 
     @classmethod
-    def glue_check(cls):
+    def running_on_glue(cls):
         """
         Check if the current execution environment is an AWS Glue job.
 
@@ -150,17 +167,46 @@ class AWSAccountClamp:
         """
         try:
             import awsglue  # noqa: F401
-
+            cls.log.info("Running in AWS Glue Environment...")
             return True
         except ImportError:
             return False
 
     @classmethod
-    def _session_credentials(cls):
-        """Internal: Set up our AWS Session credentials for automatic refresh"""
+    def running_on_lambda(cls):
+        """
+        Check if the current execution environment is an AWS Lambda function.
+
+        Returns:
+            bool: True if running in AWS Lambda environment, False otherwise.
+        """
+        if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
+            cls.log.info("Running in AWS Lambda Environment...")
+            return True
+        else:
+            return False
+
+    @classmethod
+    def _sageworks_role_boto3_session(cls):
+
+        # Create a refreshable credentials object
+        refreshable_credentials = RefreshableCredentials.create_from_metadata(
+            metadata=cls._assume_sageworks_role_session_credentials(),
+            refresh_using=cls._assume_sageworks_role_session_credentials,
+            method="sts-assume-role",
+        )
+        session = get_session()
+        session._credentials = refreshable_credentials
+        refreshable_session = boto3.Session(botocore_session=session)
+
+        return refreshable_session
+
+    @classmethod
+    def _assume_sageworks_role_session_credentials(cls):
+        """Internal: Assume SageWorks Role and set up our AWS Session credentials for automatic refresh"""
 
         # Assume the SageWorks Execution Role and then pull the credentials
-        cls.log.debug("Assuming the SageWorks Execution Role and Refreshing Credentials...")
+        cls.log.important("Assuming the SageWorks Execution Role with Refreshing Credentials...")
         sts = boto3.Session().client("sts")
         response = sts.assume_role(
             RoleArn=cls.sageworks_execution_role_arn(),
@@ -174,23 +220,6 @@ class AWSAccountClamp:
         }
         cls.log.debug(f"Credentials Refreshed: Expires at {credentials['expiry_time']}")
         return credentials
-
-    @classmethod
-    def _init_boto3_session(cls):
-        if cls.is_sageworks_role() or cls.glue_check():
-            return boto3.Session()
-
-        refreshable_credentials = RefreshableCredentials.create_from_metadata(
-            metadata=cls._session_credentials(),
-            refresh_using=cls._session_credentials,
-            method="sts-assume-role",
-        )
-
-        session = get_session()
-        session._credentials = refreshable_credentials
-        refreshable_session = boto3.Session(botocore_session=session)
-
-        return refreshable_session
 
     @classmethod
     def boto_session(cls):
