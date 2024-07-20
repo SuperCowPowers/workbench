@@ -1,15 +1,14 @@
 try:
     import shap
+    from sageworks.utils.extract_model_artifact import ExtractModelArtifact
 
-    SHAP_AVAILABLE = True
+    NO_SHAP = False
 except ImportError:
-    SHAP_AVAILABLE = False
+    NO_SHAP = True
     print("Please install the shap package: pip install shap")
 import pandas as pd
 import awswrangler as wr
 
-# SageWorks Imports
-from sageworks.utils.extract_model_artifact import ExtractModelArtifact
 
 # SageWorks logging
 import logging
@@ -33,7 +32,7 @@ def generate_shap_values(
     """
 
     # Check if SHAP is available
-    if not SHAP_AVAILABLE:
+    if NO_SHAP:
         log.warning("SHAP is not available. Please install the shap package: pip install shap")
         return
 
