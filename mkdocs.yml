@@ -58,7 +58,8 @@ nav:
     - AWS Access Management: aws_setup/aws_access_management.md
   - Admin: 
     - PyPI Release:  admin/pypi_release.md
-    - Docker Push:  admin/docker_push.md
+    - Base Docker Push:  admin/base_docker_push.md
+    - Dashboard Docker Push:  admin/dashboard_docker_push.md
 
 theme:
   name: material
