@@ -10,17 +10,25 @@ import awswrangler as wr
 from typing import Union
 import joblib
 
-# Model Performance Scores
-from sklearn.metrics import (
-    mean_absolute_error,
-    r2_score,
-    root_mean_squared_error,
-    precision_recall_fscore_support,
-    median_absolute_error,
-    roc_auc_score,
-    confusion_matrix,
-)
-from sklearn.preprocessing import LabelBinarizer
+# Check if scikit-learn is installed
+try:
+    # Model Performance Scores
+    from sklearn.metrics import (
+        mean_absolute_error,
+        r2_score,
+        root_mean_squared_error,
+        precision_recall_fscore_support,
+        median_absolute_error,
+        roc_auc_score,
+        confusion_matrix,
+    )
+    from sklearn.preprocessing import LabelBinarizer
+
+    NO_SKLEARN = False
+
+except ImportError:
+    print("Please install the scikit-learn package: pip install scikit-learn")
+    NO_SKLEARN = True
 
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
@@ -95,6 +103,11 @@ class EndpointCore(Artifact):
 
         # Call SuperClass Post Initialization
         super().__post_init__()
+
+        # Check if Scikit-Learn is available
+        self.no_scikit = NO_SKLEARN
+        if self.no_scikit:
+            self.log.critical("Scikit-Learn is not available, only some functionality will work...")
 
         # All done
         self.log.info(f"EndpointCore Initialized: {self.endpoint_name}")
