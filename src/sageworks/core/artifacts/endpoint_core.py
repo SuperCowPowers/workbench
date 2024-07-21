@@ -9,6 +9,10 @@ from io import StringIO
 import awswrangler as wr
 from typing import Union
 import joblib
+import logging
+
+# Initialize the logger
+log = logging.getLogger("sageworks")
 
 # Check if scikit-learn is installed
 try:
@@ -16,19 +20,19 @@ try:
     from sklearn.metrics import (
         mean_absolute_error,
         r2_score,
-        root_mean_squared_error,
-        precision_recall_fscore_support,
         median_absolute_error,
         roc_auc_score,
         confusion_matrix,
+        precision_recall_fscore_support,
+        mean_squared_error  # Replacing root_mean_squared_error with mean_squared_error
     )
     from sklearn.preprocessing import LabelBinarizer
 
-    NO_SKLEARN = False
-
-except ImportError:
-    print("Please install the scikit-learn package: pip install scikit-learn")
-    NO_SKLEARN = True
+except ImportError as e:
+    msg = "Please install the scikit-learn package: pip install scikit-learn"
+    log.critical(msg)
+    print(msg)  # Optionally print the message
+    raise SystemExit(msg) from e  # Exit the program with the error message
 
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
@@ -103,11 +107,6 @@ class EndpointCore(Artifact):
 
         # Call SuperClass Post Initialization
         super().__post_init__()
-
-        # Check if Scikit-Learn is available
-        self.no_scikit = NO_SKLEARN
-        if self.no_scikit:
-            self.log.critical("Scikit-Learn is not available, only some functionality will work...")
 
         # All done
         self.log.info(f"EndpointCore Initialized: {self.endpoint_name}")
