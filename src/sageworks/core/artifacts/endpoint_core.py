@@ -11,9 +11,6 @@ from typing import Union
 import joblib
 import logging
 
-# Initialize the logger
-log = logging.getLogger("sageworks")
-
 # Check if scikit-learn is installed
 try:
     # Model Performance Scores
@@ -24,11 +21,13 @@ try:
         roc_auc_score,
         confusion_matrix,
         precision_recall_fscore_support,
-        mean_squared_error  # Replacing root_mean_squared_error with mean_squared_error
+        root_mean_squared_error,
     )
     from sklearn.preprocessing import LabelBinarizer
 
 except ImportError as e:
+    # Initialize the logger
+    log = logging.getLogger("sageworks")
     msg = "Please install the scikit-learn package: pip install scikit-learn"
     log.critical(msg)
     print(msg)  # Optionally print the message
