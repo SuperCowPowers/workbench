@@ -3,4 +3,5 @@ pytest
 pytest-sugar
 coverage
 pytest-cov
+flake8
 black
