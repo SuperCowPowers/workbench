@@ -1,7 +1,7 @@
 !!! tip inline end "SageWorks Lambda Layers"
     AWS Lambda Jobs are a great way to spin up data processing jobs. Follow this guide and empower AWS Lambda with SageWorks!
 
-SageWorks make creating, testing, and debugging of AWS Lambda Jobs easy. The exact same [SageWorks API Classes](../api_classes/overview.md) are used in your Lambda Jobs. Also since SageWorks provides the access policies you'll be able to test new Lambda Jobs locally and minimizes surprises when deploying.
+SageWorks makes creating, testing, and debugging of AWS Lambda Functions easy. The exact same [SageWorks API Classes](../api_classes/overview.md) are used in your AWS Lambda Functions. Also since SageWorks manages the access policies you'll be able to test new Lambda Jobs locally and minimizes surprises when deploying.
     
 !!! warning inline end "Work In Progress"
     Right now the SageWorks layers only support Python 3.10 Lambda Functions. We'll be adding more regions and python version support in the near future.
