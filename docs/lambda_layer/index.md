@@ -1,0 +1,82 @@
+!!! tip inline end "SageWorks Lambda Layers"
+    AWS Lambda Jobs are a great way to spin up quick data processing jobs. Follow this guide and empower your Lambda Jobs with SageWorks!
+
+SageWorks make creating, testing, and debugging of AWS Lambda Jobs easy. The exact same [SageWorks API Classes](../api_classes/overview.md) are used in your Lambda Jobs. Also since SageWorks provides the access policies you'll be able to test new Lambda Jobs locally and minimizes surprises when deploying.
+    
+## Lambda Job Setup
+
+!!! warning inline end "Work In Progress"
+    Right now the SageWorks layers only support Python 3.10 Lambda Functions. We'll be adding more regions and python version support in the near future.
+
+Setting up a AWS Lambda Job that uses SageWorks is straight forward. SageWorks can be 'installed' using a Lambda Layer and then you can use the Sageworks API just like normal.
+
+Here are the ARNs for the current SageWorks Lambda Layers:
+
+- US-EAST-1: `arn:aws:lambda:us-east-1:507740646243:layer:sageworks_lambda_layer:1`
+- US-WEST-2: `arn:aws:lambda:us-west-2:507740646243:layer:sageworks_lambda_layer:20`
+
+<img alt="lambda_layer"  padding-left: 12px; border: 1px solid grey;""
+src="https://github.com/user-attachments/assets/7d0e2fbe-b907-42bc-96bd-3b274d94c3de">
+
+At the bottom of the Lambda page there's an 'Add Layer' button. You can click that button and specify the layer using the ARN above. Also in the 'General Configuration' set these parameters:
+
+- Timeout: 5 Minutes
+- Memory: 4096
+
+!!! tip "Lambda Role Details"
+    If your Lambda Function already use an existing IAM Role then you can add the SageWorks policies to that Role to enable the Lambda Job to perform SageWorks API Tasks. See [SageWorks Access Controls](https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing)
+
+## SageWorks Lambda Example
+Here's a simple example of using SageWorks in your Lambda Function.
+
+```py title="examples/lambda_hello_world.py"
+import json
+from sageworks.utils.lambda_utils import load_lambda_layer
+    
+# Load the SageWorks Lambda Layer
+load_lambda_layer()
+
+# Now we can use the normal SageWorks imports
+from sageworks.api import Meta, Model 
+
+def lambda_handler(event, context):
+    
+    # Create our Meta Class and get a list of our Models
+    meta = Meta()
+    models = meta.models()
+    
+    print(f"Number of Models: {len(models)}")
+    print(models)
+    
+    # Get more details data on the Endpoints
+    models_groups = meta.models_deep()
+    for name, model_versions in models_groups.items():
+        print(name)
+        
+    # Onboard a model
+    model = Model("abalone-regression")
+    model.onboard()
+        
+    # Return success
+    return {
+        'statusCode': 200,
+        'body': { "incoming_event": event}
+    }
+```
+
+## Lambda Function Local Testing
+Lambda Power without the Pain. SageWorks manages the AWS Execution Role/Policies, so local API and Lambda Functions will have the same permissions/access. Also using the same Code as your notebooks or scripts makes creating and testing Lambda Functions a breeze.
+
+```shell
+python my_lambda_function.py --sageworks-bucket <your bucket>
+```
+
+## Additional Resources
+- SageWorks Access Management: [SageWorks Access Management](https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing)
+- Setting up SageWorks on your AWS Account: [AWS Setup](../aws_setup/core_stack.md)
+
+<img align="right" src="../images/scp.png" width="180">
+
+- Using SageWorks for ML Pipelines: [SageWorks API Classes](../api_classes/overview.md)
+
+- Consulting Available: [SuperCowPowers LLC](https://www.supercowpowers.com)

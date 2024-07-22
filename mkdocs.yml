@@ -48,6 +48,7 @@ nav:
       - Project Branding: enterprise/project_branding.md
   - FAQ:  misc/faq.md
   - AWS Glue Jobs: glue/index.md 
+  - AWS Lambda Layer: lambda_layer/index.md 
   - AWS Setup: 
     - Developer SSO Setup: aws_setup/sso_setup.md
     - Full Pipeline Testing: aws_setup/full_pipeline.md
@@ -59,8 +60,9 @@ nav:
   - Admin: 
     - PyPI Release:  admin/pypi_release.md
     - Base Docker Push:  admin/base_docker_push.md
-    - Using SageWorks Image for Lambdas:  admin/sageworks_docker_for_lambdas.md
     - Dashboard Docker Push:  admin/dashboard_docker_push.md
+    - Storage:
+      - SageWorks Docker for Lambdas:  admin/sageworks_docker_for_lambdas.md
 
 theme:
   name: material
