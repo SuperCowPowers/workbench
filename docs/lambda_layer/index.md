@@ -47,7 +47,7 @@ src="https://github.com/user-attachments/assets/a5afdaff-188f-45ca-bd66-1ab62d7b
 Here's a simple example of using SageWorks in your Lambda Function. 
 
 !!! warning "SageWorks Layer is Compressed"
-    The SageWorks Lambda Layer is compressed (*to fit all the awesome*). This means that the `load_lambda_layer()` method must be called before using any other SageWorks imports, see the example below. If you do not do this you'll probably get a `numpy not found` error or something like that.
+    The SageWorks Lambda Layer is compressed (*to fit all the awesome*). This means that the `load_lambda_layer()` method must be called before using any other SageWorks imports, see the example below. If you do not do this you'll probably get a `No module named 'numpy'` error or something like that.
 
 ```py title="examples/lambda_hello_world.py"
 import json
