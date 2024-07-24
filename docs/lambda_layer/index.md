@@ -44,7 +44,10 @@ src="https://github.com/user-attachments/assets/a5afdaff-188f-45ca-bd66-1ab62d7b
     If your Lambda Function already use an existing IAM Role then you can add the SageWorks policies to that Role to enable the Lambda Job to perform SageWorks API Tasks. See [SageWorks Access Controls](https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing)
 
 ## SageWorks Lambda Example
-Here's a simple example of using SageWorks in your Lambda Function.
+Here's a simple example of using SageWorks in your Lambda Function. 
+
+!!! warning "SageWorks Layer is Compressed"
+    The SageWorks Lambda Layer is compressed (*to fit all the awesome*). This means that the `load_lambda_layer()` method must be called before using any other SageWorks imports, see the example below. If you do not do this you'll probably get a `numpy not found` error or something like that.
 
 ```py title="examples/lambda_hello_world.py"
 import json
@@ -53,7 +56,7 @@ from sageworks.utils.lambda_utils import load_lambda_layer
 # Load the SageWorks Lambda Layer
 load_lambda_layer()
 
-# Now we can use the normal SageWorks imports
+# After 'load_lambda_layer()' we can use other SageWorks imports
 from sageworks.api import Meta, Model 
 
 def lambda_handler(event, context):
