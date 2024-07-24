@@ -53,7 +53,7 @@ Here's a simple example of using SageWorks in your Lambda Function.
 import json
 from sageworks.utils.lambda_utils import load_lambda_layer
     
-# Load the SageWorks Lambda Layer
+# Load/Decompress the SageWorks Lambda Layer
 load_lambda_layer()
 
 # After 'load_lambda_layer()' we can use other SageWorks imports
