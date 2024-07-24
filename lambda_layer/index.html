@@ -1941,14 +1941,18 @@ src="https://github.com/user-attachments/assets/a5afdaff-188f-45ca-bd66-1ab62d7b
 <p>If your Lambda Function already use an existing IAM Role then you can add the SageWorks policies to that Role to enable the Lambda Job to perform SageWorks API Tasks. See <a href="https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing">SageWorks Access Controls</a></p>
 </div>
 <h2 id="sageworks-lambda-example">SageWorks Lambda Example</h2>
-<p>Here's a simple example of using SageWorks in your Lambda Function.</p>
+<p>Here's a simple example of using SageWorks in your Lambda Function. </p>
+<div class="admonition warning">
+<p class="admonition-title">SageWorks Layer is Compressed</p>
+<p>The SageWorks Lambda Layer is compressed (<em>to fit all the awesome</em>). This means that the <code>load_lambda_layer()</code> method must be called before using any other SageWorks imports, see the example below. If you do not do this you'll probably get a <code>numpy not found</code> error or something like that.</p>
+</div>
 <div class="language-py highlight"><span class="filename">examples/lambda_hello_world.py</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">json</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">sageworks.utils.lambda_utils</span> <span class="kn">import</span> <span class="n">load_lambda_layer</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Load the SageWorks Lambda Layer</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">load_lambda_layer</span><span class="p">()</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># Now we can use the normal SageWorks imports</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># After &#39;load_lambda_layer()&#39; we can use other SageWorks imports</span>
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="kn">from</span> <span class="nn">sageworks.api</span> <span class="kn">import</span> <span class="n">Meta</span><span class="p">,</span> <span class="n">Model</span> 
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="k">def</span> <span class="nf">lambda_handler</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
