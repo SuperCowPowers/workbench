@@ -10,18 +10,30 @@ SageWorks makes creating, testing, and debugging of AWS Lambda Functions easy. T
 
 Setting up a AWS Lambda Job that uses SageWorks is straight forward. SageWorks can be 'installed' using a Lambda Layer and then you can use the Sageworks API just like normal.
 
-Here are the ARNs for the current SageWorks Lambda Layers:
+Here are the ARNs for the current SageWorks Lambda Layers, please note they are specified with region and Python version in the name, so if your lambda is us-east-1, python 3.12, pick this ARN with values in it.
+ 
 
-- US-EAST-1: `arn:aws:lambda:us-east-1:507740646243:layer:sageworks_lambda_layer:1`
-- US-WEST-2: `arn:aws:lambda:us-west-2:507740646243:layer:sageworks_lambda_layer:20`
+```
+arn:aws:lambda:us-east-1:507740646243:layer:sageworks_lambda_layer-us-east-1-python310:1
+arn:aws:lambda:us-east-1:507740646243:layer:sageworks_lambda_layer-us-east-1-python312:1
 
-<img alt="lambda_layer"  padding-left: 12px; border: 1px solid grey;""
+arn:aws:lambda:us-west-2:507740646243:layer:sageworks_lambda_layer-us-west-2-python310:1
+arn:aws:lambda:us-west-2:507740646243:layer:sageworks_lambda_layer-us-west-2-python312:1
+```
+
+<img alt="lambda_layer"  padding: 20px; border: 1px solid grey;""
 src="https://github.com/user-attachments/assets/7d0e2fbe-b907-42bc-96bd-3b274d94c3de">
 
 At the bottom of the Lambda page there's an 'Add Layer' button. You can click that button and specify the layer using the ARN above. Also in the 'General Configuration' set these parameters:
 
 - Timeout: 5 Minutes
 - Memory: 4096
+
+**Set the SAGEWORKS_BUCKET ENV**
+SageWorks will need to know what bucket to work out of, so go into the Configuration...Environment Variables... and add one for the SageWorks bucket that your are using for AWS Account (dev, prod, etc).
+<img alt="lambda_layer"  padding: 20px; border: 1px solid grey;""
+src="https://github.com/user-attachments/assets/a5afdaff-188f-45ca-bd66-1ab62d7b0b2a">
+
 
 !!! tip "Lambda Role Details"
     If your Lambda Function already use an existing IAM Role then you can add the SageWorks policies to that Role to enable the Lambda Job to perform SageWorks API Tasks. See [SageWorks Access Controls](https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing)
