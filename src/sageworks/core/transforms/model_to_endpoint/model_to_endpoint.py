@@ -102,6 +102,7 @@ class ModelToEndpoint(Transform):
         """
         model_name = self.input_uuid
         endpoint_name = self.output_uuid
+        endpoint_config_name = f"{endpoint_name}-config"
         aws_tags = self.get_aws_tags()
 
         # Create Low Level Model Resource (Endpoint Config below references this Model Resource)
@@ -119,10 +120,10 @@ class ModelToEndpoint(Transform):
         )
 
         # Create Endpoint Config
-        self.log.info(f"Creating Endpoint Config {endpoint_name}...")
+        self.log.info(f"Creating Endpoint Config {endpoint_config_name}...")
         try:
             self.sm_client.create_endpoint_config(
-                EndpointConfigName=endpoint_name,
+                EndpointConfigName=endpoint_config_name,
                 ProductionVariants=[
                     {
                         "ServerlessConfig": {"MemorySizeInMB": mem_size, "MaxConcurrency": max_concurrency},
@@ -138,9 +139,11 @@ class ModelToEndpoint(Transform):
                 and "already existing endpoint configuration" in e.response["Error"]["Message"]
             ):
                 self.log.warning("Endpoint configuration already exists: Deleting and retrying...")
-                self.sm_client.delete_endpoint_config(EndpointConfigName=endpoint_name)
+                # Grab the existing endpoint configuration and delete it
+                _del_config_name = self.sm_client.describe_endpoint(EndpointName=self.endpoint_name)["EndpointConfigName"]
+                self.sm_client.delete_endpoint_config(EndpointConfigName=_del_config_name)
                 self.sm_client.create_endpoint_config(
-                    EndpointConfigName=endpoint_name,
+                    EndpointConfigName=endpoint_config_name,
                     ProductionVariants=[
                         {
                             "ServerlessConfig": {"MemorySizeInMB": mem_size, "MaxConcurrency": max_concurrency},
@@ -153,7 +156,7 @@ class ModelToEndpoint(Transform):
         # Create Endpoint
         self.log.info(f"Creating Serverless Endpoint {endpoint_name}...")
         self.sm_client.create_endpoint(
-            EndpointName=endpoint_name, EndpointConfigName=endpoint_name, Tags=self.get_aws_tags()
+            EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name, Tags=self.get_aws_tags()
         )
 
         # Wait for Endpoint to be ready
@@ -191,5 +194,5 @@ if __name__ == "__main__":
     input_uuid = "abalone-regression"
     output_uuid = "abalone-regression-end"
     to_endpoint = ModelToEndpoint(input_uuid, output_uuid)
-    to_endpoint.set_output_tags(["aqsol", "public"])
+    to_endpoint.set_output_tags(["abalone", "public"])
     to_endpoint.transform()
