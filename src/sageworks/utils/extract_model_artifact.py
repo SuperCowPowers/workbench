@@ -10,6 +10,7 @@ from xgboost import XGBModel
 import json
 import joblib
 import logging
+import tarfile
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
@@ -30,13 +31,14 @@ class ExtractModelArtifact:
 
     def get_model_artifact(self):
         """Get the model artifact from the endpoint"""
-        model_artifact_uri = self.get_model_data_uri()
+        model_artifact_uri, _ = self.get_artifact_uris()
         return self.download_and_extract_model(model_artifact_uri)
 
-    def get_model_data_uri(self) -> str:
-        """Get the model artifact URI (S3 Path) from the endpoint
+    def get_artifact_uris(self) -> tuple:
+        """Get the model artifact URI (S3 Path) and source artifact URI from the endpoint
+
         Returns:
-            str: URI (S3 Path) to the model artifact
+            tuple: (Model artifact URI, Script artifact URI)
         """
 
         # Get the endpoint configuration
@@ -59,6 +61,8 @@ class ExtractModelArtifact:
         elif "PrimaryContainer" in model_desc:
             # Serverless model
             model_package_arn = model_desc["PrimaryContainer"].get("ModelPackageName")
+        else:
+            model_package_arn = None
 
         # Throw an error if the model package ARN is not found
         if model_package_arn is None:
@@ -68,11 +72,23 @@ class ExtractModelArtifact:
         model_package_desc = self.sagemaker_client.describe_model_package(ModelPackageName=model_package_arn)
         inference_spec = model_package_desc.get("InferenceSpecification", {})
         containers = inference_spec.get("Containers", [])
+
+        # Do we have containers for the model package?
         if containers:
-            model_data_url = containers[0].get("ModelDataUrl")
-            return model_data_url
+            # Get the model artifact URI
+            model_data_uri = containers[0].get("ModelDataUrl")
+            # Assuming 'source.tar.gz' is also located in the same container specification
+            script_uri = containers[0]["Environment"].get("SAGEMAKER_SUBMIT_DIRECTORY")
+
+            # Ensure both URLs are found
+            if model_data_uri is None:
+                raise ValueError("ModelDataUrl not found in the model package description")
+            if script_uri is None:
+                raise ValueError("SAGEMAKER_SUBMIT_DIRECTORY not found in the model package description")
+
+            return model_data_uri, script_uri
         else:
-            raise ValueError("ModelDataUrl not found in the model package description")
+            raise ValueError("Containers not found in the model package description")
 
     @staticmethod
     def load_from_json(tmpdir):
@@ -168,18 +184,59 @@ class ExtractModelArtifact:
         # Return the model after exiting the temporary directory context
         return model_return
 
+    @staticmethod
+    def unpack_artifacts(model_uri, source_uri, output_path=None):
+        """
+        Unpack the model and script artifacts from S3 URIs into local directories.
+
+        Args:
+            model_uri (str): S3 URI for the model artifact (model.tar.gz)
+            source_uri (str): S3 URI for the script artifact (script.tar.gz)
+            output_path (str): Local directory to unpack the artifacts into. Defaults to None.
+        """
+        # Extract the model name from the model_uri
+        model_name = model_uri.split('/')[-3]
+
+        if output_path is None:
+            output_path = f"/tmp/sageworks/{model_name}"
+
+        model_dir = os.path.join(output_path, "model")
+        script_dir = os.path.join(output_path, "script")
+
+        os.makedirs(model_dir, exist_ok=True)
+        os.makedirs(script_dir, exist_ok=True)
+
+        # Download and unpack model artifact
+        model_tar_path = os.path.join(output_path, "model.tar.gz")
+        wr.s3.download(model_uri, model_tar_path)
+        with tarfile.open(model_tar_path, "r:gz") as tar:
+            tar.extractall(path=model_dir)
+
+        # Download and unpack script artifact
+        script_tar_path = os.path.join(output_path, "script.tar.gz")
+        wr.s3.download(source_uri, script_tar_path)
+        with tarfile.open(script_tar_path, "r:gz") as tar:
+            tar.extractall(path=script_dir)
+
+        print(f"Model artifacts unpacked into: {model_dir}")
+        print(f"Script artifacts unpacked into: {script_dir}")
+
 
 if __name__ == "__main__":
     """Exercise the ExtractModelArtifact class"""
 
     # Create the Class and test it out
-    my_endpoint = "abalone-regression-end"
+    my_endpoint = "test-abalone-regression-end"
     ema = ExtractModelArtifact(my_endpoint)
 
     # Test the lower level methods
-    model_data_uri = ema.get_model_data_uri()
-    print(f"Model Data URI: {model_data_uri}")
-    my_model = ema.download_and_extract_model(model_data_uri)
+    model_uri, script_uri = ema.get_artifact_uris()
+    print(f"Model Data URI: {model_uri}")
+    print(f"Script URI: {script_uri}")
+    my_model = ema.download_and_extract_model(model_uri)
+
+    # Unpack the artifacts
+    ema.unpack_artifacts(model_uri, script_uri)
 
     # Test the higher level method
     my_model = ema.get_model_artifact()
