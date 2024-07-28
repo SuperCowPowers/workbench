@@ -319,7 +319,8 @@ class SageworksCoreStack(Stack):
             resources=[f"arn:aws:sagemaker:{self.region}:{self.account}:training-job/*"],
         )
 
-    def model_training_log_statement(self) -> iam.PolicyStatement:
+    @staticmethod
+    def model_training_log_statement() -> iam.PolicyStatement:
         """Create a policy statement for log interactions when training SageMaker models.
 
         Returns:
