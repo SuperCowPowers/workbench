@@ -32,7 +32,6 @@ class ModelToEndpoint(Transform):
             endpoint_uuid(str): The UUID of the output Endpoint
             serverless(bool): Deploy the Endpoint in serverless mode (default: True)
         """
-
         # Make sure the endpoint_uuid is a valid name
         Artifact.ensure_valid_name(endpoint_uuid, delimiter="-")
 
@@ -121,37 +120,7 @@ class ModelToEndpoint(Transform):
 
         # Create Endpoint Config
         self.log.info(f"Creating Endpoint Config {endpoint_config_name}...")
-        try:
-            self.sm_client.create_endpoint_config(
-                EndpointConfigName=endpoint_config_name,
-                ProductionVariants=[
-                    {
-                        "ServerlessConfig": {"MemorySizeInMB": mem_size, "MaxConcurrency": max_concurrency},
-                        "ModelName": model_name,
-                        "VariantName": "AllTraffic",
-                    }
-                ],
-            )
-        except ClientError as e:
-            # Already Exists: Check if ValidationException and existing endpoint configuration
-            if (
-                e.response["Error"]["Code"] == "ValidationException"
-                and "already existing endpoint configuration" in e.response["Error"]["Message"]
-            ):
-                self.log.warning("Endpoint configuration already exists: Deleting and retrying...")
-                # Grab the existing endpoint configuration and delete it
-                _del_config_name = self.sm_client.describe_endpoint(EndpointName=self.endpoint_name)["EndpointConfigName"]
-                self.sm_client.delete_endpoint_config(EndpointConfigName=_del_config_name)
-                self.sm_client.create_endpoint_config(
-                    EndpointConfigName=endpoint_config_name,
-                    ProductionVariants=[
-                        {
-                            "ServerlessConfig": {"MemorySizeInMB": mem_size, "MaxConcurrency": max_concurrency},
-                            "ModelName": model_name,
-                            "VariantName": "AllTraffic",
-                        }
-                    ],
-                )
+        self._create_serverless_config(endpoint_config_name, model_name, mem_size, max_concurrency)
 
         # Create Endpoint
         self.log.info(f"Creating Serverless Endpoint {endpoint_name}...")
@@ -163,20 +132,54 @@ class ModelToEndpoint(Transform):
         if not wait:
             self.log.important(f"Endpoint {endpoint_name} is being created...")
         else:
-            self.log.important(f"Waiting for Endpoint {endpoint_name} to be ready...")
+            self._wait_for_endpoint(endpoint_name)
+
+    def _create_serverless_config(self, endpoint_config_name: str, model_name: str, mem_size: int, max_concurrency: int):
+        """Internal Method: Create a Serverless Endpoint Config
+
+        Args:
+            endpoint_config_name(str): The name of the endpoint configuration
+            model_name(str): The name of the model
+            mem_size(int): Memory size in MB (default: 2048)
+            max_concurrency(int): Max concurrency (default: 5)
+        """
+        try:
+            self.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
+            self.log.warning(f"Endpoint configuration {endpoint_config_name} already exists: Deleting and retrying...")
+            self.sm_client.delete_endpoint_config(EndpointConfigName=endpoint_config_name)
+        except ClientError as e:
+            if e.response["Error"]["Code"] != "ValidationException":
+                raise e
+
+        self.sm_client.create_endpoint_config(
+            EndpointConfigName=endpoint_config_name,
+            ProductionVariants=[{
+                "ServerlessConfig": {"MemorySizeInMB": mem_size, "MaxConcurrency": max_concurrency},
+                "ModelName": model_name,
+                "VariantName": "AllTraffic",
+            }],
+        )
+
+    def _wait_for_endpoint(self, endpoint_name):
+        """Internal Method: Wait for Endpoint to be ready
+
+        Args:
+            endpoint_name(str): The name of the endpoint
+        """
+        self.log.important(f"Waiting for Endpoint {endpoint_name} to be ready...")
+        describe_endpoint_response = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
+        while describe_endpoint_response["EndpointStatus"] == "Creating":
+            time.sleep(30)
             describe_endpoint_response = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
-            while describe_endpoint_response["EndpointStatus"] == "Creating":
-                time.sleep(30)
-                describe_endpoint_response = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
-                self.log.info(f"Endpoint Status: {describe_endpoint_response['EndpointStatus']}")
-            status = describe_endpoint_response["EndpointStatus"]
-            if status != "InService":
-                msg = f"Endpoint {endpoint_name} failed to be created. Status: {status}"
-                details = describe_endpoint_response["FailureReason"]
-                self.log.critical(msg)
-                self.log.critical(details)
-                raise Exception(msg)
-            self.log.important(f"Endpoint {endpoint_name} is now {status}...")
+            self.log.info(f"Endpoint Status: {describe_endpoint_response['EndpointStatus']}")
+        status = describe_endpoint_response["EndpointStatus"]
+        if status != "InService":
+            msg = f"Endpoint {endpoint_name} failed to be created. Status: {status}"
+            details = describe_endpoint_response["FailureReason"]
+            self.log.critical(msg)
+            self.log.critical(details)
+            raise Exception(msg)
+        self.log.important(f"Endpoint {endpoint_name} is now {status}...")
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling onboard() for the Endpoint"""
@@ -191,8 +194,8 @@ if __name__ == "__main__":
     """Exercise the ModelToEndpoint Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "abalone-regression"
-    output_uuid = "abalone-regression-end"
+    input_uuid = "abalone-regression-full"
+    output_uuid = "abalone-regression-full-end"
     to_endpoint = ModelToEndpoint(input_uuid, output_uuid)
     to_endpoint.set_output_tags(["abalone", "public"])
     to_endpoint.transform()
