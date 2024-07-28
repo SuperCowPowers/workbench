@@ -4,14 +4,15 @@ To run/deploy the SageWorks AWS Sandbox you'll need install a couple of Python p
 either in a Python VirtualENV of your choice (PyENV is good) or any Python3 will do. You'll also need to use a newer version of node such as node v19.6
 
 ```
-$ pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 At this point you can now synthesize the CloudFormation template and deploy the SageWorks Sandbox AWS Components.
 
 ```
-$ cdk synth
-$ cdk deploy
+cdk synth
+cdk diff
+cdk deploy
 ```
 
 ## Useful commands
