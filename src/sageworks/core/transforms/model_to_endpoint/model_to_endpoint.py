@@ -145,7 +145,7 @@ class ModelToEndpoint(Transform):
         """
         try:
             self.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
-            self.log.warning(f"Endpoint configuration {endpoint_config_name} already exists: Deleting and retrying...")
+            self.log.warning(f"Endpoint configuration {endpoint_config_name} already exists: Deleting...")
             self.sm_client.delete_endpoint_config(EndpointConfigName=endpoint_config_name)
         except ClientError as e:
             if e.response["Error"]["Code"] != "ValidationException":
@@ -194,8 +194,8 @@ if __name__ == "__main__":
     """Exercise the ModelToEndpoint Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "abalone-regression-full"
-    output_uuid = "abalone-regression-full-end"
+    input_uuid = "abalone-regression"
+    output_uuid = "abalone-regression-end"
     to_endpoint = ModelToEndpoint(input_uuid, output_uuid)
     to_endpoint.set_output_tags(["abalone", "public"])
     to_endpoint.transform()
