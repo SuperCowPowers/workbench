@@ -29,7 +29,7 @@ class Endpoints(Connector):
 
     def refresh(self):
         """Refresh all the Endpoint Data from SageMaker"""
-        self.log.info("Refreshing Endpoints from SageMaker...")
+        self.log.debug("Refreshing Endpoints from SageMaker...")
         _endpoints = self.sm_client.list_endpoints(MaxResults=100)["Endpoints"]
         _end_names = [_endpoint["EndpointName"] for _endpoint in _endpoints]
 
@@ -44,7 +44,7 @@ class Endpoints(Connector):
         # Track the size of the metadata
         for key in self.endpoint_data.keys():
             self.metadata_size_info[key] = compute_size(self.endpoint_data[key])
-        self.log.info("Done with Endpoints...")
+        self.log.debug("Done with Endpoints...")
 
     def summary(self) -> dict:
         """Return a summary of all the AWS endpoints"""

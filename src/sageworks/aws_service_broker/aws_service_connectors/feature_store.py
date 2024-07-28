@@ -28,7 +28,7 @@ class FeatureStore(Connector):
 
     def refresh(self):
         """Refresh all the Feature Store Data from SageMaker"""
-        self.log.info("Refreshing Feature Store Data from SageMaker...")
+        self.log.debug("Refreshing Feature Store Data from SageMaker...")
         _feature_groups = self.sm_client.list_feature_groups(MaxResults=100)["FeatureGroupSummaries"]
         _fg_names = [feature_group["FeatureGroupName"] for feature_group in _feature_groups]
 

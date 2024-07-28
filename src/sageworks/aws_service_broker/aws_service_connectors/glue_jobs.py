@@ -31,7 +31,7 @@ class GlueJobs(Connector):
 
     def refresh(self):
         """Refresh the metadata for all the Glue Jobs"""
-        self.log.info("Refreshing Glue Job Metadata from AWS Glue...")
+        self.log.debug("Refreshing Glue Job Metadata from AWS Glue...")
 
         # For each Glue Job get the detailed metadata about that job
         jobs = self.glue_client.get_jobs()

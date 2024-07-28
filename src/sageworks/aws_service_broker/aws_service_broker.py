@@ -172,7 +172,7 @@ class AWSServiceBroker:
 
         # Is the AWS data stale?
         if cls.fresh_cache.get(category) is None:
-            cls.log.info(f"Async: Metadata for {category} is stale, launching refresh thread...")
+            cls.log.debug(f"Async: Metadata for {category} is stale, launching refresh thread...")
             cls.fresh_cache.set(category, True)
 
             # Submit the data refresh task to the thread pool

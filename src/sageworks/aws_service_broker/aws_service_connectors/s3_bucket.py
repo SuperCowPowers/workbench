@@ -32,7 +32,7 @@ class S3Bucket(Connector):
 
     def refresh(self):
         """Refresh all the file/object data from this bucket"""
-        self.log.info(f"Refreshing S3 Bucket: {self.bucket}...")
+        self.log.debug(f"Refreshing S3 Bucket: {self.bucket}...")
         try:
             _aws_file_info = wr.s3.describe_objects(self.bucket, boto3_session=self.boto_session)
         except ClientError as error:

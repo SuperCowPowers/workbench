@@ -40,7 +40,7 @@ class DataCatalog(Connector):
         """Refresh all the tables in all the catalog databases"""
         for database in self.database_scope:
             # Get all table metadata from the Glue catalog Database
-            self.log.info(f"Refreshing Data Catalog Database: {database}...")
+            self.log.debug(f"Refreshing Data Catalog Database: {database}...")
             all_tables = wr.catalog.get_tables(database=database, boto3_session=self.boto_session)
 
             # Convert to a data structure with direct lookup

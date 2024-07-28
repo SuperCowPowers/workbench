@@ -29,7 +29,7 @@ class ModelRegistry(Connector):
 
     def refresh(self):
         """Refresh all the Model Registry Data from SageMaker"""
-        self.log.info("Refreshing Model Registry Data from SageMaker...")
+        self.log.debug("Refreshing Model Registry Data from SageMaker...")
         _model_groups = self.sm_client.list_model_package_groups(MaxResults=100)["ModelPackageGroupSummaryList"]
         _mg_names = [model_group["ModelPackageGroupName"] for model_group in _model_groups]
 
