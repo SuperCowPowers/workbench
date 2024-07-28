@@ -108,7 +108,7 @@ class ModelToEndpoint(Transform):
         # Note: Since model is internal to the endpoint we'll add a timestamp (just like SageMaker does)
         datetime_str = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")[:-3]
         model_name = f"{model_name}-{datetime_str}"
-        self.log.info(f"Creating Low Level Model: {model_name}...")
+        self.log.info(f"Creating Endpoint Model: {model_name} from Model Package: {model_package_arn}")
         self.sm_client.create_model(
             ModelName=model_name,
             PrimaryContainer={
@@ -195,7 +195,7 @@ if __name__ == "__main__":
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = "abalone-regression"
-    output_uuid = "abalone-regression-end"
+    output_uuid = f"{input_uuid}-end"
     to_endpoint = ModelToEndpoint(input_uuid, output_uuid)
     to_endpoint.set_output_tags(["abalone", "public"])
     to_endpoint.transform()

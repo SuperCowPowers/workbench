@@ -6,10 +6,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Hardcoded values
-MODEL_PACKAGE_GROUP_NAME = "abalone-regression-full"
+MODEL_PACKAGE_GROUP_NAME = "abalone-regression"
 MEM_SIZE = 2048
 MAX_CONCURRENCY = 5
-ENDPOINT_NAME = "abalone-regression-full-end"
+ENDPOINT_NAME = "abalone-regression-end"
 ROLE_ARN = "arn:aws:iam::507740646243:role/SageWorks-ExecutionRole"
 
 # Get a boto3 SageMaker session from the SageWorks AWS Account Clamp

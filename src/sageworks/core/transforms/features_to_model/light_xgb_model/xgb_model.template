@@ -130,7 +130,7 @@ if __name__ == "__main__":
             all_df, test_size=validation_split, random_state=42
         )
     print(f"FIT/TRAIN: {df_train.shape}")
-    print(f"VALIDATiON: {df_val.shape}")
+    print(f"VALIDATION: {df_val.shape}")
 
     # Now spin up our XGB Model
     if model_type == "classifier":
@@ -251,6 +251,16 @@ def model_fn(model_dir):
 
     model.load_model(model_path)
     return model
+
+
+def model_fn_fake(model_dir):
+    """Fake model_fn for testing endpoint creation."""
+
+    class DummyModel:
+        def predict(self, data):
+            return [0] * len(data)
+
+    return DummyModel()
 
 
 def input_fn(input_data, content_type):
