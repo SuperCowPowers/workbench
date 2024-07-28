@@ -21,7 +21,7 @@ from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.api.meta import Meta
 
-logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
+logging.getLogger("sageworks").setLevel(logging.INFO)
 
 
 class CustomPromptStyle(Style):
