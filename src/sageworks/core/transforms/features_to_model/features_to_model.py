@@ -176,6 +176,11 @@ class FeaturesToModel(Transform):
         # Now write out the generated model script and return the name
         with open(output_path, "w") as fp:
             fp.write(aws_script)
+
+        # Now we make sure the model script dir only has template, model script, and a requirements file
+        for file in os.listdir(self.model_script_dir):
+            if file not in [script_name, "requirements.txt"] and not file.endswith(".template"):
+                    self.log.warning(f"Finding {file} in model_script_dir...")
         return script_name
 
     def transform_impl(
@@ -371,7 +376,7 @@ class FeaturesToModel(Transform):
 if __name__ == "__main__":
     """Exercise the FeaturesToModel Class"""
 
-    """
+
     # Regression Model
     input_uuid = "abalone_features"
     output_uuid = "abalone-regression"
@@ -379,6 +384,7 @@ if __name__ == "__main__":
     to_model.set_output_tags(["abalone", "public"])
     to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
 
+    """
     # Classification Model
     input_uuid = "wine_features"
     output_uuid = "wine-classification"
@@ -405,7 +411,6 @@ if __name__ == "__main__":
     new_model = to_model.transform(
         target_column="class_number_of_rings", description="Abalone KNN Regression", train_all_data=True
     )
-    """
 
     # Scikit-Learn Random Forest Classification Model (Wine)
     input_uuid = "wine_features"
@@ -415,3 +420,4 @@ if __name__ == "__main__":
     new_model = to_model.transform(
         target_column="wine_class", description="Wine RF Classification", train_all_data=True
     )
+    """
