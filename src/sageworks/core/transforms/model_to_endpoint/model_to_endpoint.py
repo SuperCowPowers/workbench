@@ -99,8 +99,7 @@ class ModelToEndpoint(Transform):
             endpoint_name=self.output_uuid,
             serializer=CSVSerializer(),
             deserializer=CSVDeserializer(),
-            tags=aws_tags,
-            endpoint_logging=True,
+            tags=aws_tags
         )
 
     def post_transform(self, **kwargs):
