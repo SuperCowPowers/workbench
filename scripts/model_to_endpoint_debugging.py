@@ -31,9 +31,7 @@ def get_latest_model_package(model_package_group_name):
     latest_model_package_arn = model_packages["ModelPackageSummaryList"][0]["ModelPackageArn"]
 
     # Describe the model package to get details
-    model_package_details = session.sagemaker_client.describe_model_package(
-        ModelPackageName=latest_model_package_arn
-    )
+    model_package_details = session.sagemaker_client.describe_model_package(ModelPackageName=latest_model_package_arn)
 
     logger.info(f"Model Package Details: {model_package_details}")
     return latest_model_package_arn
@@ -46,8 +44,8 @@ def delete_model_if_exists(model_name):
         logger.info(f"Deleted existing model: {model_name}")
     except ClientError as e:
         if (
-                e.response["Error"]["Code"] == "ValidationException"
-                and "Could not find model" in e.response["Error"]["Message"]
+            e.response["Error"]["Code"] == "ValidationException"
+            and "Could not find model" in e.response["Error"]["Message"]
         ):
             logger.info(f"Model {model_name} does not exist, no need to delete")
         else:
