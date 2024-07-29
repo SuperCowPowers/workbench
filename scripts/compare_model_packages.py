@@ -3,15 +3,15 @@ from pprint import pprint
 
 
 def get_model_package_arn(model_package_name):
-    sagemaker_client = boto3.client('sagemaker')
+    sagemaker_client = boto3.client("sagemaker")
     response = sagemaker_client.list_model_packages(ModelPackageGroupName=model_package_name)
-    if not response['ModelPackageSummaryList']:
+    if not response["ModelPackageSummaryList"]:
         raise ValueError(f"Model package {model_package_name} does not exist.")
-    return response['ModelPackageSummaryList'][0]['ModelPackageArn']
+    return response["ModelPackageSummaryList"][0]["ModelPackageArn"]
 
 
 def get_model_package_details(model_package_arn):
-    sagemaker_client = boto3.client('sagemaker')
+    sagemaker_client = boto3.client("sagemaker")
     response = sagemaker_client.describe_model_package(ModelPackageName=model_package_arn)
     return response
 
@@ -24,28 +24,36 @@ def compare_model_packages(model_package_name_1, model_package_name_2):
     details_2 = get_model_package_details(arn_2)
 
     # Compare container image details
-    container_image_1 = details_1['InferenceSpecification']['Containers'][0]['Image']
-    container_image_2 = details_2['InferenceSpecification']['Containers'][0]['Image']
+    container_image_1 = details_1["InferenceSpecification"]["Containers"][0]["Image"]
+    container_image_2 = details_2["InferenceSpecification"]["Containers"][0]["Image"]
 
     print(f"Container Image Comparison:\nModel A: {container_image_1}\nModel B: {container_image_2}")
 
     # Compare model artifact locations
-    model_artifact_1 = details_1['InferenceSpecification']['Containers'][0]['ModelDataUrl']
-    model_artifact_2 = details_2['InferenceSpecification']['Containers'][0]['ModelDataUrl']
+    model_artifact_1 = details_1["InferenceSpecification"]["Containers"][0]["ModelDataUrl"]
+    model_artifact_2 = details_2["InferenceSpecification"]["Containers"][0]["ModelDataUrl"]
 
     print(f"Model Artifacts Comparison:\nModel A: {model_artifact_1}\nModel B: {model_artifact_2}")
 
     # Compare SAGEMAKER_SUBMIT_DIRECTORY
-    submit_dir_1 = details_1.get('InferenceSpecification', {}).get('Containers', [{}])[0].get('Environment', {}).get(
-        'SAGEMAKER_SUBMIT_DIRECTORY', 'Not Defined')
-    submit_dir_2 = details_2.get('InferenceSpecification', {}).get('Containers', [{}])[0].get('Environment', {}).get(
-        'SAGEMAKER_SUBMIT_DIRECTORY', 'Not Defined')
+    submit_dir_1 = (
+        details_1.get("InferenceSpecification", {})
+        .get("Containers", [{}])[0]
+        .get("Environment", {})
+        .get("SAGEMAKER_SUBMIT_DIRECTORY", "Not Defined")
+    )
+    submit_dir_2 = (
+        details_2.get("InferenceSpecification", {})
+        .get("Containers", [{}])[0]
+        .get("Environment", {})
+        .get("SAGEMAKER_SUBMIT_DIRECTORY", "Not Defined")
+    )
 
     print(f"SAGEMAKER_SUBMIT_DIRECTORY Comparison:\nModel A: {submit_dir_1}\nModel B: {submit_dir_2}")
 
     # Compare endpoint configurations (for serverless)
-    serverless_config_1 = details_1.get('ServerlessConfig', None)
-    serverless_config_2 = details_2.get('ServerlessConfig', None)
+    serverless_config_1 = details_1.get("ServerlessConfig", None)
+    serverless_config_2 = details_2.get("ServerlessConfig", None)
 
     print("Serverless Config Comparison:")
     if serverless_config_1:

@@ -360,11 +360,15 @@ class FeaturesToModel(Transform):
         )
 
         # Register our model
+        image = (
+            "246618743249.dkr.ecr.us-west-2.amazonaws.com/"
+            "sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd"
+        )
         model = self.estimator.create_model(role=self.sageworks_role_arn)
         model.register(
             model_package_group_name=self.output_uuid,
             framework_version="1.2.1",
-            image_uri="246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd",
+            image_uri=image,
             content_types=["text/csv"],
             response_types=["text/csv"],
             inference_instances=["ml.t2.medium"],
@@ -379,7 +383,7 @@ if __name__ == "__main__":
 
     # Regression Model
     input_uuid = "abalone_features"
-    output_uuid = "abalone-regression-full-new"
+    output_uuid = "abalone-regression"
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.REGRESSOR)
     to_model.set_output_tags(["abalone", "public"])
     to_model.transform(target_column="class_number_of_rings", description="Abalone Regression", train_all_data=True)
