@@ -1,10 +1,9 @@
 """ModelToEndpoint: Deploy an Endpoint for a Model"""
-
 import time
-from datetime import datetime
 from sagemaker import ModelPackage
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
+from sagemaker.serverless import ServerlessInferenceConfig
 from botocore.exceptions import ClientError
 
 # Local Imports
@@ -39,6 +38,7 @@ class ModelToEndpoint(Transform):
         super().__init__(model_uuid, endpoint_uuid)
 
         # Set up all my instance attributes
+        self.serverless = serverless
         self.instance_type = "serverless" if serverless else "ml.t2.medium"
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
@@ -55,11 +55,8 @@ class ModelToEndpoint(Transform):
         input_model = ModelCore(self.input_uuid)
         model_package_arn = input_model.model_package_arn()
 
-        # Will this be a Serverless Endpoint?
-        if self.instance_type == "serverless":
-            self._serverless_deploy(model_package_arn)
-        else:
-            self._realtime_deploy(model_package_arn)
+        # Deploy the model
+        self._deploy_model(model_package_arn)
 
         # Add this endpoint to the set of registered endpoints for the model
         input_model.register_endpoint(self.output_uuid)
@@ -69,117 +66,40 @@ class ModelToEndpoint(Transform):
         end = EndpointCore(self.output_uuid, force_refresh=True)
         self.log.important(f"Endpoint {end.uuid} is ready for use")
 
-    def _realtime_deploy(self, model_package_arn: str):
-        """Internal Method: Deploy the Realtime Endpoint
+    def _deploy_model(self, model_package_arn: str):
+        """Internal Method: Deploy the Model
 
         Args:
             model_package_arn(str): The Model Package ARN used to deploy the Endpoint
         """
-        # Create a Model Package
-        model_package = ModelPackage(role=self.sageworks_role_arn, model_package_arn=model_package_arn)
+        # Grab the specified Model Package
+        model_package = ModelPackage(
+            role=self.sageworks_role_arn,
+            model_package_arn=model_package_arn,
+            sagemaker_session=self.sm_session,
+        )
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
 
-        # Deploy a Realtime Endpoint
+        # Is this a serverless deployment?
+        serverless_config = None
+        if self.serverless:
+            serverless_config = ServerlessInferenceConfig(
+                memory_size_in_mb=2048,
+                max_concurrency=5,
+            )
+
+        # Deploy the Endpoint
+        self.log.important(f"Deploying the Endpoint {self.output_uuid}...")
         model_package.deploy(
-            initial_instance_count=1,
-            instance_type=self.instance_type,
+            serverless_inference_config=serverless_config,
             endpoint_name=self.output_uuid,
             serializer=CSVSerializer(),
             deserializer=CSVDeserializer(),
             tags=aws_tags,
+            endpoint_logging=True,
         )
-
-    def _serverless_deploy(self, model_package_arn, mem_size=2048, max_concurrency=5, wait=True):
-        """Internal Method: Deploy a Serverless Endpoint
-
-        Args:
-            mem_size(int): Memory size in MB (default: 2048)
-            max_concurrency(int): Max concurrency (default: 5)
-            wait(bool): Wait for the Endpoint to be ready (default: True)
-        """
-        model_name = self.input_uuid
-        endpoint_name = self.output_uuid
-        endpoint_config_name = f"{endpoint_name}-config"
-        aws_tags = self.get_aws_tags()
-
-        # Create Low Level Model Resource (Endpoint Config below references this Model Resource)
-        # Note: Since model is internal to the endpoint we'll add a timestamp (just like SageMaker does)
-        datetime_str = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")[:-3]
-        model_name = f"{model_name}-{datetime_str}"
-        self.log.info(f"Creating Endpoint Model: {model_name} from Model Package: {model_package_arn}")
-        self.sm_client.create_model(
-            ModelName=model_name,
-            PrimaryContainer={
-                "ModelPackageName": model_package_arn,
-            },
-            ExecutionRoleArn=self.sageworks_role_arn,
-            Tags=aws_tags,
-        )
-
-        # Create Endpoint Config
-        self.log.info(f"Creating Endpoint Config {endpoint_config_name}...")
-        self._create_serverless_config(endpoint_config_name, model_name, mem_size, max_concurrency)
-
-        # Create Endpoint
-        self.log.info(f"Creating Serverless Endpoint {endpoint_name}...")
-        self.sm_client.create_endpoint(
-            EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name, Tags=self.get_aws_tags()
-        )
-
-        # Wait for Endpoint to be ready
-        if not wait:
-            self.log.important(f"Endpoint {endpoint_name} is being created...")
-        else:
-            self._wait_for_endpoint(endpoint_name)
-
-    def _create_serverless_config(self, endpoint_config_name: str, model_name: str, mem_size: int, max_concurrency: int):
-        """Internal Method: Create a Serverless Endpoint Config
-
-        Args:
-            endpoint_config_name(str): The name of the endpoint configuration
-            model_name(str): The name of the model
-            mem_size(int): Memory size in MB (default: 2048)
-            max_concurrency(int): Max concurrency (default: 5)
-        """
-        try:
-            self.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
-            self.log.warning(f"Endpoint configuration {endpoint_config_name} already exists: Deleting...")
-            self.sm_client.delete_endpoint_config(EndpointConfigName=endpoint_config_name)
-        except ClientError as e:
-            if e.response["Error"]["Code"] != "ValidationException":
-                raise e
-
-        self.sm_client.create_endpoint_config(
-            EndpointConfigName=endpoint_config_name,
-            ProductionVariants=[{
-                "ServerlessConfig": {"MemorySizeInMB": mem_size, "MaxConcurrency": max_concurrency},
-                "ModelName": model_name,
-                "VariantName": "AllTraffic",
-            }],
-        )
-
-    def _wait_for_endpoint(self, endpoint_name):
-        """Internal Method: Wait for Endpoint to be ready
-
-        Args:
-            endpoint_name(str): The name of the endpoint
-        """
-        self.log.important(f"Waiting for Endpoint {endpoint_name} to be ready...")
-        describe_endpoint_response = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
-        while describe_endpoint_response["EndpointStatus"] == "Creating":
-            time.sleep(30)
-            describe_endpoint_response = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
-            self.log.info(f"Endpoint Status: {describe_endpoint_response['EndpointStatus']}")
-        status = describe_endpoint_response["EndpointStatus"]
-        if status != "InService":
-            msg = f"Endpoint {endpoint_name} failed to be created. Status: {status}"
-            details = describe_endpoint_response["FailureReason"]
-            self.log.critical(msg)
-            self.log.critical(details)
-            raise Exception(msg)
-        self.log.important(f"Endpoint {endpoint_name} is now {status}...")
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling onboard() for the Endpoint"""
@@ -194,8 +114,9 @@ if __name__ == "__main__":
     """Exercise the ModelToEndpoint Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "abalone-regression"
-    output_uuid = f"{input_uuid}-end"
-    to_endpoint = ModelToEndpoint(input_uuid, output_uuid)
+    input_uuid = "test-abc"
+    # input_uuid = "abalone-regression-full"
+    output_uuid = f"{input_uuid}-end-rt"
+    to_endpoint = ModelToEndpoint(input_uuid, output_uuid, serverless=False)
     to_endpoint.set_output_tags(["abalone", "public"])
     to_endpoint.transform()
