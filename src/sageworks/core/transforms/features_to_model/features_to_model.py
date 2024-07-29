@@ -180,7 +180,7 @@ class FeaturesToModel(Transform):
         # Now we make sure the model script dir only has template, model script, and a requirements file
         for file in os.listdir(self.model_script_dir):
             if file not in [script_name, "requirements.txt"] and not file.endswith(".template"):
-                    self.log.warning(f"Finding {file} in model_script_dir...")
+                self.log.warning(f"Finding {file} in model_script_dir...")
         return script_name
 
     def transform_impl(
@@ -375,7 +375,6 @@ class FeaturesToModel(Transform):
 
 if __name__ == "__main__":
     """Exercise the FeaturesToModel Class"""
-
 
     # Regression Model
     input_uuid = "abalone_features"

@@ -15,6 +15,7 @@ ROLE_ARN = "arn:aws:iam::507740646243:role/SageWorks-ExecutionRole"
 
 # Get a boto3 SageMaker session from the SageWorks AWS Account Clamp
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+
 session = AWSAccountClamp().sagemaker_session()
 
 
@@ -24,7 +25,7 @@ def get_latest_model_package(model_package_group_name):
         ModelPackageGroupName=model_package_group_name,
         ModelApprovalStatus="Approved",
         SortBy="CreationTime",
-        SortOrder="Descending"
+        SortOrder="Descending",
     )
     if not model_packages["ModelPackageSummaryList"]:
         raise ValueError(f"No approved model packages found in group: {model_package_group_name}")
@@ -39,7 +40,10 @@ def delete_model_if_exists(model_name):
         session.sagemaker_client.delete_model(ModelName=model_name)
         logger.info(f"Deleted existing model: {model_name}")
     except ClientError as e:
-        if e.response['Error']['Code'] == 'ValidationException' and 'Could not find model' in e.response['Error']['Message']:
+        if (
+            e.response["Error"]["Code"] == "ValidationException"
+            and "Could not find model" in e.response["Error"]["Message"]
+        ):
             logger.info(f"Model {model_name} does not exist, no need to delete")
         else:
             raise
@@ -61,14 +65,16 @@ def create_serverless_endpoint(model_package_arn, endpoint_name, role_arn, mem_s
             PrimaryContainer={
                 "ModelPackageName": model_package_arn,
             },
-            ExecutionRoleArn=role_arn
+            ExecutionRoleArn=role_arn,
         )
 
         # Define the endpoint configuration name
         endpoint_config_name = f"{endpoint_name}-config"
 
         # Create the endpoint configuration
-        logger.info(f"Creating endpoint configuration with memory size: {mem_size} and max concurrency: {max_concurrency}")
+        logger.info(
+            f"Creating endpoint configuration with memory size: {mem_size} and max concurrency: {max_concurrency}"
+        )
         session.sagemaker_client.create_endpoint_config(
             EndpointConfigName=endpoint_config_name,
             ProductionVariants=[
@@ -77,16 +83,13 @@ def create_serverless_endpoint(model_package_arn, endpoint_name, role_arn, mem_s
                     "ModelName": model_name,
                     "VariantName": "AllTraffic",
                 }
-            ]
+            ],
         )
 
         # Create the endpoint
         logger.info(f"Creating endpoint: {endpoint_name}")
         response = session.create_endpoint(
-            endpoint_name=endpoint_name,
-            config_name=endpoint_config_name,
-            wait=True,
-            live_logging=True
+            endpoint_name=endpoint_name, config_name=endpoint_config_name, wait=True, live_logging=True
         )
 
         logger.info(f"Endpoint creation response: {response}")
@@ -94,8 +97,8 @@ def create_serverless_endpoint(model_package_arn, endpoint_name, role_arn, mem_s
 
     except ClientError as e:
         logger.error(f"ClientError: {e.response['Error']['Code']}, {e.response['Error']['Message']}")
-        if 'LogResult' in e.response:
-            log_result = e.response['LogResult']
+        if "LogResult" in e.response:
+            log_result = e.response["LogResult"]
             logger.error(f"LogResult: {log_result}")
         raise
     except Exception as e:

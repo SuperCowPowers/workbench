@@ -1,10 +1,10 @@
 """ModelToEndpoint: Deploy an Endpoint for a Model"""
+
 import time
 from sagemaker import ModelPackage
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
 from sagemaker.serverless import ServerlessInferenceConfig
-from botocore.exceptions import ClientError
 
 # Local Imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput

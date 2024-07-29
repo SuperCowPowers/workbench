@@ -10,7 +10,6 @@ from xgboost import XGBModel
 import json
 import joblib
 import logging
-import tarfile
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
@@ -195,7 +194,7 @@ class ExtractModelArtifact:
             output_path (str): Local directory to unpack the artifacts into. Defaults to None.
         """
         # Extract the model name from the model_uri
-        model_name = model_uri.split('/')[-3]
+        model_name = model_uri.split("/")[-3]
 
         if output_path is None:
             output_path = f"/tmp/sageworks/{model_name}"
