@@ -93,6 +93,8 @@ class ModelToEndpoint(Transform):
         # Deploy the Endpoint
         self.log.important(f"Deploying the Endpoint {self.output_uuid}...")
         model_package.deploy(
+            initial_instance_count=1,
+            instance_type=self.instance_type,
             serverless_inference_config=serverless_config,
             endpoint_name=self.output_uuid,
             serializer=CSVSerializer(),
@@ -115,8 +117,8 @@ if __name__ == "__main__":
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = "test-abc"
-    # input_uuid = "abalone-regression-full"
-    output_uuid = f"{input_uuid}-end-rt"
-    to_endpoint = ModelToEndpoint(input_uuid, output_uuid, serverless=False)
+    input_uuid = "abalone-regression-full-new"
+    output_uuid = f"{input_uuid}-end"
+    to_endpoint = ModelToEndpoint(input_uuid, output_uuid, serverless=True)
     to_endpoint.set_output_tags(["abalone", "public"])
     to_endpoint.transform()
