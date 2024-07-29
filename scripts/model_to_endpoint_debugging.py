@@ -7,16 +7,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Hardcoded values
-MODEL_PACKAGE_GROUP_NAME = "abalone-regression"
+MODEL_PACKAGE_GROUP_NAME = "abalone-regression-full"
 ENDPOINT_NAME = f"{MODEL_PACKAGE_GROUP_NAME}-end"
-MEM_SIZE = 2048
-MAX_CONCURRENCY = 5
+MEM_SIZE = 4096
+MAX_CONCURRENCY = 10
 ROLE_ARN = "arn:aws:iam::507740646243:role/SageWorks-ExecutionRole"
 
-# Get a boto3 SageMaker session from the SageWorks AWS Account Clamp
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-
-session = AWSAccountClamp().sagemaker_session()
+# Get a standard SageMaker session
+session = sagemaker.Session()
 
 
 # Get the latest approved model package
@@ -31,6 +29,13 @@ def get_latest_model_package(model_package_group_name):
         raise ValueError(f"No approved model packages found in group: {model_package_group_name}")
 
     latest_model_package_arn = model_packages["ModelPackageSummaryList"][0]["ModelPackageArn"]
+
+    # Describe the model package to get details
+    model_package_details = session.sagemaker_client.describe_model_package(
+        ModelPackageName=latest_model_package_arn
+    )
+
+    logger.info(f"Model Package Details: {model_package_details}")
     return latest_model_package_arn
 
 
@@ -41,8 +46,8 @@ def delete_model_if_exists(model_name):
         logger.info(f"Deleted existing model: {model_name}")
     except ClientError as e:
         if (
-            e.response["Error"]["Code"] == "ValidationException"
-            and "Could not find model" in e.response["Error"]["Message"]
+                e.response["Error"]["Code"] == "ValidationException"
+                and "Could not find model" in e.response["Error"]["Message"]
         ):
             logger.info(f"Model {model_name} does not exist, no need to delete")
         else:
@@ -94,6 +99,10 @@ def create_serverless_endpoint(model_package_arn, endpoint_name, role_arn, mem_s
 
         logger.info(f"Endpoint creation response: {response}")
         logger.info(f"Endpoint {endpoint_name} created successfully.")
+
+        # Check the endpoint logs
+        endpoint_logs = session.sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
+        logger.info(f"Endpoint Logs: {endpoint_logs}")
 
     except ClientError as e:
         logger.error(f"ClientError: {e.response['Error']['Code']}, {e.response['Error']['Message']}")
