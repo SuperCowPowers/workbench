@@ -922,6 +922,24 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sageworks.core.artifacts.model_core.ModelCore.container_image" class="md-nav__link">
+    <span class="md-ellipsis">
+      container_image
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.artifacts.model_core.ModelCore.container_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      container_info
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sageworks.core.artifacts.model_core.ModelCore.created" class="md-nav__link">
     <span class="md-ellipsis">
       created
@@ -1069,24 +1087,6 @@
   <a href="#sageworks.core.artifacts.model_core.ModelCore.list_inference_runs" class="md-nav__link">
     <span class="md-ellipsis">
       list_inference_runs
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.core.artifacts.model_core.ModelCore.model_container_info" class="md-nav__link">
-    <span class="md-ellipsis">
-      model_container_info
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.core.artifacts.model_core.ModelCore.model_image" class="md-nav__link">
-    <span class="md-ellipsis">
-      model_image
     </span>
   </a>
   
@@ -2279,6 +2279,24 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sageworks.core.artifacts.model_core.ModelCore.container_image" class="md-nav__link">
+    <span class="md-ellipsis">
+      container_image
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sageworks.core.artifacts.model_core.ModelCore.container_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      container_info
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sageworks.core.artifacts.model_core.ModelCore.created" class="md-nav__link">
     <span class="md-ellipsis">
       created
@@ -2426,24 +2444,6 @@
   <a href="#sageworks.core.artifacts.model_core.ModelCore.list_inference_runs" class="md-nav__link">
     <span class="md-ellipsis">
       list_inference_runs
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.core.artifacts.model_core.ModelCore.model_container_info" class="md-nav__link">
-    <span class="md-ellipsis">
-      model_container_info
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sageworks.core.artifacts.model_core.ModelCore.model_image" class="md-nav__link">
-    <span class="md-ellipsis">
-      model_image
     </span>
   </a>
   
@@ -3566,7 +3566,7 @@
 </span><span id="__span-0-139"><a id="__codelineno-0-139" name="__codelineno-0-139"></a><span class="sd">           sagemaker.model.Model: AWS Sagemaker Model object</span>
 </span><span id="__span-0-140"><a id="__codelineno-0-140" name="__codelineno-0-140"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-141"><a id="__codelineno-0-141" name="__codelineno-0-141"></a>        <span class="k">return</span> <span class="n">SagemakerModel</span><span class="p">(</span>
-</span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a>            <span class="n">model_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_package_arn</span><span class="p">(),</span> <span class="n">sagemaker_session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sm_session</span><span class="p">,</span> <span class="n">image_uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_image</span><span class="p">()</span>
+</span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a>            <span class="n">model_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_package_arn</span><span class="p">(),</span> <span class="n">sagemaker_session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sm_session</span><span class="p">,</span> <span class="n">image_uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">container_image</span><span class="p">()</span>
 </span><span id="__span-0-143"><a id="__codelineno-0-143" name="__codelineno-0-143"></a>        <span class="p">)</span>
 </span><span id="__span-0-144"><a id="__codelineno-0-144" name="__codelineno-0-144"></a>
 </span><span id="__span-0-145"><a id="__codelineno-0-145" name="__codelineno-0-145"></a>    <span class="k">def</span> <span class="nf">list_inference_runs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
@@ -3679,13 +3679,13 @@
 </span><span id="__span-0-252"><a id="__codelineno-0-252" name="__codelineno-0-252"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;AWS ARN (Amazon Resource Name) for the Model Package (within the Group)&quot;&quot;&quot;</span>
 </span><span id="__span-0-253"><a id="__codelineno-0-253" name="__codelineno-0-253"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_model</span><span class="p">[</span><span class="s2">&quot;ModelPackageArn&quot;</span><span class="p">]</span>
 </span><span id="__span-0-254"><a id="__codelineno-0-254" name="__codelineno-0-254"></a>
-</span><span id="__span-0-255"><a id="__codelineno-0-255" name="__codelineno-0-255"></a>    <span class="k">def</span> <span class="nf">model_container_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span id="__span-0-255"><a id="__codelineno-0-255" name="__codelineno-0-255"></a>    <span class="k">def</span> <span class="nf">container_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 </span><span id="__span-0-256"><a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Container Info for the Latest Model Package&quot;&quot;&quot;</span>
 </span><span id="__span-0-257"><a id="__codelineno-0-257" name="__codelineno-0-257"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_model</span><span class="p">[</span><span class="s2">&quot;ModelPackageDetails&quot;</span><span class="p">][</span><span class="s2">&quot;InferenceSpecification&quot;</span><span class="p">][</span><span class="s2">&quot;Containers&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
 </span><span id="__span-0-258"><a id="__codelineno-0-258" name="__codelineno-0-258"></a>
-</span><span id="__span-0-259"><a id="__codelineno-0-259" name="__codelineno-0-259"></a>    <span class="k">def</span> <span class="nf">model_image</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-0-259"><a id="__codelineno-0-259" name="__codelineno-0-259"></a>    <span class="k">def</span> <span class="nf">container_image</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 </span><span id="__span-0-260"><a id="__codelineno-0-260" name="__codelineno-0-260"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Container Image for the Latest Model Package&quot;&quot;&quot;</span>
-</span><span id="__span-0-261"><a id="__codelineno-0-261" name="__codelineno-0-261"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_container_info</span><span class="p">()[</span><span class="s2">&quot;Image&quot;</span><span class="p">]</span>
+</span><span id="__span-0-261"><a id="__codelineno-0-261" name="__codelineno-0-261"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_info</span><span class="p">()[</span><span class="s2">&quot;Image&quot;</span><span class="p">]</span>
 </span><span id="__span-0-262"><a id="__codelineno-0-262" name="__codelineno-0-262"></a>
 </span><span id="__span-0-263"><a id="__codelineno-0-263" name="__codelineno-0-263"></a>    <span class="k">def</span> <span class="nf">aws_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span id="__span-0-264"><a id="__codelineno-0-264" name="__codelineno-0-264"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;The AWS URL for looking at/querying this data source&quot;&quot;&quot;</span>
@@ -3816,12 +3816,12 @@
 </span><span id="__span-0-389"><a id="__codelineno-0-389" name="__codelineno-0-389"></a>        <span class="n">details</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aws_meta</span><span class="p">[</span><span class="s2">&quot;ModelPackageVersion&quot;</span><span class="p">]</span>
 </span><span id="__span-0-390"><a id="__codelineno-0-390" name="__codelineno-0-390"></a>        <span class="n">details</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aws_meta</span><span class="p">[</span><span class="s2">&quot;ModelPackageStatus&quot;</span><span class="p">]</span>
 </span><span id="__span-0-391"><a id="__codelineno-0-391" name="__codelineno-0-391"></a>        <span class="n">details</span><span class="p">[</span><span class="s2">&quot;approval_status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aws_meta</span><span class="p">[</span><span class="s2">&quot;ModelApprovalStatus&quot;</span><span class="p">]</span>
-</span><span id="__span-0-392"><a id="__codelineno-0-392" name="__codelineno-0-392"></a>        <span class="n">details</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_image</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Shorten the image uri</span>
+</span><span id="__span-0-392"><a id="__codelineno-0-392" name="__codelineno-0-392"></a>        <span class="n">details</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_image</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Shorten the image uri</span>
 </span><span id="__span-0-393"><a id="__codelineno-0-393" name="__codelineno-0-393"></a>
 </span><span id="__span-0-394"><a id="__codelineno-0-394" name="__codelineno-0-394"></a>        <span class="c1"># Grab the inference and container info</span>
 </span><span id="__span-0-395"><a id="__codelineno-0-395" name="__codelineno-0-395"></a>        <span class="n">package_details</span> <span class="o">=</span> <span class="n">aws_meta</span><span class="p">[</span><span class="s2">&quot;ModelPackageDetails&quot;</span><span class="p">]</span>
 </span><span id="__span-0-396"><a id="__codelineno-0-396" name="__codelineno-0-396"></a>        <span class="n">inference_spec</span> <span class="o">=</span> <span class="n">package_details</span><span class="p">[</span><span class="s2">&quot;InferenceSpecification&quot;</span><span class="p">]</span>
-</span><span id="__span-0-397"><a id="__codelineno-0-397" name="__codelineno-0-397"></a>        <span class="n">container_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_container_info</span><span class="p">()</span>
+</span><span id="__span-0-397"><a id="__codelineno-0-397" name="__codelineno-0-397"></a>        <span class="n">container_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_info</span><span class="p">()</span>
 </span><span id="__span-0-398"><a id="__codelineno-0-398" name="__codelineno-0-398"></a>        <span class="n">details</span><span class="p">[</span><span class="s2">&quot;framework&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">container_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Framework&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
 </span><span id="__span-0-399"><a id="__codelineno-0-399" name="__codelineno-0-399"></a>        <span class="n">details</span><span class="p">[</span><span class="s2">&quot;framework_version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">container_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FrameworkVersion&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
 </span><span id="__span-0-400"><a id="__codelineno-0-400" name="__codelineno-0-400"></a>        <span class="n">details</span><span class="p">[</span><span class="s2">&quot;inference_types&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inference_spec</span><span class="p">[</span><span class="s2">&quot;SupportedRealtimeInferenceInstanceTypes&quot;</span><span class="p">]</span>
@@ -4188,7 +4188,7 @@
 </span><span id="__span-0-761"><a id="__codelineno-0-761" name="__codelineno-0-761"></a>    <span class="k">def</span> <span class="nf">_extract_training_job_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 </span><span id="__span-0-762"><a id="__codelineno-0-762" name="__codelineno-0-762"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Internal: Extract the training job name from the ModelDataUrl&quot;&quot;&quot;</span>
 </span><span id="__span-0-763"><a id="__codelineno-0-763" name="__codelineno-0-763"></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="__span-0-764"><a id="__codelineno-0-764" name="__codelineno-0-764"></a>            <span class="n">model_data_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_container_info</span><span class="p">()[</span><span class="s2">&quot;ModelDataUrl&quot;</span><span class="p">]</span>
+</span><span id="__span-0-764"><a id="__codelineno-0-764" name="__codelineno-0-764"></a>            <span class="n">model_data_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_info</span><span class="p">()[</span><span class="s2">&quot;ModelDataUrl&quot;</span><span class="p">]</span>
 </span><span id="__span-0-765"><a id="__codelineno-0-765" name="__codelineno-0-765"></a>            <span class="n">parsed_url</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlparse</span><span class="p">(</span><span class="n">model_data_url</span><span class="p">)</span>
 </span><span id="__span-0-766"><a id="__codelineno-0-766" name="__codelineno-0-766"></a>            <span class="n">training_job_name</span> <span class="o">=</span> <span class="n">parsed_url</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </span><span id="__span-0-767"><a id="__codelineno-0-767" name="__codelineno-0-767"></a>            <span class="k">return</span> <span class="n">training_job_name</span>
@@ -4653,6 +4653,58 @@ Args:
 <div class="doc doc-object doc-function">
 
 
+<h3 id="sageworks.core.artifacts.model_core.ModelCore.container_image" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">container_image</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+      <p>Container Image for the Latest Model Package</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/artifacts/model_core.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-259">259</a></span>
+<span class="normal"><a href="#__codelineno-0-260">260</a></span>
+<span class="normal"><a href="#__codelineno-0-261">261</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-259"><a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="k">def</span> <span class="nf">container_image</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-0-260"><a id="__codelineno-0-260" name="__codelineno-0-260"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Container Image for the Latest Model Package&quot;&quot;&quot;</span>
+</span><span id="__span-0-261"><a id="__codelineno-0-261" name="__codelineno-0-261"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_info</span><span class="p">()[</span><span class="s2">&quot;Image&quot;</span><span class="p">]</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sageworks.core.artifacts.model_core.ModelCore.container_info" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">container_info</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+      <p>Container Info for the Latest Model Package</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/sageworks/core/artifacts/model_core.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-255">255</a></span>
+<span class="normal"><a href="#__codelineno-0-256">256</a></span>
+<span class="normal"><a href="#__codelineno-0-257">257</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-255"><a id="__codelineno-0-255" name="__codelineno-0-255"></a><span class="k">def</span> <span class="nf">container_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span id="__span-0-256"><a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Container Info for the Latest Model Package&quot;&quot;&quot;</span>
+</span><span id="__span-0-257"><a id="__codelineno-0-257" name="__codelineno-0-257"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_model</span><span class="p">[</span><span class="s2">&quot;ModelPackageDetails&quot;</span><span class="p">][</span><span class="s2">&quot;InferenceSpecification&quot;</span><span class="p">][</span><span class="s2">&quot;Containers&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="sageworks.core.artifacts.model_core.ModelCore.created" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">created</span><span class="p">()</span></code>
 
@@ -4844,12 +4896,12 @@ Returns:
 </span><span id="__span-0-389"><a id="__codelineno-0-389" name="__codelineno-0-389"></a>    <span class="n">details</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aws_meta</span><span class="p">[</span><span class="s2">&quot;ModelPackageVersion&quot;</span><span class="p">]</span>
 </span><span id="__span-0-390"><a id="__codelineno-0-390" name="__codelineno-0-390"></a>    <span class="n">details</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aws_meta</span><span class="p">[</span><span class="s2">&quot;ModelPackageStatus&quot;</span><span class="p">]</span>
 </span><span id="__span-0-391"><a id="__codelineno-0-391" name="__codelineno-0-391"></a>    <span class="n">details</span><span class="p">[</span><span class="s2">&quot;approval_status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aws_meta</span><span class="p">[</span><span class="s2">&quot;ModelApprovalStatus&quot;</span><span class="p">]</span>
-</span><span id="__span-0-392"><a id="__codelineno-0-392" name="__codelineno-0-392"></a>    <span class="n">details</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_image</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Shorten the image uri</span>
+</span><span id="__span-0-392"><a id="__codelineno-0-392" name="__codelineno-0-392"></a>    <span class="n">details</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_image</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Shorten the image uri</span>
 </span><span id="__span-0-393"><a id="__codelineno-0-393" name="__codelineno-0-393"></a>
 </span><span id="__span-0-394"><a id="__codelineno-0-394" name="__codelineno-0-394"></a>    <span class="c1"># Grab the inference and container info</span>
 </span><span id="__span-0-395"><a id="__codelineno-0-395" name="__codelineno-0-395"></a>    <span class="n">package_details</span> <span class="o">=</span> <span class="n">aws_meta</span><span class="p">[</span><span class="s2">&quot;ModelPackageDetails&quot;</span><span class="p">]</span>
 </span><span id="__span-0-396"><a id="__codelineno-0-396" name="__codelineno-0-396"></a>    <span class="n">inference_spec</span> <span class="o">=</span> <span class="n">package_details</span><span class="p">[</span><span class="s2">&quot;InferenceSpecification&quot;</span><span class="p">]</span>
-</span><span id="__span-0-397"><a id="__codelineno-0-397" name="__codelineno-0-397"></a>    <span class="n">container_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_container_info</span><span class="p">()</span>
+</span><span id="__span-0-397"><a id="__codelineno-0-397" name="__codelineno-0-397"></a>    <span class="n">container_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_info</span><span class="p">()</span>
 </span><span id="__span-0-398"><a id="__codelineno-0-398" name="__codelineno-0-398"></a>    <span class="n">details</span><span class="p">[</span><span class="s2">&quot;framework&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">container_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Framework&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
 </span><span id="__span-0-399"><a id="__codelineno-0-399" name="__codelineno-0-399"></a>    <span class="n">details</span><span class="p">[</span><span class="s2">&quot;framework_version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">container_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FrameworkVersion&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
 </span><span id="__span-0-400"><a id="__codelineno-0-400" name="__codelineno-0-400"></a>    <span class="n">details</span><span class="p">[</span><span class="s2">&quot;inference_types&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inference_spec</span><span class="p">[</span><span class="s2">&quot;SupportedRealtimeInferenceInstanceTypes&quot;</span><span class="p">]</span>
@@ -5671,7 +5723,7 @@ Returns:
 </span><span id="__span-0-139"><a id="__codelineno-0-139" name="__codelineno-0-139"></a><span class="sd">       sagemaker.model.Model: AWS Sagemaker Model object</span>
 </span><span id="__span-0-140"><a id="__codelineno-0-140" name="__codelineno-0-140"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-141"><a id="__codelineno-0-141" name="__codelineno-0-141"></a>    <span class="k">return</span> <span class="n">SagemakerModel</span><span class="p">(</span>
-</span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a>        <span class="n">model_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_package_arn</span><span class="p">(),</span> <span class="n">sagemaker_session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sm_session</span><span class="p">,</span> <span class="n">image_uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_image</span><span class="p">()</span>
+</span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a>        <span class="n">model_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_package_arn</span><span class="p">(),</span> <span class="n">sagemaker_session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sm_session</span><span class="p">,</span> <span class="n">image_uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">container_image</span><span class="p">()</span>
 </span><span id="__span-0-143"><a id="__codelineno-0-143" name="__codelineno-0-143"></a>    <span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
@@ -5744,58 +5796,6 @@ Returns:
 </span><span id="__span-0-156"><a id="__codelineno-0-156" name="__codelineno-0-156"></a>    <span class="c1"># We&#39;re going to add the training to the front of the list</span>
 </span><span id="__span-0-157"><a id="__codelineno-0-157" name="__codelineno-0-157"></a>    <span class="n">inference_runs</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;model_training&quot;</span><span class="p">)</span>
 </span><span id="__span-0-158"><a id="__codelineno-0-158" name="__codelineno-0-158"></a>    <span class="k">return</span> <span class="n">inference_runs</span>
-</span></code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="sageworks.core.artifacts.model_core.ModelCore.model_container_info" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">model_container_info</span><span class="p">()</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-      <p>Container Info for the Latest Model Package</p>
-
-            <details class="quote">
-              <summary>Source code in <code>src/sageworks/core/artifacts/model_core.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-255">255</a></span>
-<span class="normal"><a href="#__codelineno-0-256">256</a></span>
-<span class="normal"><a href="#__codelineno-0-257">257</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-255"><a id="__codelineno-0-255" name="__codelineno-0-255"></a><span class="k">def</span> <span class="nf">model_container_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="__span-0-256"><a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Container Info for the Latest Model Package&quot;&quot;&quot;</span>
-</span><span id="__span-0-257"><a id="__codelineno-0-257" name="__codelineno-0-257"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_model</span><span class="p">[</span><span class="s2">&quot;ModelPackageDetails&quot;</span><span class="p">][</span><span class="s2">&quot;InferenceSpecification&quot;</span><span class="p">][</span><span class="s2">&quot;Containers&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-</span></code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="sageworks.core.artifacts.model_core.ModelCore.model_image" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">model_image</span><span class="p">()</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-      <p>Container Image for the Latest Model Package</p>
-
-            <details class="quote">
-              <summary>Source code in <code>src/sageworks/core/artifacts/model_core.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-259">259</a></span>
-<span class="normal"><a href="#__codelineno-0-260">260</a></span>
-<span class="normal"><a href="#__codelineno-0-261">261</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-259"><a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="k">def</span> <span class="nf">model_image</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="__span-0-260"><a id="__codelineno-0-260" name="__codelineno-0-260"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Container Image for the Latest Model Package&quot;&quot;&quot;</span>
-</span><span id="__span-0-261"><a id="__codelineno-0-261" name="__codelineno-0-261"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_container_info</span><span class="p">()[</span><span class="s2">&quot;Image&quot;</span><span class="p">]</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
