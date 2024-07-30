@@ -51,6 +51,7 @@ Here's a simple example of using SageWorks in your Lambda Function.
 
 ```py title="examples/lambda_hello_world.py"
 import json
+from pprint import pprint
 from sageworks.utils.lambda_utils import load_lambda_layer
     
 # Load/Decompress the SageWorks Lambda Layer
@@ -67,15 +68,10 @@ def lambda_handler(event, context):
     
     print(f"Number of Models: {len(models)}")
     print(models)
-    
-    # Get more details data on the Endpoints
-    models_groups = meta.models_deep()
-    for name, model_versions in models_groups.items():
-        print(name)
         
     # Onboard a model
     model = Model("abalone-regression")
-    model.onboard()
+    pprint(model.details())
         
     # Return success
     return {
