@@ -10,7 +10,7 @@ from datetime import datetime
 # Local Imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model_core import ModelCore, ModelType
+from sageworks.core.artifacts.model_core import ModelCore, ModelType, InferenceImage
 from sageworks.core.artifacts.artifact import Artifact
 
 
@@ -360,10 +360,8 @@ class FeaturesToModel(Transform):
         )
 
         # Register our model
-        image = (
-            "246618743249.dkr.ecr.us-west-2.amazonaws.com/"
-            "sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd"
-        )
+        image = InferenceImage.get_image_uri(self.sm_session.boto_region_name, "sklearn", "1.2.1")
+        self.log.important(f"Registering model {self.output_uuid} with image {image}...")
         model = self.estimator.create_model(role=self.sageworks_role_arn)
         model.register(
             model_package_group_name=self.output_uuid,
