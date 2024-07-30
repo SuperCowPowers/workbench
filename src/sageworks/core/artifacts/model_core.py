@@ -32,6 +32,39 @@ class ModelType(Enum):
     UNKNOWN = "unknown"
 
 
+class InferenceImage:
+    """Class for retrieving locked Scikit-Learn inference images"""
+
+    image_uris = {
+        ("us-east-1", "sklearn", "1.2.1"): (
+            "683313688378.dkr.ecr.us-east-1.amazonaws.com/"
+            "sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd"
+        ),
+        ("us-east-2", "sklearn", "1.2.1"): (
+            "257758044811.dkr.ecr.us-east-2.amazonaws.com/"
+            "sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd"
+        ),
+        ("us-west-1", "sklearn", "1.2.1"): (
+            "746614075791.dkr.ecr.us-west-1.amazonaws.com/"
+            "sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd"
+        ),
+        ("us-west-2", "sklearn", "1.2.1"): (
+            "246618743249.dkr.ecr.us-west-2.amazonaws.com/"
+            "sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd"
+        ),
+    }
+
+    @classmethod
+    def get_image_uri(cls, region, framework, version):
+        key = (region, framework, version)
+        if key in cls.image_uris:
+            return cls.image_uris[key]
+        else:
+            raise ValueError(
+                f"No matching image found for region: {region}, framework: {framework}, version: {version}"
+            )
+
+
 class ModelCore(Artifact):
     """ModelCore: SageWorks ModelCore Class
 
