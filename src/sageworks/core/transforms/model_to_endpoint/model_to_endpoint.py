@@ -115,8 +115,7 @@ if __name__ == "__main__":
     """Exercise the ModelToEndpoint Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "test-abc"
-    input_uuid = "abalone-regression-full-new"
+    input_uuid = "abalone-regression"
     output_uuid = f"{input_uuid}-end"
     to_endpoint = ModelToEndpoint(input_uuid, output_uuid, serverless=True)
     to_endpoint.set_output_tags(["abalone", "public"])
