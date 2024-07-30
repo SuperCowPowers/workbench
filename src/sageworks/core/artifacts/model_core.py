@@ -139,7 +139,7 @@ class ModelCore(Artifact):
            sagemaker.model.Model: AWS Sagemaker Model object
         """
         return SagemakerModel(
-            model_data=self.model_package_arn(), sagemaker_session=self.sm_session, image_uri=self.model_image()
+            model_data=self.model_package_arn(), sagemaker_session=self.sm_session, image_uri=self.container_image()
         )
 
     def list_inference_runs(self) -> list[str]:
@@ -252,13 +252,13 @@ class ModelCore(Artifact):
         """AWS ARN (Amazon Resource Name) for the Model Package (within the Group)"""
         return self.latest_model["ModelPackageArn"]
 
-    def model_container_info(self) -> dict:
+    def container_info(self) -> dict:
         """Container Info for the Latest Model Package"""
         return self.latest_model["ModelPackageDetails"]["InferenceSpecification"]["Containers"][0]
 
-    def model_image(self) -> str:
+    def container_image(self) -> str:
         """Container Image for the Latest Model Package"""
-        return self.model_container_info()["Image"]
+        return self.container_info()["Image"]
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
@@ -389,12 +389,12 @@ class ModelCore(Artifact):
         details["version"] = aws_meta["ModelPackageVersion"]
         details["status"] = aws_meta["ModelPackageStatus"]
         details["approval_status"] = aws_meta["ModelApprovalStatus"]
-        details["image"] = self.model_image().split("/")[-1]  # Shorten the image uri
+        details["image"] = self.container_image().split("/")[-1]  # Shorten the image uri
 
         # Grab the inference and container info
         package_details = aws_meta["ModelPackageDetails"]
         inference_spec = package_details["InferenceSpecification"]
-        container_info = self.model_container_info()
+        container_info = self.container_info()
         details["framework"] = container_info.get("Framework", "unknown")
         details["framework_version"] = container_info.get("FrameworkVersion", "unknown")
         details["inference_types"] = inference_spec["SupportedRealtimeInferenceInstanceTypes"]
@@ -761,7 +761,7 @@ class ModelCore(Artifact):
     def _extract_training_job_name(self) -> Union[str, None]:
         """Internal: Extract the training job name from the ModelDataUrl"""
         try:
-            model_data_url = self.model_container_info()["ModelDataUrl"]
+            model_data_url = self.container_info()["ModelDataUrl"]
             parsed_url = urllib.parse.urlparse(model_data_url)
             training_job_name = parsed_url.path.lstrip("/").split("/")[0]
             return training_job_name
@@ -837,6 +837,7 @@ class ModelCore(Artifact):
 
 if __name__ == "__main__":
     """Exercise the ModelCore Class"""
+    from pprint import pprint
 
     # Grab a ModelCore object and pull some information from it
     my_model = ModelCore("abalone-regression")
@@ -853,11 +854,16 @@ if __name__ == "__main__":
     print(f"Model Group ARN: {my_model.group_arn()}")
     print(f"Model Package ARN: {my_model.arn()}")
 
+    # Get the container info
+    print("Container Info:")
+    pprint(my_model.container_info())
+
     # Get the tags associated with this Model
     print(f"Tags: {my_model.get_tags()}")
 
     # Get the SageWorks metadata associated with this Model
-    print(f"SageWorks Meta: {my_model.sageworks_meta()}")
+    print("SageWorks Meta:")
+    pprint(my_model.sageworks_meta())
 
     # Get creation time
     print(f"Created: {my_model.created()}")
