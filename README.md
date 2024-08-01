@@ -1,4 +1,7 @@
 
+# Recent News
+SageWorks is partnering with AWS® to accelerate your Machine Learning Pipelines development with our new [Dashboard for ML Pipelines](https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo). Getting started with SageWorks is a snap and can be billed through AWS.
+
 # Welcome to SageWorks
 The SageWorks framework makes AWS® both easier to use and more powerful. SageWorks handles all the details around updating and managing a complex set of AWS Services. With a simple-to-use Python API and a beautiful set of web interfaces, SageWorks makes creating AWS ML pipelines a snap. It also dramatically improves both the usability and visibility across the entire spectrum of services: Glue Job, Athena, Feature Store, Models, and Endpoints, SageWorks makes it easy to build production ready, AWS powered, machine learning pipelines.
 
