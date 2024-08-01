@@ -14,10 +14,10 @@ from sageworks.core.transforms.data_to_features.light.molecular_descriptors impo
 from sageworks.api.pipeline import Pipeline
 
 from sageworks.utils.config_manager import ConfigManager
-from sageworks.utils.glue_utils import glue_args_to_dict
+from sageworks.utils.glue_utils import get_resolved_options
 
 # Convert Glue Job Args to a Dictionary
-glue_args = glue_args_to_dict(sys.argv)
+glue_args = get_resolved_options(sys.argv)
 
 # Set the SageWorks Config (needs to be done early)
 cm = ConfigManager()

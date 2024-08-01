@@ -5,7 +5,7 @@ import logging
 import sageworks
 from sageworks.api.data_source import DataSource
 from sageworks.utils.config_manager import ConfigManager
-from sageworks.utils.glue_utils import glue_args_to_dict
+from sageworks.utils.glue_utils import get_resolved_options
 from sageworks.utils.sageworks_logging import logging_setup
 
 # Setup logging (note: regular prints don't show up in Glue Logs)
@@ -14,7 +14,7 @@ log = logging.getLogger("sageworks")
 log.info(f"SageWorks: {sageworks.__version__}")
 
 # Convert Glue Job Args to a Dictionary
-glue_args = glue_args_to_dict(sys.argv)
+glue_args = get_resolved_options(sys.argv)
 
 # Set the SAGEWORKS_BUCKET for the ConfigManager
 cm = ConfigManager()

@@ -27,7 +27,7 @@ Here are the settings and a screen shot to guide you. There are several ways to 
 ## SageWorks Glue Example
 Anyone familiar with a typical Glue Job should be pleasantly surpised by how simple the example below is. Also SageWorks allows you to test Glue Jobs locally using the same code that you use for script and Notebooks (see [Glue Testing](#glue-job-local-testing))
 !!!tip "Glue Job Arguments"
-    AWS Glue Jobs take arguments in the form of **Job Parameters** (see screenshot above). There's a SageWorks utility function `glue_args_to_dict` that turns these Job Parameters into a nice dictionary for ease of use.
+    AWS Glue Jobs take arguments in the form of **Job Parameters** (see screenshot above). There's a SageWorks utility function `get_resolved_options` that turns these Job Parameters into a nice dictionary for ease of use.
 
 ```py title="examples/glue_hello_world.py"
 import sys
@@ -35,10 +35,10 @@ import sys
 # SageWorks Imports
 from sageworks.api.data_source import DataSource
 from sageworks.utils.config_manager import ConfigManager
-from sageworks.utils.glue_utils import glue_args_to_dict
+from sageworks.utils.glue_utils import get_resolved_options
 
 # Convert Glue Job Args to a Dictionary
-glue_args = glue_args_to_dict(sys.argv)
+glue_args = get_resolved_options(sys.argv)
 
 # Set the SAGEWORKS_BUCKET for the ConfigManager
 cm = ConfigManager()
@@ -63,10 +63,10 @@ import sys
 # SageWorks Imports
 from sageworks.api.data_source import DataSource
 from sageworks.utils.config_manager import ConfigManager
-from sageworks.utils.glue_utils import glue_args_to_dict, list_s3_files
+from sageworks.utils.glue_utils import get_resolved_options, list_s3_files
 
 # Convert Glue Job Args to a Dictionary
-glue_args = glue_args_to_dict(sys.argv)
+glue_args = get_resolved_options(sys.argv)
 
 # Set the SAGEWORKS_BUCKET for the ConfigManager
 cm = ConfigManager()

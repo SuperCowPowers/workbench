@@ -7,10 +7,10 @@ from sageworks.api.feature_set import FeatureSet
 from sageworks.api.model import Model, ModelType
 from sageworks.api.endpoint import Endpoint
 from sageworks.utils.config_manager import ConfigManager
-from sageworks.utils.glue_utils import glue_args_to_dict
+from sageworks.utils.glue_utils import get_resolved_options
 
 # Convert Glue Job Args to a Dictionary
-glue_args = glue_args_to_dict(sys.argv)
+glue_args = get_resolved_options(sys.argv)
 
 # Set the SAGEWORKS_BUCKET for the ConfigManager
 cm = ConfigManager()
