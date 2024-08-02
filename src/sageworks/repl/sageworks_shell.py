@@ -200,7 +200,7 @@ class SageWorksShell:
         spinner = self.spinner_start("Chatting with AWS:")
         try:
             self.artifacts_text_view = importlib.import_module(
-                "sageworks.views.artifacts_text_view"
+                "sageworks.web_views.artifacts_text_view"
             ).ArtifactsTextView()
         finally:
             spinner.stop()

@@ -3,7 +3,7 @@
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.views.view import View
+from sageworks.web_views.view import View
 from sageworks.api import Meta
 
 

@@ -12,7 +12,7 @@ from . import callbacks
 from sageworks.web_components import table, endpoint_metric_plots
 from sageworks.web_components.plugins import endpoint_details
 from sageworks.web_components.plugin_interface import PluginPage
-from sageworks.views.endpoint_web_view import EndpointWebView
+from sageworks.web_views.endpoint_web_view import EndpointWebView
 from sageworks.utils.plugin_manager import PluginManager
 
 # Register this page with Dash

@@ -3,7 +3,7 @@
 import logging
 
 # SageWorks Imports
-from sageworks.views.artifacts_text_view import ArtifactsTextView
+from sageworks.web_views.artifacts_text_view import ArtifactsTextView
 from sageworks.core.artifacts.endpoint_core import EndpointCore
 
 # Setup logging

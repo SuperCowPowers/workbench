@@ -6,7 +6,7 @@ from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
 from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
-from sageworks.views.data_source_web_view import DataSourceWebView
+from sageworks.web_views.data_source_web_view import DataSourceWebView
 
 # Local Imports
 from .layout import data_sources_layout

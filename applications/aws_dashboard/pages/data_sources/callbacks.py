@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.views.data_source_web_view import DataSourceWebView
+from sageworks.web_views.data_source_web_view import DataSourceWebView
 from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
 

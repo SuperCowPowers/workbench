@@ -4,7 +4,7 @@ import pandas as pd
 from typing import Dict
 
 # SageWorks Imports
-from sageworks.views.view import View
+from sageworks.web_views.view import View
 from sageworks.api.meta import Meta
 
 

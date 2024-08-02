@@ -4,7 +4,7 @@ from dash import register_page
 import dash
 
 # SageWorks Imports
-from sageworks.views.artifacts_web_view import ArtifactsWebView
+from sageworks.web_views.artifacts_web_view import ArtifactsWebView
 from sageworks.web_components import table
 
 # Local Imports

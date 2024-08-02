@@ -11,7 +11,7 @@ from typing import Union, Dict, List, Any
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.s3_utils import copy_s3_files_to_local
-from sageworks.views.view import View
+from sageworks.web_views.view import View
 from sageworks.web_components.plugin_interface import PluginInterface
 from sageworks.web_components.plugin_interface import PluginPage
 

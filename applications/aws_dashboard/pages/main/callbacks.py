@@ -7,7 +7,7 @@ from dash.dependencies import Input, Output, State
 
 
 # SageWorks Imports
-from sageworks.views.artifacts_web_view import ArtifactsWebView
+from sageworks.web_views.artifacts_web_view import ArtifactsWebView
 from sageworks.web_components import table
 from sageworks.utils.pandas_utils import serialize_aws_broker_data, deserialize_aws_broker_data
 
