@@ -3,11 +3,11 @@
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.web_views.view import View
+from sageworks.web_views.web_view import WebView
 from sageworks.api import Meta
 
 
-class ModelPluginView(View):
+class ModelPluginView(WebView):
     def __init__(self):
         """ModelPluginView pulls Model metadata and populates a Details Panel"""
         # Call SuperClass Initialization

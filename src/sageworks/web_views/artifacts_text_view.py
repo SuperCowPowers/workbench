@@ -4,11 +4,11 @@ import pandas as pd
 from typing import Dict
 
 # SageWorks Imports
-from sageworks.web_views.view import View
+from sageworks.web_views.web_view import WebView
 from sageworks.api.meta import Meta
 
 
-class ArtifactsTextView(View):
+class ArtifactsTextView(WebView):
 
     def __init__(self):
         """ArtifactsTextView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""

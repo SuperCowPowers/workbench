@@ -11,7 +11,7 @@ from typing import Union, Dict, List, Any
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.s3_utils import copy_s3_files_to_local
-from sageworks.web_views.view import View
+from sageworks.web_views.web_view import WebView
 from sageworks.web_components.plugin_interface import PluginInterface
 from sageworks.web_components.plugin_interface import PluginPage
 
@@ -96,8 +96,8 @@ class PluginManager:
                             self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
                             self.plugins[plugin_type][attr_name] = attr
 
-                        # For views, check if the class is a subclass of View
-                        elif plugin_type == "views" and issubclass(attr, View):
+                        # For views, check if the class is a subclass of WebView
+                        elif plugin_type == "views" and issubclass(attr, WebView):
                             self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
                             self.plugins[plugin_type][attr_name] = attr
 
@@ -184,7 +184,7 @@ class PluginManager:
         web_plugin = self.plugins["web_components"].get(plugin_name)
         return web_plugin() if web_plugin else None
 
-    def get_view(self, view_name: str) -> Union[View, None]:
+    def get_view(self, view_name: str) -> Union[WebView, None]:
         """
         Retrieve a view plugin with the given name.
 
@@ -192,7 +192,7 @@ class PluginManager:
             view_name (str): The name of the view to retrieve (None if not found).
 
         Returns:
-            View: An INSTANTIATED view class with the given name.
+            WebView: An INSTANTIATED view class with the given name.
         """
         view = self.plugins["views"].get(view_name)
         return view() if view else None
