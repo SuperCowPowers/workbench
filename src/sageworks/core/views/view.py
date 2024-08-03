@@ -9,7 +9,8 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
-from sageworks.core.views.training_view import create_training_view
+from sageworks.core.artifacts.feature_set_core import FeatureSetCore
+from sageworks.core.views import training_view
 
 
 # Enumerated View Types
@@ -34,7 +35,7 @@ class View:
         self.log = logging.getLogger("sageworks")
 
         # Is this a DataSource or a FeatureSet?
-        self.is_feature_set = isinstance(artifact, FeatureSet)
+        self.is_feature_set = isinstance(artifact, FeatureSetCore)
 
         # Get the data_source from the artifact
         self.data_source = artifact.data_source if self.is_feature_set else artifact
@@ -42,11 +43,12 @@ class View:
         self.database = self.data_source.get_database()
         self.base_table = self.data_source.get_table_name()
 
-    def pull_dataframe(self, view_type: ViewType = ViewType.RAW) -> Union[pd.DataFrame, None]:
+    def pull_dataframe(self, view_type: ViewType = ViewType.RAW, limit=50000) -> Union[pd.DataFrame, None]:
         """Pull a DataFrame based on the view type
 
         Args:
             view_type (ViewType): The type of view to create (default: ViewType.RAW)
+            limit (int): The maximum number of rows to pull (default: 50000)
 
         Returns:
             Union[pd.DataFrame, None]: The DataFrame for the view or None if it doesn't exist
@@ -97,7 +99,7 @@ class View:
         Args:
             view_type (ViewType): The type of view to create
         """
-        create_training_view(self.data_source, id_column, holdout_ids)
+        training_view.create_training_view(self.data_source, id_column, holdout_ids)
 
     def delete(self, view_type: ViewType):
         """Delete the database view if it exists.
