@@ -228,8 +228,10 @@ class FeatureSetCore(Artifact):
         date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
         s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
 
-        # Get the training data query
-        query = self.get_training_data_query()
+        # Get the training view table name
+        from sageworks.core.views.view import View, ViewType
+        table_name = View(self).view_table_name(ViewType.TRAINING)
+        query = f"SELECT * FROM {table_name}"
 
         # Make the query
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
@@ -241,26 +243,7 @@ class FeatureSetCore(Artifact):
         full_s3_path = s3_output_path + f"/{query_execution['QueryExecution']['QueryExecutionId']}.csv"
         return full_s3_path
 
-    def get_training_data_query(self) -> str:
-        """Get the training data query for this FeatureSet
-
-        Returns:
-            str: The training data query for this FeatureSet
-        """
-
-        # Do we have a training view?
-        training_view = self.get_training_view_table()
-        if training_view:
-            self.log.important(f"Pulling Data from Training View {training_view}...")
-            table_name = training_view
-        else:
-            self.log.warning(f"No Training View found for {self.uuid}, using FeatureSet directly...")
-            table_name = self.athena_table
-
-        # Make a query that gets all the data from the FeatureSet
-        return f"SELECT * FROM {table_name}"
-
-    def get_training_data(self, limit=50000) -> pd.DataFrame:
+    def get_training_data(self) -> pd.DataFrame:
         """Get the training data for this FeatureSet
 
         Args:
@@ -268,12 +251,8 @@ class FeatureSetCore(Artifact):
         Returns:
             pd.DataFrame: The training data for this FeatureSet
         """
-
-        # Get the training data query (put a limit on it for now)
-        query = self.get_training_data_query() + f" LIMIT {limit}"
-
-        # Make the query
-        return self.query(query)
+        from sageworks.core.views.view import View, ViewType
+        return View(self).pull_dataframe(ViewType.TRAINING)
 
     def snapshot_query(self, table_name: str = None) -> str:
         """An Athena query to get the latest snapshot of features
@@ -392,88 +371,21 @@ class FeatureSetCore(Artifact):
             time.sleep(1)
         self.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
-    def create_default_training_view(self):
-        """Create a default view in Athena that assigns roughly 80% of the data to training"""
-
-        # Create the view name
-        view_name = f"{self.athena_table}_training"
-        self.log.important(f"Creating default Training View {view_name}...")
-
-        # Do we already have a training column?
-        if "training" in self.column_names():
-            create_view_query = f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM {self.athena_table}"
-        else:
-            # No training column, so create one:
-            #    Construct the CREATE VIEW query with a simple modulo operation for the 80/20 split
-            #    using self.record_id as the stable identifier for row numbering
-            create_view_query = f"""
-            CREATE OR REPLACE VIEW {view_name} AS
-            SELECT *, CASE
-                WHEN MOD(ROW_NUMBER() OVER (ORDER BY {self.record_id}), 10) < 8 THEN 1  -- Assign 80% to training
-                ELSE 0  -- Assign roughly 20% to validation
-            END AS training
-            FROM {self.athena_table}
-            """
-
-        # Execute the CREATE VIEW query
-        self.data_source.execute_statement(create_view_query)
-
-    def create_training_view(self, id_column: str, holdout_ids: list[str]):
+    def create_training_view(self, id_column: str = None, holdout_ids: Union[list[str], None] = None):
         """Create a view in Athena that marks hold out ids for this FeatureSet
 
         Args:
             id_column (str): The name of the id column in the output DataFrame.
-            holdout_ids (list[str]): The list of hold out ids.
+            holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None.
         """
-
-        # Create the view name
-        view_name = f"{self.athena_table}_training"
-        self.log.important(f"Creating Training View {view_name}...")
-
-        # Format the list of hold out ids for SQL IN clause
-        if holdout_ids and all(isinstance(id, str) for id in holdout_ids):
-            formatted_holdout_ids = ", ".join(f"'{id}'" for id in holdout_ids)
-        else:
-            formatted_holdout_ids = ", ".join(map(str, holdout_ids))
-
-        # Construct the CREATE VIEW query
-        create_view_query = f"""
-        CREATE OR REPLACE VIEW {view_name} AS
-        SELECT *, CASE
-            WHEN {id_column} IN ({formatted_holdout_ids}) THEN 0
-            ELSE 1
-        END AS training
-        FROM {self.athena_table}
-        """
-
-        # Execute the CREATE VIEW query
-        self.data_source.execute_statement(create_view_query)
-
-    def set_holdout_ids(self, id_column: str, holdout_ids: list[str]):
-        """Set the hold out ids for this FeatureSet
-
-        Args:
-            id_column (str): The name of the id column in the output DataFrame.
-            holdout_ids (list[str]): The list of hold out ids.
-        """
-        self.create_training_view(id_column, holdout_ids)
-
-    def get_holdout_ids(self, id_column: str) -> list[str]:
-        """Get the hold out ids for this FeatureSet
-
-        Args:
-            id_column (str): The name of the id column in the output DataFrame.
-
-        Returns:
-            list[str]: The list of hold out ids.
-        """
-        training_view_table = self.get_training_view_table(create=False)
-        if training_view_table is not None:
-            query = f"SELECT {id_column} FROM {training_view_table} WHERE training = 0"
-            holdout_ids = self.query(query)[id_column].tolist()
-            return holdout_ids
-        else:
-            return []
+        from sageworks.core.views.view import View
+        
+        # Check the id_column
+        if id_column is None:
+            id_column = self.record_id
+            
+        # Create the training view
+        View(self).create_training_view(id_column, holdout_ids)
 
     def get_training_view_table(self, create: bool = True) -> Union[str, None]:
         """Get the name of the training view for this FeatureSet
@@ -482,34 +394,25 @@ class FeatureSetCore(Artifact):
         Returns:
             str: The name of the training view for this FeatureSet
         """
-        training_view_name = f"{self.athena_table}_training"
-        glue_client = self.boto_session.client("glue")
-        try:
-            glue_client.get_table(DatabaseName=self.athena_database, Name=training_view_name)
-            return training_view_name
-        except glue_client.exceptions.EntityNotFoundException:
-            if not create:
-                return None
-            self.log.warning(f"Training View for {self.uuid} doesn't exist, creating one...")
-            self.create_default_training_view()
+        from sageworks.core.views.view import View, ViewType
+
+        # Check if the training view exists
+        if View(self).exists(ViewType.TRAINING):
+            return View(self).view_table_name(ViewType.TRAINING)
+
+        # Create the training view if it doesn't exist
+        if create:
+            View(self).create_training_view()
             time.sleep(1)  # Give AWS a second to catch up
-            return training_view_name
+            return View(self).view_table_name(ViewType.TRAINING)
+        else:
+            self.log.error(f"Training View for {self.uuid} doesn't exist!")
+            return None
 
     def delete_training_view(self):
         """Delete the training view for this FeatureSet"""
-        try:
-            training_view_table = self.get_training_view_table(create=False)
-            if training_view_table is not None:
-                self.log.info(f"Deleting Training View {training_view_table} for {self.uuid}")
-                glue_client = self.boto_session.client("glue")
-                glue_client.delete_table(DatabaseName=self.athena_database, Name=training_view_table)
-        except botocore.exceptions.ClientError as error:
-            # For ResourceNotFound/ValidationException, this is fine, otherwise raise all other exceptions
-            if error.response["Error"]["Code"] in ["ResourceNotFound", "ValidationException"]:
-                self.log.warning(f"Training View for {self.uuid} doesn't exist, nothing to delete...")
-                pass
-            else:
-                raise error
+        from sageworks.core.views.view import View
+        View(self).delete_view(ViewType.TRAINING)
 
     def descriptive_stats(self, recompute: bool = False) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource
@@ -647,6 +550,7 @@ class FeatureSetCore(Artifact):
 
 if __name__ == "__main__":
     """Exercise for FeatureSet Class"""
+    from sageworks.core.artifacts.feature_set_core import FeatureSetCore
     from pprint import pprint
 
     # Setup Pandas output options
@@ -707,22 +611,14 @@ if __name__ == "__main__":
 
     # Test creating a default training view
     print("Creating default training view...")
-    my_features.create_default_training_view()
+    my_features.create_training_view()
 
-    # Test the hold out set functionality with ints
+    # Test creating the training view with a hold out set
     print("Setting hold out ids...")
     table = my_features.get_training_view_table()
     df = my_features.query(f"SELECT id, name FROM {table}")
     my_holdout_ids = [id for id in df["id"] if id < 20]
     my_features.create_training_view("id", my_holdout_ids)
-
-    # Convenience methods to set and get the hold out ids
-    print("Setting hold out ids...")
-    my_features.set_holdout_ids("id", my_holdout_ids)
-    print("Getting hold out ids...")
-    holdoutput = my_features.get_holdout_ids("id")
-    print(holdoutput)
-    assert set(holdoutput) == set(my_holdout_ids)
 
     # Test the hold out set functionality with strings
     print("Setting hold out ids (strings)...")
