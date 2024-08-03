@@ -51,7 +51,7 @@ class View:
         Returns:
             Union[pd.DataFrame, None]: The DataFrame for the view or None if it doesn't exist
         """
-        view_table_name = self._view_table_name(view_type)
+        view_table_name = self.view_table_name(view_type)
 
         # Check if the view exists
         if not self.exists(view_type):
@@ -77,7 +77,7 @@ class View:
         if view_type == ViewType.RAW:
             table_name = self.base_table
         else:
-            table_name = self._view_table_name(view_type)
+            table_name = self.view_table_name(view_type)
 
         # Query to check if the table/view exists
         check_table_query = f"""
@@ -107,7 +107,7 @@ class View:
         """
 
         # Construct the view table name
-        view_table_name = self._view_table_name(view_type)
+        view_table_name = self.view_table_name(view_type)
 
         # Check if the view exists
         if not self.exists(view_type):
@@ -129,7 +129,7 @@ class View:
             return f'View: {self.database}:{self.base_table} for DataSource("{self.data_source_name}")'
 
     # Helper Methods
-    def _view_table_name(self, view_type: ViewType) -> str:
+    def view_table_name(self, view_type: ViewType) -> str:
         """Construct the view table name for the given view type
 
         Args:
