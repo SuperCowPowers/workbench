@@ -230,6 +230,7 @@ class FeatureSetCore(Artifact):
 
         # Get the training view table name
         from sageworks.core.views.view import View, ViewType
+
         table_name = View(self).view_table_name(ViewType.TRAINING)
         query = f"SELECT * FROM {table_name}"
 
@@ -252,6 +253,7 @@ class FeatureSetCore(Artifact):
             pd.DataFrame: The training data for this FeatureSet
         """
         from sageworks.core.views.view import View, ViewType
+
         return View(self).pull_dataframe(ViewType.TRAINING)
 
     def snapshot_query(self, table_name: str = None) -> str:
@@ -379,11 +381,11 @@ class FeatureSetCore(Artifact):
             holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None.
         """
         from sageworks.core.views.view import View
-        
+
         # Check the id_column
         if id_column is None:
             id_column = self.record_id
-            
+
         # Create the training view
         View(self).create_training_view(id_column, holdout_ids)
 
@@ -411,7 +413,8 @@ class FeatureSetCore(Artifact):
 
     def delete_training_view(self):
         """Delete the training view for this FeatureSet"""
-        from sageworks.core.views.view import View
+        from sageworks.core.views.view import View, ViewType
+
         View(self).delete_view(ViewType.TRAINING)
 
     def descriptive_stats(self, recompute: bool = False) -> dict:
@@ -550,7 +553,7 @@ class FeatureSetCore(Artifact):
 
 if __name__ == "__main__":
     """Exercise for FeatureSet Class"""
-    from sageworks.core.artifacts.feature_set_core import FeatureSetCore
+    from sageworks.core.artifacts.feature_set_core import FeatureSetCore  # noqa: F811
     from pprint import pprint
 
     # Setup Pandas output options
