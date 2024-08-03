@@ -147,17 +147,6 @@ class FeatureSetCore(Artifact):
             ds_details[col] = fs_details.get(col, dtype)
         return ds_details
 
-        # Not going to use these for now
-        """
-        internal = {
-            "write_time": "Timestamp",
-            "api_invocation_time": "Timestamp",
-            "is_deleted": "Boolean",
-        }
-        details.update(internal)
-        return details
-        """
-
     def get_display_columns(self) -> list[str]:
         """Get the display columns for this FeatureSet
 
@@ -275,7 +264,7 @@ class FeatureSetCore(Artifact):
         """Get the training data for this FeatureSet
 
         Args:
-            limit (int): The number of rows to limit the query to (default: 1000)
+            limit (int): The number of rows to limit the query to (default: 50000)
         Returns:
             pd.DataFrame: The training data for this FeatureSet
         """
