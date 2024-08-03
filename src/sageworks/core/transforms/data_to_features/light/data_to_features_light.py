@@ -72,7 +72,7 @@ class DataToFeaturesLight(Transform):
 
         # Create a default training_view for this FeatureSet
         fs = FeatureSetCore(self.output_uuid, force_refresh=True)
-        fs.create_default_training_view()
+        fs.create_training_view()
 
 
 if __name__ == "__main__":
