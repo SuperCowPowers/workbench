@@ -1,14 +1,13 @@
 """Create Display Views: A View with a subset of columns for display purposes"""
 
 import logging
-from enum import Enum
 from typing import Union
-import pandas as pd
 
 # SageWorks Imports
 from sageworks.api import DataSource
 
 log = logging.getLogger("sageworks")
+
 
 def create_display_view(data_source: DataSource, column_list: Union[list[str], None] = None, column_limit: int = 30):
     """Create a display view that shows a subset of columns
@@ -44,7 +43,6 @@ def create_display_view(data_source: DataSource, column_list: Union[list[str], N
 
 if __name__ == "__main__":
     """Exercise the Training View functionality"""
-    from pprint import pprint
     from sageworks.api import DataSource, FeatureSet
 
     # Get the FeatureSet

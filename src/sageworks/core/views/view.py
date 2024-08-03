@@ -15,6 +15,7 @@ from sageworks.core.views.training_view import create_training_view
 # Enumerated View Types
 class ViewType(Enum):
     """Enumerated Types for SageWorks View Types"""
+
     RAW = "raw"
     DISPLAY = "display"
     COMPUTATION = "computation"
@@ -79,7 +80,7 @@ class View:
             table_name = self._view_table_name(view_type)
 
         # Query to check if the table/view exists
-        check_table_query =  f"""
+        check_table_query = f"""
         SELECT table_name
         FROM information_schema.tables
         WHERE table_schema = '{self.database}' AND table_name = '{table_name}'
@@ -123,10 +124,9 @@ class View:
     def __repr__(self):
         """Return a string representation of this object"""
         if self.is_feature_set:
-            return f"View: {self.database}:{self.base_table} for FeatureSet(\"{self.data_source_name}\")"
+            return f'View: {self.database}:{self.base_table} for FeatureSet("{self.data_source_name}")'
         else:
-            return f"View: {self.database}:{self.base_table} for DataSource(\"{self.data_source_name}\")"
-
+            return f'View: {self.database}:{self.base_table} for DataSource("{self.data_source_name}")'
 
     # Helper Methods
     def _view_table_name(self, view_type: ViewType) -> str:
@@ -142,9 +142,9 @@ class View:
             return self.base_table
         return f"{self.base_table}_{view_type.value}"
 
+
 if __name__ == "__main__":
     """Exercise the ViewManager Class"""
-    from pprint import pprint
     from sageworks.api import DataSource, FeatureSet
 
     # Create a View for the DataSource
@@ -153,8 +153,8 @@ if __name__ == "__main__":
     print(my_view)
 
     # Now let's check if these views exist
-    assert my_view.exists(ViewType.RAW)==True
-    assert my_view.exists(ViewType.TRAINING)==False
+    assert my_view.exists(ViewType.RAW) is True
+    assert my_view.exists(ViewType.TRAINING) is False
 
     # Pull the raw data
     df = my_view.pull_dataframe()
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     print(my_view)
 
     # Now let's check if these views exist
-    assert my_view.exists(ViewType.RAW)==True
+    assert my_view.exists(ViewType.RAW) is True
 
     # Create the training view
     my_view.create_training_view("id")

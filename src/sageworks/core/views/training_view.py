@@ -1,14 +1,13 @@
 """Create Training Views: All columns + a training column with 0/1 values for training/validation"""
 
 import logging
-from enum import Enum
 from typing import Union
-import pandas as pd
 
 # SageWorks Imports
 from sageworks.api import DataSource
 
 log = logging.getLogger("sageworks")
+
 
 def create_training_view(data_source: DataSource, id_column: str, holdout_ids: Union[list[str], None] = None):
     """Create a training view that marks hold out ids
@@ -79,7 +78,6 @@ def _default_training_view(data_source: DataSource, id_column: str, view_name: s
 
 if __name__ == "__main__":
     """Exercise the Training View functionality"""
-    from pprint import pprint
     from sageworks.api import DataSource, FeatureSet
 
     # Get the FeatureSet
