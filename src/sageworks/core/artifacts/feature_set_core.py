@@ -244,11 +244,11 @@ class FeatureSetCore(Artifact):
         date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
         s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
 
-        # Get the training view table name
+        # Make sure the training view exists
         from sageworks.core.views.view import View, ViewType
 
-        table_name = View(self).view_table_name(ViewType.TRAINING)
-        query = f"SELECT * FROM {table_name}"
+        training_view = View(self, view_type=ViewType.TRAINING)
+        query = f"SELECT * FROM {training_view.view_table_name}"
 
         # Make the query
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()

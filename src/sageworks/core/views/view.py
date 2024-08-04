@@ -59,12 +59,13 @@ class View:
 
         # Check if the view exists
         self.view_type = view_type
+        self.view_table_name = self.table_name()
         self.auto_created = False
-        if not self.exists(self.view_type):
+        if not self._exists():
             self.log.warning(
-                f"View {self.view_type} for {self.data_source_name} does not exist. Creating identity view..."
+                f"View {self.view_type} for {self.data_source_name} does not exist. Auto creating view..."
             )
-            self.create_identity_view(self.view_type)
+            self._auto_create_view(self.view_type)
 
     def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
         """Pull a DataFrame based on the view type
@@ -77,36 +78,42 @@ class View:
         Returns:
             Union[pd.DataFrame, None]: The DataFrame for the view or None if it doesn't exist
         """
-        view_table_name = self.view_table_name(self.view_type)
 
         # Pull the DataFrame
         if head:
             limit = 5
-        pull_query = f"SELECT * FROM {view_table_name} LIMIT {limit}"
+        pull_query = f"SELECT * FROM {self.view_table_name} LIMIT {limit}"
         df = self.data_source.query(pull_query)
         return df
 
-    def exists(self, view_type: ViewType) -> bool:
-        """Check if the view exists in the database
+    def delete(self):
+        """Delete the database view if it exists.
+        """
 
-        Args:
-            view_type (ViewType): The type of view to check
+        # Check if the view exists
+        if not self._exists():
+            self.log.info(f"View {self.view_table_name} for {self.data_source_name} does not exist, nothing to delete.")
+            return
+
+        # If the view exists, drop it
+        self.log.important(f"Dropping View {self.view_table_name}...")
+        drop_view_query = f"DROP VIEW {self.view_table_name}"
+
+        # Execute the DROP VIEW query
+        self.data_source.execute_statement(drop_view_query)
+
+    def _exists(self) -> bool:
+        """Internal: Check if the view exists in the database
 
         Returns:
             bool: True if the view exists, False otherwise.
         """
 
-        # Check for raw view
-        if view_type == ViewType.RAW:
-            table_name = self.base_table
-        else:
-            table_name = self.view_table_name(view_type)
-
         # Query to check if the table/view exists
         check_table_query = f"""
         SELECT table_name
         FROM information_schema.tables
-        WHERE table_schema = '{self.database}' AND table_name = '{table_name}'
+        WHERE table_schema = '{self.database}' AND table_name = '{self.view_table_name}'
         """
         df = self.data_source.query(check_table_query)
         if not df.empty:
@@ -114,8 +121,8 @@ class View:
         else:
             return False
 
-    def auto_create_view(self, view_type: ViewType):
-        """Automatically create a view. This is called when a view is accessed that doesn't exist.
+    def _auto_create_view(self, view_type: ViewType):
+        """Internal: Automatically create a view. This is called when a view is accessed that doesn't exist.
 
         Args:
             view_type (ViewType): The type of view to create
@@ -124,22 +131,22 @@ class View:
 
         # Is this a Training View and do we have an auto id column?
         if view_type == ViewType.TRAINING and self.auto_id_column:
-            self.create_training_view(self.auto_id_column)
+            self._create_training_view(self.auto_id_column)
             return
 
         # Display View
         if view_type == ViewType.DISPLAY:
-            self.create_display_view()
+            self._create_display_view()
 
         # Computation View
         if view_type == ViewType.COMPUTATION:
-            self.create_computation_view()
+            self._create_computation_view()
 
         # Okay, so at this point we kind of punt and create an identity view
-        self.create_identity_view(view_type)
+        self._create_identity_view(view_type)
 
-    def create_training_view(self, id_column: str, holdout_ids: Union[list[str], None] = None):
-        """Create a training view for this data source
+    def _create_training_view(self, id_column: str, holdout_ids: Union[list[str], None] = None):
+        """Internal: Create a training view for this data source
 
         Args:
             id_column (str): The name of the id column
@@ -147,8 +154,8 @@ class View:
         """
         training_view.create_training_view(self.data_source, id_column, holdout_ids)
 
-    def create_display_view(self, column_list: Union[list[str], None] = None, column_limit: int = 30):
-        """Create a display view for this data source
+    def _create_display_view(self, column_list: Union[list[str], None] = None, column_limit: int = 30):
+        """Internal: Create a display view for this data source
 
         Args:
             column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
@@ -156,8 +163,8 @@ class View:
         """
         display_view.create_display_view(self.data_source, column_list, column_limit)
 
-    def create_computation_view(self, column_list: Union[list[str], None] = None, column_limit: int = 30):
-        """Create a computation view for this data source
+    def _create_computation_view(self, column_list: Union[list[str], None] = None, column_limit: int = 30):
+        """Internal: Create a computation view for this data source
 
         Args:
             column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
@@ -165,8 +172,8 @@ class View:
         """
         computation_view.create_computation_view(self.data_source, column_list, column_limit)
 
-    def create_identity_view(self, view_type: ViewType):
-        """Create a computation view for this data source
+    def _create_identity_view(self, view_type: ViewType):
+        """Internal: Create a computation view for this data source
 
         Args:
             column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
@@ -174,49 +181,24 @@ class View:
         """
         identity_view.create_display_view(self.data_source, view_type)
 
-    def delete(self, view_type: ViewType):
-        """Delete the database view if it exists.
-
-        Args:
-            view_type (ViewType): The type of view to delete
-        """
-
-        # Construct the view table name
-        view_table_name = self.view_table_name(view_type)
-
-        # Check if the view exists
-        if not self.exists(view_type):
-            self.log.info(f"View {view_table_name} for {self.data_source_name} does not exist, nothing to delete.")
-            return
-
-        # If the view exists, drop it
-        self.log.important(f"Dropping View {view_table_name}...")
-        drop_view_query = f"DROP VIEW {view_table_name}"
-
-        # Execute the DROP VIEW query
-        self.data_source.execute_statement(drop_view_query)
-
     def __repr__(self):
         """Return a string representation of this object"""
         auto = " (Auto-Created)" if self.auto_created else ""
         if self.is_feature_set:
-            return f'View: {self.database}:{self.base_table}{auto} for FeatureSet("{self.data_source_name}")'
+            return f'View: {self.database}:{self.view_table_name}{auto} for FeatureSet("{self.data_source_name}")'
         else:
-            return f'View: {self.database}:{self.base_table}{auto} for DataSource("{self.data_source_name}")'
+            return f'View: {self.database}:{self.view_table_name}{auto} for DataSource("{self.data_source_name}")'
 
     # Helper Methods
-    def view_table_name(self, view_type: ViewType) -> str:
+    def table_name(self) -> str:
         """Construct the view table name for the given view type
-
-        Args:
-            view_type (ViewType): The given view type
 
         Returns:
             str: The view table name
         """
-        if view_type == ViewType.RAW:
+        if self.view_type == ViewType.RAW:
             return self.base_table
-        return f"{self.base_table}_{view_type.value}"
+        return f"{self.base_table}_{self.view_type.value}"
 
 
 if __name__ == "__main__":
@@ -236,33 +218,20 @@ if __name__ == "__main__":
     df_head = my_view.pull_dataframe(head=True)
     print(df_head)
 
-    # Get a training view (that doesn't exist)
-    my_view = View(data_source, ViewType.TRAINING)
-
     # Create a View for a FeatureSet
     fs = FeatureSet("test_features")
-    my_view = View(fs)
-    print(my_view)
-
-    # Now let's check if these views exist
-    assert my_view.exists(ViewType.RAW) is True
-
-    # Create the training view
-    my_view.create_training_view("id")
+    my_view = View(fs, ViewType.TRAINING)
 
     # Pull the training data
     df_train = my_view.pull_dataframe()
     print(df_train.columns)
 
     # Delete the training view
-    my_view.delete(ViewType.TRAINING)
+    my_view.delete()
 
     # Create a View for the Non-Existing DataSource
     data_source = DataSource("non_existent_data")
-    no_data_view = View(data_source)
-    print(no_data_view)
-    print(no_data_view.exists(ViewType.RAW))
-
-    # Pull the training data (for a view that doesn't exist)
-    df_data_quality = my_view.pull_dataframe()
-    assert df_data_quality is None
+    try:
+        no_data_view = View(data_source)
+    except ValueError as e:
+        print("Expected Error == Good :)")

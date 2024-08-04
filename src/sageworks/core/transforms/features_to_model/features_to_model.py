@@ -384,7 +384,7 @@ if __name__ == "__main__":
     output_uuid = "abalone-regression"
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.REGRESSOR)
     to_model.set_output_tags(["abalone", "public"])
-    to_model.transform(target_column="class_number_of_rings", description="Abalone Regression", train_all_data=True)
+    to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
 
     """
     # Classification Model
