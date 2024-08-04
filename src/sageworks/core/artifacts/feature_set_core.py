@@ -100,7 +100,7 @@ class FeatureSetCore(Artifact):
     def view_setup(self, view: str):
         """Set up the view for this FeatureSet"""
         self.view_type = self.view_module.ViewType.from_string()
-        self.view = self.view_module.View(self)
+        self.view = self.view_module.View(self, view_type=self.view_type)
 
     def health_check(self) -> list[str]:
         """Perform a health check on this model
@@ -245,9 +245,7 @@ class FeatureSetCore(Artifact):
         s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
 
         # Make sure the training view exists
-        from sageworks.core.views.view import View, ViewType
-
-        training_view = View(self, view_type=ViewType.TRAINING)
+        training_view = self.view_module.View(self, view_type=self.view_module.ViewType.TRAINING)
         query = f"SELECT * FROM {training_view.view_table_name}"
 
         # Make the query
@@ -395,14 +393,14 @@ class FeatureSetCore(Artifact):
             id_column (str): The name of the id column in the output DataFrame.
             holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None.
         """
-        from sageworks.core.views.view import View
 
         # Check the id_column
         if id_column is None:
             id_column = self.record_id
 
         # Create the training view
-        View(self).create_training_view(id_column, holdout_ids)
+        training_view = self.view_module.View(self, view_type=self.view_module.ViewType.TRAINING)
+        training_view._create_training_view(id_column, holdout_ids)
 
     def get_training_view_table(self, create: bool = True) -> Union[str, None]:
         """Get the name of the training view for this FeatureSet
@@ -411,26 +409,14 @@ class FeatureSetCore(Artifact):
         Returns:
             str: The name of the training view for this FeatureSet
         """
-        from sageworks.core.views.view import View, ViewType
-
-        # Check if the training view exists
-        if View(self).exists(ViewType.TRAINING):
-            return View(self).view_table_name(ViewType.TRAINING)
-
-        # Create the training view if it doesn't exist
-        if create:
-            View(self).create_training_view()
-            time.sleep(1)  # Give AWS a second to catch up
-            return View(self).view_table_name(ViewType.TRAINING)
-        else:
-            self.log.error(f"Training View for {self.uuid} doesn't exist!")
-            return None
+        training_view = self.view_module.View(self, view_type=self.view_module.ViewType.TRAINING)
+        time.sleep(1)  # Give AWS a second to catch up
+        return training_view.view_table_name
 
     def delete_training_view(self):
         """Delete the training view for this FeatureSet"""
-        from sageworks.core.views.view import View, ViewType
-
-        View(self).delete_view(ViewType.TRAINING)
+        training_view = self.view_module.View(self, view_type=self.view_module.ViewType.TRAINING)
+        training_view.delete()
 
     def descriptive_stats(self, recompute: bool = False) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource
