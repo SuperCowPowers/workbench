@@ -62,9 +62,7 @@ class View:
         self.view_table_name = self.table_name()
         self.auto_created = False
         if not self._exists():
-            self.log.warning(
-                f"View {self.view_type} for {self.data_source_name} does not exist. Auto creating view..."
-            )
+            self.log.warning(f"View {self.view_type} for {self.data_source_name} does not exist. Auto creating view...")
             self._auto_create_view(self.view_type)
 
     def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
@@ -87,8 +85,7 @@ class View:
         return df
 
     def delete(self):
-        """Delete the database view if it exists.
-        """
+        """Delete the database view if it exists."""
 
         # Check if the view exists
         if not self._exists():
@@ -233,5 +230,5 @@ if __name__ == "__main__":
     data_source = DataSource("non_existent_data")
     try:
         no_data_view = View(data_source)
-    except ValueError as e:
+    except ValueError:
         print("Expected Error == Good :)")
