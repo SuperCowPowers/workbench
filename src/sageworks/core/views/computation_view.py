@@ -1,4 +1,4 @@
-"""Create a Display View: A View with a subset of columns for display purposes"""
+"""Create a Computation View: A View with a subset of columns for computation/stats purposes"""
 
 import logging
 from typing import Union
@@ -9,8 +9,8 @@ from sageworks.api import DataSource
 log = logging.getLogger("sageworks")
 
 
-def create_display_view(data_source: DataSource, column_list: Union[list[str], None] = None, column_limit: int = 30):
-    """Create a Display View: A View with a subset of columns for display purposes
+def create_computation_view(data_source: DataSource, column_list: Union[list[str], None] = None, column_limit: int = 30):
+    """"Create a Computation View: A View with a subset of columns for computation/stats purposes
 
     Args:
         data_source (DataSource): The DataSource object
@@ -20,9 +20,9 @@ def create_display_view(data_source: DataSource, column_list: Union[list[str], N
 
     # Create the training view table name
     base_table = data_source.get_table_name()
-    view_name = f"{base_table}_display"
+    view_name = f"{base_table}_computation"
 
-    log.important(f"Creating Display View {view_name}...")
+    log.important(f"Creating Computation View {view_name}...")
 
     # If the user doesn't specify columns, then we'll limit the columns
     if column_list is None:
@@ -54,8 +54,8 @@ if __name__ == "__main__":
     fs = FeatureSet("test_features")
 
     # Create a default display view
-    create_display_view(fs.data_source)
+    create_computation_view(fs.data_source)
 
     # Create a display view with specific columns
-    display_columns = fs.column_names()[:5]
-    create_display_view(fs.data_source, display_columns)
+    computation_columns = fs.column_names()[:10]
+    create_computation_view(fs.data_source, computation_columns)

@@ -61,7 +61,7 @@ def _default_training_view(data_source: DataSource, id_column: str, view_name: s
     log.important(f"Creating default Training View {view_name}...")
 
     #    Construct the CREATE VIEW query with a simple modulo operation for the 80/20 split
-    #    using record_id as the stable identifier for row numbering
+    #    using the id column as the stable identifier for row numbering
     base_table = data_source.get_table_name()
     create_view_query = f"""
     CREATE OR REPLACE VIEW {view_name} AS

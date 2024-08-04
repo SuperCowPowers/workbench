@@ -30,13 +30,20 @@ class FeatureSetCore(Artifact):
         ```
     """
 
-    def __init__(self, feature_set_uuid: str, force_refresh: bool = False):
+    def __init__(self, feature_set_uuid: str, view: str = "raw", force_refresh: bool = False):
         """FeatureSetCore Initialization
 
         Args:
             feature_set_uuid (str): Name of Feature Set
+            view (str): The view for the Feature Set (default: "raw")
             force_refresh (bool): Force a refresh of the Feature Set metadata (default: False)
         """
+
+        # Grab the SageWorks view module
+        import sageworks.core.views.view as view_module
+        self.view_module = view_module
+        self.view = None
+        self.view_type = None
 
         # Make sure the feature_set name is valid
         self.ensure_valid_name(feature_set_uuid)
@@ -71,8 +78,11 @@ class FeatureSetCore(Artifact):
         # Call superclass post_init
         super().__post_init__()
 
+        # Set up the view for this FeatureSet
+        self.view = view
+
         # All done
-        self.log.info(f"FeatureSet Initialized: {self.uuid}")
+        self.log.info(f"FeatureSet Initialized: {self.uuid} ({self.view})")
 
     def refresh_meta(self):
         """Internal: Refresh our internal AWS Feature Store metadata"""
@@ -85,6 +95,11 @@ class FeatureSetCore(Artifact):
             self.log.debug(f"FeatureSet {self.uuid} not found in AWS Metadata!")
             return False
         return True
+
+    def view_setup(self, view: str):
+        """Set up the view for this FeatureSet"""
+        self.view_type = self.view_module.ViewType.from_string()
+        self.view = self.view_module.View(self)
 
     def health_check(self) -> list[str]:
         """Perform a health check on this model
