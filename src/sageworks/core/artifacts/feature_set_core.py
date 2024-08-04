@@ -41,6 +41,7 @@ class FeatureSetCore(Artifact):
 
         # Grab the SageWorks view module
         import sageworks.core.views.view as view_module
+
         self.view_module = view_module
         self.view = None
         self.view_type = None

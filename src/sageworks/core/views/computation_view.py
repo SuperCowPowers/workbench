@@ -9,8 +9,10 @@ from sageworks.api import DataSource
 log = logging.getLogger("sageworks")
 
 
-def create_computation_view(data_source: DataSource, column_list: Union[list[str], None] = None, column_limit: int = 30):
-    """"Create a Computation View: A View with a subset of columns for computation/stats purposes
+def create_computation_view(
+    data_source: DataSource, column_list: Union[list[str], None] = None, column_limit: int = 30
+):
+    """ "Create a Computation View: A View with a subset of columns for computation/stats purposes
 
     Args:
         data_source (DataSource): The DataSource object

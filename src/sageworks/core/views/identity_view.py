@@ -1,7 +1,6 @@
 """Create Identity View: A View that shows all columns from the data source"""
 
 import logging
-from typing import Union
 
 # SageWorks Imports
 from sageworks.api import DataSource
@@ -43,4 +42,3 @@ if __name__ == "__main__":
 
     # Create a default display view
     create_identity_view(fs.data_source, ViewType.COMPUTATION)
-

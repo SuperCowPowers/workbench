@@ -61,10 +61,12 @@ class View:
         self.view_type = view_type
         self.auto_created = False
         if not self.exists(self.view_type):
-            self.log.warning(f"View {self.view_type} for {self.data_source_name} does not exist. Creating identity view...")
+            self.log.warning(
+                f"View {self.view_type} for {self.data_source_name} does not exist. Creating identity view..."
+            )
             self.create_identity_view(self.view_type)
 
-    def pull_dataframe(self, limit:int = 50000, head:bool = False) -> Union[pd.DataFrame, None]:
+    def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
         """Pull a DataFrame based on the view type
 
         Args:
@@ -161,7 +163,7 @@ class View:
             column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
             column_limit (int, optional): The max number of columns to include. Defaults to 30.
         """
-        display_view.create_display_view(self.data_source, column_list, column_limit)
+        computation_view.create_computation_view(self.data_source, column_list, column_limit)
 
     def create_identity_view(self, view_type: ViewType):
         """Create a computation view for this data source
