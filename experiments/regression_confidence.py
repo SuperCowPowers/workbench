@@ -26,7 +26,7 @@ model = Model(end.get_input())
 target = model.target()
 
 # Grab the inference data
-pred_df = model.get_inference_predictions("qrr_2024_07_11")
+pred_df = model.get_inference_predictions()  # "qrr_2024_07_11")
 
 # Domain specific confidence
 pred_df["target_spread"] = pred_df["q_95"] - pred_df["q_05"]

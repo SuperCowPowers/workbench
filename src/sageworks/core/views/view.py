@@ -32,9 +32,17 @@ class ViewType(Enum):
 
 
 class View:
+    """View: A View in the Model, View, Controller sense. Provides a view
+            (training, data_quality, etc) for DataSources and FeatureSets.
+
+    Common Usage:
+        ```
+        view = View(DataSource/FeatureSet, view_type=ViewType.TRAINING)
+        training_df = view.pull_dataframe()
+        ```
+    """
     def __init__(self, artifact: Union[DataSource, FeatureSet], view_type: ViewType = ViewType.RAW):
-        """View: A View in the Model, View, Controller sense. Provides a view
-                (training, data_quality, etc) for DataSources and FeatureSets.
+        """View Constructor: Create a new View object for the given artifact
 
         Args:
             artifact (Union[DataSource, FeatureSet]): A DataSource or FeatureSet object
@@ -65,6 +73,10 @@ class View:
             self.log.warning(f"View {self.view_type} for {self.data_source_name} does not exist. Auto creating view...")
             self._auto_create_view(self.view_type)
 
+        # View Exists so report that we found it
+        else:
+            self.log.info(f"View {self.view_table_name} for {self.data_source_name} found.")
+
     def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
         """Pull a DataFrame based on the view type
 
@@ -83,6 +95,16 @@ class View:
         pull_query = f"SELECT * FROM {self.view_table_name} LIMIT {limit}"
         df = self.data_source.query(pull_query)
         return df
+
+    def table_name(self) -> str:
+        """Construct the view table name for the given view type
+
+        Returns:
+            str: The view table name
+        """
+        if self.view_type == ViewType.RAW:
+            return self.base_table
+        return f"{self.base_table}_{self.view_type.value}"
 
     def delete(self):
         """Delete the database view if it exists."""
@@ -136,11 +158,12 @@ class View:
             self._create_display_view()
 
         # Computation View
-        if view_type == ViewType.COMPUTATION:
+        elif view_type == ViewType.COMPUTATION:
             self._create_computation_view()
 
         # Okay, so at this point we kind of punt and create an identity view
-        self._create_identity_view(view_type)
+        else:
+            self._create_identity_view(view_type)
 
     def _create_training_view(self, id_column: str, holdout_ids: Union[list[str], None] = None):
         """Internal: Create a training view for this data source
@@ -186,17 +209,6 @@ class View:
         else:
             return f'View: {self.database}:{self.view_table_name}{auto} for DataSource("{self.data_source_name}")'
 
-    # Helper Methods
-    def table_name(self) -> str:
-        """Construct the view table name for the given view type
-
-        Returns:
-            str: The view table name
-        """
-        if self.view_type == ViewType.RAW:
-            return self.base_table
-        return f"{self.base_table}_{self.view_type.value}"
-
 
 if __name__ == "__main__":
     """Exercise the ViewManager Class"""
@@ -204,15 +216,18 @@ if __name__ == "__main__":
 
     # Create a View for the DataSource
     data_source = DataSource("test_data")
-    my_view = View(data_source)
-    print(my_view)
+    raw_view = View(data_source)  # Default is RAW
+    print(raw_view)
 
     # Pull the raw data
-    df = my_view.pull_dataframe()
+    df = raw_view.pull_dataframe()
     print(df)
 
+    # Create a display view
+    display_view = View(data_source, ViewType.DISPLAY)
+
     # Pull just the head
-    df_head = my_view.pull_dataframe(head=True)
+    df_head = display_view.pull_dataframe(head=True)
     print(df_head)
 
     # Create a View for a FeatureSet
@@ -225,6 +240,8 @@ if __name__ == "__main__":
 
     # Delete the training view
     my_view.delete()
+
+
 
     # Create a View for the Non-Existing DataSource
     data_source = DataSource("non_existent_data")

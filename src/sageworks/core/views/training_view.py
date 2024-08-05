@@ -35,10 +35,17 @@ def create_training_view(data_source: DataSource, id_column: str, holdout_ids: U
     else:
         formatted_holdout_ids = ", ".join(map(str, holdout_ids))
 
+    # Drop any columns generated from AWS
+    aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
+    column_list = [col for col in data_source.column_names() if col not in aws_cols]
+
+    # Enclose each column name in double quotes
+    sql_columns = ", ".join([f'"{column}"' for column in column_list])
+
     # Construct the CREATE VIEW query
     create_view_query = f"""
     CREATE OR REPLACE VIEW {view_name} AS
-    SELECT *, CASE
+    SELECT {sql_columns}, CASE
         WHEN {id_column} IN ({formatted_holdout_ids}) THEN 0
         ELSE 1
     END AS training
@@ -60,12 +67,19 @@ def _default_training_view(data_source: DataSource, id_column: str, view_name: s
     """
     log.important(f"Creating default Training View {view_name}...")
 
+    # Drop any columns generated from AWS
+    aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
+    column_list = [col for col in data_source.column_names() if col not in aws_cols]
+
+    # Enclose each column name in double quotes
+    sql_columns = ", ".join([f'"{column}"' for column in column_list])
+
     #    Construct the CREATE VIEW query with a simple modulo operation for the 80/20 split
     #    using the id column as the stable identifier for row numbering
     base_table = data_source.get_table_name()
     create_view_query = f"""
     CREATE OR REPLACE VIEW {view_name} AS
-    SELECT *, CASE
+    SELECT {sql_columns}, CASE
         WHEN MOD(ROW_NUMBER() OVER (ORDER BY {id_column}), 10) < 8 THEN 1  -- Assign 80% to training
         ELSE 0  -- Assign roughly 20% to validation/test
     END AS training
