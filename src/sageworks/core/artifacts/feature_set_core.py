@@ -267,6 +267,7 @@ class FeatureSetCore(Artifact):
             pd.DataFrame: The training data for this FeatureSet
         """
         from sageworks.core.views.view import View, ViewType
+
         return View(self, ViewType.TRAINING).pull_dataframe()
 
     def snapshot_query(self, table_name: str = None) -> str:

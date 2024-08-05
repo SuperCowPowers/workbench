@@ -41,6 +41,7 @@ class View:
         training_df = view.pull_dataframe()
         ```
     """
+
     def __init__(self, artifact: Union[DataSource, FeatureSet], view_type: ViewType = ViewType.RAW):
         """View Constructor: Create a new View object for the given artifact
 
@@ -224,10 +225,10 @@ if __name__ == "__main__":
     print(df)
 
     # Create a display view
-    display_view = View(data_source, ViewType.DISPLAY)
+    my_display_view = View(data_source, ViewType.DISPLAY)
 
     # Pull just the head
-    df_head = display_view.pull_dataframe(head=True)
+    df_head = my_display_view.pull_dataframe(head=True)
     print(df_head)
 
     # Create a View for a FeatureSet
@@ -240,8 +241,6 @@ if __name__ == "__main__":
 
     # Delete the training view
     my_view.delete()
-
-
 
     # Create a View for the Non-Existing DataSource
     data_source = DataSource("non_existent_data")
