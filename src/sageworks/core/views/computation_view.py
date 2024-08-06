@@ -9,19 +9,24 @@ from sageworks.api import DataSource
 log = logging.getLogger("sageworks")
 
 
-def create_computation_view(
-    data_source: DataSource, column_list: Union[list[str], None] = None, column_limit: int = 30
-):
-    """ "Create a Computation View: A View with a subset of columns for computation/stats purposes
+def create_computation_view(data_source: DataSource,
+                        column_list: Union[list[str], None] = None,
+                        column_limit: int = 30,
+                        source_table: str = None):
+    """Create a Display View: A View with a subset of columns for computation purposes
 
     Args:
         data_source (DataSource): The DataSource object
         column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
         column_limit (int, optional): The max number of columns to include. Defaults to 30.
+        source_table_name (str, optional): The table/view to create the view from. Defaults to data_source base table.
     """
 
-    # Create the training view table name
+    # Set the source_table to create the view from
     base_table = data_source.get_table_name()
+    source_table = source_table if source_table else base_table
+
+    # Create the computation view table name
     view_name = f"{base_table}_computation"
 
     log.important(f"Creating Computation View {view_name}...")
@@ -41,7 +46,7 @@ def create_computation_view(
     # Create the view query
     create_view_query = f"""
        CREATE OR REPLACE VIEW {view_name} AS
-       SELECT {sql_columns} FROM {base_table}
+       SELECT {sql_columns} FROM {source_table}
        """
 
     # Execute the CREATE VIEW query
@@ -55,9 +60,9 @@ if __name__ == "__main__":
     # Get the FeatureSet
     fs = FeatureSet("test_features")
 
-    # Create a default display view
+    # Create a default computation view
     create_computation_view(fs.data_source)
 
-    # Create a display view with specific columns
+    # Create a computation view with specific columns
     computation_columns = fs.column_names()[:10]
     create_computation_view(fs.data_source, computation_columns)

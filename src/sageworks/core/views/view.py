@@ -17,14 +17,15 @@ from sageworks.core.views import training_view, display_view, computation_view, 
 class ViewType(Enum):
     """Enumerated Types for SageWorks View Types"""
 
-    RAW = "raw"
+    BASE = "base"
     DISPLAY = "display"
     COMPUTATION = "computation"
     TRAINING = "training"
     DATA_QUALITY = "data_quality"
 
     @staticmethod
-    def from_string(view_type_str):
+    def from_string(view_type_str: str) -> "ViewType":
+        """Convert a string to a ViewType Enum"""
         try:
             return ViewType(view_type_str)
         except ValueError:
@@ -42,12 +43,12 @@ class View:
         ```
     """
 
-    def __init__(self, artifact: Union[DataSource, FeatureSet], view_type: ViewType = ViewType.RAW):
+    def __init__(self, artifact: Union[DataSource, FeatureSet], view_type: ViewType = ViewType.BASE):
         """View Constructor: Create a new View object for the given artifact
 
         Args:
             artifact (Union[DataSource, FeatureSet]): A DataSource or FeatureSet object
-            view_type (ViewType, optional): The type of view to create (default: ViewType.RAW)
+            view_type (ViewType, optional): The type of view to create (default: ViewType.BASE)
         """
 
         self.log = logging.getLogger("sageworks")
@@ -82,7 +83,7 @@ class View:
         """Pull a DataFrame based on the view type
 
         Args:
-            view_type (ViewType): The type of view to create (default: ViewType.RAW)
+            view_type (ViewType): The type of view to create (default: ViewType.BASE)
             limit (int): The maximum number of rows to pull (default: 50000)
             head (bool): Return just the head of the DataFrame (default: False)
 
@@ -103,9 +104,48 @@ class View:
         Returns:
             str: The view table name
         """
-        if self.view_type == ViewType.RAW:
+        if self.view_type == ViewType.BASE:
             return self.base_table
         return f"{self.base_table}_{self.view_type.value}"
+
+    def create_training_view(self, id_column: str,
+                             holdout_ids: Union[list[str], None] = None,
+                             source_table: str = None):
+        """Create a training view for this data source
+
+        Args:
+            id_column (str): The name of the id column
+            holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None
+            source_table (str, optional): The table/view to create the view from. Defaults to data_source base table.
+        """
+        training_view.create_training_view(self.data_source, id_column, holdout_ids, source_table)
+
+    def create_display_view(self, column_list: Union[list[str], None] = None, column_limit: int = 30):
+        """Create a display view for this data source
+
+        Args:
+            column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
+            column_limit (int, optional): The max number of columns to include. Defaults to 30.
+        """
+        display_view.create_display_view(self.data_source, column_list, column_limit)
+
+    def create_computation_view(self, column_list: Union[list[str], None] = None, column_limit: int = 30):
+        """Create a computation view for this data source
+
+        Args:
+            column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
+            column_limit (int, optional): The max number of columns to include. Defaults to 30.
+        """
+        computation_view.create_computation_view(self.data_source, column_list, column_limit)
+
+    def create_identity_view(self, view_type: ViewType):
+        """Create a indentity view for this data source
+
+        Args:
+            column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
+            column_limit (int, optional): The max number of columns to include. Defaults to 30.
+        """
+        identity_view.create_display_view(self.data_source, view_type)
 
     def delete(self):
         """Delete the database view if it exists."""
@@ -151,56 +191,20 @@ class View:
 
         # Is this a Training View and do we have an auto id column?
         if view_type == ViewType.TRAINING and self.auto_id_column:
-            self._create_training_view(self.auto_id_column)
+            self.create_training_view(self.auto_id_column)
             return
 
         # Display View
         if view_type == ViewType.DISPLAY:
-            self._create_display_view()
+            self.create_display_view()
 
         # Computation View
         elif view_type == ViewType.COMPUTATION:
-            self._create_computation_view()
+            self.create_computation_view()
 
         # Okay, so at this point we kind of punt and create an identity view
         else:
-            self._create_identity_view(view_type)
-
-    def _create_training_view(self, id_column: str, holdout_ids: Union[list[str], None] = None):
-        """Internal: Create a training view for this data source
-
-        Args:
-            id_column (str): The name of the id column
-            holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None
-        """
-        training_view.create_training_view(self.data_source, id_column, holdout_ids)
-
-    def _create_display_view(self, column_list: Union[list[str], None] = None, column_limit: int = 30):
-        """Internal: Create a display view for this data source
-
-        Args:
-            column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
-            column_limit (int, optional): The max number of columns to include. Defaults to 30.
-        """
-        display_view.create_display_view(self.data_source, column_list, column_limit)
-
-    def _create_computation_view(self, column_list: Union[list[str], None] = None, column_limit: int = 30):
-        """Internal: Create a computation view for this data source
-
-        Args:
-            column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
-            column_limit (int, optional): The max number of columns to include. Defaults to 30.
-        """
-        computation_view.create_computation_view(self.data_source, column_list, column_limit)
-
-    def _create_identity_view(self, view_type: ViewType):
-        """Internal: Create a computation view for this data source
-
-        Args:
-            column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
-            column_limit (int, optional): The max number of columns to include. Defaults to 30.
-        """
-        identity_view.create_display_view(self.data_source, view_type)
+            self.create_identity_view(view_type)
 
     def __repr__(self):
         """Return a string representation of this object"""
@@ -217,11 +221,11 @@ if __name__ == "__main__":
 
     # Create a View for the DataSource
     data_source = DataSource("test_data")
-    raw_view = View(data_source)  # Default is RAW
-    print(raw_view)
+    base_view = View(data_source)  # Default is BASE
+    print(base_view)
 
     # Pull the raw data
-    df = raw_view.pull_dataframe()
+    df = base_view.pull_dataframe()
     print(df)
 
     # Create a display view
@@ -231,16 +235,29 @@ if __name__ == "__main__":
     df_head = my_display_view.pull_dataframe(head=True)
     print(df_head)
 
-    # Create a View for a FeatureSet
+    # Create a Training View for a FeatureSet
     fs = FeatureSet("test_features")
     my_view = View(fs, ViewType.TRAINING)
 
     # Pull the training data
     df_train = my_view.pull_dataframe()
-    print(df_train.columns)
+    print(df_train["training"].value_counts())
+    
+    # Now create a Training View with holdout ids
+    holdout_ids = [1, 2, 3]
+    my_view.create_training_view("id", holdout_ids)
+
+    # Pull the training data
+    df_train = my_view.pull_dataframe()
+    print(df_train["training"].value_counts())
 
     # Delete the training view
     my_view.delete()
+
+    # Okay now create a training view FROM the computation view
+    my_view = View(fs, ViewType.COMPUTATION)
+    computation_table = my_view.table_name()
+    my_view.create_training_view("id", holdout_ids, source_table=computation_table)
 
     # Create a View for the Non-Existing DataSource
     data_source = DataSource("non_existent_data")

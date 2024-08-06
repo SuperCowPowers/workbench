@@ -9,17 +9,24 @@ from sageworks.api import DataSource
 log = logging.getLogger("sageworks")
 
 
-def create_display_view(data_source: DataSource, column_list: Union[list[str], None] = None, column_limit: int = 30):
+def create_display_view(data_source: DataSource,
+                        column_list: Union[list[str], None] = None,
+                        column_limit: int = 30,
+                        source_table: str = None):
     """Create a Display View: A View with a subset of columns for display purposes
 
     Args:
         data_source (DataSource): The DataSource object
         column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
         column_limit (int, optional): The max number of columns to include. Defaults to 30.
+        source_table_name (str, optional): The table/view to create the view from. Defaults to data_source base table.
     """
 
-    # Create the training view table name
+    # Set the source_table to create the view from
     base_table = data_source.get_table_name()
+    source_table = source_table if source_table else base_table
+
+    # Create the display view table name
     view_name = f"{base_table}_display"
 
     log.important(f"Creating Display View {view_name}...")
@@ -39,7 +46,7 @@ def create_display_view(data_source: DataSource, column_list: Union[list[str], N
     # Create the view query
     create_view_query = f"""
        CREATE OR REPLACE VIEW {view_name} AS
-       SELECT {sql_columns} FROM {base_table}
+       SELECT {sql_columns} FROM {source_table}
        """
 
     # Execute the CREATE VIEW query

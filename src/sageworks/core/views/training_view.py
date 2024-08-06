@@ -9,17 +9,24 @@ from sageworks.api import DataSource
 log = logging.getLogger("sageworks")
 
 
-def create_training_view(data_source: DataSource, id_column: str, holdout_ids: Union[list[str], None] = None):
+def create_training_view(data_source: DataSource,
+                         id_column: str,
+                         holdout_ids: Union[list[str], None] = None,
+                         source_table: str = None):
     """Create a training view that marks hold out ids
 
     Args:
         data_source (DataSource): The DataSource object
         id_column (str): The name of the id column
         holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None.
+        source_table_name (str, optional): The table/view to create the view from. Defaults to data_source base table.
     """
 
-    # Create the training view table name
+    # Set the source_table to create the view from
     base_table = data_source.get_table_name()
+    source_table = source_table if source_table else base_table
+
+    # Create the training view table name
     view_name = f"{base_table}_training"
 
     # If we don't have holdout ids, create a default training view

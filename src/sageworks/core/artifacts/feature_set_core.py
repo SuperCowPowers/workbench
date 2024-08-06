@@ -30,12 +30,12 @@ class FeatureSetCore(Artifact):
         ```
     """
 
-    def __init__(self, feature_set_uuid: str, view: str = "raw", force_refresh: bool = False):
+    def __init__(self, feature_set_uuid: str, view: str = "base", force_refresh: bool = False):
         """FeatureSetCore Initialization
 
         Args:
             feature_set_uuid (str): Name of Feature Set
-            view (str): The view for the Feature Set (default: "raw")
+            view (str): The view for the Feature Set (default: "base")
             force_refresh (bool): Force a refresh of the Feature Set metadata (default: False)
         """
 
@@ -99,7 +99,7 @@ class FeatureSetCore(Artifact):
 
     def view_setup(self, view: str):
         """Set up the view for this FeatureSet"""
-        self.view_type = self.view_module.ViewType.from_string()
+        self.view_type = self.view_module.ViewType.from_string(view)
         self.view = self.view_module.View(self, view_type=self.view_type)
 
     def health_check(self) -> list[str]:
@@ -401,7 +401,7 @@ class FeatureSetCore(Artifact):
 
         # Create the training view
         training_view = self.view_module.View(self, view_type=self.view_module.ViewType.TRAINING)
-        training_view._create_training_view(id_column, holdout_ids)
+        training_view.create_training_view(id_column, holdout_ids)
 
     def get_training_view_table(self, create: bool = True) -> Union[str, None]:
         """Get the name of the training view for this FeatureSet
