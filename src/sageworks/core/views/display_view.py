@@ -9,10 +9,12 @@ from sageworks.api import DataSource
 log = logging.getLogger("sageworks")
 
 
-def create_display_view(data_source: DataSource,
-                        column_list: Union[list[str], None] = None,
-                        column_limit: int = 30,
-                        source_table: str = None):
+def create_display_view(
+    data_source: DataSource,
+    column_list: Union[list[str], None] = None,
+    column_limit: int = 30,
+    source_table: str = None,
+):
     """Create a Display View: A View with a subset of columns for display purposes
 
     Args:

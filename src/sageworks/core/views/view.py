@@ -108,9 +108,9 @@ class View:
             return self.base_table
         return f"{self.base_table}_{self.view_type.value}"
 
-    def create_training_view(self, id_column: str,
-                             holdout_ids: Union[list[str], None] = None,
-                             source_table: str = None):
+    def create_training_view(
+        self, id_column: str, holdout_ids: Union[list[str], None] = None, source_table: str = None
+    ):
         """Create a training view for this data source
 
         Args:
@@ -242,7 +242,7 @@ if __name__ == "__main__":
     # Pull the training data
     df_train = my_view.pull_dataframe()
     print(df_train["training"].value_counts())
-    
+
     # Now create a Training View with holdout ids
     holdout_ids = [1, 2, 3]
     my_view.create_training_view("id", holdout_ids)
