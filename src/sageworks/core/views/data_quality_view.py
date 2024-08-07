@@ -7,16 +7,19 @@ import numpy as np
 # SageWorks Imports
 from sageworks.api import DataSource
 from sageworks.core.views.view_utils import dataframe_to_table, get_column_list
+from sageworks.algorithms.dataframe.row_tagger import RowTagger
 
 log = logging.getLogger("sageworks")
 
 
-def create_data_quality_view(data_source: DataSource, id_column: str, source_table: str = None):
+def create_data_quality_view(data_source: DataSource, id_column: str, target: str, features: list, source_table: str = None):
     """Create a Data Quality View: A View that computes various data_quality metrics
 
     Args:
         data_source (DataSource): The DataSource object
         id_column (str): The name of the id column (must be defined for join logic)
+        target (str): The name of the target column
+        features (list): The list of feature columns
         source_table_name (str, optional): The table/view to create the view from. Defaults to data_source base table.
     """
 
@@ -47,12 +50,42 @@ def create_data_quality_view(data_source: DataSource, id_column: str, source_tab
         log.error(f"id_column {id_column} not found in {source_table}. Cannot create Data Quality View.")
         return
 
-    # TEMP: Just make a random data_quality column with random float from 0-1
-    df["data_quality"] = np.random.rand(row_count)
+    # Check if the target column exists in the source_table
+    if target not in df.columns:
+        log.error(f"target column {target} not found in {source_table}. Cannot create Data Quality View.")
+        return
+
+    # Check if the feature columns exist in the source_table
+    for feature in features:
+        if feature not in df.columns:
+            log.error(f"feature column {feature} not found in {source_table}. Cannot create Data Quality View.")
+            return
+
+    # Now run the RowTagger to compute coincident and high target gradient tags
+    row_tagger = RowTagger(
+        df,
+        features=feature_columns,
+        id_column=id_column,
+        target_column=target_column,
+        within_dist=0.25,
+        min_target_diff=1.0,
+    )
+    dq_df = row_tagger.tag_rows()
+
+    # We're going to rename the tags column to data_quality_tags
+    dq_df.rename(columns={"tags": "data_quality_tags"}, inplace=True)
+
+    # We're going to compute a data_quality score based on the tags. The tags are a set() of strings
+    # If 'coincident' is in the tags, then the data_quality score is 0.0
+    # If 'htg' is in the tags, then the data_quality score is 0.5
+    # Else there's no bad tags so the data_quality score is 1.0
+    dq_df["data_quality"] = dq_df["data_quality_tags"].apply(
+        lambda tags: 0.0 if "coincident" in tags else 0.5 if "htg" in tags else 1.0
+    )
 
     # Create the data_quality supplemental table
     data_quality_table = f"_{base_table}_data_quality"
-    dataframe_to_table(data_source, df[[id_column, "data_quality"]], data_quality_table)
+    dataframe_to_table(data_source, dq_df[[id_column, "data_quality"]], data_quality_table)
 
     # Create the data_quality view (join the data_quality table with the source_table)
     view_name = f"{base_table}_data_quality"
@@ -71,10 +104,15 @@ def create_data_quality_view(data_source: DataSource, id_column: str, source_tab
 
 if __name__ == "__main__":
     """Exercise the Training View functionality"""
-    from sageworks.api import DataSource, FeatureSet
+    from sageworks.api import FeatureSet, Model
 
     # Get the FeatureSet
-    fs = FeatureSet("test_features")
+    fs = FeatureSet("aqsol_mol_descriptors")
+
+    # Get the target and feature columns
+    m = Model("aqsol-mol-regression")
+    target_column = m.target()
+    feature_columns = m.features()
 
     # Create a default data_quality view
-    create_data_quality_view(fs.data_source, "id")
+    create_data_quality_view(fs.data_source, "id", target_column, feature_columns)
