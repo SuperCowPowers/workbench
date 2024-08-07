@@ -15,7 +15,7 @@ def create_computation_view(
     column_limit: int = 30,
     source_table: str = None,
 ):
-    """Create a Display View: A View with a subset of columns for computation purposes
+    """Create a Computation View: A View with a subset of columns for computation/stats purposes
 
     Args:
         data_source (DataSource): The DataSource object

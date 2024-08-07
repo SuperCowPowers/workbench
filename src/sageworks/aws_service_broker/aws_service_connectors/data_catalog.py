@@ -43,6 +43,9 @@ class DataCatalog(Connector):
             self.log.debug(f"Refreshing Data Catalog Database: {database}...")
             all_tables = wr.catalog.get_tables(database=database, boto3_session=self.boto_session)
 
+            # Filter out tables that start with an underscore
+            filtered_tables = [table for table in all_tables if not table["Name"].startswith("_")]
+
             # Convert to a data structure with direct lookup
             self.data_catalog_metadata[database] = {table["Name"]: table for table in all_tables}
 
