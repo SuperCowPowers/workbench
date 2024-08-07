@@ -5,6 +5,7 @@ from typing import Union
 
 # SageWorks Imports
 from sageworks.api import DataSource
+from sageworks.core.views.view_utils import get_column_list
 
 log = logging.getLogger("sageworks")
 
@@ -43,7 +44,8 @@ def create_training_view(
 
     # Drop any columns generated from AWS
     aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-    column_list = [col for col in data_source.column_names() if col not in aws_cols]
+    source_table_columns = get_column_list(data_source, source_table)
+    column_list = [col for col in source_table_columns if col not in aws_cols]
 
     # Enclose each column name in double quotes
     sql_columns = ", ".join([f'"{column}"' for column in column_list])
