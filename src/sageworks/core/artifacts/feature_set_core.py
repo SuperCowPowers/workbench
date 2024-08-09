@@ -41,6 +41,7 @@ class FeatureSetCore(Artifact):
 
         # Grab our DisplayView and TrainingView
         from sageworks.core.views import DisplayView, TrainingView
+
         self.display_view = DisplayView(self)
         self.training_view = TrainingView(self)
 
