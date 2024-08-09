@@ -39,12 +39,6 @@ class FeatureSetCore(Artifact):
             force_refresh (bool): Force a refresh of the Feature Set metadata (default: False)
         """
 
-        # Grab our DisplayView and TrainingView
-        from sageworks.core.views import DisplayView, TrainingView
-
-        self.display_view = DisplayView(self)
-        self.training_view = TrainingView(self)
-
         # Make sure the feature_set name is valid
         self.ensure_valid_name(feature_set_uuid)
 
@@ -75,14 +69,17 @@ class FeatureSetCore(Artifact):
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
 
+        # Grab our DisplayView and TrainingView
+        from sageworks.core.views import DisplayView, TrainingView
+
+        self.display_view = DisplayView(self)
+        self.training_view = TrainingView(self)
+
         # Call superclass post_init
         super().__post_init__()
 
-        # Set up the view for this FeatureSet
-        self.view = view
-
         # All done
-        self.log.info(f"FeatureSet Initialized: {self.uuid} ({self.view})")
+        self.log.info(f"FeatureSet Initialized: {self.uuid}...")
 
     def refresh_meta(self):
         """Internal: Refresh our internal AWS Feature Store metadata"""
@@ -387,7 +384,7 @@ class FeatureSetCore(Artifact):
         """
 
         # Create the training view
-        self.training_view.create_training_view(id_column, holdout_ids)
+        self.training_view.create_view(id_column, holdout_ids)
 
     def get_training_view_table(self) -> Union[str, None]:
         """Get the name of the training view for this FeatureSet

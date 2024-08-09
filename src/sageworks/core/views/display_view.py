@@ -74,7 +74,7 @@ if __name__ == "__main__":
     fs = FeatureSet("test_features")
 
     # Create a DisplayView
-    display_view = DisplayView(fs.data_source)
+    display_view = DisplayView(fs)
     print(display_view)
 
     # Pull the display data
