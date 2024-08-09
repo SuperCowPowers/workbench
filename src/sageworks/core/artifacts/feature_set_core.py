@@ -344,8 +344,8 @@ class FeatureSetCore(Artifact):
         # Delete our underlying DataSource (Data Catalog Table and S3 Storage Objects)
         self.data_source.delete()
 
-        # Delete the training view
-        self.delete_training_view()
+        # Delete any views
+        self.delete_views()
 
         # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
         s3_delete_path = self.feature_sets_s3_path + f"/{self.uuid}/"

@@ -2,9 +2,7 @@ import pytest
 import sageworks  # noqa: F401
 import logging
 from sageworks.utils.test_data_generator import TestDataGenerator
-from sageworks.api.data_source import DataSource
-from sageworks.api.model import Model
-from sageworks.api.endpoint import Endpoint
+from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 # Set the logging level
@@ -30,6 +28,27 @@ def test_data_source_deletion():
 
 
 @pytest.mark.long
+def test_feature_set_deletion():
+    test_data = TestDataGenerator()
+    df = test_data.person_data()
+
+    # Make sure the data source exists
+    if not DataSource("abc").exists():
+        ds = DataSource(df, name="abc")
+    else:
+        ds = DataSource("abc")
+
+    # If the feature set doesn't exist, create it
+    if not FeatureSet("abc_features").exists():
+        fs = ds.to_features("abc_features")
+    else:
+        fs = FeatureSet("abc_features")
+
+    # Now Delete the FeatureSet
+    fs.delete()
+
+
+@pytest.mark.long
 def test_endpoint_deletion():
 
     model = Model("abalone-regression")
@@ -51,4 +70,5 @@ if __name__ == "__main__":
     AWSServiceBroker().get_all_metadata(force_refresh=True)
 
     test_data_source_deletion()
+    test_feature_set_deletion()
     test_endpoint_deletion()
