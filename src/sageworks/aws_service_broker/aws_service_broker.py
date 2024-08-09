@@ -120,8 +120,8 @@ class AWSServiceBroker:
         Args:
             category (ServiceCategory): The Category of metadata to Pull
         """
-        max_attempts = 5
-        sleep_times = [1, 2, 4, 8, 16]
+        sleep_times = [1, 2, 4, 8, 16, 32, 64]
+        max_attempts = len(sleep_times)
         for attempt in range(max_attempts):
             try:
                 cls.fresh_cache.set(category, True)
@@ -135,14 +135,15 @@ class AWSServiceBroker:
                     f"Attempt {attempt}: Failed to refresh AWS data for {category}: {error_code} - {error_message}"
                 )
 
-                # Exponential backoff for ThrottlingExceptions
+                # Quadratic backoff for ThrottlingExceptions
                 if error_code == "ThrottlingException" and attempt < max_attempts:
                     cls.log.warning(
                         f"ThrottlingException: Waiting for {sleep_times[attempt]} seconds before retrying..."
                     )
                     time.sleep(sleep_times[attempt])
                 else:
-                    cls.log.warning(f"ClientError response: {error.response}")
+                    cls.log.critical(f"AWS Throttling Exception: Failed after {max_attempts} attempts!")
+                    cls.log.critical(f"AWS Response: {error.response}")
                     break  # Exit the loop
 
     @classmethod
