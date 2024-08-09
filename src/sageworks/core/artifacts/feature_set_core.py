@@ -39,12 +39,10 @@ class FeatureSetCore(Artifact):
             force_refresh (bool): Force a refresh of the Feature Set metadata (default: False)
         """
 
-        # Grab the SageWorks view module
-        import sageworks.core.views.view as view_module
-
-        self.view_module = view_module
-        self.view = None
-        self.view_type = None
+        # Grab our DisplayView and TrainingView
+        from sageworks.core.views import DisplayView, TrainingView
+        self.display_view = DisplayView(self)
+        self.training_view = TrainingView(self)
 
         # Make sure the feature_set name is valid
         self.ensure_valid_name(feature_set_uuid)
@@ -96,11 +94,6 @@ class FeatureSetCore(Artifact):
             self.log.debug(f"FeatureSet {self.uuid} not found in AWS Metadata!")
             return False
         return True
-
-    def view_setup(self, view: str):
-        """Set up the view for this FeatureSet"""
-        self.view_type = self.view_module.ViewType.from_string(view)
-        self.view = self.view_module.View(self, view_type=self.view_type)
 
     def health_check(self) -> list[str]:
         """Perform a health check on this model
@@ -244,11 +237,8 @@ class FeatureSetCore(Artifact):
         date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
         s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
 
-        # Make sure the training view exists
-        training_view = self.view_module.View(self, view_type=self.view_module.ViewType.TRAINING)
-        query = f"SELECT * FROM {training_view.view_table_name}"
-
         # Make the query
+        query = f"SELECT * FROM {self.training_view.view_table_name}"
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
         athena_query.wait()
@@ -387,37 +377,32 @@ class FeatureSetCore(Artifact):
             time.sleep(1)
         self.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
-    def create_training_view(self, id_column: str = None, holdout_ids: Union[list[str], None] = None):
-        """Create a view in Athena that marks hold out ids for this FeatureSet
+    def set_training_holdouts(self, id_column: str, holdout_ids: list[str]):
+        """Set the hold out ids for the training view for this FeatureSet
 
         Args:
-            id_column (str): The name of the id column in the output DataFrame.
-            holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None.
+            id_column (str): The name of the id column.
+            holdout_ids (list[str]): The list of holdout ids.
         """
 
-        # Check the id_column
-        if id_column is None:
-            id_column = self.record_id
-
         # Create the training view
-        training_view = self.view_module.View(self, view_type=self.view_module.ViewType.TRAINING)
-        training_view.create_training_view(id_column, holdout_ids)
+        self.training_view.create_training_view(id_column, holdout_ids)
 
-    def get_training_view_table(self, create: bool = True) -> Union[str, None]:
+    def get_training_view_table(self) -> Union[str, None]:
         """Get the name of the training view for this FeatureSet
-        Args:
-            create (bool): Create the training view if it doesn't exist (default=True)
+
         Returns:
             str: The name of the training view for this FeatureSet
         """
-        training_view = self.view_module.View(self, view_type=self.view_module.ViewType.TRAINING)
-        time.sleep(1)  # Give AWS a second to catch up
-        return training_view.view_table_name
+        # Get the training view table name
+        return self.training_view.view_table_name
 
-    def delete_training_view(self):
-        """Delete the training view for this FeatureSet"""
-        training_view = self.view_module.View(self, view_type=self.view_module.ViewType.TRAINING)
-        training_view.delete()
+    def delete_views(self):
+        """Delete any views associated with this FeatureSet"""
+
+        # TODO: We need to iterate over all the views and delete them
+        self.display_view.delete()
+        self.training_view.delete()
 
     def descriptive_stats(self, recompute: bool = False) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource
@@ -614,21 +599,17 @@ if __name__ == "__main__":
     outlier_df = my_features.outliers()
     print(outlier_df)
 
-    # Test creating a default training view
-    print("Creating default training view...")
-    my_features.create_training_view()
-
-    # Test creating the training view with a hold out set
+    # Set the holdout ids for the training view
     print("Setting hold out ids...")
     table = my_features.get_training_view_table()
     df = my_features.query(f"SELECT id, name FROM {table}")
     my_holdout_ids = [id for id in df["id"] if id < 20]
-    my_features.create_training_view("id", my_holdout_ids)
+    my_features.set_training_holdouts("id", my_holdout_ids)
 
     # Test the hold out set functionality with strings
     print("Setting hold out ids (strings)...")
     my_holdout_ids = [name for name in df["name"] if int(name.split(" ")[1]) > 80]
-    my_features.create_training_view("name", my_holdout_ids)
+    my_features.set_training_holdouts("name", my_holdout_ids)
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print('Deleting SageWorks Feature Set...')

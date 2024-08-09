@@ -232,7 +232,7 @@ if __name__ == "__main__":
 
     # Now create a Training View with holdout ids
     holdout_ids = [1, 2, 3]
-    my_view.create_training_view("id", holdout_ids)
+    my_view.set_training_holdouts("id", holdout_ids)
 
     # Pull the training data
     df_train = my_view.pull_dataframe()
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     # Okay now create a training view FROM the computation view
     my_view = View(fs, ViewType.COMPUTATION)
     computation_table = my_view.table_name()
-    my_view.create_training_view("id", holdout_ids, source_table=computation_table)
+    my_view.set_training_holdouts("id", holdout_ids, source_table=computation_table)
 
     # Create a View for the Non-Existing DataSource
     data_source = DataSource("non_existent_data")

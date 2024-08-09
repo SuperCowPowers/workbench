@@ -70,9 +70,9 @@ class DataToFeaturesLight(Transform):
         output_features.add_output_meta(self.output_meta)
         output_features.transform()
 
-        # Create a default training_view for this FeatureSet
+        # Spin up the FeatureSet and onboard
         fs = FeatureSetCore(self.output_uuid, force_refresh=True)
-        fs.create_training_view()
+        fs.onboard()
 
 
 if __name__ == "__main__":
