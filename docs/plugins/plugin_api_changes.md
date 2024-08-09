@@ -1,12 +1,17 @@
-## Plugin API Changes
-There were quite a fiew API changes for Plugins between `0.4.43` and `0.5.0` versions of SageWorks.
+# Recent API Changes
+Since we've recently introduced a **View()** class for DataSources and FeatureSets we needed to rename a few classes/modules.
 
-**General:** Classes that inherit from `component_interface` or `plugin_interface`  are now 'auto wrapped' with an exception container. This container not only catches errors/crashes so they don't crash the application but it also displays the error in the widget.
+### FeatureSets
+For setting holdout ids we've changed that method name from `create_training_view()` to `set_training_holdouts()`
 
-**Specific Changes:**
+### Web/Plugins
+We've changed the Web/UI View class to 'WebView'. So anywhere where you used to have **view** just replace with **web_view**
 
-* The `generate_component_figure` method is now `update_contents`
-* The `message_figure` method is now `display_text`
-* `PluginType` was changed to `PluginPage` (use CUSTOM to NOT autoload)
-* `PluginInputType.MODEL_DETAILS`  changed to `PluginInputType.MODEL`  (since your now getting a model object)
-* `FigureTypes` is now `ContentTypes`
+```
+from sageworks.views.artifacts_view import ArtifactsView
+```
+is now
+
+```
+from sageworks.web_views.artifacts_web_view import ArtifactsWebView
+```
