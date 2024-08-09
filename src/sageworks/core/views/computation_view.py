@@ -1,72 +1,86 @@
 """Create a Computation View: A View with a subset of columns for computation/stats purposes"""
-
-import logging
 from typing import Union
 
 # SageWorks Imports
 from sageworks.api import DataSource
+from sageworks.core.views.view import View, ViewType
 from sageworks.core.views.view_utils import get_column_list
 
-log = logging.getLogger("sageworks")
 
+class ComputationView(View):
+    """Computation View Class: A View with a subset of columns for computation/stats purposes"""
 
-def create_computation_view(
-    data_source: DataSource,
-    column_list: Union[list[str], None] = None,
-    column_limit: int = 30,
-    source_table: str = None,
-):
-    """Create a Computation View: A View with a subset of columns for computation/stats purposes
+    def __init__(self, data_source: DataSource):
+        """Initialize the ComputationView
 
-    Args:
-        data_source (DataSource): The DataSource object
-        column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
-        column_limit (int, optional): The max number of columns to include. Defaults to 30.
-        source_table_name (str, optional): The table/view to create the view from. Defaults to data_source base table.
-    """
+        Args:
+            data_source (DataSource): The DataSource object
+        """
+        self.view_type = ViewType.COMPUTATION
+        super().__init__(data_source)
 
-    # Set the source_table to create the view from
-    base_table = data_source.get_table_name()
-    source_table = source_table if source_table else base_table
+    def create_view(
+            self,
+            column_list: Union[list[str], None] = None,
+            column_limit: int = 30,
+            source_table: str = None,
+    ):
+        """Create a Computation View: A View with a subset of columns for computation/stats purposes
 
-    # Create the computation view table name
-    view_name = f"{base_table}_computation"
+        Args:
+            column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
+            column_limit (int, optional): The max number of columns to include. Defaults to 30.
+            source_table_name (str, optional): The table/view to create the view from. Defaults to data_source base table.
+        """
 
-    log.important(f"Creating Computation View {view_name}...")
+        # Set the source_table to create the view from
+        base_table = self.data_source.get_table_name()
+        source_table = source_table if source_table else base_table
 
-    # If the user doesn't specify columns, then we'll limit the columns
-    if column_list is None:
-        # Drop any columns generated from AWS
-        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-        source_table_columns = get_column_list(data_source, source_table)
-        column_list = [col for col in source_table_columns if col not in aws_cols]
+        # Create the computation view table name
+        view_name = f"{base_table}_computation"
 
-        # Limit the number of columns
-        column_list = column_list[:column_limit]
+        self.log.important(f"Creating Computation View {view_name}...")
 
-    # Enclose each column name in double quotes
-    sql_columns = ", ".join([f'"{column}"' for column in column_list])
+        # If the user doesn't specify columns, then we'll limit the columns
+        if column_list is None:
+            # Drop any columns generated from AWS
+            aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
+            source_table_columns = get_column_list(self.data_source, source_table)
+            column_list = [col for col in source_table_columns if col not in aws_cols]
 
-    # Create the view query
-    create_view_query = f"""
-       CREATE OR REPLACE VIEW {view_name} AS
-       SELECT {sql_columns} FROM {source_table}
-       """
+            # Limit the number of columns
+            column_list = column_list[:column_limit]
 
-    # Execute the CREATE VIEW query
-    data_source.execute_statement(create_view_query)
+        # Enclose each column name in double quotes
+        sql_columns = ", ".join([f'"{column}"' for column in column_list])
+
+        # Create the view query
+        create_view_query = f"""
+           CREATE OR REPLACE VIEW {view_name} AS
+           SELECT {sql_columns} FROM {source_table}
+           """
+
+        # Execute the CREATE VIEW query
+        self.data_source.execute_statement(create_view_query)
 
 
 if __name__ == "__main__":
     """Exercise the Training View functionality"""
-    from sageworks.api import DataSource, FeatureSet
+    from sageworks.api import FeatureSet
 
     # Get the FeatureSet
     fs = FeatureSet("test_features")
 
-    # Create a default computation view
-    create_computation_view(fs.data_source)
+    # Create a Computation View
+    comp_view = ComputationView(fs.data_source)
+    print(comp_view)
 
-    # Create a computation view with specific columns
-    computation_columns = fs.column_names()[:10]
-    create_computation_view(fs.data_source, computation_columns)
+    # Pull the display data
+    df = comp_view.pull_dataframe()
+    print(df.head())
+
+    # Create a Display View with a subset of columns
+    columns = ["id", "name", "age", "height", "weight"]
+    comp_view.create_view(column_list=columns)
+    print(comp_view.pull_dataframe(head=True))

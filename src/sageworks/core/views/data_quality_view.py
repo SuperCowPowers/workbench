@@ -1,8 +1,6 @@
 """Create a Data Quality View: A View that computes various data_quality metrics"""
 
 import logging
-from typing import Union
-import numpy as np
 
 # SageWorks Imports
 from sageworks.api import DataSource
@@ -12,7 +10,9 @@ from sageworks.algorithms.dataframe.row_tagger import RowTagger
 log = logging.getLogger("sageworks")
 
 
-def create_data_quality_view(data_source: DataSource, id_column: str, target: str, features: list, source_table: str = None):
+def create_data_quality_view(
+    data_source: DataSource, id_column: str, target: str, features: list, source_table: str = None
+):
     """Create a Data Quality View: A View that computes various data_quality metrics
 
     Args:

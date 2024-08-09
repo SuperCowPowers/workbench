@@ -6,11 +6,12 @@ import logging
 from enum import Enum
 from typing import Union
 import pandas as pd
+from abc import ABC, abstractmethod
+import importlib
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.views import training_view, display_view, computation_view, identity_view
 
 
 # Enumerated View Types
@@ -18,6 +19,7 @@ class ViewType(Enum):
     """Enumerated Types for SageWorks View Types"""
 
     BASE = "base"
+    IDENTITY = "identity"
     DISPLAY = "display"
     COMPUTATION = "computation"
     TRAINING = "training"
@@ -32,26 +34,37 @@ class ViewType(Enum):
             raise ValueError(f"Unknown view type: {view_type_str}")
 
 
-class View:
+class View(ABC):
     """View: A View in the Model, View, Controller sense. Provides a view
             (training, data_quality, etc) for DataSources and FeatureSets.
 
     Common Usage:
         ```
-        view = View(DataSource/FeatureSet, view_type=ViewType.TRAINING)
+        view = View(DataSource/FeatureSet, "training")
         training_df = view.pull_dataframe()
         ```
     """
+    log = logging.getLogger("sageworks")
 
-    def __init__(self, artifact: Union[DataSource, FeatureSet], view_type: ViewType = ViewType.BASE):
+    @classmethod
+    def factory(cls, artifact: Union[DataSource, FeatureSet], view_type: str = "base"):
+        # Convert the view_type string to a ViewType Enum
+        view_type_enum = ViewType.from_string(view_type)
+
+        # Dynamically get the subclass module and class name
+        module_name, class_name = VIEW_SUBCLASS_MAP[view_type_enum].rsplit(".", 1)
+        module = importlib.import_module(module_name)
+        subclass = getattr(module, class_name)
+
+        # Create and return the subclass instance
+        return subclass(artifact)
+
+    def __init__(self, artifact: Union[DataSource, FeatureSet]):
         """View Constructor: Create a new View object for the given artifact
 
         Args:
             artifact (Union[DataSource, FeatureSet]): A DataSource or FeatureSet object
-            view_type (ViewType, optional): The type of view to create (default: ViewType.BASE)
         """
-
-        self.log = logging.getLogger("sageworks")
 
         # Is this a DataSource or a FeatureSet?
         self.is_feature_set = isinstance(artifact, FeatureSetCore)
@@ -68,10 +81,9 @@ class View:
             raise ValueError(f"Data Source {self.data_source_name} does not exist!")
 
         # Check if the view exists
-        self.view_type = view_type
         self.view_table_name = self.table_name()
         self.auto_created = False
-        if not self._exists():
+        if not self.exists():
             self.log.warning(f"View {self.view_type} for {self.data_source_name} does not exist. Auto creating view...")
             self._auto_create_view(self.view_type)
 
@@ -108,50 +120,21 @@ class View:
             return self.base_table
         return f"{self.base_table}_{self.view_type.value}"
 
-    def create_training_view(
-        self, id_column: str, holdout_ids: Union[list[str], None] = None, source_table: str = None
-    ):
-        """Create a training view for this data source
+    @abstractmethod
+    def create_view(self, source_table: str = None, **kwargs):
+        """Abstract Method: Create the view, each subclass must implement this method
 
         Args:
-            id_column (str): The name of the id column
-            holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None
             source_table (str, optional): The table/view to create the view from. Defaults to data_source base table.
+            **kwargs: Additional keyword arguments that are specific to the view type
         """
-        training_view.create_training_view(self.data_source, id_column, holdout_ids, source_table)
-
-    def create_display_view(self, column_list: Union[list[str], None] = None, column_limit: int = 30):
-        """Create a display view for this data source
-
-        Args:
-            column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
-            column_limit (int, optional): The max number of columns to include. Defaults to 30.
-        """
-        display_view.create_display_view(self.data_source, column_list, column_limit)
-
-    def create_computation_view(self, column_list: Union[list[str], None] = None, column_limit: int = 30):
-        """Create a computation view for this data source
-
-        Args:
-            column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
-            column_limit (int, optional): The max number of columns to include. Defaults to 30.
-        """
-        computation_view.create_computation_view(self.data_source, column_list, column_limit)
-
-    def create_identity_view(self, view_type: ViewType):
-        """Create a indentity view for this data source
-
-        Args:
-            column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
-            column_limit (int, optional): The max number of columns to include. Defaults to 30.
-        """
-        identity_view.create_display_view(self.data_source, view_type)
+        pass
 
     def delete(self):
         """Delete the database view if it exists."""
 
         # Check if the view exists
-        if not self._exists():
+        if not self.exists():
             self.log.info(f"View {self.view_table_name} for {self.data_source_name} does not exist, nothing to delete.")
             return
 
@@ -162,8 +145,8 @@ class View:
         # Execute the DROP VIEW query
         self.data_source.execute_statement(drop_view_query)
 
-    def _exists(self) -> bool:
-        """Internal: Check if the view exists in the database
+    def exists(self) -> bool:
+        """Check if the view exists in the database
 
         Returns:
             bool: True if the view exists, False otherwise.
@@ -188,23 +171,7 @@ class View:
             view_type (ViewType): The type of view to create
         """
         self.auto_created = True
-
-        # Is this a Training View and do we have an auto id column?
-        if view_type == ViewType.TRAINING and self.auto_id_column:
-            self.create_training_view(self.auto_id_column)
-            return
-
-        # Display View
-        if view_type == ViewType.DISPLAY:
-            self.create_display_view()
-
-        # Computation View
-        elif view_type == ViewType.COMPUTATION:
-            self.create_computation_view()
-
-        # Okay, so at this point we kind of punt and create an identity view
-        else:
-            self.create_identity_view(view_type)
+        self.create_view()
 
     def __repr__(self):
         """Return a string representation of this object"""
@@ -215,26 +182,45 @@ class View:
             return f'View: {self.database}:{self.view_table_name}{auto} for DataSource("{self.data_source_name}")'
 
 
+# This maps the ViewType Enum to the actual View module.Class (for Factory Logic)
+VIEW_SUBCLASS_MAP = {
+    ViewType.BASE: "base_view.BaseView",
+    ViewType.IDENTITY: "identity_view.IdentityView",
+    ViewType.DISPLAY: "display_view.DisplayView",
+    ViewType.COMPUTATION: "computation_view.ComputationView",
+    ViewType.TRAINING: "training_view.TrainingView",
+    ViewType.DATA_QUALITY: "data_quality_view.DataQualityView",
+}
+
 if __name__ == "__main__":
     """Exercise the ViewManager Class"""
     from sageworks.api import DataSource, FeatureSet
 
-    # Create a View for the DataSource
+    # Show trace calls
+    logging.getLogger("sageworks").setLevel(logging.DEBUG)
+
+    # Create a Display View for a DataSource
     data_source = DataSource("test_data")
-    base_view = View(data_source)  # Default is BASE
+    display_view = View.factory(data_source, "display")
+    print(display_view)
+
+    # Test direct Class Instantiation
+    from sageworks.core.views.base_view import BaseView
+
+    base_view = BaseView(data_source)
     print(base_view)
 
     # Pull the raw data
     df = base_view.pull_dataframe()
     print(df)
 
-    # Create a display view
-    my_display_view = View(data_source, ViewType.DISPLAY)
-
-    # Pull just the head
-    df_head = my_display_view.pull_dataframe(head=True)
+    # Create a display View for a FeatureSet
+    fs = FeatureSet("test_features")
+    display_view = View.factory(fs, "display")
+    df_head = display_view.pull_dataframe(head=True)
     print(df_head)
 
+    """
     # Create a Training View for a FeatureSet
     fs = FeatureSet("test_features")
     my_view = View(fs, ViewType.TRAINING)
@@ -265,3 +251,4 @@ if __name__ == "__main__":
         no_data_view = View(data_source)
     except ValueError:
         print("Expected Error == Good :)")
+    """

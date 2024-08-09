@@ -1,4 +1,5 @@
 """View Utils: A set of utilities for creating and managing views in SageWorks"""
+
 import logging
 import pandas as pd
 import awswrangler as wr
@@ -7,6 +8,7 @@ import awswrangler as wr
 from sageworks.api import DataSource
 
 log = logging.getLogger("sageworks")
+
 
 # Get a list of columns from an Athena table/view
 def get_column_list(data_source: DataSource, source_table: str) -> list[str]:
@@ -53,11 +55,11 @@ def dataframe_to_table(data_source: DataSource, df: pd.DataFrame, table_name: st
         mode="overwrite",
         database=database,
         table=table_name,
-        boto3_session=boto_session
+        boto3_session=boto_session,
     )
 
     # Verify that the table is created
-    glue_client = boto_session.client('glue')
+    glue_client = boto_session.client("glue")
     try:
         glue_client.get_table(DatabaseName=database, Name=table_name)
         log.info(f"Table {table_name} successfully created in database {database}.")
