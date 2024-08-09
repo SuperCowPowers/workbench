@@ -17,7 +17,7 @@ except ImportError:
 
 # SageWorks Imports
 from sageworks.utils.repl_utils import cprint, Spinner
-from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
+from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.api.meta import Meta
 
@@ -100,6 +100,7 @@ class SageWorksShell:
         self.commands["endpoints"] = self.endpoints
         self.commands["pipelines"] = self.pipelines
         self.commands["log_debug"] = self.log_debug
+        self.commands["log_trace"] = self.log_trace
         self.commands["log_info"] = self.log_info
         self.commands["log_important"] = self.log_important
         self.commands["log_warning"] = self.log_warning
@@ -322,6 +323,10 @@ class SageWorksShell:
     @staticmethod
     def log_debug():
         logging.getLogger("sageworks").setLevel(logging.DEBUG)
+
+    @staticmethod
+    def log_trace():
+        logging.getLogger("sageworks").setLevel(TRACE_LEVEL_NUM)
 
     @staticmethod
     def log_info():
