@@ -29,7 +29,7 @@ class DataSource(AthenaSource):
         ```
     """
 
-    def __init__(self, source, name: str = None, tags: list = None):
+    def __init__(self, source, name: str = None, tags: list = None, **kwargs):
         """
         Initializes a new DataSource object.
 
@@ -60,7 +60,7 @@ class DataSource(AthenaSource):
         self._load_source(source, name, tags)
 
         # Call superclass init
-        super().__init__(name)
+        super().__init__(name, **kwargs)
 
     def details(self, **kwargs) -> dict:
         """DataSource Details
@@ -153,7 +153,7 @@ class DataSource(AthenaSource):
         )
 
         # Return the FeatureSet (which will now be up-to-date)
-        return FeatureSet(name)
+        return FeatureSet(name, force_refresh=True)
 
     def _load_source(self, source: str, name: str, tags: list):
         """Load the source of the data"""

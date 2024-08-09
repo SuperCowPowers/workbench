@@ -1,5 +1,6 @@
 """AthenaSource: SageWorks Data Source accessible through Athena"""
 
+from typing import Union
 import pandas as pd
 import awswrangler as wr
 from datetime import datetime
@@ -181,7 +182,7 @@ class AthenaSource(DataSourceAbstract):
         count_df = self.query(
             f'select count(*) AS sageworks_count from "{self.get_database()}"."{self.get_table_name()}"'
         )
-        return count_df["sageworks_count"][0]
+        return count_df["sageworks_count"][0] if count_df is not None else 0
 
     def num_columns(self) -> int:
         """Return the number of columns for this Data Source"""
@@ -195,7 +196,7 @@ class AthenaSource(DataSourceAbstract):
         """Return the column types of the internal AthenaSource"""
         return [item["Type"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
 
-    def query(self, query: str) -> pd.DataFrame:
+    def query(self, query: str) -> Union[pd.DataFrame, None]:
         """Query the AthenaSource
 
         Args:
@@ -204,16 +205,20 @@ class AthenaSource(DataSourceAbstract):
         Returns:
             pd.DataFrame: The results of the query
         """
-        df = wr.athena.read_sql_query(
-            sql=query,
-            database=self.get_database(),
-            ctas_approach=False,
-            boto3_session=self.boto_session,
-        )
-        scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
-        if scanned_bytes > 0:
-            self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
-        return df
+        try:
+            df = wr.athena.read_sql_query(
+                sql=query,
+                database=self.get_database(),
+                ctas_approach=False,
+                boto3_session=self.boto_session,
+            )
+            scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
+            if scanned_bytes > 0:
+                self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
+            return df
+        except wr.exceptions.QueryFailed as e:
+            self.log.critical(f"Failed to execute query: {e}")
+            return None
 
     def execute_statement(self, query: str):
         """Execute a non-returning SQL statement in Athena."""

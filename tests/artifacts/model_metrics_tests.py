@@ -53,6 +53,15 @@ def test_validation_predictions():
 
 def test_inference_predictions():
     print("\n\n*** Inference Predictions ***")
+
+    # Make sure we have inference predictions
+    end = Endpoint("abalone-regression-end")
+    end.auto_inference(capture=True)
+    end = Endpoint("wine-classification-end")
+    end.auto_inference(capture=True)
+
+    # Retrieve the inference predictions
+    model_reg = Model("abalone-regression", force_refresh=True)
     if model_reg.get_inference_predictions() is None:
         print(f"Model {model_reg.uuid} has no inference predictions!")
         exit(1)

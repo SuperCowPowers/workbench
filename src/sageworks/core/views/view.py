@@ -79,7 +79,8 @@ class View(ABC):
 
         # Check if the data source exists
         if not self.data_source.exists():
-            raise ValueError(f"Data Source {self.data_source_name} does not exist!")
+            self.log.critical(f"Data Source {self.data_source_name} does not exist, so skipping view creation.")
+            return
 
         # Check if the view exists
         self.view_table_name = self.table_name()

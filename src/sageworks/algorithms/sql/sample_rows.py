@@ -37,7 +37,15 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
         query = f"SELECT {sql_columns} FROM {table} TABLESAMPLE BERNOULLI({percentage})"
     else:
         query = f"SELECT {sql_columns} FROM {table}"
-    sample_df = data_source.query(query).head(sample_rows)
+    sample_df = data_source.query(query)
+
+    # Sanity Check
+    if sample_df is None:
+        log.error(f"Error pulling sample rows from {data_source.uuid}")
+        return None
+
+    # Grab the first 100 rows
+    sample_df = sample_df.head(sample_rows)
 
     # Shorten any long string values
     sample_df = shorten_values(sample_df)

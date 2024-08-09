@@ -33,7 +33,7 @@ def test_feature_set_deletion():
     df = test_data.person_data()
 
     # Make sure the data source exists
-    if not DataSource("abc").exists():
+    if not DataSource("abc", force_refresh=True).exists():
         ds = DataSource(df, name="abc")
     else:
         ds = DataSource("abc")
