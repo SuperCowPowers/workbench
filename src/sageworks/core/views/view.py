@@ -44,6 +44,7 @@ class View(ABC):
         training_df = view.pull_dataframe()
         ```
     """
+
     log = logging.getLogger("sageworks")
 
     @classmethod

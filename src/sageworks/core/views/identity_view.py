@@ -1,18 +1,15 @@
-"""IndentityView Class: A View that is a pass-through to the data source table"""
-
-from typing import Union
+"""IdentityView Class: A View that is a pass-through to the data source table"""
 
 # SageWorks Imports
 from sageworks.api import DataSource
 from sageworks.core.views.view import View, ViewType
-from sageworks.core.views.view_utils import get_column_list
 
 
-class IndentityView(View):
-    """IndentityView Class: A View that is a pass-through to the data source table"""
+class IdentityView(View):
+    """IdentityView Class: A View that is a pass-through to the data source table"""
 
     def __init__(self, data_source: DataSource):
-        """Initialize the IndentityView
+        """Initialize the IdentityView
 
         Args:
             data_source (DataSource): The DataSource object
@@ -45,7 +42,7 @@ if __name__ == "__main__":
     fs = FeatureSet("test_features")
 
     # Create a Identity View
-    view = IndentityView(fs.data_source)
+    view = IdentityView(fs.data_source)
     print(view)
 
     # Pull the display data

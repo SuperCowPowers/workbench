@@ -1,4 +1,5 @@
 """Create a Computation View: A View with a subset of columns for computation/stats purposes"""
+
 from typing import Union
 
 # SageWorks Imports
@@ -20,17 +21,17 @@ class ComputationView(View):
         super().__init__(data_source)
 
     def create_view(
-            self,
-            column_list: Union[list[str], None] = None,
-            column_limit: int = 30,
-            source_table: str = None,
+        self,
+        column_list: Union[list[str], None] = None,
+        column_limit: int = 30,
+        source_table: str = None,
     ):
         """Create a Computation View: A View with a subset of columns for computation/stats purposes
 
         Args:
             column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
             column_limit (int, optional): The max number of columns to include. Defaults to 30.
-            source_table_name (str, optional): The table/view to create the view from. Defaults to data_source base table.
+            source_table_name (str, optional): The table/view to create the view from. Defaults to base table.
         """
 
         # Set the source_table to create the view from

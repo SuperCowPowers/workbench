@@ -20,18 +20,13 @@ class TrainingView(View):
         self.view_type = ViewType.TRAINING
         super().__init__(data_source)
 
-    def create_view(
-            self,
-            id_column: str = None,
-            holdout_ids: Union[list[str], None] = None, 
-            source_table: str = None
-    ):
+    def create_view(self, id_column: str = None, holdout_ids: Union[list[str], None] = None, source_table: str = None):
         """Create a training view that marks hold out ids
 
         Args:
             id_column (str, optional): The name of the id column (default is None)
             holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None.
-            source_table_name (str, optional): The table/view to create the view from. Defaults to data_source base table.
+            source_table_name (str, optional): The table/view to create the view from. Defaults to base table.
         """
 
         # Set the source_table to create the view from
