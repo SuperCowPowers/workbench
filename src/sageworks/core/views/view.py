@@ -79,14 +79,14 @@ class View(ABC):
 
         # Check if the data source exists
         if not self.data_source.exists():
-            self.log.critical(f"Data Source {self.data_source_name} does not exist, so skipping view creation.")
+            self.log.info(f"Source {self.data_source_name} does not currently exist, skipping view creation.")
             return
 
         # Check if the view exists
         self.view_table_name = self.table_name()
         self.auto_created = False
         if not self.exists():
-            self.log.warning(f"View {self.view_type} for {self.data_source_name} does not exist. Auto creating view...")
+            self.log.important(f"View {self.view_type} for {self.data_source_name} does not exist. Auto creating view...")
             self._auto_create_view(self.view_type)
 
         # View Exists so report that we found it

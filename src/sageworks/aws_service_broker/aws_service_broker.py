@@ -142,7 +142,8 @@ class AWSServiceBroker:
                     )
                     time.sleep(sleep_times[attempt])
                 else:
-                    cls.log.critical(f"AWS Throttling Exception: Failed after {max_attempts} attempts!")
+                    if error_code == "ThrottlingException":
+                        cls.log.critical(f"AWS Throttling Exception: Failed after {max_attempts} attempts!")
                     cls.log.critical(f"AWS Response: {error.response}")
                     break  # Exit the loop
 

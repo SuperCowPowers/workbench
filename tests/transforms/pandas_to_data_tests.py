@@ -1,19 +1,24 @@
 """Tests for the Pandas DataFrame to Data Transforms"""
 
-# Local imports
-from sageworks.core.transforms.data_to_data.light.data_to_data_light import DataToDataLight
+# Sageworks imports
+from sageworks.core.transforms.pandas_transforms import PandasToData
+from sageworks.utils.test_data_generator import TestDataGenerator
 
 
 def test():
     """Tests for the Pandas DataFrame to Data Transforms"""
 
-    # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "abalone_data"
-    output_uuid = "abalone_data_copy"
-    data_to_data = DataToDataLight(input_uuid, output_uuid)
-    data_to_data.set_output_tags(["abalone", "public"])
-    data_to_data.add_output_meta({"sageworks_input": input_uuid})
-    data_to_data.transform()
+    # Generate some test data
+    test_data = TestDataGenerator()
+    df = test_data.person_data()
+
+    # Create my Pandas to DataSource Transform
+    test_uuid = "test_data"
+    df_to_data = PandasToData(test_uuid)
+    df_to_data.set_input(df)
+    df_to_data.set_output_tags(["test", "small"])
+    df_to_data.transform()
+    print(f"{test_uuid} stored as a SageWorks DataSource")
 
 
 if __name__ == "__main__":

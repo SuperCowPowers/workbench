@@ -237,8 +237,8 @@ class PandasToFeatures(Transform):
         for column in list(df.select_dtypes(include="category").columns):
             df[column] = df[column].astype("str")
 
-        # Special case for datetime types
-        for column in df.select_dtypes(include=["datetime"]).columns:
+        # Select all columns that are of datetime dtype and convert them to ISO-8601 strings
+        for column in [col for col in df.columns if pd.api.types.is_datetime64_any_dtype(df[col])]:
             df[column] = df[column].map(datetime_to_iso8601).astype("string")
 
         """FIXME Not sure we need these conversions
@@ -255,22 +255,11 @@ class PandasToFeatures(Transform):
         """Prep the DataFrame for Feature Store Creation"""
         self.log.info("Prep the output_df (cat_convert, convert types, and lowercase columns)...")
 
-        # Make sure we have the required id and event_time columns
-        self._ensure_id_column()
-        self._ensure_event_time()
-
         # Convert object and string types to Categorical
         if self.auto_one_hot:
             self.auto_convert_columns_to_categorical()
         else:
             self.manual_categorical_converter()
-
-        # We need to convert some of our column types to the correct types
-        # Feature Store only supports these data types:
-        # - Integral
-        # - Fractional
-        # - String (timestamp/datetime types need to be converted to string)
-        self.output_df = self.convert_column_types(self.output_df)
 
         # Convert columns names to lowercase, Athena will not work with uppercase column names
         if str(self.output_df.columns) != str(self.output_df.columns.str.lower()):
@@ -278,6 +267,17 @@ class PandasToFeatures(Transform):
                 if c != c.lower():
                     self.log.important(f"Column name {c} converted to lowercase: {c.lower()}")
             self.output_df.columns = self.output_df.columns.str.lower()
+
+        # Make sure we have the required id and event_time columns
+        self._ensure_id_column()
+        self._ensure_event_time()
+
+        # We need to convert some of our column types to the correct types
+        # Feature Store only supports these data types:
+        # - Integral
+        # - Fractional
+        # - String (timestamp/datetime types need to be converted to string)
+        self.output_df = self.convert_column_types(self.output_df)
 
     def create_feature_group(self):
         """Create a Feature Group, load our Feature Definitions, and wait for it to be ready"""
