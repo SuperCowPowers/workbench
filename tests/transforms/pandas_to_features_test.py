@@ -1,0 +1,30 @@
+"""Tests for the Pandas DataFrame to FeatureSet Transforms"""
+
+# Sageworks imports
+from sageworks.core.transforms.pandas_transforms import PandasToFeatures
+from sageworks.api import FeatureSet
+from sageworks.utils.test_data_generator import TestDataGenerator
+
+
+def test():
+    """Tests for the Pandas DataFrame to Data Transforms"""
+
+    # Generate some test data
+    test_data = TestDataGenerator()
+    df = test_data.person_data()
+
+    # Create my Pandas to DataSource Transform
+    test_uuid = "test_features"
+    df_to_data = PandasToFeatures(test_uuid)
+    df_to_data.set_input(df, id_column="id")
+    df_to_data.set_output_tags(["test", "small"])
+    df_to_data.transform()
+    print(f"{test_uuid} stored as a SageWorks FeatureSet")
+
+    # Set holdout ids
+    fs = FeatureSet(test())
+    fs.set_holdout_ids("id", [1, 2, 3])
+
+
+if __name__ == "__main__":
+    test()
