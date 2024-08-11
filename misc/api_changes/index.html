@@ -1394,6 +1394,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Models
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#webplugins" class="md-nav__link">
     <span class="md-ellipsis">
       Web/Plugins
@@ -1844,6 +1853,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Models
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#webplugins" class="md-nav__link">
     <span class="md-ellipsis">
       Web/Plugins
@@ -1871,12 +1889,15 @@
 <p>Since we've recently introduced a <strong>View()</strong> class for DataSources and FeatureSets we needed to rename a few classes/modules.</p>
 <h3 id="featuresets">FeatureSets</h3>
 <p>For setting holdout ids we've changed/combined to just one method <code>set_training_holdouts()</code>, so if you're using <code>create_training_view()</code> or <code>set_holdout_ids()</code> you can now just use the unified method <code>set_training_holdouts()</code>.</p>
+<h3 id="models">Models</h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>inference_predictions() --&gt; get_inference_predictions()
+</span></code></pre></div>
 <h3 id="webplugins">Web/Plugins</h3>
 <p>We've changed the Web/UI View class to 'WebView'. So anywhere where you used to have <strong>view</strong> just replace with <strong>web_view</strong></p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>from sageworks.views.artifacts_view import ArtifactsView
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>from sageworks.views.artifacts_view import ArtifactsView
 </span></code></pre></div>
 is now</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>from sageworks.web_views.artifacts_web_view import ArtifactsWebView
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>from sageworks.web_views.artifacts_web_view import ArtifactsWebView
 </span></code></pre></div>
 
 
