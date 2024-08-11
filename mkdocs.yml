@@ -40,13 +40,13 @@ nav:
       - Transform: core_classes/transforms/transform.md
   - Plugins: 
       - OverView: plugins/index.md
-      - API Changes: plugins/plugin_api_changes.md
   - SageWorks Enterprise: 
       - OverView: enterprise/index.md
       - Private SaaS: enterprise/private_saas.md
       - Themes: enterprise/themes.md
       - Project Branding: enterprise/project_branding.md
   - FAQ:  misc/faq.md
+  - API Changes: misc/api_changes.md
   - AWS Glue Jobs: glue/index.md 
   - AWS Lambda Layer: lambda_layer/index.md 
   - AWS Setup: 
