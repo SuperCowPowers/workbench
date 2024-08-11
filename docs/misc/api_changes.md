@@ -4,6 +4,11 @@ Since we've recently introduced a **View()** class for DataSources and FeatureSe
 ### FeatureSets
 For setting holdout ids we've changed/combined to just one method `set_training_holdouts()`, so if you're using `create_training_view()` or `set_holdout_ids()` you can now just use the unified method `set_training_holdouts()`.
 
+### Models
+```
+inference_predictions() --> get_inference_predictions()
+```
+
 ### Web/Plugins
 We've changed the Web/UI View class to 'WebView'. So anywhere where you used to have **view** just replace with **web_view**
 
