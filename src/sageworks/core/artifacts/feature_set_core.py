@@ -538,7 +538,7 @@ class FeatureSetCore(Artifact):
 
 if __name__ == "__main__":
     """Exercise for FeatureSet Class"""
-    from sageworks.core.artifacts.feature_set_core import FeatureSetCore  # noqa: F811
+    from sageworks.core.artifacts.feature_set_core import FeatureSetCore as LocalFeatureSetCore # noqa: F811
     from pprint import pprint
 
     # Setup Pandas output options
@@ -547,7 +547,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Grab a FeatureSet object and pull some information from it
-    my_features = FeatureSetCore("test_features")
+    my_features = LocalFeatureSetCore("test_features")
 
     # Call the various methods
     # What's my AWS ARN and URL
