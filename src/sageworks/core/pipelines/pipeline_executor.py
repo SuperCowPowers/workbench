@@ -101,7 +101,7 @@ class PipelineExecutor:
                 # Create the FeatureSet and set hold out ids if specified
                 sageworks_objects["feature_set"] = FeatureSet(kwargs["name"])
                 if holdout_ids:
-                    sageworks_objects["feature_set"].set_holdout_ids(id_column, holdout_ids)
+                    sageworks_objects["feature_set"].set_training_holdouts(id_column, holdout_ids)
 
             # Model
             elif class_name == "model":

@@ -249,8 +249,6 @@ class FeatureSetCore(Artifact):
     def get_training_data(self) -> pd.DataFrame:
         """Get the training data for this FeatureSet
 
-        Args:
-            limit (int): The number of rows to limit the query to (default: 50000)
         Returns:
             pd.DataFrame: The training data for this FeatureSet
         """

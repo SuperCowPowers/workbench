@@ -161,7 +161,7 @@ class EndpointCore(Artifact):
             self.remove_health_tag("no_activity")
         return health_issues
 
-    def is_serverless(self):
+    def is_serverless(self) -> bool:
         """Check if the current endpoint is serverless.
 
         Returns:

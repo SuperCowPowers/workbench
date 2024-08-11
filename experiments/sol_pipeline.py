@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     # Hold out logic (might be a list of ids or a stratified split)
     if isinstance(holdout, list):
-        fs.set_holdout_ids("udm_mol_id", holdout)
+        fs.set_training_holdouts("udm_mol_id", holdout)
     else:
         # Stratified Split, so we need to pull the parameters from the string
         test_size = float(holdout.split(":")[1])
@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
         # Perform the stratified split and set the hold out ids
         train, test = stratified_split(df, column_name=column_name, test_size=test_size)
-        fs.set_holdout_ids("udm_mol_id", test["udm_mol_id"].tolist())
+        fs.set_training_holdouts("udm_mol_id", test["udm_mol_id"].tolist())
 
     # Create the Model
     model_type = ModelType(model_type_str)
