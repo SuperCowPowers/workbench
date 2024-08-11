@@ -1,4 +1,5 @@
 """Tests for the Pandas DataFrame to FeatureSet Transforms"""
+import pytest
 
 # Sageworks imports
 from sageworks.core.transforms.pandas_transforms import PandasToFeatures
@@ -6,6 +7,7 @@ from sageworks.api import FeatureSet
 from sageworks.utils.test_data_generator import TestDataGenerator
 
 
+@pytest.mark.long
 def test():
     """Tests for the Pandas DataFrame to Data Transforms"""
 
@@ -22,8 +24,8 @@ def test():
     print(f"{test_uuid} stored as a SageWorks FeatureSet")
 
     # Set holdout ids
-    fs = FeatureSet(test())
-    fs.set_holdout_ids("id", [1, 2, 3])
+    fs = FeatureSet(test_uuid)
+    fs.set_training_holdouts("id", [1, 2, 3])
 
 
 if __name__ == "__main__":
