@@ -86,7 +86,9 @@ class View(ABC):
         self.view_table_name = self.table_name()
         self.auto_created = False
         if not self.exists():
-            self.log.important(f"View {self.view_type} for {self.data_source_name} does not exist. Auto creating view...")
+            self.log.important(
+                f"View {self.view_type} for {self.data_source_name} does not exist. Auto creating view..."
+            )
             self._auto_create_view(self.view_type)
 
         # View Exists so report that we found it
