@@ -42,7 +42,7 @@ glue_args = get_resolved_options(sys.argv)
 
 # Set the SAGEWORKS_BUCKET for the ConfigManager
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["--sageworks-bucket"])
+cm.set_config("SAGEWORKS_BUCKET", glue_args["sageworks-bucket"])
 
 # Create a new Data Source from an S3 Path
 source_path = "s3://sageworks-public-data/common/abalone.csv"
@@ -70,10 +70,10 @@ glue_args = get_resolved_options(sys.argv)
 
 # Set the SAGEWORKS_BUCKET for the ConfigManager
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["--sageworks-bucket"])
+cm.set_config("SAGEWORKS_BUCKET", glue_args["sageworks-bucket"])
 
 # List all the CSV files in the given S3 Path
-input_s3_path = glue_args["--input-s3-path"]
+input_s3_path = glue_args["input-s3-path"]
 for input_file in list_s3_files(input_s3_path):
 
     # Note: If we don't specify a name, one will be 'auto-generated'

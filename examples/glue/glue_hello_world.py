@@ -10,7 +10,7 @@ glue_args = get_resolved_options(sys.argv)
 
 # Set the SAGEWORKS_BUCKET for the ConfigManager
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["--sageworks-bucket"])
+cm.set_config("SAGEWORKS_BUCKET", glue_args["sageworks-bucket"])
 
 # Create a new Data Source from an S3 Path
 source_path = "s3://sageworks-public-data/common/abalone.csv"

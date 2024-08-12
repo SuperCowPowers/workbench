@@ -22,8 +22,8 @@ glue_args = get_resolved_options(sys.argv)
 
 # Set the SAGEWORKS_BUCKET for the ConfigManager
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["--sageworks-bucket"])
-cm.set_config("REDIS_HOST", glue_args["--redis-host"])
+cm.set_config("SAGEWORKS_BUCKET", glue_args["sageworks-bucket"])
+cm.set_config("REDIS_HOST", glue_args["redis-host"])
 
 # Create a new Data Source from an S3 Path
 # source_path = "s3://idb-forest-sandbox/physchemproperty/LogS/Null/gen_processed/2024_03_07_id_smiles.csv"

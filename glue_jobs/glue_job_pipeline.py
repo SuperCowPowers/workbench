@@ -21,8 +21,8 @@ glue_args = get_resolved_options(sys.argv)
 
 # Set the SageWorks Config (needs to be done early)
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["--sageworks-bucket"])
-cm.set_config("REDIS_HOST", glue_args["--redis-host"])
+cm.set_config("SAGEWORKS_BUCKET", glue_args["sageworks-bucket"])
+cm.set_config("REDIS_HOST", glue_args["redis-host"])
 log = logging.getLogger("sageworks")
 
 # Set our pipeline

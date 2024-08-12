@@ -10,10 +10,10 @@ glue_args = get_resolved_options(sys.argv)
 
 # Set the SAGEWORKS_BUCKET for the ConfigManager
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["--sageworks-bucket"])
+cm.set_config("SAGEWORKS_BUCKET", glue_args["sageworks-bucket"])
 
 # List all the CSV files in the given S3 Path
-input_s3_path = glue_args["--input-s3-path"]
+input_s3_path = glue_args["input-s3-path"]
 for input_file in list_s3_files(input_s3_path):
     # Note: If we don't specify a name, one will be 'auto-generated'
     my_data = DataSource(input_file, name=None)

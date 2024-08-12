@@ -14,7 +14,7 @@ glue_args = get_resolved_options(sys.argv)
 
 # Set the SAGEWORKS_BUCKET for the ConfigManager
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["--sageworks-bucket"])
+cm.set_config("SAGEWORKS_BUCKET", glue_args["sageworks-bucket"])
 
 # Feature Set Name (Hardcoded)
 fs_name = "solubility_featurized_fs"
