@@ -7,30 +7,28 @@ from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 def get_cloudwatch_client():
     """Get the CloudWatch Logs client using the SageWorks assumed role session."""
     session = AWSAccountClamp().boto_session()
-    return session.client('logs')
+    return session.client("logs")
 
 
 def get_latest_log_events(client, log_group_name, start_time, end_time=None):
     """Retrieve the latest log events from all log streams in a CloudWatch Logs group."""
     try:
-        streams_response = client.describe_log_streams(
-            logGroupName=log_group_name
-        )
+        streams_response = client.describe_log_streams(logGroupName=log_group_name)
 
         log_events = []
 
-        for log_stream in streams_response.get('logStreams', []):
-            log_stream_name = log_stream['logStreamName']
+        for log_stream in streams_response.get("logStreams", []):
+            log_stream_name = log_stream["logStreamName"]
             events_response = client.get_log_events(
                 logGroupName=log_group_name,
                 logStreamName=log_stream_name,
                 startTime=int(start_time.timestamp() * 1000),  # Convert to milliseconds
-                startFromHead=False
+                startFromHead=False,
             )
 
-            events = events_response.get('events', [])
+            events = events_response.get("events", [])
             for event in events:
-                event['logStreamName'] = log_stream_name
+                event["logStreamName"] = log_stream_name
 
             log_events.extend(events)
 
@@ -53,9 +51,9 @@ def monitor_log_group(log_group_name, start_time, end_time=None, poll_interval=1
 
         if log_events:
             for event in log_events:
-                log_stream_name = event['logStreamName']
-                timestamp = datetime.utcfromtimestamp(event['timestamp'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
-                message = event['message'].strip()
+                log_stream_name = event["logStreamName"]
+                timestamp = datetime.utcfromtimestamp(event["timestamp"] / 1000).strftime("%Y-%m-%d %H:%M:%S")
+                message = event["message"].strip()
                 print(f"[{log_stream_name}] [{timestamp}] {message}")
 
             # Update the start time to just after the last event's timestamp
@@ -74,10 +72,14 @@ def monitor_log_group(log_group_name, start_time, end_time=None, poll_interval=1
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Monitor CloudWatch Logs.")
-    parser.add_argument("--log-group", default="SageWorksLogGroup", help="The CloudWatch Logs group name (default: SageWorksLogGroup).")
+    parser.add_argument(
+        "--log-group", default="SageWorksLogGroup", help="The CloudWatch Logs group name (default: SageWorksLogGroup)."
+    )
     parser.add_argument("--start-time", type=int, help="Start time in minutes ago. Default is 5 minutes ago.")
     parser.add_argument("--end-time", type=int, help="End time in minutes ago for fetching a range of logs.")
-    parser.add_argument("--poll-interval", type=int, default=10, help="Polling interval in seconds. Default is 10 seconds.")
+    parser.add_argument(
+        "--poll-interval", type=int, default=10, help="Polling interval in seconds. Default is 10 seconds."
+    )
 
     return parser.parse_args()
 

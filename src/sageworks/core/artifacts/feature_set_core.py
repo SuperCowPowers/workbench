@@ -536,7 +536,7 @@ class FeatureSetCore(Artifact):
 
 if __name__ == "__main__":
     """Exercise for FeatureSet Class"""
-    from sageworks.core.artifacts.feature_set_core import FeatureSetCore as LocalFeatureSetCore # noqa: F811
+    from sageworks.core.artifacts.feature_set_core import FeatureSetCore as LocalFeatureSetCore  # noqa: F811
     from pprint import pprint
 
     # Setup Pandas output options

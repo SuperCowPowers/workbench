@@ -12,13 +12,6 @@ from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.docker_utils import running_on_docker, running_on_ecs
 
 
-# Check if we're running on Docker
-# AWS Cloud Watch doesn't like ANSI escape codes or custom log levels
-from sageworks.utils.docker_utils import running_on_ecs
-
-on_ecs = running_on_ecs()
-
-
 class ThrottlingFilter(logging.Filter):
     def __init__(self, rate_seconds=60):
         super().__init__()
@@ -70,22 +63,22 @@ logging.Logger.important = important
 # Define a ColoredFormatter
 class ColoredFormatter(logging.Formatter):
     COLORS_DARK_THEME = {
-        "DEBUG": "\x1b[38;5;245m",      # LightGrey
-        "TRACE": "\x1b[38;5;141m",      # LightPurple
-        "INFO": "\x1b[38;5;69m",        # LightBlue
+        "DEBUG": "\x1b[38;5;245m",  # LightGrey
+        "TRACE": "\x1b[38;5;141m",  # LightPurple
+        "INFO": "\x1b[38;5;69m",  # LightBlue
         "IMPORTANT": "\x1b[38;5;113m",  # LightGreen
-        "WARNING": "\x1b[38;5;220m",    # DarkYellow
-        "ERROR": "\x1b[38;5;208m",      # Orange
-        "CRITICAL": "\x1b[38;5;198m",   # Hot Pink
+        "WARNING": "\x1b[38;5;220m",  # DarkYellow
+        "ERROR": "\x1b[38;5;208m",  # Orange
+        "CRITICAL": "\x1b[38;5;198m",  # Hot Pink
     }
     COLORS_LIGHT_THEME = {
-        "DEBUG": "\x1b[38;5;21m",       # Blue
-        "TRACE": "\x1b[38;5;91m",       # Purple
-        "INFO": "\x1b[38;5;22m",        # Green
+        "DEBUG": "\x1b[38;5;21m",  # Blue
+        "TRACE": "\x1b[38;5;91m",  # Purple
+        "INFO": "\x1b[38;5;22m",  # Green
         "IMPORTANT": "\x1b[38;5;178m",  # Lime
-        "WARNING": "\x1b[38;5;94m",     # DarkYellow
-        "ERROR": "\x1b[38;5;166m",      # Orange
-        "CRITICAL": "\x1b[38;5;124m",   # Red
+        "WARNING": "\x1b[38;5;94m",  # DarkYellow
+        "ERROR": "\x1b[38;5;166m",  # Orange
+        "CRITICAL": "\x1b[38;5;124m",  # Red
     }
     COLORS = COLORS_DARK_THEME
 
@@ -98,9 +91,9 @@ class ColoredFormatter(logging.Formatter):
 
 def determine_log_stream():
     """Determine the log stream name based on the environment."""
-    if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
+    if "AWS_LAMBDA_FUNCTION_NAME" in os.environ:
         return f"lambda/{os.environ['AWS_LAMBDA_FUNCTION_NAME']}"
-    elif 'GLUE_JOB_NAME' in os.environ:
+    elif "GLUE_JOB_NAME" in os.environ:
         return f"glue/{os.environ['GLUE_JOB_NAME']}"
     elif running_on_ecs():
         return f"dashboard/{os.environ.get('ECS_TASK_DEFINITION_FAMILY', 'unknown')}"
@@ -110,8 +103,10 @@ def determine_log_stream():
         # This should work across platforms, including Windows
         return f"laptop/{getpass.getuser()}"
 
+
 log_stream_name = determine_log_stream()
 print(f"Log Stream Name: {log_stream_name}")
+
 
 def logging_setup(color_logs=True):
     """Setup the logging for the application."""
@@ -145,7 +140,7 @@ def logging_setup(color_logs=True):
     try:
         # Get the boto3 session from the SageWorks Account Clamp
         session = AWSAccountClamp().boto_session()
-        cloudwatch_client = session.client('logs')
+        cloudwatch_client = session.client("logs")
         cloudwatch_handler = watchtower.CloudWatchLogHandler(
             log_group="SageWorksLogGroup",
             stream_name=log_stream_name,

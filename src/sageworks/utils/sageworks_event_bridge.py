@@ -34,9 +34,8 @@ class SageWorksEventBridge:
             self.log.info(f"Connected to EventBridge event bus: {self.event_bus}")
 
         except ClientError as e:
-            if e.response['Error']['Code'] == 'ResourceNotFoundException':
-                self.log.error(f"Event bus '{self.event_bus}' does not exist. "
-                               "Event messages will not be sent.")
+            if e.response["Error"]["Code"] == "ResourceNotFoundException":
+                self.log.error(f"Event bus '{self.event_bus}' does not exist. " "Event messages will not be sent.")
             else:
                 self.log.error(f"Failed to connect to EventBridge: {e}")
             # EventBridge client remains None, and events won't be sent

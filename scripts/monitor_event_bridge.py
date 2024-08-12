@@ -3,13 +3,14 @@ import time
 
 # Get the boto3 session from the SageWorks Account Clamp
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+
 session = AWSAccountClamp().boto_session()
 
 # Create EventBridge client
-eventbridge_client = session.client('events')
+eventbridge_client = session.client("events")
 
 # Define the event bus name
-event_bus_name = 'sageworks'
+event_bus_name = "sageworks"
 
 
 # Function to monitor events
@@ -19,9 +20,9 @@ def monitor_events():
             response = eventbridge_client.list_rules(EventBusName=event_bus_name)
             print(f"Monitoring events from EventBus: {event_bus_name}")
 
-            for rule in response.get('Rules', []):
+            for rule in response.get("Rules", []):
                 print(f"\nRule: {rule['Name']}")
-                events_response = eventbridge_client.describe_rule(Name=rule['Name'], EventBusName=event_bus_name)
+                events_response = eventbridge_client.describe_rule(Name=rule["Name"], EventBusName=event_bus_name)
                 print(json.dumps(events_response, indent=2))
 
             # Wait for a short period before checking again
