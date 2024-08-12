@@ -1,59 +1,76 @@
-"""SageWorksEventBridge: Class for publishing events to AWS EventBridge"""
-
 import json
-from pprint import pprint
 import logging
+from pprint import pprint
+from botocore.exceptions import ClientError
 
 # Local Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.core.transforms.transform import TransformOutput as ArtifactType
 
 
 class SageWorksEventBridge:
     def __init__(self, bus_name="sageworks"):
-        """SageWorksEventBridge: Class for publishing events to AWS EventBridge"""
+        """SageWorksEventBridge: Class for publishing logging events to AWS EventBridge"""
         self.log = logging.getLogger("sageworks")
         self.event_bus = bus_name
+        self.event_bridge = None
 
         # Grab a SageWorks Session (this allows us to assume the SageWorks ExecutionRole)
         self.boto_session = AWSAccountClamp().boto_session()
 
-        # Get our AWS EventBridge Client
-        self.event_bridge = self.boto_session.client("events")
+        # Check if the EventBridge bus exists
+        self._check_event_bus()
 
-    def create_artifact(self, uuid: str, artifact_type: ArtifactType):
-        event = {
-            "eventType": "CREATE_ARTIFACT",
-            "artifactType": artifact_type.name,
-            "uuid": uuid,
-        }
-        return self.send_event(event, "ArtifactChange")
+    def _check_event_bus(self):
+        """Check if the event bus exists and set up the EventBridge client"""
+        try:
+            # Get our AWS EventBridge Client
+            event_bridge_client = self.boto_session.client("events")
 
-    def modify_artifact(self, uuid: str, artifact_type: ArtifactType):
-        event = {
-            "eventType": "MODIFY_ARTIFACT",
-            "artifactType": artifact_type.name,
-            "uuid": uuid,
-        }
-        return self.send_event(event, "ArtifactChange")
+            # Describe the event bus to check if it exists
+            event_bridge_client.describe_event_bus(Name=self.event_bus)
 
-    def archive_artifact(self, uuid: str, artifact_type: ArtifactType):
-        event = {
-            "eventType": "ARCHIVE_ARTIFACT",
-            "artifactType": artifact_type.name,
-            "uuid": uuid,
-        }
-        return self.send_event(event, "ArtifactChange")
+            # If no exception, set the event_bridge client for future use
+            self.event_bridge = event_bridge_client
+            self.log.info(f"Connected to EventBridge event bus: {self.event_bus}")
 
-    def delete_artifact(self, uuid: str, artifact_type: ArtifactType):
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'ResourceNotFoundException':
+                self.log.error(f"Event bus '{self.event_bus}' does not exist. "
+                               "Event messages will not be sent.")
+            else:
+                self.log.error(f"Failed to connect to EventBridge: {e}")
+            # EventBridge client remains None, and events won't be sent
+
+    def event_warning(self, message: str, **kwargs):
         event = {
-            "eventType": "DELETE_ARTIFACT",
-            "artifactType": artifact_type.name,
-            "uuid": uuid,
+            "eventType": "WARNING",
+            "message": message,
+            "details": kwargs,
         }
-        return self.send_event(event, "ArtifactChange")
+        return self.send_event(event, "LoggingEvent")
+
+    def event_error(self, message: str, **kwargs):
+        event = {
+            "eventType": "ERROR",
+            "message": message,
+            "details": kwargs,
+        }
+        return self.send_event(event, "LoggingEvent")
+
+    def event_critical(self, message: str, **kwargs):
+        event = {
+            "eventType": "CRITICAL",
+            "message": message,
+            "details": kwargs,
+        }
+        return self.send_event(event, "LoggingEvent")
 
     def send_event(self, event, detail_type):
+        # If the event_bridge is not set, log a warning and return without sending
+        if self.event_bridge is None:
+            self.log.warning("Event not sent. EventBridge bus is unavailable.")
+            return None
+
         event_data = {
             "Detail": json.dumps(event),
             "DetailType": detail_type,
@@ -81,18 +98,16 @@ class SageWorksEventBridge:
 
 
 def test():
-    """Run a test for EventBridge class"""
+    """Run a test for SageWorksEventBridge class"""
 
     event_bridge = SageWorksEventBridge()
 
     # Send some test EventBridge messages
-    response = event_bridge.create_artifact("123", ArtifactType.DATA_SOURCE)
+    response = event_bridge.event_warning("This is a test warning", component="TestComponent")
     pprint(response)
-    response = event_bridge.modify_artifact("123", ArtifactType.DATA_SOURCE)
+    response = event_bridge.event_error("This is a test error", component="TestComponent")
     pprint(response)
-    response = event_bridge.archive_artifact("123", ArtifactType.DATA_SOURCE)
-    pprint(response)
-    response = event_bridge.delete_artifact("123", ArtifactType.DATA_SOURCE)
+    response = event_bridge.event_critical("This is a test critical error", component="TestComponent")
     pprint(response)
 
 
