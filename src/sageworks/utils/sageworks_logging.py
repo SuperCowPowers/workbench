@@ -81,6 +81,7 @@ class ColoredFormatter(logging.Formatter):
         log_message = super().format(record)
         return f"{self.COLORS.get(record.levelname, self.RESET)}{log_message}{self.RESET}"
 
+
 def logging_setup(color_logs=True):
     """Setup the logging for the application."""
 

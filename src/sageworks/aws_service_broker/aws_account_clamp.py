@@ -173,12 +173,10 @@ class AWSAccountClamp:
         Returns:
             bool: True if running in AWS Glue environment, False otherwise.
         """
-        try:
-            import awsglue  # noqa: F401
-
+        if "GLUE_VERSION" in os.environ:
             cls.log.info("Running in AWS Glue Environment...")
             return True
-        except ImportError:
+        else:
             return False
 
     @classmethod
@@ -199,13 +197,13 @@ class AWSAccountClamp:
     def determine_log_stream(cls):
         """Determine the log stream name based on the environment."""
         if cls.running_on_lambda():
-            return f"lambda/{os.environ['AWS_LAMBDA_FUNCTION_NAME']}"
+            return f"lambda/{os.environ.get('AWS_LAMBDA_FUNCTION_NAME', 'unknown')}"
         elif cls.running_on_glue():
-            return f"glue"
+            return f"glue/{os.environ.get('JOB_NAME', 'unknown')}"
         elif running_on_ecs():
             return f"dashboard/{os.environ.get('ECS_TASK_DEFINITION_FAMILY', 'unknown')}"
         elif running_on_docker():
-            return f"docker"
+            return f"docker/{os.environ.get('SERVICE_NAME', 'unknown')}"
         else:
             # This should work across platforms, including Windows
             return f"laptop/{getpass.getuser()}"
