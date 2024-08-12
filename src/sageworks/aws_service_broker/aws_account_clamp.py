@@ -152,18 +152,7 @@ class AWSAccountClamp:
     @classmethod
     def sageworks_execution_role_arn(cls):
         """Get the SageWorks Execution Role ARN"""
-        iam = boto3.client("iam")
-        try:
-            role_arn = iam.get_role(RoleName=cls.role_name)["Role"]["Arn"]
-            return role_arn
-        except iam.exceptions.NoSuchEntityException:
-            msg = f"Could Not Find Role {cls.role_name}"
-            cls.log.critical(msg)
-            raise RuntimeError(msg)
-        except UnauthorizedSSOTokenError:
-            msg = "SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
-            cls.log.critical(msg)
-            raise RuntimeError(msg)
+        return f"arn:aws:iam::{cls.account_id}:role/{cls.role_name}"
 
     @classmethod
     def running_on_glue(cls):
