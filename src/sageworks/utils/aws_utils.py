@@ -431,12 +431,12 @@ def get_glue_job_name(session):
         session (): A boto3 session object
     """
     glue_client = session.client("glue")
-    job_run_id = os.environ.get('AWS_GLUE_JOB_RUN_ID')
+    job_run_id = os.environ.get("AWS_GLUE_JOB_RUN_ID")
     if job_run_id:
-        response = glue_client.get_job_run(JobName='your-glue-job-name', RunId=job_run_id)
-        return response['JobRun'].get('JobName', 'unknown')
+        response = glue_client.get_job_run(JobName="your-glue-job-name", RunId=job_run_id)
+        return response["JobRun"].get("JobName", "unknown")
 
-    return 'unknown'
+    return "unknown"
 
 
 if __name__ == "__main__":
