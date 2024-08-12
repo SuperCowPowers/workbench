@@ -1,4 +1,3 @@
-import os
 import boto3
 import aws_cdk as cdk
 from pprint import pprint
