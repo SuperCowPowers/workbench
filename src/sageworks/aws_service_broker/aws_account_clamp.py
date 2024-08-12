@@ -19,7 +19,6 @@ import logging
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 from sageworks.utils.docker_utils import running_on_docker, running_on_ecs
-from sageworks.utils.aws_utils import get_glue_job_name
 
 
 class AWSAccountClamp:
@@ -189,7 +188,7 @@ class AWSAccountClamp:
         if cls.running_on_lambda():
             return f"lambda/{os.environ.get('AWS_LAMBDA_FUNCTION_NAME', 'unknown')}"
         elif cls.running_on_glue():
-            return f"glue/{get_glue_job_name(cls.boto3_session)}"
+            return f"glue/{cls.cm.get_config('GLUE_JOB_NAME', 'unknown')}"
         elif running_on_ecs():
             return f"dashboard/{os.environ.get('ECS_TASK_DEFINITION_FAMILY', 'unknown')}"
         elif running_on_docker():

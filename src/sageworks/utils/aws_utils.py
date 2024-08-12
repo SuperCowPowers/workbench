@@ -424,21 +424,6 @@ def aws_url(artifact_info, artifact_type, aws_account_clamp):
         return aws_url.replace("__question__", "?").replace("__pound__", "#")
 
 
-def get_glue_job_name(session):
-    """Fetch the Glue job name using the AWS Glue API
-
-    Args:
-        session (): A boto3 session object
-    """
-    glue_client = session.client("glue")
-    job_run_id = os.environ.get("AWS_GLUE_JOB_RUN_ID")
-    if job_run_id:
-        response = glue_client.get_job_run(JobName="your-glue-job-name", RunId=job_run_id)
-        return response["JobRun"].get("JobName", "unknown")
-
-    return "unknown"
-
-
 if __name__ == "__main__":
     """Exercise the AWS Utils"""
     from pprint import pprint
@@ -448,10 +433,6 @@ if __name__ == "__main__":
     # Grab out SageMaker Session from the AWS Account Clamp
     sm_session = AWSAccountClamp().sagemaker_session()
     boto3_session = AWSAccountClamp().boto_session()
-
-    # Test the get_glu_job_name function
-    job_name = get_glue_job_name(boto3_session)
-    print(f"Glue Job Name: {job_name}")
 
     my_features = FeatureSetCore("test_features")
     my_meta = my_features.sageworks_meta()
