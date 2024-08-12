@@ -2,6 +2,8 @@
 
 import os
 import boto3
+import watchtower
+import getpass
 import awswrangler as wr
 from botocore.exceptions import (
     ClientError,
@@ -16,6 +18,7 @@ import logging
 
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
+from sageworks.utils.docker_utils import running_on_docker, running_on_ecs
 
 
 class AWSAccountClamp:
@@ -70,6 +73,11 @@ class AWSAccountClamp:
             else:
                 # Assume the SageWorks Role and set up our AWS Session credentials with automatic refresh
                 cls.boto3_session = cls._sageworks_role_boto3_session()
+
+            # Add a Cloud Waatch handler to the sageworks logger
+            cls.log.info("Adding CloudWatch Logs Handler...")
+            cls.log_stream_name = cls.determine_log_stream()
+            cls.add_cloudwatch_logs_handler()
 
             # Create the Singleton Instance
             cls.instance = super(AWSAccountClamp, cls).__new__(cls)
@@ -186,6 +194,38 @@ class AWSAccountClamp:
             return True
         else:
             return False
+
+    @classmethod
+    def determine_log_stream(cls):
+        """Determine the log stream name based on the environment."""
+        if cls.running_on_lambda():
+            return f"lambda/{os.environ['AWS_LAMBDA_FUNCTION_NAME']}"
+        elif cls.running_on_glue():
+            return f"glue"
+        elif running_on_ecs():
+            return f"dashboard/{os.environ.get('ECS_TASK_DEFINITION_FAMILY', 'unknown')}"
+        elif running_on_docker():
+            return f"docker"
+        else:
+            # This should work across platforms, including Windows
+            return f"laptop/{getpass.getuser()}"
+
+    @classmethod
+    def add_cloudwatch_logs_handler(cls):
+        """Add a CloudWatch Logs handler to the logger"""
+        try:
+            # Get the boto3 session from the SageWorks Account Clamp
+            session = cls.boto3_session
+            cloudwatch_client = session.client("logs")
+            cloudwatch_handler = watchtower.CloudWatchLogHandler(
+                log_group="SageWorksLogGroup",
+                stream_name=cls.log_stream_name,
+                boto3_client=cloudwatch_client,
+            )
+            cloudwatch_handler.setFormatter(cls.log.handlers[0].formatter)
+            cls.log.addHandler(cloudwatch_handler)
+        except ClientError as e:
+            cls.log.error(f"Failed to set up CloudWatch Logs handler: {e}")
 
     @classmethod
     def _sageworks_role_boto3_session(cls):

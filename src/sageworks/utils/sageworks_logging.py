@@ -3,13 +3,6 @@ import sys
 import logging
 from collections import defaultdict
 import time
-import getpass
-from botocore.exceptions import ClientError
-import watchtower
-
-# Get the boto3 session from the SageWorks Account Clamp
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.docker_utils import running_on_docker, running_on_ecs
 
 
 class ThrottlingFilter(logging.Filter):
@@ -88,26 +81,6 @@ class ColoredFormatter(logging.Formatter):
         log_message = super().format(record)
         return f"{self.COLORS.get(record.levelname, self.RESET)}{log_message}{self.RESET}"
 
-
-def determine_log_stream():
-    """Determine the log stream name based on the environment."""
-    if "AWS_LAMBDA_FUNCTION_NAME" in os.environ:
-        return f"lambda/{os.environ['AWS_LAMBDA_FUNCTION_NAME']}"
-    elif "GLUE_JOB_NAME" in os.environ:
-        return f"glue/{os.environ['GLUE_JOB_NAME']}"
-    elif running_on_ecs():
-        return f"dashboard/{os.environ.get('ECS_TASK_DEFINITION_FAMILY', 'unknown')}"
-    elif running_on_docker():
-        return f"docker/{os.environ.get('HOSTNAME', 'unknown')}"
-    else:
-        # This should work across platforms, including Windows
-        return f"laptop/{getpass.getuser()}"
-
-
-log_stream_name = determine_log_stream()
-print(f"Log Stream Name: {log_stream_name}")
-
-
 def logging_setup(color_logs=True):
     """Setup the logging for the application."""
 
@@ -135,21 +108,6 @@ def logging_setup(color_logs=True):
     )
     handler.setFormatter(formatter)
     log.addHandler(handler)
-
-    # Add CloudWatch Logs handler
-    try:
-        # Get the boto3 session from the SageWorks Account Clamp
-        session = AWSAccountClamp().boto_session()
-        cloudwatch_client = session.client("logs")
-        cloudwatch_handler = watchtower.CloudWatchLogHandler(
-            log_group="SageWorksLogGroup",
-            stream_name=log_stream_name,
-            boto3_client=cloudwatch_client,
-        )
-        cloudwatch_handler.setFormatter(formatter)
-        log.addHandler(cloudwatch_handler)
-    except ClientError as e:
-        print(f"Failed to set up CloudWatch Logs handler: {e}")
 
     # Setup logging level
     debug_env = os.getenv("SAGEWORKS_DEBUG", "False")
