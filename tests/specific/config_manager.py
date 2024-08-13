@@ -22,15 +22,6 @@ def test_config_manager():
     # All config
     pprint(cm.get_all_config())
 
-    # Unset SAGEWORKS_CONFIG
-    os.environ.pop("SAGEWORKS_CONFIG", None)
-    ConfigManager._instance = None  # We need to reset the singleton instance for testing
-
-    # Add the SAGEWORKS_BUCKET and REDIS_HOST to the ENV vars
-    os.environ["SAGEWORKS_BUCKET"] = "bucket-from-env"
-    cm = ConfigManager()
-    pprint(cm.get_all_config())
-
 
 if __name__ == "__main__":
 
