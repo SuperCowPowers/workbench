@@ -3,6 +3,8 @@
 import sys
 from typing import List, Dict, Optional
 import awswrangler as wr
+import logging
+import traceback
 
 
 def get_resolved_options(argv: List[str], options: Optional[List[str]] = None) -> Dict[str, str]:
@@ -32,6 +34,26 @@ def get_resolved_options(argv: List[str], options: Optional[List[str]] = None) -
         i += 1  # Always increment i for the next argument
 
     return resolved_options
+
+
+def sageworks_exception_handler():
+    """
+    Sets up a global exception handler to catch uncaught exceptions,
+    logs the exception information and full stack trace using the 'sageworks' logger.
+    """
+    def log_uncaught_exceptions(exctype, value, tb):
+        # Get the 'sageworks' logger
+        log = logging.getLogger("sageworks")
+
+        # Format the stack trace and log the exception details
+        stack_trace = ''.join(traceback.format_exception(exctype, value, tb))
+        log.critical("Sageworks Catching Exception:\n%s", stack_trace)
+
+        # Re-raise the exception to maintain the standard exception behavior
+        raise value
+
+    # Set the global exception hook
+    sys.excepthook = log_uncaught_exceptions
 
 
 def list_s3_files(s3_path: str, extensions: str = "*.csv") -> List[str]:
@@ -83,3 +105,7 @@ if __name__ == "__main__":
     # Test the resolved options with a specified list of options
     print("Specified Resolved Options")
     print(get_resolved_options(args, ["s3path", "JOB_ID", "JOB_RUN_ID", "JOB_NAME"]))
+
+    # Test the exception handler
+    sageworks_exception_handler()
+    foo = bar["baz"]
