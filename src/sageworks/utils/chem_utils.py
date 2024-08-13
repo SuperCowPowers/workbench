@@ -1,4 +1,5 @@
 """Chem/RDKIT utilities for Sageworks"""
+
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Draw
@@ -51,7 +52,7 @@ def log_to_micromolar(log_value):
     Returns:
     float: Concentration in micromolar.
     """
-    value_mol_per_l = 10 ** log_value  # Convert log10 back to mol/L
+    value_mol_per_l = 10**log_value  # Convert log10 back to mol/L
     value_uM = value_mol_per_l * 1e6  # Convert mol/L to µM
     return value_uM
 

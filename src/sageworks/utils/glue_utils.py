@@ -41,12 +41,13 @@ def sageworks_exception_handler():
     Sets up a global exception handler to catch uncaught exceptions,
     logs the exception information and full stack trace using the 'sageworks' logger.
     """
+
     def log_uncaught_exceptions(exctype, value, tb):
         # Get the 'sageworks' logger
         log = logging.getLogger("sageworks")
 
         # Format the stack trace and log the exception details
-        stack_trace = ''.join(traceback.format_exception(exctype, value, tb))
+        stack_trace = "".join(traceback.format_exception(exctype, value, tb))
         log.critical("Sageworks Catching Exception:\n%s", stack_trace)
 
         # Re-raise the exception to maintain the standard exception behavior
@@ -108,4 +109,4 @@ if __name__ == "__main__":
 
     # Test the exception handler
     sageworks_exception_handler()
-    foo = bar["baz"]
+    foo = bar["baz"]  # noqa: F821

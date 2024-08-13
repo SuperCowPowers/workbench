@@ -117,8 +117,9 @@ def logging_setup(color_logs=True):
         log.debug("Debugging enabled via SAGEWORKS_DEBUG environment variable.")
     else:
         log.setLevel(logging.INFO)
-        throttle_filter = ThrottlingFilter(rate_seconds=5)
-        # handler.addFilter(throttle_filter)  # Uncomment to throttle duplicate messages
+        # Note: Not using the ThrottlingFilter for now
+        # throttle_filter = ThrottlingFilter(rate_seconds=5)
+        # handler.addFilter(throttle_filter)
 
     # Suppress specific logger
     logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
