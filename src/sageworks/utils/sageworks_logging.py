@@ -118,7 +118,7 @@ def logging_setup(color_logs=True):
     else:
         log.setLevel(logging.INFO)
         throttle_filter = ThrottlingFilter(rate_seconds=5)
-        handler.addFilter(throttle_filter)
+        # handler.addFilter(throttle_filter)  # Uncomment to throttle duplicate messages
 
     # Suppress specific logger
     logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
