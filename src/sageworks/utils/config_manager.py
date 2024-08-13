@@ -3,12 +3,15 @@ import os
 import sys
 import platform
 import logging
-import importlib.resources as resources
+import importlib.resources as resources  # noqa: F401 Python 3.9 compatibility
 from typing import Any, Dict
 
 # SageWorks imports
 from sageworks.utils.license_manager import LicenseManager
 from sageworks.utils.docker_utils import running_on_docker
+
+# Python 3.9 compatibility
+from sageworks.utils.resource_utils import get_resource_path
 
 
 class FatalConfigError(Exception):
@@ -128,14 +131,14 @@ class ConfigManager:
             return True
         return False
 
-    @staticmethod
-    def open_source_api_key() -> str:
+    def open_source_api_key(self) -> str:
         """Read the open source API key from the package resources.
 
         Returns:
             str: The open source API key.
         """
-        with resources.path("sageworks.resources", "open_source_api.key") as open_source_key_path:
+        # Python 3.9 compatibility
+        with get_resource_path("sageworks.resources", "open_source_api.key") as open_source_key_path:
             with open(open_source_key_path, "r") as key_file:
                 return key_file.read().strip()
 

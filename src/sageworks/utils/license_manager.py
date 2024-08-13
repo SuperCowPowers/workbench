@@ -6,12 +6,15 @@ import json
 import logging
 import requests
 from typing import Union
-import importlib.resources as resources
+import importlib.resources as resources  # noqa: F401 Python 3.9 compatibility
 from datetime import datetime
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
+
+# Python 3.9 compatibility
+from sageworks.utils.resource_utils import get_resource_path
 
 
 class FatalLicenseError(Exception):
@@ -98,10 +101,6 @@ class LicenseManager:
 
     @classmethod
     def verify_signature(cls, license_data, signature):
-        # HACK: Check for Python 3.9 or earlier
-        if sys.version_info < (3, 10):
-            cls.log.warning("Python 3.10 or later is required for signature verification.")
-            return True
         public_key = cls.read_signature_public_key()
         try:
             public_key.verify(
@@ -139,7 +138,8 @@ class LicenseManager:
         Returns:
             The public key as an object.
         """
-        with resources.path("sageworks.resources", "signature_verify_pub.pem") as public_key_path:
+        # Python 3.9 compatibility
+        with get_resource_path("sageworks.resources", "signature_verify_pub.pem") as public_key_path:
             with open(public_key_path, "rb") as key_file:
                 public_key_data = key_file.read()
 
