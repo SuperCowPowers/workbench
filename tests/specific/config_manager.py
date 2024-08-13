@@ -1,4 +1,3 @@
-import os
 from sageworks.utils.config_manager import ConfigManager
 
 
