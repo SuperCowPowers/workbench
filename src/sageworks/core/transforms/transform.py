@@ -3,7 +3,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from typing import final
+from typing import Union, final
 import logging
 
 # SageWorks Imports
@@ -87,10 +87,10 @@ class Transform(ABC):
         """Post-Transform ensures that the output Artifact is ready for use"""
         pass
 
-    def set_output_tags(self, tags: list | str):
+    def set_output_tags(self, tags: Union[list, str]):
         """Set the tags that will be associated with the output object
         Args:
-            tags (list | str): The list of tags or a '::' separated string of tags"""
+            tags (Union[list, str]): The list of tags or a '::' separated string of tags"""
         if isinstance(tags, list):
             self.output_tags = self.tag_delimiter.join(tags)
         else:
