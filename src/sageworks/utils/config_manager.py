@@ -382,7 +382,7 @@ if __name__ == "__main__":
     print(f"SAGEWORKS_PLUGINS: {sageworks_plugins}")
 
     # License ID
-    print(f"SAGEWORKS_LICENSE_ID: {ConfigManager().get_license_id()}")
+    print(f"SAGEWORKS_LICENSE_ID: {cm.get_license_id()}")
 
     # API Key Info
     my_api_key_info = cm.get_api_key_info()
