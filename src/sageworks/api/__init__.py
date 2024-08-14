@@ -11,8 +11,8 @@ These class provide high-level APIs for the SageWorks package, offering easy acc
 
 from .data_source import DataSource
 from .feature_set import FeatureSet
-from .model import Model
+from .model import Model, ModelType
 from .endpoint import Endpoint
 from .meta import Meta
 
-__all__ = ["DataSource", "FeatureSet", "Model", "Endpoint", "Meta"]
+__all__ = ["DataSource", "FeatureSet", "Model", "ModelType", "Endpoint", "Meta"]
