@@ -107,6 +107,7 @@ class SageWorksShell:
         self.commands["aws_refresh"] = self.aws_refresh
         self.commands["config"] = self.show_config
         self.commands["status"] = self.status_description
+        self.commands["log"] = logging.getLogger("sageworks")
 
     def start(self):
         """Start the SageWorks IPython shell"""
