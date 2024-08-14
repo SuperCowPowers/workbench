@@ -162,7 +162,8 @@ class AWSAccountClamp:
         Returns:
             bool: True if running in AWS Glue environment, False otherwise.
         """
-        if "GLUE_VERSION" in os.environ:
+        # Check if GLUE_VERSION or GLUE_PYTHON_VERSION is in the environment
+        if "GLUE_VERSION" in os.environ or "GLUE_PYTHON_VERSION" in os.environ:
             cls.log.info("Running in AWS Glue Environment...")
             return True
         else:
