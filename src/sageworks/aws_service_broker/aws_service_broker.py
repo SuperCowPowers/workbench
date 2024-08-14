@@ -135,7 +135,7 @@ class AWSServiceBroker:
                     f"Attempt {attempt}: Failed to refresh AWS data for {category}: {error_code} - {error_message}"
                 )
 
-                # Quadratic backoff for ThrottlingExceptions
+                # Exponential backoff for ThrottlingExceptions
                 if error_code == "ThrottlingException" and attempt < max_attempts:
                     cls.log.warning(
                         f"ThrottlingException: Waiting for {sleep_times[attempt]} seconds before retrying..."
