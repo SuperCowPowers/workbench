@@ -63,7 +63,7 @@ def client_error_info(err: botocore.exceptions.ClientError):
     log.error(f"Request ID: {request_id}")
 
 
-def list_tags_with_throttle(arn: str, sm_session: SageSession) -> dict:
+def list_tags_with_throttle(arn: str, sm_session) -> dict:
     """A Wrapper around SageMaker's list_tags method that handles throttling
     Args:
         arn (str): The ARN of the SageMaker resource
@@ -76,10 +76,11 @@ def list_tags_with_throttle(arn: str, sm_session: SageSession) -> dict:
 
     # Log the call
     log.debug(f"Calling list_tags for {arn}...")
-    sleep_time = 0.25
+    sleep_times = [0.25, 0.5, 1, 2, 4, 8]
+    max_attempts = len(sleep_times)
 
-    # Loop 4 times with exponential backoff
-    for i in range(4):
+    # Loop with exponential backoff
+    for attempt in range(max_attempts):
         try:
             # Call the AWS List Tags method
             aws_tags = sm_session.list_tags(arn)
@@ -88,13 +89,23 @@ def list_tags_with_throttle(arn: str, sm_session: SageSession) -> dict:
 
         except botocore.exceptions.ClientError as e:
             error_code = e.response["Error"]["Code"]
+            error_message = e.response["Error"]["Message"]
+
             if error_code == "ThrottlingException":
                 log.info(f"ThrottlingException: list_tags on {arn}")
-                time.sleep(sleep_time)
-                sleep_time *= 2
+                time.sleep(sleep_times[attempt])
+
+            elif error_code == "ValidationException":
+                if "does not exist" in error_message:
+                    log.warning(f"ValidationException: {arn} does not exist")
+                    return {}
+                else:
+                    log.error(f"ValidationException: {error_message}")
+                    raise e
+
             else:
                 # Handle other ClientErrors that may occur
-                log.error(f"Unexpected ClientError: {error_code}")
+                log.error(f"Unexpected ClientError: {error_code} - {error_message}")
                 raise e
 
     # If we get here, we've failed to retrieve the tags
