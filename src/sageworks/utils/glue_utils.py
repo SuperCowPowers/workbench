@@ -5,6 +5,7 @@ from typing import List, Dict, Optional
 import awswrangler as wr
 import logging
 import traceback
+from contextlib import contextmanager
 
 
 def get_resolved_options(argv: List[str], options: Optional[List[str]] = None) -> Dict[str, str]:
@@ -36,25 +37,15 @@ def get_resolved_options(argv: List[str], options: Optional[List[str]] = None) -
     return resolved_options
 
 
-def sageworks_exception_handler():
-    """
-    Sets up a global exception handler to catch uncaught exceptions,
-    logs the exception information and full stack trace using the 'sageworks' logger.
-    """
-
-    def log_uncaught_exceptions(exctype, value, tb):
-        # Get the 'sageworks' logger
+@contextmanager
+def exception_log_forward():
+    try:
+        yield
+    except Exception as e:
         log = logging.getLogger("sageworks")
-
-        # Format the stack trace and log the exception details
-        stack_trace = "".join(traceback.format_exception(exctype, value, tb))
-        log.critical("Sageworks Catching Exception:\n%s", stack_trace)
-
-        # Re-raise the exception to maintain the standard exception behavior
-        raise value
-
-    # Set the global exception hook
-    sys.excepthook = log_uncaught_exceptions
+        stack_trace = "".join(traceback.format_exception(None, e, e.__traceback__))
+        log.critical("Caught Exception:\n%s", stack_trace)
+        raise
 
 
 def list_s3_files(s3_path: str, extensions: str = "*.csv") -> List[str]:
@@ -108,5 +99,5 @@ if __name__ == "__main__":
     print(get_resolved_options(args, ["s3path", "JOB_ID", "JOB_RUN_ID", "JOB_NAME"]))
 
     # Test the exception handler
-    sageworks_exception_handler()
-    foo = bar["baz"]  # noqa: F821
+    with exception_log_forward():
+        raise ValueError("Testing the exception handler")
