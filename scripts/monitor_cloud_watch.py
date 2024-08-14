@@ -51,7 +51,7 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None):
 
                 log_events.extend(events)
 
-            next_token = streams_response.get('nextToken')
+            next_token = streams_response.get("nextToken")
             if not next_token:
                 break
 
@@ -62,7 +62,9 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None):
         return []
 
 
-def monitor_log_group(log_group_name, start_time, end_time=None, poll_interval=10, sort_by_stream=False, local_time=False):
+def monitor_log_group(
+    log_group_name, start_time, end_time=None, poll_interval=10, sort_by_stream=False, local_time=False
+):
     """Continuously monitor the CloudWatch Logs group for new log messages from all log streams."""
     client = get_cloudwatch_client()
 
@@ -118,9 +120,7 @@ def parse_args():
     parser.add_argument(
         "--sort-by-stream", action="store_true", help="Sort the log events by stream name instead of timestamp."
     )
-    parser.add_argument(
-        "--local-time", action="store_true", help="Display timestamps in local time instead of UTC."
-    )
+    parser.add_argument("--local-time", action="store_true", help="Display timestamps in local time instead of UTC.")
 
     return parser.parse_args()
 
