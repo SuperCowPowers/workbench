@@ -23,15 +23,16 @@ class DataSourceAbstract(Artifact):
         # Set up our instance attributes
         self._database = database
         self._table_name = data_uuid
+        self.display_view = None
+
+    def __post_init__(self):
+        # Call superclass post_init
+        super().__post_init__()
 
         # Create default DisplayView
         from sageworks.core.views import DisplayView
 
         self.display_view = DisplayView(self)
-
-    def __post_init__(self):
-        # Call superclass post_init
-        super().__post_init__()
 
     def get_database(self) -> str:
         """Get the database for this Data Source"""
@@ -183,16 +184,15 @@ class DataSourceAbstract(Artifact):
 
         # No Cache, so we have to compute the outliers
         self.log.info(f"Computing Outliers {self.uuid}...")
-        df = self.outliers_impl()
+        df = self.outliers_impl(scale=scale)
         self.data_storage.set(storage_key, df.to_json())
         return df
 
     @abstractmethod
-    def outliers_impl(self, scale: float = 1.5, recompute: bool = False) -> pd.DataFrame:
+    def outliers_impl(self, scale: float = 1.5) -> pd.DataFrame:
         """Return a DataFrame of outliers from this DataSource
         Args:
             scale (float): The scale to use for the IQR (default: 1.5)
-            recompute (bool): Recompute the outliers (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
         Notes:
