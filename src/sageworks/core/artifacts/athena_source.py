@@ -234,6 +234,13 @@ class AthenaSource(DataSourceAbstract):
             # Wait for the query to complete
             wr.athena.wait_query(query_execution_id=query_execution_id, boto3_session=self.boto_session)
             self.log.debug(f"Statement executed successfully: {query_execution_id}")
+        except wr.exceptions.QueryFailed as e:
+            if "AlreadyExistsException" in str(e):
+                self.log.warning(f"Table already exists. Ignoring: {e}")
+            else:
+                self.log.error(f"Failed to execute statement: {e}")
+                raise
+
         except Exception as e:
             self.log.error(f"Failed to execute statement: {e}")
             raise
@@ -290,13 +297,12 @@ class AthenaSource(DataSourceAbstract):
         # Return the descriptive stats
         return stat_dict
 
-    def outliers_impl(self, scale: float = 1.5, use_stddev=False, recompute: bool = False) -> pd.DataFrame:
+    def outliers_impl(self, scale: float = 1.5, use_stddev=False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
 
         Args:
             scale (float): The scale to use for the IQR (default: 1.5)
             use_stddev (bool): Use Standard Deviation instead of IQR (default: False)
-            recompute (bool): Recompute the outliers (default: False)
 
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
