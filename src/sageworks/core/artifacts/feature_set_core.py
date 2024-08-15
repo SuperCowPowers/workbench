@@ -69,7 +69,7 @@ class FeatureSetCore(Artifact):
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
 
-        # Grab our DisplayView and TrainingView
+        # Create default DisplayView and TrainingView
         from sageworks.core.views import DisplayView, TrainingView
 
         self.display_view = DisplayView(self)
@@ -155,27 +155,20 @@ class FeatureSetCore(Artifact):
         return ds_details
 
     def get_display_columns(self) -> list[str]:
-        """Get the display columns for this FeatureSet
+        """Get the columns for the display view
 
         Returns:
-            list[str]: The display columns for this FeatureSet
-
-        Notes:
-            This just pulls the display columns from the underlying DataSource
+            list[str]: The columns for the display view
         """
-        return self.data_source.get_display_columns()
+        return self.display_view.columns()
 
     def set_display_columns(self, display_columns: list[str]):
-        """Set the display columns for this FeatureSet
+        """Set the columns for the display view
 
         Args:
-            display_columns (list[str]): The display columns for this FeatureSet
-
-        Notes:
-            This just sets the display columns for the underlying DataSource
+            display_columns (list[str]): The columns for the display view
         """
-        self.data_source.set_display_columns(display_columns)
-        self.onboard()
+        self.display_view.create_view(column_list=display_columns)
 
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""
