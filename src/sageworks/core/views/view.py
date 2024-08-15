@@ -126,7 +126,7 @@ class View(ABC):
         response = glue_client.get_table(DatabaseName=self.database, Name=self.view_table_name)
 
         # Extract the column names from the schema
-        column_names = [col['Name'] for col in response['Table']['StorageDescriptor']['Columns']]
+        column_names = [col["Name"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
 
         return column_names
 
