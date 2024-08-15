@@ -4,6 +4,13 @@ Since we've recently introduced a **View()** class for DataSources and FeatureSe
 ### FeatureSets
 For setting holdout ids we've changed/combined to just one method `set_training_holdouts()`, so if you're using `create_training_view()` or `set_holdout_ids()` you can now just use the unified method `set_training_holdouts()`.
 
+There's also a change to getting the training view table method.
+
+```
+old: fs.get_training_view_table(create=False)
+new: fs.get_training_view_table(), does not need the create=False
+```
+
 ### Models
 ```
 inference_predictions() --> get_inference_predictions()
