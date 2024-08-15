@@ -26,6 +26,7 @@ class DataSourceAbstract(Artifact):
 
         # Create default DisplayView
         from sageworks.core.views import DisplayView
+
         self.display_view = DisplayView(self)
 
     def __post_init__(self):
