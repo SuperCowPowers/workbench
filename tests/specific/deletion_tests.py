@@ -29,7 +29,9 @@ def create_model():
 
     # If the model doesn't exist, create it
     if not Model("abc-regression").exists():
-        FeatureSet("abc_features").to_model(model_type=ModelType.REGRESSOR, target_column="iq_score", name="abc-regression")
+        FeatureSet("abc_features").to_model(
+            model_type=ModelType.REGRESSOR, target_column="iq_score", name="abc-regression"
+        )
 
 
 def create_endpoint():
@@ -38,6 +40,7 @@ def create_endpoint():
     # Create some new endpoints
     if not Endpoint("abc-end").exists():
         Model("abc-regression").to_endpoint(name="abc-end")
+
 
 @pytest.mark.long
 def test_data_source_deletion():
@@ -61,6 +64,7 @@ def test_model_deletion():
 
     # Now Delete the Model
     Model("abc-regression").delete()
+
 
 @pytest.mark.long
 def test_endpoint_deletion():
