@@ -23,7 +23,10 @@ class DataSourceAbstract(Artifact):
         # Set up our instance attributes
         self._database = database
         self._table_name = data_uuid
-        self._display_columns = None
+
+        # Create default DisplayView
+        from sageworks.core.views import DisplayView
+        self.display_view = DisplayView(self)
 
     def __post_init__(self):
         # Call superclass post_init
@@ -76,31 +79,11 @@ class DataSourceAbstract(Artifact):
             raise ValueError(f"Unknown column details view: {view}")
 
     def get_display_columns(self) -> list[str]:
-        """Get the display columns for this Data Source
+        """Get the columns from our display view
         Returns:
-            list[str]: The display columns for this Data Source
+            list[str]: The columns from our display view
         """
-        # Check if we have the display columns in our metadata
-        if self._display_columns is None:
-            self._display_columns = self.sageworks_meta().get("sageworks_display_columns")
-
-        # If we still don't have display columns, try to set them
-        if self._display_columns is None:
-            # Exclude these automatically generated columns
-            exclude_columns = ["write_time", "api_invocation_time", "is_deleted", "event_time", "id"]
-
-            # We're going to remove any excluded columns from the display columns and limit to 30 total columns
-            self._display_columns = [col for col in self.column_names() if col not in exclude_columns][:30]
-
-            # Add the outlier_group column if it exists and isn't already in the display columns
-            if "outlier_group" in self.column_names():
-                self._display_columns = list(set(self._display_columns) + set(["outlier_group"]))
-
-            # Set the display columns in the metadata
-            self.set_display_columns(self._display_columns, onboard=False)
-
-        # Return the display columns
-        return self._display_columns
+        return self.display_view.columns()
 
     def set_display_columns(self, display_columns: list[str], onboard: bool = True):
         """Set the display columns for this Data Source
@@ -110,14 +93,11 @@ class DataSourceAbstract(Artifact):
             onboard (bool): Onboard the Data Source after setting the display columns (default: True)
         """
         self.log.important(f"Setting Display Columns...{display_columns}")
-        self._display_columns = display_columns
-        self.upsert_sageworks_meta({"sageworks_display_columns": self._display_columns})
-        if onboard:
-            self.onboard()
+        self.display_view.create_view(column_list=display_columns)
 
     def num_display_columns(self) -> int:
-        """Return the number of display columns for this Data Source"""
-        return len(self._display_columns) if self._display_columns else 0
+        """Return the number of columns for the display view"""
+        return len(self.get_display_columns())
 
     def get_computation_columns(self) -> list[str]:
         return self.get_display_columns()
