@@ -17,8 +17,7 @@ class DisplayView(View):
         Args:
             data_source (DataSource): The DataSource object
         """
-        self.view_type = ViewType.DISPLAY
-        super().__init__(data_source)
+        super().__init__(data_source, ViewType.DISPLAY)
 
     def create_view(
         self,

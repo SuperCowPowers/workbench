@@ -14,8 +14,7 @@ class IdentityView(View):
         Args:
             data_source (DataSource): The DataSource object
         """
-        self.view_type = ViewType.IDENTITY
-        super().__init__(data_source)
+        super().__init__(data_source, ViewType.IDENTITY)
 
     def create_view(self):
         """Create an Identity View: A View that is a pass-through to the data source table"""

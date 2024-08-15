@@ -13,8 +13,7 @@ class BaseView(View):
         Args:
             data_source (DataSource): The DataSource object
         """
-        self.view_type = ViewType.BASE
-        super().__init__(data_source)
+        super().__init__(data_source, ViewType.BASE)
 
     def create_view(self):
         """Create the Base View (which does nothing)"""

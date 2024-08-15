@@ -17,8 +17,7 @@ class ComputationView(View):
         Args:
             data_source (DataSource): The DataSource object
         """
-        self.view_type = ViewType.COMPUTATION
-        super().__init__(data_source)
+        super().__init__(data_source, ViewType.COMPUTATION)
 
     def create_view(
         self,

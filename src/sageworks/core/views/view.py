@@ -60,12 +60,16 @@ class View(ABC):
         # Create and return the subclass instance
         return subclass(artifact)
 
-    def __init__(self, artifact: Union[DataSource, FeatureSet]):
+    def __init__(self, artifact: Union[DataSource, FeatureSet], view_type: ViewType):
         """View Constructor: Create a new View object for the given artifact
 
         Args:
             artifact (Union[DataSource, FeatureSet]): A DataSource or FeatureSet object
+            view_type (ViewType): The type of view to create (e.g. ViewType.TRAINING)
         """
+
+        # Set the view type
+        self.view_type = view_type
 
         # Is this a DataSource or a FeatureSet?
         self.is_feature_set = isinstance(artifact, FeatureSetCore)
@@ -113,6 +117,18 @@ class View(ABC):
         pull_query = f"SELECT * FROM {self.view_table_name} LIMIT {limit}"
         df = self.data_source.query(pull_query)
         return df
+
+    def columns(self) -> list:
+        """Return the columns for the view"""
+
+        # Retrieve the table metadata
+        glue_client = self.data_source.boto_session.client("glue")
+        response = glue_client.get_table(DatabaseName=self.database, Name=self.view_table_name)
+
+        # Extract the column names from the schema
+        column_names = [col['Name'] for col in response['Table']['StorageDescriptor']['Columns']]
+
+        return column_names
 
     def table_name(self) -> str:
         """Construct the view table name for the given view type
@@ -223,6 +239,9 @@ if __name__ == "__main__":
     display_view = View.factory(fs, "display")
     df_head = display_view.pull_dataframe(head=True)
     print(df_head)
+
+    # Pull the columns for the display view
+    print(display_view.columns())
 
     """
     # Create a Training View for a FeatureSet

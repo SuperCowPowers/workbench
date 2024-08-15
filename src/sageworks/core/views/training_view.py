@@ -17,8 +17,7 @@ class TrainingView(View):
         Args:
             data_source (DataSource): The DataSource object
         """
-        self.view_type = ViewType.TRAINING
-        super().__init__(data_source)
+        super().__init__(data_source, ViewType.TRAINING)
 
     def create_view(self, id_column: str = None, holdout_ids: Union[list[str], None] = None, source_table: str = None):
         """Create a training view that marks hold out ids

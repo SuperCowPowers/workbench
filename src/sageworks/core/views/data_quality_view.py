@@ -16,8 +16,7 @@ class DataQualityView(View):
         Args:
             data_source (DataSource): The DataSource object
         """
-        self.view_type = ViewType.DATA_QUALITY
-        super().__init__(data_source)
+        super().__init__(data_source, ViewType.DATA_QUALITY)
 
     def create_view(self, id_column: str, target: str, features: list, source_table: str = None):
         """Create a Data Quality View: A View that computes various data_quality metrics
