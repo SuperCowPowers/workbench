@@ -1,6 +1,7 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
 
 import os
+import sys
 import boto3
 import watchtower
 import getpass
@@ -74,7 +75,7 @@ class AWSAccountClamp:
                 # Assume the SageWorks Role and set up our AWS Session credentials with automatic refresh
                 cls.boto3_session = cls._sageworks_role_boto3_session()
 
-            # Add a Cloud Waatch handler to the sageworks logger
+            # Add a Cloud Watch handler to the sageworks logger
             cls.log.info("Adding CloudWatch Logs Handler...")
             cls.log_stream_name = cls.determine_log_stream()
             cls.add_cloudwatch_logs_handler()
@@ -183,17 +184,33 @@ class AWSAccountClamp:
         else:
             return False
 
+    @staticmethod
+    def get_executable_name(argv):
+        # Extract the script name from argv[0], get the base name, and remove the extension
+        try:
+            script_path = argv[0]
+            base_name = os.path.basename(script_path)
+            executable_name = os.path.splitext(base_name)[0]
+            return executable_name
+        except Exception:
+            return None
+
     @classmethod
     def determine_log_stream(cls):
         """Determine the log stream name based on the environment."""
+        executable_name = cls.get_executable_name(sys.argv)
         if cls.running_on_lambda():
-            return f"lambda/{os.environ.get('AWS_LAMBDA_FUNCTION_NAME', 'unknown')}"
+            job_name = executable_name or os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "unknown")
+            return f"lambda/{job_name}"
         elif cls.running_on_glue():
-            return f"glue/{cls.cm.get_config('GLUE_JOB_NAME', 'unknown')}"
+            job_name = executable_name or os.environ.get("GLUE_JOB_NAME", "unknown")
+            return f"glue/{job_name}"
         elif running_on_ecs():
-            return f"dashboard/{os.environ.get('ECS_TASK_DEFINITION_FAMILY', 'unknown')}"
+            job_name = executable_name or os.environ.get("ECS_TASK_DEFINITION_FAMILY", "unknown")
+            return f"dashboard/{job_name}"
         elif running_on_docker():
-            return f"docker/{os.environ.get('SERVICE_NAME', 'unknown')}"
+            job_name = executable_name or os.environ.get("SERVICE_NAME", "unknown")
+            return f"docker/{job_name}"
         else:
             # This should work across platforms, including Windows
             return f"laptop/{getpass.getuser()}"
