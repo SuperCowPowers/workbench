@@ -78,6 +78,7 @@ class AWSAccountClamp:
             # Add a Cloud Watch handler to the sageworks logger
             cls.log.info("Adding CloudWatch Logs Handler...")
             cls.log_stream_name = cls.determine_log_stream()
+            cls.log.info(f"Log Stream Name: {cls.log_stream_name}")
             cls.add_cloudwatch_logs_handler()
 
             # Create the Singleton Instance
