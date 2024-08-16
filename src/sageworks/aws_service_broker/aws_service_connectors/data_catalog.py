@@ -26,6 +26,7 @@ class DataCatalog(Connector):
 
         # Set up our internal data storage
         self.data_catalog_metadata = {}
+        self.data_catalog_metadata['views'] = {}
 
     def check(self) -> bool:
         """Check if we can reach/connect to this AWS Service"""
@@ -41,25 +42,43 @@ class DataCatalog(Connector):
         for database in self.database_scope:
             # Get all table metadata from the Glue catalog Database
             self.log.debug(f"Refreshing Data Catalog Database: {database}...")
-            all_tables = wr.catalog.get_tables(database=database, boto3_session=self.boto_session)
+            all_tables = list(wr.catalog.get_tables(database=database, boto3_session=self.boto_session))
 
-            # Filter out tables that start with an underscore and exclude views
-            filtered_tables = [
+            # Separate normal tables and views
+            normal_tables = [
                 table
                 for table in all_tables
                 if not table["Name"].startswith("_") and table["TableType"] != "VIRTUAL_VIEW"
             ]
+            views = [
+                table
+                for table in all_tables
+                if not table["Name"].startswith("_") and table["TableType"] == "VIRTUAL_VIEW"
+            ]
 
-            # Convert to a data structure with direct lookup
-            self.data_catalog_metadata[database] = {table["Name"]: table for table in filtered_tables}
+            # Store normal tables in the main metadata
+            self.data_catalog_metadata[database] = {table["Name"]: table for table in normal_tables}
 
-            # Track the size of the metadata
+            # Store views in a separate section of the metadata
+            self.data_catalog_metadata['views'][database] = {table["Name"]: table for table in views}
+
+            # Track the size of the metadata for normal tables
             for key in self.data_catalog_metadata[database].keys():
                 self.metadata_size_info[database][key] = compute_size(self.data_catalog_metadata[database][key])
 
     def summary(self) -> dict:
-        """Return a summary of all the tables in this AWS Data Catalog Database"""
-        return self.data_catalog_metadata
+        """Return a summary of all the tables and views in this AWS Data Catalog Database"""
+        for database in self.database_scope:
+            print(f"\nDatabase: {database}")
+            print(f"Tables: {len(self.data_catalog_metadata[database])}")
+            print(f"Views: {len(self.data_catalog_metadata['views'][database])}")
+            # List Tables and Views (one per line)
+            print("Tables:")
+            for table in self.get_tables(database):
+                print(f"  {table}")
+            print("Views:")
+            for view in self.get_views(database):
+                print(f"  {view}")
 
     def get_tables(self, database: str) -> list:
         """Get all the table names in this database
@@ -70,6 +89,16 @@ class DataCatalog(Connector):
             list: List of table names
         """
         return list(self.data_catalog_metadata[database].keys())
+
+    def get_views(self, database: str) -> list:
+        """Get all the view names in this database
+
+        Args:
+            database (str): The name of the database
+        Returns:
+            list: List of view names
+        """
+        return list(self.data_catalog_metadata['views'][database].keys())
 
 
 if __name__ == "__main__":
