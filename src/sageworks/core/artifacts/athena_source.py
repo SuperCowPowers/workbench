@@ -335,6 +335,11 @@ class AthenaSource(DataSourceAbstract):
         # Drop duplicates
         all_except_outlier_group = [col for col in all_rows.columns if col != "outlier_group"]
         all_rows = all_rows.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
+
+        # Just grab display view + outlier_group
+        display_columns = self.get_display_columns() + ["outlier_group"]
+        display_columns = [col for col in display_columns if col in all_rows.columns]
+        all_rows = all_rows[display_columns]
         return all_rows
 
     def correlations(self, recompute: bool = False) -> dict[dict]:
@@ -469,9 +474,12 @@ class AthenaSource(DataSourceAbstract):
     def delete(self):
         """Delete the AWS Data Catalog Table and S3 Storage Objects"""
 
-        # Make sure the Feature Group exists
+        # Make sure the AthenaSource exists
         if not self.exists():
             self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.get_table_name()}")
+
+        # Delete the Display View
+        self.display_view.delete()
 
         # Delete Data Catalog Table
         self.log.info(f"Deleting DataCatalog Table: {self.get_database()}.{self.get_table_name()}...")
@@ -498,7 +506,7 @@ if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
 
     # Retrieve a Data Source
-    my_data = AthenaSource("test_data")
+    my_data = AthenaSource("aqsol_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
