@@ -68,17 +68,7 @@ class DataCatalog(Connector):
 
     def summary(self) -> dict:
         """Return a summary of all the tables and views in this AWS Data Catalog Database"""
-        for database in self.database_scope:
-            print(f"\nDatabase: {database}")
-            print(f"Tables: {len(self.data_catalog_metadata[database])}")
-            print(f"Views: {len(self.data_catalog_metadata['views'][database])}")
-            # List Tables and Views (one per line)
-            print("Tables:")
-            for table in self.get_tables(database):
-                print(f"  {table}")
-            print("Views:")
-            for view in self.get_views(database):
-                print(f"  {view}")
+        return self.data_catalog_metadata
 
     def get_tables(self, database: str) -> list:
         """Get all the table names in this database
