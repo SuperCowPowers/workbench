@@ -178,12 +178,71 @@ class Meta:
             refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
 
         Returns:
-            dict: A summary of the Data Sources in AWS
+            dict: Detailed information about all the Data Sources in AWS
         """
         data = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=refresh)
 
         # Data Sources are in two databases, 'sageworks' and 'sagemaker_featurestore'
         data = data[database]
+
+        # Return the data
+        return data
+
+    def views(self, database: str = "sageworks") -> pd.DataFrame:
+        """Get a summary of the all the Views, for the given database, in AWS
+
+        Args:
+            database (str, optional): Glue database. Defaults to 'sageworks'.
+
+        Returns:
+            pd.DataFrame: A summary of all the Views, for the given database, in AWS
+        """
+        view_data = self.views_deep(database=database)
+        view_summary = []
+
+        # Pull in various bits of metadata for each data source
+        for name, info in view_data.items():
+            summary = {
+                "Name": name,
+                "Modified": datetime_string(info.get("UpdateTime")),
+                "Num Columns": num_columns_ds(info),
+            }
+            view_summary.append(summary)
+
+        # Return the summary
+        return pd.DataFrame(view_summary)
+
+    def view_details(self, view_name: str, database: str = "sageworks", refresh: bool = False) -> Union[dict, None]:
+        """Get detailed information about a specific View in AWS
+
+        Args:
+            view_name (str): The name of the View
+            database (str, optional): Glue database. Defaults to 'sageworks'.
+            refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+
+        Returns:
+            dict: Detailed information about the data source (or None if not found)
+        """
+        data = self.views_deep(database=database, refresh=refresh)
+        return data.get(view_name)
+
+    def views_deep(self, database: str = "sageworks", refresh: bool = False) -> dict:
+        """Get a deeper set of data for the Views in Athena/AWS
+
+        Args:
+            database (str, optional): Glue database. Defaults to 'sageworks'.
+            refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+
+        Returns:
+            dict:  Detailed information about all the Views in AWS
+        """
+        data = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=refresh)
+
+        # Views are in two databases, 'sageworks' and 'sagemaker_featurestore'
+        if 'views' not in data:
+            self.log.warning("No views found in the metadata")
+            return {}
+        data = data['views'][database]
 
         # Return the data
         return data
@@ -409,6 +468,25 @@ if __name__ == "__main__":
     # Get the Data Source Details
     print("\n\n*** Data Source Details ***")
     pprint(meta.data_source_details("abalone_data"))
+
+    # Get the Views (Data Sources)
+    print("\n\n*** Views (Data Sources) ***")
+    pprint(meta.views("sageworks"))
+
+    # Get the Views (Feature Sets)
+    print("\n\n*** Views (Feature Sets) ***")
+    fs_views = meta.views("sagemaker_featurestore")
+    pprint(fs_views)
+
+    # Get the View Details (Data Source)
+    print("\n\n*** View Details (Data Source) ***")
+    pprint(meta.view_details("abalone_data_display", "sageworks"))
+
+    # Get the View Details (Feature Set)
+    print("\n\n*** View Details (Feature Set) ***")
+    # Grab the first Feature Set View from the DataFrame
+    feature_set_name = fs_views.iloc[0]["Name"]
+    pprint(meta.view_details(feature_set_name, "sagemaker_featurestore"))
 
     # Get the Feature Sets
     print("\n\n*** Feature Sets ***")
