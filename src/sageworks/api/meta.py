@@ -239,10 +239,10 @@ class Meta:
         data = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=refresh)
 
         # Views are in two databases, 'sageworks' and 'sagemaker_featurestore'
-        if 'views' not in data:
+        if "views" not in data:
             self.log.warning("No views found in the metadata")
             return {}
-        data = data['views'][database]
+        data = data["views"][database]
 
         # Return the data
         return data

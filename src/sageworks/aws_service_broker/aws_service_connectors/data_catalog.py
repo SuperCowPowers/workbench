@@ -26,7 +26,7 @@ class DataCatalog(Connector):
 
         # Set up our internal data storage
         self.data_catalog_metadata = {}
-        self.data_catalog_metadata['views'] = {}
+        self.data_catalog_metadata["views"] = {}
 
     def check(self) -> bool:
         """Check if we can reach/connect to this AWS Service"""
@@ -60,7 +60,7 @@ class DataCatalog(Connector):
             self.data_catalog_metadata[database] = {table["Name"]: table for table in normal_tables}
 
             # Store views in a separate section of the metadata
-            self.data_catalog_metadata['views'][database] = {table["Name"]: table for table in views}
+            self.data_catalog_metadata["views"][database] = {table["Name"]: table for table in views}
 
             # Track the size of the metadata for normal tables
             for key in self.data_catalog_metadata[database].keys():
@@ -88,7 +88,7 @@ class DataCatalog(Connector):
         Returns:
             list: List of view names
         """
-        return list(self.data_catalog_metadata['views'][database].keys())
+        return list(self.data_catalog_metadata["views"][database].keys())
 
 
 if __name__ == "__main__":
