@@ -3,8 +3,13 @@
 from datetime import datetime, date, timezone
 import numpy as np
 import logging
+import time
 
 log = logging.getLogger("sageworks")
+
+# A simple log throttle for specific log messages
+last_log = 0
+log_interval = 5  # seconds
 
 
 def datetime_to_iso8601(datetime_obj) -> str:
@@ -15,6 +20,8 @@ def datetime_to_iso8601(datetime_obj) -> str:
         str: The datetime as a string in ISO-8601 format
     Note: This particular format is required by AWS Feature Store
     """
+    global last_log, log_interval
+    current_time = time.time()
 
     # Check for valid input
     if not isinstance(datetime_obj, (datetime, date)):
@@ -28,7 +35,9 @@ def datetime_to_iso8601(datetime_obj) -> str:
 
     # Check for TimeZone
     if datetime_obj.tzinfo is None:
-        log.warning("Datetime object is naive; localizing to UTC.")
+        if current_time - last_log >= log_interval:
+            log.warning("Datetime object is naive; localizing to UTC.")
+            last_log = current_time
         datetime_obj = datetime_obj.replace(tzinfo=timezone.utc)
 
     try:
