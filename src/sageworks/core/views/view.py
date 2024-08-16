@@ -12,6 +12,7 @@ import importlib
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
+from sageworks.api import Meta
 
 
 # Enumerated View Types
@@ -45,7 +46,9 @@ class View(ABC):
         ```
     """
 
+    # Class attributes
     log = logging.getLogger("sageworks")
+    meta = Meta()
 
     @classmethod
     def factory(cls, artifact: Union[DataSource, FeatureSet], view_type: str = "base"):
@@ -171,18 +174,26 @@ class View(ABC):
         Returns:
             bool: True if the view exists, False otherwise.
         """
-
-        # Query to check if the table/view exists
-        check_table_query = f"""
-        SELECT table_name
-        FROM information_schema.tables
-        WHERE table_schema = '{self.database}' AND table_name = '{self.view_table_name}'
-        """
-        df = self.data_source.query(check_table_query)
-        if not df.empty:
+        # The BaseView always exists
+        if self.view_type == ViewType.BASE:
             return True
-        else:
-            return False
+
+        # Use the meta class to see if the view exists
+        views_df = self.meta.views(self.database)
+        return self.view_table_name in views_df["Name"].values
+
+        # OLD WAY
+        # Query to check if the table/view exists
+        # check_table_query = f"""
+        # SELECT table_name
+        # FROM information_schema.tables
+        # WHERE table_schema = '{self.database}' AND table_name = '{self.view_table_name}'
+        # """
+        # df = self.data_source.query(check_table_query)
+        # if not df.empty:
+        #     return True
+        # else:
+        #     return False
 
     def _auto_create_view(self, view_type: ViewType):
         """Internal: Automatically create a view. This is called when a view is accessed that doesn't exist.
