@@ -1,6 +1,7 @@
 """AthenaSource: SageWorks Data Source accessible through Athena"""
 
 from typing import Union
+from io import StringIO
 import pandas as pd
 import awswrangler as wr
 from datetime import datetime
@@ -316,17 +317,29 @@ class AthenaSource(DataSourceAbstract):
         sql_outliers = outliers.Outliers()
         return sql_outliers.compute_outliers(self, scale=scale, use_stddev=use_stddev)
 
-    def smart_sample(self) -> pd.DataFrame:
+    def smart_sample(self, recompute: bool = False) -> pd.DataFrame:
         """Get a smart sample dataframe for this DataSource
 
+        Args:
+            recompute (bool): Recompute the smart sample (default: False)
+
         Note:
-            smart = sample data + outliers for the DataSource"""
+            smart = sample data + outliers for the DataSource
+        """
+
+        # Check if we have cached smart_sample data
+        storage_key = f"data_source:{self.uuid}:smart_sample"
+        if not recompute and self.data_storage.get(storage_key):
+            return pd.read_json(StringIO(self.data_storage.get(storage_key)))
+
+        # Compute/recompute the smart sample
+        self.log.important(f"Computing Smart Sample {self.uuid}...")
 
         # Outliers DataFrame
-        outlier_rows = self.outliers()
+        outlier_rows = self.outliers(recompute=recompute)
 
         # Sample DataFrame
-        sample_rows = self.sample()
+        sample_rows = self.sample(recompute=recompute)
         sample_rows["outlier_group"] = "sample"
 
         # Combine the sample rows with the outlier rows
@@ -340,6 +353,11 @@ class AthenaSource(DataSourceAbstract):
         display_columns = self.get_display_columns() + ["outlier_group"]
         display_columns = [col for col in display_columns if col in all_rows.columns]
         all_rows = all_rows[display_columns]
+
+        # Cache the smart_sample data
+        self.data_storage.set(storage_key, all_rows.to_json())
+
+        # Return the smart_sample data
         return all_rows
 
     def correlations(self, recompute: bool = False) -> dict[dict]:
