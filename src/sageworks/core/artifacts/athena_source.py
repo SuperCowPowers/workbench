@@ -77,7 +77,7 @@ class AthenaSource(DataSourceAbstract):
     def exists(self) -> bool:
         """Validation Checks for this Data Source"""
 
-        # We're we able to pull AWS Metadata for this table_name?"""
+        # Are we able to pull AWS Metadata for this table_name?"""
         if self.catalog_table_meta is None:
             self.log.debug(f"AthenaSource {self.get_table_name()} not found in SageWorks Metadata...")
             return False
