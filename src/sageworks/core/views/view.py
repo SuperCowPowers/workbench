@@ -88,11 +88,6 @@ class View(ABC):
         self.base_table = self.data_source.get_table_name()
         self.view_table_name = self.table_name()
 
-        # Check if the data source exists
-        if not self.data_source.exists():
-            self.log.info(f"Source {self.data_source_name} does not currently exist, skipping view creation.")
-            return
-
         # Check if the view exists
         self.auto_created = False
         if not self.exists():
