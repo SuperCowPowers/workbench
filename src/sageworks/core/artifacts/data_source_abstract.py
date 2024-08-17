@@ -292,6 +292,11 @@ class DataSourceAbstract(Artifact):
         self.log.important(f"Onboarding {self.uuid}...")
         self.set_status("onboarding")
         self.remove_health_tag("needs_onboard")
+
+        # Make sure our views actually exist
+        self.display_view.ensure_exists()
+
+        # Compute the sample, column stats, and outliers
         self.sample(recompute=True)
         self.column_stats(recompute=True)
         self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts

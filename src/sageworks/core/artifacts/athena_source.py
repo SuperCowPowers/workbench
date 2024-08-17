@@ -242,10 +242,6 @@ class AthenaSource(DataSourceAbstract):
                 self.log.error(f"Failed to execute statement: {e}")
                 raise
 
-        except Exception as e:
-            self.log.error(f"Failed to execute statement: {e}")
-            raise
-
     def s3_storage_location(self) -> str:
         """Get the S3 Storage Location for this Data Source"""
         return self.catalog_table_meta["StorageDescriptor"]["Location"]

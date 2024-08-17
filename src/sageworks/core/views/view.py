@@ -8,6 +8,7 @@ from typing import Union
 import pandas as pd
 from abc import ABC, abstractmethod
 import importlib
+import awswrangler as wr
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
@@ -82,7 +83,10 @@ class View(ABC):
         self.data_source = artifact.data_source if self.is_feature_set else artifact
         self.data_source_name = artifact.uuid
         self.database = self.data_source.get_database()
+
+        # Set our view table name
         self.base_table = self.data_source.get_table_name()
+        self.view_table_name = self.table_name()
 
         # Check if the data source exists
         if not self.data_source.exists():
@@ -90,13 +94,12 @@ class View(ABC):
             return
 
         # Check if the view exists
-        self.view_table_name = self.table_name()
         self.auto_created = False
         if not self.exists():
             self.log.important(
                 f"View {self.view_type} for {self.data_source_name} does not exist. Auto creating view..."
             )
-            self._auto_create_view(self.view_type)
+            self._auto_create_view()
 
         # View Exists so report that we found it
         else:
@@ -166,7 +169,13 @@ class View(ABC):
         drop_view_query = f"DROP VIEW {self.view_table_name}"
 
         # Execute the DROP VIEW query
-        self.data_source.execute_statement(drop_view_query)
+        try:
+            self.data_source.execute_statement(drop_view_query)
+        except wr.exceptions.QueryFailed as e:
+            if "View not found" in str(e):
+                self.log.debug(f"View not found, this is fine...")
+            else:
+                raise
 
     def exists(self) -> bool:
         """Check if the view exists in the database
@@ -182,25 +191,25 @@ class View(ABC):
         views_df = self.meta.views(self.database)
         return self.view_table_name in views_df["Name"].values
 
-        # OLD WAY
+    def ensure_exists(self):
+        """Ensure if the view exists by making a query directly to the database. If it doesn't exist, create it"""
+        # The BaseView always exists
+        if self.view_type == ViewType.BASE:
+            return True
+
         # Query to check if the table/view exists
-        # check_table_query = f"""
-        # SELECT table_name
-        # FROM information_schema.tables
-        # WHERE table_schema = '{self.database}' AND table_name = '{self.view_table_name}'
-        # """
-        # df = self.data_source.query(check_table_query)
-        # if not df.empty:
-        #     return True
-        # else:
-        #     return False
-
-    def _auto_create_view(self, view_type: ViewType):
-        """Internal: Automatically create a view. This is called when a view is accessed that doesn't exist.
-
-        Args:
-            view_type (ViewType): The type of view to create
+        check_table_query = f"""
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = '{self.database}' AND table_name = '{self.view_table_name}'
         """
+        _df = self.data_source.query(check_table_query)
+        if _df.empty:
+            self.log.warning(f"View {self.view_table_name} for {self.data_source_name} does not exist. Auto creating view...")
+            self._auto_create_view()
+
+    def _auto_create_view(self):
+        """Internal: Automatically create a view. This is called when a view is accessed that doesn't exist"""
         self.auto_created = True
         self.create_view()
 
@@ -253,6 +262,10 @@ if __name__ == "__main__":
 
     # Pull the columns for the display view
     print(display_view.columns())
+
+    # Delete the display view and then call ensure_exists
+    display_view.delete()
+    display_view.ensure_exists()
 
     """
     # Create a Training View for a FeatureSet
