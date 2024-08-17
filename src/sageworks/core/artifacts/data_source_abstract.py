@@ -23,16 +23,14 @@ class DataSourceAbstract(Artifact):
         # Set up our instance attributes
         self._database = database
         self._table_name = data_uuid
-        self.display_view = None
+
+        # Create default DisplayView
+        from sageworks.core.views import DisplayView
+        self.display_view = DisplayView(self)
 
     def __post_init__(self):
         # Call superclass post_init
         super().__post_init__()
-
-        # Create default DisplayView
-        from sageworks.core.views import DisplayView
-
-        self.display_view = DisplayView(self)
 
     def get_database(self) -> str:
         """Get the database for this Data Source"""
@@ -85,6 +83,7 @@ class DataSourceAbstract(Artifact):
         Returns:
             list[str]: The columns from our display view
         """
+        self.display_view.ensure_exists()
         return self.display_view.columns()
 
     def set_display_columns(self, display_columns: list[str], onboard: bool = True):
