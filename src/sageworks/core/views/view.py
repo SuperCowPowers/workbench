@@ -173,7 +173,7 @@ class View(ABC):
             self.data_source.execute_statement(drop_view_query)
         except wr.exceptions.QueryFailed as e:
             if "View not found" in str(e):
-                self.log.debug(f"View not found, this is fine...")
+                self.log.debug(f"View {self.view_table_name} not found, this is fine...")
             else:
                 raise
 
@@ -205,7 +205,9 @@ class View(ABC):
         """
         _df = self.data_source.query(check_table_query)
         if _df.empty:
-            self.log.warning(f"View {self.view_table_name} for {self.data_source_name} does not exist. Auto creating view...")
+            self.log.warning(
+                f"View {self.view_table_name} for {self.data_source_name} does not exist. Auto creating view..."
+            )
             self._auto_create_view()
 
     def _auto_create_view(self):
