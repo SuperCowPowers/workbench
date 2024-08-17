@@ -78,7 +78,8 @@ class AthenaSource(DataSourceAbstract):
         """Validation Checks for this Data Source"""
 
         # Are we able to pull AWS Metadata for this table_name?"""
-        if self.catalog_table_meta is None:
+        # Do we have a valid catalog_table_meta?
+        if getattr(self, "catalog_table_meta", None) is None:
             self.log.debug(f"AthenaSource {self.get_table_name()} not found in SageWorks Metadata...")
             return False
         return True
