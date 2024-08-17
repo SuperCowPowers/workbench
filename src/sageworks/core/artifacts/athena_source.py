@@ -221,8 +221,13 @@ class AthenaSource(DataSourceAbstract):
             self.log.critical(f"Failed to execute query: {e}")
             return None
 
-    def execute_statement(self, query: str):
-        """Execute a non-returning SQL statement in Athena."""
+    def execute_statement(self, query: str, silence_errors: bool = False):
+        """Execute a non-returning SQL statement in Athena
+
+        Args:
+            query (str): The query to run against the AthenaSource
+            silence_errors (bool): Silence errors (default: False)
+        """
         try:
             # Start the query execution
             query_execution_id = wr.athena.start_query_execution(
@@ -239,7 +244,8 @@ class AthenaSource(DataSourceAbstract):
             if "AlreadyExistsException" in str(e):
                 self.log.warning(f"Table already exists. Ignoring: {e}")
             else:
-                self.log.error(f"Failed to execute statement: {e}")
+                if not silence_errors:
+                    self.log.error(f"Failed to execute statement: {e}")
                 raise
 
     def s3_storage_location(self) -> str:

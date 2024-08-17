@@ -170,10 +170,10 @@ class View(ABC):
 
         # Execute the DROP VIEW query
         try:
-            self.data_source.execute_statement(drop_view_query)
+            self.data_source.execute_statement(drop_view_query, silence_errors=True)
         except wr.exceptions.QueryFailed as e:
             if "View not found" in str(e):
-                self.log.debug(f"View {self.view_table_name} not found, this is fine...")
+                self.log.info(f"View {self.view_table_name} not found, this is fine...")
             else:
                 raise
 
