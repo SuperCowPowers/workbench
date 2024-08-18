@@ -207,6 +207,7 @@ class AthenaSource(DataSourceAbstract):
         Returns:
             pd.DataFrame: The results of the query
         """
+        self.log.debug(f"Executing Query: {query}...")
         try:
             df = wr.athena.read_sql_query(
                 sql=query,
