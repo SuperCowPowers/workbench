@@ -16,7 +16,7 @@ COPY requirements-no-dash.txt .
 RUN pip install --no-cache-dir -r requirements-no-dash.txt
 
 # Install latest Sageworks (no dependencies)
-RUN pip install --no-cache-dir --no-deps 'sageworks[ml-tools,chem]'==0.8.2
+RUN pip install --no-cache-dir --no-deps sageworks==0.8.3
 
 # Remove pip (vulnerability)
 RUN python -m pip uninstall -y pip && \

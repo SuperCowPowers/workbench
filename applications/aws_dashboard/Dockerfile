@@ -34,7 +34,7 @@ COPY nginx.conf /etc/nginx/sites-available/default
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Install Sageworks (changes often)
-RUN pip install --no-cache-dir sageworks==0.8.2
+RUN pip install --no-cache-dir sageworks==0.8.3
 
 # Remove pip (vulnerability)
 RUN python -m pip uninstall -y pip && \
