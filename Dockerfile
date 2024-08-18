@@ -21,4 +21,4 @@ RUN pip install --no-cache-dir --no-deps sageworks==0.8.3
 # Remove pip (vulnerability)
 RUN python -m pip uninstall -y pip && \
     rm -rf /usr/local/lib/python*/dist-packages/pip /usr/local/bin/pip* && \
-    apt-get autoremove -y && apt-get clean \
+    apt-get autoremove -y && apt-get clean
