@@ -248,6 +248,13 @@ class AthenaSource(DataSourceAbstract):
                 if not silence_errors:
                     self.log.error(f"Failed to execute statement: {e}")
                 raise
+        except botocore.exceptions.ClientError as e:
+            error_code = e.response["Error"]["Code"]
+            if error_code == "InvalidRequestException":
+                self.log.error(f"Invalid Query: {query}")
+            else:
+                self.log.error(f"Failed to execute statement: {e}")
+            raise
 
     def s3_storage_location(self) -> str:
         """Get the S3 Storage Location for this Data Source"""

@@ -134,6 +134,10 @@ class View(ABC):
         # Extract the column names from the schema
         column_names = [col["Name"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
 
+        # Sanity check the column names
+        if not column_names:
+            raise ValueError(f"No columns found for view {self.view_table_name}")
+
         return column_names
 
     def table_name(self) -> str:
