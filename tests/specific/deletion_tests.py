@@ -43,19 +43,11 @@ def create_endpoint():
 
 
 @pytest.mark.long
-def test_data_source_deletion():
-    create_data_source()
+def test_endpoint_deletion():
+    create_endpoint()
 
-    # Now Delete the DataSource
-    DataSource("abc").delete()
-
-
-@pytest.mark.long
-def test_feature_set_deletion():
-    create_feature_set()
-
-    # Now Delete the FeatureSet
-    FeatureSet("abc_features").delete()
+    # Now Delete the endpoint
+    Endpoint("abc-end").delete()
 
 
 @pytest.mark.long
@@ -67,11 +59,19 @@ def test_model_deletion():
 
 
 @pytest.mark.long
-def test_endpoint_deletion():
-    create_endpoint()
+def test_feature_set_deletion():
+    create_feature_set()
 
-    # Now Delete the endpoint
-    Endpoint("abc-end").delete()
+    # Now Delete the FeatureSet
+    FeatureSet("abc_features").delete()
+
+
+@pytest.mark.long
+def test_data_source_deletion():
+    create_data_source()
+
+    # Now Delete the DataSource
+    DataSource("abc").delete()
 
 
 if __name__ == "__main__":
