@@ -25,6 +25,9 @@ RUN apt-get remove --purge -y libaom3 && apt-get autoremove -y && apt-get clean
 # Upgrade the nghttp2 package to fix a vulnerability
 RUN apt-get update && apt-get install -y libnghttp2-dev && apt-get clean
 
+# Upgrade setuptools to fix a vulnerability
+RUN pip install --no-cache-dir --upgrade setuptools
+
 # Install app-specific dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
