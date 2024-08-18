@@ -26,8 +26,8 @@ RUN apt-get remove --purge -y libaom3 && apt-get autoremove -y && apt-get clean
 RUN apt-get update && apt-get install -y libnghttp2-dev && apt-get clean
 
 # Install app-specific dependencies
-COPY requirements-all.txt /app/
-RUN pip install --no-cache-dir -r requirements-all.txt
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the Nginx and Supervisor configuration files
 COPY nginx.conf /etc/nginx/sites-available/default
