@@ -114,6 +114,7 @@ class SageworksDashboardStack(Stack):
                 "REDIS_HOST": redis_endpoint,
                 "SAGEWORKS_BUCKET": props.sageworks_bucket,
                 "SAGEWORKS_API_KEY": props.sageworks_api_key,
+                "SAGEWORKS_DEBUG": "True",
             },
             logging=ecs.LogDriver.aws_logs(stream_prefix="SageWorksDashboard", log_group=log_group),
         )
@@ -156,8 +157,8 @@ class SageworksDashboardStack(Stack):
             self,
             "SageworksService",
             cluster=cluster,
-            cpu=1024,
-            desired_count=1,
+            cpu=2048,
+            desired_count=2,
             task_definition=task_definition,
             memory_limit_mib=4096,
             public_load_balancer=False,
