@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#including-plugins-with-the-dashboard" class="md-skip">
+        <a href="#deploying-plugins-with-the-dashboard" class="md-skip">
           Skip to content
         </a>
       
@@ -1788,6 +1788,21 @@
   
 </li>
         
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-plugin-docker-image-to-aws" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deploying Plugin Docker Image to AWS
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deploying Plugin Docker Image to AWS">
+      <ul class="md-nav__list">
+        
           <li class="md-nav__item">
   <a href="#note-on-sageworks-configuration" class="md-nav__link">
     <span class="md-ellipsis">
@@ -1963,6 +1978,21 @@
   
 </li>
         
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-plugin-docker-image-to-aws" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deploying Plugin Docker Image to AWS
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deploying Plugin Docker Image to AWS">
+      <ul class="md-nav__list">
+        
           <li class="md-nav__item">
   <a href="#note-on-sageworks-configuration" class="md-nav__link">
     <span class="md-ellipsis">
@@ -1992,7 +2022,7 @@
                   
 
 
-<h1 id="including-plugins-with-the-dashboard">Including Plugins with the Dashboard</h1>
+<h1 id="deploying-plugins-with-the-dashboard">Deploying Plugins with the Dashboard</h1>
 <p>Notes and information on how to include plugins with your SageWorks Dashboard.</p>
 <ul>
 <li><strong>ECR:</strong> AWS Elastic Container Registry (stores Docker images)</li>
@@ -2028,7 +2058,7 @@
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker build -t my_sageworks_with_plugins:v1_0 --platform linux/amd64 .
 </span></code></pre></div>
 <h3 id="test-the-image-locally">Test the Image Locally</h3>
-<p>You'll need to use AWS Credentials for this, please contact SageWorks Support for help with this.</p>
+<p>You'll need to use AWS Credentials for this, it's a bit complicated, please contact SageWorks Support <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 <h3 id="login-to-your-ecr">Login to your ECR</h3>
 <p>Okay.. so after testing locally you're ready to push the Docker image (with Plugins) to the your ECR.</p>
 <p><strong>Note:</strong> This ECR should be <strong>private</strong> as your plugins are customized for specific business use cases.</p>
@@ -2045,8 +2075,25 @@
 </span></code></pre></div>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker push &lt;aws_account_id&gt;.dkr.ecr.us-east-1.amazonaws.com/sageworks_with_plugins:v1_0
 </span></code></pre></div></p>
+<h2 id="deploying-plugin-docker-image-to-aws">Deploying Plugin Docker Image to AWS</h2>
+<p>Okay now that you have your plugin Docker Image you can deploy to your AWS account:</p>
+<p><strong>Copy the Dashboard CDK files</strong></p>
+<p>This is cheesy but just copy all the CDK files into your repo/directory.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>cp -r sageworks/aws_setup/sageworks_dashboard_full /my/sageworks/stuff/
+</span></code></pre></div>
+<p><strong>Change the Docker Image to Deploy</strong></p>
+<p>Now open up the <code>app.py</code> file and change this line to your Docker Image</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a># When you want a different docker image change this line
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>dashboard_image = &quot;public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_8_3_amd64&quot;
+</span></code></pre></div>
+<p>Make sure your <code>SAGEWORKS_CONFIG</code> is properly set, and run the following commands:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>export SAGEWORKS_CONFIG=/Users/&lt;user_name&gt;/.sageworks/sageworks_config.json
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>cdk diff
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>cdk deploy
+</span></code></pre></div>
+<p>In particular, pay attention to the <code>cdk diff</code> it should <strong>ONLY</strong> have the image name as a difference.</p>
 <h3 id="note-on-sageworks-configuration">Note on SageWorks Configuration</h3>
-<p>Configuration is managed 'later' by the CDK Python Script, you should <strong>not</strong> set things like S3 bucket/API key/etc in the Docker image. When using CDK to deploy your SageWorks Dashboard it will manage the ECS Task definition so that the various configuration options are set.</p>
+<p>All Configuration is managed by the CDK Python Script and the <code>SAGEWORKS_CONFIG</code> ENV var. You should not hardcode any configuration in the CDK code or in the Dockerfile.</p>
 
 
 
