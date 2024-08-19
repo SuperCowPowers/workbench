@@ -117,8 +117,8 @@ class CorrelationMatrix(ComponentInterface):
         corr_df = corr_df.loc[:, (corr_df.abs().max() > threshold)]
         corr_df = corr_df[(corr_df.abs().max(axis=1) > threshold)]
 
-        # If the correlation matrix is bigger than 8x8 then we need to filter it down
-        while corr_df.shape[0] > 8 and threshold <= 0.6:
+        # If the correlation matrix is bigger than 10x10 then we need to filter it down
+        while corr_df.shape[0] > 10 and threshold <= 0.6:
             # Now filter out any correlations below the threshold
             corr_df = corr_df.loc[:, (corr_df.abs().max() > threshold)]
             corr_df = corr_df[(corr_df.abs().max(axis=1) > threshold)]
