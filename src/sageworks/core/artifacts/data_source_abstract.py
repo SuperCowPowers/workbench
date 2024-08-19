@@ -85,8 +85,8 @@ class DataSourceAbstract(Artifact):
             list[str]: The columns from our display view
         """
         if self.display_view is None:
-            self.log.warning("Display View is None, returning all columns...")
-            return self.column_names()
+            self.log.warning("Display View is None...Let's figure out why this is happening...")
+            return self.column_names()[:30]
         return self.display_view.columns()
 
     def set_display_columns(self, display_columns: list[str], onboard: bool = True):
@@ -98,6 +98,8 @@ class DataSourceAbstract(Artifact):
         """
         self.log.important(f"Setting Display Columns...{display_columns}")
         self.display_view.create_view(column_list=display_columns)
+        if onboard:
+            self.onboard()
 
     def num_display_columns(self) -> int:
         """Return the number of columns for the display view"""

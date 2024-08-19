@@ -39,6 +39,9 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # Install Sageworks (changes often)
 RUN pip install --no-cache-dir sageworks==0.8.3
 
+# Remove setuptools (vulnerability)
+RUN pip uninstall -y setuptools
+
 # Remove pip (vulnerability)
 RUN python -m pip uninstall -y pip && \
     rm -rf /usr/local/lib/python*/dist-packages/pip /usr/local/bin/pip* && \

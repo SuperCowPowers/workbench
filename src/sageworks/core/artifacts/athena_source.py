@@ -617,7 +617,7 @@ if __name__ == "__main__":
 
     # Set the display columns
     print("\n\nDisplay Columns")
-    print(my_data.set_display_columns(my_data.column_names()[:5]))
+    print(my_data.set_display_columns(my_data.column_names()))
 
     # Get the display columns
     print("\n\nDisplay Columns")

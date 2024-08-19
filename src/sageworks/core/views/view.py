@@ -90,7 +90,7 @@ class View(ABC):
 
         # Check if the data source exists
         if not self.data_source.exists():
-            self.log.info(f"Source {self.data_source_name} does not currently exist, skipping view creation.")
+            self.log.error(f"Source {self.data_source_name} does not currently exist, skipping view creation.")
             return
 
         # Check if the view exists
@@ -109,7 +109,6 @@ class View(ABC):
         """Pull a DataFrame based on the view type
 
         Args:
-            view_type (ViewType): The type of view to create (default: ViewType.BASE)
             limit (int): The maximum number of rows to pull (default: 50000)
             head (bool): Return just the head of the DataFrame (default: False)
 
