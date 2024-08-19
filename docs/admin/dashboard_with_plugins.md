@@ -1,4 +1,4 @@
-# Including Plugins with the Dashboard
+# Deploying Plugins with the Dashboard
 Notes and information on how to include plugins with your SageWorks Dashboard.
 
 - **ECR:** AWS Elastic Container Registry (stores Docker images)
@@ -43,7 +43,7 @@ docker build -t my_sageworks_with_plugins:v1_0 --platform linux/amd64 .
 ```
 
 ### Test the Image Locally
-You'll need to use AWS Credentials for this, please contact SageWorks Support for help with this.
+You'll need to use AWS Credentials for this, it's a bit complicated, please contact SageWorks Support [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 ### Login to your ECR
 Okay.. so after testing locally you're ready to push the Docker image (with Plugins) to the your ECR.
@@ -69,6 +69,36 @@ docker tag my_sageworks_with_plugins:v1_0 \
 docker push <aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/sageworks_with_plugins:v1_0
 ```
 
+## Deploying Plugin Docker Image to AWS
+Okay now that you have your plugin Docker Image you can deploy to your AWS account:
+
+**Copy the Dashboard CDK files**
+
+This is cheesy but just copy all the CDK files into your repo/directory.
+
+```
+cp -r sageworks/aws_setup/sageworks_dashboard_full /my/sageworks/stuff/
+```
+
+**Change the Docker Image to Deploy**
+
+Now open up the `app.py` file and change this line to your Docker Image
+
+```
+# When you want a different docker image change this line
+dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_8_3_amd64"
+```
+
+Make sure your `SAGEWORKS_CONFIG` is properly set, and run the following commands:
+
+```
+export SAGEWORKS_CONFIG=/Users/<user_name>/.sageworks/sageworks_config.json
+cdk diff
+cdk deploy
+```
+
+In particular, pay attention to the `cdk diff` it should **ONLY** have the image name as a difference.
+
 
 ### Note on SageWorks Configuration
-Configuration is managed 'later' by the CDK Python Script, you should **not** set things like S3 bucket/API key/etc in the Docker image. When using CDK to deploy your SageWorks Dashboard it will manage the ECS Task definition so that the various configuration options are set.
+All Configuration is managed by the CDK Python Script and the `SAGEWORKS_CONFIG` ENV var. You should not hardcode any configuration in the CDK code or in the Dockerfile.
