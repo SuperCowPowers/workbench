@@ -25,9 +25,6 @@ RUN apt-get remove --purge -y libaom3 && apt-get autoremove -y && apt-get clean
 # Upgrade the nghttp2 package to fix a vulnerability
 RUN apt-get update && apt-get install -y libnghttp2-dev && apt-get clean
 
-# Upgrade setuptools to fix a vulnerability
-RUN pip install --no-cache-dir --upgrade setuptools
-
 # Install app-specific dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
@@ -40,7 +37,9 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN pip install --no-cache-dir sageworks==0.8.3
 
 # Remove setuptools (vulnerability)
-RUN pip uninstall -y setuptools
+# Reinstall supervisor after removing setuptools and pkg_resources
+RUN apt-get remove --purge -y python3-setuptools python3-pkg-resources && \
+    apt-get install -y supervisor
 
 # Remove pip (vulnerability)
 RUN python -m pip uninstall -y pip && \
