@@ -88,11 +88,6 @@ class View(ABC):
         self.base_table = self.data_source.get_table_name()
         self.view_table_name = self.table_name()
 
-        # Check if the data source exists
-        if not self.data_source.exists():
-            self.log.error(f"Source {self.data_source_name} does not currently exist, skipping view creation.")
-            return
-
         # Check if the view exists
         self.auto_created = False
         if not self.exists():
@@ -245,7 +240,7 @@ if __name__ == "__main__":
     logging.getLogger("sageworks").setLevel(logging.DEBUG)
 
     # Create a Display View for a DataSource
-    data_source = DataSource("test_data")
+    data_source = DataSource("abalone_data")
     display_view = View.factory(data_source, "display")
     print(display_view)
 
