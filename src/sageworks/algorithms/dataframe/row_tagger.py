@@ -9,6 +9,7 @@ from sageworks.algorithms.dataframe import feature_spider
 # Class: RowTagger
 class RowTagger:
     """RowTagger: Encapsulate business logic and special cases for tagging rows in a dataframe
+    - Zero Target Value
     - CoIncident (with reasonable difference in target value)
     - High Target Gradient (HTG) Neighborhood
     """
@@ -21,11 +22,14 @@ class RowTagger:
         target_column: str,
         within_dist: float,
         min_target_diff: float,
+        outlier_df: pd.DataFrame = None,
     ):
         # Set up some parameters
         self.id_column = id_column
+        self.target_column = target_column
         self.within_dist = within_dist
         self.min_target_diff = min_target_diff
+        self.outlier_df = outlier_df
 
         # Do a validation check on the dataframe
         self.df = dataframe.copy()
@@ -65,10 +69,33 @@ class RowTagger:
 
     def tag_rows(self) -> pd.DataFrame:
         """Run all the current registered taggers"""
-        taggers = [self.coincident, self.high_gradients]
+        taggers = [self.zero_target, self.coincident, self.high_gradients]
         for tagger in taggers:
             tagger()
+
+        # Check for outliers
+        if self.outlier_df is not None:
+            # Merge the dataframes on the id_column, to align rows
+            self.df = self.df.merge(self.outlier_df[[self.id_column]], on=self.id_column, how="left", indicator=True)
+
+            # Use the merge indicator to add "outlier" tag to the relevant rows
+            self.df["tags"] = self.df.apply(
+                lambda row: row["tags"].union({"outlier"}) if row["_merge"] == "both" else row["tags"],
+                axis=1
+            )
+
+            # Drop the merge indicator column
+            self.df.drop(columns=["_merge"], inplace=True)
+
+        # Convert the set to a string
+        self.df["tags"] = self.df["tags"].apply(lambda x: ", ".join(x))
         return self.df
+
+    def zero_target(self):
+        """Find observations with a target value of 0"""
+        zero_indexes = self.df[self.df[self.target_column] == 0].index
+        for index in zero_indexes:
+            self.df.at[index, "tags"].add("zero")
 
     def coincident(self):
         """Find observations with the SAME features that have different target values"""
@@ -112,7 +139,7 @@ def simple_unit_test():
         "feat1": [1.0, 1.0, 1.1, 3.0, 4.0, 1.0, 1.0, 1.1, 3.0, 4.0],
         "feat2": [1.0, 1.0, 1.1, 3.0, 4.0, 1.0, 1.0, 1.1, 3.0, 4.0],
         "feat3": [0.1, 0.1, 0.2, 1.6, 2.5, 0.1, 0.1, 0.2, 1.6, 2.5],
-        "price": [31, 60, 62, 40, 20, 31, 61, 60, 40, 20],
+        "price": [31, 60, 62, 40, 20, 31, 61, 60, 40, 0],
     }
     data_df = pd.DataFrame(data)
 
@@ -150,6 +177,7 @@ def unit_test():
         target_column=target_column,
         within_dist=0.25,
         min_target_diff=1.0,
+        outlier_df=fs.outliers()
     )
     data_df = row_tagger.tag_rows()
     print(data_df["tags"].value_counts())

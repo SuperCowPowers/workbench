@@ -30,7 +30,7 @@ class ComputationView(View):
         Args:
             column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
             column_limit (int, optional): The max number of columns to include. Defaults to 30.
-            source_table_name (str, optional): The table/view to create the view from. Defaults to base table.
+            source_table (str, optional): The table/view to create the view from. Defaults to base table.
         """
 
         # Set the source_table to create the view from

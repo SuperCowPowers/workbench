@@ -70,10 +70,11 @@ class FeatureSetCore(Artifact):
         self.feature_store = FeatureStore(self.sm_session)
 
         # Create default DisplayView and TrainingView
-        from sageworks.core.views import DisplayView, TrainingView
+        from sageworks.core.views import DisplayView, TrainingView, DataQualityView
 
         self.display_view = DisplayView(self)
         self.training_view = TrainingView(self)
+        self.data_quality_view = DataQualityView(self)
 
         # Call superclass post_init
         super().__post_init__()

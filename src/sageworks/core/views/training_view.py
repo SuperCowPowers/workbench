@@ -25,7 +25,7 @@ class TrainingView(View):
         Args:
             id_column (str, optional): The name of the id column (default is None)
             holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None.
-            source_table_name (str, optional): The table/view to create the view from. Defaults to base table.
+            source_table (str, optional): The table/view to create the view from. Defaults to base table.
         """
 
         # Set the source_table to create the view from
@@ -74,7 +74,7 @@ class TrainingView(View):
             WHEN {id_column} IN ({formatted_holdout_ids}) THEN 0
             ELSE 1
         END AS training
-        FROM {self.base_table}
+        FROM {source_table}
         """
 
         # Execute the CREATE VIEW query

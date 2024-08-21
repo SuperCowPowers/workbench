@@ -211,7 +211,10 @@ class View(ABC):
     def _auto_create_view(self):
         """Internal: Automatically create a view. This is called when a view is accessed that doesn't exist"""
         self.auto_created = True
-        self.create_view()
+        try:
+            self.create_view()
+        except TypeError:
+            self.log.important(f"View {self.view_type} for {self.data_source_name} cannot be auto-created.")
 
     def __repr__(self):
         """Return a string representation of this object"""

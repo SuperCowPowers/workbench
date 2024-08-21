@@ -25,8 +25,9 @@ class DataQualityView(View):
             id_column (str): The name of the id column (must be defined for join logic)
             target (str): The name of the target column
             features (list): The list of feature columns
-            source_table_name (str, optional): The table/view to create the view from. Defaults to base table.
+            source_table (str, optional): The table/view to create the view from. Defaults to base table.
         """
+        self.log.important(f"View {self.view_type} for {self.data_source_name} being created...")
 
         # Get the source_table to create the view from
         base_table = self.data_source.get_table_name()
@@ -73,18 +74,20 @@ class DataQualityView(View):
         # Now run the RowTagger to compute coincident and high target gradient tags
         row_tagger = RowTagger(
             df,
-            features=feature_columns,
+            features=features,
             id_column=id_column,
-            target_column=target_column,
+            target_column=target,
             within_dist=0.25,
             min_target_diff=1.0,
+            outlier_df=self.data_source.outliers()
         )
         dq_df = row_tagger.tag_rows()
 
         # We're going to rename the tags column to data_quality_tags
         dq_df.rename(columns={"tags": "data_quality_tags"}, inplace=True)
 
-        # We're going to compute a data_quality score based on the tags. The tags are a set() of strings
+        # We're going to compute a data_quality score based on the tags.
+        # Specific/Domain specific logic can be added here.
         # If 'coincident' is in the tags, then the data_quality score is 0.0
         # If 'htg' is in the tags, then the data_quality score is 0.5
         # Else there's no bad tags so the data_quality score is 1.0
@@ -92,16 +95,21 @@ class DataQualityView(View):
             lambda tags: 0.0 if "coincident" in tags else 0.5 if "htg" in tags else 1.0
         )
 
+        # Remove all the columns from the original dataframe except the id_column
+        dq_columns = list(set(dq_df.columns) - set(df.columns)) + [id_column]
+        dq_df = dq_df[dq_columns]
+        join_columns = ", ".join([f'"{column}"' for column in dq_df.columns if column != id_column])
+
         # Create the data_quality supplemental table
         data_quality_table = f"_{base_table}_data_quality"
-        dataframe_to_table(self.data_source, dq_df[[id_column, "data_quality"]], data_quality_table)
+        dataframe_to_table(self.data_source, dq_df, data_quality_table)
 
         # Create the data_quality view (join the data_quality table with the source_table)
         view_name = f"{base_table}_data_quality"
         self.log.important(f"Creating Data Quality View {view_name}...")
         create_view_query = f"""
         CREATE OR REPLACE VIEW {view_name} AS
-        SELECT A.*, B.data_quality
+        SELECT A.*, B.{join_columns}
         FROM {source_table} A
         LEFT JOIN {data_quality_table} B
         ON A.{id_column} = B.{id_column}
@@ -116,15 +124,16 @@ if __name__ == "__main__":
     from sageworks.api import FeatureSet, Model
 
     # Get the FeatureSet
-    fs = FeatureSet("aqsol_mol_descriptors")
+    fs = FeatureSet("abalone_features")
 
     # Get the target and feature columns
-    m = Model("aqsol-mol-regression")
+    m = Model("abalone-regression")
     target_column = m.target()
     feature_columns = m.features()
 
     # Create a DataQualityView
     dq_view = DataQualityView(fs)
+    dq_view.create_view("id", target_column, feature_columns)
 
     # Pull the data quality dataframe (not sure what this will do)
     df = dq_view.pull_dataframe(head=True)
