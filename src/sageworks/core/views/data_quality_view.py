@@ -89,9 +89,8 @@ class DataQualityView(View):
         dq_df = row_tagger.tag_rows()
 
         # HACK: These are the columns that are being added to the dataframe
-        dq_columns = ["data_quality_tags", "data_quality", id_column]
-        df = df.drop(columns=["data_quality_tags", "data_quality"], errors='ignore')
-        dq_df = dq_df.drop(columns=["data_quality_tags", "data_quality"], errors='ignore')
+        dq_columns = ["data_quality_tags", "data_quality"]
+        dq_df = dq_df.drop(columns=dq_columns, errors='ignore')
 
         # We're going to rename the tags column to data_quality_tags
         dq_df.rename(columns={"tags": "data_quality_tags"}, inplace=True)
@@ -106,7 +105,7 @@ class DataQualityView(View):
         )
 
         # Just want to keep the new data quality columns
-        dq_df = dq_df[dq_columns]
+        dq_df = dq_df[dq_columns + [id_column]]
 
         # Create the data_quality supplemental table
         data_quality_table = f"_{base_table}_data_quality"
@@ -117,12 +116,15 @@ class DataQualityView(View):
         self.log.important(f"Creating Data Quality View {view_name}...")
 
         # Convert the list of dq_columns into a comma-separated string
-        dq_columns_str = ", ".join(dq_columns)
+        dq_columns_str = ", ".join([f"B.{col}" for col in dq_columns])
+
+        # List the columns from A that are not in B to avoid overlap
+        source_columns_str = ", ".join([f"A.{col}" for col in df.columns if col not in dq_columns])
 
         # Construct the CREATE VIEW query
         create_view_query = f"""
         CREATE OR REPLACE VIEW {view_name} AS
-        SELECT A.*, B.{dq_columns_str}
+        SELECT {source_columns_str}, {dq_columns_str}
         FROM {source_table} A
         LEFT JOIN {data_quality_table} B
         ON A.{id_column} = B.{id_column}
