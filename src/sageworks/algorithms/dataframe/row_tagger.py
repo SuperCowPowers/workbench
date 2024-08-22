@@ -38,8 +38,11 @@ class RowTagger:
 
         # We need the feature spider for the more advanced tags
         self.f_spider = feature_spider.FeatureSpider(
-            self.df, features, id_column=self.id_column, target_column=target_column,
-            categorical_target=categorical_target
+            self.df,
+            features,
+            id_column=self.id_column,
+            target_column=target_column,
+            categorical_target=categorical_target,
         )
 
         # Add a 'tags' column (if it doesn't already exist)
@@ -82,8 +85,7 @@ class RowTagger:
 
             # Use the merge indicator to add "outlier" tag to the relevant rows
             self.df["tags"] = self.df.apply(
-                lambda row: row["tags"].union({"outlier"}) if row["_merge"] == "both" else row["tags"],
-                axis=1
+                lambda row: row["tags"].union({"outlier"}) if row["_merge"] == "both" else row["tags"], axis=1
             )
 
             # Drop the merge indicator column
@@ -179,7 +181,7 @@ def unit_test():
         target_column=target_column,
         within_dist=0.25,
         min_target_diff=1.0,
-        outlier_df=fs.outliers()
+        outlier_df=fs.outliers(),
     )
     data_df = row_tagger.tag_rows()
     print(data_df["tags"].value_counts())

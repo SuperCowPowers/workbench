@@ -9,10 +9,15 @@ from sklearn.preprocessing import StandardScaler
 
 # Feature Spider Class
 class FeatureSpider:
-    def __init__(self, df: pd.DataFrame,
-                 features: list, id_column: str,
-                 target_column: str, neighbors: int = 5,
-                 categorical_target: bool = False):
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        features: list,
+        id_column: str,
+        target_column: str,
+        neighbors: int = 5,
+        categorical_target: bool = False,
+    ):
         """FeatureSpider: A Spider for data/feature investigation and QA
 
         Args:

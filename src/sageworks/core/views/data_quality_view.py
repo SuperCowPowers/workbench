@@ -1,4 +1,5 @@
 """DataQualityView Class: A View that computes various data_quality metrics"""
+
 import pandas as pd
 
 # SageWorks Imports
@@ -90,7 +91,7 @@ class DataQualityView(View):
 
         # HACK: These are the columns that are being added to the dataframe
         dq_columns = ["data_quality_tags", "data_quality"]
-        dq_df = dq_df.drop(columns=dq_columns, errors='ignore')
+        dq_df = dq_df.drop(columns=dq_columns, errors="ignore")
 
         # We're going to rename the tags column to data_quality_tags
         dq_df.rename(columns={"tags": "data_quality_tags"}, inplace=True)
