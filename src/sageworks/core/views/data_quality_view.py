@@ -1,4 +1,5 @@
 """DataQualityView Class: A View that computes various data_quality metrics"""
+import pandas as pd
 
 # SageWorks Imports
 from sageworks.api import DataSource
@@ -63,6 +64,9 @@ class DataQualityView(View):
             self.log.error(f"target column {target} not found in {source_table}. Cannot create Data Quality View.")
             return
 
+        # Check the type of the target column is categorical (not numeric)
+        categorical_target = not pd.api.types.is_numeric_dtype(df[target])
+
         # Check if the feature columns exist in the source_table
         for feature in features:
             if feature not in df.columns:
@@ -79,9 +83,15 @@ class DataQualityView(View):
             target_column=target,
             within_dist=0.25,
             min_target_diff=1.0,
-            outlier_df=self.data_source.outliers()
+            outlier_df=self.data_source.outliers(),
+            categorical_target=categorical_target,
         )
         dq_df = row_tagger.tag_rows()
+
+        # HACK: These are the columns that are being added to the dataframe
+        dq_columns = ["data_quality_tags", "data_quality", id_column]
+        df = df.drop(columns=["data_quality_tags", "data_quality"], errors='ignore')
+        dq_df = dq_df.drop(columns=["data_quality_tags", "data_quality"], errors='ignore')
 
         # We're going to rename the tags column to data_quality_tags
         dq_df.rename(columns={"tags": "data_quality_tags"}, inplace=True)
@@ -95,10 +105,8 @@ class DataQualityView(View):
             lambda tags: 0.0 if "coincident" in tags else 0.5 if "htg" in tags else 1.0
         )
 
-        # Remove all the columns from the original dataframe except the id_column
-        dq_columns = list(set(dq_df.columns) - set(df.columns)) + [id_column]
+        # Just want to keep the new data quality columns
         dq_df = dq_df[dq_columns]
-        join_columns = ", ".join([f'"{column}"' for column in dq_df.columns if column != id_column])
 
         # Create the data_quality supplemental table
         data_quality_table = f"_{base_table}_data_quality"
@@ -107,9 +115,14 @@ class DataQualityView(View):
         # Create the data_quality view (join the data_quality table with the source_table)
         view_name = f"{base_table}_data_quality"
         self.log.important(f"Creating Data Quality View {view_name}...")
+
+        # Convert the list of dq_columns into a comma-separated string
+        dq_columns_str = ", ".join(dq_columns)
+
+        # Construct the CREATE VIEW query
         create_view_query = f"""
         CREATE OR REPLACE VIEW {view_name} AS
-        SELECT A.*, B.{join_columns}
+        SELECT A.*, B.{dq_columns_str}
         FROM {source_table} A
         LEFT JOIN {data_quality_table} B
         ON A.{id_column} = B.{id_column}
