@@ -23,6 +23,7 @@ class RowTagger:
         within_dist: float,
         min_target_diff: float,
         outlier_df: pd.DataFrame = None,
+        categorical_target: bool = False,
     ):
         # Set up some parameters
         self.id_column = id_column
@@ -37,7 +38,8 @@ class RowTagger:
 
         # We need the feature spider for the more advanced tags
         self.f_spider = feature_spider.FeatureSpider(
-            self.df, features, id_column=self.id_column, target_column=target_column
+            self.df, features, id_column=self.id_column, target_column=target_column,
+            categorical_target=categorical_target
         )
 
         # Add a 'tags' column (if it doesn't already exist)
