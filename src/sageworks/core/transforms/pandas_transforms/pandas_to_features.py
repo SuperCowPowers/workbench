@@ -255,6 +255,10 @@ class PandasToFeatures(Transform):
         """Prep the DataFrame for Feature Store Creation"""
         self.log.info("Prep the output_df (cat_convert, convert types, and lowercase columns)...")
 
+        # Remove any columns generated from AWS
+        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
+        self.output_df = self.output_df.drop(columns=aws_cols, errors="ignore")
+
         # Convert object and string types to Categorical
         if self.auto_one_hot:
             self.auto_convert_columns_to_categorical()
