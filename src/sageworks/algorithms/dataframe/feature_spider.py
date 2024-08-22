@@ -9,7 +9,10 @@ from sklearn.preprocessing import StandardScaler
 
 # Feature Spider Class
 class FeatureSpider:
-    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target_column: str, neighbors: int = 5):
+    def __init__(self, df: pd.DataFrame,
+                 features: list, id_column: str,
+                 target_column: str, neighbors: int = 5,
+                 categorical_target: bool = False):
         """FeatureSpider: A Spider for data/feature investigation and QA
 
         Args:
@@ -18,6 +21,7 @@ class FeatureSpider:
              id_column: Name of the ID column
              target_column: Name of the target column
              neighbors: Number of neighbors to use in the KNN model (default: 5)
+             categorical_target: Is the target column categorical (default: False)
         """
         # Check for expected columns
         for column in [id_column, target_column] + features:
@@ -30,6 +34,7 @@ class FeatureSpider:
         self.id_column = id_column
         self.target_column = target_column
         self.features = features
+        self.categorical_target = categorical_target
 
         # Check for NaNs in the features and log the percentage
         for feature in features:
@@ -202,9 +207,14 @@ class FeatureSpider:
                 if n_index == my_index:
                     continue
 
+                # Do we have a categorical target (not numeric)?
+                if self.categorical_target:
+                    _diff = 1.0 if my_target != target else 0.0
+                else:
+                    _diff = abs(my_target - target)
+
                 # Compute target differences `within_distance` feature space
-                _diff = abs(my_target - target)
-                if dist <= within_distance and _diff > target_diff:
+                if dist <= within_distance and _diff >= target_diff:
                     # Update the individual HTG set for this observation
                     my_htg_set.add((n_index, dist, _diff, target))
 
