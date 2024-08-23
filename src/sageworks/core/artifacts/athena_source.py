@@ -60,7 +60,7 @@ class AthenaSource(DataSourceAbstract):
             data_uuid, self.get_database(), refresh=force_refresh
         )
         if self.catalog_table_meta is None:
-            self.log.important(f"Unable to find {self.get_database()}:{self.get_table_name()} in Glue Catalogs...")
+            self.log.error(f"Unable to find {self.get_database()}:{self.get_table_name()} in Glue Catalogs...")
 
         # Call superclass post init
         super().__post_init__()
@@ -154,7 +154,11 @@ class AthenaSource(DataSourceAbstract):
                     boto3_session=self.boto_session,
                 )
             else:
-                raise e
+                self.log.critical(f"Failed to upsert metadata: {e}")
+                self.log.critical(f"{self.uuid} is Malformed! Delete this Artifact and recreate it!")
+        except Exception as e:
+            self.log.critical(f"Failed to upsert metadata: {e}")
+            self.log.critical(f"{self.uuid} is Malformed! Delete this Artifact and recreate it!")
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -522,7 +526,8 @@ class AthenaSource(DataSourceAbstract):
 
             self.log.info(f"Deleting S3 Storage Objects: {s3_path}...")
             wr.s3.delete_objects(s3_path, boto3_session=self.boto_session)
-        except TypeError:
+        except Exception as e:
+            self.log.error(f"Failed to delete S3 Storage Objects: {e}")
             self.log.warning("Malformed Artifact... good thing it's being deleted...")
 
         # Delete any data in the Cache

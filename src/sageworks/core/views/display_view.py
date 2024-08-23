@@ -55,6 +55,11 @@ class DisplayView(View):
         # Enclose each column name in double quotes
         sql_columns = ", ".join([f'"{column}"' for column in column_list])
 
+        # Sanity check the columns
+        if not sql_columns:
+            self.log.critical(f"{self.data_source_name} No columns to create display view...")
+            return
+
         # Create the view query
         create_view_query = f"""
            CREATE OR REPLACE VIEW {view_name} AS

@@ -23,6 +23,12 @@ class DataSourceAbstract(Artifact):
         # Set up our instance attributes
         self._database = database
         self._table_name = data_uuid
+        self.display_view = None
+
+        # Check if we exist
+        if not self.exists():
+            self.log.error(f"Could not find DataSource {self.uuid} within current visibility scope")
+            return
 
         # Create default DisplayView
         from sageworks.core.views import DisplayView
