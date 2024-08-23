@@ -23,17 +23,7 @@ class DataSourceAbstract(Artifact):
         # Set up our instance attributes
         self._database = database
         self._table_name = data_uuid
-        self.display_view = None
-
-        # Check if we exist
-        if not self.exists():
-            self.log.error(f"Could not find DataSource {self.uuid} within current visibility scope")
-            return
-
-        # Create default DisplayView
-        from sageworks.core.views import DisplayView
-
-        self.display_view = DisplayView(self)
+        self._display_view = None
 
     def __post_init__(self):
         # Call superclass post_init
@@ -85,15 +75,18 @@ class DataSourceAbstract(Artifact):
         else:
             raise ValueError(f"Unknown column details view: {view}")
 
+    def get_display_view(self):
+        """Get the Display View for this Data Source"""
+        if self._display_view is None:
+            self._create_display_view()
+        return self._display_view
+
     def get_display_columns(self) -> list[str]:
         """Get the columns from our display view
         Returns:
             list[str]: The columns from our display view
         """
-        if self.display_view is None:
-            self.log.warning("Display View is None...Let's figure out why this is happening...")
-            return self.column_names()[:30]
-        return self.display_view.columns()
+        return self.get_display_view().columns()
 
     def set_display_columns(self, display_columns: list[str], onboard: bool = True):
         """Set the display columns for this Data Source
@@ -103,9 +96,14 @@ class DataSourceAbstract(Artifact):
             onboard (bool): Onboard the Data Source after setting the display columns (default: True)
         """
         self.log.important(f"Setting Display Columns...{display_columns}")
-        self.display_view.create_view(column_list=display_columns)
+        self.get_display_view().create_view(column_list=display_columns)
         if onboard:
             self.onboard()
+
+    def _create_display_view(self):
+        """Internal: Create the Display View for this DataSource"""
+        from sageworks.core.views.display_view import DisplayView
+        self._display_view = DisplayView(self)
 
     def num_display_columns(self) -> int:
         """Return the number of columns for the display view"""
