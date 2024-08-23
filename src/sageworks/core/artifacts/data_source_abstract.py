@@ -103,6 +103,7 @@ class DataSourceAbstract(Artifact):
     def _create_display_view(self):
         """Internal: Create the Display View for this DataSource"""
         from sageworks.core.views.display_view import DisplayView
+
         self._display_view = DisplayView(self)
 
     def num_display_columns(self) -> int:
