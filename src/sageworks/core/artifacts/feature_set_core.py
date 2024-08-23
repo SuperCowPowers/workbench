@@ -30,12 +30,11 @@ class FeatureSetCore(Artifact):
         ```
     """
 
-    def __init__(self, feature_set_uuid: str, view: str = "base", force_refresh: bool = False):
+    def __init__(self, feature_set_uuid: str, force_refresh: bool = False):
         """FeatureSetCore Initialization
 
         Args:
             feature_set_uuid (str): Name of Feature Set
-            view (str): The view for the Feature Set (default: "base")
             force_refresh (bool): Force a refresh of the Feature Set metadata (default: False)
         """
 
@@ -69,12 +68,10 @@ class FeatureSetCore(Artifact):
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
 
-        # Create default DisplayView and TrainingView
-        from sageworks.core.views import DisplayView, TrainingView, DataQualityView
-
-        self.display_view = DisplayView(self)
-        self.training_view = TrainingView(self)
-        self.data_quality_view = DataQualityView(self)
+        # Initialize our Views
+        self._display_view = None
+        self._training_view = None
+        self._data_quality_view = None
 
         # Call superclass post_init
         super().__post_init__()
@@ -155,21 +152,56 @@ class FeatureSetCore(Artifact):
             ds_details[col] = fs_details.get(col, dtype)
         return ds_details
 
+    def get_display_view(self):
+        """Get the Display View for this Data Source"""
+        if self._display_view is None:
+            self._create_view("display")
+        return self._display_view
+
+    def get_training_view(self):
+        """Get the Training View for this Data Source"""
+        if self._training_view is None:
+            self._create_view("training")
+        return self._training_view
+
+    def get_data_quality_view(self):
+        """Get the Data Quality View for this Data Source"""
+        if self._data_quality_view is None:
+            self._create_view("data_quality")
+        return self._data_quality_view
+
     def get_display_columns(self) -> list[str]:
-        """Get the columns for the display view
-
+        """Get the columns from our display view
         Returns:
-            list[str]: The columns for the display view
+            list[str]: The columns from our display view
         """
-        return self.display_view.columns()
+        return self.get_display_view().columns()
 
-    def set_display_columns(self, display_columns: list[str]):
-        """Set the columns for the display view
+    def set_display_columns(self, display_columns: list[str], onboard: bool = True):
+        """Set the display columns for this Data Source
 
         Args:
-            display_columns (list[str]): The columns for the display view
+            display_columns (list[str]): The display columns for this Data Source
+            onboard (bool): Onboard the Data Source after setting the display columns (default: True)
         """
-        self.display_view.create_view(column_list=display_columns)
+        self.log.important(f"Setting Display Columns...{display_columns}")
+        self.get_display_view().create_view(column_list=display_columns)
+        if onboard:
+            self.onboard()
+
+    def _create_view(self, view_type: str):
+        """Internal: Create the specified View for this FeatureSet
+
+        Args:
+            view_type (str): The type of view to create
+        """
+        from sageworks.core.views import DisplayView, TrainingView, DataQualityView
+        if view_type == "display":
+            self._display_view = DisplayView(self)
+        elif view_type == "training":
+            self._training_view = TrainingView(self)
+        elif view_type == "data_quality":
+            self._data_quality_view = DataQualityView(self)
 
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""
@@ -230,7 +262,7 @@ class FeatureSetCore(Artifact):
         s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
 
         # Make the query
-        query = f"SELECT * FROM {self.training_view.view_table_name}"
+        query = f"SELECT * FROM {self.get_training_view().view_table_name}"
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
         athena_query.wait()
@@ -376,7 +408,7 @@ class FeatureSetCore(Artifact):
         """
 
         # Create the training view
-        self.training_view.create_view(id_column, holdout_ids)
+        self.get_training_view().create_view(id_column, holdout_ids)
 
     def get_training_view_table(self) -> Union[str, None]:
         """Get the name of the training view for this FeatureSet
@@ -385,14 +417,21 @@ class FeatureSetCore(Artifact):
             str: The name of the training view for this FeatureSet
         """
         # Get the training view table name
-        return self.training_view.view_table_name
+        return self.get_training_view().view_table_name
 
     def delete_views(self):
         """Delete any views associated with this FeatureSet"""
 
-        # TODO: We need to iterate over all the views and delete them
-        self.display_view.delete()
-        self.training_view.delete()
+        # Delete the views
+        if self._display_view:
+            self._display_view.delete()
+            self._display_view = None
+        if self._training_view:
+            self._training_view.delete()
+            self._training_view = None
+        if self._data_quality_view:
+            self._data_quality_view.delete()
+            self._data_quality_view = None
 
     def descriptive_stats(self, recompute: bool = False) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource

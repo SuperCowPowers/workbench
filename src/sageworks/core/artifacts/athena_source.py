@@ -512,7 +512,8 @@ class AthenaSource(DataSourceAbstract):
             self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.get_table_name()}")
 
         # Delete the Display View
-        self.display_view.delete()
+        if self._display_view:
+            self._display_view.delete()
 
         # Delete Data Catalog Table
         self.log.info(f"Deleting DataCatalog Table: {self.get_database()}.{self.get_table_name()}...")

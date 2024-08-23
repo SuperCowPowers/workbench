@@ -303,7 +303,7 @@ class DataSourceAbstract(Artifact):
         self.remove_health_tag("needs_onboard")
 
         # Make sure our views actually exist
-        self.display_view.ensure_exists()
+        self.get_display_view().ensure_exists()
 
         # Compute the sample, column stats, and outliers
         self.sample(recompute=True)
