@@ -28,12 +28,12 @@ my_license_info = LicenseManager.load_api_license(
 load_figure_template("darkly")
 
 # Create a Markdown component to display the license details
-license_details = license_details.LicenseDetails()
-details_component = license_details.create_component("license_details")
-updated_properties = license_details.update_properties(my_license_info)
+markdown_details = license_details.LicenseDetails()
+details_component = markdown_details.create_component("license_details")
+updated_properties = markdown_details.update_properties(my_license_info)
 
 # Set the properties directly on the server side before initializing the layout
-for (component_id, prop), value in zip(license_details.properties, updated_properties):
+for (component_id, prop), value in zip(markdown_details.properties, updated_properties):
     for child in details_component.children:
         if child.id == component_id:
             setattr(child, prop, value)
