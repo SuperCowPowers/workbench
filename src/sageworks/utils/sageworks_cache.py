@@ -41,7 +41,7 @@ class SageWorksCache:
         return self._actual_cache.list_subkeys(key)
 
     def check(self):
-        return self._actual_cache.check()
+        return RedisCache().check()
 
     def clear(self):
         return self._actual_cache.clear()
