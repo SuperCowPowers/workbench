@@ -15,16 +15,20 @@ def main_layout(
     feature_sets: dash_table.DataTable,
     models: dash_table.DataTable,
     endpoints: dash_table.DataTable,
+    update_rate: int = 60,
 ) -> html.Div:
     """Main Layout for the Dashboard"""
     sageworks_version = sageworks.__version__.split("+")[0].strip()
     cm = ConfigManager()
     license_id = cm.get_license_id()
 
+    # Update rate is in seconds (convert to milliseconds)
+    update_rate = update_rate * 1000
+
     # Just put all the tables in as Rows for Now (do something fancy later)
     layout = html.Div(
         children=[
-            dcc.Interval(id="broker-update-timer", interval=30000, n_intervals=0),
+            dcc.Interval(id="broker-update-timer", interval=update_rate, n_intervals=0),
             dbc.Row(
                 [
                     html.H2(
