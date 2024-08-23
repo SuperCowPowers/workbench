@@ -70,6 +70,10 @@ class DataCatalog(Connector):
         """Return a summary of all the tables and views in this AWS Data Catalog Database"""
         return self.data_catalog_metadata
 
+    def get_database_scope(self) -> list:
+        """Get the database scope for this connector"""
+        return self.database_scope
+
     def get_tables(self, database: str) -> list:
         """Get all the table names in this database
 
@@ -107,6 +111,12 @@ if __name__ == "__main__":
     # Create the class and get the AWS Data Catalog database info
     catalog = DataCatalog(["sageworks", "sagemaker_featurestore"])
     catalog.refresh()
+
+    # List the tables
+    catalog.get_tables("sageworks")
+
+    # List the views
+    catalog.get_views("sageworks")
 
     # Get the Summary Information
     pprint(catalog.summary())

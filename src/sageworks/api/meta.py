@@ -312,6 +312,11 @@ class Meta:
         model_summary = []
         for model_group_name, model_list in model_data.items():
 
+            # Sanity check
+            if not model_list:
+                self.log.critical(f"No models found for {model_group_name}")
+                continue
+
             # Get Summary information for the 'latest' model in the model_list
             latest_model = model_list[0]
             sageworks_meta = latest_model.get("sageworks_meta", {})

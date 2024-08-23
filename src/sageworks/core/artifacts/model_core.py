@@ -616,9 +616,12 @@ class ModelCore(Artifact):
         self.sm_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
 
         # Delete any training artifacts
-        s3_delete_path = f"{self.model_training_path}/"
-        self.log.info(f"Deleting Training S3 Objects {s3_delete_path}")
-        wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
+        try:
+            s3_delete_path = f"{self.model_training_path}/"
+            self.log.info(f"Deleting Training S3 Objects {s3_delete_path}")
+            wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
+        except Exception:
+            self.log.warning(f"Could not find/delete training artifacts for {self.model_name}!")
 
         # Delete any data in the Cache
         for key in self.data_storage.list_subkeys(f"model:{self.uuid}:"):
