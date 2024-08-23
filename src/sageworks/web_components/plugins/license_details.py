@@ -17,7 +17,7 @@ FEATURES = {
     "plugins": "Component Plugins",
     "pages": "Fully Customizable Pages",
     "themes": "Dark, Light, and Custom Themes",
-    "pipelines": "Machine Learning Pipelines (beta)",
+    "pipelines": "Machine Learning Pipelines",
     "branding": "Company/Project User Interface Branding",
 }
 
