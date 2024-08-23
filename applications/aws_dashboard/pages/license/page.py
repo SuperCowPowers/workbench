@@ -19,7 +19,10 @@ register_page(
 # Grab the API Key from the SageWorks ConfigManager
 cm = ConfigManager()
 api_key = cm.get_config("SAGEWORKS_API_KEY")
-my_license_info = LicenseManager.load_api_license(aws_account_id=None, api_key=api_key)
+license_api_key = cm.get_config("LICENSE_API_KEY")
+my_license_info = LicenseManager.load_api_license(
+    aws_account_id=None, api_key=api_key, license_api_key=license_api_key
+)
 
 # Put the components into 'dark' mode
 load_figure_template("darkly")
