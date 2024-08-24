@@ -108,7 +108,7 @@ class ModelToEndpoint(Transform):
 
         # Onboard the Endpoint
         output_endpoint = EndpointCore(self.output_uuid, force_refresh=True)
-        output_endpoint.onboard()
+        output_endpoint.onboard_with_args(input_model=self.input_uuid)
 
 
 if __name__ == "__main__":

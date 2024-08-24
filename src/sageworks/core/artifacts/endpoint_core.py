@@ -288,7 +288,7 @@ class EndpointCore(Artifact):
             if interactive:
                 input_model = input("Input Model?: ")
             else:
-                self.log.error("Input Model is not defined!")
+                self.log.critical("Input Model is not defined!")
                 return False
         else:
             input_model = self.get_input()
