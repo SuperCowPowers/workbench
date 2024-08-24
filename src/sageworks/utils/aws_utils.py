@@ -313,8 +313,8 @@ def extract_data_source_basename(source: str) -> str:
         return source
 
 
-def newest_files(s3_locations: list[str], sm_session: SageSession) -> Union[str, None]:
-    """Determine which full S3 bucket and prefix combination has the newest files.
+def newest_path(s3_locations: list[str], sm_session: SageSession) -> Union[str, None]:
+    """Determine which S3 bucket and prefix combination has the newest files.
 
     Args:
         s3_locations (list[str]): A list of full S3 bucket and prefix combinations.
@@ -462,7 +462,7 @@ if __name__ == "__main__":
 
     # Test the newest files in an S3 folder method
     s3_path = "s3://sandbox-sageworks-artifacts/endpoints/inference/abalone-regression-end"
-    most_recent = newest_files([s3_path], sm_session)
+    most_recent = newest_path([s3_path], sm_session)
 
     # Add a health tag
     my_features.add_health_tag("needs_onboard")

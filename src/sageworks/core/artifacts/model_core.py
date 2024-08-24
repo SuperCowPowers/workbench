@@ -17,7 +17,7 @@ from sagemaker.model import Model as SagemakerModel
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.utils.aws_utils import newest_files, pull_s3_data
+from sageworks.utils.aws_utils import newest_path, pull_s3_data
 
 
 # Enumerated Model Types
@@ -338,7 +338,13 @@ class ModelCore(Artifact):
         if registered_endpoints:
             endpoint_inference_base = self.endpoints_s3_path + "/inference/"
             endpoint_inference_paths = [endpoint_inference_base + e for e in registered_endpoints]
-            return newest_files(endpoint_inference_paths, self.sm_session)
+            inference_path = newest_path(endpoint_inference_paths, self.sm_session)
+            if inference_path is None:
+                self.log.warning(f"No inference data found for {self.model_name}!")
+                self.log.warning(f"Returning inference path for {registered_endpoints[0]}...")
+                return endpoint_inference_paths[0]
+            else:
+                return inference_path
         else:
             self.log.warning(f"No registered endpoints found for {self.model_name}!")
             return None
