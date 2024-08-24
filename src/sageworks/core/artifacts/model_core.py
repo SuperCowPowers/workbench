@@ -94,16 +94,24 @@ class ModelCore(Artifact):
         # Call SuperClass Initialization
         super().__init__(model_uuid)
 
+        # Initialize our class attributes
+        self.latest_model = None
+        self.model_type = ModelType.UNKNOWN
+        self.model_training_path = None
+        self.endpoint_inference_path = None
+
         # Grab an AWS Metadata Broker object and pull information for Models
         self.model_name = model_uuid
         aws_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS, force_refresh=force_refresh)
         self.model_meta = aws_meta.get(self.model_name)
         if self.model_meta is None:
             self.log.important(f"Could not find model {self.model_name} within current visibility scope")
-            self.latest_model = None
-            self.model_type = ModelType.UNKNOWN
             return
         else:
+            # Is this a model package group without any models?
+            if len(self.model_meta) == 0:
+                self.log.warning(f"Model Group {self.model_name} has no Model Packages!")
+                return
             try:
                 self.latest_model = self.model_meta[0]
                 self.description = self.latest_model.get("ModelPackageDescription", "-")
@@ -114,8 +122,6 @@ class ModelCore(Artifact):
                     self.model_type = self._get_model_type()
             except (IndexError, KeyError):
                 self.log.critical(f"Model {self.model_name} appears to be malformed. Delete and recreate it!")
-                self.latest_model = None
-                self.model_type = ModelType.UNKNOWN
                 return
 
         # Set the Model Training S3 Path
@@ -328,8 +334,12 @@ class ModelCore(Artifact):
         """
         return self.sageworks_meta().get("sageworks_registered_endpoints", [])
 
-    def get_endpoint_inference_path(self) -> str:
-        """Get the S3 Path for the Inference Data"""
+    def get_endpoint_inference_path(self) -> Union[str, None]:
+        """Get the S3 Path for the Inference Data
+
+        Returns:
+            str: S3 Path for the Inference Data (or None if not found)
+        """
 
         # Look for any Registered Endpoints
         registered_endpoints = self.sageworks_meta().get("sageworks_registered_endpoints")

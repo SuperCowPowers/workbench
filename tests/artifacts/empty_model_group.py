@@ -6,7 +6,7 @@ from pprint import pprint
 from sageworks.api.model import Model, ModelType
 
 
-model = Model("wine-classification")
+model = Model("empty-model-group")
 # model = Model("abalone-regression")
 
 
