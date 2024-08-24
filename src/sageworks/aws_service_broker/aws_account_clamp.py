@@ -21,6 +21,7 @@ import logging
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 from sageworks.utils.docker_utils import running_on_docker, running_on_ecs
+from sageworks.utils.sageworks_logging import ColoredFormatter
 
 
 class AWSAccountClamp:
@@ -254,12 +255,21 @@ class AWSAccountClamp:
             # Get the boto3 session from the SageWorks Account Clamp
             session = cls.boto3_session
             cloudwatch_client = session.client("logs")
+
+            # Create a CloudWatch Logs handler
             cloudwatch_handler = watchtower.CloudWatchLogHandler(
                 log_group="SageWorksLogGroup",
                 stream_name=cls.log_stream_name,
                 boto3_client=cloudwatch_client,
             )
-            cloudwatch_handler.setFormatter(cls.log.handlers[0].formatter)
+
+            # Create a formatter for CloudWatch without the timestamp
+            cloudwatch_formatter = ColoredFormatter(
+                "(%(filename)s:%(lineno)d) %(levelname)s %(message)s"
+            )
+            cloudwatch_handler.setFormatter(cloudwatch_formatter)
+
+            # Add the CloudWatch handler to the logger
             cls.log.addHandler(cloudwatch_handler)
         except ClientError as e:
             cls.log.error(f"Failed to set up CloudWatch Logs handler: {e}")

@@ -40,8 +40,6 @@ def get_resolved_options(argv: List[str], options: Optional[List[str]] = None) -
 @contextmanager
 def exception_log_forward():
     """Context manager to log exceptions to the sageworks logger"""
-    from sageworks.utils.sageworks_logging import logging_setup
-    logging_setup()
     log = logging.getLogger("sageworks")
     try:
         yield
