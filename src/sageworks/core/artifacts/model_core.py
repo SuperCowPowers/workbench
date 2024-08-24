@@ -188,7 +188,10 @@ class ModelCore(Artifact):
             list[str]: List of inference run UUIDs
         """
         if self.endpoint_inference_path is None:
-            return ["model_training"]  # Just the training run
+            # Okay we might have just training or if no model then return empty list
+            return [] if self.latest_model is None else ["model_training"]
+
+        # Get the list of directories in the inference path
         directories = wr.s3.list_directories(path=self.endpoint_inference_path + "/")
         inference_runs = [urlparse(directory).path.split("/")[-2] for directory in directories]
 
