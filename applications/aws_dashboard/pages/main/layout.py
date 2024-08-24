@@ -33,12 +33,10 @@ def main_layout(
                 [
                     html.H2(
                         [
-                            html.A("SageWorks Dashboard ",
-                                   href="/status",
-                                   style={
-                                       "color": "rgb(200, 200, 200)",
-                                       "textDecoration": "none"
-                                   }
+                            html.A(
+                                "SageWorks Dashboard ",
+                                href="/status",
+                                style={"color": "rgb(200, 200, 200)", "textDecoration": "none"},
                             ),
                             html.Span(
                                 f"{sageworks_version}",
