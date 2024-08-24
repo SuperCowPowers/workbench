@@ -312,10 +312,14 @@ class ModelCore(Artifact):
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
+        if self.latest_model is None:
+            return "-"
         return self.latest_model["CreationTime"]
 
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
+        if self.latest_model is None:
+            return "-"
         return self.latest_model["CreationTime"]
 
     def register_endpoint(self, endpoint_name: str):
@@ -440,7 +444,14 @@ class ModelCore(Artifact):
         details["model_type"] = self.model_type.value
         details["model_package_group_arn"] = self.group_arn()
         details["model_package_arn"] = self.model_package_arn()
+
+        # Sanity check is we have models in the group
         aws_meta = self.aws_meta()
+        if aws_meta is None:
+            self.log.warning(f"Model Package Group {self.model_name} has no models!")
+            return details
+
+        # Grab the Model Details
         details["description"] = aws_meta.get("ModelPackageDescription", "-")
         details["version"] = aws_meta["ModelPackageVersion"]
         details["status"] = aws_meta["ModelPackageStatus"]

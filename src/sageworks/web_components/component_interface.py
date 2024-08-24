@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Union
-import textwrap
+import traceback
 import re
 from functools import wraps
 import plotly.graph_objects as go
@@ -18,6 +18,14 @@ from sageworks.api.pipeline import Pipeline
 from sageworks.core.artifacts.graph_core import GraphCore
 
 log = logging.getLogger("sageworks")
+
+
+def get_reversed_stack_trace(exception, limit=2):
+    # Get the full stack trace
+    full_stack = traceback.format_exception(type(exception), exception, exception.__traceback__)
+    # Reverse the stack and take the last `limit` lines
+    relevant_stack = full_stack[-limit:]
+    return "".join(relevant_stack)
 
 
 class ComponentInterface(ABC):
@@ -94,8 +102,15 @@ class ComponentInterface(ABC):
             go.Figure: A Plotly Figure
         """
         text_display_text = go.Figure()
+
         text_display_text.add_annotation(
-            x=0.5, y=0.5, xref="paper", yref="paper", text=text_message, showarrow=False, font=dict(size=font_size)
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            text=text_message,
+            showarrow=False,
+            font=dict(size=font_size),
         )
 
         layout_options = dict(
@@ -121,9 +136,12 @@ def create_component_handler(func):
         except Exception as e:
             # Get the class name of the plugin
             class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
-            error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
-            error_info = "<br>".join(textwrap.wrap(error_info, width=120))
-            figure = ComponentInterface.display_text(error_info, figure_height=200, font_size=14)
+            # Get a few lines from the stack trace
+            stack_trace = "".join(traceback.format_exception(e))
+            header = f"{class_name} Crashed"
+            log.critical(f"{header}: {stack_trace}")
+            ui_error_info = f"{header}: {get_reversed_stack_trace(e)}"
+            figure = ComponentInterface.display_text(ui_error_info, figure_height=400, font_size=8)
             return dcc.Graph(id="error", figure=figure)
 
     return wrapper
@@ -137,10 +155,12 @@ def update_properties_handler(func):
         except Exception as e:
             # Get the class name of the plugin
             class_name = self.__class__.__name__
-            error_info = f"{class_name} Crashed: {e.__class__.__name__}: {e}"
-            log.critical(error_info)
-            error_info = "<br>".join(textwrap.wrap(error_info, width=120))
-            figure = ComponentInterface.display_text(error_info, figure_height=200, font_size=14)
+            # Get a few lines from the stack trace
+            stack_trace = "".join(traceback.format_exception(e))
+            header = f"{class_name} Crashed"
+            log.critical(f"{header}: {stack_trace}")
+            ui_error_info = f"{header}: {get_reversed_stack_trace(e)}"
+            figure = ComponentInterface.display_text(ui_error_info, figure_height=400, font_size=8)
 
             # Prepare the error output to match the properties format
             error_output = []
@@ -148,11 +168,11 @@ def update_properties_handler(func):
                 if property == "figure":
                     error_output.append(figure)
                 elif property in ["children", "value", "data"]:
-                    error_output.append(error_info)
+                    error_output.append(ui_error_info)
                 elif property == "columnDefs":
                     error_output.append([{"headerName": "Crash", "field": "Crash"}])
                 elif property == "rowData":
-                    error_output.append([{"Crash": error_info}])
+                    error_output.append([{"Crash": ui_error_info}])
                 else:
                     error_output.append(None)  # Fallback for other properties
             return error_output
