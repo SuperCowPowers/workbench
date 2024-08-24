@@ -2203,7 +2203,7 @@
 </span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a>
 </span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a>        <span class="c1"># Onboard the Endpoint</span>
 </span><span id="__span-0-110"><a id="__codelineno-0-110" name="__codelineno-0-110"></a>        <span class="n">output_endpoint</span> <span class="o">=</span> <span class="n">EndpointCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="__span-0-111"><a id="__codelineno-0-111" name="__codelineno-0-111"></a>        <span class="n">output_endpoint</span><span class="o">.</span><span class="n">onboard</span><span class="p">()</span>
+</span><span id="__span-0-111"><a id="__codelineno-0-111" name="__codelineno-0-111"></a>        <span class="n">output_endpoint</span><span class="o">.</span><span class="n">onboard_with_args</span><span class="p">(</span><span class="n">input_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
 
@@ -2306,7 +2306,7 @@ Args:
 </span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a>
 </span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a>    <span class="c1"># Onboard the Endpoint</span>
 </span><span id="__span-0-110"><a id="__codelineno-0-110" name="__codelineno-0-110"></a>    <span class="n">output_endpoint</span> <span class="o">=</span> <span class="n">EndpointCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="__span-0-111"><a id="__codelineno-0-111" name="__codelineno-0-111"></a>    <span class="n">output_endpoint</span><span class="o">.</span><span class="n">onboard</span><span class="p">()</span>
+</span><span id="__span-0-111"><a id="__codelineno-0-111" name="__codelineno-0-111"></a>    <span class="n">output_endpoint</span><span class="o">.</span><span class="n">onboard_with_args</span><span class="p">(</span><span class="n">input_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
