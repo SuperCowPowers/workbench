@@ -338,8 +338,8 @@ class AthenaSource(DataSourceAbstract):
         Args:
             recompute (bool): Recompute the smart sample (default: False)
 
-        Note:
-            smart = sample data + outliers for the DataSource
+        Returns:
+            pd.DataFrame: A combined DataFrame of sample data + outliers
         """
 
         # Check if we have cached smart_sample data

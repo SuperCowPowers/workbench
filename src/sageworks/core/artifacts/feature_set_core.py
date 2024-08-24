@@ -196,6 +196,7 @@ class FeatureSetCore(Artifact):
             view_type (str): The type of view to create
         """
         from sageworks.core.views import DisplayView, TrainingView, DataQualityView
+
         if view_type == "display":
             self._display_view = DisplayView(self)
         elif view_type == "training":
@@ -464,12 +465,16 @@ class FeatureSetCore(Artifact):
         """
         return self.data_source.outliers(scale=scale, recompute=recompute)
 
-    def smart_sample(self) -> pd.DataFrame:
+    def smart_sample(self, recompute: bool = False) -> pd.DataFrame:
         """Get a SMART sample dataframe from this FeatureSet
+
+        Args:
+            recompute (bool): Recompute the smart sample (default=False)
+
         Returns:
             pd.DataFrame: A combined DataFrame of sample data + outliers
         """
-        return self.data_source.smart_sample()
+        return self.data_source.smart_sample(recompute=recompute)
 
     def anomalies(self) -> pd.DataFrame:
         """Get a set of anomalous data from the underlying DataSource
