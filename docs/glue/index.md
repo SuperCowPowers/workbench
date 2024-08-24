@@ -80,6 +80,20 @@ for input_file in list_s3_files(input_s3_path):
     my_data = DataSource(input_file, name=None)
 ```
 
+## Exception Log Forwarding
+When a Glue Job crashes (has an exception), the AWS console will show you the last line of the exception, this is mostly useless. If you use SageWorks log forwarding the exception/stack will be forwarded to CloudWatch.
+
+```py
+from sageworks.utils.glue_utils import exception_log_forward
+
+with exception_log_forward():
+   <my glue code>
+   ...
+   <exception happens>
+   <more of my code>
+```
+The `exception_log_forward` sets up a **context manager** that will trap exceptions and forward the exception/stack to CloudWatch for diagnosis. 
+
 ## Glue Job Local Testing
 Glue Power without the Pain. SageWorks manages the AWS Execution Role, so local API and Glue Jobs will have the same permissions/access. Also using the same Code as your notebooks or scripts makes creating and testing Glue Jobs a breeze.
 
