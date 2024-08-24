@@ -15,6 +15,7 @@ from botocore.client import BaseClient
 from botocore.credentials import RefreshableCredentials
 from botocore.session import get_session
 from sagemaker.session import Session as SageSession
+from datetime import datetime
 import logging
 
 # SageWorks Imports
@@ -200,21 +201,51 @@ class AWSAccountClamp:
     def determine_log_stream(cls):
         """Determine the log stream name based on the environment."""
         executable_name = cls.get_executable_name(sys.argv)
+        unique_id = cls.get_unique_identifier()
+
         if cls.running_on_lambda():
             job_name = executable_name or os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "unknown")
-            return f"lambda/{job_name}"
+            return f"lambda/{job_name}/{unique_id}"
         elif cls.running_on_glue():
             job_name = executable_name or os.environ.get("GLUE_JOB_NAME", "unknown")
-            return f"glue/{job_name}"
+            return f"glue/{job_name}/{unique_id}"
         elif running_on_ecs():
             job_name = executable_name or os.environ.get("ECS_TASK_DEFINITION_FAMILY", "unknown")
-            return f"dashboard/{job_name}"
+            return f"dashboard/{job_name}/{unique_id}"
         elif running_on_docker():
             job_name = executable_name or os.environ.get("SERVICE_NAME", "unknown")
-            return f"docker/{job_name}"
+            return f"docker/{job_name}/{unique_id}"
         else:
             # This should work across platforms, including Windows
             return f"laptop/{getpass.getuser()}"
+
+    @classmethod
+    def get_unique_identifier(cls):
+        """Get a unique identifier for the log stream."""
+        # Attempt to get the job ID from environment variables
+        job_id = cls.get_job_id_from_environment()
+
+        if job_id:
+            return job_id
+        else:
+            # Fall back to a timestamp-based ID if no job ID is found
+            return datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
+
+    @classmethod
+    def get_job_id_from_environment(cls):
+        """Try to retrieve the job ID from Glue or Lambda environment variables."""
+        # Check for AWS Glue job ID
+        glue_job_id = os.environ.get("GLUE_JOB_ID")
+        if glue_job_id:
+            return glue_job_id
+
+        # Check for AWS Lambda request ID
+        lambda_request_id = os.environ.get("AWS_LAMBDA_REQUEST_ID")
+        if lambda_request_id:
+            return lambda_request_id
+
+        # If no job ID is found, return None
+        return None
 
     @classmethod
     def add_cloudwatch_logs_handler(cls):
