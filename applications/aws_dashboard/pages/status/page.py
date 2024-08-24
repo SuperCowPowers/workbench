@@ -38,7 +38,7 @@ for (component_id, prop), value in zip(markdown_details.properties, updated_prop
 # Simple layout for the license details
 layout = html.Div(
     children=[
-        html.H2("SageWorks: Dashboard Status"),
+        html.H2("SageWorks Dashboard Status"),
         details_component,
     ],
     style={"padding": "12px 30px 30px 30px"},
