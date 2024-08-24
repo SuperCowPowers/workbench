@@ -312,9 +312,12 @@ class Meta:
         model_summary = []
         for model_group_name, model_list in model_data.items():
 
-            # Sanity check
+            # Sanity check for empty Model Package Groups
             if not model_list:
-                self.log.critical(f"No models found for {model_group_name}")
+                self.log.error(f"No models found in {model_group_name}")
+                summary = {"Model Group": model_group_name, "Health": "failed", "Owner": "empty", "Model Type": "empty"}
+                summary.update({key: "-" for key in ["Created", "Ver", "Tags", "Input", "Status", "Description"]})
+                model_summary.append(summary)
                 continue
 
             # Get Summary information for the 'latest' model in the model_list

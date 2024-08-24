@@ -79,6 +79,11 @@ def list_tags_with_throttle(arn: str, sm_session) -> dict:
     sleep_times = [0.25, 0.5, 1, 2, 4, 8]
     max_attempts = len(sleep_times)
 
+    # Sanity check the ARN
+    if arn is None:
+        log.error("Called list_tags_with_throttle(arn==None)!")
+        return {}
+
     # Loop with exponential backoff
     for attempt in range(max_attempts):
         try:

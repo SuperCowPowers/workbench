@@ -1,4 +1,5 @@
 """Tests the support for Empty Model Groups"""
+
 from pprint import pprint
 
 # SageWorks Imports
@@ -46,7 +47,11 @@ def test_retrieval_with_capture_uuid():
 
 def test_validation_predictions():
     print("\n\n*** Validation Predictions ***")
-    pprint(model._get_validation_predictions().head())
+    val_predictions = model._get_validation_predictions()
+    if val_predictions is None:
+        print(f"Model {model.uuid} has no validation predictions!")
+    else:
+        pprint(val_predictions.head())
 
 
 def test_confusion_matrix():

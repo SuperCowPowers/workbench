@@ -286,12 +286,16 @@ class ModelCore(Artifact):
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
         return self.group_arn()
 
-    def group_arn(self) -> str:
+    def group_arn(self) -> Union[str, None]:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
+        if self.latest_model is None:
+            return None
         return self.latest_model["ModelPackageGroupArn"]
 
-    def model_package_arn(self) -> str:
+    def model_package_arn(self) -> Union[str, None]:
         """AWS ARN (Amazon Resource Name) for the Model Package (within the Group)"""
+        if self.latest_model is None:
+            return None
         return self.latest_model["ModelPackageArn"]
 
     def container_info(self) -> dict:
@@ -808,6 +812,10 @@ class ModelCore(Artifact):
         Returns:
             pd.DataFrame: DataFrame of the Captured Validation Predictions (might be None)
         """
+        # Sanity check the training path (which may or may not exist)
+        if self.model_training_path is None:
+            self.log.warning(f"No Validation Predictions for {self.model_name}...")
+            return None
         self.log.important(f"Grabbing Validation Predictions for {self.model_name}...")
         s3_path = f"{self.model_training_path}/validation_predictions.csv"
         df = pull_s3_data(s3_path)
