@@ -33,9 +33,15 @@ def main_layout(
                 [
                     html.H2(
                         [
-                            html.A("SageWorks Dashboard ", href="/status", style={"textDecoration": "none"}),
+                            html.A("SageWorks Dashboard ",
+                                   href="/status",
+                                   style={
+                                       "color": "rgb(200, 200, 200)",
+                                       "textDecoration": "none"
+                                   }
+                            ),
                             html.Span(
-                                f" v {sageworks_version}",
+                                f"{sageworks_version}",
                                 style={
                                     "color": "rgb(180, 120, 180)",
                                     "fontSize": 15,
@@ -43,7 +49,7 @@ def main_layout(
                             ),
                             html.Span(
                                 html.A(
-                                    f" ({license_id})",
+                                    f"  [{license_id}]",
                                     href="/license",
                                     style={
                                         "color": "rgb(140, 140, 200)",
@@ -51,10 +57,6 @@ def main_layout(
                                         "textDecoration": "none",
                                     },
                                 ),
-                                style={
-                                    "color": "rgb(140, 140, 200)",
-                                    "fontSize": 15,
-                                },
                             ),
                         ]
                     ),
