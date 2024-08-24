@@ -14,17 +14,39 @@ Endpoints:
 
 import sys
 import logging
+from botocore.exceptions import ClientError
 from pathlib import Path
 from sageworks.api.data_source import DataSource
 from sageworks.api.feature_set import FeatureSet
 from sageworks.api.model import Model, ModelType
 from sageworks.api.endpoint import Endpoint
-
-from sageworks.utils.test_data_generator import TestDataGenerator
+from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
+from sageworks.utils.test_data_generator import TestDataGenerator
 
 # Setup the logger
 log = logging.getLogger("sageworks")
+
+
+# Helper method to create an 'empty' model group
+def create_model_package_group(group_name, boto3_session):
+    sm_client = boto3_session.client("sagemaker")
+
+    try:
+        response = sm_client.create_model_package_group(
+            ModelPackageGroupName=group_name,
+            ModelPackageGroupDescription="Your description here",  # Add a relevant description
+        )
+        log.info(f"Model Package Group '{group_name}' created successfully.")
+        return response
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ValidationException" and "already exists" in e.response["Error"]["Message"]:
+            log.info(f"Model Package Group '{group_name}' already exists.")
+            return None
+        else:
+            # Re-raise any other exceptions
+            raise
+
 
 if __name__ == "__main__":
     # This forces a refresh on all the data we get from the AWS Broker
@@ -90,3 +112,7 @@ if __name__ == "__main__":
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
+
+    # Create an empty Model Package Group
+    boto3_session = AWSAccountClamp().boto_session()
+    create_model_package_group("empty-model-group", boto3_session)
