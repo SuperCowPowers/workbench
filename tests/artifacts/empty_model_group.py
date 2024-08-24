@@ -1,5 +1,4 @@
 """Tests the support for Empty Model Groups"""
-
 from pprint import pprint
 
 # SageWorks Imports
