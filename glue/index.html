@@ -1428,6 +1428,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#exception-log-forwarding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Exception Log Forwarding
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#glue-job-local-testing" class="md-nav__link">
     <span class="md-ellipsis">
       Glue Job Local Testing
@@ -1904,6 +1913,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#exception-log-forwarding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Exception Log Forwarding
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#glue-job-local-testing" class="md-nav__link">
     <span class="md-ellipsis">
       Glue Job Local Testing
@@ -2014,10 +2032,21 @@ src="https://github.com/SuperCowPowers/sageworks/assets/4806709/64b72d12-e5d6-41
 </span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="c1"># Note: If we don&#39;t specify a name, one will be &#39;auto-generated&#39;</span>
 </span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="n">my_data</span> <span class="o">=</span> <span class="n">DataSource</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </span></code></pre></div>
+<h2 id="exception-log-forwarding">Exception Log Forwarding</h2>
+<p>When a Glue Job crashes (has an exception), the AWS console will show you the last line of the exception, this is mostly useless. If you use SageWorks log forwarding the exception/stack will be forwarded to CloudWatch.</p>
+<p><div class="language-py highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">sageworks.utils.glue_utils</span> <span class="kn">import</span> <span class="n">exception_log_forward</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">with</span> <span class="n">exception_log_forward</span><span class="p">():</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>   <span class="o">&lt;</span><span class="n">my</span> <span class="n">glue</span> <span class="n">code</span><span class="o">&gt;</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>   <span class="o">...</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>   <span class="o">&lt;</span><span class="n">exception</span> <span class="n">happens</span><span class="o">&gt;</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>   <span class="o">&lt;</span><span class="n">more</span> <span class="n">of</span> <span class="n">my</span> <span class="n">code</span><span class="o">&gt;</span>
+</span></code></pre></div>
+The <code>exception_log_forward</code> sets up a <strong>context manager</strong> that will trap exceptions and forward the exception/stack to CloudWatch for diagnosis. </p>
 <h2 id="glue-job-local-testing">Glue Job Local Testing</h2>
 <p>Glue Power without the Pain. SageWorks manages the AWS Execution Role, so local API and Glue Jobs will have the same permissions/access. Also using the same Code as your notebooks or scripts makes creating and testing Glue Jobs a breeze.</p>
-<div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SAGEWORKS_CONFIG</span><span class="o">=</span>&lt;your<span class="w"> </span>config&gt;<span class="w">  </span><span class="c1"># Only if not already set up</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>python<span class="w"> </span>my_glue_job.py<span class="w"> </span>--sageworks-bucket<span class="w"> </span>&lt;your<span class="w"> </span>bucket&gt;
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SAGEWORKS_CONFIG</span><span class="o">=</span>&lt;your<span class="w"> </span>config&gt;<span class="w">  </span><span class="c1"># Only if not already set up</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>python<span class="w"> </span>my_glue_job.py<span class="w"> </span>--sageworks-bucket<span class="w"> </span>&lt;your<span class="w"> </span>bucket&gt;
 </span></code></pre></div>
 <h2 id="additional-resources">Additional Resources</h2>
 <ul>
