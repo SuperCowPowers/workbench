@@ -99,7 +99,14 @@ cdk diff
 cdk deploy
 ```
 
-In particular, pay attention to the `cdk diff` it should **ONLY** have the image name as a difference.
+!!! warning "CDK Diff" 
+    In particular, pay attention to the `cdk diff` it should **ONLY** have the image name as a difference.
+
+```
+cdk diff
+  [-] "Image": "<account>.dkr.ecr.us-east-1/my-plugins:latest_123",
+  [+] "Image": "<account>.dkr.ecr.us-east-1/my-plugins:latest_456",
+```
 
 
 ### Note on SageWorks Configuration
