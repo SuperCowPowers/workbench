@@ -131,54 +131,6 @@ if __name__ == "__main__":
     from sageworks.api.feature_set import FeatureSet
     from sageworks.api.model import Model
 
-    """
-    # Load the Abalone FeatureSet
-    fs = FeatureSet("abalone_features")
-    df = fs.pull_dataframe()
-
-    # Grab the target and feature columns from the model
-    model = Model("abalone-regression")
-    target_column = model.target()
-    feature_columns = model.features()
-
-    # Initialize the ResidualsCalculator
-    residuals_calculator = ResidualsCalculator(n_splits=5, random_state=42)
-    result_df = residuals_calculator.fit_transform(df[feature_columns], df[target_column])
-
-    # Print the result DataFrame
-    print(result_df)
-
-    # Compute percentage of observations with residuals_100_abs > residual_abs
-    percentage = (result_df["residuals_100_abs"] > result_df["residuals_abs"]).mean()
-    print(f"Percentage of observations with residuals_100_abs > residuals_abs: {percentage:.2f}")
-
-    # Now do the AQSol data (with given features)
-    fs = FeatureSet("aqsol_features")
-    if not fs.exists():
-        exit(0)
-    df = fs.pull_dataframe()
-
-    # Grab the target and feature columns from the model
-    model = Model("aqsol-regression")
-    target_column = model.target()
-    feature_columns = model.features()
-
-    # Initialize the ResidualsCalculator
-    residuals_calculator = ResidualsCalculator(n_splits=5, random_state=42)
-    result_df = residuals_calculator.fit_transform(df[feature_columns], df[target_column])
-
-    # Grab the residuals and residuals_abs columns
-    residual_columns = ["residuals", "residuals_abs", "residuals_100", "residuals_100_abs"]
-    residual_df = result_df[residual_columns]
-
-    # Compute percentage of observations with residuals_100_abs > residual_abs
-    percentage = (result_df["residuals_100_abs"] > result_df["residuals_abs"]).mean()
-    print(f"Percentage of observations with residuals_100_abs > residuals_abs: {percentage:.2f}")
-
-    # Print the residual DataFrame
-    print(residual_df)
-    """
-
     # Now do the AQSol data (with computed molecular descriptors)
     fs = FeatureSet("aqsol_mol_descriptors")
     if not fs.exists():
