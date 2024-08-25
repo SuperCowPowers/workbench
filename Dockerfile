@@ -11,6 +11,7 @@ RUN apt-get remove --purge -y libaom3 && apt-get autoremove -y && apt-get clean
 RUN apt-get update && apt-get install -y libnghttp2-dev && apt-get clean
 
 # Install SageWorks Dashboard dependencies
+COPY requirements.txt .
 COPY requirements-no-dash.txt .
 RUN pip install --no-cache-dir -r requirements-no-dash.txt
 
