@@ -10,13 +10,15 @@ RUN apt-get remove --purge -y libaom3 && apt-get autoremove -y && apt-get clean
 # Upgrade the nghttp2 package to fix a vulnerability
 RUN apt-get update && apt-get install -y libnghttp2-dev && apt-get clean
 
-# Install SageWorks dependencies
-COPY requirements.txt .
+# Install SageWorks Dashboard dependencies
 COPY requirements-no-dash.txt .
 RUN pip install --no-cache-dir -r requirements-no-dash.txt
 
-# Install latest Sageworks (no dependencies)
-RUN pip install --no-cache-dir --no-deps sageworks==0.8.3
+# Install latest Sageworks
+RUN pip install --no-cache-dir 'sageworks[ml-tool,chem]'==0.8.5
+
+# Remove setuptools (vulnerability)
+RUN apt-get remove --purge -y python3-setuptools python3-pkg-resources
 
 # Remove pip (vulnerability)
 RUN python -m pip uninstall -y pip && \
