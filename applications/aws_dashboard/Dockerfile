@@ -25,7 +25,7 @@ RUN apt-get remove --purge -y libaom3 && apt-get autoremove -y && apt-get clean
 # Upgrade the nghttp2 package to fix a vulnerability
 RUN apt-get update && apt-get install -y libnghttp2-dev && apt-get clean
 
-# Install app-specific dependencies
+# Install SageWorks Dashboard dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -33,7 +33,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY nginx.conf /etc/nginx/sites-available/default
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Install Sageworks (changes often)
+# Install latest Sageworks
 RUN pip install --no-cache-dir sageworks==0.8.3
 
 # Remove setuptools (vulnerability)
