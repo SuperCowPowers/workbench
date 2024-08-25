@@ -57,8 +57,8 @@ Your ECR location will have this form
 
 ```
 aws ecr get-login-password --region us-east-1 --profile <aws_profile> \
-| docker login --profile <your_aws_profile> \
- --username AWS --password-stdin <aws_account_id>.dkr.ecr.us-east-1.amazonaws.com
+| docker login --username AWS --password-stdin \
+<aws_account_id>.dkr.ecr.us-east-1.amazonaws.com
 ```
 
 ### Tag/Push the Image to AWS ECR
