@@ -70,7 +70,7 @@ class DashboardStatus(PluginInterface):
             details = "**Redis:** 🔴 Failed to Connect<br>"
 
         # Fill in the license details
-        details += f"**Redis Server:** {config_info['REDIS_HOST']}:{config_info['REDIS_PORT']}<br>"
+        details += f"**Redis Server:** {config_info['REDIS_HOST']}:{config_info.get('REDIS_PORT', 6379)}<br>"
         details += f"**SageWorks S3 Bucket:** {config_info['SAGEWORKS_BUCKET']}<br>"
         details += f"**Plugin Path:** {config_info['SAGEWORKS_PLUGINS']}<br>"
         details += "**SageWorks API Key:**\n"
