@@ -264,9 +264,7 @@ class AWSAccountClamp:
             )
 
             # Create a formatter for CloudWatch without the timestamp
-            cloudwatch_formatter = ColoredFormatter(
-                "(%(filename)s:%(lineno)d) %(levelname)s %(message)s"
-            )
+            cloudwatch_formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
             cloudwatch_handler.setFormatter(cloudwatch_formatter)
 
             # Add the CloudWatch handler to the logger
