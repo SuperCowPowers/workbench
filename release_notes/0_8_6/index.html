@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../getting_started/">
+        <link rel="prev" href="../../aws_setup/aws_access_management/">
       
       
-        <link rel="next" href="../api_classes/overview/">
+        <link rel="next" href="../../admin/pypi_release/">
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.33">
     
     
       
-        <title>SageWorks REPL - SageWorks</title>
+        <title>0.8.6 - SageWorks</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.3cba04c6.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.3cba04c6.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -46,9 +46,9 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#installation" class="md-skip">
+        <a href="#release-086" class="md-skip">
           Skip to content
         </a>
       
@@ -90,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              SageWorks REPL
+              0.8.6
             
           </span>
         </div>
@@ -211,7 +211,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -229,7 +229,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -249,7 +249,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../presentations/" class="md-nav__link">
+      <a href="../../presentations/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -269,7 +269,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting_started/" class="md-nav__link">
+      <a href="../../getting_started/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -286,28 +286,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    SageWorks REPL
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../repl/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -316,51 +298,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Installation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Usage
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#additional-resources" class="md-nav__link">
-    <span class="md-ellipsis">
-      Additional Resources
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -407,7 +344,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api_classes/overview/" class="md-nav__link">
+      <a href="../../api_classes/overview/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -428,7 +365,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api_classes/meta/" class="md-nav__link">
+      <a href="../../api_classes/meta/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -449,7 +386,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api_classes/data_source/" class="md-nav__link">
+      <a href="../../api_classes/data_source/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -470,7 +407,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api_classes/feature_set/" class="md-nav__link">
+      <a href="../../api_classes/feature_set/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -491,7 +428,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api_classes/model/" class="md-nav__link">
+      <a href="../../api_classes/model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -512,7 +449,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api_classes/endpoint/" class="md-nav__link">
+      <a href="../../api_classes/endpoint/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -533,7 +470,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api_classes/pipelines/" class="md-nav__link">
+      <a href="../../api_classes/pipelines/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -554,7 +491,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api_classes/monitor/" class="md-nav__link">
+      <a href="../../api_classes/monitor/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -617,7 +554,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blogs_research/" class="md-nav__link">
+      <a href="../../blogs_research/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -638,7 +575,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blogs_research/residual_analysis/" class="md-nav__link">
+      <a href="../../blogs_research/residual_analysis/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -659,7 +596,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blogs_research/eda/" class="md-nav__link">
+      <a href="../../blogs_research/eda/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -680,7 +617,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blogs_research/htg/" class="md-nav__link">
+      <a href="../../blogs_research/htg/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -743,7 +680,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/overview/" class="md-nav__link">
+      <a href="../../core_classes/overview/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -799,7 +736,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/artifacts/overview/" class="md-nav__link">
+      <a href="../../core_classes/artifacts/overview/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -820,7 +757,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/artifacts/athena_source/" class="md-nav__link">
+      <a href="../../core_classes/artifacts/athena_source/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -841,7 +778,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/artifacts/feature_set_core/" class="md-nav__link">
+      <a href="../../core_classes/artifacts/feature_set_core/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -862,7 +799,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/artifacts/model_core/" class="md-nav__link">
+      <a href="../../core_classes/artifacts/model_core/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -883,7 +820,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/artifacts/endpoint_core/" class="md-nav__link">
+      <a href="../../core_classes/artifacts/endpoint_core/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -904,7 +841,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/artifacts/monitor_core/" class="md-nav__link">
+      <a href="../../core_classes/artifacts/monitor_core/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -925,7 +862,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/artifacts/artifact/" class="md-nav__link">
+      <a href="../../core_classes/artifacts/artifact/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -946,7 +883,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/artifacts/data_source_abstract/" class="md-nav__link">
+      <a href="../../core_classes/artifacts/data_source_abstract/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1010,7 +947,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/transforms/overview/" class="md-nav__link">
+      <a href="../../core_classes/transforms/overview/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1031,7 +968,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/transforms/data_loaders_light/" class="md-nav__link">
+      <a href="../../core_classes/transforms/data_loaders_light/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1052,7 +989,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/transforms/data_loaders_heavy/" class="md-nav__link">
+      <a href="../../core_classes/transforms/data_loaders_heavy/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1073,7 +1010,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/transforms/data_to_features/" class="md-nav__link">
+      <a href="../../core_classes/transforms/data_to_features/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1094,7 +1031,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/transforms/features_to_model/" class="md-nav__link">
+      <a href="../../core_classes/transforms/features_to_model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1115,7 +1052,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/transforms/model_to_endpoint/" class="md-nav__link">
+      <a href="../../core_classes/transforms/model_to_endpoint/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1136,7 +1073,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/transforms/pandas_transforms/" class="md-nav__link">
+      <a href="../../core_classes/transforms/pandas_transforms/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1157,7 +1094,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_classes/transforms/transform/" class="md-nav__link">
+      <a href="../../core_classes/transforms/transform/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1228,7 +1165,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../plugins/" class="md-nav__link">
+      <a href="../../plugins/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1291,7 +1228,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../enterprise/" class="md-nav__link">
+      <a href="../../enterprise/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1312,7 +1249,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../enterprise/private_saas/" class="md-nav__link">
+      <a href="../../enterprise/private_saas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1333,7 +1270,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../enterprise/themes/" class="md-nav__link">
+      <a href="../../enterprise/themes/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1354,7 +1291,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../enterprise/project_branding/" class="md-nav__link">
+      <a href="../../enterprise/project_branding/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1382,7 +1319,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../misc/faq/" class="md-nav__link">
+      <a href="../../misc/faq/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1402,7 +1339,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../misc/api_changes/" class="md-nav__link">
+      <a href="../../misc/api_changes/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1422,7 +1359,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../glue/" class="md-nav__link">
+      <a href="../../glue/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1442,7 +1379,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lambda_layer/" class="md-nav__link">
+      <a href="../../lambda_layer/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1497,7 +1434,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws_setup/sso_setup/" class="md-nav__link">
+      <a href="../../aws_setup/sso_setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1518,7 +1455,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws_setup/full_pipeline/" class="md-nav__link">
+      <a href="../../aws_setup/full_pipeline/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1539,7 +1476,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws_setup/core_stack/" class="md-nav__link">
+      <a href="../../aws_setup/core_stack/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1560,7 +1497,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws_setup/dashboard_stack/" class="md-nav__link">
+      <a href="../../aws_setup/dashboard_stack/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1581,7 +1518,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws_setup/domain_cert_setup/" class="md-nav__link">
+      <a href="../../aws_setup/domain_cert_setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1602,7 +1539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws_setup/aws_tips_and_tricks/" class="md-nav__link">
+      <a href="../../aws_setup/aws_tips_and_tricks/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1623,7 +1560,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws_setup/aws_access_management/" class="md-nav__link">
+      <a href="../../aws_setup/aws_access_management/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1648,17 +1585,19 @@
       
   
   
+    
   
   
+  
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" checked>
         
           
           <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="0">
@@ -1672,7 +1611,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_15">
             <span class="md-nav__icon md-icon"></span>
             Release Notes
@@ -1683,10 +1622,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../release_notes/0_8_6/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    0.8.6
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1695,6 +1654,53 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#addition-functionality" class="md-nav__link">
+    <span class="md-ellipsis">
+      Addition Functionality
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#issues-addressed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Issues Addressed
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Questions?
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1749,7 +1755,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../admin/pypi_release/" class="md-nav__link">
+      <a href="../../admin/pypi_release/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1770,7 +1776,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../admin/base_docker_push/" class="md-nav__link">
+      <a href="../../admin/base_docker_push/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1791,7 +1797,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../admin/dashboard_docker_push/" class="md-nav__link">
+      <a href="../../admin/dashboard_docker_push/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1812,7 +1818,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../admin/dashboard_with_plugins/" class="md-nav__link">
+      <a href="../../admin/dashboard_with_plugins/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1868,7 +1874,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../admin/sageworks_docker_for_lambdas/" class="md-nav__link">
+      <a href="../../admin/sageworks_docker_for_lambdas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1914,6 +1920,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1922,27 +1930,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
+  <a href="#addition-functionality" class="md-nav__link">
     <span class="md-ellipsis">
-      Installation
+      Addition Functionality
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
+  <a href="#issues-addressed" class="md-nav__link">
     <span class="md-ellipsis">
-      Usage
+      Issues Addressed
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#additional-resources" class="md-nav__link">
+  <a href="#questions" class="md-nav__link">
     <span class="md-ellipsis">
-      Additional Resources
+      Questions?
     </span>
   </a>
   
@@ -1963,48 +1971,31 @@
                   
 
 
-  <h1>SageWorks REPL</h1>
-
+<h1 id="release-086">Release 0.8.6</h1>
 <div class="admonition tip inline end">
-<p class="admonition-title">Visibility and Control</p>
-<p>The SageWorks REPL provides AWS ML Pipeline visibility just like the <a href="../aws_setup/dashboard_stack/">SageWorks Dashboard</a> but also provides control over the creation, modification, and deletion of artifacts through the Python API.</p>
+<p class="admonition-title">Need Help?</p>
+<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
-<p>The SageWorks REPL is a customized iPython shell. It provides tailored functionality for easy interaction with SageWorks objects and since it's based on iPython developers will feel right at home using autocomplete, history, help, etc. Both easy and powerful, the SageWorks REPL puts control of AWS ML Pipelines at your fingertips.</p>
-<h3 id="installation">Installation</h3>
-<p><code>pip install sageworks</code></p>
-<h3 id="usage">Usage</h3>
-<p>Just type <code>sageworks</code> at the command line and the SageWorks shell will spin up and provide a command view of your AWS Machine Learning Pipelines.</p>
-<p>At startup the SageWorks shell, will connect to your AWS Account and create a summary of the Machine Learning artifacts currently residing on the account.</p>
-<p><img alt="sageworks_repl" style="float: right; width: 450px; padding-left: 5px;"
-src="https://github.com/SuperCowPowers/sageworks/assets/4806709/10a969ed-3415-4d9f-ad0d-ac23706e6202"></p>
-<p><strong>Available Commands:</strong></p>
+<p>The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines. We've also fixed various corner cases mostly around 'half constructed' AWS artifacts (models/endpoints).</p>
+<h3 id="addition-functionality">Addition Functionality</h3>
 <ul>
-<li>status</li>
-<li>config</li>
-<li>incoming_data</li>
-<li>glue_jobs</li>
-<li>data_sources</li>
-<li>feature_sets</li>
-<li>models</li>
-<li>endpoints</li>
-<li>aws_refresh</li>
-<li>and more...</li>
+<li>View Support (docs coming soon :)</li>
+<li>Better Docs for Deploying Plugins <a href="../../admin/dashboard_with_plugins/">Deploying Plugins</a></li>
 </ul>
-<p>All of the <a href="../api_classes/overview/">API Classes</a> are auto-loaded, so drilling down on an individual artifact is easy. The same Python API is provided so if you want additional info on a <strong>model</strong>, for instance, simply create a model object and use any of the documented API methods.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>m = Model(&quot;abalone-regression&quot;)
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>m.details()
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>&lt;shows info about the model&gt;
-</span></code></pre></div>
-<h2 id="additional-resources">Additional Resources</h2>
+<h3 id="issues-addressed">Issues Addressed</h3>
 <ul>
-<li>Setting up SageWorks on your AWS Account: <a href="../aws_setup/core_stack/">AWS Setup</a></li>
-<li>Using SageWorks for ML Pipelines: <a href="../api_classes/overview/">SageWorks API Classes</a></li>
+<li>
+<p><strong>Model to Endpoint under AWS Throttle</strong></p>
+<p>A corner case where the <code>to_endpoint()</code> method would fail when not 'knowing' the model input. This happened when AWS was throttling responses and the <code>get_input()</code> of the Endpoint returned <code>unknown</code> which caused a <code>NoneType</code> error when using the 'unknown' model.</p>
+</li>
+<li>
+<p><strong>Empty Model Package Groups</strong></p>
+<p>There are cases where customers might construct a Model Package Group (MPG) container and not put any Model Packages in that Group. SageWorks has assumed that all MPGs would have at least one model package. The current 'support' for empty MPGs treats it as an error condition but doesn't properly displayed the model group and indicates that it's 'empty' and provides alert health icons,</p>
+</li>
 </ul>
-<p><img align="right" src="../images/scp.png" width="180"></p>
-<ul>
-<li>SageWorks Core Classes: <a href="../core_classes/overview/">Core Classes</a></li>
-<li>Consulting Available: <a href="https://www.supercowpowers.com">SuperCowPowers LLC</a></li>
-</ul>
+<h3 id="questions">Questions?</h3>
+<p><img align="right" src="../../images/scp.png" width="180"></p>
+<p>The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 
 
 
@@ -2051,10 +2042,10 @@ src="https://github.com/SuperCowPowers/sageworks/assets/4806709/10a969ed-3415-4d
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.af256bd8.min.js"></script>
+      <script src="../../assets/javascripts/bundle.af256bd8.min.js"></script>
       
     
   </body>

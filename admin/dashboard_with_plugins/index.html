@@ -1585,6 +1585,69 @@
       
   
   
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Release Notes
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            Release Notes
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release_notes/0_8_6/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    0.8.6
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -1597,10 +1660,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" checked>
         
           
-          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1611,8 +1674,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_15">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_16">
             <span class="md-nav__icon md-icon"></span>
             Admin
           </label>
@@ -1840,10 +1903,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_5" >
         
           
-          <label class="md-nav__link" for="__nav_15_5" id="__nav_15_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_16_5" id="__nav_16_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1854,8 +1917,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_15_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_15_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16_5">
             <span class="md-nav__icon md-icon"></span>
             Storage
           </label>
@@ -2094,14 +2157,14 @@
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">CDK Diff</p>
-<p>In particular, pay attention to the <code>cdk diff</code> it should <strong>ONLY</strong> have the image name as a difference.</p>
-</div>
+<p>In particular, pay attention to the <code>cdk diff</code> it should <strong>ONLY</strong> have the image name as a difference.
 <div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>cdk diff
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  [-] &quot;Image&quot;: &quot;&lt;account&gt;.dkr.ecr.us-east-1/my-plugins:latest_123&quot;,
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  [+] &quot;Image&quot;: &quot;&lt;account&gt;.dkr.ecr.us-east-1/my-plugins:latest_456&quot;,
-</span></code></pre></div>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>[-] &quot;Image&quot;: &quot;&lt;account&gt;.dkr.ecr.us-east-1/my-plugins:latest_123&quot;,
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>[+] &quot;Image&quot;: &quot;&lt;account&gt;.dkr.ecr.us-east-1/my-plugins:latest_456&quot;,
+</span></code></pre></div></p>
+</div>
 <h3 id="note-on-sageworks-configuration">Note on SageWorks Configuration</h3>
-<p>All Configuration is managed by the CDK Python Script and the <code>SAGEWORKS_CONFIG</code> ENV var. You should not hardcode any configuration in the CDK code or in the Dockerfile.</p>
+<p>All Configuration is managed by the CDK Python Script and the <code>SAGEWORKS_CONFIG</code> ENV var. If you want to change things like <code>REDIS_HOST</code> or <code>SAGEWORKS_BUCKET</code> you should do that with a <code>sageworks.config</code> file and then point the <code>SAGEWORKS_CONFIG</code> ENV var to that file.</p>
 
 
 
