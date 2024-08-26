@@ -49,6 +49,7 @@ nav:
   - API Changes: misc/api_changes.md
   - AWS Glue Jobs: glue/index.md 
   - AWS Lambda Layer: lambda_layer/index.md 
+  - AWS CloudWatch: cloudwatch/index.md 
   - AWS Setup: 
     - Developer SSO Setup: aws_setup/sso_setup.md
     - Full Pipeline Testing: aws_setup/full_pipeline.md
