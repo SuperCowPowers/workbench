@@ -10,6 +10,17 @@ The SageWorks framework continues to 'flex' to support different real world use 
 The SageWorks logging setup includes the addition of a CloudWatch 'Handler' that forwards all log messages to the `SageWorksLogGroup`
 
 <img alt="private_saas_compare" src="https://github.com/user-attachments/assets/a7778232-08db-4950-952c-dd8de650bae8">
+
+### Individual Streams
+Each process running SageWorks will get a unique individual stream.
+
+- **dashboard/\*** (any logs from Web Dashboard)
+- **glue/\*** (logs from Glue jobs)
+- **lambda/\*** (logs from Lambda jobs)
+- **docker/\*** (logs from Docker containers)
+- **laptop/\*** (logs from laptop/notebooks)
+
+Since many jobs are run nightly/often, the stream will also have a date on the end... `glue/my_job/2024_08_01_17_15`
     
 ### Questions?
 <img align="right" src="../../images/scp.png" width="180">
