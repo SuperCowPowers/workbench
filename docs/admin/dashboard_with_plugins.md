@@ -101,13 +101,14 @@ cdk deploy
 
 !!! warning "CDK Diff" 
     In particular, pay attention to the `cdk diff` it should **ONLY** have the image name as a difference.
+    ```
+    cdk diff
+    [-] "Image": "<account>.dkr.ecr.us-east-1/my-plugins:latest_123",
+    [+] "Image": "<account>.dkr.ecr.us-east-1/my-plugins:latest_456",
+    ```
 
-```
-cdk diff
-  [-] "Image": "<account>.dkr.ecr.us-east-1/my-plugins:latest_123",
-  [+] "Image": "<account>.dkr.ecr.us-east-1/my-plugins:latest_456",
-```
+
 
 
 ### Note on SageWorks Configuration
-All Configuration is managed by the CDK Python Script and the `SAGEWORKS_CONFIG` ENV var. You should not hardcode any configuration in the CDK code or in the Dockerfile.
+All Configuration is managed by the CDK Python Script and the `SAGEWORKS_CONFIG` ENV var. If you want to change things like `REDIS_HOST` or `SAGEWORKS_BUCKET` you should do that with a `sageworks.config` file and then point the `SAGEWORKS_CONFIG` ENV var to that file.
