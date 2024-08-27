@@ -3,6 +3,9 @@ import argparse
 from datetime import datetime, timedelta, timezone
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
+WARNING = ["WARNING", "ERROR", "CRITICAL"]
+ERROR = ["ERROR", "CRITICAL"]
+
 
 def get_cloudwatch_client():
     """Get the CloudWatch Logs client using the SageWorks assumed role session."""
@@ -10,8 +13,8 @@ def get_cloudwatch_client():
     return session.client("logs")
 
 
-def get_latest_log_events(client, log_group_name, start_time, end_time=None):
-    """Retrieve the latest log events from all log streams in a CloudWatch Logs group."""
+def get_latest_log_events(client, log_group_name, start_time, end_time=None, stream_filter=None):
+    """Retrieve the latest log events from all or filtered log streams in a CloudWatch Logs group."""
     try:
         log_events = []
         next_token = None
@@ -30,6 +33,10 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None):
 
             for log_stream in streams_response.get("logStreams", []):
                 log_stream_name = log_stream["logStreamName"]
+
+                # Filter streams based on the stream_filter substring
+                if stream_filter and stream_filter not in log_stream_name:
+                    continue
 
                 # Create the parameters dictionary for get_log_events
                 params = {
@@ -62,8 +69,37 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None):
         return []
 
 
+def merge_ranges(ranges):
+    """Merge overlapping or adjacent line ranges."""
+    if not ranges:
+        return []
+
+    # Sort ranges by start line
+    ranges.sort(key=lambda x: x[0])
+    merged = [ranges[0]]
+
+    for current in ranges[1:]:
+        last = merged[-1]
+        if current[0] <= last[1] + 1:
+            # If the current range overlaps or is adjacent to the last range, merge them
+            merged[-1] = (last[0], max(last[1], current[1]))
+        else:
+            merged.append(current)
+
+    return merged
+
+
 def monitor_log_group(
-    log_group_name, start_time, end_time=None, poll_interval=10, sort_by_stream=False, local_time=False
+    log_group_name,
+    start_time,
+    end_time=None,
+    poll_interval=10,
+    sort_by_stream=False,
+    local_time=False,
+    search=None,
+    before=10,
+    after=0,
+    stream_filter=None,
 ):
     """Continuously monitor the CloudWatch Logs group for new log messages from all log streams."""
     client = get_cloudwatch_client()
@@ -71,8 +107,8 @@ def monitor_log_group(
     print(f"Monitoring log group: {log_group_name} from {start_time} UTC")
 
     while True:
-        # Get the latest log events
-        log_events = get_latest_log_events(client, log_group_name, start_time, end_time)
+        # Get the latest log events with stream filtering if provided
+        log_events = get_latest_log_events(client, log_group_name, start_time, end_time, stream_filter)
 
         if log_events:
             # Sort the events by timestamp by default
@@ -81,17 +117,49 @@ def monitor_log_group(
             else:
                 log_events.sort(key=lambda x: x["timestamp"])
 
+            # Handle special cases for WARNING and ERROR search terms
+            search_terms = [search]
+            if search == "WARNING":
+                search_terms = WARNING
+            elif search == "ERROR":
+                search_terms = ERROR
+
+            # If search is provided, filter log events and include context
+            if search:
+                ranges = []
+                for i, event in enumerate(log_events):
+                    if any(term in event["message"] for term in search_terms):
+                        # Calculate the start and end index for this match
+                        start_index = max(i - before, 0)
+                        end_index = min(i + after, len(log_events) - 1)
+                        ranges.append((start_index, end_index))
+
+                # Merge overlapping ranges
+                merged_ranges = merge_ranges(ranges)
+
+                # Collect filtered events based on merged ranges
+                filtered_events = []
+                for start, end in merged_ranges:
+                    filtered_events.extend(log_events[start : end + 1])
+                    filtered_events.append({"logStreamName": None, "timestamp": None, "message": ""})
+                    filtered_events.append({"logStreamName": None, "timestamp": None, "message": ""})
+
+                log_events = filtered_events
+
             for event in log_events:
-                log_stream_name = event["logStreamName"]
-                timestamp = datetime.fromtimestamp(event["timestamp"] / 1000, tz=timezone.utc)
+                if event["logStreamName"] is None and event["timestamp"] is None:
+                    print("")  # Print a blank line
+                else:
+                    log_stream_name = event["logStreamName"]
+                    timestamp = datetime.fromtimestamp(event["timestamp"] / 1000, tz=timezone.utc)
 
-                # Convert to local time if requested
-                if local_time:
-                    timestamp = timestamp.astimezone()
+                    # Convert to local time if requested
+                    if local_time:
+                        timestamp = timestamp.astimezone()
 
-                formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
-                message = event["message"].strip()
-                print(f"[{log_stream_name}] [{formatted_time}] {message}")
+                    formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                    message = event["message"].strip()
+                    print(f"[{log_stream_name}] [{formatted_time}] {message}")
 
             # Update the start time to just after the last event's timestamp
             if end_time is None:
@@ -109,9 +177,6 @@ def monitor_log_group(
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Monitor CloudWatch Logs.")
-    parser.add_argument(
-        "--log-group", default="SageWorksLogGroup", help="The CloudWatch Logs group name (default: SageWorksLogGroup)."
-    )
     parser.add_argument("--start-time", type=int, help="Start time in minutes ago. Default is 5 minutes ago.")
     parser.add_argument("--end-time", type=int, help="End time in minutes ago for fetching a range of logs.")
     parser.add_argument(
@@ -121,6 +186,10 @@ def parse_args():
         "--sort-by-stream", action="store_true", help="Sort the log events by stream name instead of timestamp."
     )
     parser.add_argument("--local-time", action="store_true", help="Display timestamps in local time instead of UTC.")
+    parser.add_argument("--search", help="Search term to filter log messages.")
+    parser.add_argument("--before", type=int, default=10, help="Number of lines to include before the search match.")
+    parser.add_argument("--after", type=int, default=0, help="Number of lines to include after the search match.")
+    parser.add_argument("--stream", help="Filter log streams by a substring.")
 
     return parser.parse_args()
 
@@ -132,4 +201,15 @@ if __name__ == "__main__":
     start_time = datetime.now(timezone.utc) - timedelta(minutes=args.start_time or 5)
     end_time = datetime.now(timezone.utc) - timedelta(minutes=args.end_time) if args.end_time else None
 
-    monitor_log_group(args.log_group, start_time, end_time, args.poll_interval, args.sort_by_stream, args.local_time)
+    monitor_log_group(
+        "SageWorksLogGroup",
+        start_time,
+        end_time,
+        args.poll_interval,
+        args.sort_by_stream,
+        args.local_time,
+        args.search,
+        args.before,
+        args.after,
+        args.stream,
+    )
