@@ -79,5 +79,10 @@ setup(
         "Topic :: Scientific/Engineering",
     ],
     setup_requires=["setuptools_scm"],
-    entry_points={"console_scripts": "sageworks = sageworks.repl.sageworks_shell:launch_shell"},
+    entry_points={
+        "console_scripts": [
+            "sageworks = sageworks.repl.sageworks_shell:launch_shell",
+            "cloud_watch = sageworks.scripts.monitor_cloud_watch:main",
+        ]
+    },
 )

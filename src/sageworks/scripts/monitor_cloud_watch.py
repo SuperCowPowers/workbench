@@ -187,7 +187,7 @@ def parse_args():
     parser.add_argument(
         "--sort-by-stream", action="store_true", help="Sort the log events by stream name instead of timestamp."
     )
-    parser.add_argument("--utc-time", action="store_true", help="Display timestamps in local time instead of UTC.")
+    parser.add_argument("--utc-time", action="store_true", help="Display timestamps in UTC instead of local.")
     parser.add_argument("--search", default="ERROR", help="Search term to filter log messages.")
     parser.add_argument("--before", type=int, default=10, help="Number of lines to include before the search match.")
     parser.add_argument("--after", type=int, default=0, help="Number of lines to include after the search match.")
@@ -196,7 +196,7 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
 
     # Determine the start time and end time for log monitoring (in UTC)
@@ -215,3 +215,7 @@ if __name__ == "__main__":
         args.after,
         args.stream,
     )
+
+
+if __name__ == "__main__":
+    main()
