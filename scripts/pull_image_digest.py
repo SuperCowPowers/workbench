@@ -32,6 +32,7 @@ def get_image_uri_with_digest(framework, region, version, sm_session: SageSessio
 
 if __name__ == "__main__":
     from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+
     # Get the image URI with digest
     framework = "sklearn"
     region = "us-west-2"
