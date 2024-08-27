@@ -95,7 +95,7 @@ def monitor_log_group(
     end_time=None,
     poll_interval=10,
     sort_by_stream=False,
-    local_time=False,
+    utc_time=False,
     search=None,
     before=10,
     after=0,
@@ -153,8 +153,8 @@ def monitor_log_group(
                     log_stream_name = event["logStreamName"]
                     timestamp = datetime.fromtimestamp(event["timestamp"] / 1000, tz=timezone.utc)
 
-                    # Convert to local time if requested
-                    if local_time:
+                    # Convert the timestamp to local time if utc_time is False
+                    if not utc_time:
                         timestamp = timestamp.astimezone()
 
                     formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
@@ -177,7 +177,7 @@ def monitor_log_group(
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Monitor CloudWatch Logs.")
-    parser.add_argument("--start-time", type=int, help="Start time in minutes ago. Default is 5 minutes ago.")
+    parser.add_argument("--start-time", type=int, default=60, help="Start time in minutes ago. Default is 60 minutes ago.")
     parser.add_argument("--end-time", type=int, help="End time in minutes ago for fetching a range of logs.")
     parser.add_argument(
         "--poll-interval", type=int, default=10, help="Polling interval in seconds. Default is 10 seconds."
@@ -185,8 +185,8 @@ def parse_args():
     parser.add_argument(
         "--sort-by-stream", action="store_true", help="Sort the log events by stream name instead of timestamp."
     )
-    parser.add_argument("--local-time", action="store_true", help="Display timestamps in local time instead of UTC.")
-    parser.add_argument("--search", help="Search term to filter log messages.")
+    parser.add_argument("--utc-time", action="store_true", help="Display timestamps in local time instead of UTC.")
+    parser.add_argument("--search", default="ERROR", help="Search term to filter log messages.")
     parser.add_argument("--before", type=int, default=10, help="Number of lines to include before the search match.")
     parser.add_argument("--after", type=int, default=0, help="Number of lines to include after the search match.")
     parser.add_argument("--stream", help="Filter log streams by a substring.")
@@ -198,7 +198,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     # Determine the start time and end time for log monitoring (in UTC)
-    start_time = datetime.now(timezone.utc) - timedelta(minutes=args.start_time or 5)
+    start_time = datetime.now(timezone.utc) - timedelta(minutes=args.start_time)
     end_time = datetime.now(timezone.utc) - timedelta(minutes=args.end_time) if args.end_time else None
 
     monitor_log_group(
@@ -207,7 +207,7 @@ if __name__ == "__main__":
         end_time,
         args.poll_interval,
         args.sort_by_stream,
-        args.local_time,
+        args.utc_time,
         args.search,
         args.before,
         args.after,
