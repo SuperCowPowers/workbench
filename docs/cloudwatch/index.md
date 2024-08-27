@@ -23,10 +23,8 @@ Each process running SageWorks will get a unique individual stream.
 Since many jobs are run nightly/often, the stream will also have a date on the end... `glue/my_job/2024_08_01_17_15`
 
 ### AWS CloudWatch made Easy
-!!!tip inline end "Easy Mode"
-    SageWorks has a nice command line tool to give 
-
-In addition to traversing AWS consoles and searching for log entries, we have an easy to use script as part of SageWorks.
+!!!tip inline end "Logs in Easy Mode"
+    The SageWorks `cloud_watch` command line tool gives you access to important logs without the hassle. Automatic display of important event and the context around those events.
 
 ```
 pip install sageworks
