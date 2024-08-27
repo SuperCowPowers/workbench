@@ -177,7 +177,9 @@ def monitor_log_group(
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Monitor CloudWatch Logs.")
-    parser.add_argument("--start-time", type=int, default=60, help="Start time in minutes ago. Default is 60 minutes ago.")
+    parser.add_argument(
+        "--start-time", type=int, default=60, help="Start time in minutes ago. Default is 60 minutes ago."
+    )
     parser.add_argument("--end-time", type=int, help="End time in minutes ago for fetching a range of logs.")
     parser.add_argument(
         "--poll-interval", type=int, default=10, help="Polling interval in seconds. Default is 10 seconds."
