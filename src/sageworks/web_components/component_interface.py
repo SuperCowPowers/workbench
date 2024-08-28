@@ -141,7 +141,7 @@ def create_component_handler(func):
             header = f"{class_name} Crashed"
             log.critical(f"{header}: {stack_trace}")
             ui_error_info = f"{header}: {get_reversed_stack_trace(e)}"
-            figure = ComponentInterface.display_text(ui_error_info, figure_height=400, font_size=8)
+            figure = ComponentInterface.display_text(ui_error_info, figure_height=400, font_size=14)
             return dcc.Graph(id="error", figure=figure)
 
     return wrapper
@@ -160,7 +160,7 @@ def update_properties_handler(func):
             header = f"{class_name} Crashed"
             log.critical(f"{header}: {stack_trace}")
             ui_error_info = f"{header}: {get_reversed_stack_trace(e)}"
-            figure = ComponentInterface.display_text(ui_error_info, figure_height=400, font_size=8)
+            figure = ComponentInterface.display_text(ui_error_info, figure_height=400, font_size=14)
 
             # Prepare the error output to match the properties format
             error_output = []
