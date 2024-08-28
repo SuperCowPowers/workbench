@@ -93,9 +93,16 @@ class RedisCache:
             db=0,
         )
         log.info(f"Redis connection success: {host}:{port}...")
-    except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
-        log.critical(f"Redis Database connection fail: {host}:{port}")
+    except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError) as e:
+        log.critical(f"Redis Database connection failed: {host}:{port} - {str(e)}")
         log.critical("SageWorks is now running in a degraded state...")
+        log.critical("Possible causes and diagnostics:")
+        log.critical("1. AWS Glue/Lambda: Check VPC settings, ensure access to Redis (Inbound Rules, Security Groups).")
+        log.critical("2. Local/Notebooks: Check if VPN is active or required for Redis access.")
+        log.critical("3. Firewall/Network: Ensure no network/firewall blocks between the client and Redis server.")
+        log.critical("4. Redis Configuration: Ensure Redis server is running and accessible.")
+        log.critical("5. Credentials: Check if the password or authentication is correct.")
+        redis_db = None
 
     @classmethod
     def check(cls):
