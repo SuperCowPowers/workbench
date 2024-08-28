@@ -202,6 +202,103 @@ class RedisCache:
     def size(cls):
         return cls.redis_db.dbsize()
 
+    def get_key_info(self):
+        """Get information about all keys in the Redis database
+        Returns:
+            A list of dictionaries containing key information: name, size, and last modified date.
+        """
+        keys_info = []
+        for key in self.redis_db.scan_iter('*'):
+            key_info = {
+                'key': key,
+                'size': self.redis_db.memory_usage(key),
+                'last_modified': self.redis_db.object("idletime", key)
+            }
+            keys_info.append(key_info)
+        return keys_info
+
+    def get_memory_config(self):
+        """Get Redis memory usage and configuration settings as a dictionary."""
+        info = {}
+        try:
+            # Get memory information
+            memory_info = self.redis_db.info('memory')
+            info['used_memory'] = memory_info.get('used_memory', 'N/A')
+            info['used_memory_human'] = memory_info.get('used_memory_human', 'N/A')
+            info['mem_fragmentation_ratio'] = memory_info.get('mem_fragmentation_ratio', 'N/A')
+            info['maxmemory_policy'] = memory_info.get('maxmemory_policy', 'N/A')
+        except redis.exceptions.RedisError as e:
+            log.error(f"Error retrieving memory info from Redis: {e}")
+
+        try:
+            # Attempt to get max memory setting from Redis config
+            max_memory = self.redis_db.config_get('maxmemory')
+            info['maxmemory'] = max_memory.get('maxmemory', 'N/A')
+        except redis.exceptions.RedisError as e:
+            log.error(f"Error retrieving config info from Redis (likely unsupported command): {e}")
+            info['maxmemory'] = 'Not Available - Command Restricted'
+
+        return info
+
+    def report_memory_config(self):
+        """Print Redis memory usage and configuration settings."""
+        info = self.get_memory_config()
+        print("Redis Memory Usage Report:")
+        print(f"\tUsed Memory: {info.get('used_memory_human', 'N/A')} ({info.get('used_memory', 'N/A')} bytes)")
+        print(f"\tMemory Fragmentation Ratio: {info.get('mem_fragmentation_ratio', 'N/A')}")
+        print(f"\tMax Memory Config: {info.get('maxmemory')}")
+        print(f"\tMax Memory Policy: {info.get('maxmemory_policy', 'N/A')}")
+
+    def get_largest_keys(self, n=5):
+        """Get the N largest keys in the Redis database by size.
+        Args:
+            n: The number of largest keys to return
+        Returns:
+            A list of dictionaries containing key information: name, size, and last modified date.
+        """
+        keys_info = self.get_key_info()
+        # Sort by size and get the top N largest keys
+        largest_keys = sorted(keys_info, key=lambda x: x['size'], reverse=True)[:n]
+        return largest_keys
+
+    def report_largest_keys(self, n=5):
+        """Print the N largest keys in the Redis database by size.
+        Args:
+            n: The number of largest keys to report
+        """
+        largest_keys = self.get_largest_keys(n)
+        print(f"Top {n} largest keys in Redis:")
+        for key_info in largest_keys:
+            size_mb = key_info['size'] / 1024 / 1024
+            days = key_info['last_modified'] // 86400
+            print(f"\t{size_mb:.2f}MB {key_info['key']}   ({days} days)")
+
+    def delete_keys_older_than(self, days, dry_run=True):
+        """Delete keys in the Redis database that are older than a specified number of days.
+
+        Args:
+            days: The number of days after which keys should be considered old and deleted.
+            dry_run: If True, do not actually delete keys, just log what would be deleted.
+        """
+        # Convert days to seconds
+        age_threshold = days * 86400  # 1 day = 86400 seconds
+
+        # Iterate over all keys in Redis
+        for key in self.redis_db.scan_iter('*'):
+            # Get the last modified time (idletime) in seconds
+            last_modified = self.redis_db.object("idletime", key)
+
+            # If the key's idle time is greater than the age threshold, delete it
+            if last_modified and last_modified > age_threshold:
+                days_mod = last_modified // 86400
+                if dry_run:
+                    log.info(f"DRY RUN: {key} ({days_mod} days old)")
+                else:
+                    self.redis_db.delete(key)
+                    log.info(f"Deleted key: {key} ({days_mod} days old)")
+
+        log.info(f"Completed deletion of keys older than {days} days.")
+
 
 if __name__ == "__main__":
     """Exercise the RedisCache class"""
@@ -294,3 +391,12 @@ if __name__ == "__main__":
     ret_data = my_redis_cache.get("data")
     pprint(data)
     pprint(ret_data)
+
+    # Report memory usage and configuration settings
+    my_redis_cache.report_memory_config()
+
+    # Report the largest keys in the Redis database
+    my_redis_cache.report_largest_keys(5)
+
+    # Delete keys older than 1 day
+    my_redis_cache.delete_keys_older_than(1, dry_run=True)
