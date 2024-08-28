@@ -208,11 +208,11 @@ class RedisCache:
             A list of dictionaries containing key information: name, size, and last modified date.
         """
         keys_info = []
-        for key in self.redis_db.scan_iter('*'):
+        for key in self.redis_db.scan_iter("*"):
             key_info = {
-                'key': key,
-                'size': self.redis_db.memory_usage(key),
-                'last_modified': self.redis_db.object("idletime", key)
+                "key": key,
+                "size": self.redis_db.memory_usage(key),
+                "last_modified": self.redis_db.object("idletime", key),
             }
             keys_info.append(key_info)
         return keys_info
@@ -222,21 +222,21 @@ class RedisCache:
         info = {}
         try:
             # Get memory information
-            memory_info = self.redis_db.info('memory')
-            info['used_memory'] = memory_info.get('used_memory', 'N/A')
-            info['used_memory_human'] = memory_info.get('used_memory_human', 'N/A')
-            info['mem_fragmentation_ratio'] = memory_info.get('mem_fragmentation_ratio', 'N/A')
-            info['maxmemory_policy'] = memory_info.get('maxmemory_policy', 'N/A')
+            memory_info = self.redis_db.info("memory")
+            info["used_memory"] = memory_info.get("used_memory", "N/A")
+            info["used_memory_human"] = memory_info.get("used_memory_human", "N/A")
+            info["mem_fragmentation_ratio"] = memory_info.get("mem_fragmentation_ratio", "N/A")
+            info["maxmemory_policy"] = memory_info.get("maxmemory_policy", "N/A")
         except redis.exceptions.RedisError as e:
             log.error(f"Error retrieving memory info from Redis: {e}")
 
         try:
             # Attempt to get max memory setting from Redis config
-            max_memory = self.redis_db.config_get('maxmemory')
-            info['maxmemory'] = max_memory.get('maxmemory', 'N/A')
+            max_memory = self.redis_db.config_get("maxmemory")
+            info["maxmemory"] = max_memory.get("maxmemory", "N/A")
         except redis.exceptions.RedisError as e:
             log.error(f"Error retrieving config info from Redis (likely unsupported command): {e}")
-            info['maxmemory'] = 'Not Available - Command Restricted'
+            info["maxmemory"] = "Not Available - Command Restricted"
 
         return info
 
@@ -258,7 +258,7 @@ class RedisCache:
         """
         keys_info = self.get_key_info()
         # Sort by size and get the top N largest keys
-        largest_keys = sorted(keys_info, key=lambda x: x['size'], reverse=True)[:n]
+        largest_keys = sorted(keys_info, key=lambda x: x["size"], reverse=True)[:n]
         return largest_keys
 
     def report_largest_keys(self, n=5):
@@ -269,8 +269,8 @@ class RedisCache:
         largest_keys = self.get_largest_keys(n)
         print(f"Top {n} largest keys in Redis:")
         for key_info in largest_keys:
-            size_mb = key_info['size'] / 1024 / 1024
-            days = key_info['last_modified'] // 86400
+            size_mb = key_info["size"] / 1024 / 1024
+            days = key_info["last_modified"] // 86400
             print(f"\t{size_mb:.2f}MB {key_info['key']}   ({days} days)")
 
     def delete_keys_older_than(self, days, dry_run=True):
@@ -284,7 +284,7 @@ class RedisCache:
         age_threshold = days * 86400  # 1 day = 86400 seconds
 
         # Iterate over all keys in Redis
-        for key in self.redis_db.scan_iter('*'):
+        for key in self.redis_db.scan_iter("*"):
             # Get the last modified time (idletime) in seconds
             last_modified = self.redis_db.object("idletime", key)
 
