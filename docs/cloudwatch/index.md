@@ -40,7 +40,7 @@ cloud_watch --help
 Here are some example options:
 
 ```
-# Show important logs in las 12 hours
+# Show important logs in last 12 hours
 cloud_watch --start-time 720 
 
 # Show a particular stream
@@ -70,5 +70,4 @@ Check out our presentation on [SageWorks CloudWatch](https://docs.google.com/pre
 <img align="right" src="../images/scp.png" width="180">
 
 The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
-
 
