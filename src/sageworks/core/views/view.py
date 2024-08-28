@@ -187,6 +187,12 @@ class View(ABC):
 
         # Use the meta class to see if the view exists
         views_df = self.meta.views(self.database)
+
+        # Check if we have ANY views
+        if views_df.empty:
+            return False
+
+        # Check if the view exists
         return self.view_table_name in views_df["Name"].values
 
     def ensure_exists(self):

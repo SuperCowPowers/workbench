@@ -15,7 +15,6 @@ from concurrent.futures import ThreadPoolExecutor
 from botocore.exceptions import ClientError
 
 # SageWorks Imports
-from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.aws_service_broker.aws_service_connectors.s3_bucket import S3Bucket
 from sageworks.aws_service_broker.aws_service_connectors.glue_jobs import GlueJobs
@@ -23,6 +22,7 @@ from sageworks.aws_service_broker.aws_service_connectors.data_catalog import Dat
 from sageworks.aws_service_broker.aws_service_connectors.feature_store import FeatureStore
 from sageworks.aws_service_broker.aws_service_connectors.model_registry import ModelRegistry
 from sageworks.aws_service_broker.aws_service_connectors.endpoints import Endpoints
+from sageworks.utils.sageworks_cache import SageWorksCache
 
 
 # Enumerated types for SageWorks Meta Requests
