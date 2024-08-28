@@ -67,7 +67,7 @@ class PipelineManager:
             ]
             return pipelines
         else:
-            self.log.warning(f"No pipelines found at {self.pipelines_s3_path}...")
+            self.log.important(f"No pipelines found at {self.pipelines_s3_path}...")
             return []
 
     # Create a new Pipeline from an Endpoint

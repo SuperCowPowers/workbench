@@ -3,6 +3,7 @@ import argparse
 from datetime import datetime, timedelta, timezone
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
+IMPORTANT = ["IMPORTANT", "WARNING", "ERROR", "CRITICAL"]
 WARNING = ["WARNING", "ERROR", "CRITICAL"]
 ERROR = ["ERROR", "CRITICAL"]
 
@@ -124,8 +125,12 @@ def monitor_log_group(
             elif search == "ERROR":
                 search_terms = ERROR
 
+            # If search is "all", set search_terms to None to include all rows
+            if search.lower() == "all":
+                search_terms = None
+
             # If search is provided, filter log events and include context
-            if search:
+            if search_terms:
                 ranges = []
                 for i, event in enumerate(log_events):
                     if any(term in event["message"] for term in search_terms):

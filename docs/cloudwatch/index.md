@@ -37,14 +37,26 @@ The `cloud_watch` script will automatically show the interesting (WARNING and CR
 cloud_watch --help
 ```
 
-Here are three useful options:
+Here are some example options:
 
 ```
-cloud_watch --start-time 720 (everything in the last 12 hours)
+# Show important logs in las 12 hours
+cloud_watch --start-time 720 
 
-cloud_watch --stream glue/my_job (a particular stream)
+# Show a particular stream
+cloud_watch --stream glue/my_job 
 
-cloud_watch --search SHAP (show all SHAP log messages)
+# Show/search for a message substring
+cloud_watch --search SHAP
+
+# Show ALL logs (includes debug)
+cloud_watch --search ALL
+
+# Show messages this log 'level' or above
+cloud_watch --search IMPORTANT
+cloud_watch --search WARNING
+cloud_watch --search ERROR
+cloud_watch --search CRITICAL
 ```
 These options can be used in combination and try out the other options to make the perfect log search :)
 
