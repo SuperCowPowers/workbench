@@ -95,7 +95,6 @@ def logging_setup(color_logs=True):
 
     # Remove any existing handlers
     while log.handlers:
-        print(f"Removing existing handler {log.handlers[0]}")
         log.removeHandler(log.handlers[0])
 
     # Setup new stream handler

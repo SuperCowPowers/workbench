@@ -361,8 +361,8 @@ class ModelCore(Artifact):
             endpoint_inference_paths = [endpoint_inference_base + e for e in registered_endpoints]
             inference_path = newest_path(endpoint_inference_paths, self.sm_session)
             if inference_path is None:
-                self.log.warning(f"No inference data found for {self.model_name}!")
-                self.log.warning(f"Returning inference path for {registered_endpoints[0]}...")
+                self.log.important(f"No inference data found for {self.model_name}!")
+                self.log.important(f"Returning default inference path for {registered_endpoints[0]}...")
                 return endpoint_inference_paths[0]
             else:
                 return inference_path
