@@ -90,6 +90,13 @@ def logging_setup(color_logs=True):
 
     log = logging.getLogger("sageworks")
 
+    # Check if logging is already set up
+    if getattr(log, '_is_setup', False):
+        return
+
+    # Mark the logging setup as done
+    log._is_setup = True
+
     # Turn off propagation to root logger
     log.propagate = False
 
