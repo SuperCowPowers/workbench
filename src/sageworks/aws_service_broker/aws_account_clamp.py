@@ -77,12 +77,6 @@ class AWSAccountClamp:
                 # Assume the SageWorks Role and set up our AWS Session credentials with automatic refresh
                 cls.boto3_session = cls._sageworks_role_boto3_session()
 
-            # Add a Cloud Watch handler to the sageworks logger
-            cls.log.info("Adding CloudWatch Logs Handler...")
-            cls.log_stream_name = cls.determine_log_stream()
-            cls.log.info(f"Log Stream Name: {cls.log_stream_name}")
-            cls.add_cloudwatch_logs_handler()
-
             # Create the Singleton Instance
             cls.instance = super(AWSAccountClamp, cls).__new__(cls)
 
@@ -186,91 +180,6 @@ class AWSAccountClamp:
             return True
         else:
             return False
-
-    @staticmethod
-    def get_executable_name(argv):
-        # Extract the script name from argv[0], get the base name, and remove the extension
-        try:
-            script_path = argv[0]
-            base_name = os.path.basename(script_path)
-            executable_name = os.path.splitext(base_name)[0]
-            return executable_name
-        except Exception:
-            return None
-
-    @classmethod
-    def determine_log_stream(cls):
-        """Determine the log stream name based on the environment."""
-        executable_name = cls.get_executable_name(sys.argv)
-        unique_id = cls.get_unique_identifier()
-
-        if cls.running_on_lambda():
-            job_name = executable_name or os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "unknown")
-            return f"lambda/{job_name}/{unique_id}"
-        elif cls.running_on_glue():
-            job_name = executable_name or os.environ.get("GLUE_JOB_NAME", "unknown")
-            return f"glue/{job_name}/{unique_id}"
-        elif running_on_ecs():
-            job_name = executable_name or os.environ.get("ECS_TASK_DEFINITION_FAMILY", "unknown")
-            return f"dashboard/{job_name}/{unique_id}"
-        elif running_on_docker():
-            job_name = executable_name or os.environ.get("SERVICE_NAME", "unknown")
-            return f"docker/{job_name}/{unique_id}"
-        else:
-            # This should work across platforms, including Windows
-            return f"laptop/{getpass.getuser()}"
-
-    @classmethod
-    def get_unique_identifier(cls):
-        """Get a unique identifier for the log stream."""
-        # Attempt to get the job ID from environment variables
-        job_id = cls.get_job_id_from_environment()
-
-        if job_id:
-            return job_id
-        else:
-            # Fall back to a timestamp-based ID if no job ID is found
-            return datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
-
-    @classmethod
-    def get_job_id_from_environment(cls):
-        """Try to retrieve the job ID from Glue or Lambda environment variables."""
-        # Check for AWS Glue job ID
-        glue_job_id = os.environ.get("GLUE_JOB_ID")
-        if glue_job_id:
-            return glue_job_id
-
-        # Check for AWS Lambda request ID
-        lambda_request_id = os.environ.get("AWS_LAMBDA_REQUEST_ID")
-        if lambda_request_id:
-            return lambda_request_id
-
-        # If no job ID is found, return None
-        return None
-
-    @classmethod
-    def add_cloudwatch_logs_handler(cls):
-        """Add a CloudWatch Logs handler to the logger"""
-        try:
-            # Get the boto3 session from the SageWorks Account Clamp
-            session = cls.boto3_session
-            cloudwatch_client = session.client("logs")
-
-            # Create a CloudWatch Logs handler
-            cloudwatch_handler = watchtower.CloudWatchLogHandler(
-                log_group="SageWorksLogGroup",
-                stream_name=cls.log_stream_name,
-                boto3_client=cloudwatch_client,
-            )
-
-            # Create a formatter for CloudWatch without the timestamp
-            cloudwatch_formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
-            cloudwatch_handler.setFormatter(cloudwatch_formatter)
-
-            # Add the CloudWatch handler to the logger
-            cls.log.addHandler(cloudwatch_handler)
-        except ClientError as e:
-            cls.log.error(f"Failed to set up CloudWatch Logs handler: {e}")
 
     @classmethod
     def _sageworks_role_boto3_session(cls):

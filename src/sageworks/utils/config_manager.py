@@ -1,3 +1,4 @@
+# Configuration Manager Class (Singleton Pattern)
 import json
 import os
 import sys
