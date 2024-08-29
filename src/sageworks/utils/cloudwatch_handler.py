@@ -19,6 +19,7 @@ class CloudWatchHandler(logging.Handler):
         # Import AWSAccountClamp here to avoid circular imports
         from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
         from sageworks.utils.sageworks_logging import ColoredFormatter
+
         self.log = logging.getLogger("sageworks")
 
         self.account_clamp = AWSAccountClamp()
