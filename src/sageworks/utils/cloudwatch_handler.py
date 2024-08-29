@@ -18,10 +18,13 @@ class CloudWatchHandler(logging.Handler):
 
         # Import AWSAccountClamp here to avoid circular imports
         from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+        from sageworks.utils.sageworks_logging import ColoredFormatter
 
         self.account_clamp = AWSAccountClamp()
         self.boto3_session = self.account_clamp.boto_session()
         self.log_stream_name = self.determine_log_stream()
+        self.formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
+        self.setFormatter(self.formatter)
 
         try:
             cloudwatch_client = self.boto3_session.client("logs")

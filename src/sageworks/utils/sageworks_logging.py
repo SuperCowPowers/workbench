@@ -132,8 +132,6 @@ def logging_setup(color_logs=True):
     cloudwatch = CloudWatchHandler()
     if cloudwatch.cloudwatch_handler:
         log.important("Adding CloudWatch logging handler...")
-        cloudwatch_formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
-        cloudwatch.setFormatter(cloudwatch_formatter)
         log.addHandler(cloudwatch)
     else:
         log.error("Failed to add CloudWatch logging handler....")
