@@ -30,7 +30,7 @@ class DisplayView(View):
         Args:
             column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
             column_limit (int, optional): The max number of columns to include. Defaults to 30.
-            source_table (str, optional): The table/view as a source for view. Defaults to data_source base table.
+            source_table (str, optional): The table/view to create the view from. Defaults to base table.
         """
         self.log.important("Creating Display View...")
 

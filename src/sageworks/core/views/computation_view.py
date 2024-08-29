@@ -32,6 +32,7 @@ class ComputationView(View):
             column_limit (int, optional): The max number of columns to include. Defaults to 30.
             source_table (str, optional): The table/view to create the view from. Defaults to base table.
         """
+        self.log.important("Creating Computational View...")
 
         # Set the source_table to create the view from
         base_table = self.data_source.get_table_name()
@@ -54,6 +55,11 @@ class ComputationView(View):
 
         # Enclose each column name in double quotes
         sql_columns = ", ".join([f'"{column}"' for column in column_list])
+
+        # Sanity check the columns
+        if not sql_columns:
+            self.log.critical(f"{self.data_source_name} No columns to create display view...")
+            return
 
         # Create the view query
         create_view_query = f"""

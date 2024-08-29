@@ -71,7 +71,9 @@ class FeatureSetCore(Artifact):
         # Initialize our Views
         self._display_view = None
         self._training_view = None
-        self._data_quality_view = None
+
+        # All other views are optional and get registered when created
+        self._registered_views = []
 
         # Call superclass post_init
         super().__post_init__()
@@ -153,19 +155,27 @@ class FeatureSetCore(Artifact):
         return ds_details
 
     def get_display_view(self):
-        """Get the Display View for this Data Source"""
+        """Get the Display View for this FeatureSet"""
+        from sageworks.core.views import DisplayView
         if self._display_view is None:
-            self._create_view("display")
+            self._display_view = DisplayView(self)
         return self._display_view
 
     def get_training_view(self):
-        """Get the Training View for this Data Source"""
+        """Get the Training View for this FeatureSet"""
+        from sageworks.core.views import TrainingView
         if self._training_view is None:
-            self._create_view("training")
+            self._training_view = TrainingView(self)
         return self._training_view
 
-    def get_data_quality_view(self):
-        """Get the Data Quality View for this Data Source"""
+    def get_view(self, view_name: str):
+        """Get the named View for this FeatureSet
+
+        Args:
+            view_name (str): The name of the view to get
+        """
+        from sageworks.core.views import View
+
         if self._data_quality_view is None:
             self._create_view("data_quality")
         return self._data_quality_view
@@ -195,7 +205,7 @@ class FeatureSetCore(Artifact):
         Args:
             view_type (str): The type of view to create
         """
-        from sageworks.core.views import DisplayView, TrainingView, DataQualityView
+        , TrainingView, DataQualityView
 
         if view_type == "display":
             self._display_view = DisplayView(self)

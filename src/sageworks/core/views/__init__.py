@@ -10,6 +10,7 @@ These class provide database views for both DataSources and Feature Sets
 - DataQualityView: A view includes various data quality metrics
 """
 
+from .view import View
 from .base_view import BaseView
 from .identity_view import IdentityView
 from .training_view import TrainingView
@@ -17,4 +18,4 @@ from .display_view import DisplayView
 from .computation_view import ComputationView
 from .data_quality_view import DataQualityView
 
-__all__ = ["BaseView", "IdentityView", "TrainingView", "DisplayView", "ComputationView", "DataQualityView"]
+__all__ = ["View", "BaseView", "IdentityView", "TrainingView", "DisplayView", "ComputationView", "DataQualityView"]
