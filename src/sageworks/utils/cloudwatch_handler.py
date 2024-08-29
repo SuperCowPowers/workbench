@@ -18,6 +18,7 @@ class CloudWatchHandler(logging.Handler):
 
         # Import AWSAccountClamp here to avoid circular imports
         from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+
         self.account_clamp = AWSAccountClamp()
         self.boto3_session = self.account_clamp.boto_session()
         self.log_stream_name = self.determine_log_stream()
@@ -29,7 +30,7 @@ class CloudWatchHandler(logging.Handler):
                 stream_name=self.log_stream_name,
                 boto3_client=cloudwatch_client,
             )
-        except ClientError as e:
+        except ClientError:
             self.cloudwatch_handler = None
 
     def emit(self, record):
@@ -79,15 +80,15 @@ class CloudWatchHandler(logging.Handler):
     @staticmethod
     def running_on_lambda():
         """Check if running in AWS Lambda."""
-        return 'AWS_LAMBDA_FUNCTION_NAME' in os.environ
+        return "AWS_LAMBDA_FUNCTION_NAME" in os.environ
 
     @staticmethod
     def running_on_glue():
         """Check if running in AWS Glue."""
-        return 'GLUE_JOB_NAME' in os.environ
+        return "GLUE_JOB_NAME" in os.environ
 
 
 if __name__ == "__main__":
     # Example usage
-    logger = logging.getLogger('SageWorks')
+    logger = logging.getLogger("SageWorks")
     logger.addHandler(CloudWatchHandler())

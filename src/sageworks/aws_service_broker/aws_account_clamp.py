@@ -1,10 +1,7 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
 
 import os
-import sys
 import boto3
-import watchtower
-import getpass
 import awswrangler as wr
 from botocore.exceptions import (
     ClientError,
@@ -15,13 +12,10 @@ from botocore.client import BaseClient
 from botocore.credentials import RefreshableCredentials
 from botocore.session import get_session
 from sagemaker.session import Session as SageSession
-from datetime import datetime
 import logging
 
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
-from sageworks.utils.docker_utils import running_on_docker, running_on_ecs
-from sageworks.utils.sageworks_logging import ColoredFormatter
 
 
 class AWSAccountClamp:
