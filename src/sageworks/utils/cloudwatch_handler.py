@@ -62,13 +62,13 @@ class CloudWatchHandler(logging.Handler):
 
         if self.running_on_lambda():
             job_name = executable_name or os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "unknown")
-            return f"lambda/{job_name}/{unique_id}"
+            return f"lambda/{job_name}"
         elif self.running_on_glue():
             job_name = executable_name or os.environ.get("GLUE_JOB_NAME", "unknown")
             return f"glue/{job_name}/{unique_id}"
         elif running_on_docker():
             job_name = executable_name or os.environ.get("SERVICE_NAME", "unknown")
-            return f"docker/{job_name}/{unique_id}"
+            return f"docker/{job_name}"
         else:
             return f"laptop/{getpass.getuser()}"
 
