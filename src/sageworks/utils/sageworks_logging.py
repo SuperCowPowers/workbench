@@ -4,6 +4,9 @@ import logging
 from collections import defaultdict
 import time
 
+# Import the CloudWatchHandler
+from sageworks.utils.cloudwatch_handler import CloudWatchHandler
+
 
 class ThrottlingFilter(logging.Filter):
     def __init__(self, rate_seconds=60):
@@ -92,10 +95,11 @@ def logging_setup(color_logs=True):
 
     # Remove any existing handlers
     while log.handlers:
+        print(f"Removing existing handler {log.handlers[0]}")
         log.removeHandler(log.handlers[0])
 
-    # Setup new handler
-    handler = logging.StreamHandler(stream=sys.stdout)
+    # Setup new stream handler
+    stream_handler = logging.StreamHandler(stream=sys.stdout)
     formatter = (
         ColoredFormatter(
             "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
@@ -107,8 +111,8 @@ def logging_setup(color_logs=True):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
     )
-    handler.setFormatter(formatter)
-    log.addHandler(handler)
+    stream_handler.setFormatter(formatter)
+    log.addHandler(stream_handler)
 
     # Setup logging level
     debug_env = os.getenv("SAGEWORKS_DEBUG", "False")
@@ -123,6 +127,16 @@ def logging_setup(color_logs=True):
 
     # Suppress specific logger
     logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
+
+    # Add a CloudWatch handler
+    cloudwatch = CloudWatchHandler()
+    if cloudwatch.cloudwatch_handler:
+        log.important("Adding CloudWatch logging handler...")
+        cloudwatch_formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
+        cloudwatch.setFormatter(cloudwatch_formatter)
+        log.addHandler(cloudwatch)
+    else:
+        log.error("Failed to add CloudWatch logging handler....")
 
     # Logging setup complete
     log.info("SageWorks Logging Setup Complete...")

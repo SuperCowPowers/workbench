@@ -7,40 +7,37 @@ import getpass
 import watchtower
 
 # SageWorks imports
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.docker_utils import running_on_docker
 
 
-class CloudWatchHandler:
-    """A CloudWatch Logs handler for SageWorks"""
+class CloudWatchHandler(logging.Handler):
+    """A custom CloudWatch Logs handler for SageWorks"""
 
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self):
+        super().__init__()
+
+        # Import AWSAccountClamp here to avoid circular imports
+        from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
         self.account_clamp = AWSAccountClamp()
-        self.boto3_session = self.account_clamp.get_boto3_session()
+        self.boto3_session = self.account_clamp.boto_session()
         self.log_stream_name = self.determine_log_stream()
 
-    def add_cloudwatch_logs_handler(self):
-        """Add a CloudWatch Logs handler to the logger"""
         try:
             cloudwatch_client = self.boto3_session.client("logs")
-            self.logger.info("Adding CloudWatch Logs Handler...")
-            self.logger.info(f"Log Stream Name: {self.log_stream_name}")
-
-            cloudwatch_handler = watchtower.CloudWatchLogHandler(
+            self.cloudwatch_handler = watchtower.CloudWatchLogHandler(
                 log_group="SageWorksLogGroup",
                 stream_name=self.log_stream_name,
                 boto3_client=cloudwatch_client,
             )
-
-            # Create a formatter for CloudWatch without the timestamp
-            cloudwatch_formatter = logging.Formatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
-            cloudwatch_handler.setFormatter(cloudwatch_formatter)
-
-            # Add the CloudWatch handler to the logger
-            self.logger.addHandler(cloudwatch_handler)
         except ClientError as e:
-            self.logger.error(f"Failed to set up CloudWatch Logs handler: {e}")
+            self.cloudwatch_handler = None
+
+    def emit(self, record):
+        """Emit a log record to CloudWatch."""
+        if self.cloudwatch_handler:
+            msg = self.format(record)
+            record.msg = msg
+            self.cloudwatch_handler.emit(record)
 
     @staticmethod
     def get_executable_name(argv):
@@ -66,7 +63,7 @@ class CloudWatchHandler:
             job_name = executable_name or os.environ.get("SERVICE_NAME", "unknown")
             return f"docker/{job_name}/{unique_id}"
         else:
-            return f"laptop/{getpass.getuser()}/{unique_id}"
+            return f"laptop/{getpass.getuser()}"
 
     @staticmethod
     def get_unique_identifier():
@@ -93,6 +90,4 @@ class CloudWatchHandler:
 if __name__ == "__main__":
     # Example usage
     logger = logging.getLogger('SageWorks')
-    logger.setLevel(logging.INFO)
-    cloud_watch_handler = CloudWatchHandler(logger)
-    cloud_watch_handler.add_cloudwatch_logs_handler()
+    logger.addHandler(CloudWatchHandler())
