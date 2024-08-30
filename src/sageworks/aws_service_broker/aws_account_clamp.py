@@ -14,6 +14,7 @@ import logging
 
 # We import SageSession lazily, so we'll leave this hint here for type checkers
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from sagemaker.session import Session as SageSession
 
