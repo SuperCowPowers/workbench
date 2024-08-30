@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 import getpass
 import watchtower
+import atexit  # Import atexit for handling cleanup on exit
 
 # SageWorks imports
 from sageworks.utils.docker_utils import running_on_docker
@@ -30,18 +31,25 @@ class CloudWatchHandler:
         """Add a CloudWatch Logs handler to the provided logger"""
         try:
             cloudwatch_client = self.boto3_session.client("logs")
-            cloudwatch_handler = watchtower.CloudWatchLogHandler(
+            self.cloudwatch_handler = watchtower.CloudWatchLogHandler(
                 log_group="SageWorksLogGroup",
                 stream_name=self.log_stream_name,
                 boto3_client=cloudwatch_client,
             )
-            cloudwatch_handler.setFormatter(self.formatter)
-            log.addHandler(cloudwatch_handler)
-            log.important("CloudWatch logging handler added successfully.")
+            self.cloudwatch_handler.setFormatter(self.formatter)
+            log.addHandler(self.cloudwatch_handler)
+            log.info("CloudWatch logging handler added successfully.")
+
+            # Register the flush function to be called at exit
+            atexit.register(self.flush_handler)
+
         except Exception as e:
-            msg = f"Failed to set up CloudWatch Logs handler: {e}"
-            log.error(msg)
-            log.monitor(msg)
+            log.error(f"Failed to set up CloudWatch Logs handler: {e}")
+
+    def flush_handler(self):
+        """Flush the CloudWatch log handler to ensure all logs are sent"""
+        if hasattr(self, "cloudwatch_handler") and self.cloudwatch_handler:
+            self.cloudwatch_handler.flush()
 
     def determine_log_stream(self):
         """Determine the log stream name based on the environment."""
