@@ -8,12 +8,10 @@ import watchtower
 from sageworks.utils.docker_utils import running_on_docker
 
 
-class CloudWatchHandler(logging.Handler):
-    """A custom CloudWatch Logs handler for SageWorks"""
+class CloudWatchHandler:
+    """A helper class to add a CloudWatch Logs handler to a logger"""
 
     def __init__(self):
-        super().__init__()
-
         # Initialize the CloudWatch handler
         try:
             # Import AWSAccountClamp here to avoid circular imports
@@ -24,32 +22,26 @@ class CloudWatchHandler(logging.Handler):
             self.boto3_session = self.account_clamp.boto_session()
             self.log_stream_name = self.determine_log_stream()
             self.formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
-            self.setFormatter(self.formatter)
+
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize CloudWatchHandler: {e}")
+
+    def add_cloudwatch_handler(self, log):
+        """Add a CloudWatch Logs handler to the provided logger"""
+        try:
             cloudwatch_client = self.boto3_session.client("logs")
-            self.cloudwatch_handler = watchtower.CloudWatchLogHandler(
+            cloudwatch_handler = watchtower.CloudWatchLogHandler(
                 log_group="SageWorksLogGroup",
                 stream_name=self.log_stream_name,
                 boto3_client=cloudwatch_client,
             )
+            cloudwatch_handler.setFormatter(self.formatter)
+            log.addHandler(cloudwatch_handler)
+            log.important("CloudWatch logging handler added successfully.")
         except Exception as e:
-            self.cloudwatch_handler = None
-            raise e
-
-    def emit(self, record):
-        """Emit a log record to CloudWatch."""
-        if self.cloudwatch_handler:
-            msg = self.format(record)
-            record.msg = msg
-            self.cloudwatch_handler.emit(record)
-
-    @staticmethod
-    def get_executable_name(argv):
-        try:
-            script_path = argv[0]
-            base_name = os.path.basename(script_path)
-            return os.path.splitext(base_name)[0]
-        except Exception:
-            return None
+            msg = f"Failed to set up CloudWatch Logs handler: {e}"
+            log.error(msg)
+            log.monitor(msg)
 
     def determine_log_stream(self):
         """Determine the log stream name based on the environment."""
@@ -92,4 +84,5 @@ class CloudWatchHandler(logging.Handler):
 if __name__ == "__main__":
     # Example usage
     logger = logging.getLogger("SageWorks")
-    logger.addHandler(CloudWatchHandler())
+    cloudwatch_handler = CloudWatchHandler()
+    cloudwatch_handler.add_cloudwatch_handler(logger)
