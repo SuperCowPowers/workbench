@@ -10,7 +10,6 @@ from botocore.exceptions import (
 from botocore.client import BaseClient
 from botocore.credentials import RefreshableCredentials
 from botocore.session import get_session
-from sagemaker.session import Session as SageSession
 import logging
 
 # SageWorks Imports
@@ -209,13 +208,14 @@ class AWSAccountClamp:
         return cls.boto3_session
 
     @classmethod
-    def sagemaker_session(cls, session: boto3.Session = None) -> SageSession:
+    def sagemaker_session(cls, session: boto3.Session = None) -> "SageSession":
         """Create a sageworks SageMaker session (using our boto3 refreshable session)
         Args:
             session (boto3.Session, optional): A boto3 session to use. Defaults to None.
         Returns:
             SageSession: A SageMaker session object
         """
+        from sagemaker.session import Session as SageSession
         session = session or cls.boto_session()
         return SageSession(boto_session=session)
 
