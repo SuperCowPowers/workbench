@@ -185,6 +185,12 @@ def exception_log_forward():
         formatted_stack_trace = "".join(traceback.format_list(filtered_stack_trace))
         log_message = f"Exception:\n{formatted_stack_trace}{stack_trace[-1]}"
         log.critical(log_message)
+
+        # Flush all handlers to ensure the log message is sent
+        for handler in log.handlers:
+            handler.flush()
+
+        # Raise the exception to ensure it's not swallowed
         raise
 
 
