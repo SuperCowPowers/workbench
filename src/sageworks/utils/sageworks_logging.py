@@ -1,8 +1,10 @@
 import os
 import sys
-import logging
 from collections import defaultdict
 import time
+import logging
+import traceback
+from contextlib import contextmanager
 
 # Import the CloudWatchHandler
 from sageworks.utils.cloudwatch_handler import CloudWatchHandler
@@ -164,6 +166,30 @@ def logging_setup(color_logs=True):
     log.info("SageWorks Logging Setup Complete...")
 
 
+@contextmanager
+def exception_log_forward():
+    """Context manager to log exceptions to the sageworks logger"""
+    log = logging.getLogger("sageworks")
+    try:
+        yield
+    except Exception as e:
+        # Capture the stack trace as a list of frames
+        tb = e.__traceback__
+        # Convert the stack trace into a list of formatted strings
+        stack_trace = traceback.format_exception(e.__class__, e, tb)
+        # Find the frame where the context manager was entered
+        cm_frame = traceback.extract_tb(tb)[0]
+        # Filter out the context manager frame
+        filtered_stack_trace = []
+        for frame in traceback.extract_tb(tb):
+            if frame != cm_frame:
+                filtered_stack_trace.append(frame)
+        # Format the filtered stack trace
+        formatted_stack_trace = "".join(traceback.format_list(filtered_stack_trace))
+        log.critical("Exception:\n%s%s", formatted_stack_trace, "".join(stack_trace[-1:]))
+        raise
+
+
 if __name__ == "__main__":
     # Uncomment to test the SAGEWORKS_DEBUG env variable
     # os.environ["SAGEWORKS_DEBUG"] = "True"
@@ -186,3 +212,7 @@ if __name__ == "__main__":
     my_log.monitor("This is a monitor message")
     my_log.error("This should be a bright color")
     my_log.critical("This should be an alert color")
+
+    # Test the exception handler
+    with exception_log_forward():
+        raise ValueError("Testing the exception handler")
