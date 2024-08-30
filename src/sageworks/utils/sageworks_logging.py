@@ -45,15 +45,25 @@ def trace(self, message, *args, **kws):
 IMPORTANT_LEVEL_NUM = 25  # Between INFO and WARNING
 logging.addLevelName(IMPORTANT_LEVEL_NUM, "IMPORTANT")
 
-
 def important(self, message, *args, **kws):
     if self.isEnabledFor(IMPORTANT_LEVEL_NUM):
         self._log(IMPORTANT_LEVEL_NUM, message, args, **kws)
 
+# Define MONITOR level
+# Note: see https://docs.python.org/3/library/logging.html#logging-levels
+MONITOR_LEVEL_NUM = 35  # Between WARNING and ERROR
+logging.addLevelName(MONITOR_LEVEL_NUM, "MONITOR")
 
-# Add the trace and important level to the logger
+
+def monitor(self, message, *args, **kws):
+    if self.isEnabledFor(MONITOR_LEVEL_NUM):
+        self._log(MONITOR_LEVEL_NUM, message, args, **kws)
+
+
+# Add the trace, important, and monitor level to the logger
 logging.Logger.trace = trace
 logging.Logger.important = important
+logging.Logger.monitor = monitor
 
 
 # Define a ColoredFormatter
@@ -63,7 +73,8 @@ class ColoredFormatter(logging.Formatter):
         "TRACE": "\x1b[38;5;141m",  # LightPurple
         "INFO": "\x1b[38;5;69m",  # LightBlue
         "IMPORTANT": "\x1b[38;5;113m",  # LightGreen
-        "WARNING": "\x1b[38;5;220m",  # DarkYellow
+        "WARNING": "\x1b[38;5;190m",  # DarkYellow
+        "MONITOR": "\x1b[38;5;220m",  # LightPurple
         "ERROR": "\x1b[38;5;208m",  # Orange
         "CRITICAL": "\x1b[38;5;198m",  # Hot Pink
     }
@@ -73,6 +84,7 @@ class ColoredFormatter(logging.Formatter):
         "INFO": "\x1b[38;5;22m",  # Green
         "IMPORTANT": "\x1b[38;5;178m",  # Lime
         "WARNING": "\x1b[38;5;94m",  # DarkYellow
+        "MONITOR": "\x1b[38;5;91m",  # Purple
         "ERROR": "\x1b[38;5;166m",  # Orange
         "CRITICAL": "\x1b[38;5;124m",  # Red
     }
@@ -138,9 +150,11 @@ def logging_setup(color_logs=True):
     cloudwatch = CloudWatchHandler()
     if cloudwatch.cloudwatch_handler:
         log.important("Adding CloudWatch logging handler...")
+        log.important(f"Log Stream Name: {cloudwatch.log_stream_name}")
         log.addHandler(cloudwatch)
     else:
         log.error("Failed to add CloudWatch logging handler....")
+        log.monitor("Failed to add CloudWatch logging handler....")
 
     # Logging setup complete
     log.info("SageWorks Logging Setup Complete...")
@@ -165,5 +179,6 @@ if __name__ == "__main__":
     my_log.info("This should be a nice color")
     my_log.important("Important color should stand out from info")
     my_log.warning("This should be a color that attracts attention")
+    my_log.monitor("This is a monitor message")
     my_log.error("This should be a bright color")
     my_log.critical("This should be an alert color")
