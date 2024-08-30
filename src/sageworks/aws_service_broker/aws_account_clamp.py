@@ -2,7 +2,6 @@
 
 import os
 import boto3
-import awswrangler as wr
 from botocore.exceptions import (
     ClientError,
     UnauthorizedSSOTokenError,
@@ -120,12 +119,6 @@ class AWSAccountClamp:
         for bucket in results["Buckets"]:
             cls.log.info(f"\t{bucket['Name']}")
         return True
-
-    @classmethod
-    def ensure_aws_catalog_db(cls, catalog_db: str):
-        """Ensure that the AWS Data Catalog Database exists"""
-        cls.log.important(f"Ensuring that the AWS Data Catalog Database {catalog_db} exists...")
-        wr.catalog.create_database(catalog_db, exist_ok=True, boto3_session=cls.boto3_session)
 
     @classmethod
     def is_sageworks_role(cls) -> bool:

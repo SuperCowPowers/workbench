@@ -180,6 +180,7 @@ class Meta:
         Returns:
             dict: Detailed information about all the Data Sources in AWS
         """
+        self.log.monitor("DataSources Deep Dive...")
         data = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=refresh)
 
         # Data Sources are in two databases, 'sageworks' and 'sagemaker_featurestore'
@@ -297,6 +298,7 @@ class Meta:
         Returns:
             dict: A summary of the Feature Sets in AWS
         """
+        self.log.monitor("FeatureSets Deep Dive...")
         return self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=refresh)
 
     def models(self, refresh: bool = False) -> pd.DataFrame:
@@ -365,6 +367,7 @@ class Meta:
         Returns:
             dict: A summary of the Models in AWS
         """
+        self.log.monitor("Models Deep Dive...")
         return self.aws_broker.get_metadata(ServiceCategory.MODELS, force_refresh=refresh)
 
     def endpoints(self, refresh: bool = False) -> pd.DataFrame:
@@ -413,6 +416,7 @@ class Meta:
         Returns:
             dict: A summary of the Endpoints in AWS
         """
+        self.log.monitor("Endpoints Deep Dive...")
         return self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS, force_refresh=refresh)
 
     def pipelines(self, refresh: bool = False) -> pd.DataFrame:

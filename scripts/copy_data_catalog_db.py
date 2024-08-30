@@ -12,7 +12,8 @@ source_database = "sagemaker_featurestore"
 destination_database = "sagemaker_featurestore_copy"
 
 # Create the destination database if it doesn't exist
-aws_account_clamp.ensure_aws_catalog_db(destination_database)
+# FIXME: If we need this, we can grab it from the AWSAccountCheck class
+# aws_account_check.ensure_aws_catalog_db(destination_database)
 
 
 def copy_tables(src_db, dest_db):

@@ -23,6 +23,11 @@ def load_lambda_layer():
         shutil.move(sklearn_dir, extract_path)
         print(f"Moved sklearn from {sklearn_dir} to {extract_path}")
 
+    # Check if the zip directory exists
+    if not os.path.exists(zip_dir):
+        log.error(f"Zip directory not found: {zip_dir}")
+        return
+
     # Iterate over each file in the zip directory
     for file_name in os.listdir(zip_dir):
         if file_name.endswith(".zip"):
