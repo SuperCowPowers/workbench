@@ -32,7 +32,6 @@ class CloudWatchHandler(logging.Handler):
                 stream_name=self.log_stream_name,
                 boto3_client=cloudwatch_client,
             )
-            import numnum
         except Exception as e:
             self.cloudwatch_handler = None
             raise e
