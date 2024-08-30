@@ -84,7 +84,7 @@ for input_file in list_s3_files(input_s3_path):
 When a Glue Job crashes (has an exception), the AWS console will show you the last line of the exception, this is mostly useless. If you use SageWorks log forwarding the exception/stack will be forwarded to CloudWatch.
 
 ```py
-from sageworks.utils.aws_utils import exception_log_forward
+from sageworks.utils.sageworks_logging import exception_log_forward
 
 with exception_log_forward():
    <my glue code>

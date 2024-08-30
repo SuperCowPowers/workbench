@@ -80,6 +80,20 @@ def lambda_handler(event, context):
     }
 ```
 
+## Exception Log Forwarding
+When a Lambda Job crashes (has an exception), the AWS console will show you the last line of the exception, this is mostly useless. If you use SageWorks log forwarding the exception/stack will be forwarded to CloudWatch.
+
+```py
+from sageworks.utils.sageworks_logging import exception_log_forward
+
+with exception_log_forward():
+   <my lambda code>
+   ...
+   <exception happens>
+   <more of my code>
+```
+The `exception_log_forward` sets up a **context manager** that will trap exceptions and forward the exception/stack to CloudWatch for diagnosis. 
+
 ## Lambda Function Local Testing
 Lambda Power without the Pain. SageWorks manages the AWS Execution Role/Policies, so local API and Lambda Functions will have the same permissions/access. Also using the same Code as your notebooks or scripts makes creating and testing Lambda Functions a breeze.
 

@@ -186,7 +186,8 @@ def exception_log_forward():
                 filtered_stack_trace.append(frame)
         # Format the filtered stack trace
         formatted_stack_trace = "".join(traceback.format_list(filtered_stack_trace))
-        log.critical("Exception:\n%s%s", formatted_stack_trace, "".join(stack_trace[-1:]))
+        log_message = f"Exception:\n{formatted_stack_trace}{stack_trace[-1]}"
+        log.critical(log_message)
         raise
 
 
