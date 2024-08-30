@@ -12,6 +12,11 @@ from botocore.credentials import RefreshableCredentials
 from botocore.session import get_session
 import logging
 
+# We import SageSession lazily, so we'll leave this hint here for type checkers
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sagemaker.session import Session as SageSession
+
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
@@ -216,6 +221,7 @@ class AWSAccountClamp:
             SageSession: A SageMaker session object
         """
         from sagemaker.session import Session as SageSession
+
         session = session or cls.boto_session()
         return SageSession(boto_session=session)
 
