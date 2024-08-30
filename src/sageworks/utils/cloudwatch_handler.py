@@ -1,7 +1,6 @@
 import os
 import sys
 import logging
-from botocore.exceptions import ClientError
 from datetime import datetime
 import getpass
 import watchtower
