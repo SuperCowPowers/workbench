@@ -197,6 +197,12 @@ def exception_log_forward(call_on_exception=None):
             # Raise the exception if no function was provided
             raise
 
+    # Ensure all log handlers are flushed
+    finally:
+        for handler in log.handlers:
+            if hasattr(handler, "flush"):
+                handler.flush()
+
 
 if __name__ == "__main__":
     # Uncomment to test the SAGEWORKS_DEBUG env variable
