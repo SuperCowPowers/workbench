@@ -186,7 +186,8 @@ def exception_log_forward(call_on_exception=None):
         log_message = f"Exception:\n{formatted_stack_trace}{stack_trace[-1]}"
         log.critical(log_message)
 
-        # Flush all handlers to ensure the log message is sent
+        # Flush all handlers to ensure the exception messages are sent
+        log.important("Flushing all log handlers...")
         for handler in log.handlers:
             handler.flush()
 
@@ -199,9 +200,11 @@ def exception_log_forward(call_on_exception=None):
 
     # Ensure all log handlers are flushed
     finally:
+        log.important("Finally: Flushing all log handlers...")
         for handler in log.handlers:
             if hasattr(handler, "flush"):
                 handler.flush()
+        time.sleep(2)  # Give the logs a chance to flush
 
 
 if __name__ == "__main__":
