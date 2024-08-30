@@ -102,13 +102,13 @@ class ColoredFormatter(logging.Formatter):
 
 
 def logging_setup(color_logs=True):
-    """Setup the logging for the application."""
+    """Set up the logging for the application."""
 
     log = logging.getLogger("sageworks")
 
     # Check if logging is already set up
-    if getattr(log, "_is_setup", False):
-        return
+    # if getattr(log, "_is_setup", False):
+    #    return
 
     # Mark the logging setup as done
     log._is_setup = True
@@ -156,14 +156,11 @@ def logging_setup(color_logs=True):
         log.important("Adding CloudWatch logging handler...")
         log.important(f"Log Stream Name: {cloudwatch.log_stream_name}")
         log.addHandler(cloudwatch)
+        log.info("SageWorks Logging Setup Complete...")
     except Exception as e:
         log.error("Failed to add CloudWatch logging handler....")
-        log.error(f"Error: {e}")
         log.monitor("Failed to add CloudWatch logging handler....")
-        log.monitor(f"Error: {e}")
-
-    # Logging setup complete
-    log.info("SageWorks Logging Setup Complete...")
+        log.exception("Exception details:")
 
 
 @contextmanager
