@@ -1439,6 +1439,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#exception-log-forwarding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Exception Log Forwarding
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#lambda-function-local-testing" class="md-nav__link">
     <span class="md-ellipsis">
       Lambda Function Local Testing
@@ -1969,6 +1978,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#exception-log-forwarding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Exception Log Forwarding
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#lambda-function-local-testing" class="md-nav__link">
     <span class="md-ellipsis">
       Lambda Function Local Testing
@@ -2078,9 +2096,20 @@ src="https://github.com/user-attachments/assets/a5afdaff-188f-45ca-bd66-1ab62d7b
 </span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>        <span class="s1">&#39;body&#39;</span><span class="p">:</span> <span class="p">{</span> <span class="s2">&quot;incoming_event&quot;</span><span class="p">:</span> <span class="n">event</span><span class="p">}</span>
 </span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>    <span class="p">}</span>
 </span></code></pre></div>
+<h2 id="exception-log-forwarding">Exception Log Forwarding</h2>
+<p>When a Lambda Job crashes (has an exception), the AWS console will show you the last line of the exception, this is mostly useless. If you use SageWorks log forwarding the exception/stack will be forwarded to CloudWatch.</p>
+<p><div class="language-py highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">sageworks.utils.sageworks_logging</span> <span class="kn">import</span> <span class="n">exception_log_forward</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">with</span> <span class="n">exception_log_forward</span><span class="p">():</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>   <span class="o">&lt;</span><span class="n">my</span> <span class="k">lambda</span> <span class="n">code</span><span class="o">&gt;</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>   <span class="o">...</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>   <span class="o">&lt;</span><span class="n">exception</span> <span class="n">happens</span><span class="o">&gt;</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>   <span class="o">&lt;</span><span class="n">more</span> <span class="n">of</span> <span class="n">my</span> <span class="n">code</span><span class="o">&gt;</span>
+</span></code></pre></div>
+The <code>exception_log_forward</code> sets up a <strong>context manager</strong> that will trap exceptions and forward the exception/stack to CloudWatch for diagnosis. </p>
 <h2 id="lambda-function-local-testing">Lambda Function Local Testing</h2>
 <p>Lambda Power without the Pain. SageWorks manages the AWS Execution Role/Policies, so local API and Lambda Functions will have the same permissions/access. Also using the same Code as your notebooks or scripts makes creating and testing Lambda Functions a breeze.</p>
-<div class="language-shell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>my_lambda_function.py<span class="w"> </span>--sageworks-bucket<span class="w"> </span>&lt;your<span class="w"> </span>bucket&gt;
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>my_lambda_function.py<span class="w"> </span>--sageworks-bucket<span class="w"> </span>&lt;your<span class="w"> </span>bucket&gt;
 </span></code></pre></div>
 <h2 id="additional-resources">Additional Resources</h2>
 <ul>
