@@ -163,6 +163,12 @@ class AWSServiceBroker:
         # - Metadata is in the cache but is stale, launch a thread to refresh, return stale data
         # - Metadata is in the cache and is fresh, so we just return it
 
+        # Force Refresh should be used sparingly, it can cause AWS Throttling
+        if force_refresh:
+            msg = f"Getting {category} Metadata with force_refresh=True..."
+            cls.log.warning(msg)
+            cls.log.monitor(msg)
+
         # Do we have this AWS data already in the cache?
         meta_data = cls.meta_cache.get(category)
 
@@ -194,7 +200,14 @@ class AWSServiceBroker:
         Returns:
             dict: The Metadata for ALL the Service Categories
         """
-        cls.log.info(f"Getting ALL AWS Metadata...(force_refresh={force_refresh})")
+
+        # Force Refresh should be used sparingly, it can cause AWS Throttling
+        if force_refresh:
+            msg = "Getting ALL AWS Metadata with force_refresh=True..."
+            cls.log.warning(msg)
+            cls.log.monitor(msg)
+
+        # Get the metadata for ALL the categories
         return {_category: cls.get_metadata(_category, force_refresh) for _category in ServiceCategory}
 
     @classmethod

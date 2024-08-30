@@ -45,9 +45,11 @@ def trace(self, message, *args, **kws):
 IMPORTANT_LEVEL_NUM = 25  # Between INFO and WARNING
 logging.addLevelName(IMPORTANT_LEVEL_NUM, "IMPORTANT")
 
+
 def important(self, message, *args, **kws):
     if self.isEnabledFor(IMPORTANT_LEVEL_NUM):
         self._log(IMPORTANT_LEVEL_NUM, message, args, **kws)
+
 
 # Define MONITOR level
 # Note: see https://docs.python.org/3/library/logging.html#logging-levels
@@ -147,14 +149,16 @@ def logging_setup(color_logs=True):
     logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
 
     # Add a CloudWatch handler
-    cloudwatch = CloudWatchHandler()
-    if cloudwatch.cloudwatch_handler:
+    try:
+        cloudwatch = CloudWatchHandler()
         log.important("Adding CloudWatch logging handler...")
         log.important(f"Log Stream Name: {cloudwatch.log_stream_name}")
         log.addHandler(cloudwatch)
-    else:
+    except Exception as e:
         log.error("Failed to add CloudWatch logging handler....")
+        log.error(f"Error: {e}")
         log.monitor("Failed to add CloudWatch logging handler....")
+        log.monitor(f"Error: {e}")
 
     # Logging setup complete
     log.info("SageWorks Logging Setup Complete...")
