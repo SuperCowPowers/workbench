@@ -164,8 +164,8 @@ def logging_setup(color_logs=True):
 
 
 @contextmanager
-def exception_log_forward():
-    """Context manager to log exceptions to the sageworks logger"""
+def exception_log_forward(call_on_exception=None):
+    """Context manager to log exceptions and optionally call a function on exception."""
     log = logging.getLogger("sageworks")
     try:
         yield
@@ -190,8 +190,12 @@ def exception_log_forward():
         for handler in log.handlers:
             handler.flush()
 
-        # Raise the exception to ensure it's not swallowed
-        raise
+        # Call the provided function if it exists
+        if callable(call_on_exception):
+            return call_on_exception(e)
+        else:
+            # Raise the exception if no function was provided
+            raise
 
 
 if __name__ == "__main__":
