@@ -123,7 +123,7 @@ def monitor_log_group(
             else:
                 log_events.sort(key=lambda x: x["timestamp"])
 
-            # Handle special for search terms
+            # Handle special search terms
             search_terms = search_map.get(search.upper(), [search]) if search else None
 
             # If search is provided, filter log events and include context

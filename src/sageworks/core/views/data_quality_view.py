@@ -1,26 +1,28 @@
 """DataQualityView Class: A View that computes various data_quality metrics"""
 
+from typing import Union
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.api import DataSource
-from sageworks.core.views.view import View, ViewType
+from sageworks.api import DataSource, FeatureSet
+from sageworks.core.views.view import View
+from sageworks.core.views.create_view import CreateView
 from sageworks.core.views.view_utils import dataframe_to_table, get_column_list
 from sageworks.algorithms.dataframe.row_tagger import RowTagger
 
 
-class DataQualityView(View):
+class DataQualityView(CreateView):
     """DataQualityView Class: A View that computes various data_quality metrics"""
 
-    def __init__(self, data_source: DataSource):
+    def __init__(self, artifact: Union[DataSource, FeatureSet]):
         """Initialize the DataQualityView
 
         Args:
-            data_source (DataSource): The DataSource object
+            artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
         """
-        super().__init__(data_source, ViewType.DATA_QUALITY)
+        super().__init__(artifact, "data_quality")
 
-    def create_view(self, id_column: str, target: str, features: list, source_table: str = None):
+    def create_view(self, id_column: str, target: str, features: list, source_table: str = None) -> Union[View, None]:
         """Create a Data Quality View: A View that computes various data_quality metrics
 
         Args:
@@ -28,6 +30,9 @@ class DataQualityView(View):
             target (str): The name of the target column
             features (list): The list of feature columns
             source_table (str, optional): The table/view to create the view from. Defaults to base table.
+
+        Returns:
+            Union[View, None]: The created View object (or None if failed to create the view)
         """
         self.log.important(f"View {self.view_type} for {self.data_source_name} being created...")
 
@@ -41,7 +46,7 @@ class DataQualityView(View):
             self.log.error(
                 f"Data Quality View cannot be created on more than 1M rows. {source_table} has {row_count} rows."
             )
-            return
+            return None
 
         # Drop any columns generated from AWS
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
@@ -58,12 +63,12 @@ class DataQualityView(View):
         # Check if the id_column exists in the source_table
         if id_column not in df.columns:
             self.log.error(f"id_column {id_column} not found in {source_table}. Cannot create Data Quality View.")
-            return
+            return None
 
         # Check if the target column exists in the source_table
         if target not in df.columns:
             self.log.error(f"target column {target} not found in {source_table}. Cannot create Data Quality View.")
-            return
+            return None
 
         # Check the type of the target column is categorical (not numeric)
         categorical_target = not pd.api.types.is_numeric_dtype(df[target])
@@ -74,7 +79,7 @@ class DataQualityView(View):
                 self.log.error(
                     f"feature column {feature} not found in {source_table}. Cannot create Data Quality View."
                 )
-                return
+                return None
 
         # Now run the RowTagger to compute coincident and high target gradient tags
         row_tagger = RowTagger(
@@ -134,6 +139,9 @@ class DataQualityView(View):
         # Execute the CREATE VIEW query
         self.data_source.execute_statement(create_view_query)
 
+        # Return the View
+        return View(self.data_source, self.view_name, auto_create=False)
+
 
 if __name__ == "__main__":
     """Exercise the Training View functionality"""
@@ -148,14 +156,14 @@ if __name__ == "__main__":
     feature_columns = m.features()
 
     # Create a DataQualityView
-    dq_view = DataQualityView(fs)
-    dq_view.create_view("id", target_column, feature_columns)
+    make_view = DataQualityView(fs)
+    dq_view = make_view.create_view("id", target_column, feature_columns)
 
     # Pull the data quality dataframe (not sure what this will do)
     df = dq_view.pull_dataframe(head=True)
     print(df)
 
     # Create a default data_quality view
-    dq_view.create_view("id", target_column, feature_columns)
+    dq_view = make_view.create_view("id", target_column, feature_columns)
     df = dq_view.pull_dataframe(head=True)
     print(df)

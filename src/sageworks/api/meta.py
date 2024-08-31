@@ -223,7 +223,7 @@ class Meta:
             refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
 
         Returns:
-            dict: Detailed information about the data source (or None if not found)
+            dict: Detailed information about the view (or None if not found)
         """
         data = self.views_deep(database=database, refresh=refresh)
         return data.get(view_name)
