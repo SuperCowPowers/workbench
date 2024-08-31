@@ -3,9 +3,14 @@ import argparse
 from datetime import datetime, timedelta, timezone
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
-IMPORTANT = ["IMPORTANT", "WARNING", "ERROR", "CRITICAL"]
-WARNING = ["WARNING", "ERROR", "CRITICAL"]
-ERROR = ["ERROR", "CRITICAL"]
+# Define the log levels to search for
+search_map = {
+    "ALL": None,
+    "IMPORTANT": ["IMPORTANT", "WARNING", "MONITOR", "ERROR", "CRITICAL"],
+    "WARNING": ["WARNING", "MONITOR", "ERROR", "CRITICAL"],
+    "MONITOR": ["MONITOR", "ERROR", "CRITICAL"],
+    "ERROR": ["ERROR", "CRITICAL"],
+}
 
 
 def get_cloudwatch_client():
@@ -118,16 +123,8 @@ def monitor_log_group(
             else:
                 log_events.sort(key=lambda x: x["timestamp"])
 
-            # Handle special cases for WARNING and ERROR search terms
-            search_terms = [search]
-            if search == "WARNING":
-                search_terms = WARNING
-            elif search == "ERROR":
-                search_terms = ERROR
-
-            # If search is "all", set search_terms to None to include all rows
-            if search.lower() == "all":
-                search_terms = None
+            # Handle special for search terms
+            search_terms = search_map.get(search.upper(), [search]) if search else None
 
             # If search is provided, filter log events and include context
             if search_terms:
