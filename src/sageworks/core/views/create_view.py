@@ -9,6 +9,7 @@ import awswrangler as wr
 from sageworks.api import DataSource, FeatureSet
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.api import Meta
+from sageworks.core.views.view import View
 
 
 class CreateView(ABC):
@@ -53,7 +54,7 @@ class CreateView(ABC):
         return f"{self.base_table}_{self.view_name}"
 
     @abstractmethod
-    def create_view(self, source_table: str = None, **kwargs) -> "View":
+    def create_view(self, source_table: str = None, **kwargs) -> View:
         """Abstract Method: Create the view, each subclass must implement this method
 
         Args:

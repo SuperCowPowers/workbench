@@ -14,8 +14,7 @@ from .view import View
 from .display_view import DisplayView
 from .computation_view import ComputationView
 from .training_view import TrainingView
-# from .data_quality_view import DataQualityView
+from .data_quality_view import DataQualityView
 from .column_subset_view import ColumnSubsetView
 
-#__all__ = ["View", "DisplayView", "ComputationView", "TrainingView", "DataQualityView", "ColumnSubsetView"]
-__all__ = ["View", "DisplayView", "ComputationView", "TrainingView", "ColumnSubsetView"]
+__all__ = ["View", "DisplayView", "ComputationView", "TrainingView", "DataQualityView", "ColumnSubsetView"]

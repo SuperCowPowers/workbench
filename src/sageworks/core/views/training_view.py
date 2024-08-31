@@ -12,7 +12,7 @@ from sageworks.core.views.view_utils import get_column_list
 class TrainingView(CreateView):
     """TrainingView Class: A View with an additional training column that marks holdout ids"""
 
-    def __init__(self,  artifact: Union[DataSource, FeatureSet]):
+    def __init__(self, artifact: Union[DataSource, FeatureSet]):
         """Initialize the TrainingView
 
         Args:
@@ -21,10 +21,7 @@ class TrainingView(CreateView):
         super().__init__(artifact, "training")
 
     def create_view(
-        self,
-        id_column: str = None,
-        holdout_ids: Union[list[str], None] = None,
-        source_table: str = None
+        self, id_column: str = None, holdout_ids: Union[list[str], None] = None, source_table: str = None
     ) -> Union[View, None]:
         """Create a training view that marks hold out ids
 

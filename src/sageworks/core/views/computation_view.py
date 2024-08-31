@@ -4,6 +4,7 @@ from typing import Union
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
+from sageworks.core.views.view import View
 from sageworks.core.views.column_subset_view import ColumnSubsetView
 
 
@@ -18,7 +19,7 @@ class ComputationView(ColumnSubsetView):
         """
         super().__init__(artifact, "computation")
 
-    def create_view(self, column_list=None, column_limit=30, source_table=None) -> "View":
+    def create_view(self, column_list=None, column_limit=30, source_table=None) -> View:
         """Create the Display View: A View with a subset of columns
 
         Args:
@@ -36,7 +37,7 @@ class ComputationView(ColumnSubsetView):
 if __name__ == "__main__":
     """Exercise the Training View functionality"""
     from sageworks.api import FeatureSet
-    
+
     # Get the FeatureSet
     fs = FeatureSet("test_features")
 

@@ -224,9 +224,7 @@ if __name__ == "__main__":
     # Delete the display view
     display_view.delete()
 
-
     """
-    # This will 
     display_view.ensure_exists()
     # Create a Training View for a FeatureSet
     fs = FeatureSet("test_features")
