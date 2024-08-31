@@ -157,6 +157,7 @@ class FeatureSetCore(Artifact):
     def get_display_view(self):
         """Get the Display View for this FeatureSet"""
         from sageworks.core.views import DisplayView
+
         if self._display_view is None:
             self._display_view = DisplayView(self)
         return self._display_view
@@ -164,21 +165,10 @@ class FeatureSetCore(Artifact):
     def get_training_view(self):
         """Get the Training View for this FeatureSet"""
         from sageworks.core.views import TrainingView
+
         if self._training_view is None:
             self._training_view = TrainingView(self)
         return self._training_view
-
-    def get_view(self, view_name: str):
-        """Get the named View for this FeatureSet
-
-        Args:
-            view_name (str): The name of the view to get
-        """
-        from sageworks.core.views import View
-
-        if self._data_quality_view is None:
-            self._create_view("data_quality")
-        return self._data_quality_view
 
     def get_display_columns(self) -> list[str]:
         """Get the columns from our display view
@@ -198,20 +188,6 @@ class FeatureSetCore(Artifact):
         self.get_display_view().create_view(column_list=display_columns)
         if onboard:
             self.onboard()
-
-    def _create_view(self, view_type: str):
-        """Internal: Create the specified View for this FeatureSet
-
-        Args:
-            view_type (str): The type of view to create
-        """
-        from sageworks.core.views import DisplayView, TrainingView, DataQualityView
-        if view_type == "display":
-            self._display_view = DisplayView(self)
-        elif view_type == "training":
-            self._training_view = TrainingView(self)
-        elif view_type == "data_quality":
-            self._data_quality_view = DataQualityView(self)
 
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""
