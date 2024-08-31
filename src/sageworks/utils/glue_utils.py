@@ -3,9 +3,6 @@
 import sys
 from typing import List, Dict, Optional
 import awswrangler as wr
-import logging
-import traceback
-from contextlib import contextmanager
 
 
 def get_resolved_options(argv: List[str], options: Optional[List[str]] = None) -> Dict[str, str]:
@@ -35,30 +32,6 @@ def get_resolved_options(argv: List[str], options: Optional[List[str]] = None) -
         i += 1  # Always increment i for the next argument
 
     return resolved_options
-
-
-@contextmanager
-def exception_log_forward():
-    """Context manager to log exceptions to the sageworks logger"""
-    log = logging.getLogger("sageworks")
-    try:
-        yield
-    except Exception as e:
-        # Capture the stack trace as a list of frames
-        tb = e.__traceback__
-        # Convert the stack trace into a list of formatted strings
-        stack_trace = traceback.format_exception(e.__class__, e, tb)
-        # Find the frame where the context manager was entered
-        cm_frame = traceback.extract_tb(tb)[0]
-        # Filter out the context manager frame
-        filtered_stack_trace = []
-        for frame in traceback.extract_tb(tb):
-            if frame != cm_frame:
-                filtered_stack_trace.append(frame)
-        # Format the filtered stack trace
-        formatted_stack_trace = "".join(traceback.format_list(filtered_stack_trace))
-        log.critical("Exception:\n%s%s", formatted_stack_trace, "".join(stack_trace[-1:]))
-        raise
 
 
 def list_s3_files(s3_path: str, extensions: str = "*.csv") -> List[str]:
@@ -110,7 +83,3 @@ if __name__ == "__main__":
     # Test the resolved options with a specified list of options
     print("Specified Resolved Options")
     print(get_resolved_options(args, ["s3path", "JOB_ID", "JOB_RUN_ID", "JOB_NAME"]))
-
-    # Test the exception handler
-    with exception_log_forward():
-        raise ValueError("Testing the exception handler")

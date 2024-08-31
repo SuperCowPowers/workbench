@@ -2,6 +2,7 @@
 
 import sys
 import logging
+import awswrangler as wr
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
@@ -26,6 +27,11 @@ class AWSAccountCheck:
             raise FatalConfigError()
 
         self.sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
+
+    def ensure_aws_catalog_db(self, catalog_db: str):
+        """Ensure that the AWS Data Catalog Database exists"""
+        self.log.important(f"Ensuring that the AWS Data Catalog Database {catalog_db} exists...")
+        wr.catalog.create_database(catalog_db, exist_ok=True, boto3_session=cls.boto3_session)
 
     def check_s3_bucket_subfolders(self):
         """Check if the SageWorks S3 Bucket is set up and has the correct sub-folders"""

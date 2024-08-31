@@ -1,8 +1,13 @@
 import os
 import sys
-import logging
 from collections import defaultdict
 import time
+import logging
+import traceback
+from contextlib import contextmanager
+
+# Import the CloudWatchHandler
+from sageworks.utils.cloudwatch_handler import CloudWatchHandler
 
 
 class ThrottlingFilter(logging.Filter):
@@ -48,9 +53,21 @@ def important(self, message, *args, **kws):
         self._log(IMPORTANT_LEVEL_NUM, message, args, **kws)
 
 
-# Add the trace and important level to the logger
+# Define MONITOR level
+# Note: see https://docs.python.org/3/library/logging.html#logging-levels
+MONITOR_LEVEL_NUM = 35  # Between WARNING and ERROR
+logging.addLevelName(MONITOR_LEVEL_NUM, "MONITOR")
+
+
+def monitor(self, message, *args, **kws):
+    if self.isEnabledFor(MONITOR_LEVEL_NUM):
+        self._log(MONITOR_LEVEL_NUM, message, args, **kws)
+
+
+# Add the trace, important, and monitor level to the logger
 logging.Logger.trace = trace
 logging.Logger.important = important
+logging.Logger.monitor = monitor
 
 
 # Define a ColoredFormatter
@@ -60,7 +77,8 @@ class ColoredFormatter(logging.Formatter):
         "TRACE": "\x1b[38;5;141m",  # LightPurple
         "INFO": "\x1b[38;5;69m",  # LightBlue
         "IMPORTANT": "\x1b[38;5;113m",  # LightGreen
-        "WARNING": "\x1b[38;5;220m",  # DarkYellow
+        "WARNING": "\x1b[38;5;190m",  # DarkYellow
+        "MONITOR": "\x1b[38;5;220m",  # LightPurple
         "ERROR": "\x1b[38;5;208m",  # Orange
         "CRITICAL": "\x1b[38;5;198m",  # Hot Pink
     }
@@ -70,6 +88,7 @@ class ColoredFormatter(logging.Formatter):
         "INFO": "\x1b[38;5;22m",  # Green
         "IMPORTANT": "\x1b[38;5;178m",  # Lime
         "WARNING": "\x1b[38;5;94m",  # DarkYellow
+        "MONITOR": "\x1b[38;5;91m",  # Purple
         "ERROR": "\x1b[38;5;166m",  # Orange
         "CRITICAL": "\x1b[38;5;124m",  # Red
     }
@@ -83,9 +102,16 @@ class ColoredFormatter(logging.Formatter):
 
 
 def logging_setup(color_logs=True):
-    """Setup the logging for the application."""
+    """Set up the logging for the application."""
 
     log = logging.getLogger("sageworks")
+
+    # Check if logging is already set up
+    if getattr(log, "_is_setup", False):
+        return
+
+    # Mark the logging setup as done
+    log._is_setup = True
 
     # Turn off propagation to root logger
     log.propagate = False
@@ -94,8 +120,8 @@ def logging_setup(color_logs=True):
     while log.handlers:
         log.removeHandler(log.handlers[0])
 
-    # Setup new handler
-    handler = logging.StreamHandler(stream=sys.stdout)
+    # Setup new stream handler
+    stream_handler = logging.StreamHandler(stream=sys.stdout)
     formatter = (
         ColoredFormatter(
             "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
@@ -107,8 +133,8 @@ def logging_setup(color_logs=True):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
     )
-    handler.setFormatter(formatter)
-    log.addHandler(handler)
+    stream_handler.setFormatter(formatter)
+    log.addHandler(stream_handler)
 
     # Setup logging level
     debug_env = os.getenv("SAGEWORKS_DEBUG", "False")
@@ -124,8 +150,61 @@ def logging_setup(color_logs=True):
     # Suppress specific logger
     logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
 
-    # Logging setup complete
-    log.info("SageWorks Logging Setup Complete...")
+    # Add a CloudWatch handler
+    try:
+        cloudwatch = CloudWatchHandler()
+        log.important("Adding CloudWatch logging handler...")
+        log.important(f"Log Stream Name: {cloudwatch.log_stream_name}")
+        cloudwatch.add_cloudwatch_handler(log)
+        log.info("SageWorks Logging Setup Complete...")
+    except Exception:
+        log.error("Failed to add CloudWatch logging handler....")
+        log.monitor("Failed to add CloudWatch logging handler....")
+        log.exception("Exception details:")
+
+
+@contextmanager
+def exception_log_forward(call_on_exception=None):
+    """Context manager to log exceptions and optionally call a function on exception."""
+    log = logging.getLogger("sageworks")
+    try:
+        yield
+    except Exception as e:
+        # Capture the stack trace as a list of frames
+        tb = e.__traceback__
+        # Convert the stack trace into a list of formatted strings
+        stack_trace = traceback.format_exception(e.__class__, e, tb)
+        # Find the frame where the context manager was entered
+        cm_frame = traceback.extract_tb(tb)[0]
+        # Filter out the context manager frame
+        filtered_stack_trace = []
+        for frame in traceback.extract_tb(tb):
+            if frame != cm_frame:
+                filtered_stack_trace.append(frame)
+        # Format the filtered stack trace
+        formatted_stack_trace = "".join(traceback.format_list(filtered_stack_trace))
+        log_message = f"Exception:\n{formatted_stack_trace}{stack_trace[-1]}"
+        log.critical(log_message)
+
+        # Flush all handlers to ensure the exception messages are sent
+        log.important("Flushing all log handlers...")
+        for handler in log.handlers:
+            handler.flush()
+
+        # Call the provided function if it exists
+        if callable(call_on_exception):
+            return call_on_exception(e)
+        else:
+            # Raise the exception if no function was provided
+            raise
+
+    # Ensure all log handlers are flushed
+    finally:
+        log.important("Finally: Flushing all log handlers...")
+        for handler in log.handlers:
+            if hasattr(handler, "flush"):
+                handler.flush()
+        time.sleep(2)  # Give the logs a chance to flush
 
 
 if __name__ == "__main__":
@@ -147,5 +226,10 @@ if __name__ == "__main__":
     my_log.info("This should be a nice color")
     my_log.important("Important color should stand out from info")
     my_log.warning("This should be a color that attracts attention")
+    my_log.monitor("This is a monitor message")
     my_log.error("This should be a bright color")
     my_log.critical("This should be an alert color")
+
+    # Test the exception handler
+    with exception_log_forward():
+        raise ValueError("Testing the exception handler")
