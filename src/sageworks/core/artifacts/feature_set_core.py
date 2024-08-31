@@ -205,8 +205,7 @@ class FeatureSetCore(Artifact):
         Args:
             view_type (str): The type of view to create
         """
-        , TrainingView, DataQualityView
-
+        from sageworks.core.views import DisplayView, TrainingView, DataQualityView
         if view_type == "display":
             self._display_view = DisplayView(self)
         elif view_type == "training":
