@@ -34,11 +34,10 @@ class DataQualityView(CreateView):
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)
         """
-        self.log.important(f"View {self.view_type} for {self.data_source_name} being created...")
+        self.log.important(f"Creating DataQuality View {self.view_table_name}...")
 
         # Get the source_table to create the view from
-        base_table = self.data_source.get_table_name()
-        source_table = source_table if source_table else base_table
+        source_table = source_table if source_table else self.base_table
 
         # Check the number of rows in the source_table, if greater than 1M, then give an error and return
         row_count = self.data_source.num_rows()
@@ -114,12 +113,8 @@ class DataQualityView(CreateView):
         dq_df = dq_df[dq_columns + [id_column]]
 
         # Create the data_quality supplemental table
-        data_quality_table = f"_{base_table}_data_quality"
+        data_quality_table = f"_{source_table}_data_quality"
         dataframe_to_table(self.data_source, dq_df, data_quality_table)
-
-        # Create the data_quality view (join the data_quality table with the source_table)
-        view_name = f"{base_table}_data_quality"
-        self.log.important(f"Creating Data Quality View {view_name}...")
 
         # Convert the list of dq_columns into a comma-separated string
         dq_columns_str = ", ".join([f"B.{col}" for col in dq_columns])
@@ -129,7 +124,7 @@ class DataQualityView(CreateView):
 
         # Construct the CREATE VIEW query
         create_view_query = f"""
-        CREATE OR REPLACE VIEW {view_name} AS
+        CREATE OR REPLACE VIEW {self.view_table_name} AS
         SELECT {source_columns_str}, {dq_columns_str}
         FROM {source_table} A
         LEFT JOIN {data_quality_table} B
@@ -159,11 +154,9 @@ if __name__ == "__main__":
     make_view = DataQualityView(fs)
     dq_view = make_view.create_view("id", target_column, feature_columns)
 
-    # Pull the data quality dataframe (not sure what this will do)
+    # Pull the data quality dataframe
     df = dq_view.pull_dataframe(head=True)
     print(df)
 
-    # Create a default data_quality view
-    dq_view = make_view.create_view("id", target_column, feature_columns)
-    df = dq_view.pull_dataframe(head=True)
-    print(df)
+    # Delete the default data_quality view
+    dq_view.delete()
