@@ -219,6 +219,8 @@ class SageWorksShell:
         ).PandasToFeatures
         self.commands["Meta"] = importlib.import_module("sageworks.api.meta").Meta
         self.commands["View"] = importlib.import_module("sageworks.core.views.view").View
+        self.commands["DisplayView"] = importlib.import_module("sageworks.core.views.display_view").DisplayView
+        self.commands["TrainingView"] = importlib.import_module("sageworks.core.views.training_view").TrainingView
 
         # We're going to include these classes/imports later
         # self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline

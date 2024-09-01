@@ -162,13 +162,17 @@ class View:
 
     def _auto_create_view(self):
         """Internal: Automatically create a view training, display, and computation views"""
-        from sageworks.core.views.column_subset_view import ColumnSubsetView
+        from sageworks.core.views import ColumnSubsetView, TrainingView
 
         # Create the view
         if self.view_name in ["display", "computation"]:
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source_name}...")
             self.auto_created = True
             ColumnSubsetView(self.data_source, self.view_name).create_view()
+        elif self.view_name == "training":
+            self.log.important(f"Auto creating View {self.view_name} for {self.data_source_name}...")
+            self.auto_created = True
+            TrainingView(self.data_source).create_view(self.auto_id_column)
         else:
             self.log.error(f"Auto-Create for {self.view_name} not implemented yet...")
 
