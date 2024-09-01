@@ -1,5 +1,6 @@
 """Tests for the SageWorks Views functionality"""
 
+import pytest
 import logging
 
 # SageWorks Imports
@@ -26,6 +27,7 @@ def test_display_view_fs():
     print(df)
 
 
+@pytest.mark.long
 def test_set_display_view_columns():
     # Create a new display View for a DataSource
     ds = DataSource("test_data")
@@ -89,7 +91,7 @@ def test_view_on_non_existent_data():
     # Create a View for the Non-Existing DataSource
     data_source = DataSource("non_existent_data")
     assert View(data_source, "display").exists() is False
-    assert View(data_source, "training").ensure_exists() is False
+    assert View(data_source, "training").exists() is False
 
 
 if __name__ == "__main__":
