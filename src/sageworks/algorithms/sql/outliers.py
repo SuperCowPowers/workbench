@@ -214,9 +214,8 @@ class Outliers:
                 return group.nlargest(n, col)
 
         # Group by 'outlier_group' and apply the helper function, explicitly selecting columns
-        top_outliers = (
-            outlier_df.groupby("outlier_group", group_keys=False)
-            .apply(get_extreme_values, include_groups=True)
+        top_outliers = outlier_df.groupby("outlier_group", group_keys=False).apply(
+            get_extreme_values, include_groups=True
         )
         return top_outliers.reset_index(drop=True)
 
