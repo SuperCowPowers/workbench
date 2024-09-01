@@ -264,9 +264,8 @@ class FeatureSetCore(Artifact):
         Returns:
             pd.DataFrame: The training data for this FeatureSet
         """
-        from sageworks.core.views.view import View, ViewType
-
-        return View(self, ViewType.TRAINING).pull_dataframe()
+        from sageworks.core.views.view import View
+        return View(self, "training").pull_dataframe()
 
     def snapshot_query(self, table_name: str = None) -> str:
         """An Athena query to get the latest snapshot of features
@@ -392,9 +391,10 @@ class FeatureSetCore(Artifact):
             id_column (str): The name of the id column.
             holdout_ids (list[str]): The list of holdout ids.
         """
+        from sageworks.core.views import TrainingView
 
         # Create the training view
-        self.get_training_view().create_view(id_column, holdout_ids)
+        TrainingView(self, "training").create_view(id_column, holdout_ids)
 
     def get_training_view_table(self) -> Union[str, None]:
         """Get the name of the training view for this FeatureSet
@@ -630,6 +630,10 @@ if __name__ == "__main__":
     print("Setting hold out ids (strings)...")
     my_holdout_ids = [name for name in df["name"] if int(name.split(" ")[1]) > 80]
     my_features.set_training_holdouts("name", my_holdout_ids)
+
+    # Get the training data
+    print("Getting the training data...")
+    training_data = my_features.get_training_data()
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print('Deleting SageWorks Feature Set...')
