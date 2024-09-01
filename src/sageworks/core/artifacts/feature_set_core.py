@@ -185,7 +185,10 @@ class FeatureSetCore(Artifact):
             onboard (bool): Onboard the Data Source after setting the display columns (default: True)
         """
         self.log.important(f"Setting Display Columns...{display_columns}")
-        self.get_display_view().create_view(column_list=display_columns)
+        from sageworks.core.views import DisplayView
+
+        # Create a NEW display view
+        DisplayView(self).create_view(column_list=display_columns)
         if onboard:
             self.onboard()
 
@@ -394,8 +397,8 @@ class FeatureSetCore(Artifact):
         """
         from sageworks.core.views import TrainingView
 
-        # Create the training view
-        TrainingView(self, "training").create_view(id_column, holdout_ids)
+        # Create a NEW training view
+        TrainingView(self).create_view(id_column, holdout_ids)
 
     def get_training_view_table(self) -> Union[str, None]:
         """Get the name of the training view for this FeatureSet

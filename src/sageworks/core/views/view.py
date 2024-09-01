@@ -49,14 +49,6 @@ class View:
         self.base_table = self.data_source.get_table_name()
         self.view_table_name = self.table_name()
 
-        # Temp debug
-        """
-        if self.exists():
-            self.log.warning(f"View {self.view_table_name} exists...")
-        else:
-            self.log.warning(f"View {self.view_table_name} does not exist...")
-        """
-
         # Check if they turned off auto-creation
         self.auto_create = kwargs.get("auto_create", True)
         if self.auto_create and not self.exists():
@@ -164,6 +156,11 @@ class View:
         """Internal: Automatically create a view training, display, and computation views"""
         from sageworks.core.views import ColumnSubsetView, TrainingView
 
+        # First if we're going to auto-create, we need to make sure the data source exists
+        if not self.data_source.exists():
+            self.log.error(f"Data Source {self.data_source_name} does not exist...")
+            return
+
         # Create the view
         if self.view_name in ["display", "computation"]:
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source_name}...")
@@ -189,15 +186,14 @@ class View:
 
 if __name__ == "__main__":
     """Exercise the ViewManager Class"""
+
+    # See tests/views/views_tests.py for more examples
+
+    # SageWorks Imports
     from sageworks.api import DataSource, FeatureSet
 
     # Show trace calls
     logging.getLogger("sageworks").setLevel(logging.DEBUG)
-
-    # Force are refresh of the metadata for the views
-    # meta = Meta()
-    # meta.views_deep("sageworks", refresh=True)
-    # meta.views_deep("sagemaker_featurestore", refresh=True)
 
     # Grab the Display View for a DataSource
     data_source = DataSource("abalone_data")
@@ -227,37 +223,3 @@ if __name__ == "__main__":
 
     # Delete the display view
     display_view.delete()
-
-    """
-    display_view.ensure_exists()
-    # Create a Training View for a FeatureSet
-    fs = FeatureSet("test_features")
-    my_view = View(fs, ViewType.TRAINING)
-
-    # Pull the training data
-    df_train = my_view.pull_dataframe()
-    print(df_train["training"].value_counts())
-
-    # Now create a Training View with holdout ids
-    holdout_ids = [1, 2, 3]
-    my_view.set_training_holdouts("id", holdout_ids)
-
-    # Pull the training data
-    df_train = my_view.pull_dataframe()
-    print(df_train["training"].value_counts())
-
-    # Delete the training view
-    my_view.delete()
-
-    # Okay now create a training view FROM the computation view
-    my_view = View(fs, ViewType.COMPUTATION)
-    computation_table = my_view.table_name()
-    my_view.set_training_holdouts("id", holdout_ids, source_table=computation_table)
-
-    # Create a View for the Non-Existing DataSource
-    data_source = DataSource("non_existent_data")
-    try:
-        no_data_view = View(data_source)
-    except ValueError:
-        print("Expected Error == Good :)")
-    """

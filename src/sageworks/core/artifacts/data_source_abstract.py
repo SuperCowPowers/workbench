@@ -96,7 +96,10 @@ class DataSourceAbstract(Artifact):
             onboard (bool): Onboard the Data Source after setting the display columns (default: True)
         """
         self.log.important(f"Setting Display Columns...{display_columns}")
-        self.get_display_view().create_view(column_list=display_columns)
+        from sageworks.core.views import DisplayView
+
+        # Create a NEW display view
+        DisplayView(self).create_view(column_list=display_columns)
         if onboard:
             self.onboard()
 
