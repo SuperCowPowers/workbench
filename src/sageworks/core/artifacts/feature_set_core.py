@@ -72,9 +72,6 @@ class FeatureSetCore(Artifact):
         self._display_view = None
         self._training_view = None
 
-        # All other views are optional and get registered when created
-        self._registered_views = []
-
         # Call superclass post_init
         super().__post_init__()
 
@@ -373,6 +370,15 @@ class FeatureSetCore(Artifact):
         # Force a refresh of the AWS Metadata (to make sure references to deleted artifacts are gone)
         self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=True)
 
+    def list_views(self) -> list[str]:
+        """List all the views associated with this FeatureSet"""
+        from sageworks.core.views.view_utils import list_view_tables
+
+        view_tables = list_view_tables(self.data_source)
+        data_table_name = self.data_source.get_table_name()
+        # Each view will have the format: {data_table_name}_{view_name}
+        return [view_table.replace(data_table_name + "_", "") for view_table in view_tables]
+
     def ensure_feature_group_deleted(self, feature_group):
         status = "Deleting"
         while status == "Deleting":
@@ -411,6 +417,7 @@ class FeatureSetCore(Artifact):
 
     def delete_views(self):
         """Delete any views associated with this FeatureSet"""
+        from sageworks.core.views.view_utils import delete_views_and_supplemental_data
 
         # Delete the views
         if self._display_view:
@@ -419,10 +426,9 @@ class FeatureSetCore(Artifact):
         if self._training_view:
             self._training_view.delete()
             self._training_view = None
-        if self._registered_views:
-            for view in self._registered_views:
-                view.delete()
-            self._registered_views = []
+
+        # Now delete any other views or supplemental data tables
+        delete_views_and_supplemental_data(self.data_source)
 
     def descriptive_stats(self, recompute: bool = False) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource

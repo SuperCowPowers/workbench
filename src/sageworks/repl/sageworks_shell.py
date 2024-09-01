@@ -221,8 +221,12 @@ class SageWorksShell:
         self.commands["View"] = importlib.import_module("sageworks.core.views.view").View
         self.commands["DisplayView"] = importlib.import_module("sageworks.core.views.display_view").DisplayView
         self.commands["TrainingView"] = importlib.import_module("sageworks.core.views.training_view").TrainingView
-        self.commands["ComputationView"] = importlib.import_module("sageworks.core.views.computation_view").ComputationView
-        self.commands["DataQualityView"] = importlib.import_module("sageworks.core.views.data_quality_view").DataQualityView
+        self.commands["ComputationView"] = importlib.import_module(
+            "sageworks.core.views.computation_view"
+        ).ComputationView
+        self.commands["DataQualityView"] = importlib.import_module(
+            "sageworks.core.views.data_quality_view"
+        ).DataQualityView
 
         # We're going to include these classes/imports later
         # self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline
