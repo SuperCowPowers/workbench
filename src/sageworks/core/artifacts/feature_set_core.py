@@ -415,9 +415,10 @@ class FeatureSetCore(Artifact):
         if self._training_view:
             self._training_view.delete()
             self._training_view = None
-        if self._data_quality_view:
-            self._data_quality_view.delete()
-            self._data_quality_view = None
+        if self._registered_views:
+            for view in self._registered_views:
+                view.delete()
+            self._registered_views = []
 
     def descriptive_stats(self, recompute: bool = False) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource
