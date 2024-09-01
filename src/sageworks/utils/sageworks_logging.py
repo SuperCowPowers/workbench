@@ -73,7 +73,7 @@ logging.Logger.monitor = monitor
 # Define a ColoredFormatter
 class ColoredFormatter(logging.Formatter):
     COLORS_DARK_THEME = {
-        "DEBUG": "\x1b[38;5;245m",  # LightGrey
+        "DEBUG": "\x1b[38;5;60m",  # "DarkGrey"
         "TRACE": "\x1b[38;5;141m",  # LightPurple
         "INFO": "\x1b[38;5;69m",  # LightBlue
         "IMPORTANT": "\x1b[38;5;113m",  # LightGreen

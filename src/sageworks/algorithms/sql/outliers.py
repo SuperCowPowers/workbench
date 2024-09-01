@@ -185,6 +185,12 @@ class Outliers:
 
             column_outlier_dfs.extend([low_df, high_df])
 
+        # If there are no outliers, return the original DataFrame with an empty 'outlier_group' column
+        if not column_outlier_dfs:
+            log.critical("No outliers found in the data source.. probably something is wrong")
+            return outlier_df.assign(outlier_group="")
+
+        # Concatenate the DataFrames and return
         return pd.concat(column_outlier_dfs, ignore_index=True)
 
     @staticmethod
@@ -207,11 +213,10 @@ class Outliers:
             else:
                 return group.nlargest(n, col)
 
-        # Group by 'outlier_group' and apply the helper function to get top N extreme values
+        # Group by 'outlier_group' and apply the helper function, explicitly selecting columns
         top_outliers = outlier_df.groupby("outlier_group", group_keys=False).apply(
             get_extreme_values, include_groups=True
         )
-
         return top_outliers.reset_index(drop=True)
 
 

@@ -383,9 +383,9 @@ class PandasToFeatures(Transform):
         if rows == expected_rows:
             self.log.important(f"Success: Reached Expected Rows ({rows} rows)...")
         else:
-            self.log.warning(
-                f"Did not reach expected rows ({rows}/{expected_rows}) but we're not sweating the small stuff..."
-            )
+            msg = f"Did not reach expected rows ({rows}/{expected_rows})...(probably AWS lag)"
+            self.log.warning(msg)
+            self.log.monitor(msg)
 
 
 if __name__ == "__main__":

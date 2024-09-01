@@ -167,7 +167,7 @@ class SageWorksShell:
         Returns:
             bool: True if AWS Account is set up correctly, False otherwise
         """
-        cprint("yellow", "Checking AWS Account Connection...")
+        cprint("lightgreen", "Checking AWS Account Connection...")
         try:
             try:
                 aws_clamp = importlib.import_module("sageworks.aws_service_broker.aws_account_clamp").AWSAccountClamp()
@@ -219,13 +219,8 @@ class SageWorksShell:
         ).PandasToFeatures
         self.commands["Meta"] = importlib.import_module("sageworks.api.meta").Meta
         self.commands["View"] = importlib.import_module("sageworks.core.views.view").View
-        self.commands["ViewType"] = importlib.import_module("sageworks.core.views.view").ViewType
         self.commands["DisplayView"] = importlib.import_module("sageworks.core.views.display_view").DisplayView
-        self.commands["IdentityView"] = importlib.import_module("sageworks.core.views.identity_view").IdentityView
         self.commands["TrainingView"] = importlib.import_module("sageworks.core.views.training_view").TrainingView
-        self.commands["DataQualityView"] = importlib.import_module(
-            "sageworks.core.views.data_quality_view"
-        ).DataQualityView
 
         # We're going to include these classes/imports later
         # self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline

@@ -96,15 +96,18 @@ class DataSourceAbstract(Artifact):
             onboard (bool): Onboard the Data Source after setting the display columns (default: True)
         """
         self.log.important(f"Setting Display Columns...{display_columns}")
-        self.get_display_view().create_view(column_list=display_columns)
+        from sageworks.core.views import DisplayView
+
+        # Create a NEW display view
+        DisplayView(self).create_view(column_list=display_columns)
         if onboard:
             self.onboard()
 
     def _create_display_view(self):
         """Internal: Create the Display View for this DataSource"""
-        from sageworks.core.views.display_view import DisplayView
+        from sageworks.core.views import View
 
-        self._display_view = DisplayView(self)
+        self._display_view = View(self, "display")
 
     def num_display_columns(self) -> int:
         """Return the number of columns for the display view"""

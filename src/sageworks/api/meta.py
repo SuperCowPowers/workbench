@@ -180,7 +180,8 @@ class Meta:
         Returns:
             dict: Detailed information about all the Data Sources in AWS
         """
-        self.log.monitor("DataSources Deep Dive...")
+        if refresh:
+            self.log.monitor("DataSources Deep Dive Force Refresh...")
         data = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=refresh)
 
         # Data Sources are in two databases, 'sageworks' and 'sagemaker_featurestore'
@@ -222,7 +223,7 @@ class Meta:
             refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
 
         Returns:
-            dict: Detailed information about the data source (or None if not found)
+            dict: Detailed information about the view (or None if not found)
         """
         data = self.views_deep(database=database, refresh=refresh)
         return data.get(view_name)
@@ -237,6 +238,8 @@ class Meta:
         Returns:
             dict:  Detailed information about all the Views in AWS
         """
+        if refresh:
+            self.log.monitor("Views Deep Dive Force Refresh...")
         data = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=refresh)
 
         # Views are in two databases, 'sageworks' and 'sagemaker_featurestore'
@@ -298,7 +301,8 @@ class Meta:
         Returns:
             dict: A summary of the Feature Sets in AWS
         """
-        self.log.monitor("FeatureSets Deep Dive...")
+        if refresh:
+            self.log.monitor("FeatureSets Deep Dive Force Refresh...")
         return self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=refresh)
 
     def models(self, refresh: bool = False) -> pd.DataFrame:
@@ -367,7 +371,8 @@ class Meta:
         Returns:
             dict: A summary of the Models in AWS
         """
-        self.log.monitor("Models Deep Dive...")
+        if refresh:
+            self.log.monitor("Models Deep Dive Force Refresh...")
         return self.aws_broker.get_metadata(ServiceCategory.MODELS, force_refresh=refresh)
 
     def endpoints(self, refresh: bool = False) -> pd.DataFrame:
@@ -416,7 +421,8 @@ class Meta:
         Returns:
             dict: A summary of the Endpoints in AWS
         """
-        self.log.monitor("Endpoints Deep Dive...")
+        if refresh:
+            self.log.monitor("Endpoints Deep Dive Force Refresh...")
         return self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS, force_refresh=refresh)
 
     def pipelines(self, refresh: bool = False) -> pd.DataFrame:
