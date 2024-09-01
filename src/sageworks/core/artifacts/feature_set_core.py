@@ -156,18 +156,18 @@ class FeatureSetCore(Artifact):
 
     def get_display_view(self):
         """Get the Display View for this FeatureSet"""
-        from sageworks.core.views import DisplayView
+        from sageworks.core.views import View
 
         if self._display_view is None:
-            self._display_view = DisplayView(self)
+            self._display_view = View(self, "display")
         return self._display_view
 
     def get_training_view(self):
         """Get the Training View for this FeatureSet"""
-        from sageworks.core.views import TrainingView
+        from sageworks.core.views import View
 
         if self._training_view is None:
-            self._training_view = TrainingView(self)
+            self._training_view = View(self, "training")
         return self._training_view
 
     def get_display_columns(self) -> list[str]:
