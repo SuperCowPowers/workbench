@@ -94,30 +94,30 @@ class MDQView(CreateView):
             outlier_df=self.data_source.outliers(),
             categorical_target=categorical_target,
         )
-        dq_df = row_tagger.tag_rows()
+        mdq_df = row_tagger.tag_rows()
 
         # HACK: These are the columns that are being added to the dataframe
         dq_columns = ["data_quality_tags", "data_quality"]
-        dq_df = dq_df.drop(columns=dq_columns, errors="ignore")
+        mdq_df = mdq_df.drop(columns=dq_columns, errors="ignore")
 
         # We're going to rename the tags column to data_quality_tags
-        dq_df.rename(columns={"tags": "data_quality_tags"}, inplace=True)
+        mdq_df.rename(columns={"tags": "data_quality_tags"}, inplace=True)
 
         # We're going to compute a data_quality score based on the tags.
         # Specific/Domain specific logic can be added here.
         # If 'coincident' is in the tags, then the data_quality score is 0.0
         # If 'htg' is in the tags, then the data_quality score is 0.5
         # Else there's no bad tags so the data_quality score is 1.0
-        dq_df["data_quality"] = dq_df["data_quality_tags"].apply(
+        mdq_df["data_quality"] = mdq_df["data_quality_tags"].apply(
             lambda tags: 0.0 if "coincident" in tags else 0.5 if "htg" in tags else 1.0
         )
 
         # Just want to keep the new data quality columns
-        dq_df = dq_df[dq_columns + [id_column]]
+        mdq_df = mdq_df[dq_columns + [id_column]]
 
-        # Create the data_quality supplemental table
-        data_quality_table = f"_{source_table}_data_quality"
-        dataframe_to_table(self.data_source, dq_df, data_quality_table)
+        # Create the Model Data Quality supplemental table
+        mdq_table = f"_{source_table}_{self.view_name}"
+        dataframe_to_table(self.data_source, mdq_df, mdq_table)
 
         # Convert the list of dq_columns into a comma-separated string
         dq_columns_str = ", ".join([f"B.{col}" for col in dq_columns])
@@ -130,7 +130,7 @@ class MDQView(CreateView):
         CREATE OR REPLACE VIEW {self.view_table_name} AS
         SELECT {source_columns_str}, {dq_columns_str}
         FROM {source_table} A
-        LEFT JOIN {data_quality_table} B
+        LEFT JOIN {mdq_table} B
         ON A.{id_column} = B.{id_column}
         """
 
@@ -148,10 +148,8 @@ if __name__ == "__main__":
     # Get the FeatureSet
     fs = FeatureSet("abalone_features")
 
-    # Get the target and feature columns
+    # Grab the Model
     m = Model("abalone-regression")
-    target_column = m.target()
-    feature_columns = m.features()
 
     # Create a MDQView
     mdq_view = MDQView(fs).create_view("id", model=m)
