@@ -12,64 +12,61 @@ from sageworks.algorithms.dataframe.row_tagger import RowTagger
 
 
 class MDQView(CreateView):
-    """MDQView Class: A View that computes various data_quality metrics"""
+    """MDQView Class: A View that computes various model data quality metrics"""
 
-    def __init__(self, artifact: Union[DataSource, FeatureSet]):
-        """Initialize the MDQView
+    def __init__(self):
+        """Initialize the Model Data Quality View"""
+        super().__init__()
+
+    def get_view_name(self) -> str:
+        """Get the name of the view"""
+        return "mdq"
+
+    def create_view_impl(self, data_source: DataSource, id_column: str, model: Model) -> Union[View, None]:
+        """Create a Model Data Quality View: A View that computes various model data quality metrics
 
         Args:
-            artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
-        """
-        super().__init__(artifact, "mdq")
-
-    def create_view(self, id_column: str, model: Model, source_table: str = None) -> Union[View, None]:
-        """Create a Data Quality View: A View that computes various data_quality metrics
-
-        Args:
+            data_source (DataSource): The SageWorks DataSource object
             id_column (str): The name of the id column (must be defined for join logic)
             model (Model): The Model object to use for the target and features
-            source_table (str, optional): The table/view to create the view from. Defaults to data_source base table.
 
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)
         """
         self.log.important(f"Creating Model Data Quality View {self.view_table_name}...")
 
-        # Get the source_table to create the view from
-        source_table = source_table if source_table else self.base_table
-
         # Get the target and feature columns
         target = model.target()
         features = model.features()
 
         # Check the number of rows in the source_table, if greater than 1M, then give an error and return
-        row_count = self.data_source.num_rows()
+        row_count = data_source.num_rows()
         if row_count > 1_000_000:
             self.log.error(
-                f"Data Quality View cannot be created on more than 1M rows. {source_table} has {row_count} rows."
+                f"Data Quality View cannot be created on more than 1M rows. {self.source_table} has {row_count} rows."
             )
             return None
 
         # Drop any columns generated from AWS
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-        source_table_columns = get_column_list(self.data_source, source_table)
+        source_table_columns = get_column_list(data_source, self.source_table)
         column_list = [col for col in source_table_columns if col not in aws_cols]
 
         # Enclose each column name in double quotes
         sql_columns = ", ".join([f'"{column}"' for column in column_list])
 
         # Pull in the data from the source_table
-        query = f"SELECT {sql_columns} FROM {source_table}"
-        df = self.data_source.query(query)
+        query = f"SELECT {sql_columns} FROM {self.source_table}"
+        df = data_source.query(query)
 
         # Check if the id_column exists in the source_table
         if id_column not in df.columns:
-            self.log.error(f"id_column {id_column} not found in {source_table}. Cannot create Data Quality View.")
+            self.log.error(f"id_column {id_column} not found in {self.source_table}. Cannot create Data Quality View.")
             return None
 
         # Check if the target column exists in the source_table
         if target not in df.columns:
-            self.log.error(f"target column {target} not found in {source_table}. Cannot create Data Quality View.")
+            self.log.error(f"target column {target} not found in {self.source_table}. Cannot create Data Quality View.")
             return None
 
         # Check the type of the target column is categorical (not numeric)
@@ -79,7 +76,7 @@ class MDQView(CreateView):
         for feature in features:
             if feature not in df.columns:
                 self.log.error(
-                    f"feature column {feature} not found in {source_table}. Cannot create Data Quality View."
+                    f"feature column {feature} not found in {self.source_table}. Cannot create Data Quality View."
                 )
                 return None
 
@@ -91,7 +88,7 @@ class MDQView(CreateView):
             target_column=target,
             within_dist=0.25,
             min_target_diff=1.0,
-            outlier_df=self.data_source.outliers(),
+            outlier_df=data_source.outliers(),
             categorical_target=categorical_target,
         )
         mdq_df = row_tagger.tag_rows()
@@ -116,8 +113,8 @@ class MDQView(CreateView):
         mdq_df = mdq_df[dq_columns + [id_column]]
 
         # Create the Model Data Quality supplemental table
-        mdq_table = f"_{source_table}_{self.view_name}"
-        dataframe_to_table(self.data_source, mdq_df, mdq_table)
+        mdq_table = f"_{self.base_table}_{self.view_name}"
+        dataframe_to_table(data_source, mdq_df, mdq_table)
 
         # Convert the list of dq_columns into a comma-separated string
         dq_columns_str = ", ".join([f"B.{col}" for col in dq_columns])
@@ -129,16 +126,16 @@ class MDQView(CreateView):
         create_view_query = f"""
         CREATE OR REPLACE VIEW {self.view_table_name} AS
         SELECT {source_columns_str}, {dq_columns_str}
-        FROM {source_table} A
+        FROM {self.source_table} A
         LEFT JOIN {mdq_table} B
         ON A.{id_column} = B.{id_column}
         """
 
         # Execute the CREATE VIEW query
-        self.data_source.execute_statement(create_view_query)
+        data_source.execute_statement(create_view_query)
 
         # Return the View
-        return View(self.data_source, self.view_name, auto_create=False)
+        return View(data_source, self.view_name, auto_create=False)
 
 
 if __name__ == "__main__":
@@ -149,10 +146,10 @@ if __name__ == "__main__":
     fs = FeatureSet("abalone_features")
 
     # Grab the Model
-    m = Model("abalone-regression")
+    model = Model("abalone-regression")
 
     # Create a MDQView
-    mdq_view = MDQView(fs).create_view("id", model=m)
+    mdq_view = MDQView().create_view(fs, id_column="id", model=model)
 
     # Pull the data quality dataframe
     my_df = mdq_view.pull_dataframe(head=True)

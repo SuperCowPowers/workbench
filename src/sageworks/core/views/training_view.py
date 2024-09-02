@@ -12,35 +12,34 @@ from sageworks.core.views.view_utils import get_column_list
 class TrainingView(CreateView):
     """TrainingView Class: A View with an additional training column that marks holdout ids"""
 
-    def __init__(self, artifact: Union[DataSource, FeatureSet]):
-        """Initialize the TrainingView
+    def __init__(self):
+        """Initialize the TrainingView"""
+        super().__init__()
 
-        Args:
-           artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
-        """
-        super().__init__(artifact, "training")
+    def get_view_name(self) -> str:
+        """Get the name of the view"""
+        return "training"
 
-    def create_view(
-        self, id_column: str = None, holdout_ids: Union[list[str], None] = None, source_table: str = None
+    def create_view_impl(
+        self,
+        data_source: DataSource,
+        id_column: str = None,
+        holdout_ids: Union[list[str], None] = None,
     ) -> Union[View, None]:
         """Create a training view that marks hold out ids
 
         Args:
+            data_source (DataSource): The SageWorks DataSource object
             id_column (str, optional): The name of the id column (default is None)
             holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None.
-            source_table (str, optional): The table/view to create the view from. Defaults to base table.
 
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)
         """
-        self.log.important(f"Creating Training View {self.view_table_name}...")
-
-        # Set the source_table to create the view from
-        source_table = source_table if source_table else self.base_table
 
         # Drop any columns generated from AWS
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-        source_table_columns = get_column_list(self.data_source, source_table)
+        source_table_columns = get_column_list(data_source, self.source_table)
         column_list = [col for col in source_table_columns if col not in aws_cols]
 
         # Sanity check on the id column
@@ -58,8 +57,8 @@ class TrainingView(CreateView):
 
         # If we don't have holdout ids, create a default training view
         if not holdout_ids:
-            self._default_training_view(id_column)
-            return View(self.data_source, self.view_name, auto_create=False)
+            self._default_training_view(data_source, id_column)
+            return View(data_source, self.view_name, auto_create=False)
 
         # Format the list of hold out ids for SQL IN clause
         if holdout_ids and all(isinstance(id, str) for id in holdout_ids):
@@ -77,27 +76,28 @@ class TrainingView(CreateView):
             WHEN {id_column} IN ({formatted_holdout_ids}) THEN 0
             ELSE 1
         END AS training
-        FROM {source_table}
+        FROM {self.source_table}
         """
 
         # Execute the CREATE VIEW query
-        self.data_source.execute_statement(create_view_query)
+        data_source.execute_statement(create_view_query)
 
         # Return the View
-        return View(self.data_source, self.view_name, auto_create=False)
+        return View(data_source, self.view_name, auto_create=False)
 
     # This is an internal method that's used to create a default training view
-    def _default_training_view(self, id_column: str):
+    def _default_training_view(self, data_source: DataSource, id_column: str):
         """Create a default view in Athena that assigns roughly 80% of the data to training
 
         Args:
+            data_source (DataSource): The SageWorks DataSource object
             id_column (str): The name of the id column
         """
         self.log.important(f"Creating default Training View {self.view_table_name}...")
 
         # Drop any columns generated from AWS
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-        column_list = [col for col in self.data_source.column_names() if col not in aws_cols]
+        column_list = [col for col in data_source.column_names() if col not in aws_cols]
 
         # Enclose each column name in double quotes
         sql_columns = ", ".join([f'"{column}"' for column in column_list])
@@ -114,7 +114,7 @@ class TrainingView(CreateView):
         """
 
         # Execute the CREATE VIEW query
-        self.data_source.execute_statement(create_view_query)
+        data_source.execute_statement(create_view_query)
 
 
 if __name__ == "__main__":
@@ -125,22 +125,24 @@ if __name__ == "__main__":
     fs = FeatureSet("test_features")
 
     # Delete the existing training view
-    training_view = TrainingView(fs)
+    training_view = TrainingView().create_view(fs)
     training_view.delete()
 
-    # Create a TrainingView
-    make_view = TrainingView(fs)
-    training_view = make_view.create_view()
+    # Create a default TrainingView
+    make_view = TrainingView()
+    training_view = make_view.create_view(fs)
     print(training_view)
 
     # Pull the training data
     df = training_view.pull_dataframe()
     print(df.head())
+    print(df["training"].value_counts())
 
     # Create a TrainingView with holdout ids
     my_holdout_ids = list(range(10))
-    training_view = make_view.create_view(id_column="id", holdout_ids=my_holdout_ids)
+    training_view = make_view.create_view(fs, id_column="id", holdout_ids=my_holdout_ids)
 
     # Pull the training data
     df = training_view.pull_dataframe()
     print(df.head())
+    print(df["training"].value_counts())

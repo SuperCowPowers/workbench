@@ -8,7 +8,6 @@ import awswrangler as wr
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.api import Meta
 from sageworks.core.views.view import View
 
 
@@ -17,48 +16,74 @@ class CreateView(ABC):
 
     # Class attributes
     log = logging.getLogger("sageworks")
-    meta = Meta()
 
-    def __init__(self, artifact: Union[DataSource, FeatureSet], view_name: str):
-        """CreateView Constructor: Retrieve a CreateView for the given artifact
+    def __init__(self):
+        """CreateView base class constructor"""
+        self.view_name = None
+        self.is_feature_set = False
+        self.auto_id_column = None
+        self._data_source = None
+        self.database = None
+        self.base_table = None
+        self.source_table = None
+        self.view_table_name = None
+
+    def pre_create_view(self, artifact: Union[DataSource, FeatureSet],  source_table: str = None):
+        """Pre-Create View: Perform any pre-creation steps before creating the view
 
         Args:
-            artifact (Union[DataSource, FeatureSet]): A DataSource or FeatureSet object
-            view_name (str): The name of the view to create (e.g. "training")
+            artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
+            source_table (str, optional): The table/view to create the view from. Defaults to None
         """
-
         # Set the view name
-        self.view_name = view_name
+        self.view_name = self.get_view_name()
 
         # Is this a DataSource or a FeatureSet?
         self.is_feature_set = isinstance(artifact, FeatureSetCore)
         self.auto_id_column = artifact.record_id if self.is_feature_set else None
 
         # Get the data_source from the artifact
-        self.data_source = artifact.data_source if self.is_feature_set else artifact
-        self.data_source_name = artifact.uuid
-        self.database = self.data_source.get_database()
+        self._data_source = artifact.data_source if self.is_feature_set else artifact
+        self.database = self._data_source.get_database()
 
-        # Set our view table name
-        self.base_table = self.data_source.get_table_name()
-        self.view_table_name = self.table_name()
+        # Set our table names (base, source, and view)
+        self.base_table = self._data_source.get_table_name()
+        self.source_table = source_table if source_table else self.base_table
+        self.view_table_name = f"{self.base_table}_{self.view_name}"
 
-    def table_name(self) -> str:
-        """Construct the view table name for the given view type
+    def create_view(self, artifact: Union[DataSource, FeatureSet], **kwargs) -> Union[View, None]:
+        """Create the view, each subclass must implement this method
+
+        Args:
+            artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
+            **kwargs: Additional keyword arguments that are specific to the view type
 
         Returns:
-            str: The view table name
+            Union[View, None]: The created View object (or None if failed to create the view)
         """
-        if self.view_name == "base":
-            return self.base_table
-        return f"{self.base_table}_{self.view_name}"
+        # Pre-Create View
+        # FIXME: Put in logic for source_table
+        self.pre_create_view(artifact)
+
+        # Create the view
+        self.log.important(f"Creating {self.view_name} view {self.view_table_name}...")
+        return self.create_view_impl(self._data_source, **kwargs)
 
     @abstractmethod
-    def create_view(self, source_table: str = None, **kwargs) -> Union[View, None]:
+    def get_view_name(self) -> str:
+        """Abstract Method: Get the name of the view
+
+        Returns:
+            str: The name of the view
+        """
+        pass
+
+    @abstractmethod
+    def create_view_impl(self, data_source: DataSource, **kwargs) -> Union[View, None]:
         """Abstract Method: Create the view, each subclass must implement this method
 
         Args:
-            source_table (str, optional): The table/view to create the view from. Defaults to data_source base table.
+            data_source (DataSource): A SageWorks DataSource object
             **kwargs: Additional keyword arguments that are specific to the view type
 
         Returns:

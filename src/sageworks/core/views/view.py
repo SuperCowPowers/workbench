@@ -42,7 +42,6 @@ class View:
 
         # Get the data_source from the artifact
         self.data_source = artifact.data_source if self.is_feature_set else artifact
-        self.data_source_name = artifact.uuid
         self.database = self.data_source.get_database()
 
         # Set our view table name
@@ -55,7 +54,7 @@ class View:
             if self.view_name in ["training", "display", "computation"]:
                 self._auto_create_view()
             else:
-                self.log.error(f"View {self.view_name} for {self.data_source_name} does not exist...")
+                self.log.error(f"View {self.view_name} for {self.data_source.uuid} does not exist...")
 
     def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
         """Pull a DataFrame based on the view type
@@ -158,16 +157,16 @@ class View:
 
         # First if we're going to auto-create, we need to make sure the data source exists
         if not self.data_source.exists():
-            self.log.error(f"Data Source {self.data_source_name} does not exist...")
+            self.log.error(f"Data Source {self.data_source.uuid} does not exist...")
             return
 
         # Create the view
         if self.view_name in ["display", "computation"]:
-            self.log.important(f"Auto creating View {self.view_name} for {self.data_source_name}...")
+            self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
             self.auto_created = True
             ColumnSubsetView(self.data_source, self.view_name).create_view()
         elif self.view_name == "training":
-            self.log.important(f"Auto creating View {self.view_name} for {self.data_source_name}...")
+            self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
             self.auto_created = True
             TrainingView(self.data_source).create_view(self.auto_id_column)
         else:
@@ -179,9 +178,9 @@ class View:
         # FIXME: Revisit this later
         auto = ""  # (Auto-Created)" if self.auto_created else ""
         if self.is_feature_set:
-            return f'View: {self.database}:{self.view_table_name}{auto} for FeatureSet("{self.data_source_name}")'
+            return f'View: {self.database}:{self.view_table_name}{auto} for FeatureSet("{self.data_source.uuid}")'
         else:
-            return f'View: {self.database}:{self.view_table_name}{auto} for DataSource("{self.data_source_name}")'
+            return f'View: {self.database}:{self.view_table_name}{auto} for DataSource("{self.data_source.uuid}")'
 
 
 if __name__ == "__main__":
