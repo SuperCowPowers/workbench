@@ -28,7 +28,7 @@ class CreateView(ABC):
         self.source_table = None
         self.view_table_name = None
 
-    def pre_create_view(self, artifact: Union[DataSource, FeatureSet],  source_table: str = None):
+    def pre_create_view(self, artifact: Union[DataSource, FeatureSet], source_table: str = None):
         """Pre-Create View: Perform any pre-creation steps before creating the view
 
         Args:

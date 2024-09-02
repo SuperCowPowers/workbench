@@ -3,7 +3,7 @@
 from typing import Union
 
 # SageWorks Imports
-from sageworks.api import DataSource, FeatureSet
+from sageworks.api import DataSource
 from sageworks.core.views.create_view import CreateView
 from sageworks.core.views.view import View
 from sageworks.core.views.view_utils import get_column_list
