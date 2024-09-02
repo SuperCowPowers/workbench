@@ -172,7 +172,7 @@ class View:
         elif self.view_name == "training":
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
             self.auto_created = True
-            TrainingView().create_view(self.data_source, self.auto_id_column)
+            TrainingView().create_view(self.data_source, id_column=self.auto_id_column)
         else:
             self.log.error(f"Auto-Create for {self.view_name} not implemented yet...")
 

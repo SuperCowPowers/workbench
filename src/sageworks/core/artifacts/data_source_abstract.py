@@ -99,7 +99,7 @@ class DataSourceAbstract(Artifact):
         from sageworks.core.views import DisplayView
 
         # Create a NEW display view
-        DisplayView(self).create_view(column_list=display_columns)
+        DisplayView().create_view(self, column_list=display_columns)
         if onboard:
             self.onboard()
 
