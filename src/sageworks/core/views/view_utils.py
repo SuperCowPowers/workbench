@@ -168,3 +168,4 @@ if __name__ == "__main__":
     # Test dataframe_to_table
     df = pd.DataFrame({"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]})
     dataframe_to_table(my_data_source, df, "test_table")
+    _delete_table(my_data_source, "test_table")

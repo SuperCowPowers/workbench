@@ -54,12 +54,15 @@ class CreateView(ABC):
         return f"{self.base_table}_{self.view_name}"
 
     @abstractmethod
-    def create_view(self, source_table: str = None, **kwargs) -> View:
+    def create_view(self, source_table: str = None, **kwargs) -> Union[View, None]:
         """Abstract Method: Create the view, each subclass must implement this method
 
         Args:
             source_table (str, optional): The table/view to create the view from. Defaults to data_source base table.
             **kwargs: Additional keyword arguments that are specific to the view type
+
+        Returns:
+            Union[View, None]: The created View object (or None if failed to create the view)
         """
         pass
 

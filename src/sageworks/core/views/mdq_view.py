@@ -4,7 +4,7 @@ from typing import Union
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.api import DataSource, FeatureSet
+from sageworks.api import DataSource, FeatureSet, Model
 from sageworks.core.views.view import View
 from sageworks.core.views.create_view import CreateView
 from sageworks.core.views.view_utils import dataframe_to_table, get_column_list
@@ -20,16 +20,15 @@ class MDQView(CreateView):
         Args:
             artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
         """
-        super().__init__(artifact, "data_quality")
+        super().__init__(artifact, "mdq")
 
-    def create_view(self, id_column: str, target: str, features: list, source_table: str = None) -> Union[View, None]:
+    def create_view(self, id_column: str, model: Model, source_table: str = None) -> Union[View, None]:
         """Create a Data Quality View: A View that computes various data_quality metrics
 
         Args:
             id_column (str): The name of the id column (must be defined for join logic)
-            target (str): The name of the target column
-            features (list): The list of feature columns
-            source_table (str, optional): The table/view to create the view from. Defaults to base table.
+            model (Model): The Model object to use for the target and features
+            source_table (str, optional): The table/view to create the view from. Defaults to data_source base table.
 
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)
@@ -38,6 +37,10 @@ class MDQView(CreateView):
 
         # Get the source_table to create the view from
         source_table = source_table if source_table else self.base_table
+
+        # Get the target and feature columns
+        target = model.target()
+        features = model.features()
 
         # Check the number of rows in the source_table, if greater than 1M, then give an error and return
         row_count = self.data_source.num_rows()
@@ -151,12 +154,11 @@ if __name__ == "__main__":
     feature_columns = m.features()
 
     # Create a MDQView
-    make_view = MDQView(fs)
-    dq_view = make_view.create_view("id", target_column, feature_columns)
+    mdq_view = MDQView(fs).create_view("id", model=m)
 
     # Pull the data quality dataframe
-    df = dq_view.pull_dataframe(head=True)
-    print(df)
+    my_df = mdq_view.pull_dataframe(head=True)
+    print(my_df)
 
     # Delete the default data_quality view
-    dq_view.delete()
+    mdq_view.delete()
