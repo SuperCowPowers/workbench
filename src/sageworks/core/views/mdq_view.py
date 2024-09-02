@@ -9,6 +9,7 @@ from sageworks.core.views.view import View
 from sageworks.core.views.create_view import CreateView
 from sageworks.core.views.view_utils import dataframe_to_table, get_column_list
 from sageworks.algorithms.dataframe.row_tagger import RowTagger
+from sageworks.algorithms.dataframe.residuals_calculator import ResidualsCalculator
 
 
 class MDQView(CreateView):
@@ -61,12 +62,12 @@ class MDQView(CreateView):
 
         # Check if the id_column exists in the source_table
         if id_column not in df.columns:
-            self.log.error(f"id_column {id_column} not found in {self.source_table}. Cannot create Data Quality View.")
+            self.log.error(f"id_column {id_column} not found in {self.source_table}. Cannot create Model Data Quality View.")
             return None
 
         # Check if the target column exists in the source_table
         if target not in df.columns:
-            self.log.error(f"target column {target} not found in {self.source_table}. Cannot create Data Quality View.")
+            self.log.error(f"target column {target} not found in {self.source_table}. Cannot create Model Data Quality View.")
             return None
 
         # Check the type of the target column is categorical (not numeric)
@@ -76,7 +77,7 @@ class MDQView(CreateView):
         for feature in features:
             if feature not in df.columns:
                 self.log.error(
-                    f"feature column {feature} not found in {self.source_table}. Cannot create Data Quality View."
+                    f"feature column {feature} not found in {self.source_table}. Cannot create Model Data Quality View."
                 )
                 return None
 
@@ -93,7 +94,7 @@ class MDQView(CreateView):
         )
         mdq_df = row_tagger.tag_rows()
 
-        # HACK: These are the columns that are being added to the dataframe
+        # HACK: Drop columns that have the same name as the ones we're about to add
         dq_columns = ["data_quality_tags", "data_quality"]
         mdq_df = mdq_df.drop(columns=dq_columns, errors="ignore")
 
@@ -112,20 +113,35 @@ class MDQView(CreateView):
         # Just want to keep the new data quality columns
         mdq_df = mdq_df[dq_columns + [id_column]]
 
-        # Create the Model Data Quality supplemental table
+        # Spin up the ResidualsCalculator
+        residuals_calculator = ResidualsCalculator(n_splits=5, random_state=42)
+        residuals_df = residuals_calculator.fit_transform(df[features], df[target])
+
+        # Fit/Transform will give us the original columns plus the residuals columns
+        # Let's just keep the residuals columns and the id_column
+        orig_columns = df.columns
+        residuals_columns = [col for col in residuals_df.columns if col not in orig_columns]
+        residuals_df = residuals_df[residuals_columns]
+        residuals_df[id_column] = df[id_column]
+
+        # Merge the residual_df with the mdq_df (we'll keep all the rows in the mdf_df, and just one id_column)
+        mdq_df = mdq_df.merge(residuals_df, on=id_column, how="left")
+
+        # Create the Model Data Quality supplemental data table
         mdq_table = f"_{self.base_table}_{self.view_name}"
         dataframe_to_table(data_source, mdq_df, mdq_table)
 
-        # Convert the list of dq_columns into a comma-separated string
-        dq_columns_str = ", ".join([f"B.{col}" for col in dq_columns])
+        # Convert the list of mdq_df.columns into a comma-separated string
+        mdq_df_columns_without_id = [col for col in mdq_df.columns if col != id_column]
+        mdq_df_columns_str = ", ".join([f"B.{col}" for col in mdq_df_columns_without_id])
 
         # List the columns from A that are not in B to avoid overlap
-        source_columns_str = ", ".join([f"A.{col}" for col in df.columns if col not in dq_columns])
+        source_columns_str = ", ".join([f"A.{col}" for col in df.columns if col not in mdq_df_columns_without_id])
 
         # Construct the CREATE VIEW query
         create_view_query = f"""
         CREATE OR REPLACE VIEW {self.view_table_name} AS
-        SELECT {source_columns_str}, {dq_columns_str}
+        SELECT {source_columns_str}, {mdq_df_columns_str}
         FROM {self.source_table} A
         LEFT JOIN {mdq_table} B
         ON A.{id_column} = B.{id_column}
@@ -156,4 +172,4 @@ if __name__ == "__main__":
     print(my_df)
 
     # Delete the default data_quality view
-    mdq_view.delete()
+    # mdq_view.delete()
