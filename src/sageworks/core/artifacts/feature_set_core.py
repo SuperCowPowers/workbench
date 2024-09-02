@@ -404,7 +404,7 @@ class FeatureSetCore(Artifact):
         from sageworks.core.views import TrainingView
 
         # Create a NEW training view
-        TrainingView(self).create_view(id_column, holdout_ids)
+        TrainingView().create_view(self, id_column, holdout_ids)
 
     def get_training_view_table(self) -> Union[str, None]:
         """Get the name of the training view for this FeatureSet
