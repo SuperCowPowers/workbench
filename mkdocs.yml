@@ -60,6 +60,7 @@ nav:
     - AWS Access Management: aws_setup/aws_access_management.md
   - Release Notes: 
     - 0.8.6:  release_notes/0_8_6.md
+    - 0.8.8:  release_notes/0_8_8.md
   - Admin: 
     - PyPI Release:  admin/pypi_release.md
     - Base Docker Push:  admin/base_docker_push.md
