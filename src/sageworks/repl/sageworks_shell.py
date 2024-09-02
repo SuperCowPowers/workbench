@@ -88,6 +88,9 @@ class SageWorksShell:
         config.TerminalInteractiveShell.highlighting_style = CustomPromptStyle
         self.shell = InteractiveShellEmbed(config=config, banner1="", exit_msg="Goodbye from SageWorks!")
 
+        # Set matplotlib to interactive mode
+        self.shell.run_line_magic("matplotlib", "auto")
+
         # Register our custom commands
         self.commands["help"] = self.help
         self.commands["docs"] = self.doc_browser
