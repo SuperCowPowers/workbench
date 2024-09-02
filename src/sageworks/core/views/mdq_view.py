@@ -1,4 +1,4 @@
-"""DataQualityView Class: A View that computes various data_quality metrics"""
+"""MDQView Class: A View that computes various data_quality metrics"""
 
 from typing import Union
 import pandas as pd
@@ -11,11 +11,11 @@ from sageworks.core.views.view_utils import dataframe_to_table, get_column_list
 from sageworks.algorithms.dataframe.row_tagger import RowTagger
 
 
-class DataQualityView(CreateView):
-    """DataQualityView Class: A View that computes various data_quality metrics"""
+class MDQView(CreateView):
+    """MDQView Class: A View that computes various data_quality metrics"""
 
     def __init__(self, artifact: Union[DataSource, FeatureSet]):
-        """Initialize the DataQualityView
+        """Initialize the MDQView
 
         Args:
             artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
@@ -34,7 +34,7 @@ class DataQualityView(CreateView):
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)
         """
-        self.log.important(f"Creating DataQuality View {self.view_table_name}...")
+        self.log.important(f"Creating Model Data Quality View {self.view_table_name}...")
 
         # Get the source_table to create the view from
         source_table = source_table if source_table else self.base_table
@@ -150,8 +150,8 @@ if __name__ == "__main__":
     target_column = m.target()
     feature_columns = m.features()
 
-    # Create a DataQualityView
-    make_view = DataQualityView(fs)
+    # Create a MDQView
+    make_view = MDQView(fs)
     dq_view = make_view.create_view("id", target_column, feature_columns)
 
     # Pull the data quality dataframe

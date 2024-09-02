@@ -1,4 +1,4 @@
-"""View: Read from a view (training, data_quality, etc) for DataSources and FeatureSets."""
+"""View: Read from a view (training, display, etc) for DataSources and FeatureSets."""
 
 import logging
 from typing import Union
@@ -12,7 +12,7 @@ from sageworks.api import Meta
 
 
 class View:
-    """View: Read from a view (training, data_quality, etc) for DataSources and FeatureSets.
+    """View: Read from a view (training, display, etc) for DataSources and FeatureSets.
 
     Common Usage:
         ```

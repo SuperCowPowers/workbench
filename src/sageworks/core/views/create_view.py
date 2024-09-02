@@ -1,4 +1,4 @@
-"""CreateView: An abstract base class for View Creation (training, data_quality, etc)"""
+"""CreateView: An abstract base class for View Creation (training, display, etc)"""
 
 import logging
 from typing import Union
@@ -13,7 +13,7 @@ from sageworks.core.views.view import View
 
 
 class CreateView(ABC):
-    """CreateView: An abstract base class for View Creation (training, data_quality, etc)"""
+    """CreateView: An abstract base class for View Creation (training, display, etc)"""
 
     # Class attributes
     log = logging.getLogger("sageworks")

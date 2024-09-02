@@ -7,14 +7,14 @@ These class provide database views for both DataSources and Feature Sets
 - TrainingView: A view with an additional training columns that marks holdout ids
 - DisplayView: A view that has a subset of columns for display purposes
 - ComputationView: A view that has a subset of columns for computation purposes
-- DataQualityView: A view includes various data quality metrics
+- MDQView: A view with a set of model data quality metrics
 """
 
 from .view import View
 from .display_view import DisplayView
 from .computation_view import ComputationView
 from .training_view import TrainingView
-from .data_quality_view import DataQualityView
+from .mdq_view import MDQView
 from .column_subset_view import ColumnSubsetView
 
-__all__ = ["View", "DisplayView", "ComputationView", "TrainingView", "DataQualityView", "ColumnSubsetView"]
+__all__ = ["View", "DisplayView", "ComputationView", "TrainingView", "MDQView", "ColumnSubsetView"]
