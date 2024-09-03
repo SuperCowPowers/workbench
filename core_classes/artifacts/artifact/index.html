@@ -2617,7 +2617,7 @@
 <a id="sageworks.core.artifacts.artifact"></a>
     <div class="doc doc-contents first">
 
-      <p>Artifact: Abstract Base Class for all Artifact classes in SageWorks.
+        <p>Artifact: Abstract Base Class for all Artifact classes in SageWorks.
 Artifacts simply reflect and aggregate one or more AWS Services</p>
 
 
@@ -2647,7 +2647,7 @@ Artifacts simply reflect and aggregate one or more AWS Services</p>
               Bases: <code><span title="abc.ABC">ABC</span></code></p>
 
 
-      <p>Artifact: Abstract Base Class for all Artifact classes in SageWorks</p>
+        <p>Artifact: Abstract Base Class for all Artifact classes in SageWorks</p>
 
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -3542,7 +3542,7 @@ Artifacts simply reflect and aggregate one or more AWS Services</p>
 
     <div class="doc doc-contents ">
 
-      <p>Initialize the Artifact Base Class</p>
+        <p>Initialize the Artifact Base Class</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3687,7 +3687,7 @@ Artifacts simply reflect and aggregate one or more AWS Services</p>
 
     <div class="doc doc-contents ">
 
-      <p>Artifact Post Initialization</p>
+        <p>Artifact Post Initialization</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -3749,7 +3749,7 @@ Artifacts simply reflect and aggregate one or more AWS Services</p>
 
     <div class="doc doc-contents ">
 
-      <p>String representation of this artifact</p>
+        <p>String representation of this artifact</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -3832,7 +3832,7 @@ Artifacts simply reflect and aggregate one or more AWS Services</p>
 
     <div class="doc doc-contents ">
 
-      <p>Add a tag for this artifact, ensuring no duplicates and maintaining order.
+        <p>Add a tag for this artifact, ensuring no duplicates and maintaining order.
 Args:
     tag (str): Tag to add for this artifact
     tag_type (str): Type of tag to add (user or health)</p>
@@ -3887,7 +3887,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>AWS ARN (Amazon Resource Name) for this artifact</p>
+        <p>AWS ARN (Amazon Resource Name) for this artifact</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -3919,7 +3919,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Get the full AWS metadata for this artifact</p>
+        <p>Get the full AWS metadata for this artifact</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -3951,7 +3951,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>AWS console/web interface for this artifact</p>
+        <p>AWS console/web interface for this artifact</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -3983,7 +3983,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Return the datetime when this artifact was created</p>
+        <p>Return the datetime when this artifact was created</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -4015,7 +4015,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Delete this artifact including all related AWS objects</p>
+        <p>Delete this artifact including all related AWS objects</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -4043,7 +4043,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Delete specific metadata from this artifact
+        <p>Delete specific metadata from this artifact
 Args:
     key_to_delete (str): Metadata key to delete</p>
 
@@ -4123,7 +4123,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Additional Details about this Artifact</p>
+        <p>Additional Details about this Artifact</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -4155,7 +4155,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Check if the ID adheres to the naming conventions for this Artifact.</p>
+        <p>Check if the ID adheres to the naming conventions for this Artifact.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4277,7 +4277,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Does the Artifact exist? Can we connect to it?</p>
+        <p>Does the Artifact exist? Can we connect to it?</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -4305,7 +4305,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Metadata we expect to see for this Artifact when it's ready
+        <p>Metadata we expect to see for this Artifact when it's ready
 Returns:
     list[str]: List of expected metadata keys</p>
 
@@ -4347,7 +4347,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Only allow letters and the specified delimiter, also lowercase the string</p>
+        <p>Only allow letters and the specified delimiter, also lowercase the string</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4463,7 +4463,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Get the input data for this artifact</p>
+        <p>Get the input data for this artifact</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -4489,7 +4489,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Get the owner of this artifact</p>
+        <p>Get the owner of this artifact</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -4515,7 +4515,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Get the status for this artifact</p>
+        <p>Get the status for this artifact</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -4541,7 +4541,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Get the tags for this artifact
+        <p>Get the tags for this artifact
 Args:
     tag_type (str): Type of tags to return (user or health)
 Returns:
@@ -4609,7 +4609,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Perform a health check on this artifact
+        <p>Perform a health check on this artifact
 Returns:
     list[str]: List of health issues</p>
 
@@ -4657,7 +4657,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Return the datetime when this artifact was last modified</p>
+        <p>Return the datetime when this artifact was last modified</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -4689,7 +4689,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Onboard this Artifact into SageWorks
+        <p>Onboard this Artifact into SageWorks
 Returns:
     bool: True if the Artifact was successfully onboarded, False otherwise</p>
 
@@ -4725,7 +4725,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Is the Artifact ready? Is initial setup complete and expected metadata populated?</p>
+        <p>Is the Artifact ready? Is initial setup complete and expected metadata populated?</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -4783,7 +4783,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Refresh the Artifact's metadata</p>
+        <p>Refresh the Artifact's metadata</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -4811,7 +4811,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Remove SageWorks specific metadata from this Artifact
+        <p>Remove SageWorks specific metadata from this Artifact
 Args:
     key_to_remove (str): The metadata key to remove
 Note:
@@ -4866,7 +4866,7 @@ Note:
 
     <div class="doc doc-contents ">
 
-      <p>Remove a tag from this artifact if it exists.
+        <p>Remove a tag from this artifact if it exists.
 Args:
     tag (str): Tag to remove from this artifact
     tag_type (str): Type of tag to remove (user or health)</p>
@@ -4917,7 +4917,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Get the SageWorks specific metadata for this Artifact
+        <p>Get the SageWorks specific metadata for this Artifact
 Note: This functionality will work for FeatureSets, Models, and Endpoints
       but not for DataSources/Graphs. DataSource/Graph classes need to override this method.</p>
 
@@ -4969,7 +4969,7 @@ Note: This functionality will work for FeatureSets, Models, and Endpoints
 
     <div class="doc doc-contents ">
 
-      <p>Set the input data for this artifact</p>
+        <p>Set the input data for this artifact</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4999,7 +4999,7 @@ Note: This functionality will work for FeatureSets, Models, and Endpoints
           </tr>
       </tbody>
     </table>
-      <p>Note:
+        <p>Note:
     This breaks the official provenance of the artifact, so use with caution.</p>
 
             <details class="quote">
@@ -5042,7 +5042,7 @@ Note: This functionality will work for FeatureSets, Models, and Endpoints
 
     <div class="doc doc-contents ">
 
-      <p>Set the owner of this artifact</p>
+        <p>Set the owner of this artifact</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -5105,7 +5105,7 @@ Note: This functionality will work for FeatureSets, Models, and Endpoints
 
     <div class="doc doc-contents ">
 
-      <p>Set the status for this artifact
+        <p>Set the status for this artifact
 Args:
     status (str): Status to set for this artifact</p>
 
@@ -5143,7 +5143,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Return the size of this artifact in MegaBytes</p>
+        <p>Return the size of this artifact in MegaBytes</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/artifact.py</code></summary>
@@ -5171,7 +5171,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>This is generic summary information for all Artifacts. If you
+        <p>This is generic summary information for all Artifacts. If you
 want to get more detailed information, call the details() method
 which is implemented by the specific Artifact class</p>
 
@@ -5223,7 +5223,7 @@ which is implemented by the specific Artifact class</p>
 
     <div class="doc doc-contents ">
 
-      <p>Add SageWorks specific metadata to this Artifact
+        <p>Add SageWorks specific metadata to this Artifact
 Args:
     new_meta (dict): Dictionary of NEW metadata to add
 Note:

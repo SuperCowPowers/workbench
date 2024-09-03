@@ -2328,7 +2328,7 @@
 <a id="sageworks.core.artifacts.monitor_core"></a>
     <div class="doc doc-contents first">
 
-      <p>MonitorCore class for monitoring SageMaker endpoints</p>
+        <p>MonitorCore class for monitoring SageMaker endpoints</p>
 
 
 
@@ -3220,7 +3220,7 @@
 
     <div class="doc doc-contents ">
 
-      <p>ExtractModelArtifact Class
+        <p>ExtractModelArtifact Class
 Args:
     endpoint_name (str): Name of the endpoint to set up monitoring for
     instance_type (str): Instance type to use for monitoring. Defaults to "ml.t3.large".
@@ -3298,7 +3298,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>String representation of this MonitorCore object</p>
+        <p>String representation of this MonitorCore object</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -3361,7 +3361,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Add data capture configuration for the SageMaker endpoint.</p>
+        <p>Add data capture configuration for the SageMaker endpoint.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3492,7 +3492,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Check if baseline files exist in S3.</p>
+        <p>Check if baseline files exist in S3.</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -3555,7 +3555,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Code to create a baseline for monitoring
+        <p>Code to create a baseline for monitoring
 Args:
     recreate (bool): If True, recreate the baseline even if it already exists
 Notes:
@@ -3642,7 +3642,7 @@ Notes:
 
     <div class="doc doc-contents ">
 
-      <p>Sets up the monitoring schedule for the model endpoint.
+        <p>Sets up the monitoring schedule for the model endpoint.
 Args:
     schedule (str): The schedule for the monitoring job (hourly or daily, defaults to hourly).
     recreate (bool): If True, recreate the monitoring schedule even if it already exists.</p>
@@ -3755,7 +3755,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Return the details of the monitoring for the endpoint</p>
+        <p>Return the details of the monitoring for the endpoint</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -3906,7 +3906,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Code to get the baseline CSV from the S3 baseline directory</p>
+        <p>Code to get the baseline CSV from the S3 baseline directory</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -3973,7 +3973,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Code to get the constraints from the baseline</p>
+        <p>Code to get the constraints from the baseline</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -4030,7 +4030,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Get the latest data capture from S3.</p>
+        <p>Get the latest data capture from S3.</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -4115,7 +4115,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Code to get the statistics from the baseline</p>
+        <p>Code to get the statistics from the baseline</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -4172,7 +4172,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Check if data capture is already configured on the endpoint.
+        <p>Check if data capture is already configured on the endpoint.
 Args:
     capture_percentage (int): Expected data capture percentage.
 Returns:
@@ -4236,7 +4236,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Return the details of the last monitoring run for the endpoint</p>
+        <p>Return the details of the last monitoring run for the endpoint</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -4323,7 +4323,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Code to figure out if a monitoring schedule already exists for this endpoint</p>
+        <p>Code to figure out if a monitoring schedule already exists for this endpoint</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/monitor_core.py</code></summary>
@@ -4369,7 +4369,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Process the captured data DataFrame to extract and flatten the nested data.</p>
+        <p>Process the captured data DataFrame to extract and flatten the nested data.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4527,7 +4527,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Code to set up alerts based on monitoring results</p>
+        <p>Code to set up alerts based on monitoring results</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/monitor_core.py</code></summary>
@@ -4553,7 +4553,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Return the summary of information about the endpoint monitor</p>
+        <p>Return the summary of information about the endpoint monitor</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>

@@ -2491,7 +2491,7 @@
 <a id="sageworks.core.artifacts.data_source_abstract"></a>
     <div class="doc doc-contents first">
 
-      <p>DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, JSONL, Parquet, RDS, etc)</p>
+        <p>DataSourceAbstract: Abstract Base Class for all data sources (S3: CSV, JSONL, Parquet, RDS, etc)</p>
 
 
 
@@ -3171,7 +3171,7 @@
 
     <div class="doc doc-contents ">
 
-      <p>DataSourceAbstract: Abstract Base Class for all data sources
+        <p>DataSourceAbstract: Abstract Base Class for all data sources
 Args:
     data_uuid(str): The UUID for this Data Source
     database(str): The database to use for this Data Source (default: sageworks)</p>
@@ -3222,7 +3222,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Return the column details for this Data Source
+        <p>Return the column details for this Data Source
 Args:
     view (str): The view to get column details for (default: "all")
 Returns:
@@ -3284,7 +3284,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Return the column names for this Data Source</p>
+        <p>Return the column names for this Data Source</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/data_source_abstract.py</code></summary>
@@ -3316,7 +3316,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Compute Column Stats for all the columns in a DataSource
+        <p>Compute Column Stats for all the columns in a DataSource
 Args:
     recompute (bool): Recompute the column stats (default: False)
 Returns:
@@ -3374,7 +3374,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Return the column types for this Data Source</p>
+        <p>Return the column types for this Data Source</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/data_source_abstract.py</code></summary>
@@ -3406,7 +3406,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Compute Descriptive Stats for all the numeric columns in a DataSource
+        <p>Compute Descriptive Stats for all the numeric columns in a DataSource
 Args:
     recompute (bool): Recompute the descriptive stats (default: False)
 Returns:
@@ -3454,7 +3454,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Additional Details about this DataSourceAbstract Artifact</p>
+        <p>Additional Details about this DataSourceAbstract Artifact</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/data_source_abstract.py</code></summary>
@@ -3494,7 +3494,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Execute a non-returning SQL statement
+        <p>Execute a non-returning SQL statement
 Args:
     query(str): The SQL query to execute</p>
 
@@ -3530,7 +3530,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>DataSources have quite a bit of expected Metadata for EDA displays</p>
+        <p>DataSources have quite a bit of expected Metadata for EDA displays</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/data_source_abstract.py</code></summary>
@@ -3574,7 +3574,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Get the database for this Data Source</p>
+        <p>Get the database for this Data Source</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/data_source_abstract.py</code></summary>
@@ -3600,7 +3600,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Get the columns from our display view
+        <p>Get the columns from our display view
 Returns:
     list[str]: The columns from our display view</p>
 
@@ -3634,7 +3634,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Get the Display View for this Data Source</p>
+        <p>Get the Display View for this Data Source</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/data_source_abstract.py</code></summary>
@@ -3664,7 +3664,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Get the base table name for this Data Source</p>
+        <p>Get the base table name for this Data Source</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/data_source_abstract.py</code></summary>
@@ -3694,7 +3694,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Return the number of columns for this Data Source</p>
+        <p>Return the number of columns for this Data Source</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/data_source_abstract.py</code></summary>
@@ -3722,7 +3722,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Return the number of columns for the display view</p>
+        <p>Return the number of columns for the display view</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/data_source_abstract.py</code></summary>
@@ -3752,7 +3752,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Return the number of rows for this Data Source</p>
+        <p>Return the number of rows for this Data Source</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/data_source_abstract.py</code></summary>
@@ -3780,7 +3780,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>This is a BLOCKING method that will onboard the data source (make it ready)</p>
+        <p>This is a BLOCKING method that will onboard the data source (make it ready)</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -3875,7 +3875,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Return a DataFrame of outliers from this DataSource
+        <p>Return a DataFrame of outliers from this DataSource
 Args:
     scale (float): The scale to use for the IQR (default: 1.5)
     recompute (bool): Recompute the outliers (default: False)
@@ -3951,7 +3951,7 @@ Notes:
 
     <div class="doc doc-contents ">
 
-      <p>Return a DataFrame of outliers from this DataSource
+        <p>Return a DataFrame of outliers from this DataSource
 Args:
     scale (float): The scale to use for the IQR (default: 1.5)
 Returns:
@@ -4006,7 +4006,7 @@ Notes:
 
     <div class="doc doc-contents ">
 
-      <p>Query the DataSourceAbstract
+        <p>Query the DataSourceAbstract
 Args:
     query(str): The SQL query to execute</p>
 
@@ -4042,7 +4042,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Is the DataSource ready?</p>
+        <p>Is the DataSource ready?</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/data_source_abstract.py</code></summary>
@@ -4112,7 +4112,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Return a sample DataFrame from this DataSource
+        <p>Return a sample DataFrame from this DataSource
 Args:
     recompute (bool): Recompute the sample (default: False)
 Returns:
@@ -4176,7 +4176,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Return a sample DataFrame from this DataSourceAbstract
+        <p>Return a sample DataFrame from this DataSourceAbstract
 Returns:
     pd.DataFrame: A sample DataFrame from this DataSource</p>
 
@@ -4212,7 +4212,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Set the display columns for this Data Source</p>
+        <p>Set the display columns for this Data Source</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4307,7 +4307,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Get a SMART sample dataframe from this DataSource
+        <p>Get a SMART sample dataframe from this DataSource
 Returns:
     pd.DataFrame: A combined DataFrame of sample data + outliers</p>
 
@@ -4347,7 +4347,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-      <p>Compute 'value_counts' for all the string columns in a DataSource
+        <p>Compute 'value_counts' for all the string columns in a DataSource
 Args:
     recompute (bool): Recompute the value counts (default: False)
 Returns:

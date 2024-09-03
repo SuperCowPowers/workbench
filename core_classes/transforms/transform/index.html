@@ -2293,7 +2293,7 @@
 <a id="sageworks.core.transforms.transform"></a>
     <div class="doc doc-contents first">
 
-      <p>Transform: Base Class for all transforms within SageWorks
+        <p>Transform: Base Class for all transforms within SageWorks
 Inherited Classes must implement the abstract transform_impl() method</p>
 
 
@@ -2323,7 +2323,7 @@ Inherited Classes must implement the abstract transform_impl() method</p>
               Bases: <code><span title="abc.ABC">ABC</span></code></p>
 
 
-      <p>Transform: Base Class for all transforms within SageWorks. Inherited Classes
+        <p>Transform: Base Class for all transforms within SageWorks. Inherited Classes
 must implement the abstract transform_impl() method</p>
 
               <details class="quote">
@@ -2561,7 +2561,7 @@ must implement the abstract transform_impl() method</p>
 
     <div class="doc doc-contents ">
 
-      <p>Transform Initialization</p>
+        <p>Transform Initialization</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/transform.py</code></summary>
@@ -2647,7 +2647,7 @@ must implement the abstract transform_impl() method</p>
 
     <div class="doc doc-contents ">
 
-      <p>Add additional metadata that will be associated with the output artifact
+        <p>Add additional metadata that will be associated with the output artifact
 Args:
     meta (dict): A dictionary of metadata</p>
 
@@ -2683,7 +2683,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Convert a dictionary to the AWS tag format (list of dicts)
+        <p>Convert a dictionary to the AWS tag format (list of dicts)
 [ {Key: key_name, Value: value}, {..}, ...]</p>
 
             <details class="quote">
@@ -2714,7 +2714,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Get the metadata/tags and convert them into AWS Tag Format</p>
+        <p>Get the metadata/tags and convert them into AWS Tag Format</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/transform.py</code></summary>
@@ -2750,7 +2750,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>What Input Type does this Transform Consume</p>
+        <p>What Input Type does this Transform Consume</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/transform.py</code></summary>
@@ -2776,7 +2776,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>What Output Type does this Transform Produce</p>
+        <p>What Output Type does this Transform Produce</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/transform.py</code></summary>
@@ -2806,7 +2806,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Post-Transform ensures that the output Artifact is ready for use</p>
+        <p>Post-Transform ensures that the output Artifact is ready for use</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/transform.py</code></summary>
@@ -2834,7 +2834,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Perform any Pre-Transform operations</p>
+        <p>Perform any Pre-Transform operations</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/transform.py</code></summary>
@@ -2860,7 +2860,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Set the Input UUID (Name) for this Transform</p>
+        <p>Set the Input UUID (Name) for this Transform</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/transform.py</code></summary>
@@ -2886,7 +2886,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Set the tags that will be associated with the output object
+        <p>Set the tags that will be associated with the output object
 Args:
     tags (Union[list, str]): The list of tags or a '::' separated string of tags</p>
 
@@ -2924,7 +2924,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Set the Output UUID (Name) for this Transform</p>
+        <p>Set the Output UUID (Name) for this Transform</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/transform.py</code></summary>
@@ -2950,7 +2950,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Perform the Transformation from Input to Output with pre_transform() and post_transform() invocations</p>
+        <p>Perform the Transformation from Input to Output with pre_transform() and post_transform() invocations</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/transform.py</code></summary>
@@ -2986,7 +2986,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Abstract Method: Implement the Transformation from Input to Output</p>
+        <p>Abstract Method: Implement the Transformation from Input to Output</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/transform.py</code></summary>
@@ -3027,7 +3027,7 @@ Args:
               Bases: <code><span title="enum.Enum">Enum</span></code></p>
 
 
-      <p>Enumerated Types for SageWorks Transform Inputs</p>
+        <p>Enumerated Types for SageWorks Transform Inputs</p>
 
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/transform.py</code></summary>
@@ -3089,7 +3089,7 @@ Args:
               Bases: <code><span title="enum.Enum">Enum</span></code></p>
 
 
-      <p>Enumerated Types for SageWorks Transform Outputs</p>
+        <p>Enumerated Types for SageWorks Transform Outputs</p>
 
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/transform.py</code></summary>

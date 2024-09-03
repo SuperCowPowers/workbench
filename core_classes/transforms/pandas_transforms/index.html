@@ -2766,7 +2766,7 @@
 <a id="sageworks.core.transforms.pandas_transforms"></a>
     <div class="doc doc-contents first">
 
-      <p>Welcome to the SageWorks Pandas Transform Classes</p>
+        <p>Welcome to the SageWorks Pandas Transform Classes</p>
 <p>These classes provide low-level APIs for using Pandas DataFrames</p>
 <ul>
 <li>DataToPandas: Pull a dataframe from a SageWorks DataSource</li>
@@ -2803,7 +2803,7 @@
               Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
 
 
-      <p>DataToPandas: Class to transform a Data Source into a Pandas DataFrame</p>
+        <p>DataToPandas: Class to transform a Data Source into a Pandas DataFrame</p>
 
 
 <details class="common-usage" open>
@@ -2971,7 +2971,7 @@
 
     <div class="doc doc-contents ">
 
-      <p>DataToPandas Initialization</p>
+        <p>DataToPandas Initialization</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
@@ -3011,7 +3011,7 @@
 
     <div class="doc doc-contents ">
 
-      <p>Get the DataFrame Output from this Transform</p>
+        <p>Get the DataFrame Output from this Transform</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
@@ -3037,7 +3037,7 @@
 
     <div class="doc doc-contents ">
 
-      <p>Post-Transform: Any checks on the Pandas DataFrame that need to be done</p>
+        <p>Post-Transform: Any checks on the Pandas DataFrame that need to be done</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
@@ -3065,7 +3065,7 @@
 
     <div class="doc doc-contents ">
 
-      <p>Convert the DataSource into a Pandas DataFrame
+        <p>Convert the DataSource into a Pandas DataFrame
 Args:
     query(str): The query to run against the DataSource (default: None)
     max_rows(int): The maximum number of rows to return (default: 100000)</p>
@@ -3161,7 +3161,7 @@ Args:
               Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
 
 
-      <p>FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame</p>
+        <p>FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame</p>
 
 
 <details class="common-usage" open>
@@ -3328,7 +3328,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>FeaturesToPandas Initialization</p>
+        <p>FeaturesToPandas Initialization</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
@@ -3370,7 +3370,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Get the DataFrame Output from this Transform</p>
+        <p>Get the DataFrame Output from this Transform</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
@@ -3400,7 +3400,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Post-Transform: Any checks on the Pandas DataFrame that need to be done</p>
+        <p>Post-Transform: Any checks on the Pandas DataFrame that need to be done</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
@@ -3428,7 +3428,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Convert the FeatureSet into a Pandas DataFrame</p>
+        <p>Convert the FeatureSet into a Pandas DataFrame</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
@@ -3523,7 +3523,7 @@ Args:
               Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
 
 
-      <p>PandasToData: Class to publish a Pandas DataFrame as a DataSource</p>
+        <p>PandasToData: Class to publish a Pandas DataFrame as a DataSource</p>
 
 
 <details class="common-usage" open>
@@ -3865,7 +3865,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>PandasToData Initialization
+        <p>PandasToData Initialization
 Args:
     output_uuid (str): The UUID of the DataSource to create
     output_format (str): The file format to store the S3 object data in (default: "parquet")</p>
@@ -3936,7 +3936,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Convert datetime columns to ISO-8601 string</p>
+        <p>Convert datetime columns to ISO-8601 string</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
@@ -3972,7 +3972,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Try to automatically convert object columns to datetime or string columns</p>
+        <p>Try to automatically convert object columns to datetime or string columns</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
@@ -4008,7 +4008,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Try to automatically convert object columns to string columns</p>
+        <p>Try to automatically convert object columns to string columns</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
@@ -4046,7 +4046,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Post-Transform: Calling onboard() fnr the DataSource</p>
+        <p>Post-Transform: Calling onboard() fnr the DataSource</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
@@ -4080,7 +4080,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Set the DataFrame Input for this Transform</p>
+        <p>Set the DataFrame Input for this Transform</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
@@ -4106,7 +4106,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
+        <p>Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
 store the information about the data to the AWS Data Catalog sageworks database</p>
 
 
@@ -4323,7 +4323,7 @@ store the information about the data to the AWS Data Catalog sageworks database<
               Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
 
 
-      <p>PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet</p>
+        <p>PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet</p>
 
 
 <details class="common-usage" open>
@@ -5105,7 +5105,7 @@ store the information about the data to the AWS Data Catalog sageworks database<
 
     <div class="doc doc-contents ">
 
-      <p>PandasToFeatures Initialization
+        <p>PandasToFeatures Initialization
 Args:
     output_uuid (str): The UUID of the FeatureSet to create
     auto_one_hot (bool): Should we automatically one-hot encode categorical columns?</p>
@@ -5190,7 +5190,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Convert object and string types to Categorical</p>
+        <p>Convert object and string types to Categorical</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -5248,7 +5248,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Convert the types of the DataFrame to the correct types for the Feature Store</p>
+        <p>Convert the types of the DataFrame to the correct types for the Feature Store</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -5310,7 +5310,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Create a Feature Group, load our Feature Definitions, and wait for it to be ready</p>
+        <p>Create a Feature Group, load our Feature Definitions, and wait for it to be ready</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -5384,7 +5384,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Convert object and string types to Categorical</p>
+        <p>Convert object and string types to Categorical</p>
 
 
 <details class="note" open>
@@ -5439,7 +5439,7 @@ their respective categorical types.</p>
 
     <div class="doc doc-contents ">
 
-      <p>One Hot Encoding for Categorical Columns with additional column name management</p>
+        <p>One Hot Encoding for Categorical Columns with additional column name management</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -5499,7 +5499,7 @@ their respective categorical types.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Post-Transform: Populating Offline Storage and onboard()</p>
+        <p>Post-Transform: Populating Offline Storage and onboard()</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -5545,7 +5545,7 @@ their respective categorical types.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Pre-Transform: Create the Feature Group</p>
+        <p>Pre-Transform: Create the Feature Group</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -5571,7 +5571,7 @@ their respective categorical types.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Prep the DataFrame for Feature Store Creation</p>
+        <p>Prep the DataFrame for Feature Store Creation</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -5653,7 +5653,7 @@ their respective categorical types.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Call various methods to make sure the column is ready for Feature Store
+        <p>Call various methods to make sure the column is ready for Feature Store
 Args:
     column (str): The column name to process
     shorten (bool): Should we shorten the column name? (default: False)</p>
@@ -5708,7 +5708,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Set the Input DataFrame for this Transform
+        <p>Set the Input DataFrame for this Transform
 Args:
     input_df (pd.DataFrame): The input DataFrame
     target_column (str): The name of the target column (default: None)
@@ -5763,7 +5763,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Transform Implementation: Ingest the data into the Feature Group</p>
+        <p>Transform Implementation: Ingest the data into the Feature Group</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -5841,7 +5841,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Wait for AWS Feature Group to fully populate the Offline Storage</p>
+        <p>Wait for AWS Feature Group to fully populate the Offline Storage</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -5912,7 +5912,7 @@ Args:
               Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
 
 
-      <p>PandasToFeaturesChunked:  Class to manage a bunch of chunked Pandas DataFrames into a FeatureSet</p>
+        <p>PandasToFeaturesChunked:  Class to manage a bunch of chunked Pandas DataFrames into a FeatureSet</p>
 
 
 <details class="common-usage" open>
@@ -6100,7 +6100,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>PandasToFeaturesChunked Initialization</p>
+        <p>PandasToFeaturesChunked Initialization</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
@@ -6148,7 +6148,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Add a Chunk of Data to the FeatureSet</p>
+        <p>Add a Chunk of Data to the FeatureSet</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
@@ -6196,7 +6196,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Post-Transform: Any Post Transform Steps</p>
+        <p>Post-Transform: Any Post Transform Steps</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
@@ -6222,7 +6222,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Pre-Transform: Create the Feature Group with Chunked Data</p>
+        <p>Pre-Transform: Create the Feature Group with Chunked Data</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
@@ -6252,7 +6252,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Set the Categorical Columns
+        <p>Set the Categorical Columns
 Args:
     cat_column_info (dict[list[str]]): Dictionary of categorical columns and their possible values</p>
 
@@ -6300,7 +6300,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-      <p>Required implementation of the Transform interface</p>
+        <p>Required implementation of the Transform interface</p>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
