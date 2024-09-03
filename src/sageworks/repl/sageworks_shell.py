@@ -11,8 +11,9 @@ import readline  # noqa
 
 try:
     import matplotlib.pyplot as plt  # noqa
+    HAVE_MATPLOTLIB = True
 except ImportError:
-    pass
+    HAVE_MATPLOTLIB = False
 
 
 # SageWorks Imports
@@ -89,7 +90,8 @@ class SageWorksShell:
         self.shell = InteractiveShellEmbed(config=config, banner1="", exit_msg="Goodbye from SageWorks!")
 
         # Set matplotlib to interactive mode
-        self.shell.run_line_magic("matplotlib", "auto")
+        if HAVE_MATPLOTLIB:
+            self.shell.run_line_magic("matplotlib", "auto")
 
         # Register our custom commands
         self.commands["help"] = self.help
