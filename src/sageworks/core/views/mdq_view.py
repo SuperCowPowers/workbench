@@ -62,12 +62,16 @@ class MDQView(CreateView):
 
         # Check if the id_column exists in the source_table
         if id_column not in df.columns:
-            self.log.error(f"id_column {id_column} not found in {self.source_table}. Cannot create Model Data Quality View.")
+            self.log.error(
+                f"id_column {id_column} not found in {self.source_table}. Cannot create Model Data Quality View."
+            )
             return None
 
         # Check if the target column exists in the source_table
         if target not in df.columns:
-            self.log.error(f"target column {target} not found in {self.source_table}. Cannot create Model Data Quality View.")
+            self.log.error(
+                f"target column {target} not found in {self.source_table}. Cannot create Model Data Quality View."
+            )
             return None
 
         # Check the type of the target column is categorical (not numeric)
