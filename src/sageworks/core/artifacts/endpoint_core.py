@@ -738,10 +738,12 @@ class EndpointCore(Artifact):
         prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
         y_pred = prediction_df[prediction_col]
 
-        # Special case for low, medium, high classes
-        if (set(y_true) | set(y_pred)) == {"low", "medium", "high"}:
-            labels = ["low", "medium", "high"]
+        # Check if the target column is an ordinal categorical type
+        if isinstance(y_true.dtype, pd.CategoricalDtype) and y_true.cat.ordered:
+            labels = y_true.cat.categories.tolist()
         else:
+            # Fallback: sort unique values
+            self.log.warning(f"Target column {target_column} is not ordinal, fallback to sorting...")
             labels = sorted(list(set(y_true) | set(y_pred)))
 
         # Compute the confusion matrix
@@ -891,5 +893,18 @@ if __name__ == "__main__":
     pred_results = my_endpoint.inference(eval_df, capture_uuid="holdout_xyz")
 
     # Run Inference and metrics for a Classification Endpoint
-    class_endpoint = EndpointCore("wine-classification-end")
-    class_endpoint.auto_inference()
+    class_endpoint = EndpointCore("aqsol-mol-class-end")
+    auto_predictions = class_endpoint.auto_inference()
+
+    # Get the confusion matrix
+    target = "solubility_class"
+    print(class_endpoint.confusion_matrix(target, auto_predictions))
+
+    # Now convert the "solubility_class" column to an ordinal categorical type
+    # Convert the "solubility_class" column to an ordinal categorical type in one line
+    auto_predictions["solubility_class"] = auto_predictions["solubility_class"].astype(
+        pd.CategoricalDtype(categories=["low", "medium", "high"], ordered=True)
+    )
+
+    # Get the confusion matrix
+    print(class_endpoint.confusion_matrix(target, auto_predictions))
