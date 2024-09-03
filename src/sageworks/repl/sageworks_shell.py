@@ -228,12 +228,6 @@ class SageWorksShell:
             "sageworks.core.views.computation_view"
         ).ComputationView
         self.commands["MDQView"] = importlib.import_module("sageworks.core.views.mdq_view").MDQView
-        self.commands["ScatterPlot"] = importlib.import_module(
-            "sageworks.web_components.plugins.scatter_plot"
-        ).ScatterPlot
-        self.commands["PluginUnitTest"] = importlib.import_module(
-            "sageworks.web_components.plugin_unit_test"
-        ).PluginUnitTest
 
         # We're going to include these classes/imports later
         # self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline
