@@ -2029,9 +2029,30 @@
 <li>
 <p><strong>Auto Inference name change</strong></p>
 <p>When auto_inference is run on an endpoint the name of that inference run is currently <code>training_holdout</code>. That is too close to <code>model_training</code> and is confusing. So we're going to change the name to <code>auto_inference</code> which is way more explanatory and intuitive.</p>
-<p><strong>Porting plugins:</strong> A global string replace of <code>training_holdout</code> → <code>auto_inference</code> should be all it takes.</p>
+<p><strong>Porting plugins:</strong> There should really not be any hard coding for <code>training_holdout</code>, plugins should just call <code>list_inference_runs()</code> (see below) and use the first one on the list.</p>
+</li>
+<li>
+<p><strong><code>list_inference_runs()</code></strong></p>
+<p>The <code>list_inference_runs()</code> method on Models has been improved. It now handles error states better (no model, no model training data) and will return 'model_training' LAST on the list, this should improve UX for plugin components.</p>
 </li>
 </ul>
+<p><strong>Examples</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a> model = Model(&quot;abalone-regression&quot;)
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a> model.list_inference_runs()
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a> Out[1]: [&#39;auto_inference&#39;, &#39;model_training&#39;]
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a> model = Model(&quot;wine-classification&quot;)
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a> model.list_inference_runs()
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a> Out[2]: [&#39;auto_inference&#39;, &#39;training_holdout&#39;, &#39;model_training&#39;]
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a> model = Model(&quot;aqsol-mol-regression&quot;)
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a> model.list_inference_runs()
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a> Out[3]: [&#39;training_holdout&#39;, &#39;model_training&#39;]
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a> model = Model(&quot;empty-model-group&quot;)
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a> model.list_inference_runs()
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a> Out[4]: []
+</span></code></pre></div>
 <h3 id="questions">Questions?</h3>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
 <p>The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
