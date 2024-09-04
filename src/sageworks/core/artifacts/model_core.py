@@ -187,16 +187,23 @@ class ModelCore(Artifact):
         Returns:
             list[str]: List of inference run UUIDs
         """
-        if self.endpoint_inference_path is None:
-            # Okay we might have just training or if no model then return empty list
-            return [] if self.latest_model is None else ["model_training"]
 
-        # Get the list of directories in the inference path
-        directories = wr.s3.list_directories(path=self.endpoint_inference_path + "/")
-        inference_runs = [urlparse(directory).path.split("/")[-2] for directory in directories]
+        # Check if we have a model (if not return empty list)
+        if self.latest_model is None:
+            return []
+
+        # Check if we have model training metrics in our metadata
+        have_model_training = True if self.sageworks_meta().get("sageworks_training_metrics") else False
+
+        # Now grab the list of directories from our inference path
+        inference_runs = []
+        if self.endpoint_inference_path:
+            directories = wr.s3.list_directories(path=self.endpoint_inference_path + "/")
+            inference_runs = [urlparse(directory).path.split("/")[-2] for directory in directories]
 
         # We're going to add the model training to the end of the list
-        inference_runs.append("model_training")
+        if have_model_training:
+            inference_runs.append("model_training")
         return inference_runs
 
     def get_inference_metrics(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
