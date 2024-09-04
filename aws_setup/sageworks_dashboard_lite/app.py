@@ -12,6 +12,9 @@ aws_region = session.region_name
 print(f"Account: {aws_account}")
 print(f"Region: {aws_region}")
 
+# When you want a different docker image change this line
+dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_8_8_amd64"
+
 # SageWorks Configuration
 try:
     from sageworks.utils.config_manager import ConfigManager
@@ -41,6 +44,7 @@ SageworksDashboardStack(
     "SageworksDashboard",
     env={"account": aws_account, "region": aws_region},
     props=SageworksDashboardStackProps(
+        dashboard_image=dashboard_image,
         sageworks_bucket=sageworks_bucket,
         sageworks_api_key=sageworks_api_key,
         existing_vpc_id=existing_vpc_id,
