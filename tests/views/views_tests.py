@@ -31,14 +31,15 @@ def test_display_view_fs():
 def test_set_display_view_columns():
     # Create a new display View for a DataSource
     ds = DataSource("test_data")
-    ds.set_display_columns(["id", "name", "age"])
+    display_columns = ds.column_names()
+    ds.set_display_columns(display_columns)
     display_view = ds.get_display_view()
     df = display_view.pull_dataframe(head=True)
     print(df)
 
     # Create a new display View for a FeatureSet
     fs = FeatureSet("test_features")
-    fs.set_display_columns(["id", "name", "age"])
+    fs.set_display_columns(display_columns)
     display_view = fs.get_display_view()
     df = display_view.pull_dataframe(head=True)
     print(df)
