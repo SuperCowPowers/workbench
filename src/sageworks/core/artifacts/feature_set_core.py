@@ -185,7 +185,7 @@ class FeatureSetCore(Artifact):
         from sageworks.core.views import DisplayView
 
         # Create a NEW display view
-        DisplayView().create_view(self, column_list=display_columns)
+        DisplayView(self).create(column_list=display_columns)
         if onboard:
             self.onboard()
 
@@ -404,7 +404,7 @@ class FeatureSetCore(Artifact):
         from sageworks.core.views import TrainingView
 
         # Create a NEW training view
-        TrainingView().create_view(self, id_column=id_column, holdout_ids=holdout_ids)
+        TrainingView(self.data_source).create(id_column=id_column, holdout_ids=holdout_ids)
 
     def get_training_view_table(self) -> Union[str, None]:
         """Get the name of the training view for this FeatureSet

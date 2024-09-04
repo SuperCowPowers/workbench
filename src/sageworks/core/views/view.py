@@ -164,15 +164,15 @@ class View:
         if self.view_name == "display":
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
             self.auto_created = True
-            DisplayView().create_view(self.data_source)
+            DisplayView(self.data_source).create()
         elif self.view_name == "computation":
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
             self.auto_created = True
-            ComputationView().create_view(self.data_source)
+            ComputationView(self.data_source).create()
         elif self.view_name == "training":
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
             self.auto_created = True
-            TrainingView().create_view(self.data_source, id_column=self.auto_id_column)
+            TrainingView(self.data_source).create(id_column=self.auto_id_column)
         else:
             self.log.error(f"Auto-Create for {self.view_name} not implemented yet...")
 
