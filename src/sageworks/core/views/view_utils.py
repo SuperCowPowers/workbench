@@ -11,16 +11,17 @@ log = logging.getLogger("sageworks")
 
 
 # Get a list of columns from an Athena table/view
-def get_column_list(data_source: DataSource, source_table: str) -> list[str]:
+def get_column_list(data_source: DataSource, source_table: str = None) -> list[str]:
     """Get a list of columns from an Athena table/view
 
     Args:
         data_source (DataSource): The DataSource object
-        source_table (str): The table/view name
+        source_table (str, optional): The table/view to get the columns from. Defaults to None.
 
     Returns:
         list[str]: A list of column names
     """
+    source_table = source_table if source_table else data_source.get_table_name()
 
     # Query to get the column names
     column_query = f"""
@@ -153,8 +154,11 @@ if __name__ == "__main__":
     my_data_source = fs.data_source
 
     # Test get_column_list
-    display_table = fs.get_display_view().view_table_name
-    print(get_column_list(my_data_source, display_table))
+    print(get_column_list(my_data_source))
+
+    # Test get_column_list (with training view)
+    training_table = fs.get_training_view().view_table_name
+    print(get_column_list(my_data_source, training_table))
 
     # Test list_views
     print(list_view_tables(my_data_source))

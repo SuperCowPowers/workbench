@@ -11,6 +11,7 @@ import readline  # noqa
 
 try:
     import matplotlib.pyplot as plt  # noqa
+
     HAVE_MATPLOTLIB = True
 except ImportError:
     HAVE_MATPLOTLIB = False

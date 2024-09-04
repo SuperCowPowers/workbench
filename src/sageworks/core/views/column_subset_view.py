@@ -3,7 +3,7 @@
 from typing import Union
 
 # SageWorks Imports
-from sageworks.api import DataSource
+from sageworks.api import DataSource, FeatureSet
 from sageworks.core.views.create_view import CreateView
 from sageworks.core.views.view import View
 from sageworks.core.views.view_utils import get_column_list
@@ -12,15 +12,17 @@ from sageworks.core.views.view_utils import get_column_list
 class ColumnSubsetView(CreateView):
     """ColumnSubsetView Class: Create a View with a subset of columns"""
 
-    def __init__(self):
-        """Initialize the ColumnSubsetView"""
-        super().__init__()
+    def __init__(self, view_name: str, artifact: Union[DataSource, FeatureSet], source_table: str = None):
+        """Initialize the ColumnSubsetView
 
-    def get_view_name(self) -> str:
-        """Get the name of the view"""
-        return "column_subset"
+        Args:
+            view_name (str): The name of the view
+            artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
+            source_table (str, optional): The table/view to create the view from. Defaults to None
+        """
+        super().__init__(view_name, artifact, source_table)
 
-    def create_view_impl(
+    def create_impl(
         self,
         data_source: DataSource,
         column_list: Union[list[str], None] = None,
@@ -76,8 +78,8 @@ if __name__ == "__main__":
     fs = FeatureSet("test_features")
 
     # Create a ColumnSubsetView
-    column_subset = ColumnSubsetView()
-    test_view = column_subset.create_view(fs)
+    column_subset = ColumnSubsetView("test_subset", fs)
+    test_view = column_subset.create()
 
     # Pull the display data
     df = test_view.pull_dataframe()
@@ -85,5 +87,8 @@ if __name__ == "__main__":
 
     # Create a Display View with a subset of columns
     columns = ["id", "name", "age", "height", "weight"]
-    test_view = column_subset.create_view(fs, column_list=columns)
+    test_view = column_subset.create(column_list=columns)
     print(test_view.pull_dataframe(head=True))
+
+    # Delete the View
+    column_subset.delete()

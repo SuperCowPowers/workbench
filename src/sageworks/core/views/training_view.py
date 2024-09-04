@@ -3,7 +3,7 @@
 from typing import Union
 
 # SageWorks Imports
-from sageworks.api import DataSource
+from sageworks.api import DataSource, FeatureSet
 from sageworks.core.views.view import View
 from sageworks.core.views.create_view import CreateView
 from sageworks.core.views.view_utils import get_column_list
@@ -12,15 +12,16 @@ from sageworks.core.views.view_utils import get_column_list
 class TrainingView(CreateView):
     """TrainingView Class: A View with an additional training column that marks holdout ids"""
 
-    def __init__(self):
-        """Initialize the TrainingView"""
-        super().__init__()
+    def __init__(self, artifact: Union[DataSource, FeatureSet], source_table: str = None):
+        """Initialize the ColumnSubsetView
 
-    def get_view_name(self) -> str:
-        """Get the name of the view"""
-        return "training"
+        Args:
+            artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
+            source_table (str, optional): The table/view to create the view from. Defaults to None
+        """
+        super().__init__("training", artifact, source_table)
 
-    def create_view_impl(
+    def create_impl(
         self,
         data_source: DataSource,
         id_column: str = None,
@@ -125,12 +126,12 @@ if __name__ == "__main__":
     fs = FeatureSet("test_features")
 
     # Delete the existing training view
-    training_view = TrainingView().create_view(fs)
+    training_view = TrainingView(fs).create()
     training_view.delete()
 
     # Create a default TrainingView
-    make_view = TrainingView()
-    training_view = make_view.create_view(fs)
+    make_view = TrainingView(fs)
+    training_view = make_view.create()
     print(training_view)
 
     # Pull the training data
@@ -140,7 +141,7 @@ if __name__ == "__main__":
 
     # Create a TrainingView with holdout ids
     my_holdout_ids = list(range(10))
-    training_view = make_view.create_view(fs, id_column="id", holdout_ids=my_holdout_ids)
+    training_view = make_view.create(id_column="id", holdout_ids=my_holdout_ids)
 
     # Pull the training data
     df = training_view.pull_dataframe()

@@ -4,86 +4,61 @@ from typing import Union
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.api import DataSource, Model
+from sageworks.api import DataSource, FeatureSet, Model
 from sageworks.core.views.view import View
-from sageworks.core.views.create_view import CreateView
-from sageworks.core.views.view_utils import dataframe_to_table, get_column_list
+from sageworks.core.views.create_view_with_df import CreateViewWithDF
 from sageworks.algorithms.dataframe.row_tagger import RowTagger
 from sageworks.algorithms.dataframe.residuals_calculator import ResidualsCalculator
 
 
-class MDQView(CreateView):
+class MDQView:
     """MDQView Class: A View that computes various model data quality metrics"""
 
-    def __init__(self):
-        """Initialize the Model Data Quality View"""
-        super().__init__()
+    def __init__(self, artifact: Union[DataSource, FeatureSet], source_table: str = None):
+        """Initialize the ColumnSubsetView
 
-    def get_view_name(self) -> str:
-        """Get the name of the view"""
-        return "mdq"
+        Args:
+            artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
+            source_table (str, optional): The table/view to create the view from. Defaults to None
+        """
+        self.log = artifact.log
 
-    def create_view_impl(self, data_source: DataSource, id_column: str, model: Model) -> Union[View, None]:
+        # We're going to use the CreateViewWithDF class internally
+        self.cv_with_df = CreateViewWithDF("mdq", artifact, source_table)
+        self.data_source = self.cv_with_df.data_source
+        self.source_table = self.cv_with_df.source_table
+
+    def create(self, model: Model, id_column: str) -> Union[View, None]:
         """Create a Model Data Quality View: A View that computes various model data quality metrics
 
         Args:
-            data_source (DataSource): The SageWorks DataSource object
-            id_column (str): The name of the id column (must be defined for join logic)
             model (Model): The Model object to use for the target and features
+            id_column (str): The name of the id column (must be defined for join logic)
 
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)
         """
-        self.log.important(f"Creating Model Data Quality View {self.view_table_name}...")
+        self.log.important("Creating Model Data Quality View...")
 
         # Get the target and feature columns
         target = model.target()
         features = model.features()
 
-        # Check the number of rows in the source_table, if greater than 1M, then give an error and return
-        row_count = data_source.num_rows()
-        if row_count > 1_000_000:
-            self.log.error(
-                f"Data Quality View cannot be created on more than 1M rows. {self.source_table} has {row_count} rows."
-            )
+        # Make sure the target and features are in the data_source
+        df = self.data_source.query(f"SELECT * FROM {self.source_table}")
+        ds_columns = df.columns
+        if target not in ds_columns:
+            self.log.error(f"Target column {target} not found in {self.data_source.uuid}. Cannot create MDQ View.")
             return None
-
-        # Drop any columns generated from AWS
-        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-        source_table_columns = get_column_list(data_source, self.source_table)
-        column_list = [col for col in source_table_columns if col not in aws_cols]
-
-        # Enclose each column name in double quotes
-        sql_columns = ", ".join([f'"{column}"' for column in column_list])
-
-        # Pull in the data from the source_table
-        query = f"SELECT {sql_columns} FROM {self.source_table}"
-        df = data_source.query(query)
-
-        # Check if the id_column exists in the source_table
-        if id_column not in df.columns:
-            self.log.error(
-                f"id_column {id_column} not found in {self.source_table}. Cannot create Model Data Quality View."
-            )
-            return None
-
-        # Check if the target column exists in the source_table
-        if target not in df.columns:
-            self.log.error(
-                f"target column {target} not found in {self.source_table}. Cannot create Model Data Quality View."
-            )
-            return None
+        for feature in features:
+            if feature not in ds_columns:
+                self.log.error(
+                    f"Feature column {feature} not found in {self.data_source.uuid}. Cannot create MDQ View."
+                )
+                return None
 
         # Check the type of the target column is categorical (not numeric)
         categorical_target = not pd.api.types.is_numeric_dtype(df[target])
-
-        # Check if the feature columns exist in the source_table
-        for feature in features:
-            if feature not in df.columns:
-                self.log.error(
-                    f"feature column {feature} not found in {self.source_table}. Cannot create Model Data Quality View."
-                )
-                return None
 
         # Now run the RowTagger to compute coincident and high target gradient tags
         row_tagger = RowTagger(
@@ -93,16 +68,12 @@ class MDQView(CreateView):
             target_column=target,
             within_dist=0.25,
             min_target_diff=1.0,
-            outlier_df=data_source.outliers(),
+            outlier_df=self.data_source.outliers(),
             categorical_target=categorical_target,
         )
         mdq_df = row_tagger.tag_rows()
 
-        # HACK: Drop columns that have the same name as the ones we're about to add
-        dq_columns = ["data_quality_tags", "data_quality"]
-        mdq_df = mdq_df.drop(columns=dq_columns, errors="ignore")
-
-        # We're going to rename the tags column to data_quality_tags
+        # Just some renaming
         mdq_df.rename(columns={"tags": "data_quality_tags"}, inplace=True)
 
         # We're going to compute a data_quality score based on the tags.
@@ -114,48 +85,18 @@ class MDQView(CreateView):
             lambda tags: 0.0 if "coincident" in tags else 0.5 if "htg" in tags else 1.0
         )
 
-        # Just want to keep the new data quality columns
-        mdq_df = mdq_df[dq_columns + [id_column]]
-
         # Spin up the ResidualsCalculator
         residuals_calculator = ResidualsCalculator(n_splits=5, random_state=42)
         residuals_df = residuals_calculator.fit_transform(df[features], df[target])
 
-        # Fit/Transform will give us the original columns plus the residuals columns
-        # Let's just keep the residuals columns and the id_column
-        orig_columns = df.columns
-        residuals_columns = [col for col in residuals_df.columns if col not in orig_columns]
-        residuals_df = residuals_df[residuals_columns]
+        # Add the id_column to the residuals_df
         residuals_df[id_column] = df[id_column]
 
         # Merge the residual_df with the mdq_df (we'll keep all the rows in the mdf_df, and just one id_column)
         mdq_df = mdq_df.merge(residuals_df, on=id_column, how="left")
 
-        # Create the Model Data Quality supplemental data table
-        mdq_table = f"_{self.base_table}_{self.view_name}"
-        dataframe_to_table(data_source, mdq_df, mdq_table)
-
-        # Convert the list of mdq_df.columns into a comma-separated string
-        mdq_df_columns_without_id = [col for col in mdq_df.columns if col != id_column]
-        mdq_df_columns_str = ", ".join([f"B.{col}" for col in mdq_df_columns_without_id])
-
-        # List the columns from A that are not in B to avoid overlap
-        source_columns_str = ", ".join([f"A.{col}" for col in df.columns if col not in mdq_df_columns_without_id])
-
-        # Construct the CREATE VIEW query
-        create_view_query = f"""
-        CREATE OR REPLACE VIEW {self.view_table_name} AS
-        SELECT {source_columns_str}, {mdq_df_columns_str}
-        FROM {self.source_table} A
-        LEFT JOIN {mdq_table} B
-        ON A.{id_column} = B.{id_column}
-        """
-
-        # Execute the CREATE VIEW query
-        data_source.execute_statement(create_view_query)
-
-        # Return the View
-        return View(data_source, self.view_name, auto_create=False)
+        # Call our internal CreateViewWithDF to create the Model Data Quality View
+        return self.cv_with_df.create(df=mdq_df, id_column=id_column)
 
 
 if __name__ == "__main__":
@@ -169,7 +110,7 @@ if __name__ == "__main__":
     model = Model("abalone-regression")
 
     # Create a MDQView
-    mdq_view = MDQView().create_view(fs, id_column="id", model=model)
+    mdq_view = MDQView(fs).create(model=model, id_column="id")
 
     # Pull the data quality dataframe
     my_df = mdq_view.pull_dataframe(head=True)
