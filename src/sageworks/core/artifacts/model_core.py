@@ -195,8 +195,8 @@ class ModelCore(Artifact):
         directories = wr.s3.list_directories(path=self.endpoint_inference_path + "/")
         inference_runs = [urlparse(directory).path.split("/")[-2] for directory in directories]
 
-        # We're going to add the training to the front of the list
-        inference_runs.insert(0, "model_training")
+        # We're going to add the model training to the end of the list
+        inference_runs.append("model_training")
         return inference_runs
 
     def get_inference_metrics(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
@@ -212,7 +212,7 @@ class ModelCore(Artifact):
         """
         # Try to get the auto_capture 'training_holdout' or the training
         if capture_uuid == "latest":
-            metrics_df = self.get_inference_metrics("training_holdout")
+            metrics_df = self.get_inference_metrics("auto_inference")
             return metrics_df if metrics_df is not None else self.get_inference_metrics("model_training")
 
         # Grab the metrics captured during model training (could return None)
@@ -724,12 +724,12 @@ class ModelCore(Artifact):
                 {"sageworks_training_metrics": metrics_df.to_dict(), "sageworks_training_cm": cm_df.to_dict()}
             )
 
-    def _load_inference_metrics(self, capture_uuid: str = "training_holdout"):
+    def _load_inference_metrics(self, capture_uuid: str = "auto_inference"):
         """Internal: Retrieve the inference model metrics for this model
                      and load the data into the SageWorks Metadata
 
         Args:
-            capture_uuid (str, optional): A specific capture_uuid (default: "training_holdout")
+            capture_uuid (str, optional): A specific capture_uuid (default: "auto_inference")
         Notes:
             This may or may not exist based on whether an Endpoint ran Inference
         """
@@ -740,12 +740,12 @@ class ModelCore(Artifact):
         metrics_storage = None if inference_metrics is None else inference_metrics.to_dict("records")
         self.upsert_sageworks_meta({"sageworks_inference_metrics": metrics_storage})
 
-    def _load_inference_cm(self, capture_uuid: str = "training_holdout"):
+    def _load_inference_cm(self, capture_uuid: str = "auto_inference"):
         """Internal: Pull the inference Confusion Matrix for this model
                      and load the data into the SageWorks Metadata
 
         Args:
-            capture_uuid (str, optional): A specific capture_uuid (default: "training_holdout")
+            capture_uuid (str, optional): A specific capture_uuid (default: "auto_inference")
 
         Returns:
             pd.DataFrame: DataFrame of the inference Confusion Matrix (might be None)
@@ -760,11 +760,11 @@ class ModelCore(Artifact):
         cm_storage = None if inference_cm is None else inference_cm.to_dict("records")
         self.upsert_sageworks_meta({"sageworks_inference_cm": cm_storage})
 
-    def get_inference_metadata(self, capture_uuid: str = "training_holdout") -> Union[pd.DataFrame, None]:
+    def get_inference_metadata(self, capture_uuid: str = "auto_inference") -> Union[pd.DataFrame, None]:
         """Retrieve the inference metadata for this model
 
         Args:
-            capture_uuid (str, optional): A specific capture_uuid (default: "training_holdout")
+            capture_uuid (str, optional): A specific capture_uuid (default: "auto_inference")
 
         Returns:
             dict: Dictionary of the inference metadata (might be None)
@@ -798,7 +798,7 @@ class ModelCore(Artifact):
             self.log.info(f"Could not find model inference meta at {s3_path}...")
             return None
 
-    def get_inference_predictions(self, capture_uuid: str = "training_holdout") -> Union[pd.DataFrame, None]:
+    def get_inference_predictions(self, capture_uuid: str = "auto_inference") -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
@@ -875,7 +875,7 @@ class ModelCore(Artifact):
 
         return metrics_df, cm_df
 
-    def shapley_values(self, capture_uuid: str = "training_holdout") -> Union[list[pd.DataFrame], pd.DataFrame, None]:
+    def shapley_values(self, capture_uuid: str = "auto_inference") -> Union[list[pd.DataFrame], pd.DataFrame, None]:
         """Retrieve the Shapely values for this model
 
         Args:

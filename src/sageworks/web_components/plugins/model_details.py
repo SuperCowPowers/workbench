@@ -202,8 +202,8 @@ class ModelDetails(PluginInterface):
         if not inference_runs:
             return [], None
 
-        # Set "training_holdout" as the default, if that doesn't exist, set the first
-        default_inference_run = "training_holdout" if "training_holdout" in inference_runs else inference_runs[0]
+        # Set "auto_inference" as the default, if that doesn't exist, set the first
+        default_inference_run = "auto_inference" if "auto_inference" in inference_runs else inference_runs[0]
 
         # Return the options for the dropdown and the selected value
         return inference_runs, default_inference_run

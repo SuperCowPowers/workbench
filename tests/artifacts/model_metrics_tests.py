@@ -95,10 +95,10 @@ def test_shap_values():
 
 def test_metrics_with_capture_uuid():
     """Test the Performance Metrics using a Capture UUID"""
-    metrics = model_reg.get_inference_metrics("training_holdout")
+    metrics = model_reg.get_inference_metrics("auto_inference")
     print("\n\n*** Performance Metrics with Capture UUID ***")
     pprint(metrics)
-    metrics = model_class.get_inference_metrics("training_holdout")
+    metrics = model_class.get_inference_metrics("auto_inference")
     pprint(metrics)
 
 

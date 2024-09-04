@@ -63,9 +63,7 @@ class PluginUnitTest:
                 updated_properties = self.plugin.update_properties(feature_set, **self.kwargs)
             elif plugin_input_type == PluginInputType.MODEL:
                 model = self.input_data if self.input_data is not None else Model("abalone-regression")
-                updated_properties = self.plugin.update_properties(
-                    model, inference_run="training_holdout", **self.kwargs
-                )
+                updated_properties = self.plugin.update_properties(model, inference_run="auto_inference", **self.kwargs)
             elif plugin_input_type == PluginInputType.ENDPOINT:
                 endpoint = self.input_data if self.input_data is not None else Endpoint("abalone-regression-end")
                 updated_properties = self.plugin.update_properties(endpoint, **self.kwargs)

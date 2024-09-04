@@ -85,7 +85,7 @@ if __name__ == "__main__":
     from sageworks.api.model import Model
 
     m = Model("wine-classification")
-    inference_run = "training_holdout"
+    inference_run = "auto_inference"
 
     # Instantiate the ConfusionMatrix class
     cm = ConfusionMatrix()
