@@ -206,6 +206,27 @@ class ModelCore(Artifact):
             inference_runs.append("model_training")
         return inference_runs
 
+    def delete_inference_run(self, inference_run_uuid: str):
+        """Delete the inference run for this model
+
+        Args:
+            inference_run_uuid (str): UUID of the inference run
+        """
+        if inference_run_uuid == "model_training":
+            self.log.warning("Cannot delete model training data!")
+            return
+
+        if self.endpoint_inference_path:
+            full_path = f"{self.endpoint_inference_path}/{inference_run_uuid}"
+            # Check if there are any objects at the path
+            if wr.s3.list_objects(full_path):
+                wr.s3.delete_objects(path=full_path)
+                self.log.important(f"Deleted inference run {inference_run_uuid} for {self.model_name}")
+            else:
+                self.log.warning(f"Inference run {inference_run_uuid} not found for {self.model_name}!")
+        else:
+            self.log.warning(f"No inference data found for {self.model_name}!")
+
     def get_inference_metrics(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
         """Retrieve the inference performance metrics for this model
 
