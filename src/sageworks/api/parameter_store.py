@@ -1,6 +1,5 @@
 import logging
 import json
-import boto3
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
@@ -103,12 +102,7 @@ class ParameterStore:
                     raise ValueError("Parameter size exceeds 4KB limit for standard parameters.")
 
             # Add or update the parameter in Parameter Store
-            self.ssm_client.put_parameter(
-                Name=name,
-                Value=value,
-                Type="String",
-                Overwrite=overwrite
-            )
+            self.ssm_client.put_parameter(Name=name, Value=value, Type="String", Overwrite=overwrite)
             self.log.info(f"Parameter '{name}' added/updated successfully.")
 
         except ValueError as ve:
