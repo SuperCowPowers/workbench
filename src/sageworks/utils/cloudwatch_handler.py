@@ -63,7 +63,7 @@ class CloudWatchHandler:
             job_name = os.environ.get("GLUE_JOB_NAME", "unknown")
             return f"glue/{job_name}/{unique_id}"
         elif running_on_docker():
-            job_name = os.environ.get("SERVICE_NAME", "unknown")
+            job_name = os.environ.get("ECS_SERVICE_NAME") or os.environ.get("HOSTNAME", "unknown")
             return f"docker/{job_name}"
         else:
             return f"laptop/{getpass.getuser()}"
