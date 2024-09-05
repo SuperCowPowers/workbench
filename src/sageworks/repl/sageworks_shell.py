@@ -220,6 +220,7 @@ class SageWorksShell:
         self.commands["ModelType"] = importlib.import_module("sageworks.api.model").ModelType
         self.commands["Endpoint"] = importlib.import_module("sageworks.api.endpoint").Endpoint
         self.commands["Monitor"] = importlib.import_module("sageworks.api.monitor").Monitor
+        self.commands["ParameterStore"] = importlib.import_module("sageworks.api.parameter_store").ParameterStore
         self.commands["PandasToFeatures"] = importlib.import_module(
             "sageworks.core.transforms.pandas_transforms"
         ).PandasToFeatures

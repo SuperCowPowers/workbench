@@ -14,5 +14,6 @@ from .feature_set import FeatureSet
 from .model import Model, ModelType
 from .endpoint import Endpoint
 from .meta import Meta
+from .parameter_store import ParameterStore
 
-__all__ = ["DataSource", "FeatureSet", "Model", "ModelType", "Endpoint", "Meta"]
+__all__ = ["DataSource", "FeatureSet", "Model", "ModelType", "Endpoint", "Meta", "ParameterStore"]
