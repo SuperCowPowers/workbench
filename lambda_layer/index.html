@@ -1407,6 +1407,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Lambda Job Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#python-310-and-312" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python 3.10 and 3.12
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1988,6 +2003,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Lambda Job Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#python-310-and-312" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python 3.10 and 3.12
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2055,17 +2085,16 @@
 <h2 id="lambda-job-setup">Lambda Job Setup</h2>
 <p>Setting up a AWS Lambda Job that uses SageWorks is straight forward. SageWorks can be 'installed' using a Lambda Layer and then you can use the Sageworks API just like normal.</p>
 <p>Here are the ARNs for the current SageWorks Lambda Layers, please note they are specified with region and Python version in the name, so if your lambda is us-east-1, python 3.12, pick this ARN with those values in it.</p>
+<h3 id="python-310-and-312">Python 3.10 and 3.12</h3>
 <p><strong>us-east-1</strong></p>
 <ul>
-<li>arn:aws:lambda:us-east-1:507740646243:layer:sageworks_lambda_layer-us-east-1-python310:2</li>
-<li>arn:aws:lambda:us-east-1:507740646243:layer:sageworks_lambda_layer-us-east-1-python311:3</li>
-<li>arn:aws:lambda:us-east-1:507740646243:layer:sageworks_lambda_layer-us-east-1-python312:2</li>
+<li>arn:aws:lambda:us-east-1:507740646243:layer:sageworks_lambda_layer-us-east-1-python310:3</li>
+<li>arn:aws:lambda:us-east-1:507740646243:layer:sageworks_lambda_layer-us-east-1-python312:3</li>
 </ul>
 <p><strong>us-west-2</strong></p>
 <ul>
-<li>arn:aws:lambda:us-west-2:507740646243:layer:sageworks_lambda_layer-us-west-2-python310:2</li>
-<li>arn:aws:lambda:us-west-2:507740646243:layer:sageworks_lambda_layer-us-west-2-python311:3</li>
-<li>arn:aws:lambda:us-west-2:507740646243:layer:sageworks_lambda_layer-us-west-2-python312:2</li>
+<li>arn:aws:lambda:us-west-2:507740646243:layer:sageworks_lambda_layer-us-west-2-python310:3</li>
+<li>arn:aws:lambda:us-west-2:507740646243:layer:sageworks_lambda_layer-us-west-2-python312:5</li>
 </ul>
 <p><strong>Note:</strong> If you're using lambdas on a different region or with a different Python version, just let us know and we'll publish some additional layers.</p>
 <p><img alt="lambda_layer"  padding: 20px; border: 1px solid grey;""
