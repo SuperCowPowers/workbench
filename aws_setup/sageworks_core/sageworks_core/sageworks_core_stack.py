@@ -473,6 +473,23 @@ class SageworksCoreStack(Stack):
             resources=["*"],
         )
 
+    def parameter_store_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for accessing AWS Systems Manager Parameter Store.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for accessing AWS Systems Manager Parameter Store.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "ssm:GetParameter",
+                "ssm:GetParameters",
+                "ssm:GetParametersByPath",
+                "ssm:PutParameter",
+                "ssm:DeleteParameter",
+            ],
+            resources=["*"],  # Broad permission necessary for Parameter Store operations
+        )
+
     def sageworks_datasource_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the SageWorks DataSources"""
         policy_statements = [
@@ -484,6 +501,7 @@ class SageworksCoreStack(Stack):
             self.glue_database_policy_statement(),
             self.athena_policy_statement(),
             self.athena_workgroup_policy_statement(),
+            self.parameter_store_policy_statement(),
         ]
 
         return iam.ManagedPolicy(
@@ -503,6 +521,7 @@ class SageworksCoreStack(Stack):
             self.athena_workgroup_policy_statement(),
             self.featurestore_list_policy_statement(),
             self.featurestore_policy_statement(),
+            self.parameter_store_policy_statement(),
         ]
         return iam.ManagedPolicy(
             self,
@@ -538,6 +557,7 @@ class SageworksCoreStack(Stack):
             self.ecr_policy_statement(),
             self.cloudwatch_policy_statement(),
             self.sagemaker_pass_role_policy_statement(),
+            self.parameter_store_policy_statement(),
         ]
         return iam.ManagedPolicy(
             self,
@@ -553,6 +573,7 @@ class SageworksCoreStack(Stack):
             self.endpoint_policy_statement(),
             self.endpoint_list_monitoring_policy_statement(),
             self.cloudwatch_policy_statement(),
+            self.parameter_store_policy_statement(),
         ]
         return iam.ManagedPolicy(
             self,
