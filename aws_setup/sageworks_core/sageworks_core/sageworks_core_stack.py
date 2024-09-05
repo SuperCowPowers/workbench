@@ -481,6 +481,7 @@ class SageworksCoreStack(Stack):
         """
         return iam.PolicyStatement(
             actions=[
+                "ssm:DescribeParameters",
                 "ssm:GetParameter",
                 "ssm:GetParameters",
                 "ssm:GetParametersByPath",
