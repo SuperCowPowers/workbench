@@ -105,10 +105,9 @@ class ParameterStore:
             self.ssm_client.put_parameter(Name=name, Value=value, Type="String", Overwrite=overwrite)
             self.log.info(f"Parameter '{name}' added/updated successfully.")
 
-        except ValueError as ve:
-            self.log.error(f"Failed to add parameter '{name}': {ve}")
         except Exception as e:
             self.log.error(f"Failed to add/update parameter '{name}': {e}")
+            raise
 
     def delete(self, name: str):
         """Delete a parameter from the AWS Parameter Store.

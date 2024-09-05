@@ -66,6 +66,22 @@ def test_deletion():
     param_store.delete("my_data")
 
 
+def test_4k_limit():
+    param_store = ParameterStore()
+
+    # Create a string that will exceed the 4KB limit when repeated
+    large_value = {"key": "x" * 5000}  # This creates a string of length 5000 characters
+
+    try:
+        # Try adding a parameter that exceeds the 4KB limit
+        param_store.add("test_large_value", large_value, overwrite=True)
+    except ValueError as e:
+        print("Caught expected ValueError:", e)
+
+        # Verify that the error was indeed due to the size
+        assert "Parameter size exceeds 4KB limit" in str(e)
+
+
 if __name__ == "__main__":
 
     # Run the tests
@@ -74,3 +90,4 @@ if __name__ == "__main__":
     test_lists()
     test_dicts()
     test_deletion()
+    test_4k_limit()
