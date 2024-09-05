@@ -12,16 +12,18 @@ Setting up a AWS Lambda Job that uses SageWorks is straight forward. SageWorks c
 
 Here are the ARNs for the current SageWorks Lambda Layers, please note they are specified with region and Python version in the name, so if your lambda is us-east-1, python 3.12, pick this ARN with those values in it.
 
-### Python 3.10 and 3.12
+### Python 3.10, 3.11, and 3.12
  
 **us-east-1**
 
 - arn:aws:lambda:us-east-1:507740646243:layer:sageworks\_lambda_layer-us-east-1-python310:3
+- arn:aws:lambda:us-east-1:507740646243:layer:sageworks\_lambda_layer-us-east-1-python311:4
 - arn:aws:lambda:us-east-1:507740646243:layer:sageworks\_lambda_layer-us-east-1-python312:3
 
 **us-west-2**
 
 - arn:aws:lambda:us-west-2:507740646243:layer:sageworks\_lambda_layer-us-west-2-python310:3
+- arn:aws:lambda:us-west-2:507740646243:layer:sageworks\_lambda_layer-us-west-2-python311:4
 - arn:aws:lambda:us-west-2:507740646243:layer:sageworks\_lambda_layer-us-west-2-python312:5
 
 **Note:** If you're using lambdas on a different region or with a different Python version, just let us know and we'll publish some additional layers.
