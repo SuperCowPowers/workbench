@@ -117,12 +117,12 @@ def delete_views_and_supplemental_data(data_source: DataSource):
         data_source (DataSource): The DataSource object
     """
     for view_table in list_view_tables(data_source):
-        _delete_table(data_source, view_table)
+        delete_table(data_source, view_table)
     for supplemental_data_table in list_supplemental_data_tables(data_source):
-        _delete_table(data_source, supplemental_data_table)
+        delete_table(data_source, supplemental_data_table)
 
 
-def _delete_table(data_source: DataSource, table_name: str):
+def delete_table(data_source: DataSource, table_name: str):
     """Delete a table from the Glue Catalog
 
     Args:
@@ -172,4 +172,4 @@ if __name__ == "__main__":
     # Test dataframe_to_table
     df = pd.DataFrame({"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]})
     dataframe_to_table(my_data_source, df, "test_table")
-    _delete_table(my_data_source, "test_table")
+    delete_table(my_data_source, "test_table")

@@ -9,6 +9,7 @@ import awswrangler as wr
 from sageworks.api import DataSource, FeatureSet
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.api import Meta
+from sageworks.core.views.view_utils import list_supplemental_data_tables, delete_table
 
 
 class View:
@@ -101,7 +102,16 @@ class View:
         return f"{self.base_table}_{self.view_name}"
 
     def delete(self):
-        """Delete the database view if it exists."""
+        """Delete the database view (and supplemental data) if it exists."""
+
+        # List any supplemental tables for this data source
+        supplemental_tables = list_supplemental_data_tables(self.data_source)
+        for table in supplemental_tables:
+            if self.view_name in table:
+                self.log.important(f"Deleting Supplemental Table {table}...")
+                delete_table(self.data_source, table)
+
+        # Now drop the view
         self.log.important(f"Dropping View {self.view_table_name}...")
         drop_view_query = f"DROP VIEW {self.view_table_name}"
 
@@ -225,4 +235,9 @@ if __name__ == "__main__":
     print(display_view.columns())
 
     # Delete the display view
-    display_view.delete()
+    # display_view.delete()
+
+    # Test supplemental data tables deletion
+    fs = FeatureSet("abalone_features")
+    view = View(fs, "test_df")
+    view.delete()
