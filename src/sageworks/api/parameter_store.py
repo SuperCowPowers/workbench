@@ -22,8 +22,12 @@ class ParameterStore:
         ```
     """
 
-    def __init__(self):
-        """ParameterStore Init Method"""
+    def __init__(self, prefix: str = "/sageworks"):
+        """ParameterStore Init Method
+
+        Args:
+            prefix (str): The prefix for all parameter names (default: "/sageworks")
+        """
         self.log = logging.getLogger("sageworks")
 
         # Initialize a SageWorks Session (to assume the SageWorks ExecutionRole)
@@ -33,13 +37,10 @@ class ParameterStore:
         self.ssm_client = self.boto_session.client("ssm")
 
         # Prefix all parameter names
-        self.prefix = "/sageworks/"
+        self.prefix = prefix + "/"
 
-    def list(self, sageworks_only=False) -> list:
+    def list(self) -> list:
         """List all parameters in the AWS Parameter Store.
-
-        Args:
-            sageworks_only (bool): List only SageWorks parameters (default: False)
 
         Returns:
             list: A list of parameter names and details.
