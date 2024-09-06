@@ -82,6 +82,7 @@ def test_4k_limit():
 
 def test_compressed_failure():
     from random import random
+
     param_store = ParameterStore()
 
     # Create some data that will exceed the 4KB limit even after compression

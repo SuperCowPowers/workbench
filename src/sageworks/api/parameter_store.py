@@ -56,13 +56,7 @@ class ParameterStore:
                 response = self.ssm_client.describe_parameters()
             else:
                 response = self.ssm_client.describe_parameters(
-                    ParameterFilters=[
-                        {
-                            'Key': 'Name',
-                            'Option': 'BeginsWith',
-                            'Values': [self.prefix]
-                        }
-                    ]
+                    ParameterFilters=[{"Key": "Name", "Option": "BeginsWith", "Values": [self.prefix]}]
                 )
 
             # Return the names of the parameters within the prefix
@@ -97,8 +91,8 @@ class ParameterStore:
             if value.startswith("COMPRESSED:"):
                 # Base64 decode and decompress
                 self.log.important(f"Decompressing parameter '{name}'...")
-                compressed_value = base64.b64decode(value[len("COMPRESSED:"):])
-                value = zlib.decompress(compressed_value).decode('utf-8')
+                compressed_value = base64.b64decode(value[len("COMPRESSED:") :])
+                value = zlib.decompress(compressed_value).decode("utf-8")
 
             # Attempt to parse the value back to its original type
             try:
@@ -134,8 +128,8 @@ class ParameterStore:
             # Check size and compress if necessary
             if len(value) > 4096:
                 self.log.warning(f"Parameter size exceeds 4KB: Compressing '{name}'...")
-                compressed_value = zlib.compress(value.encode('utf-8'))
-                encoded_value = "COMPRESSED:" + base64.b64encode(compressed_value).decode('utf-8')
+                compressed_value = zlib.compress(value.encode("utf-8"))
+                encoded_value = "COMPRESSED:" + base64.b64encode(compressed_value).decode("utf-8")
 
                 try:
                     # Add or update the compressed parameter in Parameter Store
