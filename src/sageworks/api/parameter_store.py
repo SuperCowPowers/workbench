@@ -1,3 +1,6 @@
+"""ParameterStore: Manages SageWorks parameters in AWS Systems Manager Parameter Store."""
+
+from typing import Union
 import logging
 import json
 
@@ -22,7 +25,7 @@ class ParameterStore:
         ```
     """
 
-    def __init__(self, prefix: str = "/sageworks"):
+    def __init__(self, prefix: Union[str, None] = "/sageworks"):
         """ParameterStore Init Method
 
         Args:
@@ -37,17 +40,30 @@ class ParameterStore:
         self.ssm_client = self.boto_session.client("ssm")
 
         # Prefix all parameter names
-        self.prefix = prefix + "/"
+        self.prefix = prefix + "/" if prefix else ""
 
     def list(self) -> list:
-        """List all parameters in the AWS Parameter Store.
+        """List all parameters under the prefix in the AWS Parameter Store.
 
         Returns:
             list: A list of parameter names and details.
         """
         try:
-            # Just return the names of the parameters
-            response = self.ssm_client.describe_parameters()
+            # Return the names of the parameters within the prefix
+            if not self.prefix:
+                response = self.ssm_client.describe_parameters()
+            else:
+                response = self.ssm_client.describe_parameters(
+                    ParameterFilters=[
+                        {
+                            'Key': 'Name',
+                            'Option': 'BeginsWith',
+                            'Values': [self.prefix]
+                        }
+                    ]
+                )
+
+            # Return the names of the parameters within the prefix
             return [param["Name"] for param in response["Parameters"]]
 
         except Exception as e:
@@ -152,5 +168,10 @@ if __name__ == "__main__":
     print("Retrieved value:", retrieved_value)
 
     # Delete the parameters
-    param_store.delete("test")
-    param_store.delete("my_data")
+    # param_store.delete("test")
+    # param_store.delete("my_data")
+
+    # Now use a different prefix scope
+    param_store = ParameterStore(prefix=None)
+    print("Listing Parameters...")
+    print(param_store.list())
