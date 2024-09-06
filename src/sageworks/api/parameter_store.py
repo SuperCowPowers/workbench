@@ -16,12 +16,24 @@ class ParameterStore:
     Common Usage:
         ```
         params = ParameterStore()
+
+        # List Parameters
         params.list()
+
+        ['/sageworks/abalone_info',
+         '/sageworks/my_data',
+         '/sageworks/test',
+         '/sageworks/pipelines/my_pipeline']
+
+        # Add Key
         params.add("key", "value")
         value = params.get("key")
 
-        # Can also store lists and dictionaries
-        params.add("my_data", {"key": "value", "number": 4.2, "list": [1,2,3]})
+        # Add any data (lists, dictionaries, etc..)
+        my_data = {"key": "value", "number": 4.2, "list": [1,2,3]}
+        params.add("my_data", my_data)
+
+        # Retrieve data
         return_value = params.get("my_data")
         pprint(return_value)
 
