@@ -781,6 +781,10 @@ class EndpointCore(Artifact):
         """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
         self.delete_endpoint_models()
 
+        # Remove this endpoint from the set of registered endpoints in our model
+        model = ModelCore(self.model_name)
+        model.remove_endpoint(self.uuid)
+
         # Grab the Endpoint Config Name from the AWS
         endpoint_config_name = self.endpoint_config_name()
         try:

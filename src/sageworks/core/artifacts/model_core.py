@@ -169,6 +169,12 @@ class ModelCore(Artifact):
             health_issues.append("metrics_needed")
         else:
             self.remove_health_tag("metrics_needed")
+
+        # Endpoint
+        if not self.endpoints():
+            health_issues.append("no_endpoint")
+        else:
+            self.remove_health_tag("no_endpoint")
         return health_issues
 
     def latest_model_object(self) -> SagemakerModel:
@@ -361,9 +367,30 @@ class ModelCore(Artifact):
         registered_endpoints.add(endpoint_name)
         self.upsert_sageworks_meta({"sageworks_registered_endpoints": list(registered_endpoints)})
 
+        # Remove any health tags
+        self.remove_health_tag("no_endpoint")
+
         # A new endpoint means we need to refresh our inference path
         time.sleep(2)  # Give the AWS Metadata a chance to update
         self.endpoint_inference_path = self.get_endpoint_inference_path()
+
+    def remove_endpoint(self, endpoint_name: str):
+        """Remove this endpoint from the set of registered endpoints for the model
+
+        Args:
+            endpoint_name (str): Name of the endpoint
+        """
+        self.log.important(f"Removing Endpoint {endpoint_name} from Model {self.uuid}...")
+        registered_endpoints = set(self.sageworks_meta().get("sageworks_registered_endpoints", []))
+        registered_endpoints.discard(endpoint_name)
+        self.upsert_sageworks_meta({"sageworks_registered_endpoints": list(registered_endpoints)})
+
+        # If we have NO endpionts, then set a health tags
+        if not registered_endpoints:
+            self.add_health_tag("no_endpoint")
+
+        # A new endpoint means we need to refresh our inference path
+        time.sleep(2)
 
     def endpoints(self) -> list[str]:
         """Get the list of registered endpoints for this Model
@@ -483,7 +510,7 @@ class ModelCore(Artifact):
         details["description"] = aws_meta.get("ModelPackageDescription", "-")
         details["version"] = aws_meta["ModelPackageVersion"]
         details["status"] = aws_meta["ModelPackageStatus"]
-        details["approval_status"] = aws_meta["ModelApprovalStatus"]
+        details["approval_status"] = aws_meta.get("ModelApprovalStatus", "unknown")
         details["image"] = self.container_image().split("/")[-1]  # Shorten the image uri
 
         # Grab the inference and container info
