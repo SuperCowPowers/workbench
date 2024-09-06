@@ -587,6 +587,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#bypassing-the-4k-limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bypassing the 4k Limit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#examples" class="md-nav__link">
     <span class="md-ellipsis">
       Examples
@@ -2113,6 +2122,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#bypassing-the-4k-limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bypassing the 4k Limit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#examples" class="md-nav__link">
     <span class="md-ellipsis">
       Examples
@@ -3221,7 +3239,9 @@
 
     </div>
 
-</div><h2 id="examples">Examples</h2>
+</div><h2 id="bypassing-the-4k-limit">Bypassing the 4k Limit</h2>
+<p>AWS Parameter Storage has a 4k limit on values, the SageWorks class bypasses this limit by detecting large values (strings, data, whatever) and compressing those on the fly. The decompressing is also handled automatically, so for larger data simply use the <code>add()</code> and <code>get()</code> methods and it will all <strong>just work</strong>.</p>
+<h2 id="examples">Examples</h2>
 <p>These example show how to use the <code>ParameterStore()</code> class to list, add, and get parameters from the AWS Parameter Store Service.</p>
 <div class="admonition tip">
 <p class="admonition-title">SageWorks REPL</p>
