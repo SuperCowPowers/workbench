@@ -69,17 +69,29 @@ def test_deletion():
 def test_4k_limit():
     param_store = ParameterStore()
 
-    # Create a string that will exceed the 4KB limit when repeated
-    large_value = {"key": "x" * 5000}  # This creates a string of length 5000 characters
+    # Create some data that will exceed the 4KB limit
+    large_value = {"key": "x" * 5000}
+
+    # Try adding a parameter that exceeds the 4KB limit
+    param_store.add("test_large_value", large_value, overwrite=True)
+
+    # Retrieve the parameter
+    return_value = param_store.get("test_large_value")
+    assert return_value == large_value
+
+
+def test_compressed_failure():
+    from random import random
+    param_store = ParameterStore()
+
+    # Create some data that will exceed the 4KB limit even after compression
+    large_incompressible_value = [random() for _ in range(500)]
 
     try:
         # Try adding a parameter that exceeds the 4KB limit
-        param_store.add("test_large_value", large_value, overwrite=True)
-    except ValueError as e:
-        print("Caught expected ValueError:", e)
-
-        # Verify that the error was indeed due to the size
-        assert "Parameter size exceeds 4KB limit" in str(e)
+        param_store.add("large_incompressible_value", large_incompressible_value, overwrite=True)
+    except Exception as e:
+        print("Caught expected Exception:", e)
 
 
 if __name__ == "__main__":
@@ -91,3 +103,4 @@ if __name__ == "__main__":
     test_dicts()
     test_deletion()
     test_4k_limit()
+    test_compressed_failure()

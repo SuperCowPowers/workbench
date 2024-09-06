@@ -3,6 +3,8 @@
 from typing import Union
 import logging
 import json
+import zlib
+import base64
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
@@ -91,6 +93,13 @@ class ParameterStore:
             response = self.ssm_client.get_parameter(Name=name, WithDecryption=decrypt)
             value = response["Parameter"]["Value"]
 
+            # Auto-detect and decompress if needed
+            if value.startswith("COMPRESSED:"):
+                # Base64 decode and decompress
+                self.log.important(f"Decompressing parameter '{name}'...")
+                compressed_value = base64.b64decode(value[len("COMPRESSED:"):])
+                value = zlib.decompress(compressed_value).decode('utf-8')
+
             # Attempt to parse the value back to its original type
             try:
                 parsed_value = json.loads(value)
@@ -121,15 +130,28 @@ class ParameterStore:
             # Anything that's not a string gets converted to JSON
             if not isinstance(value, str):
                 value = json.dumps(value)
-                if len(value) > 4096:
-                    raise ValueError("Parameter size exceeds 4KB limit for standard parameters.")
 
-            # Add or update the parameter in Parameter Store
+            # Check size and compress if necessary
+            if len(value) > 4096:
+                self.log.warning(f"Parameter size exceeds 4KB: Compressing '{name}'...")
+                compressed_value = zlib.compress(value.encode('utf-8'))
+                encoded_value = "COMPRESSED:" + base64.b64encode(compressed_value).decode('utf-8')
+
+                try:
+                    # Add or update the compressed parameter in Parameter Store
+                    self.ssm_client.put_parameter(Name=name, Value=encoded_value, Type="String", Overwrite=overwrite)
+                    self.log.info(f"Parameter '{name}' added/updated successfully with compression.")
+                    return
+                except Exception as e:
+                    self.log.critical(f"Failed to add/update compressed parameter '{name}': {e}")
+                    raise
+
+            # Add or update the parameter normally if under 4KB
             self.ssm_client.put_parameter(Name=name, Value=value, Type="String", Overwrite=overwrite)
             self.log.info(f"Parameter '{name}' added/updated successfully.")
 
         except Exception as e:
-            self.log.error(f"Failed to add/update parameter '{name}': {e}")
+            self.log.critical(f"Failed to add/update parameter '{name}': {e}")
             raise
 
     def delete(self, name: str):
