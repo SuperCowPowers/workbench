@@ -5,6 +5,9 @@
     
 ::: sageworks.api.parameter_store
 
+## Bypassing the 4k Limit
+AWS Parameter Storage has a 4k limit on values, the SageWorks class bypasses this limit by detecting large values (strings, data, whatever) and compressing those on the fly. The decompressing is also handled automatically, so for larger data simply use the `add()` and `get()` methods and it will all **just work**.
+
 ## Examples
 These example show how to use the `ParameterStore()` class to list, add, and get parameters from the AWS Parameter Store Service.
 
