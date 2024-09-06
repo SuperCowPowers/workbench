@@ -15,14 +15,19 @@ class ParameterStore:
 
     Common Usage:
         ```
-        param_store = ParameterStore()
-        param_store.list()
-        param_store.add("key", "value")
-        value = param_store.get("key")
+        params = ParameterStore()
+        params.list()
+        params.add("key", "value")
+        value = params.get("key")
 
         # Can also store lists and dictionaries
-        param_store.add("my_data", {"key": "value", "number": 42})
-        retrieved_dict = param_store.get("my_data")
+        params.add("my_data", {"key": "value", "number": 4.2, "list": [1,2,3]})
+        return_value = params.get("my_data")
+        pprint(return_value)
+
+        {'key': 'value', 'list': [1, 2, 3], 'number': 4.2}
+
+        # Delete parameters
         param_store.delete("my_data")
         ```
     """
@@ -84,7 +89,7 @@ class ParameterStore:
         # Return the aggregated list of parameter names
         return all_parameters
 
-    def get(self, name: str, decrypt: bool = True):
+    def get(self, name: str, decrypt: bool = True) -> Union[str, list, dict, None]:
         """Retrieve a parameter value from the AWS Parameter Store.
 
         Args:
@@ -92,7 +97,7 @@ class ParameterStore:
             decrypt (bool): Whether to decrypt secure string parameters.
 
         Returns:
-            str | list | dict: The parameter value.
+            Union[str, list, dict, None]: The value of the parameter or None if not found.
         """
         try:
             # Add the prefix to the parameter name

@@ -11,6 +11,7 @@ nav:
     - FeatureSet: api_classes/feature_set.md
     - Model: api_classes/model.md
     - Endpoint: api_classes/endpoint.md
+    - Parameter Store: api_classes/parameter_store.md
     - Pipelines: api_classes/pipelines.md
     - Monitor: api_classes/monitor.md
   - Blogs/Research: 
