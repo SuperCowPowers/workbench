@@ -40,7 +40,7 @@ class ParameterStore:
         self.ssm_client = self.boto_session.client("ssm")
 
         # Prefix all parameter names
-        self.prefix = prefix + "/" if prefix else ""
+        self.prefix = prefix + "/" if prefix else "/"
 
     def list(self) -> list:
         """List all parameters under the prefix in the AWS Parameter Store.
@@ -50,7 +50,7 @@ class ParameterStore:
         """
         try:
             # Return the names of the parameters within the prefix
-            if not self.prefix:
+            if self.prefix == "/":
                 response = self.ssm_client.describe_parameters()
             else:
                 response = self.ssm_client.describe_parameters(
@@ -84,6 +84,9 @@ class ParameterStore:
             # Add the prefix to the parameter name
             name = self.prefix + name
 
+            # Remove any double // in the name
+            name = name.replace("//", "/")
+
             # Retrieve the parameter from Parameter Store
             response = self.ssm_client.get_parameter(Name=name, WithDecryption=decrypt)
             value = response["Parameter"]["Value"]
@@ -111,6 +114,9 @@ class ParameterStore:
         try:
             # Add the prefix to the parameter name
             name = self.prefix + name
+
+            # Remove any double // in the name
+            name = name.replace("//", "/")
 
             # Anything that's not a string gets converted to JSON
             if not isinstance(value, str):
