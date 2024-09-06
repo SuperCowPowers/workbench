@@ -388,6 +388,7 @@ class ModelCore(Artifact):
         # If we have NO endpionts, then set a health tags
         if not registered_endpoints:
             self.add_health_tag("no_endpoint")
+            self.details(recompute=True)
 
         # A new endpoint means we need to refresh our inference path
         time.sleep(2)
