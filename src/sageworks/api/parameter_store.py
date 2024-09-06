@@ -41,8 +41,13 @@ class ParameterStore:
         # Create a Systems Manager (SSM) client for Parameter Store operations
         self.ssm_client = self.boto_session.client("ssm")
 
+        # Give some admonition if the prefix is not set
+        if prefix is None:
+            self.log.warning("No prefix set, you have access to all parameters, be responsible :)")
+
         # Prefix all parameter names
         self.prefix = prefix + "/" if prefix else "/"
+
 
     def list(self) -> list:
         """List all parameters under the prefix in the AWS Parameter Store.
