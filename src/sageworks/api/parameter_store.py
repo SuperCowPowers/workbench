@@ -48,7 +48,6 @@ class ParameterStore:
         # Prefix all parameter names
         self.prefix = prefix + "/" if prefix else "/"
 
-
     def list(self) -> list:
         """List all parameters under the prefix in the AWS Parameter Store.
 
@@ -56,20 +55,34 @@ class ParameterStore:
             list: A list of parameter names and details.
         """
         try:
-            # Return the names of the parameters within the prefix
-            if self.prefix == "/":
-                response = self.ssm_client.describe_parameters()
-            else:
-                response = self.ssm_client.describe_parameters(
-                    ParameterFilters=[{"Key": "Name", "Option": "BeginsWith", "Values": [self.prefix]}]
-                )
+            # Add the ParameterFilters if a prefix other than "/" is used
+            params = {"MaxResults": 50}
+            if self.prefix != "/":
+                params["ParameterFilters"] = [{"Key": "Name", "Option": "BeginsWith", "Values": [self.prefix]}]
 
-            # Return the names of the parameters within the prefix
-            return [param["Name"] for param in response["Parameters"]]
+            # Initialize the list to collect parameter names
+            all_parameters = []
+
+            # Make the initial call to describe parameters
+            response = self.ssm_client.describe_parameters(**params)
+
+            # Aggregate the names from the initial response
+            all_parameters.extend(param["Name"] for param in response["Parameters"])
+
+            # Continue to paginate if there's a NextToken
+            while "NextToken" in response:
+                # Update the parameters with the NextToken for subsequent calls
+                params["NextToken"] = response["NextToken"]
+                response = self.ssm_client.describe_parameters(**params)
+
+                # Aggregate the names from the subsequent responses
+                all_parameters.extend(param["Name"] for param in response["Parameters"])
 
         except Exception as e:
             self.log.error(f"Failed to list parameters: {e}")
-            return []
+
+        # Return the aggregated list of parameter names
+        return all_parameters
 
     def get(self, name: str, decrypt: bool = True):
         """Retrieve a parameter value from the AWS Parameter Store.
