@@ -192,9 +192,10 @@ class AthenaSource(DataSourceAbstract):
 
     def num_columns(self) -> int:
         """Return the number of columns for this Data Source"""
-        return len(self.column_names())
+        return len(self.columns())
 
-    def column_names(self) -> list[str]:
+    @property
+    def columns(self) -> list[str]:
         """Return the column names for this Athena Table"""
         return [item["Name"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
 
@@ -563,7 +564,7 @@ if __name__ == "__main__":
     print(f"Modified: {my_data.modified()}")
 
     # Column Names and Types
-    print(f"Column Names: {my_data.column_names()}")
+    print(f"Column Names: {my_data.columns()}")
     print(f"Column Types: {my_data.column_types()}")
     print(f"Column Details: {my_data.column_details()}")
 
@@ -623,7 +624,7 @@ if __name__ == "__main__":
 
     # Set the display columns
     print("\n\nDisplay Columns")
-    print(my_data.set_display_columns(my_data.column_names()))
+    print(my_data.set_display_columns(my_data.columns()))
 
     # Get the display columns
     print("\n\nDisplay Columns")

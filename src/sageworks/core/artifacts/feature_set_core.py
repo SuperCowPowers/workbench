@@ -122,7 +122,8 @@ class FeatureSetCore(Artifact):
         """Return the size of the internal DataSource in MegaBytes"""
         return self.data_source.size()
 
-    def column_names(self) -> list[str]:
+    @property
+    def columns(self) -> list[str]:
         """Return the column names of the Feature Set"""
         return list(self.column_details().keys())
 
@@ -191,7 +192,7 @@ class FeatureSetCore(Artifact):
 
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""
-        return len(self.column_names())
+        return len(self.columns())
 
     def num_rows(self) -> int:
         """Return the number of rows of the internal DataSource"""
@@ -278,7 +279,7 @@ class FeatureSetCore(Artifact):
             str: The Athena query to get the latest snapshot of features
         """
         # Remove FeatureGroup metadata columns that might have gotten added
-        columns = self.column_names()
+        columns = self.columns()
         filter_columns = ["write_time", "api_invocation_time", "is_deleted"]
         columns = ", ".join(['"' + x + '"' for x in columns if x not in filter_columns])
 
@@ -595,7 +596,7 @@ if __name__ == "__main__":
     print(f"Rows: {num_rows} Columns: {num_columns}")
 
     # What are the column names?
-    columns = my_features.column_names()
+    columns = my_features.columns()
     print(columns)
 
     # Get the metadata and tags associated with this feature set

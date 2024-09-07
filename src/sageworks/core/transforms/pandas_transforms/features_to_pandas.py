@@ -43,7 +43,7 @@ class FeaturesToPandas(Transform):
         table = input_data.athena_table
 
         # Get the list of columns (and subtract metadata columns that might get added)
-        columns = input_data.column_names()
+        columns = input_data.columns()
         filter_columns = ["write_time", "api_invocation_time", "is_deleted"]
         columns = ", ".join([x for x in columns if x not in filter_columns])
 

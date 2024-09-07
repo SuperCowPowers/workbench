@@ -141,7 +141,7 @@ if __name__ == "__main__":
     print(f"UUID: {my_data.uuid}")
 
     # Set computation view columns
-    # computation_cols = my_data.column_names()
+    # computation_cols = my_data.columns()
     # my_data.set_computation_columns(computation_cols)
 
     # Get column stats for computation columns

@@ -68,7 +68,7 @@ class S3HeavyToDataSource:
         return DynamicFrame.fromDF(spark_df, self.glue_context, "output_dyf")
 
     @staticmethod
-    def remove_periods_from_column_names(dyf: DynamicFrame) -> DynamicFrame:
+    def remove_periods_from_columns(dyf: DynamicFrame) -> DynamicFrame:
         """Remove periods from column names in the DynamicFrame
         Args:
             dyf (DynamicFrame): The DynamicFrame to convert
@@ -142,7 +142,7 @@ class S3HeavyToDataSource:
 
         # Relationalize will put periods in the column names. This will cause
         # problems later when we try to create a FeatureSet from this DataSource
-        output_dyf = self.remove_periods_from_column_names(output_dyf)
+        output_dyf = self.remove_periods_from_columns(output_dyf)
 
         print("After TimeStamp Conversions and Removing Periods from column names")
         output_dyf.printSchema()
