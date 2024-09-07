@@ -1710,6 +1710,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#glue-job-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Glue Job Changes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#misc" class="md-nav__link">
     <span class="md-ellipsis">
       Misc
@@ -2020,6 +2029,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#glue-job-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Glue Job Changes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#misc" class="md-nav__link">
     <span class="md-ellipsis">
       Misc
@@ -2060,8 +2078,8 @@
 <p>The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines.</p>
 <h3 id="additional-functionality">Additional Functionality</h3>
 <ul>
-<li>View Support (docs coming soon :)</li>
-<li>CloudWatch (docs coming soon :)</li>
+<li>View Support (<a href="../../api_classes/views/">Views</a>)</li>
+<li>CloudWatch (<a href="../../cloudwatch/">CloudWatch Docs</a>)</li>
 </ul>
 <h3 id="api-changes">API Changes</h3>
 <ul>
@@ -2091,6 +2109,20 @@
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a> model = Model(&quot;empty-model-group&quot;)
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a> model.list_inference_runs()
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a> Out[4]: []
+</span></code></pre></div>
+<h3 id="glue-job-changes">Glue Job Changes</h3>
+<p>We're spinning up the CloudWatch Handler much earlier now, so if you're setting config like this:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>from sageworks.utils.config_manager import ConfigManager
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a># Set the SageWorks Config
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>cm = ConfigManager()
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>cm.set_config(&quot;SAGEWORKS_BUCKET&quot;, args_dict[&quot;sageworks-bucket&quot;])
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>cm.set_config(&quot;REDIS_HOST&quot;, args_dict[&quot;redis-host&quot;])
+</span></code></pre></div>
+<p>Just switch out that code for this code. <strong>Note:</strong> these need to be set before importing sageworks</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a># Set these ENV vars for SageWorks 
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>os.environ[&#39;SAGEWORKS_BUCKET&#39;] = args_dict[&quot;sageworks-bucket&quot;]
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>os.environ[&quot;REDIS_HOST&quot;] = args_dict[&quot;redis-host&quot;]
 </span></code></pre></div>
 <h3 id="misc">Misc</h3>
 <p><strong>Confusion Matrix support for 'ordinal' labels</strong></p>
