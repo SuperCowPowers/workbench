@@ -47,8 +47,8 @@ class MonitorCore:
         self.statistics_json_file = f"{self.baseline_dir}/statistics.json"
 
         # Initialize the DefaultModelMonitor
-        self.sageworks_role = AWSAccountClamp().sageworks_execution_role_arn()
-        self.model_monitor = DefaultModelMonitor(role=self.sageworks_role, instance_type=self.instance_type)
+        self.sageworks_role_arn = AWSAccountClamp().aws_session.get_sageworks_execution_role_arn()
+        self.model_monitor = DefaultModelMonitor(role=self.sageworks_role_arn, instance_type=self.instance_type)
 
     def summary(self) -> dict:
         """Return the summary of information about the endpoint monitor

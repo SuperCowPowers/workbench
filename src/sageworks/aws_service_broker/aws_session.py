@@ -1,10 +1,13 @@
+import os
 import boto3
+import re
 from botocore.exceptions import ClientError, UnauthorizedSSOTokenError, TokenRetrievalError
 from botocore.credentials import RefreshableCredentials
 from botocore.session import get_session
 import logging
 
 # SageWorks Imports
+from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.execution_environment import running_on_lambda, running_on_glue
 
 
@@ -13,7 +16,15 @@ class AWSSession:
 
     def __init__(self):
         self.log = logging.getLogger("sageworks")
-        self.sageworks_role_name = "SageWorks-ExecutionRole"
+
+        # Pull in our config from the config manager
+        self.cm = ConfigManager()
+        self.sageworks_role_name = self.cm.get_config("SAGEWORKS_ROLE")
+
+        # Grab the AWS Profile from the Config Manager
+        profile = self.cm.get_config("AWS_PROFILE")
+        if profile is not None:
+            os.environ["AWS_PROFILE"] = profile
 
         # Grab our AWS Account Info
         try:
@@ -42,8 +53,17 @@ class AWSSession:
             self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
             raise RuntimeError("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...") from e
 
-    def _get_sageworks_execution_role_arn(self):
+    def get_sageworks_execution_role_arn(self):
         """Get the SageWorks Execution Role ARN"""
+        # Validate the account ID is a 12-digit number
+        if not self.account_id.isdigit() or len(self.account_id) != 12:
+            raise ValueError("Invalid AWS account ID")
+
+        # Validate the role name contains only allowed characters
+        if not re.match(r"^[\w+=,.@-]+$", self.sageworks_role_name):
+            raise ValueError("Invalid SageWorks role name")
+
+        # Construct the ARN
         return f"arn:aws:iam::{self.account_id}:role/{self.sageworks_role_name}"
 
     def _sageworks_role_boto3_session(self):
@@ -64,7 +84,7 @@ class AWSSession:
         self.log.important("Assuming the SageWorks Execution Role with Refreshing Credentials...")
         sts_client = boto3.client("sts")
         response = sts_client.assume_role(
-            RoleArn=self._get_sageworks_execution_role_arn(),
+            RoleArn=self.get_sageworks_execution_role_arn(),
             RoleSessionName="sageworks-execution-role-session",
         ).get("Credentials")
         credentials = {

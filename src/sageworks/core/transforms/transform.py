@@ -65,10 +65,9 @@ class Transform(ABC):
 
         # Grab a SageWorks Role ARN, Boto3, SageMaker Session, and SageMaker Client
         self.aws_account_clamp = AWSAccountClamp()
-        self.sageworks_role_arn = self.aws_account_clamp.sageworks_execution_role_arn()
         self.boto3_session = self.aws_account_clamp.boto3_session
-        self.sm_session = self.aws_account_clamp.sagemaker_session(self.boto3_session)
-        self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto3_session)
+        self.sm_session = self.aws_account_clamp.sagemaker_session()
+        self.sm_client = self.aws_account_clamp.sagemaker_client()
 
         # Delimiter for storing lists in AWS Tags
         self.tag_delimiter = "::"

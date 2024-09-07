@@ -1,6 +1,5 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
 
-import os
 import boto3
 from botocore.exceptions import (
     ClientError,
@@ -26,7 +25,6 @@ class AWSAccountClamp:
     # Initialize Class Attributes
     log = None
     cm = None
-    role_name = None
     sageworks_bucket_name = None
     account_id = None
     region = None
@@ -46,14 +44,13 @@ class AWSAccountClamp:
                 cls.log.error("SageWorks Configuration Incomplete...")
                 cls.log.error("Run the 'sageworks' command and follow the prompts...")
                 raise FatalConfigError()
-            cls.role_name = cls.cm.get_config("SAGEWORKS_ROLE")
             cls.sageworks_bucket_name = cls.cm.get_config("SAGEWORKS_BUCKET")
 
-            # Note: We might want to revisit this
-            profile = cls.cm.get_config("AWS_PROFILE")
-            if profile is not None:
-                os.environ["AWS_PROFILE"] = profile
+            # Grab our AWS Boto3 Session
+            cls.aws_session = AWSSession()
+            cls.boto3_session = cls.aws_session.boto3_session
 
+            # Check our AWS Identity
             try:
                 cls.account_id = boto3.client("sts").get_caller_identity()["Account"]
                 cls.region = boto3.session.Session().region_name
@@ -65,9 +62,6 @@ class AWSAccountClamp:
             cls.log.info("Checking SageWorks API License...")
             cls.cm.load_and_check_license(cls.account_id)
             cls.cm.print_license_info()
-
-            # Grab our AWS Boto3 Session
-            cls.boto3_session = AWSSession().boto3_session
 
             # Create the Singleton Instance
             cls.instance = super(AWSAccountClamp, cls).__new__(cls)
