@@ -805,10 +805,10 @@ class EndpointCore(Artifact):
 
             # Make sure we add the trailing slash
             s3_path = s3_path if s3_path.endswith("/") else f"{s3_path}/"
-            objects = wr.s3.list_objects(s3_path, boto3_session=self.boto_session)
+            objects = wr.s3.list_objects(s3_path, boto3_session=self.boto3_session)
             for obj in objects:
                 self.log.info(f"Deleting S3 Object {obj}...")
-            wr.s3.delete_objects(objects, boto3_session=self.boto_session)
+            wr.s3.delete_objects(objects, boto3_session=self.boto3_session)
 
         # Now delete any data in the Cache
         for key in self.data_storage.list_subkeys(f"endpoint:{self.uuid}:"):

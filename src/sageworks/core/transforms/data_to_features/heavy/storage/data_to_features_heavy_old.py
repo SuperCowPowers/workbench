@@ -79,7 +79,7 @@ class DataToFeaturesHeavy(Transform):
             ctas_database=self.output_database,
             s3_output=s3_storage_path,
             write_compression="snappy",
-            boto3_session=self.boto_session,
+            boto3_session=self.boto3_session,
             wait=True,
         )
         self.log.info(f"FeatureSet Data Created: {info}")

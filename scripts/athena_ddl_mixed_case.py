@@ -13,12 +13,12 @@ will be lowercased to castle.
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
-boto_session = AWSAccountClamp().boto_session()
+boto3_session = AWSAccountClamp().boto3_session
 
 
 # Create a Glue client and Athena client
-glue_client = boto_session.client("glue")
-athena_client = boto_session.client("athena")
+glue_client = boto3_session.client("glue")
+athena_client = boto3_session.client("athena")
 
 # Define the database, table name, and S3 path
 database_name = "sageworks"

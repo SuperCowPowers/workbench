@@ -37,7 +37,7 @@ class AWSAccountCheck:
         """Check if the SageWorks S3 Bucket is set up and has the correct sub-folders"""
 
         self.log.info("*** AWS SageWorks Bucket Check ***")
-        s3 = self.aws_clamp.boto_session().resource("s3")
+        s3 = self.aws_clamp.boto3_session.resource("s3")
         bucket = s3.Bucket(self.sageworks_bucket)
 
         # Check if the bucket exists
@@ -69,12 +69,8 @@ class AWSAccountCheck:
         self.aws_clamp.check_aws_identity()
         self.log.info("Identity Check Success...")
 
-        self.log.info("*** AWS Assume SageWorks ExecutionRole Check ***")
-        check_boto_session = self.aws_clamp.boto_session()
-        self.log.info("Assume Role Success...")
-
         self.log.info("*** AWS S3 Access Check ***")
-        self.aws_clamp.check_s3_access(check_boto_session)
+        self.aws_clamp.check_s3_access()
         self.log.info("S3 Access Check Success...")
 
         # Check that the SageWorks S3 Bucket and Sub-folders are created

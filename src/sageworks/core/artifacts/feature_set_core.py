@@ -360,7 +360,7 @@ class FeatureSetCore(Artifact):
         # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
         s3_delete_path = self.feature_sets_s3_path + f"/{self.uuid}/"
         self.log.info(f"Deleting All FeatureSet S3 Storage Objects {s3_delete_path}")
-        wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
+        wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto3_session)
 
         # Now delete any data in the Cache
         for key in self.data_storage.list_subkeys(f"feature_set:{self.uuid}:"):

@@ -125,7 +125,7 @@ class PandasToData(Transform):
                 database=self.data_catalog_db,
                 table=self.output_uuid,
                 filename_prefix=f"{self.output_uuid}_",
-                boto3_session=self.boto_session,
+                boto3_session=self.boto3_session,
                 partition_cols=None,
                 glue_table_settings=glue_table_settings,
                 sanitize_columns=False,
@@ -149,7 +149,7 @@ class PandasToData(Transform):
                 database=self.data_catalog_db,
                 table=self.output_uuid,
                 filename_prefix=f"{self.output_uuid}_",
-                boto3_session=self.boto_session,
+                boto3_session=self.boto3_session,
                 partition_cols=None,
                 glue_table_settings=glue_table_settings,
             )

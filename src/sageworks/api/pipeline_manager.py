@@ -40,10 +40,10 @@ class PipelineManager:
         self.pipelines_s3_path = f"s3://{self.sageworks_bucket}/pipelines/"
 
         # Grab a SageWorks Session (this allows us to assume the SageWorks ExecutionRole)
-        self.boto_session = AWSAccountClamp().boto_session()
+        self.boto3_session = AWSAccountClamp().boto3_session
 
         # Read all the Pipelines from this S3 path
-        self.s3_client = self.boto_session.client("s3")
+        self.s3_client = self.boto3_session.client("s3")
 
     def list_pipelines(self) -> list:
         """List all the Pipelines in the S3 Bucket

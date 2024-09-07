@@ -38,7 +38,7 @@ class GraphCore(Artifact):
         super().__init__(name)
 
         # Grab our S3 client
-        self.s3_client = self.boto_session.client("s3")
+        self.s3_client = self.boto3_session.client("s3")
 
         # Convert PosixPath to string if necessary
         if isinstance(source, Path):

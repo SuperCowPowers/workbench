@@ -46,8 +46,8 @@ class Pipeline:
         self.s3_path = f"s3://{self.bucket}/{self.key}"
 
         # Grab a SageWorks Session (this allows us to assume the SageWorks ExecutionRole)
-        self.boto_session = AWSAccountClamp().boto_session()
-        self.s3_client = self.boto_session.client("s3")
+        self.boto3_session = AWSAccountClamp().boto3_session
+        self.s3_client = self.boto3_session.client("s3")
 
         # If this S3 Path exists, load the Pipeline
         if wr.s3.does_object_exist(self.s3_path):

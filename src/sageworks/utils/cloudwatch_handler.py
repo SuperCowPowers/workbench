@@ -18,6 +18,7 @@ class CloudWatchHandler:
 
         # Import ColoredFormatter here to avoid circular imports
         from sageworks.utils.sageworks_logging import ColoredFormatter
+
         self.boto3_session = AWSSession().boto3_session
         self.log_stream_name = self.determine_log_stream()
         self.formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")

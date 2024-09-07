@@ -179,8 +179,6 @@ class SageWorksShell:
                 aws_clamp = importlib.import_module("sageworks.aws_service_broker.aws_account_clamp").AWSAccountClamp()
                 cprint("lightgreen", "AWS Account Clamp Created...")
                 aws_clamp.check_aws_identity()
-                cprint("lightgreen", "AWS Identity Check...")
-                aws_clamp.boto_session()
                 cprint("lightgreen", "AWS Account Check AOK!")
             except RuntimeError:
                 cprint("red", "AWS Account Check Failed: Check AWS_PROFILE and/or Renew SSO Token...")

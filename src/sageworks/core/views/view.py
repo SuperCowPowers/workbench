@@ -79,7 +79,7 @@ class View:
         """Return the columns for the view"""
 
         # Retrieve the table metadata
-        glue_client = self.data_source.boto_session.client("glue")
+        glue_client = self.data_source.boto3_session.client("glue")
         response = glue_client.get_table(DatabaseName=self.database, Name=self.view_table_name)
 
         # Extract the column names from the schema

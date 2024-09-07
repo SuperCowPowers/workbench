@@ -323,7 +323,7 @@ class FeaturesToModel(Transform):
         self.log.info(f"Deleting training data {s3_training_path}...")
         wr.s3.delete_objects(
             [s3_training_path, s3_training_path.replace(".csv", ".csv.metadata")],
-            boto3_session=self.boto_session,
+            boto3_session=self.boto3_session,
         )
 
         # Create Model and officially Register

@@ -29,9 +29,9 @@ class Artifact(ABC):
 
         # Set up our Boto3 and SageMaker Session and SageMaker Client
         self.aws_account_clamp = AWSAccountClamp()
-        self.boto_session = self.aws_account_clamp.boto_session()
-        self.sm_session = self.aws_account_clamp.sagemaker_session(self.boto_session)
-        self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto_session)
+        self.boto3_session = self.aws_account_clamp.boto3_session
+        self.sm_session = self.aws_account_clamp.sagemaker_session()
+        self.sm_client = self.aws_account_clamp.sagemaker_client()
         self.aws_region = self.aws_account_clamp.region
 
         # The Meta() class pulls and collects metadata from a bunch of AWS Services

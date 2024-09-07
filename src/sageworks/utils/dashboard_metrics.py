@@ -28,8 +28,8 @@ class DashboardMetrics:
         - HTTPCode_Target_5XX_Count: The number of 5XX errors returned by the targets.
         """
         self.aws_account_clamp = AWSAccountClamp()
-        self.boto_session = self.aws_account_clamp.boto_session()
-        self.cloudwatch = self.boto_session.client("cloudwatch")
+        self.boto3_session = self.aws_account_clamp.boto3_session
+        self.cloudwatch = self.boto3_session.client("cloudwatch")
         self.start_time = None
         self.end_time = None
 

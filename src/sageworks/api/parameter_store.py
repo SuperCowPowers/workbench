@@ -53,10 +53,10 @@ class ParameterStore:
         self.log = logging.getLogger("sageworks")
 
         # Initialize a SageWorks Session (to assume the SageWorks ExecutionRole)
-        self.boto_session = AWSAccountClamp().boto_session()
+        self.boto3_session = AWSAccountClamp().boto3_session
 
         # Create a Systems Manager (SSM) client for Parameter Store operations
-        self.ssm_client = self.boto_session.client("ssm")
+        self.ssm_client = self.boto3_session.client("ssm")
 
         # Give some admonition if the prefix is not set
         if prefix is None:

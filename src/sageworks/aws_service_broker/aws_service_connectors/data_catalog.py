@@ -31,7 +31,7 @@ class DataCatalog(Connector):
     def check(self) -> bool:
         """Check if we can reach/connect to this AWS Service"""
         try:
-            wr.catalog.get_databases(boto3_session=self.boto_session)
+            wr.catalog.get_databases(boto3_session=self.boto3_session)
             return True
         except Exception as e:
             self.log.critical(f"Error connecting to AWS Data Catalog: {e}")
@@ -42,7 +42,7 @@ class DataCatalog(Connector):
         for database in self.database_scope:
             # Get all table metadata from the Glue catalog Database
             self.log.debug(f"Refreshing Data Catalog Database: {database}...")
-            all_tables = list(wr.catalog.get_tables(database=database, boto3_session=self.boto_session))
+            all_tables = list(wr.catalog.get_tables(database=database, boto3_session=self.boto3_session))
 
             # Separate normal tables and views
             normal_tables = [

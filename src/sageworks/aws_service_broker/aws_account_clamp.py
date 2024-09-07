@@ -8,8 +8,6 @@ from botocore.exceptions import (
     TokenRetrievalError,
 )
 from botocore.client import BaseClient
-from botocore.credentials import RefreshableCredentials
-from botocore.session import get_session
 import logging
 
 # We import SageSession lazily, so we'll leave this hint here for type checkers
@@ -130,6 +128,7 @@ class AWSAccountClamp:
             SageSession: A SageMaker session object
         """
         from sagemaker.session import Session as SageSession
+
         return SageSession(boto_session=cls.boto3_session)
 
     @classmethod
