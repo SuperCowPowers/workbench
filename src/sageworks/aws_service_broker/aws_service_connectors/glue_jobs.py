@@ -17,7 +17,7 @@ class GlueJobs(Connector):
         super().__init__()
 
         # Set up our glue client and internal data storage
-        self.glue_client = self.boto_session.client("glue")
+        self.glue_client = self.boto3_session.client("glue")
         self.glue_job_metadata = {}
 
     def check(self) -> bool:

@@ -1,11 +1,11 @@
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
-boto_session = AWSAccountClamp().boto_session()
+boto3_session = AWSAccountClamp().boto3_session
 
 
 # Create a Glue client
-glue_client = boto_session.client("glue")
+glue_client = boto3_session.client("glue")
 
 # Define the database and table names
 database_name = "sageworks"

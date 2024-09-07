@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 # SageWorks imports
 from sageworks.utils.license_manager import LicenseManager
-from sageworks.utils.docker_utils import running_on_docker
+from sageworks.utils.execution_environment import running_on_docker
 
 # Python 3.9 compatibility
 from sageworks.utils.resource_utils import get_resource_path

@@ -39,7 +39,7 @@ class S3ToDataSourceLight(Transform):
 
     def input_size_mb(self) -> int:
         """Get the size of the input S3 object in MBytes"""
-        size_in_bytes = wr.s3.size_objects(self.input_uuid, boto3_session=self.boto_session)[self.input_uuid]
+        size_in_bytes = wr.s3.size_objects(self.input_uuid, boto3_session=self.boto3_session)[self.input_uuid]
         size_in_mb = round(size_in_bytes / 1_000_000)
         return size_in_mb
 
@@ -56,9 +56,9 @@ class S3ToDataSourceLight(Transform):
 
         # Read in the S3 CSV as a Pandas DataFrame
         if self.datatype == "csv":
-            df = wr.s3.read_csv(self.input_uuid, low_memory=False, boto3_session=self.boto_session)
+            df = wr.s3.read_csv(self.input_uuid, low_memory=False, boto3_session=self.boto3_session)
         else:
-            df = wr.s3.read_json(self.input_uuid, lines=True, boto3_session=self.boto_session)
+            df = wr.s3.read_json(self.input_uuid, lines=True, boto3_session=self.boto3_session)
 
         # Temporary hack to limit the number of columns in the dataframe
         if len(df.columns) > 40:

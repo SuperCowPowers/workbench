@@ -82,7 +82,7 @@ class DataToFeaturesChunk(Transform):
             database=self.ds_database,
             ctas_approach=False,
             chunksize=self.chunk_size,
-            boto3_session=self.boto_session,
+            boto3_session=self.boto3_session,
         ):
             # Hand off each chunk of data
             self.chunked_to_features.add_chunk(chunk)

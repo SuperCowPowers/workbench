@@ -4,7 +4,7 @@ import time
 # Get the boto3 session from the SageWorks Account Clamp
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
-session = AWSAccountClamp().boto_session()
+session = AWSAccountClamp().boto3_session
 
 # Create EventBridge client
 eventbridge_client = session.client("events")

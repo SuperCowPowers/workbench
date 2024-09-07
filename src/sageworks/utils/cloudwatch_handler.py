@@ -6,7 +6,8 @@ import watchtower
 import atexit  # Import atexit for handling cleanup on exit
 
 # SageWorks imports
-from sageworks.utils.docker_utils import running_on_docker
+from sageworks.utils.execution_environment import running_on_docker
+from sageworks.aws_service_broker.aws_session import AWSSession
 
 
 class CloudWatchHandler:
@@ -14,18 +15,14 @@ class CloudWatchHandler:
 
     def __init__(self):
         # Initialize the CloudWatch handler
-        try:
-            # Import AWSAccountClamp here to avoid circular imports
-            from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-            from sageworks.utils.sageworks_logging import ColoredFormatter
 
-            self.account_clamp = AWSAccountClamp()
-            self.boto3_session = self.account_clamp.boto_session()
-            self.log_stream_name = self.determine_log_stream()
-            self.formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
+        # Import ColoredFormatter here to avoid circular imports
+        from sageworks.utils.sageworks_logging import ColoredFormatter
 
-        except Exception as e:
-            raise RuntimeError(f"Failed to initialize CloudWatchHandler: {e}")
+        self.boto3_session = AWSSession().boto3_session
+        self.log_stream_name = self.determine_log_stream()
+        self.formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
+        self.cloudwatch_handler = None
 
     def add_cloudwatch_handler(self, log):
         """Add a CloudWatch Logs handler to the provided logger"""

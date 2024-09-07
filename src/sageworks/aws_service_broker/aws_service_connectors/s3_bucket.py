@@ -24,7 +24,7 @@ class S3Bucket(Connector):
     def check(self) -> bool:
         """Check if we can reach/connect to this AWS Service"""
         try:
-            wr.s3.does_object_exist(self.bucket, boto3_session=self.boto_session)
+            wr.s3.does_object_exist(self.bucket, boto3_session=self.boto3_session)
             return True
         except Exception:
             self.log.critical(f"Could not connect to AWS S3 {self.bucket}!")
@@ -34,7 +34,7 @@ class S3Bucket(Connector):
         """Refresh all the file/object data from this bucket"""
         self.log.debug(f"Refreshing S3 Bucket: {self.bucket}...")
         try:
-            _aws_file_info = wr.s3.describe_objects(self.bucket, boto3_session=self.boto_session)
+            _aws_file_info = wr.s3.describe_objects(self.bucket, boto3_session=self.boto3_session)
         except ClientError as error:
             # If the exception is a ResourceNotFound, this is fine, otherwise raise all other exceptions
             if error.response["Error"]["Code"] in ["ResourceNotFound", "NoSuchBucket"]:

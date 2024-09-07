@@ -135,7 +135,7 @@ class AthenaSource(DataSourceAbstract):
                 parameters=new_meta,
                 database=self.get_database(),
                 table=self.get_table_name(),
-                boto3_session=self.boto_session,
+                boto3_session=self.boto3_session,
             )
             self.metadata_refresh_needed = True
         except botocore.exceptions.ClientError as e:
@@ -151,7 +151,7 @@ class AthenaSource(DataSourceAbstract):
                     parameters=new_meta,
                     database=self.get_database(),
                     table=self.get_table_name(),
-                    boto3_session=self.boto_session,
+                    boto3_session=self.boto3_session,
                 )
             else:
                 self.log.critical(f"Failed to upsert metadata: {e}")
@@ -162,7 +162,7 @@ class AthenaSource(DataSourceAbstract):
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
-        size_in_bytes = sum(wr.s3.size_objects(self.s3_storage_location(), boto3_session=self.boto_session).values())
+        size_in_bytes = sum(wr.s3.size_objects(self.s3_storage_location(), boto3_session=self.boto3_session).values())
         size_in_mb = size_in_bytes / 1_000_000
         return size_in_mb
 
@@ -217,7 +217,7 @@ class AthenaSource(DataSourceAbstract):
                 sql=query,
                 database=self.get_database(),
                 ctas_approach=False,
-                boto3_session=self.boto_session,
+                boto3_session=self.boto3_session,
             )
             scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
             if scanned_bytes > 0:
@@ -239,12 +239,12 @@ class AthenaSource(DataSourceAbstract):
             query_execution_id = wr.athena.start_query_execution(
                 sql=query,
                 database=self.get_database(),
-                boto3_session=self.boto_session,
+                boto3_session=self.boto3_session,
             )
             self.log.debug(f"QueryExecutionId: {query_execution_id}")
 
             # Wait for the query to complete
-            wr.athena.wait_query(query_execution_id=query_execution_id, boto3_session=self.boto_session)
+            wr.athena.wait_query(query_execution_id=query_execution_id, boto3_session=self.boto3_session)
             self.log.debug(f"Statement executed successfully: {query_execution_id}")
         except wr.exceptions.QueryFailed as e:
             if "AlreadyExistsException" in str(e):
@@ -272,7 +272,7 @@ class AthenaSource(DataSourceAbstract):
             sql=query,
             database=self.get_database(),
             ctas_approach=False,
-            boto3_session=self.boto_session,
+            boto3_session=self.boto3_session,
         )
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
@@ -484,7 +484,7 @@ class AthenaSource(DataSourceAbstract):
         # Compute our AWS URL
         query = f"select * from {self.get_database()}.{self.get_table_name()} limit 10"
         query_exec_id = wr.athena.start_query_execution(
-            sql=query, database=self.get_database(), boto3_session=self.boto_session
+            sql=query, database=self.get_database(), boto3_session=self.boto3_session
         )
         base_url = "https://console.aws.amazon.com/athena/home"
         details["aws_url"] = f"{base_url}?region={self.aws_region}#query/history/{query_exec_id}"
@@ -517,7 +517,7 @@ class AthenaSource(DataSourceAbstract):
 
         # Delete Data Catalog Table
         self.log.info(f"Deleting DataCatalog Table: {self.get_database()}.{self.get_table_name()}...")
-        wr.catalog.delete_table_if_exists(self.get_database(), self.get_table_name(), boto3_session=self.boto_session)
+        wr.catalog.delete_table_if_exists(self.get_database(), self.get_table_name(), boto3_session=self.boto3_session)
 
         # Delete S3 Storage Objects (if they exist)
         try:
@@ -526,7 +526,7 @@ class AthenaSource(DataSourceAbstract):
             s3_path = s3_path if s3_path.endswith("/") else f"{s3_path}/"
 
             self.log.info(f"Deleting S3 Storage Objects: {s3_path}...")
-            wr.s3.delete_objects(s3_path, boto3_session=self.boto_session)
+            wr.s3.delete_objects(s3_path, boto3_session=self.boto3_session)
         except Exception as e:
             self.log.error(f"Failed to delete S3 Storage Objects: {e}")
             self.log.warning("Malformed Artifact... good thing it's being deleted...")

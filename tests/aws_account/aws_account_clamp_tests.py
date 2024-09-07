@@ -16,12 +16,8 @@ def test():
     aws_account_clamp.check_aws_identity()
     print("Identity Check Success...")
 
-    print("*** AWS Assume SageWorks ExecutionRole Check ***")
-    check_boto_session = aws_account_clamp.boto_session()
-    print("Assume Role Success...")
-
     print("*** AWS S3 Access Check ***")
-    aws_account_clamp.check_s3_access(check_boto_session)
+    aws_account_clamp.check_s3_access()
     print("S3 Access Check Success...")
 
     print("*** AWS Sagemaker Session/Client Check ***")

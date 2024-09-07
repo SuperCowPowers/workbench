@@ -7,7 +7,6 @@ from sageworks.api.model import Model, ModelType
 
 
 model = Model("empty-model-group")
-# model = Model("abalone-regression")
 
 
 # Test the Model Metrics

@@ -15,7 +15,7 @@ def delete_invalid_views(database_scope):
         return
 
     # Grab the boto3 session from the DataCatalog
-    boto_session = data_catalog.boto_session
+    boto3_session = data_catalog.boto3_session
 
     # Okay now delete invalid views for each database
     for database in data_catalog.database_scope:
@@ -27,11 +27,11 @@ def delete_invalid_views(database_scope):
             try:
                 # Attempt a simple query to check if the view is valid
                 query = f"SELECT * FROM {view} limit 0"
-                wr.athena.read_sql_query(sql=query, database=database, ctas_approach=False, boto3_session=boto_session)
+                wr.athena.read_sql_query(sql=query, database=database, ctas_approach=False, boto3_session=boto3_session)
             except Exception as e:
                 if "INVALID_VIEW" in str(e):
                     print(f"Deleting invalid view: {view}...")
-                    wr.catalog.delete_table_if_exists(database, view, boto3_session=boto_session)
+                    wr.catalog.delete_table_if_exists(database, view, boto3_session=boto3_session)
                 else:
                     print(f"Error querying view {view}: {e}")
 

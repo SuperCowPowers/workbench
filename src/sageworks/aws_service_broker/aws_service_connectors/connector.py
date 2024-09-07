@@ -17,9 +17,9 @@ class Connector(ABC):
         # Initializing class attributes
         self.log = logging.getLogger("sageworks")
         self.aws_account_clamp = AWSAccountClamp()
-        self.boto_session = self.aws_account_clamp.boto_session()
-        self.sm_session = self.aws_account_clamp.sagemaker_session(self.boto_session)
-        self.sm_client = self.aws_account_clamp.sagemaker_client(self.boto_session)
+        self.boto3_session = self.aws_account_clamp.boto3_session
+        self.sm_session = self.aws_account_clamp.sagemaker_session()
+        self.sm_client = self.aws_account_clamp.sagemaker_client()
         self.metadata_size_info = defaultdict(dict)
 
     @abstractmethod

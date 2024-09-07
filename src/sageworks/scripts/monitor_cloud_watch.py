@@ -15,7 +15,7 @@ search_map = {
 
 def get_cloudwatch_client():
     """Get the CloudWatch Logs client using the SageWorks assumed role session."""
-    session = AWSAccountClamp().boto_session()
+    session = AWSAccountClamp().boto3_session
     return session.client("logs")
 
 

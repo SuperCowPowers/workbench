@@ -709,7 +709,7 @@ class ModelCore(Artifact):
         try:
             s3_delete_path = f"{self.model_training_path}/"
             self.log.info(f"Deleting Training S3 Objects {s3_delete_path}")
-            wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto_session)
+            wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto3_session)
         except Exception:
             self.log.warning(f"Could not find/delete training artifacts for {self.model_name}!")
 

@@ -15,7 +15,7 @@ class SageWorksEventBridge:
         self.event_bridge = None
 
         # Grab a SageWorks Session (this allows us to assume the SageWorks ExecutionRole)
-        self.boto_session = AWSAccountClamp().boto_session()
+        self.boto3_session = AWSAccountClamp().boto3_session
 
         # Check if the EventBridge bus exists
         self._check_event_bus()
@@ -24,7 +24,7 @@ class SageWorksEventBridge:
         """Check if the event bus exists and set up the EventBridge client"""
         try:
             # Get our AWS EventBridge Client
-            event_bridge_client = self.boto_session.client("events")
+            event_bridge_client = self.boto3_session.client("events")
 
             # Describe the event bus to check if it exists
             event_bridge_client.describe_event_bus(Name=self.event_bus)

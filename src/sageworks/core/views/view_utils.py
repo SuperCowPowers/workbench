@@ -87,7 +87,7 @@ def dataframe_to_table(data_source: DataSource, df: pd.DataFrame, table_name: st
     # Grab information from the data_source
     bucket = data_source.sageworks_bucket
     database = data_source.get_database()
-    boto_session = data_source.boto_session
+    boto3_session = data_source.boto3_session
     s3_path = f"s3://{bucket}/supplemental-data/{table_name}/"
 
     # Store the DataFrame as a Glue Catalog Table
@@ -98,11 +98,11 @@ def dataframe_to_table(data_source: DataSource, df: pd.DataFrame, table_name: st
         mode="overwrite",
         database=database,
         table=table_name,
-        boto3_session=boto_session,
+        boto3_session=boto3_session,
     )
 
     # Verify that the table is created
-    glue_client = boto_session.client("glue")
+    glue_client = boto3_session.client("glue")
     try:
         glue_client.get_table(DatabaseName=database, Name=table_name)
         log.info(f"Table {table_name} successfully created in database {database}.")
@@ -131,13 +131,13 @@ def delete_table(data_source: DataSource, table_name: str):
     """
     # Grab information from the data_source
     database = data_source.get_database()
-    boto_session = data_source.boto_session
+    boto3_session = data_source.boto3_session
 
     # Delete the table
-    wr.catalog.delete_table_if_exists(database=database, table=table_name, boto3_session=boto_session)
+    wr.catalog.delete_table_if_exists(database=database, table=table_name, boto3_session=boto3_session)
 
     # Verify that the table is deleted
-    glue_client = boto_session.client("glue")
+    glue_client = boto3_session.client("glue")
     try:
         glue_client.get_table(DatabaseName=database, Name=table_name)
         log.error(f"Failed to delete table {table_name} in database {database}.")

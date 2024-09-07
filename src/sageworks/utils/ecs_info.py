@@ -12,9 +12,9 @@ class ECSInfo:
 
         # Spin up our AWSAccountClamp
         self.aws_account_clamp = AWSAccountClamp()
-        self.boto_session = self.aws_account_clamp.boto_session()
-        self.ecs_client = self.boto_session.client("ecs")
-        self.elbv2_client = self.boto_session.client("elbv2")
+        self.boto3_session = self.aws_account_clamp.boto3_session
+        self.ecs_client = self.boto3_session.client("ecs")
+        self.elbv2_client = self.boto3_session.client("elbv2")
 
     def get_cluster_name(self):
         return self.ecs_metadata.get("Cluster", "Unknown")

@@ -114,5 +114,5 @@ if __name__ == "__main__":
         end.auto_inference(capture=True)
 
     # Create an empty Model Package Group
-    boto3_session = AWSAccountClamp().boto_session()
+    boto3_session = AWSAccountClamp().boto3_session
     create_model_package_group("empty-model-group", boto3_session)

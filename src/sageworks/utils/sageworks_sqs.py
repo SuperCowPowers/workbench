@@ -13,11 +13,11 @@ class SageWorksSQS:
         self.queue_url = queue_url
 
         # Grab a SageWorks Session (this allows us to assume the SageWorks-ExecutionRole)
-        self.boto_session = AWSAccountClamp().boto_session()
-        print(self.boto_session)
+        self.boto3_session = AWSAccountClamp().boto3_session
+        print(self.boto3_session)
 
         # Get our AWS EventBridge Client
-        self.sqs = self.boto_session.client("sqs")
+        self.sqs = self.boto3_session.client("sqs")
 
     def get_message(self, delete=False):
         """Get a message from the SQS Message Queue

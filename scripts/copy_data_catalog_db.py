@@ -1,9 +1,8 @@
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from datetime import datetime
 
 # Initialize a session using your AWS credentials
 aws_account_clamp = AWSAccountClamp()
-session = aws_account_clamp.boto_session()
+session = aws_account_clamp.boto3_session
 
 glue_client = session.client("glue")
 

@@ -17,7 +17,7 @@ class WebView(ABC):
         # Grab an AWS Metadata Broker object for pulling AWS Service information
         self.aws_broker = AWSServiceBroker()
         self.aws_account_clamp = AWSAccountClamp()
-        self.boto_session = self.aws_account_clamp.boto_session()
+        self.boto3_session = self.aws_account_clamp.boto3_session
         self.sm_session = self.aws_account_clamp.sagemaker_session()
 
     @abstractmethod

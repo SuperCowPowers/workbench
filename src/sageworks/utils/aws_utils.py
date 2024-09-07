@@ -448,7 +448,7 @@ if __name__ == "__main__":
 
     # Grab out SageMaker Session from the AWS Account Clamp
     sm_session = AWSAccountClamp().sagemaker_session()
-    boto3_session = AWSAccountClamp().boto_session()
+    boto3_session = AWSAccountClamp().boto3_session
 
     my_features = FeatureSetCore("test_features")
     my_meta = my_features.sageworks_meta()
