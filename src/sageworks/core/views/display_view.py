@@ -37,6 +37,6 @@ if __name__ == "__main__":
 
     # Create a Display View with a subset of columns
     aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-    columns = [col for col in fs.columns() if col not in aws_cols]
+    columns = [col for col in fs.columns if col not in aws_cols]
     test_view = view_maker.create(column_list=columns)
     print(test_view.pull_dataframe().head())

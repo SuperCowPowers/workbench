@@ -173,7 +173,7 @@ class FeatureSetCore(Artifact):
         Returns:
             list[str]: The columns from our display view
         """
-        return self.get_display_view().columns()
+        return self.get_display_view().columns
 
     def set_display_columns(self, display_columns: list[str], onboard: bool = True):
         """Set the display columns for this Data Source
@@ -192,7 +192,7 @@ class FeatureSetCore(Artifact):
 
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""
-        return len(self.columns())
+        return len(self.columns)
 
     def num_rows(self) -> int:
         """Return the number of rows of the internal DataSource"""
@@ -279,7 +279,7 @@ class FeatureSetCore(Artifact):
             str: The Athena query to get the latest snapshot of features
         """
         # Remove FeatureGroup metadata columns that might have gotten added
-        columns = self.columns()
+        columns = self.columns
         filter_columns = ["write_time", "api_invocation_time", "is_deleted"]
         columns = ", ".join(['"' + x + '"' for x in columns if x not in filter_columns])
 
@@ -596,8 +596,7 @@ if __name__ == "__main__":
     print(f"Rows: {num_rows} Columns: {num_columns}")
 
     # What are the column names?
-    columns = my_features.columns()
-    print(columns)
+    print(my_features.columns)
 
     # Get the metadata and tags associated with this feature set
     print(f"SageWorks Meta: {my_features.sageworks_meta()}")

@@ -192,7 +192,7 @@ class AthenaSource(DataSourceAbstract):
 
     def num_columns(self) -> int:
         """Return the number of columns for this Data Source"""
-        return len(self.columns())
+        return len(self.columns)
 
     @property
     def columns(self) -> list[str]:
@@ -564,7 +564,7 @@ if __name__ == "__main__":
     print(f"Modified: {my_data.modified()}")
 
     # Column Names and Types
-    print(f"Column Names: {my_data.columns()}")
+    print(f"Column Names: {my_data.columns}")
     print(f"Column Types: {my_data.column_types()}")
     print(f"Column Details: {my_data.column_details()}")
 
@@ -624,7 +624,7 @@ if __name__ == "__main__":
 
     # Set the display columns
     print("\n\nDisplay Columns")
-    print(my_data.set_display_columns(my_data.columns()))
+    print(my_data.set_display_columns(my_data.columns))
 
     # Get the display columns
     print("\n\nDisplay Columns")

@@ -75,6 +75,7 @@ class View:
         df = self.data_source.query(pull_query)
         return df
 
+    @property
     def columns(self) -> list:
         """Return the columns for the view"""
 
@@ -220,7 +221,7 @@ if __name__ == "__main__":
     # Grab a Computation View for a DataSource (that doesn't exist)
     computation_view = View(data_source, "computation")
     print(computation_view)
-    print(computation_view.columns())
+    print(computation_view.columns)
 
     # Delete the computation view
     computation_view.delete()
@@ -232,7 +233,7 @@ if __name__ == "__main__":
     print(df_head)
 
     # Pull the columns for the display view
-    print(display_view.columns())
+    print(display_view.columns)
 
     # Delete the display view
     # display_view.delete()

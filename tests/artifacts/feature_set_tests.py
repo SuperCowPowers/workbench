@@ -22,8 +22,7 @@ def test():
     print(f"Rows: {num_rows} Columns: {num_columns}")
 
     # What are the column names?
-    columns = my_features.column_names()
-    print(columns)
+    print(my_features.columns)
 
     # Get Tags associated with this Feature Set
     print(f"Tags: {my_features.get_tags()}")

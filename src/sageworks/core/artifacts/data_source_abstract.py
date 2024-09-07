@@ -47,6 +47,7 @@ class DataSourceAbstract(Artifact):
         """Return the number of columns for this Data Source"""
         pass
 
+    @property
     @abstractmethod
     def columns(self) -> list[str]:
         """Return the column names for this Data Source"""
@@ -64,7 +65,7 @@ class DataSourceAbstract(Artifact):
         Returns:
             dict: The column details for this Data Source
         """
-        names = self.columns()
+        names = self.columns
         types = self.column_types()
         if view == "display":
             return {name: type_ for name, type_ in zip(names, types) if name in self.get_display_columns()}
@@ -86,7 +87,7 @@ class DataSourceAbstract(Artifact):
         Returns:
             list[str]: The columns from our display view
         """
-        return self.get_display_view().columns()
+        return self.get_display_view().columns
 
     def set_display_columns(self, display_columns: list[str], onboard: bool = True):
         """Set the display columns for this Data Source

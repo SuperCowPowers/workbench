@@ -43,7 +43,7 @@ class Outliers:
 
         # If there are no outliers, return a DataFrame with defined columns but no rows
         if outlier_df is None:
-            return pd.DataFrame(columns=data_source.columns() + ["outlier_group"])
+            return pd.DataFrame(columns=data_source.columns + ["outlier_group"])
 
         # Get the top N outliers for each outlier group
         outlier_df = self.get_top_n_outliers(outlier_df)

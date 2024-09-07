@@ -226,7 +226,7 @@ class FeaturesToModel(Transform):
             # - Don't include any columns that are of type string or timestamp
             # - The rest of the columns are assumed to be features
             self.log.warning("Guessing at the feature list, HIGHLY SUGGESTED to specify an explicit feature list!")
-            all_columns = feature_set.columns()
+            all_columns = feature_set.columns
             filter_list = [
                 "id",
                 "__index_level_0__",
