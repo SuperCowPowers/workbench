@@ -31,7 +31,7 @@ class AWSAccountCheck:
     def ensure_aws_catalog_db(self, catalog_db: str):
         """Ensure that the AWS Data Catalog Database exists"""
         self.log.important(f"Ensuring that the AWS Data Catalog Database {catalog_db} exists...")
-        wr.catalog.create_database(catalog_db, exist_ok=True, boto3_session=cls.boto3_session)
+        wr.catalog.create_database(catalog_db, exist_ok=True, boto3_session=self.aws_clamp.boto3_session)
 
     def check_s3_bucket_subfolders(self):
         """Check if the SageWorks S3 Bucket is set up and has the correct sub-folders"""
@@ -84,7 +84,7 @@ class AWSAccountCheck:
         # Check that the Glue Database exist
         self.log.info("*** AWS Glue Database Check ***")
         for catalog_db in ["sageworks", "sagemaker_featurestore"]:
-            self.aws_clamp.ensure_aws_catalog_db(catalog_db)
+            self.ensure_aws_catalog_db(catalog_db)
 
         self.log.info("\n\nAWS Account Clamp: AOK!")
 
