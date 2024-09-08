@@ -46,7 +46,7 @@ def list_views(data_source: DataSource) -> list[str]:
     view_tables = list_view_tables(data_source)
 
     # Extract the last part of each table name
-    view_names = [table_name.split('_')[-1] for table_name in view_tables]
+    view_names = [table_name.split("_")[-1] for table_name in view_tables]
     return view_names
 
 
@@ -61,7 +61,7 @@ def list_view_tables(data_source: DataSource) -> list[str]:
     """
     base_table_name = data_source.get_table_name()
 
-    # Use REGEXP_LIKE to match table names that start with base_table_name, followed by one underscore, and no more underscores
+    # Use REGEXP_LIKE to match table names that start with base_table_name followed by one underscore
     view_query = f"""
     SELECT table_name
     FROM information_schema.tables
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     print(get_column_list(my_data_source))
 
     # Test get_column_list (with training view)
-    training_table = fs.get_training_view().view_table_name
+    training_table = fs.view("training").view_table_name
     print(get_column_list(my_data_source, training_table))
 
     # Test list_view_tables

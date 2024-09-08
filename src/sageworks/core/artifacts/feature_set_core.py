@@ -18,6 +18,11 @@ from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sageworks.core.views import View
+
 
 class FeatureSetCore(Artifact):
     """FeatureSetCore: SageWorks FeatureSetCore Class
@@ -155,30 +160,26 @@ class FeatureSetCore(Artifact):
     def views(self) -> list[str]:
         """Return the views for this Data Source"""
         from sageworks.core.views.view_utils import list_views
+
         return list_views(self.data_source)
 
-    def get_display_view(self):
-        """Get the Display View for this FeatureSet"""
+    def view(self, view_name: str) -> "View":
+        """Return a DataFrame for a specific view
+        Args:
+            view_name (str): The name of the view to return
+        Returns:
+            pd.DataFrame: A DataFrame for the specified view
+        """
         from sageworks.core.views import View
 
-        if self._display_view is None:
-            self._display_view = View(self, "display")
-        return self._display_view
-
-    def get_training_view(self):
-        """Get the Training View for this FeatureSet"""
-        from sageworks.core.views import View
-
-        if self._training_view is None:
-            self._training_view = View(self, "training")
-        return self._training_view
+        return View(self, view_name)
 
     def get_display_columns(self) -> list[str]:
         """Get the columns from our display view
         Returns:
             list[str]: The columns from our display view
         """
-        return self.get_display_view().columns
+        return self.view("display").columns
 
     def set_display_columns(self, display_columns: list[str], onboard: bool = True):
         """Set the display columns for this Data Source
@@ -254,7 +255,8 @@ class FeatureSetCore(Artifact):
         s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
 
         # Make the query
-        query = f"SELECT * FROM {self.get_training_view().view_table_name}"
+        view_table_name = self.view("training").view_table_name
+        query = f"SELECT * FROM {view_table_name}"
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
         athena_query.wait()
@@ -419,7 +421,7 @@ class FeatureSetCore(Artifact):
             str: The name of the training view for this FeatureSet
         """
         # Get the training view table name
-        return self.get_training_view().view_table_name
+        return self.view("training").view_table_name
 
     def delete_views(self):
         """Delete any views associated with this FeatureSet"""

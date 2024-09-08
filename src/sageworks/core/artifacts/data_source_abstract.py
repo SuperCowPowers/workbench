@@ -8,6 +8,11 @@ import time
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sageworks.core.views import View
+
 
 class DataSourceAbstract(Artifact):
     def __init__(self, data_uuid: str, database: str = "sageworks"):
@@ -79,20 +84,26 @@ class DataSourceAbstract(Artifact):
     def views(self) -> list[str]:
         """Return the views for this Data Source"""
         from sageworks.core.views.view_utils import list_views
+
         return list_views(self)
 
-    def get_display_view(self):
-        """Get the Display View for this Data Source"""
-        if self._display_view is None:
-            self._create_display_view()
-        return self._display_view
+    def view(self, view_name: str) -> "View":
+        """Return a DataFrame for a specific view
+        Args:
+            view_name (str): The name of the view to return
+        Returns:
+            pd.DataFrame: A DataFrame for the specified view
+        """
+        from sageworks.core.views import View
+
+        return View(self, view_name)
 
     def get_display_columns(self) -> list[str]:
         """Get the columns from our display view
         Returns:
             list[str]: The columns from our display view
         """
-        return self.get_display_view().columns
+        return self.view("display").columns
 
     def set_display_columns(self, display_columns: list[str], onboard: bool = True):
         """Set the display columns for this Data Source
@@ -312,7 +323,7 @@ class DataSourceAbstract(Artifact):
         self.remove_health_tag("needs_onboard")
 
         # Make sure our views actually exist
-        self.get_display_view().ensure_exists()
+        self.view("display").ensure_exists()
 
         # Compute the sample, column stats, and outliers
         self.sample(recompute=True)

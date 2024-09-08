@@ -33,14 +33,14 @@ def test_set_display_view_columns():
     ds = DataSource("test_data")
     display_columns = ds.column_names()
     ds.set_display_columns(display_columns)
-    display_view = ds.get_display_view()
+    display_view = ds.view("display")
     df = display_view.pull_dataframe(head=True)
     print(df)
 
     # Create a new display View for a FeatureSet
     fs = FeatureSet("test_features")
     fs.set_display_columns(display_columns)
-    display_view = fs.get_display_view()
+    display_view = fs.view("display")
     df = display_view.pull_dataframe(head=True)
     print(df)
 
@@ -59,7 +59,7 @@ def test_training_holdouts():
     df = fs.get_training_data()
     print(f"Before setting holdouts: {df['training'].value_counts()}")
     fs.set_training_holdouts("id", [1, 2, 3])
-    training_view = fs.get_training_view()
+    training_view = fs.view("training")
     df = training_view.pull_dataframe()
     print(f"After setting holdouts: {df['training'].value_counts()}")
 
@@ -69,7 +69,7 @@ def test_delete_display_view():
     fs = FeatureSet("test_features")
     display_view = View(fs, "display")
     display_view.delete()
-    fs.get_display_view()
+    fs.view("display")
 
 
 def test_delete_training_view():
@@ -77,7 +77,7 @@ def test_delete_training_view():
     fs = FeatureSet("test_features")
     training_view = View(fs, "training")
     training_view.delete()
-    fs.get_training_view()
+    fs.view("training")
 
 
 def test_computation_view():
