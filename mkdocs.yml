@@ -59,6 +59,7 @@ nav:
     - AWS Tips and Tricks: aws_setup/aws_tips_and_tricks.md
     - AWS Access Management: aws_setup/aws_access_management.md
   - Release Notes: 
+    - 0.8.9:  release_notes/0_8_9.md
     - 0.8.8:  release_notes/0_8_8.md
     - 0.8.6:  release_notes/0_8_6.md
     - 0.7.8:  release_notes/0_7_8.md
