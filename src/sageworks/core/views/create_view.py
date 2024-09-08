@@ -3,7 +3,6 @@
 import logging
 from typing import Union
 from abc import ABC, abstractmethod
-import awswrangler as wr
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
