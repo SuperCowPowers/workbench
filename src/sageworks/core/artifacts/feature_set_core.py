@@ -422,6 +422,7 @@ class FeatureSetCore(Artifact):
     def delete_views(self):
         """Delete any views associated with this FeatureSet"""
         from sageworks.core.views.view_utils import delete_views_and_supplemental_data
+
         delete_views_and_supplemental_data(self.data_source)
 
     def descriptive_stats(self, recompute: bool = False) -> dict:

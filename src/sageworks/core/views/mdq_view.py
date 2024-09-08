@@ -93,7 +93,9 @@ class MDQView:
         residuals_df[id_column] = df[id_column]
 
         # Get the list of columns to add from residuals_df, excluding any columns already in mdq_df
-        new_columns = [id_column] + [col for col in residuals_df.columns if col != id_column and col not in mdq_df.columns]
+        new_columns = [id_column] + [
+            col for col in residuals_df.columns if col != id_column and col not in mdq_df.columns
+        ]
 
         # Merge the DataFrames, only including new columns from residuals_df
         mdq_df = mdq_df.merge(residuals_df[new_columns], on=id_column, how="left")
