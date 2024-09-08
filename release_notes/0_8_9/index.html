@@ -1983,9 +1983,22 @@
 </span></code></pre></div>
 is replaced with</p>
 <p><code>data_source.columns
-feature_set.columns</code>
-- <strong>AWSAccountClamp</strong></p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>AWSAccountClamp().boto_session()
+feature_set.columns</code></p>
+</li>
+<li>
+<p><strong>Display/Training Views</strong></p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>data_source.get_display_view()
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>feature_set.get_display_view()
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>feature_set.get_training_view()
+</span></code></pre></div>
+is replaced with</p>
+<p><code>data_source.view("display")
+feature_set.view("display")
+feature_set.view("training")</code></p>
+</li>
+<li>
+<p><strong>AWSAccountClamp</strong></p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>AWSAccountClamp().boto_session()
 </span></code></pre></div>
 is replaced with</p>
 <p><code>AWSAccountClamp().boto3_session</code>
