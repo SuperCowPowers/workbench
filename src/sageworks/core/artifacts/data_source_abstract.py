@@ -28,7 +28,6 @@ class DataSourceAbstract(Artifact):
         # Set up our instance attributes
         self._database = database
         self._table_name = data_uuid
-        self._display_view = None
 
     def __post_init__(self):
         # Call superclass post_init
@@ -123,8 +122,7 @@ class DataSourceAbstract(Artifact):
     def _create_display_view(self):
         """Internal: Create the Display View for this DataSource"""
         from sageworks.core.views import View
-
-        self._display_view = View(self, "display")
+        View(self, "display")
 
     def num_display_columns(self) -> int:
         """Return the number of columns for the display view"""
@@ -149,9 +147,9 @@ class DataSourceAbstract(Artifact):
 
     @abstractmethod
     def execute_statement(self, query: str):
-        """Execute a non-returning SQL statement
+        """Execute an SQL statement that doesn't return a result
         Args:
-            query(str): The SQL query to execute
+            query(str): The SQL statement to execute
         """
         pass
 

@@ -73,10 +73,6 @@ class FeatureSetCore(Artifact):
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
 
-        # Initialize our Views
-        self._display_view = None
-        self._training_view = None
-
         # Call superclass post_init
         super().__post_init__()
 
@@ -426,16 +422,6 @@ class FeatureSetCore(Artifact):
     def delete_views(self):
         """Delete any views associated with this FeatureSet"""
         from sageworks.core.views.view_utils import delete_views_and_supplemental_data
-
-        # Delete the views
-        if self._display_view:
-            self._display_view.delete()
-            self._display_view = None
-        if self._training_view:
-            self._training_view.delete()
-            self._training_view = None
-
-        # Now delete any other views or supplemental data tables
         delete_views_and_supplemental_data(self.data_source)
 
     def descriptive_stats(self, recompute: bool = False) -> dict:

@@ -512,9 +512,8 @@ class AthenaSource(DataSourceAbstract):
         if not self.exists():
             self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.get_table_name()}")
 
-        # Delete the Display View
-        if self._display_view:
-            self._display_view.delete()
+        # Delete any views associated with this AthenaSource
+        self.delete_views()
 
         # Delete Data Catalog Table
         self.log.info(f"Deleting DataCatalog Table: {self.get_database()}.{self.get_table_name()}...")
@@ -536,6 +535,11 @@ class AthenaSource(DataSourceAbstract):
         for key in self.data_storage.list_subkeys(f"data_source:{self.uuid}:"):
             self.log.info(f"Deleting Cache Key {key}...")
             self.data_storage.delete(key)
+
+    def delete_views(self):
+        """Delete any views associated with this FeatureSet"""
+        from sageworks.core.views.view_utils import delete_views_and_supplemental_data
+        delete_views_and_supplemental_data(self)
 
 
 if __name__ == "__main__":
