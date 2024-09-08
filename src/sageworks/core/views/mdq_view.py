@@ -92,8 +92,11 @@ class MDQView:
         # Add the id_column to the residuals_df
         residuals_df[id_column] = df[id_column]
 
-        # Merge the residual_df with the mdq_df (we'll keep all the rows in the mdf_df, and just one id_column)
-        mdq_df = mdq_df.merge(residuals_df, on=id_column, how="left")
+        # Get the list of columns to add from residuals_df, excluding any columns already in mdq_df
+        new_columns = [id_column] + [col for col in residuals_df.columns if col != id_column and col not in mdq_df.columns]
+
+        # Merge the DataFrames, only including new columns from residuals_df
+        mdq_df = mdq_df.merge(residuals_df[new_columns], on=id_column, how="left")
 
         # Call our internal CreateViewWithDF to create the Model Data Quality View
         return self.cv_with_df.create(df=mdq_df, id_column=id_column)
