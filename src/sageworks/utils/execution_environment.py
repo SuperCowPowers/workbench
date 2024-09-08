@@ -1,7 +1,11 @@
 """ExecutionEnvironment provides logic/functionality to figure out the current execution environment"""
 
 import os
+import sys
 import logging
+
+# SageWorks imports
+from sageworks.utils.glue_utils import get_resolved_options
 
 # Set up the logger
 log = logging.getLogger("sageworks")
@@ -84,6 +88,27 @@ def running_on_ecs() -> bool:
     return any(indicator in os.environ for indicator in indicators)
 
 
+def _glue_job_from_script_name(args):
+    """Get the Glue Job Name from the script name"""
+    try:
+        script_name = args["scriptLocation"]
+        return os.path.splitext(os.path.basename(script_name))[0]
+    except Exception:
+        return "unknown"
+
+
+def glue_job_name():
+    from pprint import pprint
+
+    # Define the required argument
+    args = get_resolved_options(sys.argv)
+    pprint(args)
+
+    # Get the job name
+    job_name = args.get("JOB_NAME") or _glue_job_from_script_name(args)
+    return job_name
+
+
 if __name__ == "__main__":
     """Test the Execution Environment utilities"""
 
@@ -109,5 +134,8 @@ if __name__ == "__main__":
     os.environ["ECS_CONTAINER_METADATA_URI"] = "http://localhost:8080"
     assert running_on_ecs() is True
     del os.environ["ECS_CONTAINER_METADATA_URI"]
+
+    # Test getting the Glue Job Name
+    print(glue_job_name())
 
     print("All tests passed!")

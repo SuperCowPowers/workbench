@@ -6,7 +6,7 @@ import watchtower
 import atexit  # Import atexit for handling cleanup on exit
 
 # SageWorks imports
-from sageworks.utils.execution_environment import running_on_docker
+from sageworks.utils.execution_environment import running_on_lambda, running_on_glue, running_on_docker, glue_job_name
 from sageworks.aws_service_broker.aws_session import AWSSession
 
 
@@ -53,11 +53,11 @@ class CloudWatchHandler:
         """Determine the log stream name based on the environment."""
         unique_id = self.get_unique_identifier()
 
-        if self.running_on_lambda():
+        if running_on_lambda():
             job_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "unknown")
             return f"lambda/{job_name}"
-        elif self.running_on_glue():
-            job_name = os.environ.get("GLUE_JOB_NAME", "unknown")
+        elif running_on_glue():
+            job_name = glue_job_name()
             return f"glue/{job_name}/{unique_id}"
         elif running_on_docker():
             job_name = os.environ.get("ECS_SERVICE_NAME") or os.environ.get("HOSTNAME", "unknown")
@@ -75,16 +75,6 @@ class CloudWatchHandler:
     def get_job_id_from_environment():
         """Try to retrieve the job ID from Glue or Lambda environment variables."""
         return os.environ.get("GLUE_JOB_ID") or os.environ.get("AWS_LAMBDA_REQUEST_ID")
-
-    @staticmethod
-    def running_on_lambda():
-        """Check if running in AWS Lambda."""
-        return "AWS_LAMBDA_FUNCTION_NAME" in os.environ
-
-    @staticmethod
-    def running_on_glue():
-        """Check if running in AWS Glue."""
-        return "GLUE_JOB_NAME" in os.environ
 
 
 if __name__ == "__main__":
