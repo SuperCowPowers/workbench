@@ -222,7 +222,7 @@ class AthenaSource(DataSourceAbstract):
             )
             scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
             if scanned_bytes > 0:
-                self.log.info(f"Athena Query successful (scanned bytes: {scanned_bytes})")
+                self.log.debug(f"Athena Query successful (scanned bytes: {scanned_bytes})")
             return df
         except wr.exceptions.QueryFailed as e:
             self.log.critical(f"Failed to execute query: {e}")
