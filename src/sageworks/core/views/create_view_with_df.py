@@ -49,6 +49,9 @@ class CreateViewWithDF(CreateView):
         source_table_columns = get_column_list(data_source, self.source_table)
         column_list = [col for col in source_table_columns if col not in aws_cols]
 
+        # Same thing as above, but with the incoming dataframe
+        df = df.drop(columns=aws_cols)
+
         # Enclose each column name in double quotes
         sql_columns = ", ".join([f'"{column}"' for column in column_list])
 
