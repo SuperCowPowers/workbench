@@ -1088,9 +1088,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sageworks.core.transforms.data_loaders.heavy.S3HeavyToDataSource.remove_periods_from_column_names" class="md-nav__link">
+  <a href="#sageworks.core.transforms.data_loaders.heavy.S3HeavyToDataSource.remove_periods_from_columns" class="md-nav__link">
     <span class="md-ellipsis">
-      remove_periods_from_column_names
+      remove_periods_from_columns
     </span>
   </a>
   
@@ -2056,9 +2056,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sageworks.core.transforms.data_loaders.heavy.S3HeavyToDataSource.remove_periods_from_column_names" class="md-nav__link">
+  <a href="#sageworks.core.transforms.data_loaders.heavy.S3HeavyToDataSource.remove_periods_from_columns" class="md-nav__link">
     <span class="md-ellipsis">
-      remove_periods_from_column_names
+      remove_periods_from_columns
     </span>
   </a>
   
@@ -2404,7 +2404,7 @@
 </span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a>        <span class="k">return</span> <span class="n">DynamicFrame</span><span class="o">.</span><span class="n">fromDF</span><span class="p">(</span><span class="n">spark_df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">glue_context</span><span class="p">,</span> <span class="s2">&quot;output_dyf&quot;</span><span class="p">)</span>
 </span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a>
 </span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a>    <span class="nd">@staticmethod</span>
-</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="k">def</span> <span class="nf">remove_periods_from_column_names</span><span class="p">(</span><span class="n">dyf</span><span class="p">:</span> <span class="n">DynamicFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DynamicFrame</span><span class="p">:</span>
+</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="k">def</span> <span class="nf">remove_periods_from_columns</span><span class="p">(</span><span class="n">dyf</span><span class="p">:</span> <span class="n">DynamicFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DynamicFrame</span><span class="p">:</span>
 </span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove periods from column names in the DynamicFrame</span>
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a><span class="sd">        Args:</span>
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a><span class="sd">            dyf (DynamicFrame): The DynamicFrame to convert</span>
@@ -2478,7 +2478,7 @@
 </span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a>
 </span><span id="__span-0-143"><a id="__codelineno-0-143" name="__codelineno-0-143"></a>        <span class="c1"># Relationalize will put periods in the column names. This will cause</span>
 </span><span id="__span-0-144"><a id="__codelineno-0-144" name="__codelineno-0-144"></a>        <span class="c1"># problems later when we try to create a FeatureSet from this DataSource</span>
-</span><span id="__span-0-145"><a id="__codelineno-0-145" name="__codelineno-0-145"></a>        <span class="n">output_dyf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_periods_from_column_names</span><span class="p">(</span><span class="n">output_dyf</span><span class="p">)</span>
+</span><span id="__span-0-145"><a id="__codelineno-0-145" name="__codelineno-0-145"></a>        <span class="n">output_dyf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_periods_from_columns</span><span class="p">(</span><span class="n">output_dyf</span><span class="p">)</span>
 </span><span id="__span-0-146"><a id="__codelineno-0-146" name="__codelineno-0-146"></a>
 </span><span id="__span-0-147"><a id="__codelineno-0-147" name="__codelineno-0-147"></a>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;After TimeStamp Conversions and Removing Periods from column names&quot;</span><span class="p">)</span>
 </span><span id="__span-0-148"><a id="__codelineno-0-148" name="__codelineno-0-148"></a>        <span class="n">output_dyf</span><span class="o">.</span><span class="n">printSchema</span><span class="p">()</span>
@@ -2687,8 +2687,8 @@
 <div class="doc doc-object doc-function">
 
 
-<h3 id="sageworks.core.transforms.data_loaders.heavy.S3HeavyToDataSource.remove_periods_from_column_names" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">remove_periods_from_column_names</span><span class="p">(</span><span class="n">dyf</span><span class="p">)</span></code>
+<h3 id="sageworks.core.transforms.data_loaders.heavy.S3HeavyToDataSource.remove_periods_from_columns" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">remove_periods_from_columns</span><span class="p">(</span><span class="n">dyf</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
@@ -2727,7 +2727,7 @@ Returns:
 <span class="normal"><a href="#__codelineno-0-87">87</a></span>
 <span class="normal"><a href="#__codelineno-0-88">88</a></span>
 <span class="normal"><a href="#__codelineno-0-89">89</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="nd">@staticmethod</span>
-</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="k">def</span> <span class="nf">remove_periods_from_column_names</span><span class="p">(</span><span class="n">dyf</span><span class="p">:</span> <span class="n">DynamicFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DynamicFrame</span><span class="p">:</span>
+</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="k">def</span> <span class="nf">remove_periods_from_columns</span><span class="p">(</span><span class="n">dyf</span><span class="p">:</span> <span class="n">DynamicFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DynamicFrame</span><span class="p">:</span>
 </span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove periods from column names in the DynamicFrame</span>
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a><span class="sd">    Args:</span>
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a><span class="sd">        dyf (DynamicFrame): The DynamicFrame to convert</span>
@@ -3012,7 +3012,7 @@ Args:
 </span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a>
 </span><span id="__span-0-143"><a id="__codelineno-0-143" name="__codelineno-0-143"></a>    <span class="c1"># Relationalize will put periods in the column names. This will cause</span>
 </span><span id="__span-0-144"><a id="__codelineno-0-144" name="__codelineno-0-144"></a>    <span class="c1"># problems later when we try to create a FeatureSet from this DataSource</span>
-</span><span id="__span-0-145"><a id="__codelineno-0-145" name="__codelineno-0-145"></a>    <span class="n">output_dyf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_periods_from_column_names</span><span class="p">(</span><span class="n">output_dyf</span><span class="p">)</span>
+</span><span id="__span-0-145"><a id="__codelineno-0-145" name="__codelineno-0-145"></a>    <span class="n">output_dyf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_periods_from_columns</span><span class="p">(</span><span class="n">output_dyf</span><span class="p">)</span>
 </span><span id="__span-0-146"><a id="__codelineno-0-146" name="__codelineno-0-146"></a>
 </span><span id="__span-0-147"><a id="__codelineno-0-147" name="__codelineno-0-147"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;After TimeStamp Conversions and Removing Periods from column names&quot;</span><span class="p">)</span>
 </span><span id="__span-0-148"><a id="__codelineno-0-148" name="__codelineno-0-148"></a>    <span class="n">output_dyf</span><span class="o">.</span><span class="n">printSchema</span><span class="p">()</span>

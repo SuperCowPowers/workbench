@@ -1977,8 +1977,15 @@
 <h3 id="api-changes">API Changes</h3>
 <ul>
 <li>
-<p><strong>AWSAccountClamp</strong></p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>AWSAccountClamp().boto_session()
+<p><strong>Column Names</strong></p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>data_source.column_names()
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>feature_set.column_names()
+</span></code></pre></div>
+is replaced with</p>
+<p><code>data_source.columns
+feature_set.columns</code>
+- <strong>AWSAccountClamp</strong></p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>AWSAccountClamp().boto_session()
 </span></code></pre></div>
 is replaced with</p>
 <p><code>AWSAccountClamp().boto3_session</code>
