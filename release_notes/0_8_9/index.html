@@ -1719,6 +1719,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#robust-modelnotreadyexception-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Robust ModelNotReadyException Handling
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#questions" class="md-nav__link">
     <span class="md-ellipsis">
       Questions?
@@ -2050,6 +2059,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#robust-modelnotreadyexception-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Robust ModelNotReadyException Handling
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#questions" class="md-nav__link">
     <span class="md-ellipsis">
       Questions?
@@ -2129,6 +2147,13 @@ cm.set_config(&quot;SAGEWORKS_BUCKET&quot;, args_dict[&quot;sageworks-bucket&quo
 cm.set_config(&quot;REDIS_HOST&quot;, args_dict[&quot;redis-host&quot;])
 ```
 </code></pre></div>
+<h3 id="robust-modelnotreadyexception-handling">Robust ModelNotReadyException Handling</h3>
+<p>AWS will 'deep freeze' Serverless Endpoints and if that endpoint hasn't been used for a while it can sometimes take a long time to come up and be ready for inference. SageWorks now properly manages this AWS error condition, it will report the issue, wait 60 seconds, and try again 5 times before raising the exception.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>(endpoint_core.py:502) ERROR Endpoint model not ready
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>(endpoint_core.py:503) ERROR Waiting and Retrying...
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>...
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>After a while, inference will run successfully :)
+</span></code></pre></div>
 <h3 id="questions">Questions?</h3>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
 <p>The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
