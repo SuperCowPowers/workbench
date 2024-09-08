@@ -152,6 +152,11 @@ class FeatureSetCore(Artifact):
             ds_details[col] = fs_details.get(col, dtype)
         return ds_details
 
+    def views(self) -> list[str]:
+        """Return the views for this Data Source"""
+        from sageworks.core.views.view_utils import list_view_tables
+        return list_view_tables(self.data_source)
+
     def get_display_view(self):
         """Get the Display View for this FeatureSet"""
         from sageworks.core.views import View

@@ -76,6 +76,11 @@ class DataSourceAbstract(Artifact):
         else:
             raise ValueError(f"Unknown column details view: {view}")
 
+    def views(self) -> list[str]:
+        """Return the views for this Data Source"""
+        from sageworks.core.views.view_utils import list_view_tables
+        return list_view_tables(self)
+
     def get_display_view(self):
         """Get the Display View for this Data Source"""
         if self._display_view is None:

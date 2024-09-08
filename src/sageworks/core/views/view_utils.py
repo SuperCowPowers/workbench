@@ -44,11 +44,13 @@ def list_view_tables(data_source: DataSource) -> list[str]:
     """
     base_table_name = data_source.get_table_name()
 
-    # Query to get the view names that start with the base_table_name
+    # Use REGEXP_LIKE to match table names that start with base_table_name, followed by one underscore, and no more underscores
     view_query = f"""
     SELECT table_name
     FROM information_schema.tables
-    WHERE table_schema = '{data_source.get_database()}' AND table_name LIKE '{base_table_name}_%'
+    WHERE table_schema = '{data_source.get_database()}'
+      AND table_type = 'VIEW'
+      AND REGEXP_LIKE(table_name, '^{base_table_name}_[^_]+$')
     """
     df = data_source.query(view_query)
     return df["table_name"].tolist()
@@ -65,11 +67,14 @@ def list_supplemental_data_tables(data_source: DataSource) -> list[str]:
     """
     base_table_name = data_source.get_table_name()
 
-    # Query to get the supplemental data names that start with the _base_table_name
+    # Use REGEXP_LIKE to match table names that start with an underscore, followed by the base_table_name,
+    # followed by one underscore, and no more underscores
     supplemental_data_query = f"""
     SELECT table_name
     FROM information_schema.tables
-    WHERE table_schema = '{data_source.get_database()}' AND table_name LIKE '_{base_table_name}_%'
+    WHERE table_schema = '{data_source.get_database()}'
+      AND table_type = 'BASE TABLE'
+      AND REGEXP_LIKE(table_name, '^_{base_table_name}_[^_]+$')
     """
     df = data_source.query(supplemental_data_query)
     return df["table_name"].tolist()
@@ -161,12 +166,15 @@ if __name__ == "__main__":
     print(get_column_list(my_data_source, training_table))
 
     # Test list_views
+    print("List Views...")
     print(list_view_tables(my_data_source))
 
     # Test list_supplemental_data
+    print("List Supplemental Data...")
     print(list_supplemental_data_tables(my_data_source))
 
     # Test view/supplemental data deletion
+    print("Deleting Views and Supplemental Data...")
     delete_views_and_supplemental_data(my_data_source)
 
     # Test dataframe_to_table
