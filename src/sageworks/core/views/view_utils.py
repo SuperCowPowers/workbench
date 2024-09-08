@@ -33,6 +33,23 @@ def get_column_list(data_source: DataSource, source_table: str = None) -> list[s
     return df["column_name"].tolist()
 
 
+def list_views(data_source: DataSource) -> list[str]:
+    """Extract the last part of the view table names in a database for a DataSource
+
+    Args:
+        data_source (DataSource): The DataSource object
+
+    Returns:
+        list[str]: A list containing only the last part of the view table names
+    """
+    # Get the list of view tables from the original method
+    view_tables = list_view_tables(data_source)
+
+    # Extract the last part of each table name
+    view_names = [table_name.split('_')[-1] for table_name in view_tables]
+    return view_names
+
+
 def list_view_tables(data_source: DataSource) -> list[str]:
     """List all the view tables in a database for a DataSource
 
@@ -165,9 +182,13 @@ if __name__ == "__main__":
     training_table = fs.get_training_view().view_table_name
     print(get_column_list(my_data_source, training_table))
 
-    # Test list_views
+    # Test list_view_tables
     print("List Views...")
     print(list_view_tables(my_data_source))
+
+    # Test list_views
+    print("List Views...")
+    print(list_views(my_data_source))
 
     # Test list_supplemental_data
     print("List Supplemental Data...")

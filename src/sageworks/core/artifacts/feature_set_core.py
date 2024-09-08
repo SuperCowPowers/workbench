@@ -154,8 +154,8 @@ class FeatureSetCore(Artifact):
 
     def views(self) -> list[str]:
         """Return the views for this Data Source"""
-        from sageworks.core.views.view_utils import list_view_tables
-        return list_view_tables(self.data_source)
+        from sageworks.core.views.view_utils import list_views
+        return list_views(self.data_source)
 
     def get_display_view(self):
         """Get the Display View for this FeatureSet"""

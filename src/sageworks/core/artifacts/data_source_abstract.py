@@ -78,8 +78,8 @@ class DataSourceAbstract(Artifact):
 
     def views(self) -> list[str]:
         """Return the views for this Data Source"""
-        from sageworks.core.views.view_utils import list_view_tables
-        return list_view_tables(self)
+        from sageworks.core.views.view_utils import list_views
+        return list_views(self)
 
     def get_display_view(self):
         """Get the Display View for this Data Source"""
