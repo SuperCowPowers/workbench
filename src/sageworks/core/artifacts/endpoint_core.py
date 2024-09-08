@@ -485,16 +485,28 @@ class EndpointCore(Artifact):
             return results_df
 
         except botocore.exceptions.ClientError as err:
-            if err.response["Error"]["Code"] == "ModelError":  # Model Error
+            error_code = err.response["Error"]["Code"]
+
+            if error_code == "ModelError":
                 # Report the error and raise an exception
                 self.log.critical(f"Endpoint prediction error: {err.response.get('Message')}")
-                raise err
+                raise
+
+            # Handle the ModelNotReadyException by checking the error code
+            if error_code == "ModelNotReadyException":
+                if self.endpoint_retry >= 3:
+                    raise
+                self.endpoint_retry += 1
+                self.log.critical(f"Endpoint model not ready: {err}")
+                self.log.critical("Waiting and Retrying...")
+                time.sleep(30)
+                return self._endpoint_error_handling(predictor, feature_df)
 
             # Base case: DataFrame with 1 Row
             if len(feature_df) == 1:
                 # If we don't have ANY known good results we're kinda screwed
                 if not self.endpoint_return_columns:
-                    raise err
+                    raise
 
                 # Construct an Error DataFrame (one row of NaNs in the return columns)
                 results_df = self._error_df(feature_df, self.endpoint_return_columns)
@@ -507,17 +519,10 @@ class EndpointCore(Artifact):
             second_half = self._endpoint_error_handling(predictor, feature_df[split:num_rows])
             return pd.concat([first_half, second_half], ignore_index=True)
 
-        # Catch the botocore.errorfactory.ModelNotReadyException
-        # Note: This is a SageMaker specific error that sometimes occurs
-        #       when the endpoint hasn't been used in a long time.
-        except botocore.errorfactory.ModelNotReadyException as err:
-            if self.endpoint_retry >= 3:
-                raise err
-            self.endpoint_retry += 1
-            self.log.critical(f"Endpoint model not ready: {err}")
-            self.log.critical("Waiting and Retrying...")
-            time.sleep(30)
-            return self._endpoint_error_handling(predictor, feature_df)
+        except Exception as err:
+            # Catch all other exceptions and log them as critical
+            self.log.critical(f"Unexpected error occurred: {err}")
+            raise
 
     def _error_df(self, df, all_columns):
         """Internal: Method to construct an Error DataFrame (a Pandas DataFrame with one row of NaNs)"""
