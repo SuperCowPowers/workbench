@@ -66,19 +66,3 @@ class CreateView(ABC):
             Union[View, None]: The created View object (or None if failed to create the view)
         """
         pass
-
-    def delete(self):
-        """Delete the database view if it exists."""
-
-        # Log the deletion
-        self.log.important(f"Dropping View {self.view_table_name}...")
-        drop_view_query = f"DROP VIEW {self.view_table_name}"
-
-        # Execute the DROP VIEW query
-        try:
-            self.data_source.execute_statement(drop_view_query, silence_errors=True)
-        except wr.exceptions.QueryFailed as e:
-            if "View not found" in str(e):
-                self.log.info(f"View {self.view_table_name} not found, this is fine...")
-            else:
-                raise
