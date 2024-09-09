@@ -123,7 +123,7 @@ def ecs_job_name():
                     return job_name
         except requests.RequestException as e:
             # Log the error or handle it as needed
-            print(f"Failed to fetch ECS metadata: {e}")
+            log.error(f"Failed to fetch ECS metadata: {e}")
 
     # Fallback to environment variables if metadata is not available
     job_name = os.environ.get("ECS_SERVICE_NAME", "unknown")
