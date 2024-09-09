@@ -8,7 +8,7 @@ import base64
 from botocore.exceptions import ClientError
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.aws_service_broker.aws_session import AWSSession
 
 
 class ParameterStore:
@@ -54,7 +54,7 @@ class ParameterStore:
         self.log = logging.getLogger("sageworks")
 
         # Initialize a SageWorks Session (to assume the SageWorks ExecutionRole)
-        self.boto3_session = AWSAccountClamp().boto3_session
+        self.boto3_session = AWSSession().boto3_session
 
         # Create a Systems Manager (SSM) client for Parameter Store operations
         self.ssm_client = self.boto3_session.client("ssm")
@@ -102,11 +102,12 @@ class ParameterStore:
         # Return the aggregated list of parameter names
         return all_parameters
 
-    def get(self, name: str, decrypt: bool = True) -> Union[str, list, dict, None]:
+    def get(self, name: str, warn: bool = True, decrypt: bool = True) -> Union[str, list, dict, None]:
         """Retrieve a parameter value from the AWS Parameter Store.
 
         Args:
             name (str): The name of the parameter to retrieve.
+            warn (bool): Whether to log a warning if the parameter is not found.
             decrypt (bool): Whether to decrypt secure string parameters.
 
         Returns:
@@ -140,7 +141,8 @@ class ParameterStore:
 
         except ClientError as e:
             if e.response["Error"]["Code"] == "ParameterNotFound":
-                self.log.warning(f"Parameter '{name}' not found")
+                if warn:
+                    self.log.warning(f"Parameter '{name}' not found")
             else:
                 self.log.error(f"Failed to get parameter '{name}': {e}")
             return None
