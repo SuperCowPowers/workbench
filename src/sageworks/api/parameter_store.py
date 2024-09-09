@@ -5,6 +5,7 @@ import logging
 import json
 import zlib
 import base64
+from botocore.exceptions import ClientError
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
@@ -137,8 +138,11 @@ class ParameterStore:
                 # If parsing fails, return the value as is (assumed to be a simple string)
                 return value
 
-        except Exception as e:
-            self.log.error(f"Failed to get parameter '{name}': {e}")
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ParameterNotFound":
+                self.log.warning(f"Parameter '{name}' not found")
+            else:
+                self.log.error(f"Failed to get parameter '{name}': {e}")
             return None
 
     def add(self, name: str, value, overwrite: bool = False):
