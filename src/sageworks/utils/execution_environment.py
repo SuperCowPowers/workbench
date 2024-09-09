@@ -89,6 +89,16 @@ def running_on_ecs() -> bool:
     return any(indicator in os.environ for indicator in indicators)
 
 
+def running_as_service() -> bool:
+    """
+    Check if the current environment is running as a service (e.g. Docker, ECS, Glue, Lambda).
+
+    Returns:
+        bool: True if running as a service, False otherwise.
+    """
+    return running_on_docker() or running_on_glue() or running_on_lambda()
+
+
 def _glue_job_from_script_name(args):
     """Get the Glue Job Name from the script name"""
     try:
