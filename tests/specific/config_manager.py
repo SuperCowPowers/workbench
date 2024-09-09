@@ -23,7 +23,7 @@ def test_config_manager():
 
 def test_running_as_service(monkeypatch):
     # Mock running_as_service to always return True
-    monkeypatch.setattr('sageworks.utils.config_manager.running_as_service', lambda: True)
+    monkeypatch.setattr("sageworks.utils.config_manager.running_as_service", lambda: True)
 
     # Reset the ConfigManager class
     ConfigManager._instance = None
