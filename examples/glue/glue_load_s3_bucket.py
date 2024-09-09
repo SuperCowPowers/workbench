@@ -3,7 +3,8 @@ import sys
 # SageWorks Imports
 from sageworks.api.data_source import DataSource
 from sageworks.utils.config_manager import ConfigManager
-from sageworks.utils.glue_utils import get_resolved_options, list_s3_files
+from sageworks.utils.glue_utils import get_resolved_options
+from sageworks.utils.aws_utils import list_s3_files
 
 # Convert Glue Job Args to a Dictionary
 glue_args = get_resolved_options(sys.argv)

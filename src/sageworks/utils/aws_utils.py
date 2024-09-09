@@ -6,7 +6,7 @@ import json
 import base64
 import re
 import os
-from typing import Union
+from typing import Union, List
 import pandas as pd
 import awswrangler as wr
 from awswrangler.exceptions import NoFilesFound
@@ -318,6 +318,21 @@ def extract_data_source_basename(source: str) -> str:
         return source
 
 
+def list_s3_files(s3_path: str, extensions: str = "*.csv") -> List[str]:
+    """
+    Lists files in an S3 path with specified extension.
+
+    Args:
+    s3_path (str): The full S3 path (e.g., 's3://my-bucket/my-prefix/').
+    extensions (str): File extension to filter by, defaults to '*.csv'.
+
+    Returns:
+    List[str]: A list of file paths matching the extension in the S3 path.
+    """
+    files = wr.s3.list_objects(path=s3_path, suffix=extensions.lstrip("*"))
+    return files
+
+
 def newest_path(s3_locations: list[str], sm_session: SageSession) -> Union[str, None]:
     """Determine which S3 bucket and prefix combination has the newest files.
 
@@ -464,6 +479,9 @@ if __name__ == "__main__":
         print(f"Full Image URI with Digest: {full_image_uri}")
     except Exception as e:
         print(f"Error: {e}")
+
+    # Test listing_files in an S3 folder method
+    print(list_s3_files("s3://sageworks-public-data/common"))
 
     # Test the newest files in an S3 folder method
     s3_path = "s3://sandbox-sageworks-artifacts/endpoints/inference/abalone-regression-end"
