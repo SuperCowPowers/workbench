@@ -249,6 +249,7 @@ class SageworksCoreStack(Stack):
                 "sagemaker:PutRecord",
                 "sagemaker:ListTags",
                 "sagemaker:AddTags",
+                "sagemaker:DeleteTags",
             ],
             resources=resources,
         )
@@ -303,6 +304,7 @@ class SageworksCoreStack(Stack):
                 # Additional actions
                 "sagemaker:ListTags",
                 "sagemaker:AddTags",
+                "sagemaker:DeleteTags",
             ],
             resources=[model_package_group_arn, model_package_arn, model_arn, processing_arn],
         )
@@ -376,6 +378,7 @@ class SageworksCoreStack(Stack):
                 "sagemaker:InvokeEndpoint",
                 "sagemaker:ListTags",
                 "sagemaker:AddTags",
+                "sagemaker:DeleteTags",
             ],
             resources=[
                 endpoint_arn,
@@ -417,6 +420,7 @@ class SageworksCoreStack(Stack):
                 # Additional actions
                 "sagemaker:ListTags",
                 "sagemaker:AddTags",
+                "sagemaker:DeleteTags",
             ],
             resources=[processing_resources],
         )
