@@ -3,6 +3,7 @@
 import os
 import sys
 import logging
+import requests
 
 # SageWorks imports
 from sageworks.utils.glue_utils import get_resolved_options
@@ -98,14 +99,34 @@ def _glue_job_from_script_name(args):
 
 
 def glue_job_name():
-    from pprint import pprint
-
+    """Get the Glue Job Name from the environment or script name"""
     # Define the required argument
     args = get_resolved_options(sys.argv)
-    pprint(args)
 
     # Get the job name
     job_name = args.get("JOB_NAME") or _glue_job_from_script_name(args)
+    return job_name
+
+
+def ecs_job_name():
+    """Get the ECS Job Name from the metadata endpoint or environment variables."""
+    # Attempt to get the job name from ECS metadata
+    ecs_metadata_uri = os.environ.get("ECS_CONTAINER_METADATA_URI_V4")
+
+    if ecs_metadata_uri:
+        try:
+            response = requests.get(f"{ecs_metadata_uri}/task")
+            if response.status_code == 200:
+                metadata = response.json()
+                job_name = metadata.get("Family")  # 'Family' represents the ECS task definition family name
+                if job_name:
+                    return job_name
+        except requests.RequestException as e:
+            # Log the error or handle it as needed
+            print(f"Failed to fetch ECS metadata: {e}")
+
+    # Fallback to environment variables if metadata is not available
+    job_name = os.environ.get("ECS_SERVICE_NAME", "unknown")
     return job_name
 
 
