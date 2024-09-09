@@ -1,4 +1,4 @@
-"""Helper functions for working with SageWorks Labmda Layer"""
+"""Helper functions for working with SageWorks Lambda Layer"""
 
 import os
 import sys

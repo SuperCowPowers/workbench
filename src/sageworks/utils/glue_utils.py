@@ -2,7 +2,6 @@
 
 import sys
 from typing import List, Dict, Optional
-import awswrangler as wr
 
 
 def get_resolved_options(argv: List[str], options: Optional[List[str]] = None) -> Dict[str, str]:
@@ -45,6 +44,7 @@ def list_s3_files(s3_path: str, extensions: str = "*.csv") -> List[str]:
     Returns:
     List[str]: A list of file paths matching the extension in the S3 path.
     """
+    import awswrangler as wr
     files = wr.s3.list_objects(path=s3_path, suffix=extensions.lstrip("*"))
     return files
 
