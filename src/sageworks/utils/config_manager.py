@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 # SageWorks imports
 from sageworks.utils.license_manager import LicenseManager
-from sageworks.utils.execution_environment import running_on_docker
+from sageworks.utils.execution_environment import running_as_service
 
 # Python 3.9 compatibility
 from sageworks.utils.resource_utils import get_resource_path
@@ -49,17 +49,20 @@ class ConfigManager:
         # Load the LicenseManager
         self.license_manager = LicenseManager()
 
-        # Check if we're running in a Docker container
-        if running_on_docker():
-            self.log.important("Running on a Docker/ECS container...")
+        # Check if we're running as a service
+        if running_as_service():
+            self.log.important("Running as part of a Service...")
 
             # Remove the AWS_PROFILE from the config
             if "AWS_PROFILE" in self.config:
                 self.log.important("Removing AWS_PROFILE from config...")
                 del self.config["AWS_PROFILE"]
 
-            # For Docker, overwrite the config with the ENV vars
+            # Overwrite the config with the ENV vars
             self.overwrite_config_with_env()
+
+            # Check AWS Parameter Store for config
+            self.overwrite_config_with_parameter_store()
 
         # AOK
         self.__initialized = True
@@ -124,6 +127,31 @@ class ConfigManager:
             if key in overwrites:
                 self.log.important(f"Overwriting {key} with ENV var: {value}")
                 self.config[key] = value
+
+    def overwrite_config_with_parameter_store(self):
+        """Overwrite the configuration with AWS Parameter Store."""
+        """FIXME: Need to resolve circular dependency between ConfigManager and ParameterStore"""
+        self.log.important("Stubbed out: Overwriting config with AWS Parameter Store...")
+        """
+        from sageworks.api.parameter_store import ParameterStore
+
+        overwrites = [
+            "SAGEWORKS_ROLE",
+            "SAGEWORKS_BUCKET",
+            "SAGEWORKS_API_KEY",
+            "SAGEWORKS_PLUGINS",
+            "REDIS_HOST",
+            "REDIS_PORT",
+            "REDIS_PASSWORD",
+        ]
+        params = ParameterStore()
+        for key in overwrites:
+            config_key = f"/config/{key}"
+            value = params.get(config_key, warn=False)
+            if value:
+                self.log.important(f"Overwriting {key} with Parameter Store: {value}")
+                self.config[key] = value
+        """
 
     def is_open_source(self) -> bool:
         """Returns True if the API is open source."""
@@ -255,15 +283,6 @@ class ConfigManager:
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         return config_path
 
-    def get_config_from_aws_parameter_store(self) -> Dict[str, Any]:
-        """Stub method to fetch configuration from AWS Parameter Store.
-
-        Returns:
-            Dict[str, Any]: Configuration dictionary from AWS Parameter Store.
-        """
-        # TODO: Implement AWS Parameter Store fetching logic
-        return {}
-
     def platform_specific_instructions(self):
         """Provides instructions to the user for setting the SAGEWORKS_CONFIG
         environment variable permanently based on their operating system.
@@ -308,16 +327,7 @@ class ConfigManager:
             self.log.warning("SAGEWORKS_CONFIG ENV var not set")
             return self._load_default_config()
 
-        # Load configuration from AWS Parameter Store
-        if self.site_config_path == "parameter_store":
-            try:
-                self.log.info("Loading site configuration from AWS Parameter Store...")
-                return self.get_config_from_aws_parameter_store()
-            except Exception:
-                self.log.error("Failed to load config from AWS Parameter Store")
-                return self._load_default_config()
-
-        # Load site specified configuration file
+        # Load site specific configuration file
         try:
             # Normalize the path
             self.site_config_path = os.path.normpath(self.site_config_path)
