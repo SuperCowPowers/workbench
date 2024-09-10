@@ -41,7 +41,7 @@ def load_lambda_layer():
 
     # Install xgboost into the extract path
     try:
-        subprocess.check_call(['pip', 'install', '--target', extract_path, 'xgboost'])
+        subprocess.check_call(["pip", "install", "--target", extract_path, "xgboost"])
         log.important("Successfully installed xgboost.")
     except subprocess.CalledProcessError as e:
         log.critical(f"Failed to install xgboost: {e}")
