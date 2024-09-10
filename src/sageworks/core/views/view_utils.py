@@ -61,13 +61,13 @@ def list_view_tables(data_source: DataSource) -> list[str]:
     """
     base_table_name = data_source.get_table_name()
 
-    # Use REGEXP_LIKE to match table names that start with base_table_name followed by one underscore
+    # Use LIKE to match table names that start with base_table_name followed by any characters
     view_query = f"""
     SELECT table_name
     FROM information_schema.tables
     WHERE table_schema = '{data_source.get_database()}'
       AND table_type = 'VIEW'
-      AND REGEXP_LIKE(table_name, '^{base_table_name}_[^_]+$')
+      AND table_name LIKE '{base_table_name}_%'
     """
     df = data_source.query(view_query)
     return df["table_name"].tolist()
@@ -91,7 +91,7 @@ def list_supplemental_data_tables(data_source: DataSource) -> list[str]:
     FROM information_schema.tables
     WHERE table_schema = '{data_source.get_database()}'
       AND table_type = 'BASE TABLE'
-      AND REGEXP_LIKE(table_name, '^_{base_table_name}_[^_]+$')
+      AND table_name LIKE '{base_table_name}_%'
     """
     df = data_source.query(supplemental_data_query)
     return df["table_name"].tolist()

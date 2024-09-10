@@ -236,7 +236,7 @@ if __name__ == "__main__":
     print(display_view.columns)
 
     # Delete the display view
-    # display_view.delete()
+    display_view.delete()
 
     # Test supplemental data tables deletion
     fs = FeatureSet("abalone_features")
