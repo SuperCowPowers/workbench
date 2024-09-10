@@ -5,6 +5,7 @@ import sys
 import shutil
 import zipfile
 import logging
+import subprocess
 
 log = logging.getLogger("sageworks")
 
@@ -37,6 +38,13 @@ def load_lambda_layer():
             # Extract each zip file into the extract path
             with zipfile.ZipFile(zip_path, "r") as zip_ref:
                 zip_ref.extractall(extract_path)
+
+    # Install xgboost into the extract path
+    try:
+        subprocess.check_call(['pip', 'install', '--target', extract_path, 'xgboost'])
+        log.important("Successfully installed xgboost.")
+    except subprocess.CalledProcessError as e:
+        log.critical(f"Failed to install xgboost: {e}")
 
     # Add the extracted path to the System Path (so imports will find it)
     sys.path.append(extract_path)
