@@ -1,2 +1,2 @@
-scikit-learn==1.3.2
-awswrangler==3.8.0
+scikit-learn>=1.4.1
+awswrangler>=3.8.0
