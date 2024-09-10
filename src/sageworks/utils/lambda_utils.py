@@ -18,11 +18,20 @@ def load_lambda_layer():
     # Create the extraction path if it doesn't exist
     os.makedirs(extract_path, exist_ok=True)
 
+    # Check for available disk space in the extract path
+    min_required_space = 1.8 * 1024 * 1024 * 1024  # 2 GB in bytes (1.8 GB for a little buffer)
+    total, used, free = shutil.disk_usage(extract_path)
+    if free < min_required_space:
+        log.critical(f"Insufficient disk space. Required: 2 GB, Available: {free / (1024 * 1024):.2f} MB.")
+        return
+    else:
+        log.important(f"Available disk space is sufficient: {free / (1024 * 1024):.2f} MB.")
+
     # Move sklearn from zip_dir to extract_path
     sklearn_dir = os.path.join(zip_dir, "sklearn")
     if os.path.exists(sklearn_dir):
         shutil.move(sklearn_dir, extract_path)
-        print(f"Moved sklearn from {sklearn_dir} to {extract_path}")
+        log.important(f"Moved sklearn from {sklearn_dir} to {extract_path}")
 
     # Check if the zip directory exists
     if not os.path.exists(zip_dir):
@@ -33,18 +42,24 @@ def load_lambda_layer():
     for file_name in os.listdir(zip_dir):
         if file_name.endswith(".zip"):
             zip_path = os.path.join(zip_dir, file_name)
-            print(f"Extracting {zip_path} to {extract_path}")
+            log.important(f"Extracting {zip_path} to {extract_path}")
 
             # Extract each zip file into the extract path
             with zipfile.ZipFile(zip_path, "r") as zip_ref:
                 zip_ref.extractall(extract_path)
 
-    # Install xgboost into the extract path
-    try:
-        subprocess.check_call(["pip", "install", "--target", extract_path, "xgboost"])
-        log.important("Successfully installed xgboost...")
-    except subprocess.CalledProcessError as e:
-        log.critical(f"Failed to install xgboost: {e}")
+    # Check if xgboost already exists in the extract path
+    if os.path.exists(os.path.join(extract_path, "xgboost")):
+        log.important("xgboost already exists in the extract path...")
+
+    else:
+        # Install xgboost into the extract path
+        log.important("Installing xgboost...")
+        try:
+            subprocess.check_call(["pip", "install", "--target", extract_path, "xgboost"])
+            log.important("Successfully installed xgboost...")
+        except subprocess.CalledProcessError as e:
+            log.critical(f"Failed to install xgboost: {e}")
 
     # Add the extracted path to the System Path (so imports will find it)
     sys.path.append(extract_path)
