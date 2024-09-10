@@ -19,13 +19,13 @@ def load_lambda_layer():
     os.makedirs(extract_path, exist_ok=True)
 
     # Check for available disk space in the extract path
-    min_required_space = 1.8 * 1024 * 1024 * 1024  # 2 GB in bytes (1.8 GB for a little buffer)
+    min_required_space = 1024 * 1024 * 1024  # 1 GB
     total, used, free = shutil.disk_usage(extract_path)
     if free < min_required_space:
-        log.critical(f"Insufficient disk space. Required: 2 GB, Available: {free / (1024 * 1024):.2f} MB.")
-        return
+        log.error(f"Insufficient disk space. Available: {free / (1024 * 1024):.2f} MB.")
+        log.error("Package extraction and installation may fail, if so,  increase ephemeral storage.")
     else:
-        log.important(f"Available disk space is sufficient: {free / (1024 * 1024):.2f} MB.")
+        log.important(f"Available ephemeral storage should be sufficient: {free / (1024 * 1024):.2f} MB.")
 
     # Move sklearn from zip_dir to extract_path
     sklearn_dir = os.path.join(zip_dir, "sklearn")
