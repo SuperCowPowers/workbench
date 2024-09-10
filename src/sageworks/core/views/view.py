@@ -45,9 +45,8 @@ class View:
         self.data_source = artifact.data_source if self.is_feature_set else artifact
         self.database = self.data_source.get_database()
 
-        # Set our view table name
-        self.base_table = self.data_source.get_table_name()
-        self.view_table_name = self.table_name()
+        # Construct our base_table_name
+        self.base_table_name = self.data_source.get_table_name()
 
         # Check if they turned off auto-creation
         self.auto_create = kwargs.get("auto_create", True)
@@ -81,17 +80,18 @@ class View:
 
         # Retrieve the table metadata
         glue_client = self.data_source.boto3_session.client("glue")
-        response = glue_client.get_table(DatabaseName=self.database, Name=self.view_table_name)
+        response = glue_client.get_table(DatabaseName=self.database, Name=self.table_name)
 
         # Extract the column names from the schema
         column_names = [col["Name"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
 
         # Sanity check the column names
         if not column_names:
-            raise ValueError(f"No columns found for view {self.view_table_name}")
+            raise ValueError(f"No columns found for view {self.table_name}")
 
         return column_names
 
+    @property
     def table_name(self) -> str:
         """Construct the view table name for the given view type
 
@@ -99,8 +99,8 @@ class View:
             str: The view table name
         """
         if self.view_name == "base":
-            return self.base_table
-        return f"{self.base_table}_{self.view_name}"
+            return self.base_table_name
+        return f"{self.base_table_name}_{self.view_name}"
 
     def delete(self):
         """Delete the database view (and supplemental data) if it exists."""
@@ -113,15 +113,15 @@ class View:
                 delete_table(self.data_source, table)
 
         # Now drop the view
-        self.log.important(f"Dropping View {self.view_table_name}...")
-        drop_view_query = f"DROP VIEW {self.view_table_name}"
+        self.log.important(f"Dropping View {self.table_name}...")
+        drop_view_query = f"DROP VIEW {self.table_name}"
 
         # Execute the DROP VIEW query
         try:
             self.data_source.execute_statement(drop_view_query, silence_errors=True)
         except wr.exceptions.QueryFailed as e:
             if "View not found" in str(e):
-                self.log.info(f"View {self.view_table_name} not found, this is fine...")
+                self.log.info(f"View {self.table_name} not found, this is fine...")
             else:
                 raise
 
@@ -143,7 +143,7 @@ class View:
             return False
 
         # Check if the view exists
-        return self.view_table_name in views_df["Name"].values
+        return self.table_name in views_df["Name"].values
 
     def ensure_exists(self):
         """Ensure if the view exists by making a query directly to the database. If it doesn't exist, create it"""
@@ -156,7 +156,7 @@ class View:
         check_table_query = f"""
         SELECT table_name
         FROM information_schema.tables
-        WHERE table_schema = '{self.database}' AND table_name = '{self.view_table_name}'
+        WHERE table_schema = '{self.database}' AND table_name = '{self.table_name}'
         """
         _df = self.data_source.query(check_table_query)
         if _df.empty:
@@ -193,9 +193,9 @@ class View:
         # FIXME: Revisit this later
         auto = ""  # (Auto-Created)" if self.auto_created else ""
         if self.is_feature_set:
-            return f'View: {self.database}:{self.view_table_name}{auto} for FeatureSet("{self.data_source.uuid}")'
+            return f'View: {self.database}:{self.table_name}{auto} for FeatureSet("{self.data_source.uuid}")'
         else:
-            return f'View: {self.database}:{self.view_table_name}{auto} for DataSource("{self.data_source.uuid}")'
+            return f'View: {self.database}:{self.table_name}{auto} for DataSource("{self.data_source.uuid}")'
 
 
 if __name__ == "__main__":

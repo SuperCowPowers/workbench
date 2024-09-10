@@ -251,8 +251,8 @@ class FeatureSetCore(Artifact):
         s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
 
         # Make the query
-        view_table_name = self.view("training").view_table_name
-        query = f"SELECT * FROM {view_table_name}"
+        table_name = self.view("training").table_name
+        query = f"SELECT * FROM {table_name}"
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
         athena_query.wait()
@@ -417,7 +417,7 @@ class FeatureSetCore(Artifact):
             str: The name of the training view for this FeatureSet
         """
         # Get the training view table name
-        return self.view("training").view_table_name
+        return self.view("training").table_name
 
     def delete_views(self):
         """Delete any views associated with this FeatureSet"""

@@ -230,6 +230,7 @@ class SageWorksShell:
             "sageworks.core.views.computation_view"
         ).ComputationView
         self.commands["MDQView"] = importlib.import_module("sageworks.core.views.mdq_view").MDQView
+        self.commands["CreateViewWithDF"] = importlib.import_module("sageworks.core.views.create_view_with_df").CreateViewWithDF
 
         # We're going to include these classes/imports later
         # self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline

@@ -73,7 +73,7 @@ class CreateViewWithDF(CreateView):
 
         # Remove any columns in the incoming df that overlap with the source_df (except for the id_column)
         overlap_columns = [col for col in df.columns if col in source_df.columns and col != id_column]
-        self.log.important(f"Removing overlap columns: {overlap_columns}")
+        self.log.info(f"Removing overlap columns: {overlap_columns}")
         df = df.drop(columns=overlap_columns)
 
         # Create a supplemental data table with the incoming dataframe
