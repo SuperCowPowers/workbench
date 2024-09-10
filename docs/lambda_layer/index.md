@@ -35,6 +35,7 @@ At the bottom of the Lambda page there's an 'Add Layer' button. You can click th
 
 - Timeout: 5 Minutes
 - Memory: 4096
+- Ephemeral storage: 2048
 
 **Set the SAGEWORKS_BUCKET ENV**
 SageWorks will need to know what bucket to work out of, so go into the Configuration...Environment Variables... and add one for the SageWorks bucket that your are using for AWS Account (dev, prod, etc).
