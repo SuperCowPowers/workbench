@@ -560,6 +560,14 @@ class FeatureSetCore(Artifact):
         self.set_status("ready")
         return True
 
+    def recompute_stats(self) -> bool:
+        """This is a BLOCKING method that will recompute the stats for the FeatureSet"""
+
+        # Call our underlying DataSource recompute stats method
+        self.log.important(f"Recomputing Stats {self.uuid}...")
+        self.data_source.recompute_stats()
+        return True
+
 
 if __name__ == "__main__":
     """Exercise for FeatureSet Class"""

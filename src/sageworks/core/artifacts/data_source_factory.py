@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     # Column Names and Types
     print(f"Column Names: {my_data.columns}")
-    print(f"Column Types: {my_data.column_types()}")
+    print(f"Column Types: {my_data.column_types}")
 
     # Get Tags associated with this Artifact
     print(f"Tags: {my_data.get_tags()}")

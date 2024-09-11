@@ -564,7 +564,7 @@ if __name__ == "__main__":
 
     # Column Names and Types
     print(f"Column Names: {my_data.columns}")
-    print(f"Column Types: {my_data.column_types()}")
+    print(f"Column Types: {my_data.column_types}")
     print(f"Column Details: {my_data.column_details()}")
 
     # Get the input for this Artifact
@@ -628,6 +628,12 @@ if __name__ == "__main__":
     # Get the display columns
     print("\n\nDisplay Columns")
     print(my_data.view("display").columns)
+
+    # Test new recompute_stats method (we're grabbing a datasource from the FeatureSet)
+    from sageworks.api import FeatureSet
+    fs = FeatureSet("abalone_features")
+    ds = fs.data_source
+    ds.recompute_stats()
 
     # Test a Data Source that doesn't exist
     # The rest of the tests are Disabled for now

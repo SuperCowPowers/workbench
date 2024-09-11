@@ -292,15 +292,11 @@ class DataSourceAbstract(Artifact):
         self.set_status("onboarding")
         self.remove_health_tag("needs_onboard")
 
-        # Make sure our display view actually exist
+        # Make sure our display view actually exists
         self.view("display").ensure_exists()
 
-        # Compute the sample, column stats, outliers, and smart_sample
-        self.sample(recompute=True)
-        self.column_stats(recompute=True)
-        self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts
-        self.outliers(recompute=True)
-        self.smart_sample(recompute=True)
+        # Recompute the stats
+        self.recompute_stats()
 
         # Run a health check and refresh the meta
         time.sleep(2)  # Give the AWS Metadata a chance to update
@@ -308,4 +304,23 @@ class DataSourceAbstract(Artifact):
         self.refresh_meta()
         self.details(recompute=True)
         self.set_status("ready")
+        return True
+
+    def recompute_stats(self) -> bool:
+        """This is a BLOCKING method that will recompute the stats for the data source
+
+        Returns:
+            bool: True if the DataSource stats were recomputed successfully
+        """
+        self.log.important(f"Recomputing Stats {self.uuid}...")
+
+        # Make sure our computation view actually exists
+        self.view("computation").ensure_exists()
+
+        # Compute the sample, column stats, outliers, and smart_sample
+        self.sample(recompute=True)
+        self.column_stats(recompute=True)
+        self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts
+        self.outliers(recompute=True)
+        self.smart_sample(recompute=True)
         return True
