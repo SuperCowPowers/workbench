@@ -98,8 +98,6 @@ class Table(ComponentInterface):
 
         # HARDCODE: Not sure how to get around hard coding these columns
         dont_show = [
-            "id",
-            "uuid",
             "write_time",
             "event_time",
             "api_invocation_time",

@@ -39,15 +39,20 @@ class ColumnSubsetView(CreateView):
             Union[View, None]: The created View object (or None if failed to create the view)
         """
 
-        # If the user doesn't specify columns, then we'll limit the columns
-        if column_list is None:
-            # Drop any columns generated from AWS
-            aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-            source_table_columns = get_column_list(data_source, self.source_table)
-            column_list = [col for col in source_table_columns if col not in aws_cols]
+        # Get the columns from the source table
+        source_table_columns = get_column_list(data_source, self.source_table)
 
-            # Limit the number of columns
-            column_list = column_list[:column_limit]
+        # If the user doesn't specify columns, then we'll grab columns from data_source with limit
+        if column_list is None:
+            column_list = source_table_columns[:column_limit]
+
+        # Check if the columns are valid
+        else:
+            column_list = [col for col in column_list if col in source_table_columns]
+
+        # Drop any columns generated from AWS
+        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
+        column_list = [col for col in column_list if col not in aws_cols]
 
         # Enclose each column name in double quotes
         sql_columns = ", ".join([f'"{column}"' for column in column_list])
