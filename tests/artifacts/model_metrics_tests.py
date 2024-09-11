@@ -122,7 +122,7 @@ def test_inference_with_capture_uuid():
 
     # Grab a dataframe for inference
     my_features = FeatureSet("abalone_features")
-    table = my_features.get_training_view_table()
+    table = my_features.view("training").table_name
     df = my_features.query(f"SELECT * FROM {table} where training = 0")
 
     # Run inference

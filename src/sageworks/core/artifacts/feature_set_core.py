@@ -625,7 +625,7 @@ if __name__ == "__main__":
 
     # Set the holdout ids for the training view
     print("Setting hold out ids...")
-    table = my_features.get_training_view_table()
+    table = my_features.view("training").table_name
     df = my_features.query(f"SELECT id, name FROM {table}")
     my_holdout_ids = [id for id in df["id"] if id < 20]
     my_features.set_training_holdouts("id", my_holdout_ids)

@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # Run predictions on the Endpoint
     model = Model(my_endpoint.get_input())
     my_features = FeatureSet(model.get_input())
-    table = my_features.get_training_view_table()
+    table = my_features.view("training").table_name
     df = my_features.query(f"SELECT * FROM {table} where training = 0")
     results = my_endpoint.inference(df)
     target = model.target()

@@ -21,7 +21,7 @@ def run_inference(endpoint_name):
     model = my_endpoint.get_input()
     feature_set = ModelCore(model).get_input()
     features = FeatureSetCore(feature_set)
-    table = features.get_training_view_table()
+    table = features.view("training").table_name
     test_df = features.query(f"SELECT * FROM {table} where training = 0")
 
     # Drop some columns
