@@ -379,7 +379,7 @@ class FeatureSetCore(Artifact):
         from sageworks.core.views.view_utils import list_view_tables
 
         view_tables = list_view_tables(self.data_source)
-        data_table_name = self.data_source.get_table_name()
+        data_table_name = self.data_source.table_name
         # Each view will have the format: {data_table_name}_{view_name}
         return [view_table.replace(data_table_name + "_", "") for view_table in view_tables]
 

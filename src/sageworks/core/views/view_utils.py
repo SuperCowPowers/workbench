@@ -21,7 +21,7 @@ def get_column_list(data_source: DataSource, source_table: str = None) -> list[s
     Returns:
         list[str]: A list of column names
     """
-    source_table = source_table if source_table else data_source.get_table_name()
+    source_table = source_table if source_table else data_source.table_name
 
     # Query to get the column names
     column_query = f"""
@@ -59,7 +59,7 @@ def list_view_tables(data_source: DataSource) -> list[str]:
     Returns:
         list[str]: A list of view table names
     """
-    base_table_name = data_source.get_table_name()
+    base_table_name = data_source.table_name
 
     # Use LIKE to match table names that start with base_table_name followed by any characters
     view_query = f"""
@@ -82,7 +82,7 @@ def list_supplemental_data_tables(data_source: DataSource) -> list[str]:
     Returns:
         list[str]: A list of supplemental data table names
     """
-    base_table_name = data_source.get_table_name()
+    base_table_name = data_source.table_name
 
     # Use REGEXP_LIKE to match table names that start with an underscore, followed by the base_table_name,
     # followed by one underscore, and no more underscores

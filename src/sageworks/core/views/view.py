@@ -46,7 +46,7 @@ class View:
         self.database = self.data_source.get_database()
 
         # Construct our base_table_name
-        self.base_table_name = self.data_source.get_table_name()
+        self.base_table_name = self.data_source.table_name
 
         # Check if they turned off auto-creation
         self.auto_create = kwargs.get("auto_create", True)

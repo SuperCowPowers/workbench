@@ -37,7 +37,8 @@ class DataSourceAbstract(Artifact):
         """Get the database for this Data Source"""
         return self._database
 
-    def get_table_name(self) -> str:
+    @property
+    def table_name(self) -> str:
         """Get the base table name for this Data Source"""
         return self._table_name
 

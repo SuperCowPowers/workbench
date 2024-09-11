@@ -22,7 +22,7 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
     """
 
     # Grab the  DataSource table name
-    table = data_source.get_table_name()
+    table = data_source.table_name
 
     # For every column in the table that is string, compute the value_counts
     data_source.log.info("Computing value_counts for all string columns...")

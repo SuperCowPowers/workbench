@@ -96,7 +96,7 @@ class DataSource(AthenaSource):
 
         # Get the table associated with the data
         self.log.info(f"Pulling all data from {self.uuid}...")
-        table = super().get_table_name()
+        table = super().table_name
         query = f"SELECT * FROM {table}"
         df = self.query(query)
 
