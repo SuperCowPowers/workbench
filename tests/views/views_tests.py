@@ -28,20 +28,20 @@ def test_display_view_fs():
 
 
 @pytest.mark.long
-def test_set_display_view_columns():
-    # Create a new display View for a DataSource
+def test_set_computation_view_columns():
+    # Create a new computation View for a DataSource
     ds = DataSource("test_data")
-    display_columns = ds.columns
-    ds.set_display_columns(display_columns)
-    display_view = ds.view("display")
-    df = display_view.pull_dataframe(head=True)
+    computation_columns = ds.columns
+    ds.set_computation_columns(computation_columns)
+    computation_view = ds.view("computation")
+    df = computation_view.pull_dataframe(head=True)
     print(df)
 
     # Create a new display View for a FeatureSet
     fs = FeatureSet("test_features")
-    fs.set_display_columns(display_columns)
-    display_view = fs.view("display")
-    df = display_view.pull_dataframe(head=True)
+    fs.set_computation_columns(computation_columns)
+    computation_view = fs.view("display")
+    df = computation_view.pull_dataframe(head=True)
     print(df)
 
 

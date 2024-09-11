@@ -89,20 +89,20 @@ class DataSourceAbstract(Artifact):
 
         return View(self, view_name)
 
-    def set_display_columns(self, display_columns: list[str], onboard: bool = True):
-        """Set the display columns for this Data Source
+    def set_computation_columns(self, computation_columns: list[str], recompute_stats: bool = True):
+        """Set the computation columns for this Data Source
 
         Args:
-            display_columns (list[str]): The display columns for this Data Source
-            onboard (bool): Onboard the Data Source after setting the display columns (default: True)
+            computation_columns (list[str]): The computation columns for this Data Source
+            recompute_stats (bool): Recomputes all the stats for this Data Source (default: True)
         """
-        self.log.important(f"Setting Display Columns...{display_columns}")
-        from sageworks.core.views import DisplayView
+        self.log.important(f"Setting Computation Columns...{computation_columns}")
+        from sageworks.core.views import ComputationView
 
-        # Create a NEW display view
-        DisplayView(self).create(column_list=display_columns)
-        if onboard:
-            self.onboard()
+        # Create a NEW computation view
+        ComputationView(self).create(column_list=computation_columns)
+        if recompute_stats:
+            self.recompute_stats()
 
     def _create_display_view(self):
         """Internal: Create the Display View for this DataSource"""

@@ -540,13 +540,6 @@ class AthenaSource(DataSourceAbstract):
 if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
 
-    # Test new recompute_stats method (we're grabbing a datasource from the FeatureSet)
-    from sageworks.api import FeatureSet
-    fs = FeatureSet("abalone_features")
-    ds = fs.data_source
-    ds.recompute_stats()
-
-
     # Retrieve a Data Source
     my_data = AthenaSource("abalone_data")
 
@@ -628,13 +621,13 @@ if __name__ == "__main__":
     print("\n\nDisplay Columns")
     print(my_data.view("display").columns)
 
-    # Set the display columns
-    print("\n\nDisplay Columns")
-    print(my_data.set_display_columns(my_data.columns))
+    # Set the computation columns
+    print("\n\nSet Computation Columns")
+    print(my_data.set_computation_columns(my_data.columns))
 
-    # Get the display columns
-    print("\n\nDisplay Columns")
-    print(my_data.view("display").columns)
+    # Get the computation columns
+    print("\n\nComputation Columns")
+    print(my_data.view("computation").columns)
 
     # Test a Data Source that doesn't exist
     # The rest of the tests are Disabled for now

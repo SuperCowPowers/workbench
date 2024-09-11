@@ -175,20 +175,20 @@ class FeatureSetCore(Artifact):
         """
         return self.view("display").columns
 
-    def set_display_columns(self, display_columns: list[str], onboard: bool = True):
-        """Set the display columns for this Data Source
+    def set_computation_columns(self, computation_columns: list[str], recompute_stats: bool = True):
+        """Set the computation columns for this FeatureSet
 
         Args:
-            display_columns (list[str]): The display columns for this Data Source
-            onboard (bool): Onboard the Data Source after setting the display columns (default: True)
+            computation_columns (list[str]): The computation columns for this FeatureSet
+            recompute_stats (bool): Recompute the stats after setting the computation columns (default: True)
         """
-        self.log.important(f"Setting Display Columns...{display_columns}")
-        from sageworks.core.views import DisplayView
+        self.log.important(f"Setting Computation Columns...{display_columns}")
+        from sageworks.core.views import ComputationView
 
-        # Create a NEW display view
-        DisplayView(self).create(column_list=display_columns)
-        if onboard:
-            self.onboard()
+        # Create a NEW computation view
+        ComputationView(self).create(column_list=computation_columns)
+        if recompute_stats:
+            self.recompute_stats()
 
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""
@@ -566,6 +566,7 @@ class FeatureSetCore(Artifact):
         # Call our underlying DataSource recompute stats method
         self.log.important(f"Recomputing Stats {self.uuid}...")
         self.data_source.recompute_stats()
+        self.details(recompute=True)
         return True
 
 
@@ -578,6 +579,11 @@ if __name__ == "__main__":
     pd.set_option("display.max_colwidth", 50)
     pd.set_option("display.max_columns", 15)
     pd.set_option("display.width", 1000)
+
+    # Test new recompute_stats method (we're grabbing a datasource from the FeatureSet)
+    from sageworks.api import FeatureSet
+    fs = LocalFeatureSetCore("abalone_features")
+    fs.recompute_stats()
 
     # Grab a FeatureSet object and pull some information from it
     my_features = LocalFeatureSetCore("test_features")
