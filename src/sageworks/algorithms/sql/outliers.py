@@ -41,9 +41,10 @@ class Outliers:
         # Compute the numeric outliers
         outlier_df = self._numeric_outliers(data_source, scale, use_stddev)
 
-        # If there are no outliers, return a DataFrame with defined columns but no rows
+        # If there are no outliers, return a DataFrame with the computation columns but no rows
         if outlier_df is None:
-            return pd.DataFrame(columns=data_source.columns + ["outlier_group"])
+            columns = data_source.view("computation").columns
+            return pd.DataFrame(columns=columns + ["outlier_group"])
 
         # Get the top N outliers for each outlier group
         outlier_df = self.get_top_n_outliers(outlier_df)
@@ -142,8 +143,8 @@ class Outliers:
         Returns:
             str: A SQL query to compute outliers for multiple columns
         """
-        # Grab the  DataSource table name
-        table = data_source.table_name
+        # Grab the DataSource computation table name
+        table = data_source.view("computation").table_name
 
         # Get the column names and types from the DataSource
         column_details = data_source.view("computation").column_details()

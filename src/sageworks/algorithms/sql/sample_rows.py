@@ -19,8 +19,8 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
         pd.DataFrame: A sample DataFrame from this DataSource
     """
 
-    # Grab the  DataSource table name
-    table = data_source.table_name
+    # Grab the DataSource computation table name
+    table = data_source.view("computation").table_name
 
     # Get the column names the DataSource computation view
     column_names = data_source.view("computation").columns

@@ -98,8 +98,8 @@ def column_stats(data_source: DataSourceAbstract, recompute: bool = False) -> di
     non_numeric = [column for column, data_type in details.items() if data_type not in num_type]
     all_columns = numeric + non_numeric
 
-    # Grab the  DataSource table name
-    table = data_source.table_name
+    # Grab the DataSource computation table name
+    table = data_source.view("computation").table_name
 
     # Now call the queries to compute the counts of distinct, nulls, and zeros
     data_source.log.info("Computing Unique values...")

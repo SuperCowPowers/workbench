@@ -300,9 +300,9 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # First check if we have already computed the descriptive stats
-        stat_dict_json = self.sageworks_meta().get("sageworks_descriptive_stats")
-        if stat_dict_json and not recompute:
-            return stat_dict_json
+        stat_dict = self.sageworks_meta().get("sageworks_descriptive_stats")
+        if stat_dict and not recompute:
+            return stat_dict
 
         # Call the SQL function to compute descriptive stats
         stat_dict = descriptive_stats.descriptive_stats(self)
@@ -540,6 +540,13 @@ class AthenaSource(DataSourceAbstract):
 if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
 
+    # Test new recompute_stats method (we're grabbing a datasource from the FeatureSet)
+    from sageworks.api import FeatureSet
+    fs = FeatureSet("abalone_features")
+    ds = fs.data_source
+    ds.recompute_stats()
+
+
     # Retrieve a Data Source
     my_data = AthenaSource("abalone_data")
 
@@ -628,12 +635,6 @@ if __name__ == "__main__":
     # Get the display columns
     print("\n\nDisplay Columns")
     print(my_data.view("display").columns)
-
-    # Test new recompute_stats method (we're grabbing a datasource from the FeatureSet)
-    from sageworks.api import FeatureSet
-    fs = FeatureSet("abalone_features")
-    ds = fs.data_source
-    ds.recompute_stats()
 
     # Test a Data Source that doesn't exist
     # The rest of the tests are Disabled for now
