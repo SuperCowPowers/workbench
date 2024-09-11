@@ -151,7 +151,7 @@ class DataDetailsMarkdown(ComponentInterface):
             "Boolean": "B",
         }
         if "fs_dtype" in column_info:
-            display_fs_type = shorten_map.get(column_info["fs_dtype"], "???")
+            display_fs_type = shorten_map.get(column_info["fs_dtype"], "V")
             column_info["full_type"] = f"{display_fs_type}: {column_info['dtype']}"
         else:
             column_info["full_type"] = column_info["dtype"]
