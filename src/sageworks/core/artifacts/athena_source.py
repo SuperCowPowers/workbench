@@ -619,7 +619,7 @@ if __name__ == "__main__":
 
     # Get the display columns
     print("\n\nDisplay Columns")
-    print(my_data.get_display_columns())
+    print(my_data.view("display").columns)
 
     # Set the display columns
     print("\n\nDisplay Columns")
@@ -627,7 +627,7 @@ if __name__ == "__main__":
 
     # Get the display columns
     print("\n\nDisplay Columns")
-    print(my_data.get_display_columns())
+    print(my_data.view("display").columns)
 
     # Test a Data Source that doesn't exist
     # The rest of the tests are Disabled for now

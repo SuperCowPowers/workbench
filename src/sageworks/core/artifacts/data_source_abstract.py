@@ -89,13 +89,6 @@ class DataSourceAbstract(Artifact):
 
         return View(self, view_name)
 
-    def get_display_columns(self) -> list[str]:
-        """Get the columns from our display view
-        Returns:
-            list[str]: The columns from our display view
-        """
-        return self.view("display").columns
-
     def set_display_columns(self, display_columns: list[str], onboard: bool = True):
         """Set the display columns for this Data Source
 
@@ -116,19 +109,6 @@ class DataSourceAbstract(Artifact):
         from sageworks.core.views import View
 
         View(self, "display")
-
-    def num_display_columns(self) -> int:
-        """Return the number of columns for the display view"""
-        return len(self.get_display_columns())
-
-    def get_computation_columns(self) -> list[str]:
-        return self.get_display_columns()
-
-    def set_computation_columns(self, computation_columns: list[str]):
-        self.set_display_columns(computation_columns)
-
-    def num_computation_columns(self) -> int:
-        return self.num_display_columns()
 
     @abstractmethod
     def query(self, query: str) -> pd.DataFrame:
