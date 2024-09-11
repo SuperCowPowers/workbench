@@ -31,6 +31,7 @@ nav:
       - Artifact: core_classes/artifacts/artifact.md
     - Views: 
       - View: core_classes/views/view.md
+      - ComputationView: core_classes/views/computation_view.md
       - DisplayView: core_classes/views/display_view.md
       - TrainingView: core_classes/views/training_view.md
     - Transforms: 
