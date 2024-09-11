@@ -1,7 +1,7 @@
 # View Class (Beta)
 
-!!! warning inline end "Work In Progress"
-    The SageWorks Lambda Layers are a great way to use SageWorks but they are still in 'beta' mode so please let us know if you have any issues.
+!!! warning inline end "Experimental"
+    The SageWorks View classes are currently in experimental mode so have fun but expect issues and API changes going forward.
     
 ::: sageworks.core.views.view
 
