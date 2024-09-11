@@ -100,7 +100,7 @@ if __name__ == "__main__":
     # Run the tests
     test_display_view_ds()
     test_display_view_fs()
-    test_set_display_view_columns()
+    test_set_computation_view_columns()
     test_training_view()
     test_training_holdouts()
     test_delete_display_view()

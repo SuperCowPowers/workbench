@@ -182,7 +182,7 @@ class FeatureSetCore(Artifact):
             computation_columns (list[str]): The computation columns for this FeatureSet
             recompute_stats (bool): Recompute the stats after setting the computation columns (default: True)
         """
-        self.log.important(f"Setting Computation Columns...{display_columns}")
+        self.log.important(f"Setting Computation Columns...{computation_columns}")
         from sageworks.core.views import ComputationView
 
         # Create a NEW computation view
@@ -581,7 +581,6 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Test new recompute_stats method (we're grabbing a datasource from the FeatureSet)
-    from sageworks.api import FeatureSet
     fs = LocalFeatureSetCore("abalone_features")
     fs.recompute_stats()
 
