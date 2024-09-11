@@ -77,7 +77,7 @@ class CreateViewWithDF(CreateView):
         df = df.drop(columns=overlap_columns)
 
         # Create a supplemental data table with the incoming dataframe
-        df_table = f"_{self.base_table}_{self.view_name}"
+        df_table = f"_{self.base_table_name}_{self.view_name}"
         dataframe_to_table(data_source, df, df_table)
 
         # Create a list of columns in SQL form (for the source table)

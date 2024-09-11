@@ -111,7 +111,7 @@ class TrainingView(CreateView):
             WHEN MOD(ROW_NUMBER() OVER (ORDER BY {id_column}), 10) < 8 THEN 1  -- Assign 80% to training
             ELSE 0  -- Assign roughly 20% to validation/test
         END AS training
-        FROM {self.base_table}
+        FROM {self.base_table_name}
         """
 
         # Execute the CREATE VIEW query

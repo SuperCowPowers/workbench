@@ -185,9 +185,7 @@ class AthenaSource(DataSourceAbstract):
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
-        count_df = self.query(
-            f'select count(*) AS sageworks_count from "{self.get_database()}"."{self.table_name}"'
-        )
+        count_df = self.query(f'select count(*) AS sageworks_count from "{self.get_database()}"."{self.table_name}"')
         return count_df["sageworks_count"][0] if count_df is not None else 0
 
     def num_columns(self) -> int:

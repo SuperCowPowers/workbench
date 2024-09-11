@@ -34,9 +34,10 @@ class CreateView(ABC):
         self.data_source = artifact.data_source if self.is_feature_set else artifact
         self.database = self.data_source.get_database()
 
-        # Set our source_table
-        self.source_table = source_table if source_table else self.data_source.table_name
-        self.table_name = f"{self.data_source.table_name}_{self.view_name}"
+        # Set our table names
+        self.base_table_name = self.data_source.table_name
+        self.source_table = source_table if source_table else self.base_table_name
+        self.table_name = f"{self.base_table_name}_{self.view_name}"
 
     def create(self, **kwargs) -> Union[View, None]:
         """Create the view, each subclass must implement this method
