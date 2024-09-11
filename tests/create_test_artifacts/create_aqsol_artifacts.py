@@ -105,7 +105,7 @@ if __name__ == "__main__":
         # Compute our features
         feature_set = FeatureSet("aqsol_mol_descriptors")
         exclude = ["id", "smiles", "solubility", "solubility_class"]
-        feature_list = [f for f in feature_set.column_names() if f not in exclude]
+        feature_list = [f for f in feature_set.columns if f not in exclude]
         feature_set.to_model(
             ModelType.REGRESSOR,
             target_column="solubility",
@@ -120,7 +120,7 @@ if __name__ == "__main__":
         # Compute our features
         feature_set = FeatureSet("aqsol_mol_descriptors")
         exclude = ["id", "smiles", "solubility", "solubility_class"]
-        feature_list = [f for f in feature_set.column_names() if f not in exclude]
+        feature_list = [f for f in feature_set.columns if f not in exclude]
         feature_set.to_model(
             ModelType.CLASSIFIER,
             target_column="solubility_class",

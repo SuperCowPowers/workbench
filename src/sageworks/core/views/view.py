@@ -5,6 +5,7 @@ import time
 from typing import Union
 import pandas as pd
 import awswrangler as wr
+from botocore.exceptions import ClientError
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
@@ -87,27 +88,31 @@ class View:
         """
         return dict(zip(self.columns, self.column_types))
 
-    def _pull_column_info(self) -> (list, list):
+    def _pull_column_info(self) -> (Union[list, None], Union[list, None]):
         """Internal: pull the column names and types for the view
 
         Returns:
-            list: The column names
-            list: The column types
+            Union[list, None]: The column names (returns None if the table does not exist)
+            Union[list, None]: The column types (returns None if the table does not exist)
         """
 
         # Retrieve the table metadata
         glue_client = self.data_source.boto3_session.client("glue")
-        response = glue_client.get_table(DatabaseName=self.database, Name=self.table_name)
+        try:
+            response = glue_client.get_table(DatabaseName=self.database, Name=self.table_name)
 
-        # Extract the column names from the schema
-        column_names = [col["Name"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
-        column_types = [col["Type"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
+            # Extract the column names from the schema
+            column_names = [col["Name"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
+            column_types = [col["Type"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
+            return column_names, column_types
 
-        # Sanity check the column names
-        if not column_names:
-            raise ValueError(f"No columns found for view {self.table_name}")
-
-        return column_names, column_types
+        # Handle the case where the table does not exist
+        except glue_client.exceptions.EntityNotFoundException:
+            self.log.warning(f"Table {self.table_name} not found in database {self.database}.")
+            return None, None
+        except ClientError as e:
+            self.log.error(f"An error occurred while retrieving table info: {e}")
+            return None, None
 
     @property
     def table_name(self) -> str:
@@ -142,6 +147,10 @@ class View:
                 self.log.info(f"View {self.table_name} not found, this is fine...")
             else:
                 raise
+
+        # We want to do a small sleep so that AWS has time to catch up
+        self.log.info("Sleeping for 3 seconds after dropping view to allow AWS to catch up...")
+        time.sleep(3)
 
     def exists(self) -> bool:
         """Check if the view exists in the database
@@ -204,9 +213,6 @@ class View:
             TrainingView(self.data_source).create(id_column=self.auto_id_column)
         else:
             self.log.error(f"Auto-Create for {self.view_name} not implemented yet...")
-
-        # We want to do a small sleep so that AWS has time to catch up
-        time.sleep(1)
 
     def __repr__(self):
         """Return a string representation of this object"""

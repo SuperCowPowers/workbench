@@ -31,7 +31,7 @@ def test_display_view_fs():
 def test_set_display_view_columns():
     # Create a new display View for a DataSource
     ds = DataSource("test_data")
-    display_columns = ds.column_names()
+    display_columns = ds.columns
     ds.set_display_columns(display_columns)
     display_view = ds.view("display")
     df = display_view.pull_dataframe(head=True)
