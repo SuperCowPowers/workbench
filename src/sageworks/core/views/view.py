@@ -55,6 +55,10 @@ class View:
                 self._auto_create_view()
             else:
                 self.log.error(f"View {self.view_name} for {self.data_source.uuid} does not exist...")
+                return
+
+        # Now fill in our columns and column types
+        self.columns, self.column_types = self._pull_column_info()
 
     def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
         """Pull a DataFrame based on the view type
@@ -74,9 +78,21 @@ class View:
         df = self.data_source.query(pull_query)
         return df
 
-    @property
-    def columns(self) -> list:
-        """Return the columns for the view"""
+    def column_details(self) -> dict:
+        """Return a dictionary of the column names and types for this view
+
+        Returns:
+            dict: A dictionary of the column names and types
+        """
+        return dict(zip(self.columns, self.column_types))
+
+    def _pull_column_info(self) -> (list, list):
+        """Internal: pull the column names and types for the view
+
+        Returns:
+            list: The column names
+            list: The column types
+        """
 
         # Retrieve the table metadata
         glue_client = self.data_source.boto3_session.client("glue")
@@ -84,12 +100,13 @@ class View:
 
         # Extract the column names from the schema
         column_names = [col["Name"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
+        column_types = [col["Type"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
 
         # Sanity check the column names
         if not column_names:
             raise ValueError(f"No columns found for view {self.table_name}")
 
-        return column_names
+        return column_names, column_types
 
     @property
     def table_name(self) -> str:
@@ -200,11 +217,10 @@ class View:
 
 if __name__ == "__main__":
     """Exercise the ViewManager Class"""
-
     # See tests/views/views_tests.py for more examples
-
-    # SageWorks Imports
+    import numpy as np
     from sageworks.api import DataSource, FeatureSet
+    from sageworks.core.views.create_view_with_df import CreateViewWithDF
 
     # Show trace calls
     logging.getLogger("sageworks").setLevel(logging.DEBUG)
@@ -238,7 +254,14 @@ if __name__ == "__main__":
     # Delete the display view
     display_view.delete()
 
+    # Generate a DataFrame with the same id column and two random columns
+    my_df = fs.pull_dataframe()[["id", "height", "weight", "salary"]]
+    my_df["random1"] = np.random.rand(len(my_df))
+    my_df["random2"] = np.random.rand(len(my_df))
+
+    # Create a view with a CreateViewWithDF class
+    df_view = CreateViewWithDF("test_df", fs).create(df=my_df, id_column="id")
+
     # Test supplemental data tables deletion
-    fs = FeatureSet("abalone_features")
     view = View(fs, "test_df")
     view.delete()

@@ -82,7 +82,7 @@ class Outliers:
             return None
 
         # Get the column names and types from the DataSource
-        column_details = data_source.column_details(view="computation")
+        column_details = data_source.view("computation").column_details()
 
         # For every column in the data_source that is numeric get the outliers
         # This loop computes the columns, lower bounds, and upper bounds for the SQL query
@@ -146,7 +146,7 @@ class Outliers:
         table = data_source.table_name
 
         # Get the column names and types from the DataSource
-        column_details = data_source.column_details(view="computation")
+        column_details = data_source.view("computation").column_details()
         sql_columns = ", ".join([f'"{col}"' for col in column_details.keys()])
 
         query = f"SELECT {sql_columns} FROM {table} WHERE "

@@ -128,15 +128,13 @@ class FeatureSetCore(Artifact):
         """Return the column names of the Feature Set"""
         return list(self.column_details().keys())
 
+    @property
     def column_types(self) -> list[str]:
         """Return the column types of the Feature Set"""
         return list(self.column_details().values())
 
-    def column_details(self, view: str = "all") -> dict:
+    def column_details(self) -> dict:
         """Return the column details of the Feature Set
-
-        Args:
-            view (str): The view to get column details for (default: "all")
 
         Returns:
             dict: The column details of the Feature Set
@@ -146,7 +144,7 @@ class FeatureSetCore(Artifact):
             types, so we need to overlay that type information on top of the DataSource type information
         """
         fs_details = {item["FeatureName"]: item["FeatureType"] for item in self.feature_meta["FeatureDefinitions"]}
-        ds_details = self.data_source.column_details(view)
+        ds_details = self.data_source.column_details()
 
         # Overlay the FeatureSet type information on top of the DataSource type information
         for col, dtype in ds_details.items():

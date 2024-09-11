@@ -45,7 +45,7 @@ def correlations(data_source: DataSourceAbstract) -> dict[dict]:
 
     # Figure out which columns are numeric
     num_type = ["double", "float", "int", "bigint", "smallint", "tinyint"]
-    details = data_source.column_details(view="computation")
+    details = data_source.view("computation").column_details()
 
     # Get the numeric columns
     numeric = [column for column, data_type in details.items() if data_type in num_type]

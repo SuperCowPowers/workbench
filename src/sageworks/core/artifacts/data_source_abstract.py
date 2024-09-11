@@ -58,28 +58,19 @@ class DataSourceAbstract(Artifact):
         """Return the column names for this Data Source"""
         pass
 
+    @property
     @abstractmethod
     def column_types(self) -> list[str]:
         """Return the column types for this Data Source"""
         pass
 
-    def column_details(self, view: str = "all") -> dict:
+    def column_details(self) -> dict:
         """Return the column details for this Data Source
-        Args:
-            view (str): The view to get column details for (default: "all")
+
         Returns:
             dict: The column details for this Data Source
         """
-        names = self.columns
-        types = self.column_types()
-        if view == "display":
-            return {name: type_ for name, type_ in zip(names, types) if name in self.get_display_columns()}
-        elif view == "computation":
-            return {name: type_ for name, type_ in zip(names, types) if name in self.get_computation_columns()}
-        elif view == "all":
-            return {name: type_ for name, type_ in zip(names, types)}  # Return the full column details
-        else:
-            raise ValueError(f"Unknown column details view: {view}")
+        return dict(zip(self.columns, self.column_types))
 
     def views(self) -> list[str]:
         """Return the views for this Data Source"""

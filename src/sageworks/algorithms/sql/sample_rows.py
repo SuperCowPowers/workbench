@@ -22,9 +22,9 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
     # Grab the  DataSource table name
     table = data_source.table_name
 
-    # Get the column names and types from the DataSource
-    column_details = data_source.column_details(view="computation")
-    sql_columns = ", ".join([f'"{name}"' for name in column_details.keys()])
+    # Get the column names the DataSource computation view
+    column_names = data_source.view("computation").columns
+    sql_columns = ", ".join([f'"{name}"' for name in column_names])
 
     # Note: Hardcoded to 100 rows so that metadata storage is consistent
     sample_rows = 100

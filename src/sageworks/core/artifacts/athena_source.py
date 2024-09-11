@@ -197,6 +197,7 @@ class AthenaSource(DataSourceAbstract):
         """Return the column names for this Athena Table"""
         return [item["Name"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
 
+    @property
     def column_types(self) -> list[str]:
         """Return the column types of the internal AthenaSource"""
         return [item["Type"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
