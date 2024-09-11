@@ -140,10 +140,6 @@ if __name__ == "__main__":
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")
 
-    # Set computation view columns
-    # computation_cols = my_data.columns
-    # my_data.set_computation_columns(computation_cols)
-
     # Get column stats for computation columns
     my_column_stats = column_stats(my_data)
     print("\nColumn Stats:")

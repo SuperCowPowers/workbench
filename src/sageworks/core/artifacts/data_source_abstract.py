@@ -240,7 +240,6 @@ class DataSourceAbstract(Artifact):
         details = self.summary()
         details["num_rows"] = self.num_rows()
         details["num_columns"] = self.num_columns()
-        details["num_display_columns"] = self.num_display_columns()
         details["column_details"] = self.column_details()
         return details
 
