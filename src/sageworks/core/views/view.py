@@ -70,7 +70,7 @@ class View:
         # Pull the DataFrame
         if head:
             limit = 5
-        pull_query = f"SELECT * FROM {self.view_table_name} LIMIT {limit}"
+        pull_query = f"SELECT * FROM {self.table_name} LIMIT {limit}"
         df = self.data_source.query(pull_query)
         return df
 

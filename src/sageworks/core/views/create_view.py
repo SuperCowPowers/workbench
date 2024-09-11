@@ -34,10 +34,9 @@ class CreateView(ABC):
         self.data_source = artifact.data_source if self.is_feature_set else artifact
         self.database = self.data_source.get_database()
 
-        # Set our table names (base, source, and view)
-        self.base_table = self.data_source.get_table_name()
-        self.source_table = source_table if source_table else self.base_table
-        self.view_table_name = f"{self.base_table}_{self.view_name}"
+        # Set our source_table
+        self.source_table = source_table if source_table else self.data_source.get_table_name()
+        self.table_name = f"{self.base_table_name}_{self.view_name}"
 
     def create(self, **kwargs) -> Union[View, None]:
         """Create the view, each subclass must implement this method
@@ -50,7 +49,7 @@ class CreateView(ABC):
         """
 
         # Create the view
-        self.log.important(f"Creating {self.view_name} view {self.view_table_name}...")
+        self.log.important(f"Creating {self.view_name} view {self.table_name}...")
         return self.create_impl(self.data_source, **kwargs)
 
     @abstractmethod

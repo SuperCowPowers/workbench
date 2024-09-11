@@ -179,7 +179,7 @@ if __name__ == "__main__":
     print(get_column_list(my_data_source))
 
     # Test get_column_list (with training view)
-    training_table = fs.view("training").view_table_name
+    training_table = fs.view("training").table_name
     print(get_column_list(my_data_source, training_table))
 
     # Test list_view_tables

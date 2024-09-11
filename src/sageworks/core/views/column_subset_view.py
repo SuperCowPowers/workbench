@@ -59,7 +59,7 @@ class ColumnSubsetView(CreateView):
 
         # Create the view query
         create_view_query = f"""
-           CREATE OR REPLACE VIEW {self.view_table_name} AS
+           CREATE OR REPLACE VIEW {self.table_name} AS
            SELECT {sql_columns} FROM {self.source_table}
            """
 

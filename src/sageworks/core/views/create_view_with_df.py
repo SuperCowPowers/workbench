@@ -34,7 +34,7 @@ class CreateViewWithDF(CreateView):
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)
         """
-        self.log.important(f"Creating View with DF {self.view_table_name}...")
+        self.log.important(f"Creating View with DF {self.table_name}...")
 
         # Check the number of rows in the source_table, if greater than 1M, then give an error and return
         row_count = data_source.num_rows()
@@ -88,7 +88,7 @@ class CreateViewWithDF(CreateView):
 
         # Construct the CREATE VIEW query
         create_view_query = f"""
-        CREATE OR REPLACE VIEW {self.view_table_name} AS
+        CREATE OR REPLACE VIEW {self.table_name} AS
         SELECT {source_columns_str}, {df_columns_str}
         FROM {self.source_table} A
         LEFT JOIN {df_table} B
