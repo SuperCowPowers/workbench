@@ -1,6 +1,7 @@
 """View: Read from a view (training, display, etc) for DataSources and FeatureSets."""
 
 import logging
+import time
 from typing import Union
 import pandas as pd
 import awswrangler as wr
@@ -203,6 +204,9 @@ class View:
             TrainingView(self.data_source).create(id_column=self.auto_id_column)
         else:
             self.log.error(f"Auto-Create for {self.view_name} not implemented yet...")
+
+        # We want to do a small sleep so that AWS has time to catch up
+        time.sleep(1)
 
     def __repr__(self):
         """Return a string representation of this object"""

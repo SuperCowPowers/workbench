@@ -364,11 +364,6 @@ class AthenaSource(DataSourceAbstract):
         all_except_outlier_group = [col for col in all_rows.columns if col != "outlier_group"]
         all_rows = all_rows.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
 
-        # Just grab display view + outlier_group
-        display_columns = self.get_display_columns() + ["outlier_group"]
-        display_columns = [col for col in display_columns if col in all_rows.columns]
-        all_rows = all_rows[display_columns]
-
         # Cache the smart_sample data
         self.data_storage.set(storage_key, all_rows.to_json())
 
