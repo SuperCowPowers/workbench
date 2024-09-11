@@ -968,6 +968,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../core_classes/views/computation_view/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ComputationView
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../core_classes/views/display_view/" class="md-nav__link">
         
   
@@ -2209,14 +2230,16 @@
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>fs.get_training_data(self) -&gt; fs.view(&quot;training&quot;).pull_dataframe()
 </span></code></pre></div>
 <p>Some FS/DS methods have also been removed</p>
-<p><code>num_display_columns() -&gt; gone
-   set_computation_columns() -&gt; gone
-   num_computation_columns() -&gt; gone</code></p>
-<p><strong>Note</strong>: We're still going to have the <code>fs.set_display_columns()</code> method since that handles some logistics around recomputing samples, outliers, etc... </p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>set_display_columns() -&gt; gone
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>num_display_columns() -&gt; gone
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>set_computation_columns() -&gt; gone
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>num_computation_columns() -&gt; gone
+</span></code></pre></div>
+<p><strong>Note</strong>: We're still going to have the <code>fs.set_computation_columns()</code> method since that handles the underlying recomputation of statistics for the new columns... </p>
 </li>
 <li>
 <p><strong>AWSAccountClamp</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>AWSAccountClamp().boto_session() --&gt; AWSAccountClamp().boto3_session
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>AWSAccountClamp().boto_session() --&gt; AWSAccountClamp().boto3_session
 </span></code></pre></div>
 </li>
 <li>
@@ -2237,10 +2260,10 @@ cm.set_config(&quot;REDIS_HOST&quot;, args_dict[&quot;redis-host&quot;])
 </code></pre></div>
 <h3 id="robust-modelnotreadyexception-handling">Robust ModelNotReadyException Handling</h3>
 <p>AWS will 'deep freeze' Serverless Endpoints and if that endpoint hasn't been used for a while it can sometimes take a long time to come up and be ready for inference. SageWorks now properly manages this AWS error condition, it will report the issue, wait 60 seconds, and try again 5 times before raising the exception.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>(endpoint_core.py:502) ERROR Endpoint model not ready
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>(endpoint_core.py:503) ERROR Waiting and Retrying...
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>...
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>After a while, inference will run successfully :)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>(endpoint_core.py:502) ERROR Endpoint model not ready
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>(endpoint_core.py:503) ERROR Waiting and Retrying...
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>...
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>After a while, inference will run successfully :)
 </span></code></pre></div>
 <h3 id="questions">Questions?</h3>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
