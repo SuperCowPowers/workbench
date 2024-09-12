@@ -59,7 +59,7 @@ class TrainingView(CreateView):
         # If we don't have holdout ids, create a default training view
         if not holdout_ids:
             self._default_training_view(data_source, id_column)
-            return View(data_source, self.view_name, auto_create=False)
+            return View(data_source, self.view_name, auto_create_view=False)
 
         # Format the list of hold out ids for SQL IN clause
         if holdout_ids and all(isinstance(id, str) for id in holdout_ids):
@@ -84,7 +84,7 @@ class TrainingView(CreateView):
         data_source.execute_statement(create_view_query)
 
         # Return the View
-        return View(data_source, self.view_name, auto_create=False)
+        return View(data_source, self.view_name, auto_create_view=False)
 
     # This is an internal method that's used to create a default training view
     def _default_training_view(self, data_source: DataSource, id_column: str):

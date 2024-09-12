@@ -89,6 +89,25 @@ class DataSourceAbstract(Artifact):
 
         return View(self, view_name)
 
+    def set_display_columns(self, diplay_columns: list[str]):
+        """Set the display columns for this Data Source
+
+        Args:
+            diplay_columns (list[str]): The display columns for this Data Source
+        """
+        # Check mismatch of display columns to computation columns
+        c_view = self.view("computation")
+        computation_columns = c_view.columns
+        mismatch_columns = [col for col in diplay_columns if col not in computation_columns]
+        if mismatch_columns:
+            self.log.monitor(f"Display View/Computation mismatch: {mismatch_columns}")
+
+        self.log.important(f"Setting Display Columns...{diplay_columns}")
+        from sageworks.core.views import DisplayView
+
+        # Create a NEW display view
+        DisplayView(self, source_table=c_view.table_name).create(column_list=diplay_columns)
+
     def set_computation_columns(self, computation_columns: list[str], recompute_stats: bool = True):
         """Set the computation columns for this Data Source
 

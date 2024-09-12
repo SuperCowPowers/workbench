@@ -51,7 +51,9 @@ class CreateView(ABC):
 
         # Create the view
         self.log.important(f"Creating {self.view_name} view {self.table_name}...")
-        return self.create_impl(self.data_source, **kwargs)
+        view = self.create_impl(self.data_source, **kwargs)
+        view.source_table = self.source_table
+        return view
 
     @abstractmethod
     def create_impl(self, data_source: DataSource, **kwargs) -> Union[View, None]:

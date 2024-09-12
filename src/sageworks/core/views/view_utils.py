@@ -1,8 +1,13 @@
 """View Utils: A set of utilities for creating and managing views in SageWorks"""
 
+import base64
+import json
+import re
+from typing import Union
 import logging
 import pandas as pd
 import awswrangler as wr
+from botocore.exceptions import ClientError
 
 # SageWorks Imports
 from sageworks.api import DataSource
@@ -167,6 +172,90 @@ def delete_table(data_source: DataSource, table_name: str):
         log.info(f"Table {table_name} successfully deleted from database {database}.")
 
 
+def view_details(database: str, table: str, boto3_session) -> (Union[list, None], Union[list, None], Union[str, None]):
+    """Pull the column names, types, and source table for the view
+
+    Args:
+        database (str): The database name
+        table (str): The view table
+        boto3_session: The boto3 session
+
+    Returns:
+        Union[list, None]: The column names (returns None if the table does not exist)
+        Union[list, None]: The column types (returns None if the table does not exist)
+        Union[str, None]: The source table the view was created from (returns None if not found or not a view)
+    """
+
+    # Retrieve the table metadata
+    glue_client = boto3_session.client("glue")
+    try:
+        response = glue_client.get_table(DatabaseName=database, Name=table)
+
+        # Extract the column names and types from the schema
+        column_names = [col["Name"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
+        column_types = [col["Type"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
+
+        # Check if the table is a view and extract the source table from the SQL query
+        if response["Table"]["TableType"] != "VIRTUAL_VIEW":
+            return column_names, column_types, response["Table"]["Name"]
+        elif "ViewOriginalText" in response["Table"]:
+            view_sql_encoded = response["Table"]["ViewOriginalText"]
+            view_sql_decoded = _decode_view_sql(view_sql_encoded)
+            source_table = _extract_source_table(view_sql_decoded)
+            return column_names, column_types, source_table
+        else:
+            log.error(f"Failed to extract source table from view {table}.")
+            return column_names, column_types, source_table
+
+    # Handle the case where the table does not exist
+    except glue_client.exceptions.EntityNotFoundException:
+        log.warning(f"Table {table} not found in database {database}.")
+        return None, None, None
+    except ClientError as e:
+        log.error(f"An error occurred while retrieving table info: {e}")
+        return None, None, None
+
+
+def _decode_view_sql(encoded_sql: str) -> str:
+    """Decode the base64-encoded SQL query from the view.
+
+    Args:
+        encoded_sql (str): The encoded SQL query in the ViewOriginalText.
+
+    Returns:
+        str: The decoded SQL query.
+    """
+    # Extract the base64-encoded content from the comment
+    match = re.search(r'Presto View: ([\w=+/]+)', encoded_sql)
+    if match:
+        base64_sql = match.group(1)
+        decoded_bytes = base64.b64decode(base64_sql)
+        decoded_str = decoded_bytes.decode('utf-8')
+
+        # Parse the decoded string as JSON to extract the SQL
+        try:
+            view_json = json.loads(decoded_str)
+            return view_json.get("originalSql", "")
+        except json.JSONDecodeError:
+            self.log.error("Failed to parse the decoded view SQL as JSON.")
+            return ""
+    return ""
+
+
+def _extract_source_table(view_sql: str) -> Union[str, None]:
+    """Extract the source table from the SQL query of the view.
+
+    Args:
+        view_sql (str): The decoded SQL query used to create the view.
+
+    Returns:
+        Union[str, None]: The source table name if found, otherwise None.
+    """
+    # Use regex to find the source table in the SQL query
+    match = re.search(r'FROM\s+([^\s;]+)', view_sql, re.IGNORECASE)
+    return match.group(1) if match else None
+
+
 if __name__ == "__main__":
     """Test the various view utilities"""
     from sageworks.api import FeatureSet
@@ -174,6 +263,14 @@ if __name__ == "__main__":
     # Create a FeatureSet
     fs = FeatureSet("abalone_features")
     my_data_source = fs.data_source
+
+    # Test view_details
+    print("View Details on the FeatureSet Table...")
+    print(view_details(my_data_source.get_database(), my_data_source.table_name, my_data_source.boto3_session))
+
+    print("View Details on the Training View...")
+    training_view = fs.view("training")
+    print(view_details(training_view.get_database(), training_view.table_name, my_data_source.boto3_session))
 
     # Test get_column_list
     print(get_column_list(my_data_source))

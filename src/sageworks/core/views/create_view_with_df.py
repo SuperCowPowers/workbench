@@ -99,7 +99,7 @@ class CreateViewWithDF(CreateView):
         data_source.execute_statement(create_view_query)
 
         # Return the View
-        return View(data_source, self.view_name, auto_create=False)
+        return View(data_source, self.view_name, auto_create_view=False)
 
 
 if __name__ == "__main__":

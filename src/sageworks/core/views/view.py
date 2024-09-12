@@ -2,6 +2,7 @@
 
 import logging
 import time
+import re
 from typing import Union
 import pandas as pd
 import awswrangler as wr
@@ -11,7 +12,7 @@ from botocore.exceptions import ClientError
 from sageworks.api import DataSource, FeatureSet
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.api import Meta
-from sageworks.core.views.view_utils import list_supplemental_data_tables, delete_table
+from sageworks.core.views.view_utils import list_supplemental_data_tables, delete_table, view_details
 
 
 class View:
@@ -44,23 +45,27 @@ class View:
         self.auto_id_column = artifact.record_id if self.is_feature_set else None
 
         # Get the data_source from the artifact
+        self.artifact_name = artifact.uuid
         self.data_source = artifact.data_source if self.is_feature_set else artifact
         self.database = self.data_source.get_database()
 
         # Construct our base_table_name
         self.base_table_name = self.data_source.table_name
 
-        # Check if they turned off auto-creation
-        self.auto_create = kwargs.get("auto_create", True)
-        if self.auto_create and not self.exists():
+        # Check if the view should be auto created
+        self.auto_created = False
+        if kwargs.get("auto_create_view", True) and not self.exists():
             if self.view_name in ["training", "display", "computation"]:
                 self._auto_create_view()
+                self.auto_created = True
             else:
                 self.log.error(f"View {self.view_name} for {self.data_source.uuid} does not exist...")
                 return
 
-        # Now fill in our columns and column types
-        self.columns, self.column_types = self._pull_column_info()
+        # Now fill some details about the view
+        self.columns, self.column_types, self.source_table = view_details(self.data_source.get_database(),
+                                                                          self.table_name,
+                                                                          self.data_source.boto3_session)
 
     def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
         """Pull a DataFrame based on the view type
@@ -87,32 +92,6 @@ class View:
             dict: A dictionary of the column names and types
         """
         return dict(zip(self.columns, self.column_types))
-
-    def _pull_column_info(self) -> (Union[list, None], Union[list, None]):
-        """Internal: pull the column names and types for the view
-
-        Returns:
-            Union[list, None]: The column names (returns None if the table does not exist)
-            Union[list, None]: The column types (returns None if the table does not exist)
-        """
-
-        # Retrieve the table metadata
-        glue_client = self.data_source.boto3_session.client("glue")
-        try:
-            response = glue_client.get_table(DatabaseName=self.database, Name=self.table_name)
-
-            # Extract the column names from the schema
-            column_names = [col["Name"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
-            column_types = [col["Type"] for col in response["Table"]["StorageDescriptor"]["Columns"]]
-            return column_names, column_types
-
-        # Handle the case where the table does not exist
-        except glue_client.exceptions.EntityNotFoundException:
-            self.log.warning(f"Table {self.table_name} not found in database {self.database}.")
-            return None, None
-        except ClientError as e:
-            self.log.error(f"An error occurred while retrieving table info: {e}")
-            return None, None
 
     @property
     def table_name(self) -> str:
@@ -201,15 +180,12 @@ class View:
         # Auto create the standard views
         if self.view_name == "display":
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
-            self.auto_created = True
             DisplayView(self.data_source).create()
         elif self.view_name == "computation":
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
-            self.auto_created = True
             ComputationView(self.data_source).create()
         elif self.view_name == "training":
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
-            self.auto_created = True
             TrainingView(self.data_source).create(id_column=self.auto_id_column)
         else:
             self.log.error(f"Auto-Create for {self.view_name} not implemented yet...")
@@ -217,12 +193,15 @@ class View:
     def __repr__(self):
         """Return a string representation of this object"""
 
-        # FIXME: Revisit this later
-        auto = ""  # (Auto-Created)" if self.auto_created else ""
-        if self.is_feature_set:
-            return f'View: {self.database}:{self.table_name}{auto} for FeatureSet("{self.data_source.uuid}")'
-        else:
-            return f'View: {self.database}:{self.table_name}{auto} for DataSource("{self.data_source.uuid}")'
+        # Set up various details that we want to print out
+        auto = "(Auto-Created)" if self.auto_created else ""
+        artifact = "FeatureSet" if self.is_feature_set else "DataSource"
+
+        info = f'View: "{self.view_name}" for {artifact}("{self.artifact_name}")\n'
+        info += f"      Database: {self.database}\n"
+        info += f"      Table: {self.table_name}{auto}\n"
+        info += f"      Source Table: {self.source_table}"
+        return info
 
 
 if __name__ == "__main__":
