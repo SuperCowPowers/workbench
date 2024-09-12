@@ -11,6 +11,7 @@ nav:
     - FeatureSet: api_classes/feature_set.md
     - Model: api_classes/model.md
     - Endpoint: api_classes/endpoint.md
+    - Views: api_classes/views.md
     - Parameter Store: api_classes/parameter_store.md
     - Pipelines: api_classes/pipelines.md
     - Monitor: api_classes/monitor.md
@@ -19,6 +20,7 @@ nav:
     - Residual Analysis: blogs_research/residual_analysis.md 
     - Exploratory Data Analysis(EDA): blogs_research/eda.md
     - High Target Gradients (HTG): blogs_research/htg.md
+    - Model Monitoring: blogs_research/model_monitoring.md
   - Core Classes: 
     - OverView: core_classes/overview.md
     - Artifacts: 
@@ -62,6 +64,7 @@ nav:
     - Domain/SSL Cert Setup: aws_setup/domain_cert_setup.md
     - AWS Tips and Tricks: aws_setup/aws_tips_and_tricks.md
     - AWS Access Management: aws_setup/aws_access_management.md
+    - AWS Client VPN: aws_setup/aws_client_vpn.md
   - Release Notes: 
     - 0.8.11:  release_notes/0_8_11.md
     - 0.8.8:  release_notes/0_8_8.md
