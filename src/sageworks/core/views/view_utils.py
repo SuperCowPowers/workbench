@@ -226,18 +226,18 @@ def _decode_view_sql(encoded_sql: str) -> str:
         str: The decoded SQL query.
     """
     # Extract the base64-encoded content from the comment
-    match = re.search(r'Presto View: ([\w=+/]+)', encoded_sql)
+    match = re.search(r"Presto View: ([\w=+/]+)", encoded_sql)
     if match:
         base64_sql = match.group(1)
         decoded_bytes = base64.b64decode(base64_sql)
-        decoded_str = decoded_bytes.decode('utf-8')
+        decoded_str = decoded_bytes.decode("utf-8")
 
         # Parse the decoded string as JSON to extract the SQL
         try:
             view_json = json.loads(decoded_str)
             return view_json.get("originalSql", "")
         except json.JSONDecodeError:
-            self.log.error("Failed to parse the decoded view SQL as JSON.")
+            log.error("Failed to parse the decoded view SQL as JSON.")
             return ""
     return ""
 
@@ -252,7 +252,7 @@ def _extract_source_table(view_sql: str) -> Union[str, None]:
         Union[str, None]: The source table name if found, otherwise None.
     """
     # Use regex to find the source table in the SQL query
-    match = re.search(r'FROM\s+([^\s;]+)', view_sql, re.IGNORECASE)
+    match = re.search(r"FROM\s+([^\s;]+)", view_sql, re.IGNORECASE)
     return match.group(1) if match else None
 
 

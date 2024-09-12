@@ -68,13 +68,19 @@ class DataSourceWebView(ArtifactsWebView):
 
         # Subset some of the details using the display columns
         sub_details = ds.details()
-        sub_details["column_stats"] = {k: sub_details["column_stats"][k] for k in display_columns if k in sub_details["column_stats"]}
-        sub_details["column_details"] = {k: sub_details["column_details"][k] for k in display_columns if k in sub_details["column_details"]}
+        sub_details["column_stats"] = {
+            k: sub_details["column_stats"][k] for k in display_columns if k in sub_details["column_stats"]
+        }
+        sub_details["column_details"] = {
+            k: sub_details["column_details"][k] for k in display_columns if k in sub_details["column_details"]
+        }
 
         # Subset the correlation details to avoid breaking the correlation matrix
         for column, data in sub_details["column_stats"].items():
             if "correlations" in data:
-                data["correlations"] = {k: data["correlations"][k] for k in display_columns if k in data["correlations"]}
+                data["correlations"] = {
+                    k: data["correlations"][k] for k in display_columns if k in data["correlations"]
+                }
 
         # Return the Subset of DataSource Details
         return sub_details

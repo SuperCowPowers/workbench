@@ -2,11 +2,9 @@
 
 import logging
 import time
-import re
 from typing import Union
 import pandas as pd
 import awswrangler as wr
-from botocore.exceptions import ClientError
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
@@ -63,9 +61,9 @@ class View:
                 return
 
         # Now fill some details about the view
-        self.columns, self.column_types, self.source_table = view_details(self.data_source.get_database(),
-                                                                          self.table_name,
-                                                                          self.data_source.boto3_session)
+        self.columns, self.column_types, self.source_table = view_details(
+            self.data_source.get_database(), self.table_name, self.data_source.boto3_session
+        )
 
     def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
         """Pull a DataFrame based on the view type
