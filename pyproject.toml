@@ -5,3 +5,6 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 version_scheme = "guess-next-dev"
 local_scheme = "dirty-tag"
+
+[project]
+requires-python = ">=3.10" 
