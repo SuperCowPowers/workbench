@@ -20,7 +20,7 @@
     
     
       
-        <title>0.8.10 - SageWorks</title>
+        <title>0.8.11 - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-0810" class="md-skip">
+        <a href="#release-0811" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              0.8.10
+              0.8.11
             
           </span>
         </div>
@@ -1765,7 +1765,7 @@
           
   
   <span class="md-ellipsis">
-    0.8.10
+    0.8.11
   </span>
   
 
@@ -1776,7 +1776,7 @@
         
   
   <span class="md-ellipsis">
-    0.8.10
+    0.8.11
   </span>
   
 
@@ -2197,12 +2197,13 @@
                   
 
 
-<h1 id="release-0810">Release 0.8.10</h1>
+<h1 id="release-0811">Release 0.8.11</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
 <p>The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines.</p>
+<p><strong>Note:</strong> These release notes cover all the changes from <code>0.8.8</code> to <code>0.8.11</code></p>
 <h3 id="general">General</h3>
 <p>The AWSAccountClamp had too many responsibilities so that class has been split up into two classes and a set of utilities:</p>
 <ul>
@@ -2230,12 +2231,15 @@
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>fs.get_training_data(self) -&gt; fs.view(&quot;training&quot;).pull_dataframe()
 </span></code></pre></div>
 <p>Some FS/DS methods have also been removed</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>set_display_columns() -&gt; gone
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>num_display_columns() -&gt; gone
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>set_computation_columns() -&gt; gone
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>num_computation_columns() -&gt; gone
+<p><code>num_display_columns() -&gt; gone
+   num_computation_columns() -&gt; gone</code></p>
+</li>
+<li>
+<p><strong>Views: Methods that we're Keeping</strong></p>
+<p>We're keeping the methods below since they handle some underlying mechanics and serve as nice convenience methods. </p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ds/fs.set_display_columns()
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>ds/fs.set_computation_columns()
 </span></code></pre></div>
-<p><strong>Note</strong>: We're still going to have the <code>fs.set_computation_columns()</code> method since that handles the underlying recomputation of statistics for the new columns... </p>
 </li>
 <li>
 <p><strong>AWSAccountClamp</strong></p>

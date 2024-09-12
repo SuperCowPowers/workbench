@@ -1845,11 +1845,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../release_notes/0_8_10/" class="md-nav__link">
+      <a href="../../../release_notes/0_8_11/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    0.8.10
+    0.8.11
   </span>
   
 
@@ -2414,7 +2414,7 @@
 </span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>        <span class="c1"># If we don&#39;t have holdout ids, create a default training view</span>
 </span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">holdout_ids</span><span class="p">:</span>
 </span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_default_training_view</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="n">id_column</span><span class="p">)</span>
-</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>            <span class="k">return</span> <span class="n">View</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_name</span><span class="p">,</span> <span class="n">auto_create</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>            <span class="k">return</span> <span class="n">View</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_name</span><span class="p">,</span> <span class="n">auto_create_view</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a>
 </span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>        <span class="c1"># Format the list of hold out ids for SQL IN clause</span>
 </span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a>        <span class="k">if</span> <span class="n">holdout_ids</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">holdout_ids</span><span class="p">):</span>
@@ -2439,7 +2439,7 @@
 </span><span id="__span-0-84"><a id="__codelineno-0-84" name="__codelineno-0-84"></a>        <span class="n">data_source</span><span class="o">.</span><span class="n">execute_statement</span><span class="p">(</span><span class="n">create_view_query</span><span class="p">)</span>
 </span><span id="__span-0-85"><a id="__codelineno-0-85" name="__codelineno-0-85"></a>
 </span><span id="__span-0-86"><a id="__codelineno-0-86" name="__codelineno-0-86"></a>        <span class="c1"># Return the View</span>
-</span><span id="__span-0-87"><a id="__codelineno-0-87" name="__codelineno-0-87"></a>        <span class="k">return</span> <span class="n">View</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_name</span><span class="p">,</span> <span class="n">auto_create</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-0-87"><a id="__codelineno-0-87" name="__codelineno-0-87"></a>        <span class="k">return</span> <span class="n">View</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_name</span><span class="p">,</span> <span class="n">auto_create_view</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span><span id="__span-0-88"><a id="__codelineno-0-88" name="__codelineno-0-88"></a>
 </span><span id="__span-0-89"><a id="__codelineno-0-89" name="__codelineno-0-89"></a>    <span class="c1"># This is an internal method that&#39;s used to create a default training view</span>
 </span><span id="__span-0-90"><a id="__codelineno-0-90" name="__codelineno-0-90"></a>    <span class="k">def</span> <span class="nf">_default_training_view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">:</span> <span class="n">DataSource</span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
@@ -2761,7 +2761,7 @@
 </span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>    <span class="c1"># If we don&#39;t have holdout ids, create a default training view</span>
 </span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">holdout_ids</span><span class="p">:</span>
 </span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_default_training_view</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="n">id_column</span><span class="p">)</span>
-</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>        <span class="k">return</span> <span class="n">View</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_name</span><span class="p">,</span> <span class="n">auto_create</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>        <span class="k">return</span> <span class="n">View</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_name</span><span class="p">,</span> <span class="n">auto_create_view</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a>
 </span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>    <span class="c1"># Format the list of hold out ids for SQL IN clause</span>
 </span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a>    <span class="k">if</span> <span class="n">holdout_ids</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">holdout_ids</span><span class="p">):</span>
@@ -2786,7 +2786,7 @@
 </span><span id="__span-0-84"><a id="__codelineno-0-84" name="__codelineno-0-84"></a>    <span class="n">data_source</span><span class="o">.</span><span class="n">execute_statement</span><span class="p">(</span><span class="n">create_view_query</span><span class="p">)</span>
 </span><span id="__span-0-85"><a id="__codelineno-0-85" name="__codelineno-0-85"></a>
 </span><span id="__span-0-86"><a id="__codelineno-0-86" name="__codelineno-0-86"></a>    <span class="c1"># Return the View</span>
-</span><span id="__span-0-87"><a id="__codelineno-0-87" name="__codelineno-0-87"></a>    <span class="k">return</span> <span class="n">View</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_name</span><span class="p">,</span> <span class="n">auto_create</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-0-87"><a id="__codelineno-0-87" name="__codelineno-0-87"></a>    <span class="k">return</span> <span class="n">View</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_name</span><span class="p">,</span> <span class="n">auto_create_view</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
