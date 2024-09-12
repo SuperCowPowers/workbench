@@ -19,7 +19,7 @@ docker build --build-arg SAGEWORKS_CONFIG=open_source_config.json -t \
 sageworks_dashboard:v0_4_13_amd64 --platform linux/amd64 .
 ```
 
-**Docker with Custom Plugins:** If you're using custom plugins you may want to change the SAGEWORKS_PLUGINS directory to something like `/app/sageworks_plugins` and then have Dockerfile copy your plugins into that directory on the Docker image.
+**Docker with Custom Plugins:** If you're using custom plugins you should visit our [Dashboard with Plugins](dashboard_with_plugins.md)) page.
 
 ### Test the Image Locally
 You have a `docker_local_dashboard` alias in your `~/.zshrc` :)
