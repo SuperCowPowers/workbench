@@ -42,11 +42,12 @@ class FeatureSetWebView(ArtifactsWebView):
             status = fs.get_status()
             return pd.DataFrame({"uuid": [feature_uuid], "status": [f"{status}"]})
         else:
-            # Grab the Smart Sample
-            smart_sample = fs.smart_sample()
+            # Get the display columns
+            display_columns = fs.view("display").columns
 
-            # Return the Smart Sample (max 100 rows)
-            return smart_sample[:100]
+            # Return the Smart Sample (with the display subset of the columns)
+            smart_sample = fs.smart_sample()
+            return smart_sample[[col for col in display_columns if col in smart_sample.columns]]
 
     @staticmethod
     def feature_set_details(feature_uuid: str) -> (dict, None):
@@ -60,8 +61,21 @@ class FeatureSetWebView(ArtifactsWebView):
         if not fs.exists() or not fs.ready():
             return None
 
-        # Return the FeatureSet Details
-        return fs.details()
+        # Get the display columns
+        display_columns = fs.view("display").columns
+
+        # Subset some of the details using the display columns
+        sub_details = fs.details()
+        sub_details["column_stats"] = {k: sub_details["column_stats"][k] for k in display_columns if k in sub_details["column_stats"]}
+        sub_details["column_details"] = {k: sub_details["column_details"][k] for k in display_columns if k in sub_details["column_details"]}
+
+        # Subset the correlation details to avoid breaking the correlation matrix
+        for column, data in sub_details["column_stats"].items():
+            if "correlations" in data:
+                data["correlations"] = {k: data["correlations"][k] for k in display_columns if k in data["correlations"]}
+
+        # Return the Subset of DataSource Details
+        return sub_details
 
 
 if __name__ == "__main__":
