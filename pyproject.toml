@@ -7,4 +7,87 @@ version_scheme = "guess-next-dev"
 local_scheme = "dirty-tag"
 
 [project]
-requires-python = ">=3.10" 
+name = "sageworks"
+dynamic = ["version"]
+description = "SageWorks: A Dashboard and Python API for creating and deploying AWS SageMaker Model Pipelines"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+keywords = ["SageMaker", "Machine Learning", "AWS", "Python", "Utilities"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+authors = [{ name = "SuperCowPowers LLC", email = "support@supercowpowers.com" }]
+
+dependencies = [
+    "boto3 >= 1.28.76",
+    "botocore >= 1.31.76",
+    "redis >= 5.0.1",
+    "numpy >= 1.26.1",
+    "pandas >= 2.1.2",
+    "awswrangler >= 3.4.0",
+    "sagemaker >= 2.143",
+    "watchtower >= 3.1.0",
+    "cryptography >= 42.0.5",
+    "ipython >= 8.17.2",
+    "pyreadline3; sys_platform == 'win32'",
+    "xgboost >= 2.0.3",
+    "scikit-learn >= 1.4.1",
+    "joblib >= 1.3.2",
+    "requests >= 2.26.0"
+]
+
+[project.optional-dependencies]
+ml-tools = ["shap>=0.43.0", "networkx>=3.2"]
+chem = ["rdkit>=2023.9.1", "mordredcommunity>=2.0"]
+ui = [
+    "plotly>=5.18.0",
+    "dash>=2.16.1",
+    "dash-bootstrap-components>=1.5.0",
+    "dash-bootstrap-templates==1.1.1",
+    "dash_ag_grid",
+    "tabulate>=0.9.0",
+]
+dev = ["pytest", "pytest-sugar", "coverage", "pytest-cov", "flake8", "black"]
+all = [
+    "shap>=0.43.0",
+    "networkx>=3.2",
+    "rdkit>=2023.9.1",
+    "mordredcommunity>=2.0",
+    "plotly>=5.18.0",
+    "dash>=2.16.1",
+    "dash-bootstrap-components>=1.5.0",
+    "dash-bootstrap-templates==1.1.1",
+    "dash_ag_grid",
+    "tabulate>=0.9.0",
+    "pytest",
+    "pytest-sugar",
+    "coverage",
+    "pytest-cov",
+    "flake8",
+    "black",
+]
+
+[project.urls]
+Homepage = "https://github.com/SuperCowPowers/sageworks"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = { find = { where = ["src"] } }
+
+[tool.setuptools.package-data]
+"sageworks" = [
+    "resources/signature_verify_pub.pem",
+    "resources/open_source_api.key",
+    "core/transforms/features_to_model/light_xgb_model/xgb_model.template",
+    "core/transforms/features_to_model/light_xgb_model/requirements.txt",
+]
+
+[project.scripts]
+sageworks = "sageworks.repl.sageworks_shell:launch_shell"
+cloud_watch = "sageworks.scripts.monitor_cloud_watch:main"
