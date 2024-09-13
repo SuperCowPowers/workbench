@@ -87,6 +87,17 @@ class View:
         df = self.data_source.query(pull_query)
         return df
 
+    def query(self, query: str) -> Union[pd.DataFrame, None]:
+        """Query the view with a custom SQL query
+
+        Args:
+            query (str): The SQL query to execute
+
+        Returns:
+            Union[pd.DataFrame, None]: The DataFrame for the query or None if it doesn't exist
+        """
+        return self.data_source.query(query)
+
     def column_details(self) -> dict:
         """Return a dictionary of the column names and types for this view
 
