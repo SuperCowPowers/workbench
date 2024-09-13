@@ -58,7 +58,7 @@ class View:
                     self._auto_create_view()
                     self.auto_created = True
                 else:
-                    msg = f"View {self.view_name} for {self.data_source.uuid} does not exist and cannot be auto-created..."
+                    msg = f"View {self.view_name} for {self.artifact_name} does not exist and cannot be auto-created..."
                     self.log.error(msg)
                     raise ValueError(msg)
 
@@ -209,11 +209,13 @@ class View:
                 self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
                 TrainingView(self.data_source).create(id_column=self.auto_id_column)
             else:
-                self.log.warning(f"Training Views are only supported for FeatureSets...")
-                raise ValueError("Training Views are only supported for FeatureSets...")
+                msg = "Training Views are only supported for FeatureSets..."
+                self.log.warning(msg)
+                raise ValueError(msg)
         else:
-            self.log.warning(f"Auto-Create for {self.view_name} not implemented yet...")
-            raise ValueError(f"Auto-Create for {self.view_name} not implemented yet...")
+            msg = f"Auto-Create for {self.view_name} not implemented yet..."
+            self.log.warning(msg)
+            raise ValueError(msg)
 
     def __repr__(self):
         """Return a string representation of this object"""
