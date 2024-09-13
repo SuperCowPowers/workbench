@@ -51,19 +51,23 @@ class View:
         self.base_table_name = self.data_source.table_name
 
         # Check if the view should be auto created
-        self.auto_created = False
-        if kwargs.get("auto_create_view", True) and not self.exists():
-            if self.view_name in ["training", "display", "computation"]:
-                self._auto_create_view()
-                self.auto_created = True
-            else:
-                self.log.error(f"View {self.view_name} for {self.data_source.uuid} does not exist...")
-                return
+        try:
+            self.auto_created = False
+            if kwargs.get("auto_create_view", True) and not self.exists():
+                if self.view_name in ["training", "display", "computation"]:
+                    self._auto_create_view()
+                    self.auto_created = True
+                else:
+                    msg = f"View {self.view_name} for {self.data_source.uuid} does not exist and cannot be auto-created..."
+                    self.log.error(msg)
+                    raise ValueError(msg)
 
-        # Now fill some details about the view
-        self.columns, self.column_types, self.source_table = view_details(
-            self.data_source.get_database(), self.table_name, self.data_source.boto3_session
-        )
+            # Now fill some details about the view
+            self.columns, self.column_types, self.source_table = view_details(
+                self.data_source.get_database(), self.table_name, self.data_source.boto3_session
+            )
+        except ValueError:
+            self.view_name = self.columns = self.column_types = self.source_table = self.base_table_name = None
 
     def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
         """Pull a DataFrame based on the view type
@@ -98,6 +102,8 @@ class View:
         Returns:
             str: The view table name
         """
+        if self.view_name is None:
+            return None
         if self.view_name == "base":
             return self.base_table_name
         return f"{self.base_table_name}_{self.view_name}"
@@ -167,7 +173,11 @@ class View:
             self._auto_create_view()
 
     def _auto_create_view(self):
-        """Internal: Automatically create a view training, display, and computation views"""
+        """Internal: Automatically create a view training, display, and computation views
+
+        Raises:
+            ValueError: If the view type is not supported
+        """
         from sageworks.core.views import DisplayView, ComputationView, TrainingView
 
         # First if we're going to auto-create, we need to make sure the data source exists
@@ -183,10 +193,16 @@ class View:
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
             ComputationView(self.data_source).create()
         elif self.view_name == "training":
-            self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
-            TrainingView(self.data_source).create(id_column=self.auto_id_column)
+            # We're only going to create training views for FeatureSets
+            if self.is_feature_set:
+                self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
+                TrainingView(self.data_source).create(id_column=self.auto_id_column)
+            else:
+                self.log.warning(f"Training Views are only supported for FeatureSets...")
+                raise ValueError("Training Views are only supported for FeatureSets...")
         else:
-            self.log.error(f"Auto-Create for {self.view_name} not implemented yet...")
+            self.log.warning(f"Auto-Create for {self.view_name} not implemented yet...")
+            raise ValueError(f"Auto-Create for {self.view_name} not implemented yet...")
 
     def __repr__(self):
         """Return a string representation of this object"""
