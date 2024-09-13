@@ -296,14 +296,6 @@ class EndpointCore(Artifact):
         # Now that we have the details, let's onboard the Endpoint with args
         return self.onboard_with_args(input_model)
 
-        # Run a health check and refresh the meta
-        time.sleep(2)  # Give the AWS Metadata a chance to update
-        self.health_check()
-        self.refresh_meta()
-        self.details(recompute=True)
-        self.set_status("ready")
-        return True
-
     def onboard_with_args(self, input_model: str) -> bool:
         """Onboard the Endpoint with the given arguments
 
