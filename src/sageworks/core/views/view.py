@@ -51,23 +51,21 @@ class View:
         self.base_table_name = self.data_source.table_name
 
         # Check if the view should be auto created
-        try:
-            self.auto_created = False
-            if kwargs.get("auto_create_view", True) and not self.exists():
-                if self.view_name in ["training", "display", "computation"]:
-                    self._auto_create_view()
-                    self.auto_created = True
-                else:
-                    msg = f"View {self.view_name} for {self.artifact_name} does not exist and cannot be auto-created..."
-                    self.log.error(msg)
-                    raise ValueError(msg)
+        self.auto_created = False
+        if kwargs.get("auto_create_view", True) and not self.exists():
 
-            # Now fill some details about the view
-            self.columns, self.column_types, self.source_table = view_details(
-                self.data_source.get_database(), self.table_name, self.data_source.boto3_session
-            )
-        except ValueError:
-            self.view_name = self.columns = self.column_types = self.source_table = self.base_table_name = None
+            # Auto-create the view
+            if self._auto_create_view():
+                self.auto_created = True
+            else:
+                self.log.error(f"View {self.view_name} for {self.artifact_name} doesn't exist and cannot be auto-created...")
+                self.view_name = self.columns = self.column_types = self.source_table = self.base_table_name = None
+                return
+
+        # Now fill some details about the view
+        self.columns, self.column_types, self.source_table = view_details(
+            self.data_source.get_database(), self.table_name, self.data_source.boto3_session
+        )
 
     def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
         """Pull a DataFrame based on the view type
@@ -183,8 +181,11 @@ class View:
         if _df.empty:
             self._auto_create_view()
 
-    def _auto_create_view(self):
+    def _auto_create_view(self) -> bool:
         """Internal: Automatically create a view training, display, and computation views
+
+        Returns:
+            bool: True if the view was created, False otherwise
 
         Raises:
             ValueError: If the view type is not supported
@@ -194,28 +195,34 @@ class View:
         # First if we're going to auto-create, we need to make sure the data source exists
         if not self.data_source.exists():
             self.log.error(f"Data Source {self.data_source.uuid} does not exist...")
-            return
+            return False
 
-        # Auto create the standard views
+        # DisplayView
         if self.view_name == "display":
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
             DisplayView(self.data_source).create()
-        elif self.view_name == "computation":
+            return True
+
+        # ComputationView
+        if self.view_name == "computation":
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
             ComputationView(self.data_source).create()
-        elif self.view_name == "training":
+            return True
+
+        # TrainingView
+        if self.view_name == "training":
             # We're only going to create training views for FeatureSets
             if self.is_feature_set:
                 self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
                 TrainingView(self.data_source).create(id_column=self.auto_id_column)
+                return True
             else:
-                msg = "Training Views are only supported for FeatureSets..."
-                self.log.warning(msg)
-                raise ValueError(msg)
-        else:
-            msg = f"Auto-Create for {self.view_name} not implemented yet..."
-            self.log.warning(msg)
-            raise ValueError(msg)
+                self.log.warning("Training Views are only supported for FeatureSets...")
+                return False
+
+        # If we get here, we don't support auto-creating this view
+        self.log.warning(f"Auto-Create for {self.view_name} not implemented yet...")
+        return False
 
     def __repr__(self):
         """Return a string representation of this object"""
