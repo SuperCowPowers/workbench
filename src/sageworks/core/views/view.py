@@ -58,7 +58,9 @@ class View:
             if self._auto_create_view():
                 self.auto_created = True
             else:
-                self.log.error(f"View {self.view_name} for {self.artifact_name} doesn't exist and cannot be auto-created...")
+                self.log.error(
+                    f"View {self.view_name} for {self.artifact_name} doesn't exist and cannot be auto-created..."
+                )
                 self.view_name = self.columns = self.column_types = self.source_table = self.base_table_name = None
                 return
 
