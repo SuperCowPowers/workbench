@@ -172,7 +172,9 @@ def delete_table(data_source: DataSource, table_name: str):
         log.info(f"Table {table_name} successfully deleted from database {database}.")
 
 
-def view_details(database: str, table: str, boto3_session) -> (Union[list, None], Union[list, None], Union[str, None], bool):
+def view_details(
+    database: str, table: str, boto3_session
+) -> (Union[list, None], Union[list, None], Union[str, None], bool):
     """Pull the column names, types, and source table for the view
 
     Args:
