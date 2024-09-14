@@ -30,38 +30,21 @@ class CreateView(ABC):
         self.is_feature_set = isinstance(artifact, FeatureSetCore)
         self.auto_id_column = artifact.record_id if self.is_feature_set else None
 
-        # Get the data_source from the artifact
+        # Set up data source and database details
         self.data_source = artifact.data_source if self.is_feature_set else artifact
         self.database = self.data_source.get_database()
 
-        # Set our table names
+        # Set table names
         self.base_table_name = self.data_source.table
-        self.source_table = source_table if source_table else self.base_table_name
+        self.source_table = source_table or self.base_table_name
         self.table = f"{self.base_table_name}_{self.view_name}"
 
-    def create(self, **kwargs) -> Union[View, None]:
-        """Create the view, each subclass must implement this method
-
-        Args:
-            **kwargs: Additional keyword arguments that are specific to the view type
-
-        Returns:
-            Union[View, None]: The created View object (or None if failed to create the view)
-        """
-
-        # Create the view
-        self.log.important(f"Creating {self.view_name} view {self.table}...")
-        view = self.create_impl(self.data_source, **kwargs)
-        view.source_table = self.source_table
-        return view
-
     @abstractmethod
-    def create_impl(self, data_source: DataSource, **kwargs) -> Union[View, None]:
+    def create(self, **kwargs) -> Union[View, None]:
         """Abstract Method: Create the view, each subclass must implement this method
 
         Args:
-            data_source (DataSource): A SageWorks DataSource object
-            **kwargs: Additional keyword arguments that are specific to the view type
+            **kwargs: Additional keyword arguments specific to the view type
 
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)

@@ -22,31 +22,36 @@ class ColumnSubsetView(CreateView):
         """
         super().__init__(view_name, artifact, source_table)
 
-    def create_impl(
-        self,
-        data_source: DataSource,
+    @classmethod
+    def create(
+        cls,
+        view_name: str,
+        artifact: Union[DataSource, FeatureSet],
+        source_table: str = None,
         column_list: Union[list[str], None] = None,
         column_limit: int = 30,
     ) -> Union[View, None]:
-        """Create the View: A View with a subset of columns
+        """Factory method to create and return a ColumnSubsetView instance.
 
         Args:
-            data_source (DataSource): The DataSource object
+            view_name (str): The name of the view
+            artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
+            source_table (str, optional): The table/view to create the view from. Defaults to None
             column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
             column_limit (int, optional): The max number of columns to include. Defaults to 30.
 
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)
         """
+        # Instantiate the ColumnSubsetView
+        instance = cls(view_name, artifact, source_table)
 
         # Get the columns from the source table
-        source_table_columns = get_column_list(data_source, self.source_table)
+        source_table_columns = get_column_list(instance.data_source, instance.source_table)
 
         # If the user doesn't specify columns, then we'll grab columns from data_source with limit
         if column_list is None:
             column_list = source_table_columns[:column_limit]
-
-        # Check if the columns are valid
         else:
             column_list = [col for col in column_list if col in source_table_columns]
 
@@ -59,20 +64,20 @@ class ColumnSubsetView(CreateView):
 
         # Sanity check the columns
         if not sql_columns:
-            self.log.critical(f"{data_source.uuid} No columns to create view...")
+            instance.log.critical(f"{artifact.uuid} No columns to create view...")
             return None
 
         # Create the view query
         create_view_query = f"""
-           CREATE OR REPLACE VIEW {self.table} AS
-           SELECT {sql_columns} FROM {self.source_table}
+           CREATE OR REPLACE VIEW {instance.table} AS
+           SELECT {sql_columns} FROM {instance.source_table}
            """
 
         # Execute the CREATE VIEW query
-        data_source.execute_statement(create_view_query)
+        instance.data_source.execute_statement(create_view_query)
 
         # Return the View
-        return View(data_source, self.view_name, auto_create_view=False)
+        return View(instance.data_source, instance.view_name, auto_create_view=False)
 
 
 if __name__ == "__main__":
@@ -83,8 +88,7 @@ if __name__ == "__main__":
     fs = FeatureSet("test_features")
 
     # Create a ColumnSubsetView
-    column_subset = ColumnSubsetView("test_subset", fs)
-    test_view = column_subset.create()
+    test_view = ColumnSubsetView.create("test_subset", fs)
 
     # Pull the display data
     df = test_view.pull_dataframe()
@@ -92,8 +96,8 @@ if __name__ == "__main__":
 
     # Create a Display View with a subset of columns
     columns = ["id", "name", "age", "height", "weight"]
-    test_view = column_subset.create(column_list=columns)
+    test_view = ColumnSubsetView.create("test_subset", fs, column_list=columns)
     print(test_view.pull_dataframe(head=True))
 
     # Delete the View
-    column_subset.delete()
+    test_view.delete()
