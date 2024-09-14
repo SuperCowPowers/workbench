@@ -1,4 +1,4 @@
-"""CreateViewWithDF Class: A View that joins the source_table with a Pandas dataframe"""
+"""PandasToView Class: A View that joins the source_table with a Pandas dataframe"""
 
 from typing import Union
 import pandas as pd
@@ -10,24 +10,34 @@ from sageworks.core.views.create_view import CreateView
 from sageworks.core.views.view_utils import dataframe_to_table, get_column_list
 
 
-class CreateViewWithDF(CreateView):
-    """CreateViewWithDF Class: A View that joins the source_table with a Pandas dataframe"""
+class PandasToView(CreateView):
+    """PandasToView Class: A View that joins the source_table with a Pandas dataframe"""
 
-    def __init__(self, view_name: str, artifact: Union[DataSource, FeatureSet], source_table: str = None):
-        """Initialize the ColumnSubsetView
+    @classmethod
+    def create(cls, view_name: str, artifact: Union[DataSource, FeatureSet], df: pd.DataFrame,
+               id_column: str, source_table: str = None) -> Union[View, None]:
+        """Factory method to create and return a PandasToView instance.
 
         Args:
             view_name (str): The name of the view
             artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
+            df (pd.DataFrame): The Pandas DataFrame to join with the source_table
+            id_column (str): The name of the id column (must be defined for join logic)
             source_table (str, optional): The table/view to create the view from. Defaults to None
-        """
-        super().__init__(view_name, artifact, source_table)
 
-    def create_impl(self, data_source: DataSource, df: pd.DataFrame, id_column: str) -> Union[View, None]:
-        """Create a Model Data Quality View: A View that computes various model data quality metrics
+        Returns:
+            Union[View, None]: The created View object (or None if failed to create the view)
+        """
+        # Instantiate the PandasToView
+        instance = cls(view_name, artifact, source_table)
+
+        # Delegate to the internal method for creating the view
+        return instance._create_view(df, id_column)
+
+    def _create_view(self, df: pd.DataFrame, id_column: str) -> Union[View, None]:
+        """Internal method to create the view by joining with a Pandas DataFrame.
 
         Args:
-            data_source (DataSource): A SageWorks DataSource object
             df (pd.DataFrame): The Pandas DataFrame to join with the source_table
             id_column (str): The name of the id column (must be defined for join logic)
 
@@ -37,7 +47,7 @@ class CreateViewWithDF(CreateView):
         self.log.important(f"Creating View with DF {self.table}...")
 
         # Check the number of rows in the source_table, if greater than 1M, then give an error and return
-        row_count = data_source.num_rows()
+        row_count = self.data_source.num_rows()
         if row_count > 1_000_000:
             self.log.error(
                 f"View with DF cannot be created on more than 1M rows. {self.source_table} has {row_count} rows."
@@ -46,7 +56,7 @@ class CreateViewWithDF(CreateView):
 
         # Drop any columns generated from AWS
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-        source_table_columns = get_column_list(data_source, self.source_table)
+        source_table_columns = get_column_list(self.data_source, self.source_table)
         column_list = [col for col in source_table_columns if col not in aws_cols]
 
         # Same thing as above, but with the incoming dataframe
@@ -57,18 +67,18 @@ class CreateViewWithDF(CreateView):
 
         # Pull in the data from the source_table
         query = f"SELECT {sql_columns} FROM {self.source_table}"
-        source_df = data_source.query(query)
+        source_df = self.data_source.query(query)
 
         # Check if the id_column exists in the source_table
         if id_column not in source_df.columns:
             self.log.error(
-                f"id_column {id_column} not found in {self.source_table}. Cannot create Model Data Quality View."
+                f"id_column {id_column} not found in {self.source_table}. Cannot create the View."
             )
             return None
 
         # Check if the id_column exists in the dataframe
         if id_column not in df.columns:
-            self.log.error(f"id_column {id_column} not found in the dataframe. Cannot create Model Data Quality View.")
+            self.log.error(f"id_column {id_column} not found in the dataframe. Cannot create the View.")
             return None
 
         # Remove any columns in the incoming df that overlap with the source_df (except for the id_column)
@@ -78,7 +88,7 @@ class CreateViewWithDF(CreateView):
 
         # Create a supplemental data table with the incoming dataframe
         df_table = f"_{self.base_table_name}_{self.view_name}"
-        dataframe_to_table(data_source, df, df_table)
+        dataframe_to_table(self.data_source, df, df_table)
 
         # Create a list of columns in SQL form (for the source table)
         source_columns_str = ", ".join([f'A."{col}"' for col in source_df.columns])
@@ -96,14 +106,14 @@ class CreateViewWithDF(CreateView):
         """
 
         # Execute the CREATE VIEW query
-        data_source.execute_statement(create_view_query)
+        self.data_source.execute_statement(create_view_query)
 
         # Return the View
-        return View(data_source, self.view_name, auto_create_view=False)
+        return View(self.data_source, self.view_name, auto_create_view=False)
 
 
 if __name__ == "__main__":
-    """Exercise the Training View functionality"""
+    """Exercise the PandasToView functionality"""
     from sageworks.api import FeatureSet
     import numpy as np
 
@@ -115,8 +125,8 @@ if __name__ == "__main__":
     my_df["random1"] = np.random.rand(len(my_df))
     my_df["random2"] = np.random.rand(len(my_df))
 
-    # Create a CreateViewWithDF
-    df_view = CreateViewWithDF("test_df", fs).create(df=my_df, id_column="id")
+    # Create a PandasToView
+    df_view = PandasToView.create("test_df", fs, df=my_df, id_column="id")
 
     # Pull the dataframe view
     my_df = df_view.pull_dataframe(head=True)
