@@ -386,15 +386,6 @@ class FeatureSetCore(Artifact):
         # Force a refresh of the AWS Metadata (to make sure references to deleted artifacts are gone)
         self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=True)
 
-    def list_views(self) -> list[str]:
-        """List all the views associated with this FeatureSet"""
-        from sageworks.core.views.view_utils import list_view_tables
-
-        view_tables = list_view_tables(self.data_source)
-        data_source_table = self.data_source.table
-        # Each view will have the format: {data_table_name}_{view_name}
-        return [view_table.replace(data_source_table + "_", "") for view_table in view_tables]
-
     def ensure_feature_group_deleted(self, feature_group):
         status = "Deleting"
         while status == "Deleting":
