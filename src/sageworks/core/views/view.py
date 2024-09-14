@@ -107,7 +107,7 @@ class View:
         return dict(zip(self.columns, self.column_types))
 
     @property
-    def table_name(self) -> str:
+    def table(self) -> str:
         """Construct the view table name for the given view type
 
         Returns:
