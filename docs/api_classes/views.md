@@ -1,6 +1,9 @@
 # Views
 !!! tip inline end "View Examples"
-    Examples of Views are in the [Examples](#examples) section at the bottom of this page. Views are a powerful way to filter and agument your DataSources and FeatureSets. Data Analysis and Feature Engineering are a snap using Views.
+    Examples of using the Views classes to extend the functionality of SageWorks Artifacts are in the [Examples](#examples) section at the bottom of this page. 
+    
+Views are a powerful way to filter and agument your DataSources and FeatureSets. With Views you can subset columns, rows, and even add data to existing SageWorks Artifacts. If you want to compute outliers, runs some statistics or engineer some new features, Views are an easy way to change, modify, and add to DataSources and FeatureSets.
+
     
 ::: sageworks.core.views.view
 
@@ -37,21 +40,22 @@ df = display_view.pull_dataframe()
 0   58  Person 58  71.781227  275.088196  162053.140625  
 ```
 
-**Query (coming soon)**
+**View Queries**
 
-All SageWorks Views have an 'offline' store that uses AWS Athena, so any query that you can make with Athena is accessible through the FeatureSet API.
+All SageWorks Views are stored in AWS Athena, so any query that you can make with Athena is accessible through the View Query API.
 
 ```py title="view_query.py"
 from sageworks.api.feature_set import FeatureSet
 
-# Grab a FeatureSet
+# Grab a FeatureSet View
 fs = FeatureSet("abalone_features")
+t_view = fs.view("training")
 
 # Make some queries using the Athena backend
-df = my_features.query("select * from abalone_features where height > .3")
+df = t_view(f"select * from {t_view.table} where height > .3")
 print(df.head())
 
-df = my_features.query("select * from abalone_features where class_number_of_rings < 3")
+df = t_view.query("select * from abalone_features where class_number_of_rings < 3")
 print(df.head())
 ```
 

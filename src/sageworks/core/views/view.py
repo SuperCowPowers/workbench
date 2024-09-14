@@ -20,6 +20,21 @@ class View:
         ```
         view = View(DataSource/FeatureSet, "training")
         training_df = view.pull_dataframe()
+
+        # You can also pull from the DS/FS directly
+        display_view = ds.view("display")
+        print(display_view.columns)
+
+        # Get a DataFrame for the computation view
+        comp_view = fs.view("computation")
+        comp_df = comp_view.pull_dataframe()
+
+        # Query the view with a custom SQL query
+        query = f"SELECT * FROM {comp_view.table} WHERE age > 30"
+        df = comp_view.query(query)
+
+        # Delete the view
+        comp_view.delete()
         ```
     """
 
