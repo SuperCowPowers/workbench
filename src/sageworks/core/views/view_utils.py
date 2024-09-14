@@ -277,7 +277,7 @@ if __name__ == "__main__":
 
     print("View Details on the Training View...")
     training_view = fs.view("training")
-    print(view_details(training_view.get_database(), training_view.table, my_data_source.boto3_session))
+    print(view_details(training_view.database, training_view.table, my_data_source.boto3_session))
 
     # Test get_column_list
     print(get_column_list(my_data_source))
