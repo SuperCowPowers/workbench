@@ -236,7 +236,7 @@ class View:
         info = f'View: "{self.view_name}" for {artifact}("{self.artifact_name}")\n'
         info += f"      Database: {self.database}\n"
         info += f"      Table: {self.table}{auto}\n"
-        info += f"      Source Table: {self.source_table}"
+        info += f"      Source Table: {self.source_table}\n"
         info += f"      Join View: {self.join_view}"
         return info
 
