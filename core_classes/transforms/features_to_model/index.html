@@ -1926,6 +1926,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../release_notes/0_8_12/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    0.8.12
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../release_notes/0_8_11/" class="md-nav__link">
         
   
@@ -2982,7 +3003,7 @@
 </span><span id="__span-0-271"><a id="__codelineno-0-271" name="__codelineno-0-271"></a>            <span class="c1"># We need to get creative with the Classification Metrics</span>
 </span><span id="__span-0-272"><a id="__codelineno-0-272" name="__codelineno-0-272"></a>
 </span><span id="__span-0-273"><a id="__codelineno-0-273" name="__codelineno-0-273"></a>            <span class="c1"># Grab all the target column class values (class labels)</span>
-</span><span id="__span-0-274"><a id="__codelineno-0-274" name="__codelineno-0-274"></a>            <span class="n">table</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">data_source</span><span class="o">.</span><span class="n">table_name</span>
+</span><span id="__span-0-274"><a id="__codelineno-0-274" name="__codelineno-0-274"></a>            <span class="n">table</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">data_source</span><span class="o">.</span><span class="n">table</span>
 </span><span id="__span-0-275"><a id="__codelineno-0-275" name="__codelineno-0-275"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">class_labels</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;select DISTINCT </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="si">}</span><span class="s2"> FROM </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)[</span>
 </span><span id="__span-0-276"><a id="__codelineno-0-276" name="__codelineno-0-276"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span>
 </span><span id="__span-0-277"><a id="__codelineno-0-277" name="__codelineno-0-277"></a>            <span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
@@ -3755,7 +3776,7 @@ Args:
 </span><span id="__span-0-271"><a id="__codelineno-0-271" name="__codelineno-0-271"></a>        <span class="c1"># We need to get creative with the Classification Metrics</span>
 </span><span id="__span-0-272"><a id="__codelineno-0-272" name="__codelineno-0-272"></a>
 </span><span id="__span-0-273"><a id="__codelineno-0-273" name="__codelineno-0-273"></a>        <span class="c1"># Grab all the target column class values (class labels)</span>
-</span><span id="__span-0-274"><a id="__codelineno-0-274" name="__codelineno-0-274"></a>        <span class="n">table</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">data_source</span><span class="o">.</span><span class="n">table_name</span>
+</span><span id="__span-0-274"><a id="__codelineno-0-274" name="__codelineno-0-274"></a>        <span class="n">table</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">data_source</span><span class="o">.</span><span class="n">table</span>
 </span><span id="__span-0-275"><a id="__codelineno-0-275" name="__codelineno-0-275"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">class_labels</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;select DISTINCT </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="si">}</span><span class="s2"> FROM </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)[</span>
 </span><span id="__span-0-276"><a id="__codelineno-0-276" name="__codelineno-0-276"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span>
 </span><span id="__span-0-277"><a id="__codelineno-0-277" name="__codelineno-0-277"></a>        <span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>

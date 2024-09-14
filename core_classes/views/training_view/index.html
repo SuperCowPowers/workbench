@@ -1908,6 +1908,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../release_notes/0_8_12/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    0.8.12
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../release_notes/0_8_11/" class="md-nav__link">
         
   
@@ -2490,7 +2511,7 @@
 </span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a>
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>        <span class="c1"># Construct the CREATE VIEW query</span>
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a>        <span class="n">create_view_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-</span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a><span class="s2">        CREATE OR REPLACE VIEW </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> AS</span>
+</span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a><span class="s2">        CREATE OR REPLACE VIEW </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2"> AS</span>
 </span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a><span class="s2">        SELECT </span><span class="si">{</span><span class="n">sql_columns</span><span class="si">}</span><span class="s2">, CASE</span>
 </span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a><span class="s2">            WHEN </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2"> IN (</span><span class="si">{</span><span class="n">formatted_holdout_ids</span><span class="si">}</span><span class="s2">) THEN 0</span>
 </span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a><span class="s2">            ELSE 1</span>
@@ -2512,7 +2533,7 @@
 </span><span id="__span-0-94"><a id="__codelineno-0-94" name="__codelineno-0-94"></a><span class="sd">            data_source (DataSource): The SageWorks DataSource object</span>
 </span><span id="__span-0-95"><a id="__codelineno-0-95" name="__codelineno-0-95"></a><span class="sd">            id_column (str): The name of the id column</span>
 </span><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="__span-0-97"><a id="__codelineno-0-97" name="__codelineno-0-97"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating default Training View </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+</span><span id="__span-0-97"><a id="__codelineno-0-97" name="__codelineno-0-97"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating default Training View </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-98"><a id="__codelineno-0-98" name="__codelineno-0-98"></a>
 </span><span id="__span-0-99"><a id="__codelineno-0-99" name="__codelineno-0-99"></a>        <span class="c1"># Drop any columns generated from AWS</span>
 </span><span id="__span-0-100"><a id="__codelineno-0-100" name="__codelineno-0-100"></a>        <span class="n">aws_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;write_time&quot;</span><span class="p">,</span> <span class="s2">&quot;api_invocation_time&quot;</span><span class="p">,</span> <span class="s2">&quot;is_deleted&quot;</span><span class="p">,</span> <span class="s2">&quot;event_time&quot;</span><span class="p">]</span>
@@ -2524,7 +2545,7 @@
 </span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a>        <span class="c1">#    Construct the CREATE VIEW query with a simple modulo operation for the 80/20 split</span>
 </span><span id="__span-0-107"><a id="__codelineno-0-107" name="__codelineno-0-107"></a>        <span class="c1">#    using the id column as the stable identifier for row numbering</span>
 </span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a>        <span class="n">create_view_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-</span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a><span class="s2">        CREATE OR REPLACE VIEW </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> AS</span>
+</span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a><span class="s2">        CREATE OR REPLACE VIEW </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2"> AS</span>
 </span><span id="__span-0-110"><a id="__codelineno-0-110" name="__codelineno-0-110"></a><span class="s2">        SELECT </span><span class="si">{</span><span class="n">sql_columns</span><span class="si">}</span><span class="s2">, CASE</span>
 </span><span id="__span-0-111"><a id="__codelineno-0-111" name="__codelineno-0-111"></a><span class="s2">            WHEN MOD(ROW_NUMBER() OVER (ORDER BY </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2">), 10) &lt; 8 THEN 1  -- Assign 80% to training</span>
 </span><span id="__span-0-112"><a id="__codelineno-0-112" name="__codelineno-0-112"></a><span class="s2">            ELSE 0  -- Assign roughly 20% to validation/test</span>
@@ -2837,7 +2858,7 @@
 </span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a>
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>    <span class="c1"># Construct the CREATE VIEW query</span>
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="n">create_view_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-</span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a><span class="s2">    CREATE OR REPLACE VIEW </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> AS</span>
+</span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a><span class="s2">    CREATE OR REPLACE VIEW </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2"> AS</span>
 </span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a><span class="s2">    SELECT </span><span class="si">{</span><span class="n">sql_columns</span><span class="si">}</span><span class="s2">, CASE</span>
 </span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a><span class="s2">        WHEN </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2"> IN (</span><span class="si">{</span><span class="n">formatted_holdout_ids</span><span class="si">}</span><span class="s2">) THEN 0</span>
 </span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a><span class="s2">        ELSE 1</span>

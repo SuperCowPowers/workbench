@@ -1809,6 +1809,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../release_notes/0_8_12/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    0.8.12
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../release_notes/0_8_11/" class="md-nav__link">
         
   
@@ -2147,9 +2168,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sageworks.core.artifacts.data_source_abstract.DataSourceAbstract.table_name" class="md-nav__link">
+  <a href="#sageworks.core.artifacts.data_source_abstract.DataSourceAbstract.table" class="md-nav__link">
     <span class="md-ellipsis">
-      table_name
+      table
     </span>
   </a>
   
@@ -2789,7 +2810,7 @@
 </span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_database</span>
 </span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>    <span class="nd">@property</span>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>    <span class="k">def</span> <span class="nf">table_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>    <span class="k">def</span> <span class="nf">table</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 </span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the base table name for this Data Source&quot;&quot;&quot;</span>
 </span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_table_name</span>
 </span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>
@@ -2857,7 +2878,7 @@
 </span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a>        <span class="kn">from</span> <span class="nn">sageworks.core.views</span> <span class="kn">import</span> <span class="n">DisplayView</span>
 </span><span id="__span-0-107"><a id="__codelineno-0-107" name="__codelineno-0-107"></a>
 </span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a>        <span class="c1"># Create a NEW display view</span>
-</span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a>        <span class="n">DisplayView</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_table</span><span class="o">=</span><span class="n">c_view</span><span class="o">.</span><span class="n">table_name</span><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">column_list</span><span class="o">=</span><span class="n">diplay_columns</span><span class="p">)</span>
+</span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a>        <span class="n">DisplayView</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_table</span><span class="o">=</span><span class="n">c_view</span><span class="o">.</span><span class="n">table</span><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">column_list</span><span class="o">=</span><span class="n">diplay_columns</span><span class="p">)</span>
 </span><span id="__span-0-110"><a id="__codelineno-0-110" name="__codelineno-0-110"></a>
 </span><span id="__span-0-111"><a id="__codelineno-0-111" name="__codelineno-0-111"></a>    <span class="k">def</span> <span class="nf">set_computation_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">computation_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">recompute_stats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 </span><span id="__span-0-112"><a id="__codelineno-0-112" name="__codelineno-0-112"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the computation columns for this Data Source</span>
@@ -3155,8 +3176,8 @@
 
 
 
-<h3 id="sageworks.core.artifacts.data_source_abstract.DataSourceAbstract.table_name" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span></code>
+<h3 id="sageworks.core.artifacts.data_source_abstract.DataSourceAbstract.table" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">table</span><span class="p">:</span> <span class="nb">str</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-property"><code>property</code></small>
@@ -4272,7 +4293,7 @@ Returns:
 </span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a>    <span class="kn">from</span> <span class="nn">sageworks.core.views</span> <span class="kn">import</span> <span class="n">DisplayView</span>
 </span><span id="__span-0-107"><a id="__codelineno-0-107" name="__codelineno-0-107"></a>
 </span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a>    <span class="c1"># Create a NEW display view</span>
-</span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a>    <span class="n">DisplayView</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_table</span><span class="o">=</span><span class="n">c_view</span><span class="o">.</span><span class="n">table_name</span><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">column_list</span><span class="o">=</span><span class="n">diplay_columns</span><span class="p">)</span>
+</span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a>    <span class="n">DisplayView</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_table</span><span class="o">=</span><span class="n">c_view</span><span class="o">.</span><span class="n">table</span><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">column_list</span><span class="o">=</span><span class="n">diplay_columns</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
