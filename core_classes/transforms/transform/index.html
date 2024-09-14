@@ -2556,7 +2556,7 @@ Inherited Classes must implement the abstract transform_impl() method</p>
               Bases: <code><span title="abc.ABC">ABC</span></code></p>
 
 
-        <p>Transform: Base Class for all transforms within SageWorks. Inherited Classes
+        <p>Transform: Abstract Base Class for all transforms within SageWorks. Inherited Classes
 must implement the abstract transform_impl() method</p>
 
               <details class="quote">
@@ -2665,7 +2665,7 @@ must implement the abstract transform_impl() method</p>
 <span class="normal"><a href="#__codelineno-0-139">139</a></span>
 <span class="normal"><a href="#__codelineno-0-140">140</a></span>
 <span class="normal"><a href="#__codelineno-0-141">141</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="k">class</span> <span class="nc">Transform</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform: Base Class for all transforms within SageWorks. Inherited Classes</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform: Abstract Base Class for all transforms within SageWorks. Inherited Classes</span>
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">    must implement the abstract transform_impl() method&quot;&quot;&quot;</span>
 </span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>
 </span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
