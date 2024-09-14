@@ -245,7 +245,7 @@ if __name__ == "__main__":
     # See tests/views/views_tests.py for more examples
     import numpy as np
     from sageworks.api import DataSource, FeatureSet
-    from sageworks.core.views.create_view_with_df import CreateViewWithDF
+    from sageworks.core.views.pandas_to_view import PandasToView
 
     # Show trace calls
     logging.getLogger("sageworks").setLevel(logging.DEBUG)
@@ -284,8 +284,8 @@ if __name__ == "__main__":
     my_df["random1"] = np.random.rand(len(my_df))
     my_df["random2"] = np.random.rand(len(my_df))
 
-    # Create a view with a CreateViewWithDF class
-    df_view = CreateViewWithDF("test_df", fs).create(df=my_df, id_column="id")
+    # Create a view with a PandasToView class
+    df_view = PandasToView("test_df", fs).create(df=my_df, id_column="id")
 
     # Test supplemental data tables deletion
     view = View(fs, "test_df")

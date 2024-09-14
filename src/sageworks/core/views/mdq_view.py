@@ -6,7 +6,7 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet, Model
 from sageworks.core.views.view import View
-from sageworks.core.views.create_view_with_df import CreateViewWithDF
+from sageworks.core.views.pandas_to_view import PandasToView
 from sageworks.algorithms.dataframe.row_tagger import RowTagger
 from sageworks.algorithms.dataframe.residuals_calculator import ResidualsCalculator
 
@@ -23,8 +23,8 @@ class MDQView:
         """
         self.log = artifact.log
 
-        # We're going to use the CreateViewWithDF class internally
-        self.cv_with_df = CreateViewWithDF("mdq", artifact, source_table)
+        # We're going to use the PandasToView class internally
+        self.cv_with_df = PandasToView("mdq", artifact, source_table)
         self.data_source = self.cv_with_df.data_source
         self.source_table = self.cv_with_df.source_table
 
@@ -100,7 +100,7 @@ class MDQView:
         # Merge the DataFrames, only including new columns from residuals_df
         mdq_df = mdq_df.merge(residuals_df[new_columns], on=id_column, how="left")
 
-        # Call our internal CreateViewWithDF to create the Model Data Quality View
+        # Call our internal PandasToView to create the Model Data Quality View
         return self.cv_with_df.create(df=mdq_df, id_column=id_column)
 
 
