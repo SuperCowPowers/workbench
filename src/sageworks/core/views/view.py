@@ -65,7 +65,7 @@ class View:
                 return
 
         # Now fill some details about the view
-        self.columns, self.column_types, self.source_table = view_details(
+        self.columns, self.column_types, self.source_table, self.join_view = view_details(
             self.data_source.get_database(), self.table, self.data_source.boto3_session
         )
 
@@ -237,6 +237,7 @@ class View:
         info += f"      Database: {self.database}\n"
         info += f"      Table: {self.table}{auto}\n"
         info += f"      Source Table: {self.source_table}"
+        info += f"      Join View: {self.join_view}"
         return info
 
 

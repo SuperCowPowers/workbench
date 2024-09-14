@@ -172,7 +172,7 @@ def delete_table(data_source: DataSource, table_name: str):
         log.info(f"Table {table_name} successfully deleted from database {database}.")
 
 
-def view_details(database: str, table: str, boto3_session) -> (Union[list, None], Union[list, None], Union[str, None]):
+def view_details(database: str, table: str, boto3_session) -> (Union[list, None], Union[list, None], Union[str, None], bool):
     """Pull the column names, types, and source table for the view
 
     Args:
@@ -184,6 +184,7 @@ def view_details(database: str, table: str, boto3_session) -> (Union[list, None]
         Union[list, None]: The column names (returns None if the table does not exist)
         Union[list, None]: The column types (returns None if the table does not exist)
         Union[str, None]: The source table the view was created from (returns None if not found)
+        bool: True if the view is a JOIN view, False otherwise
     """
 
     # Retrieve the table metadata
@@ -202,18 +203,19 @@ def view_details(database: str, table: str, boto3_session) -> (Union[list, None]
             view_sql_encoded = response["Table"]["ViewOriginalText"]
             view_sql_decoded = _decode_view_sql(view_sql_encoded)
             source_table = _extract_source_table(view_sql_decoded)
-            return column_names, column_types, source_table
+            join_view = "JOIN" in view_sql_decoded
+            return column_names, column_types, source_table, join_view
         else:
             log.error(f"Failed to extract source table from view {table}.")
-            return column_names, column_types, None
+            return column_names, column_types, None, False
 
     # Handle the case where the table does not exist
     except glue_client.exceptions.EntityNotFoundException:
         log.warning(f"Table {table} not found in database {database}.")
-        return None, None, None
+        return None, None, None, False
     except ClientError as e:
         log.error(f"An error occurred while retrieving table info: {e}")
-        return None, None, None
+        return None, None, None, False
 
 
 def _decode_view_sql(encoded_sql: str) -> str:
