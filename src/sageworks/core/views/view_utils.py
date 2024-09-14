@@ -183,7 +183,7 @@ def view_details(database: str, table: str, boto3_session) -> (Union[list, None]
     Returns:
         Union[list, None]: The column names (returns None if the table does not exist)
         Union[list, None]: The column types (returns None if the table does not exist)
-        Union[str, None]: The source table the view was created from (returns None if not found or not a view)
+        Union[str, None]: The source table the view was created from (returns None if not found)
     """
 
     # Retrieve the table metadata
@@ -205,7 +205,7 @@ def view_details(database: str, table: str, boto3_session) -> (Union[list, None]
             return column_names, column_types, source_table
         else:
             log.error(f"Failed to extract source table from view {table}.")
-            return column_names, column_types, source_table
+            return column_names, column_types, None
 
     # Handle the case where the table does not exist
     except glue_client.exceptions.EntityNotFoundException:
@@ -253,7 +253,14 @@ def _extract_source_table(view_sql: str) -> Union[str, None]:
     """
     # Use regex to find the source table in the SQL query
     match = re.search(r"FROM\s+([^\s;]+)", view_sql, re.IGNORECASE)
-    return match.group(1) if match else None
+    table = match.group(1) if match else None
+
+    # Special case for join queries
+    if table.startswith("("):
+        table.replace("(", "")
+
+    # Return the source table name
+    return table
 
 
 if __name__ == "__main__":

@@ -65,7 +65,7 @@ class PandasToView(CreateView):
         source_table_columns = get_column_list(self.data_source, self.source_table)
         column_list = [col for col in source_table_columns if col not in aws_cols]
 
-        # Same thing as above, but with the incoming dataframe
+        # Drop any columns generated from AWS from the incoming dataframe
         df = df.drop(columns=aws_cols, errors="ignore")
 
         # Enclose each column name in double quotes
@@ -118,19 +118,19 @@ class PandasToView(CreateView):
 
 if __name__ == "__main__":
     """Exercise the PandasToView functionality"""
-    from sageworks.api import FeatureSet
+    from sageworks.api import DataSource
     import numpy as np
 
-    # Get the FeatureSet
-    fs = FeatureSet("abalone_features")
+    # Get the DataSource
+    ds = DataSource("test_data")
 
     # Generate a DataFrame with the same id column and two random columns
-    my_df = fs.pull_dataframe()[["id", "length", "diameter"]]
+    my_df = ds.pull_dataframe()
     my_df["random1"] = np.random.rand(len(my_df))
     my_df["random2"] = np.random.rand(len(my_df))
 
     # Create a PandasToView
-    df_view = PandasToView.create("test_df", fs, df=my_df, id_column="id")
+    df_view = PandasToView.create("test_df", ds, df=my_df, id_column="id")
 
     # Pull the dataframe view
     my_df = df_view.pull_dataframe(head=True)
