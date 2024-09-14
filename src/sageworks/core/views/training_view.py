@@ -13,8 +13,13 @@ class TrainingView(CreateView):
     """TrainingView Class: A View with an additional training column that marks holdout ids"""
 
     @classmethod
-    def create(cls, feature_set: FeatureSet, source_table: str = None,
-               id_column: str = None, holdout_ids: Union[list[str], None] = None) -> Union[View, None]:
+    def create(
+        cls,
+        feature_set: FeatureSet,
+        source_table: str = None,
+        id_column: str = None,
+        holdout_ids: Union[list[str], None] = None,
+    ) -> Union[View, None]:
         """Factory method to create and return a TrainingView instance.
 
         Args:
@@ -42,7 +47,9 @@ class TrainingView(CreateView):
                 return None
             else:
                 if instance.auto_id_column not in column_list:
-                    instance.log.error(f"Auto id column {instance.auto_id_column} not found in column list, aborting ..")
+                    instance.log.error(
+                        f"Auto id column {instance.auto_id_column} not found in column list, aborting .."
+                    )
                     return None
                 else:
                     id_column = instance.auto_id_column

@@ -12,8 +12,13 @@ class ComputationView(ColumnSubsetView):
     """ComputationView Class: Create a View with a subset of columns for computation purposes"""
 
     @classmethod
-    def create(cls, artifact: Union[DataSource, FeatureSet], source_table: str = None,
-               column_list: Union[list[str], None] = None, column_limit: int = 30) -> Union[View, None]:
+    def create(
+        cls,
+        artifact: Union[DataSource, FeatureSet],
+        source_table: str = None,
+        column_list: Union[list[str], None] = None,
+        column_limit: int = 30,
+    ) -> Union[View, None]:
         """Factory method to create and return a ComputationView instance.
 
         Args:
@@ -26,9 +31,7 @@ class ComputationView(ColumnSubsetView):
             Union[View, None]: The created View object (or None if failed to create the view)
         """
         # Use the create logic directly from ColumnSubsetView with the "computation" view name
-        return ColumnSubsetView.create(
-            "computation", artifact, source_table, column_list, column_limit
-        )
+        return ColumnSubsetView.create("computation", artifact, source_table, column_list, column_limit)
 
 
 if __name__ == "__main__":
