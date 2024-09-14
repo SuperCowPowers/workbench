@@ -4,32 +4,42 @@ from typing import Union
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
+from sageworks.core.views.view import View
 from sageworks.core.views.column_subset_view import ColumnSubsetView
 
 
 class DisplayView(ColumnSubsetView):
     """DisplayView Class: Create a View with a subset of columns for display purposes"""
 
-    def __init__(self, artifact: Union[DataSource, FeatureSet], source_table: str = None):
-        """Initialize the ColumnSubsetView
+    @classmethod
+    def create(cls, artifact: Union[DataSource, FeatureSet], source_table: str = None,
+               column_list: Union[list[str], None] = None, column_limit: int = 30) -> Union[View, None]:
+        """Factory method to create and return a DisplayView instance.
 
         Args:
             artifact (Union[DataSource, FeatureSet]): The DataSource or FeatureSet object
             source_table (str, optional): The table/view to create the view from. Defaults to None
+            column_list (Union[list[str], None], optional): A list of columns to include. Defaults to None.
+            column_limit (int, optional): The max number of columns to include. Defaults to 30.
+
+        Returns:
+            Union[View, None]: The created View object (or None if failed to create the view)
         """
-        super().__init__("display", artifact, source_table)
+        # Use the create logic directly from ColumnSubsetView with the "display" view name
+        return ColumnSubsetView.create(
+            "display", artifact, source_table, column_list, column_limit
+        )
 
 
 if __name__ == "__main__":
-    """Exercise the Training View functionality"""
+    """Exercise the Display View functionality"""
     from sageworks.api import FeatureSet
 
     # Get the FeatureSet
     fs = FeatureSet("test_features")
 
     # Create a DisplayView
-    view_maker = DisplayView(fs)
-    display_view = view_maker.create()
+    display_view = DisplayView.create(fs)
 
     # Pull the display data
     df = display_view.pull_dataframe()
@@ -38,5 +48,5 @@ if __name__ == "__main__":
     # Create a Display View with a subset of columns
     aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
     columns = [col for col in fs.columns if col not in aws_cols]
-    test_view = view_maker.create(column_list=columns)
-    print(test_view.pull_dataframe().head())
+    display_view = DisplayView.create(fs, column_list=columns)
+    print(display_view.pull_dataframe().head())
