@@ -259,7 +259,7 @@ def _extract_source_table(view_sql: str) -> Union[str, None]:
 
     # Special case for join queries
     if table.startswith("("):
-        table.replace("(", "")
+        table = table.replace("(", "")
 
     # Return the source table name
     return table
