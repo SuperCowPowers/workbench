@@ -47,12 +47,12 @@ def list_views(data_source: DataSource) -> list[str]:
     Returns:
         list[str]: A list containing only the last part of the view table names
     """
-    # Get the list of view tables from the original method
+    # Get the list of view tables for this data source
     view_tables = list_view_tables(data_source)
+    data_source_table = data_source.table
 
-    # Extract the last part of each table name
-    view_names = [table_name.split("_")[-1] for table_name in view_tables]
-    return view_names
+    # Each view will have the format: {data_table_name}_{view_name}
+    return [view_table.replace(data_source_table + "_", "") for view_table in view_tables]
 
 
 def list_view_tables(data_source: DataSource) -> list[str]:
