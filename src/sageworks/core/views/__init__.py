@@ -20,11 +20,4 @@ from .training_view import TrainingView
 from .mdq_view import MDQView
 from .column_subset_view import ColumnSubsetView
 
-__all__ = [
-    "View",
-    "DisplayView",
-    "ComputationView",
-    "TrainingView",
-    "MDQView",
-    "ColumnSubsetView"
-]
+__all__ = ["View", "DisplayView", "ComputationView", "TrainingView", "MDQView", "ColumnSubsetView"]
