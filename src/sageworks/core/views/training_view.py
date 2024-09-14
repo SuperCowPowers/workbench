@@ -10,7 +10,22 @@ from sageworks.core.views.view_utils import get_column_list
 
 
 class TrainingView(CreateView):
-    """TrainingView Class: A View with an additional training column that marks holdout ids"""
+    """TrainingView Class: A View with an additional training column that marks holdout ids
+
+    Common Usage:
+        ```
+        # Create a default TrainingView
+        fs = FeatureSet("test_features")
+        training_view = TrainingView.create(fs)
+        df = training_view.pull_dataframe()
+
+        # Create a TrainingView with a specific set of columns
+        training_view = TrainingView.create(fs, column_list=["my_col1", "my_col2"])
+
+        # Query the view
+        df = training_view.query(f"SELECT * FROM {training_view.table} where training = 1")
+        ```
+    """
 
     @classmethod
     def create(

@@ -12,7 +12,22 @@ from sageworks.algorithms.dataframe.residuals_calculator import ResidualsCalcula
 
 
 class MDQView:
-    """MDQView Class: A View that computes various model data quality metrics"""
+    """MDQView Class: A View that computes various model data quality metrics
+
+    Common Usage:
+        ```
+        # Grab a FeatureSet and a Model
+        fs = FeatureSet("abalone_features")
+        model = Model("abalone-regression")
+
+        # Create a ModelDataQuality View
+        mdq_view = MDQView(fs).create(model=model, id_column="id")
+        my_df = mdq_view.pull_dataframe(head=True)
+
+        # Query the view
+        df = mdq_view.query(f"SELECT * FROM {mdq_view.table} where residuals > 0.5")
+        ```
+    """
 
     def __init__(self, artifact: Union[DataSource, FeatureSet], source_table: str = None):
         """Initialize the ColumnSubsetView

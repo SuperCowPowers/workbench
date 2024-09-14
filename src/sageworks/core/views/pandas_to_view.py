@@ -11,7 +11,25 @@ from sageworks.core.views.view_utils import dataframe_to_table, get_column_list
 
 
 class PandasToView(CreateView):
-    """PandasToView Class: A View that joins the source_table with a Pandas dataframe"""
+    """PandasToView Class: A View that joins the source_table with a Pandas dataframe
+
+        Common Usage:
+        ```
+        # Grab a DataSource
+        ds = DataSource("test_data")
+
+        # Do some awesome Feature Engineering :)
+        my_df = ds.pull_dataframe()
+        my_df["random1"] = np.random.rand(len(my_df))
+        my_df["random2"] = np.random.rand(len(my_df))
+
+        # Create your new View
+        fe_view = PandasToView.create("feature_engineering_view", ds, df=my_df, id_column="id")
+
+        # Query the view
+        df = fe_view.query(f"SELECT * FROM {fe_view.table} where residuals > 0.5")
+        ```
+    """
 
     @classmethod
     def create(
@@ -121,10 +139,10 @@ if __name__ == "__main__":
     from sageworks.api import DataSource
     import numpy as np
 
-    # Get the DataSource
+    # Grab a DataSource
     ds = DataSource("test_data")
 
-    # Generate a DataFrame with the same id column and two random columns
+    # Generate a DataFrame with two random columns
     my_df = ds.pull_dataframe()
     my_df["random1"] = np.random.rand(len(my_df))
     my_df["random2"] = np.random.rand(len(my_df))

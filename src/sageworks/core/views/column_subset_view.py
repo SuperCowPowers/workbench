@@ -10,7 +10,17 @@ from sageworks.core.views.view_utils import get_column_list
 
 
 class ColumnSubsetView(CreateView):
-    """ColumnSubsetView Class: Create a View with a subset of columns"""
+    """ColumnSubsetView Class: Create a View with a subset of columns
+
+    Common Usage:
+        ```
+        # Create a ColumnSubsetView with a specific set of columns
+        my_view = ColumnSubsetView.create("my_view", fs, column_list=["my_col1", "my_col2"])
+
+        # Query the view
+        df = my_view.query(f"SELECT * FROM {my_view.table} where residual > 0.8")
+        ```
+    """
 
     def __init__(self, view_name: str, artifact: Union[DataSource, FeatureSet], source_table: str = None):
         """Initialize the ColumnSubsetView

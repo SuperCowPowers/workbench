@@ -9,7 +9,22 @@ from sageworks.core.views.view import View
 
 
 class ComputationView(ColumnSubsetView):
-    """ComputationView Class: Create a View with a subset of columns for computation purposes"""
+    """ComputationView Class: Create a View with a subset of columns for computation purposes
+
+    Common Usage:
+        ```
+        # Create a default ComputationView
+        fs = FeatureSet("test_features")
+        comp_view = ComputationView.create(fs)
+        df = comp_view.pull_dataframe()
+
+        # Create a ComputationView with a specific set of columns
+        comp_view = ComputationView.create(fs, column_list=["my_col1", "my_col2"])
+
+        # Query the view
+        df = comp_view.query(f"SELECT * FROM {comp_view.table} where prediction > 0.5")
+        ```
+    """
 
     @classmethod
     def create(

@@ -9,7 +9,22 @@ from sageworks.core.views.column_subset_view import ColumnSubsetView
 
 
 class DisplayView(ColumnSubsetView):
-    """DisplayView Class: Create a View with a subset of columns for display purposes"""
+    """DisplayView Class: Create a View with a subset of columns for display purposes
+
+    Common Usage:
+        ```
+        # Create a default DisplayView
+        fs = FeatureSet("test_features")
+        display_view = DisplayView.create(fs)
+        df = display_view.pull_dataframe()
+
+        # Create a DisplayView with a specific set of columns
+        display_view = DisplayView.create(fs, column_list=["my_col1", "my_col2"])
+
+        # Query the view
+        df = display_view.query(f"SELECT * FROM {display_view.table} where awesome = 'yes'")
+        ```
+    """
 
     @classmethod
     def create(
