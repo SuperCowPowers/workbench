@@ -2,7 +2,6 @@
 
 import time
 from datetime import datetime, timezone
-from typing import Union
 
 import botocore.exceptions
 import pandas as pd
