@@ -27,7 +27,7 @@ class CreateViewWithDF(CreateView):
         """Create a Model Data Quality View: A View that computes various model data quality metrics
 
         Args:
-            data_source (DataSource): The SageWorks DataSource object
+            data_source (DataSource): A SageWorks DataSource object
             df (pd.DataFrame): The Pandas DataFrame to join with the source_table
             id_column (str): The name of the id column (must be defined for join logic)
 
