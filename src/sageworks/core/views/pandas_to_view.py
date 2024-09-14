@@ -14,8 +14,14 @@ class PandasToView(CreateView):
     """PandasToView Class: A View that joins the source_table with a Pandas dataframe"""
 
     @classmethod
-    def create(cls, view_name: str, artifact: Union[DataSource, FeatureSet], df: pd.DataFrame,
-               id_column: str, source_table: str = None) -> Union[View, None]:
+    def create(
+        cls,
+        view_name: str,
+        artifact: Union[DataSource, FeatureSet],
+        df: pd.DataFrame,
+        id_column: str,
+        source_table: str = None,
+    ) -> Union[View, None]:
         """Factory method to create and return a PandasToView instance.
 
         Args:
@@ -71,9 +77,7 @@ class PandasToView(CreateView):
 
         # Check if the id_column exists in the source_table
         if id_column not in source_df.columns:
-            self.log.error(
-                f"id_column {id_column} not found in {self.source_table}. Cannot create the View."
-            )
+            self.log.error(f"id_column {id_column} not found in {self.source_table}. Cannot create the View.")
             return None
 
         # Check if the id_column exists in the dataframe
