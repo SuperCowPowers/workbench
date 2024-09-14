@@ -31,11 +31,12 @@ nav:
       - EndpointCore: core_classes/artifacts/endpoint_core.md
       - MonitorCore: core_classes/artifacts/monitor_core.md
       - Artifact: core_classes/artifacts/artifact.md
-    - Views: 
-      - View: core_classes/views/view.md
+    - Views:
+      - OverView: core_classes/views/overview.md
       - ComputationView: core_classes/views/computation_view.md
       - DisplayView: core_classes/views/display_view.md
       - TrainingView: core_classes/views/training_view.md
+      - ModelDataQualityView: core_classes/views/mdq_view.md
     - Transforms: 
       - OverView: core_classes/transforms/overview.md
       - Data Loaders Light: core_classes/transforms/data_loaders_light.md

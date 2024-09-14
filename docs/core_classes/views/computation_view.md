@@ -1,4 +1,4 @@
-# ComputationView Class (Beta)
+# Computation View
 
 !!! warning inline end "Experimental"
     The SageWorks View classes are currently in experimental mode so have fun but expect issues and API changes going forward.

@@ -4,9 +4,17 @@
     
 Views are a powerful way to filter and agument your DataSources and FeatureSets. With Views you can subset columns, rows, and even add data to existing SageWorks Artifacts. If you want to compute outliers, runs some statistics or engineer some new features, Views are an easy way to change, modify, and add to DataSources and FeatureSets.
 
-    
-::: sageworks.core.views.view
+If you're looking to read and pull data from a view please see the [Views](../../api_classes/views.md) documentation.
 
+    
+## View Constructor Classes
+
+These classes provide APIs for creating Views for DataSources and FeatureSets.
+
+- **[DisplayView](display_view.md):** The Display View is leveraged by the web views/components and allows fine tuning of the UI for the SageWorks Dashboard.
+- **[ComputationView](computation_view.md):** The Computation View controls which columns have descriptive stats, outliers, and correlation calculations. Typically the computation view is a superset of the display view.
+- **[TrainingView](training_view.md):** The Training View will add a 'training' column to the data for model training, validation, and testing. Each row will have a 1 or 0 indicated whether is was used in the model training.
+- **[MDQView](mdq_view.md):** The Model Data Quality View computes various data quality metrics that include modeling inference results.
 
 ## Examples
 All of the SageWorks Examples are in the Sageworks Repository under the `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
@@ -70,9 +78,5 @@ print(df.head())
 0   I   0.075     0.055   0.010         0.002          0.0010          0.0005        0.0015                      1
 1   I   0.150     0.100   0.025         0.015          0.0045          0.0040         0.0050                      2
 ```
-
-!!! note "Classes to construct View"
-    The SageWorks Classes used to construct viewss are currently in 'Core'. So you can check out the documentation for those classes here: [SageWorks View Creators](../core_classes/views/overview.md)
-    
 
 The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
