@@ -989,11 +989,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/views/view/" class="md-nav__link">
+      <a href="../../core_classes/views/overview/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    View
+    OverView
   </span>
   
 
@@ -1057,6 +1057,27 @@
   
   <span class="md-ellipsis">
     TrainingView
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../core_classes/views/mdq_view/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ModelDataQualityView
   </span>
   
 
@@ -1861,24 +1882,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#table-name-attribute" class="md-nav__link">
-    <span class="md-ellipsis">
-      Table Name attribute
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#method-changesremovals" class="md-nav__link">
-    <span class="md-ellipsis">
-      Method Changes/Removals
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#general" class="md-nav__link">
     <span class="md-ellipsis">
       General
@@ -1891,24 +1894,6 @@
   <a href="#api-changes" class="md-nav__link">
     <span class="md-ellipsis">
       API Changes
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#glue-job-fixes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Glue Job Fixes
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#robust-modelnotreadyexception-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      Robust ModelNotReadyException Handling
     </span>
   </a>
   
@@ -2240,24 +2225,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#table-name-attribute" class="md-nav__link">
-    <span class="md-ellipsis">
-      Table Name attribute
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#method-changesremovals" class="md-nav__link">
-    <span class="md-ellipsis">
-      Method Changes/Removals
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#general" class="md-nav__link">
     <span class="md-ellipsis">
       General
@@ -2270,24 +2237,6 @@
   <a href="#api-changes" class="md-nav__link">
     <span class="md-ellipsis">
       API Changes
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#glue-job-fixes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Glue Job Fixes
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#robust-modelnotreadyexception-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      Robust ModelNotReadyException Handling
     </span>
   </a>
   
@@ -2324,80 +2273,19 @@
 </div>
 <p>The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines.</p>
 <p><strong>Note:</strong> These release notes cover the changes from <code>0.8.11</code> to <code>0.8.12</code></p>
-<h3 id="table-name-attribute">Table Name attribute</h3>
+<h3 id="general">General</h3>
+<p>The View classes have finished their initial refactoring. The 'read' class <code>View()</code> can be constructed either directly or with the <code>ds/fs.view("display")</code> methods. See <a href="../../api_classes/views/">Views</a> for more details. There also a set of classes for constructing views, please see <a href="../../core_classes/views/overview/">View Overview</a></p>
+<h3 id="api-changes">API Changes</h3>
+<ul>
+<li>
+<p><strong>Table Name attribute</strong></p>
 <p>The <code>table_name</code> attribute/property has been replaced with just <code>table</code></p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ds.table_name -&gt; ds.table
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>fs.table_name -&gt; fs.table
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>view.table-name -&gt; view.table
 </span></code></pre></div>
-<h3 id="method-changesremovals">Method Changes/Removals</h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>fs.get_training_view_table() -&gt; fs.view(&quot;training&quot;).table_name
-</span></code></pre></div>
-<h3 id="general">General</h3>
-<p>The AWSAccountClamp had too many responsibilities so that class has been split up into two classes and a set of utilities:</p>
-<ul>
-<li>AWSAccountClamp</li>
-<li>AWSSession</li>
-<li>utils/execution_environment.py</li>
-</ul>
-<h3 id="api-changes">API Changes</h3>
-<p>For all/most of these API changes they include both DataSources and FeatureSets. We're using a FeatureSet (fs) in the examples below but also applies to DataSoources.</p>
-<ul>
-<li>
-<p><strong>Column Names/Table Names</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fs.column_names() -&gt; fs.columns
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>fs.get_table_name() -&gt; fs.table_name
-</span></code></pre></div>
-</li>
-<li>
-<p><strong>Display/Training/Computation Views</strong></p>
-<p>In general methods for FS/DS are now part of the View API, here's a change list:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>fs.get_display_view() -&gt; fs.view(&quot;display&quot;)
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>fs.get_training_view() -&gt; fs.view(&quot;training&quot;)
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>fs.get_display_columns() -&gt; fs.view(&quot;display&quot;).columns
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>fs.get_computation_columns() -&gt; fs.view(&quot;computation&quot;).columns
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>fs.get_training_view_table() -&gt; fs.view(&quot;training&quot;).table_name
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>fs.get_training_data(self) -&gt; fs.view(&quot;training&quot;).pull_dataframe()
-</span></code></pre></div>
-<p>Some FS/DS methods have also been removed</p>
-<p><code>num_display_columns() -&gt; gone
-   num_computation_columns() -&gt; gone</code></p>
-</li>
-<li>
-<p><strong>Views: Methods that we're Keeping</strong></p>
-<p>We're keeping the methods below since they handle some underlying mechanics and serve as nice convenience methods. </p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ds/fs.set_display_columns()
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>ds/fs.set_computation_columns()
-</span></code></pre></div>
-</li>
-<li>
-<p><strong>AWSAccountClamp</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>AWSAccountClamp().boto_session() --&gt; AWSAccountClamp().boto3_session
-</span></code></pre></div>
-</li>
-<li>
-<p><strong>All Classes</strong></p>
-<p>If the class previously had a <code>boto_session</code> attribute that has been renamed to <code>boto3_session</code></p>
 </li>
 </ul>
-<h3 id="glue-job-fixes">Glue Job Fixes</h3>
-<p>For <code>sageworks==0.8.8</code> you needed to be careful about when/where you set your config/ENV vars. With <code>&gt;=0.8.9</code> you can now use the typical setup like this:</p>
-<div class="language-text highlight"><pre><span></span><code>```
-from sageworks.utils.config_manager import ConfigManager
-
-# Set the SageWorks Config
-cm = ConfigManager()
-cm.set_config(&quot;SAGEWORKS_BUCKET&quot;, args_dict[&quot;sageworks-bucket&quot;])
-cm.set_config(&quot;REDIS_HOST&quot;, args_dict[&quot;redis-host&quot;])
-```
-</code></pre></div>
-<h3 id="robust-modelnotreadyexception-handling">Robust ModelNotReadyException Handling</h3>
-<p>AWS will 'deep freeze' Serverless Endpoints and if that endpoint hasn't been used for a while it can sometimes take a long time to come up and be ready for inference. SageWorks now properly manages this AWS error condition, it will report the issue, wait 60 seconds, and try again 5 times before raising the exception.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>(endpoint_core.py:502) ERROR Endpoint model not ready
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>(endpoint_core.py:503) ERROR Waiting and Retrying...
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>...
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>After a while, inference will run successfully :)
-</span></code></pre></div>
 <h3 id="questions">Questions?</h3>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
 <p>The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
