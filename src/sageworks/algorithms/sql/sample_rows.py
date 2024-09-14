@@ -20,7 +20,7 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
     """
 
     # Grab the DataSource computation table name
-    table = data_source.view("computation").table_name
+    table = data_source.view("computation").table
 
     # Get the column names the DataSource computation view
     column_names = data_source.view("computation").columns

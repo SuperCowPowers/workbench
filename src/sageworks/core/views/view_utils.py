@@ -26,7 +26,7 @@ def get_column_list(data_source: DataSource, source_table: str = None) -> list[s
     Returns:
         list[str]: A list of column names
     """
-    source_table = source_table if source_table else data_source.table_name
+    source_table = source_table if source_table else data_source.table
 
     # Query to get the column names
     column_query = f"""
@@ -64,7 +64,7 @@ def list_view_tables(data_source: DataSource) -> list[str]:
     Returns:
         list[str]: A list of view table names
     """
-    base_table_name = data_source.table_name
+    base_table_name = data_source.table
 
     # Use LIKE to match table names that start with base_table_name followed by any characters
     view_query = f"""
@@ -87,7 +87,7 @@ def list_supplemental_data_tables(data_source: DataSource) -> list[str]:
     Returns:
         list[str]: A list of supplemental data table names
     """
-    base_table_name = data_source.table_name
+    base_table_name = data_source.table
 
     # Use REGEXP_LIKE to match table names that start with an underscore, followed by the base_table_name,
     # followed by one underscore, and no more underscores
@@ -266,17 +266,17 @@ if __name__ == "__main__":
 
     # Test view_details
     print("View Details on the FeatureSet Table...")
-    print(view_details(my_data_source.get_database(), my_data_source.table_name, my_data_source.boto3_session))
+    print(view_details(my_data_source.get_database(), my_data_source.table, my_data_source.boto3_session))
 
     print("View Details on the Training View...")
     training_view = fs.view("training")
-    print(view_details(training_view.get_database(), training_view.table_name, my_data_source.boto3_session))
+    print(view_details(training_view.get_database(), training_view.table, my_data_source.boto3_session))
 
     # Test get_column_list
     print(get_column_list(my_data_source))
 
     # Test get_column_list (with training view)
-    training_table = fs.view("training").table_name
+    training_table = fs.view("training").table
     print(get_column_list(my_data_source, training_table))
 
     # Test list_view_tables

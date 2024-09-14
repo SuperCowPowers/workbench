@@ -55,7 +55,7 @@ def correlations(data_source: DataSourceAbstract) -> dict[dict]:
         return {}
 
     # Grab the DataSource computation table name
-    table = data_source.view("computation").table_name
+    table = data_source.view("computation").table
 
     # Build the query
     query = correlation_query(numeric, table)

@@ -185,7 +185,7 @@ class FeatureSetCore(Artifact):
         from sageworks.core.views import DisplayView
 
         # Create a NEW display view
-        DisplayView(self, source_table=c_view.table_name).create(column_list=diplay_columns)
+        DisplayView(self, source_table=c_view.table).create(column_list=diplay_columns)
 
     def set_computation_columns(self, computation_columns: list[str], reset_display: bool = True):
         """Set the computation columns for this FeatureSet
@@ -264,8 +264,8 @@ class FeatureSetCore(Artifact):
         s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
 
         # Make the query
-        table_name = self.view("training").table_name
-        query = f"SELECT * FROM {table_name}"
+        table = self.view("training").table
+        query = f"SELECT * FROM {table}"
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
         athena_query.wait()
@@ -392,9 +392,9 @@ class FeatureSetCore(Artifact):
         from sageworks.core.views.view_utils import list_view_tables
 
         view_tables = list_view_tables(self.data_source)
-        data_table_name = self.data_source.table_name
+        data_source_table = self.data_source.table
         # Each view will have the format: {data_table_name}_{view_name}
-        return [view_table.replace(data_table_name + "_", "") for view_table in view_tables]
+        return [view_table.replace(data_source_table + "_", "") for view_table in view_tables]
 
     def ensure_feature_group_deleted(self, feature_group):
         status = "Deleting"
@@ -422,15 +422,6 @@ class FeatureSetCore(Artifact):
 
         # Create a NEW training view
         TrainingView(self.data_source).create(id_column=id_column, holdout_ids=holdout_ids)
-
-    def get_training_view_table(self) -> Union[str, None]:
-        """Get the name of the training view for this FeatureSet
-
-        Returns:
-            str: The name of the training view for this FeatureSet
-        """
-        # Get the training view table name
-        return self.view("training").table_name
 
     def delete_views(self):
         """Delete any views associated with this FeatureSet"""
@@ -651,7 +642,7 @@ if __name__ == "__main__":
 
     # Set the holdout ids for the training view
     print("Setting hold out ids...")
-    table = my_features.view("training").table_name
+    table = my_features.view("training").table
     df = my_features.query(f"SELECT id, name FROM {table}")
     my_holdout_ids = [id for id in df["id"] if id < 20]
     my_features.set_training_holdouts("id", my_holdout_ids)

@@ -144,7 +144,7 @@ class Outliers:
             str: A SQL query to compute outliers for multiple columns
         """
         # Grab the DataSource computation table name
-        table = data_source.view("computation").table_name
+        table = data_source.view("computation").table
 
         # Get the column names and types from the DataSource
         column_details = data_source.view("computation").column_details()

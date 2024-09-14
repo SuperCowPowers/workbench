@@ -72,7 +72,7 @@ class TrainingView(CreateView):
 
         # Construct the CREATE VIEW query
         create_view_query = f"""
-        CREATE OR REPLACE VIEW {self.table_name} AS
+        CREATE OR REPLACE VIEW {self.table} AS
         SELECT {sql_columns}, CASE
             WHEN {id_column} IN ({formatted_holdout_ids}) THEN 0
             ELSE 1
@@ -94,7 +94,7 @@ class TrainingView(CreateView):
             data_source (DataSource): The SageWorks DataSource object
             id_column (str): The name of the id column
         """
-        self.log.important(f"Creating default Training View {self.table_name}...")
+        self.log.important(f"Creating default Training View {self.table}...")
 
         # Drop any columns generated from AWS
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
@@ -106,7 +106,7 @@ class TrainingView(CreateView):
         #    Construct the CREATE VIEW query with a simple modulo operation for the 80/20 split
         #    using the id column as the stable identifier for row numbering
         create_view_query = f"""
-        CREATE OR REPLACE VIEW {self.table_name} AS
+        CREATE OR REPLACE VIEW {self.table} AS
         SELECT {sql_columns}, CASE
             WHEN MOD(ROW_NUMBER() OVER (ORDER BY {id_column}), 10) < 8 THEN 1  -- Assign 80% to training
             ELSE 0  -- Assign roughly 20% to validation/test

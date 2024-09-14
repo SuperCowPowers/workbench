@@ -60,18 +60,18 @@ class AthenaSource(DataSourceAbstract):
             data_uuid, self.get_database(), refresh=force_refresh
         )
         if self.catalog_table_meta is None:
-            self.log.error(f"Unable to find {self.get_database()}:{self.table_name} in Glue Catalogs...")
+            self.log.error(f"Unable to find {self.get_database()}:{self.table} in Glue Catalogs...")
 
         # Call superclass post init
         super().__post_init__()
 
         # All done
-        self.log.debug(f"AthenaSource Initialized: {self.get_database()}.{self.table_name}")
+        self.log.debug(f"AthenaSource Initialized: {self.get_database()}.{self.table}")
 
     def refresh_meta(self):
         """Refresh our internal AWS Broker catalog metadata"""
         _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=True)
-        self.catalog_table_meta = _catalog_meta[self.get_database()].get(self.table_name)
+        self.catalog_table_meta = _catalog_meta[self.get_database()].get(self.table)
         self.metadata_refresh_needed = False
 
     def exists(self) -> bool:
@@ -80,7 +80,7 @@ class AthenaSource(DataSourceAbstract):
         # Are we able to pull AWS Metadata for this table_name?"""
         # Do we have a valid catalog_table_meta?
         if getattr(self, "catalog_table_meta", None) is None:
-            self.log.debug(f"AthenaSource {self.table_name} not found in SageWorks Metadata...")
+            self.log.debug(f"AthenaSource {self.table} not found in SageWorks Metadata...")
             return False
         return True
 
@@ -89,7 +89,7 @@ class AthenaSource(DataSourceAbstract):
         # Grab our SageWorks Role Manager, get our AWS account id, and region for ARN creation
         account_id = self.aws_account_clamp.account_id
         region = self.aws_account_clamp.region
-        arn = f"arn:aws:glue:{region}:{account_id}:table/{self.get_database()}/{self.table_name}"
+        arn = f"arn:aws:glue:{region}:{account_id}:table/{self.get_database()}/{self.table}"
         return arn
 
     def sageworks_meta(self) -> dict:
@@ -101,7 +101,7 @@ class AthenaSource(DataSourceAbstract):
             if not self.exists():
                 self.log.error(f"DataSource {self.uuid} doesn't appear to exist...")
             else:
-                self.log.critical(f"Unable to get AWS Metadata for {self.table_name}")
+                self.log.critical(f"Unable to get AWS Metadata for {self.table}")
                 self.log.critical("Malformed Artifact! Delete this Artifact and recreate it!")
             return {}
 
@@ -134,14 +134,14 @@ class AthenaSource(DataSourceAbstract):
             wr.catalog.upsert_table_parameters(
                 parameters=new_meta,
                 database=self.get_database(),
-                table=self.table_name,
+                table=self.table,
                 boto3_session=self.boto3_session,
             )
             self.metadata_refresh_needed = True
         except botocore.exceptions.ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code == "InvalidInputException":
-                self.log.error(f"Unable to upsert metadata for {self.table_name}")
+                self.log.error(f"Unable to upsert metadata for {self.table}")
                 self.log.error("Probably because the metadata is too large")
                 self.log.error(new_meta)
             elif error_code == "ConcurrentModificationException":
@@ -150,7 +150,7 @@ class AthenaSource(DataSourceAbstract):
                 wr.catalog.upsert_table_parameters(
                     parameters=new_meta,
                     database=self.get_database(),
-                    table=self.table_name,
+                    table=self.table,
                     boto3_session=self.boto3_session,
                 )
             else:
@@ -185,7 +185,7 @@ class AthenaSource(DataSourceAbstract):
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
-        count_df = self.query(f'select count(*) AS sageworks_count from "{self.get_database()}"."{self.table_name}"')
+        count_df = self.query(f'select count(*) AS sageworks_count from "{self.get_database()}"."{self.table}"')
         return count_df["sageworks_count"][0] if count_df is not None else 0
 
     def num_columns(self) -> int:
@@ -267,7 +267,7 @@ class AthenaSource(DataSourceAbstract):
 
     def athena_test_query(self):
         """Validate that Athena Queries are working"""
-        query = f"select count(*) as sageworks_count from {self.table_name}"
+        query = f"select count(*) as sageworks_count from {self.table}"
         df = wr.athena.read_sql_query(
             sql=query,
             database=self.get_database(),
@@ -477,7 +477,7 @@ class AthenaSource(DataSourceAbstract):
         details["storage_type"] = "athena"
 
         # Compute our AWS URL
-        query = f"select * from {self.get_database()}.{self.table_name} limit 10"
+        query = f"select * from {self.get_database()}.{self.table} limit 10"
         query_exec_id = wr.athena.start_query_execution(
             sql=query, database=self.get_database(), boto3_session=self.boto3_session
         )
@@ -504,14 +504,14 @@ class AthenaSource(DataSourceAbstract):
 
         # Make sure the AthenaSource exists
         if not self.exists():
-            self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.table_name}")
+            self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.table}")
 
         # Delete any views associated with this AthenaSource
         self.delete_views()
 
         # Delete Data Catalog Table
-        self.log.info(f"Deleting DataCatalog Table: {self.get_database()}.{self.table_name}...")
-        wr.catalog.delete_table_if_exists(self.get_database(), self.table_name, boto3_session=self.boto3_session)
+        self.log.info(f"Deleting DataCatalog Table: {self.get_database()}.{self.table}...")
+        wr.catalog.delete_table_if_exists(self.get_database(), self.table, boto3_session=self.boto3_session)
 
         # Delete S3 Storage Objects (if they exist)
         try:

@@ -106,7 +106,7 @@ class DataSourceAbstract(Artifact):
         from sageworks.core.views import DisplayView
 
         # Create a NEW display view
-        DisplayView(self, source_table=c_view.table_name).create(column_list=diplay_columns)
+        DisplayView(self, source_table=c_view.table).create(column_list=diplay_columns)
 
     def set_computation_columns(self, computation_columns: list[str], recompute_stats: bool = True):
         """Set the computation columns for this Data Source

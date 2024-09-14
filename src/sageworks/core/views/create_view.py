@@ -35,9 +35,9 @@ class CreateView(ABC):
         self.database = self.data_source.get_database()
 
         # Set our table names
-        self.base_table_name = self.data_source.table_name
+        self.base_table_name = self.data_source.table
         self.source_table = source_table if source_table else self.base_table_name
-        self.table_name = f"{self.base_table_name}_{self.view_name}"
+        self.table = f"{self.base_table_name}_{self.view_name}"
 
     def create(self, **kwargs) -> Union[View, None]:
         """Create the view, each subclass must implement this method
@@ -50,7 +50,7 @@ class CreateView(ABC):
         """
 
         # Create the view
-        self.log.important(f"Creating {self.view_name} view {self.table_name}...")
+        self.log.important(f"Creating {self.view_name} view {self.table}...")
         view = self.create_impl(self.data_source, **kwargs)
         view.source_table = self.source_table
         return view

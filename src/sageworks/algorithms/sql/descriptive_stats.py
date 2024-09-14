@@ -48,7 +48,7 @@ def descriptive_stats(data_source: DataSourceAbstract) -> dict[dict]:
               'col2': ...}
     """
     # Grab the DataSource computation view table name
-    table = data_source.view("computation").table_name
+    table = data_source.view("computation").table
 
     # Figure out which columns are numeric
     num_type = ["double", "float", "int", "bigint", "smallint", "tinyint"]

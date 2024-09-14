@@ -48,7 +48,7 @@ class View:
         self.database = self.data_source.get_database()
 
         # Construct our base_table_name
-        self.base_table_name = self.data_source.table_name
+        self.base_table_name = self.data_source.table
 
         # Check if the view should be auto created
         self.auto_created = False
@@ -66,7 +66,7 @@ class View:
 
         # Now fill some details about the view
         self.columns, self.column_types, self.source_table = view_details(
-            self.data_source.get_database(), self.table_name, self.data_source.boto3_session
+            self.data_source.get_database(), self.table, self.data_source.boto3_session
         )
 
     def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
@@ -83,7 +83,7 @@ class View:
         # Pull the DataFrame
         if head:
             limit = 5
-        pull_query = f"SELECT * FROM {self.table_name} LIMIT {limit}"
+        pull_query = f"SELECT * FROM {self.table} LIMIT {limit}"
         df = self.data_source.query(pull_query)
         return df
 
@@ -130,15 +130,15 @@ class View:
                 delete_table(self.data_source, table)
 
         # Now drop the view
-        self.log.important(f"Dropping View {self.table_name}...")
-        drop_view_query = f"DROP VIEW {self.table_name}"
+        self.log.important(f"Dropping View {self.table}...")
+        drop_view_query = f"DROP VIEW {self.table}"
 
         # Execute the DROP VIEW query
         try:
             self.data_source.execute_statement(drop_view_query, silence_errors=True)
         except wr.exceptions.QueryFailed as e:
             if "View not found" in str(e):
-                self.log.info(f"View {self.table_name} not found, this is fine...")
+                self.log.info(f"View {self.table} not found, this is fine...")
             else:
                 raise
 
@@ -164,7 +164,7 @@ class View:
             return False
 
         # Check if the view exists
-        return self.table_name in views_df["Name"].values
+        return self.table in views_df["Name"].values
 
     def ensure_exists(self):
         """Ensure if the view exists by making a query directly to the database. If it doesn't exist, create it"""
@@ -177,7 +177,7 @@ class View:
         check_table_query = f"""
         SELECT table_name
         FROM information_schema.tables
-        WHERE table_schema = '{self.database}' AND table_name = '{self.table_name}'
+        WHERE table_schema = '{self.database}' AND table_name = '{self.table}'
         """
         _df = self.data_source.query(check_table_query)
         if _df.empty:
@@ -235,7 +235,7 @@ class View:
 
         info = f'View: "{self.view_name}" for {artifact}("{self.artifact_name}")\n'
         info += f"      Database: {self.database}\n"
-        info += f"      Table: {self.table_name}{auto}\n"
+        info += f"      Table: {self.table}{auto}\n"
         info += f"      Source Table: {self.source_table}"
         return info
 
