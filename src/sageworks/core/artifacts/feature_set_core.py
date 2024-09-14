@@ -184,7 +184,7 @@ class FeatureSetCore(Artifact):
         from sageworks.core.views import DisplayView
 
         # Create a NEW display view
-        DisplayView(self, source_table=c_view.table).create(column_list=diplay_columns)
+        DisplayView.create(self, source_table=c_view.table, column_list=diplay_columns)
 
     def set_computation_columns(self, computation_columns: list[str], reset_display: bool = True):
         """Set the computation columns for this FeatureSet
@@ -197,7 +197,7 @@ class FeatureSetCore(Artifact):
         from sageworks.core.views import ComputationView
 
         # Create a NEW computation view
-        ComputationView(self).create(column_list=computation_columns)
+        ComputationView.create(self, column_list=computation_columns)
         self.recompute_stats()
 
         # Reset the display columns to match the computation columns
@@ -420,7 +420,7 @@ class FeatureSetCore(Artifact):
         from sageworks.core.views import TrainingView
 
         # Create a NEW training view
-        TrainingView(self.data_source).create(id_column=id_column, holdout_ids=holdout_ids)
+        TrainingView.create(self, id_column=id_column, holdout_ids=holdout_ids)
 
     def delete_views(self):
         """Delete any views associated with this FeatureSet"""

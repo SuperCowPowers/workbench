@@ -202,13 +202,13 @@ class View:
         # DisplayView
         if self.view_name == "display":
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
-            DisplayView(self.data_source).create()
+            DisplayView.create(self.data_source)
             return True
 
         # ComputationView
         if self.view_name == "computation":
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
-            ComputationView(self.data_source).create()
+            ComputationView.create(self.data_source)
             return True
 
         # TrainingView
@@ -216,7 +216,7 @@ class View:
             # We're only going to create training views for FeatureSets
             if self.is_feature_set:
                 self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
-                TrainingView(self.data_source).create(id_column=self.auto_id_column)
+                TrainingView.create(self.data_source, id_column=self.auto_id_column)
                 return True
             else:
                 self.log.warning("Training Views are only supported for FeatureSets...")
