@@ -5,7 +5,7 @@ import logging
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
-from sageworks.core.views.view import View
+from sageworks.core.views import View
 
 # Show debug calls
 logging.getLogger("sageworks").setLevel(logging.DEBUG)
