@@ -45,26 +45,16 @@ class ParameterStore:
         ```
     """
 
-    def __init__(self, prefix: Union[str, None] = "/sageworks"):
-        """ParameterStore Init Method
-
-        Args:
-            prefix (str): The prefix for all parameter names (default: "/sageworks")
-        """
+    def __init__(self):
+        """ParameterStore Init Method"""
         self.log = logging.getLogger("sageworks")
+        self.scope_prefix = "/sageworks"
 
         # Initialize a SageWorks Session (to assume the SageWorks ExecutionRole)
         self.boto3_session = AWSSession().boto3_session
 
         # Create a Systems Manager (SSM) client for Parameter Store operations
         self.ssm_client = self.boto3_session.client("ssm")
-
-        # Give some admonition if the prefix is not set
-        if prefix is None:
-            self.log.warning("No prefix set, you have access to all parameters, be responsible :)")
-
-        # Prefix all parameter names
-        self.prefix = prefix + "/" if prefix else "/"
 
     def list(self) -> list:
         """List all parameters under the prefix in the AWS Parameter Store.
@@ -73,10 +63,11 @@ class ParameterStore:
             list: A list of parameter names and details.
         """
         try:
-            # Add the ParameterFilters if a prefix other than "/" is used
+            # Set up parameters for our search
             params = {"MaxResults": 50}
-            if self.prefix != "/":
-                params["ParameterFilters"] = [{"Key": "Name", "Option": "BeginsWith", "Values": [self.prefix]}]
+
+            # This can filter based on prefix (we're not currently using this)
+            # params["ParameterFilters"] = [{"Key": "Name", "Option": "BeginsWith", "Values": [self.prefix]}]
 
             # Initialize the list to collect parameter names
             all_parameters = []
@@ -114,12 +105,6 @@ class ParameterStore:
             Union[str, list, dict, None]: The value of the parameter or None if not found.
         """
         try:
-            # Add the prefix to the parameter name
-            name = self.prefix + name
-
-            # Remove any double // in the name
-            name = name.replace("//", "/")
-
             # Retrieve the parameter from Parameter Store
             response = self.ssm_client.get_parameter(Name=name, WithDecryption=decrypt)
             value = response["Parameter"]["Value"]
@@ -147,20 +132,21 @@ class ParameterStore:
                 self.log.error(f"Failed to get parameter '{name}': {e}")
             return None
 
-    def add(self, name: str, value, overwrite: bool = False):
+    def add(self, name: str, value, overwrite: bool = False, outside_scope: bool = False):
         """Add or update a parameter in the AWS Parameter Store.
 
         Args:
             name (str): The name of the parameter.
             value (str | list | dict): The value of the parameter.
             overwrite (bool): Whether to overwrite an existing parameter.
+            outside_scope (bool): Whether to add the parameter outside the scope prefix
         """
         try:
-            # Add the prefix to the parameter name
-            name = self.prefix + name
-
-            # Remove any double // in the name
-            name = name.replace("//", "/")
+            # Check that the name is within the scope prefix
+            if not name.startswith(self.scope_prefix) and not outside_scope:
+                self.log.warning(f"Parameter '{name}' is not within the scope prefix '{self.scope_prefix}'")
+                self.log.warning("Add /sageworks or use the 'outside_scope' flag")
+                return
 
             # Anything that's not a string gets converted to JSON
             if not isinstance(value, str):
@@ -189,15 +175,19 @@ class ParameterStore:
             self.log.critical(f"Failed to add/update parameter '{name}': {e}")
             raise
 
-    def delete(self, name: str):
+    def delete(self, name: str, outside_scope: bool = False):
         """Delete a parameter from the AWS Parameter Store.
 
         Args:
             name (str): The name of the parameter to delete.
+            outside_scope (bool): Whether to delete the parameter outside the scope prefix
         """
         try:
-            # Add the prefix to the parameter name
-            name = self.prefix + name
+            # Check that the name is within the scope prefix
+            if not name.startswith(self.scope_prefix) and not outside_scope:
+                self.log.warning(f"Parameter '{name}' is not within the scope prefix '{self.scope_prefix}'")
+                self.log.warning("Add /sageworks or use the 'outside_scope' flag")
+                return
 
             # Delete the parameter from Parameter Store
             self.ssm_client.delete_parameter(Name=name)
@@ -217,24 +207,25 @@ if __name__ == "__main__":
     print(param_store.list())
 
     # Add a new parameter
-    param_store.add("test", "value", overwrite=True)
+    param_store.add("/sageworks/test", "value", overwrite=True)
 
     # Get the parameter
-    print(f"Getting parameter 'test': {param_store.get('test')}")
+    print(f"Getting parameter 'test': {param_store.get('/sageworks/test')}")
 
     # Add a dictionary as a parameter
     sample_dict = {"key": "str_value", "awesome_value": 4.2}
-    param_store.add("my_data", sample_dict, overwrite=True)
+    param_store.add("/sageworks/my_data", sample_dict, overwrite=True)
 
     # Retrieve the parameter as a dictionary
-    retrieved_value = param_store.get("my_data")
+    retrieved_value = param_store.get("/sageworks/my_data")
     print("Retrieved value:", retrieved_value)
 
     # Delete the parameters
-    # param_store.delete("test")
-    # param_store.delete("my_data")
+    param_store.delete("/sageworks/test")
+    param_store.delete("/sageworks/my_data")
 
-    # Now use a different prefix scope
-    param_store = ParameterStore(prefix=None)
-    print("Listing Parameters...")
-    print(param_store.list())
+    # Out of scope tests
+    param_store.add("test", "value")
+    param_store.add("test", "value", outside_scope=True)
+    param_store.delete("test")
+    param_store.delete("test", outside_scope=True)
