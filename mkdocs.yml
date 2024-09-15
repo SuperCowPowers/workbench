@@ -58,7 +58,7 @@ nav:
   - AWS Lambda Layer: lambda_layer/index.md 
   - AWS CloudWatch: cloudwatch/index.md 
   - AWS Setup: 
-    - Developer SSO Setup: aws_setup/sso_setup.md
+    - AWS CLI/SSO Setup: aws_setup/aws_setup.md
     - Full Pipeline Testing: aws_setup/full_pipeline.md
     - AWS Admin Initial Setup: aws_setup/core_stack.md
     - Dashboard Setup: aws_setup/dashboard_stack.md

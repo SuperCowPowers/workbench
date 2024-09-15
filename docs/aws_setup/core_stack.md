@@ -1,4 +1,4 @@
-# Initial AWS Setup
+# SageWorks AWS Stack
 Welcome to the SageWorks AWS Setup Guide. SageWorks is deployed as an AWS **Stack** following the well architected system practices of AWS. 
 
 !!! warning "AWS Setup can be a bit complex"
@@ -70,7 +70,7 @@ pip install sageworks (if not already installed)
 cd sageworks/aws_setup
 python aws_account_check.py
 <lot of print outs for various checks>
-2023-04-12 11:17:09 (aws_account_check.py:48) INFO AWS Account Clamp: AOK!
+INFO AWS Account Clamp: AOK!
 ```
 
 !!! success

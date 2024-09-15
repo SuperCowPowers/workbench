@@ -1,35 +1,25 @@
-# AWS SSO Setup
+# AWS Setup
 !!!tip inline end "Need AWS Help?"
     The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 ## Get some information
-  - Goto your AWS Identity Center in the AWS Console
+  - Go to your AWS Identity Center in the AWS Console
   - On the right side there will be two important pieces of information
     - Start URL
     - Region 
 
-  If you're connecting to the SCP AWS Account you can use these values
+  **Write these values down**, you'll need them as part of this AWS setup.
 
-  ```
-  Start URL: https://supercowpowers.awsapps.com/start 
-  Region: us-west-2
-  ```
 
 
 ## Install AWS CLI
-**Mac** `brew install awscli`
-    
-**Linux** `pip install awscli`
-
-**Windows**
-
-Download the MSI installer (top right corner on this page) <https://aws.amazon.com/cli/> and follow the installation instructions.
+[AWS CLI Instructions](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
 ## Running the SSO Configuration 
-**Note:** You only need to do this once!
+**Note:** You only need to do this once! Also this will create a NEW profile, so name the profile something like `aws_sso`.
 
 ```
-aws configure sso --profile <whatever you want> (e.g. aws_sso)
+aws configure sso --profile <whatever> (e.g. aws_sso)
 SSO session name (Recommended): sso-session
 SSO start URL []: <the Start URL from info above>
 SSO region []: <the Region from info above>
@@ -60,10 +50,10 @@ Edit your favorite ~/.bashrc ~/.zshrc and add these nice aliases/helper
 
 ```
 # AWS Aliases
-alias bob_sso='export AWS_PROFILE=bob_sso'
+alias aws_sso='export AWS_PROFILE=aws_sso'
 
 # Default AWS Profile
-export AWS_PROFILE=bob_sso
+export AWS_PROFILE=aws_sso
 ```
 
 ## Testing your new AWS Profile
@@ -71,7 +61,7 @@ Make sure your profile is active/set
 
 ```
 env | grep AWS
-AWS_PROFILE=<bob_sso or whatever>
+AWS_PROFILE=<aws_sso or whatever>
 ```
 Now you can list the S3 buckets in the AWS Account
 

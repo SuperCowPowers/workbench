@@ -67,8 +67,8 @@ On the third panel just review the details and hit the 'Add User' button at the 
 Now when the user logs onto the AWS Console they should see something like this:
 <img width="800" alt="Screenshot 2023-05-03 at 9 21 27 AM" src="https://user-images.githubusercontent.com/4806709/235970829-d1fdf1a8-84a2-46ca-a20e-143664715531.png">
 
-### SSO Setup for Command Line/Python Usage
-Please see our [SSO Setup](sso_setup.md)
+### AWS CLI/SSO Setup for Command Line/Python Usage
+Please see our [AWS Setup](aws_setup.md)
 
  
 ## AWS Resources

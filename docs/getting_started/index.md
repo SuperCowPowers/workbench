@@ -5,7 +5,9 @@ For the initial setup of SageWorks we'll be using the SageWorks REPL. When you s
     The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 ## Initial Setup/Config
-**Notes:** Use the SageWorks REPL to setup your AWS connection for both API Usage (Data Scientists/Engineers) and AWS Initial Setup (AWS Folks). Also if you don't already have an AWS Profile or SSO Setup you'll need to do that first [Developer SSO Setup](../aws_setup/sso_setup.md) 
+**Notes:** SageWorks uses your existing AWS account/profile/SSO. So if you don't already have an AWS Profile or SSO Setup you'll need to do that first [AWS Setup](../aws_setup/aws_setup.md)
+
+Okay so **after** you've completed your [AWS Setup](../aws_setup/aws_setup.md) you can now install SageWorks.
 
 ```
 > pip install sageworks
