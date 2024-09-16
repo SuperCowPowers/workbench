@@ -325,7 +325,7 @@ if __name__ == "__main__":
     plugin_pages = manager.get_pages()
 
     # Get css files
-    plugin_pages = manager.get_css_files()
+    css_files = manager.get_css_files()
 
     # Get all the plugins
     pprint(manager.get_all_plugins())
