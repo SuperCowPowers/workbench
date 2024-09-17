@@ -15,28 +15,52 @@ Many classes in SageWorks need additional high-level material that covers class 
 
 Each plugin class inherits from the SageWorks PluginInterface class and needs to set two attributes and implement two methods. These requirements are set so that each Plugin will conform to the Sageworks infrastructure; if the required attributes and methods aren’t included in the class definition, errors will be raised during tests and at runtime.
 
+**Note:** For full code see [Model Plugin Example](https://github.com/SuperCowPowers/sageworks/blob/main/examples/plugins/web_components/model_plugin.py)
+
 ```
 
-from sageworks.web_components.plugin_interface import PluginInterface, PluginPage
+class ModelPlugin(PluginInterface):
+    """MyModelPlugin Component"""
 
-class MyPlugin(PluginInterface):
-    """My Awesome Component"""
-
-    # Initialize the required attributes"""
-    plugin_page = PluginPage.MODEL
+    """Initialize this Plugin Component """
+    auto_load_page = PluginPage.MODEL
     plugin_input_type = PluginInputType.MODEL
-    
-    # Implement the two methods
-    def create_component(self, component_id: str) -> ComponentTypes:
-        < Function logic which creates a Dash Component >
-        return dcc.Graph(id=component_id, figure=self.waiting_figure())
 
-    def update_content(self, data_object: SageworksObject) -> ContentTypes:
-        < Function logic which creates a figure (go.Figure) 
-        return figure
+    def create_component(self, component_id: str) -> dcc.Graph:
+        """Create the container for this component
+        Args:
+            component_id (str): The ID of the web component
+        Returns:
+            dcc.Graph: The EndpointTurbo Component
+        """
+        self.component_id = component_id
+        self.container = dcc.Graph(id=component_id, ...)
+
+        # Fill in plugin properties
+        self.properties = [(self.component_id, "figure")]
+
+        # Return the container
+        return self.container
+
+    def update_properties(self, model: Model, **kwargs) -> list:
+        """Update the properties for the plugin.
+
+        Args:
+            model (Model): An instantiated Model object
+            **kwargs: Additional keyword arguments
+
+        Returns:
+            list: A list of the updated property values
+        """
+
+        # Create a pie chart with the endpoint name as the title
+        pie_figure = go.Figure(data=..., ...)
+
+        # Return the updated property values for the plugin
+        return [pie_figure]
+
 ```
   
-
 
 
 ### Required Attributes
