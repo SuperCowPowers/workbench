@@ -42,7 +42,7 @@ class MDQPluginPage:
             layout=self.page_layout(),
         )
 
-        # Populate the FeatureSet table with data
+        # Populate the table with data about the FeatureSets
         feature_sets = self.meta.feature_sets()
         feature_sets["uuid"] = feature_sets["Feature Group"]
         feature_sets["id"] = range(len(feature_sets))

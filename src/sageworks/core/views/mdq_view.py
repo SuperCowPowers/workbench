@@ -37,11 +37,9 @@ class MDQView:
             source_table (str, optional): The table/view to create the view from. Defaults to None
         """
         self.log = artifact.log
-
-        # We're going to use the PandasToView class internally
-        self.cv_with_df = PandasToView("mdq", artifact, source_table)
-        self.data_source = self.cv_with_df.data_source
-        self.source_table = self.cv_with_df.source_table
+        self.view_name = "mdq"
+        self.data_source = artifact.data_source if isinstance(artifact, FeatureSet) else artifact
+        self.source_table = source_table if source_table else self.data_source.uuid
 
     def create(self, model: Model, id_column: str) -> Union[View, None]:
         """Create a Model Data Quality View: A View that computes various model data quality metrics
@@ -61,6 +59,13 @@ class MDQView:
 
         # Make sure the target and features are in the data_source
         df = self.data_source.query(f"SELECT * FROM {self.source_table}")
+
+        # Super Hack
+        # import numpy as np
+        # df["udm_asy_res_value"] = df["udm_asy_res_value"].replace(0, 1e-10)
+        # df["log_s"] = np.log10(df["udm_asy_res_value"] / 1e6)
+        # target = "log_s"
+
         ds_columns = df.columns
         if target not in ds_columns:
             self.log.error(f"Target column {target} not found in {self.data_source.uuid}. Cannot create MDQ View.")
@@ -116,7 +121,7 @@ class MDQView:
         mdq_df = mdq_df.merge(residuals_df[new_columns], on=id_column, how="left")
 
         # Call our internal PandasToView to create the Model Data Quality View
-        return self.cv_with_df.create(df=mdq_df, id_column=id_column)
+        return PandasToView.create(self.view_name, self.data_source, df=mdq_df, id_column=id_column)
 
 
 if __name__ == "__main__":
