@@ -116,7 +116,7 @@ class ScatterPlot(PluginInterface):
 
         # Grab the dataframe from the input data object
         if isinstance(input_data, (DataSource, FeatureSet)):
-            self.df = input_data.pull_dataframe()
+            self.df = input_data.view("display").pull_dataframe(limit=1000)
         else:
             self.df = input_data
 

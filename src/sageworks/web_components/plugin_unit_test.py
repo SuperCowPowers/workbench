@@ -3,7 +3,7 @@ from dash import html, Output, Input
 
 # SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginInputType
-from sageworks.api import FeatureSet, Model, Endpoint, Meta
+from sageworks.api import DataSource, FeatureSet, Model, Endpoint, Meta
 from sageworks.api.pipeline import Pipeline
 from sageworks.core.artifacts.graph_core import GraphCore
 
@@ -57,8 +57,11 @@ class PluginUnitTest:
             prevent_initial_call=True,
         )
         def update_plugin_properties(n_clicks):
-            # Simulate updating the plugin with a FeatureSet, Model, Endpoint, or Model Table
-            if plugin_input_type == PluginInputType.FEATURE_SET:
+            # Simulate updating the plugin with a DataSource, FeatureSet, Model, Endpoint, or Model Table
+            if plugin_input_type == PluginInputType.DATA_SOURCE:
+                data_source = self.input_data if self.input_data is not None else DataSource("abalone_data")
+                updated_properties = self.plugin.update_properties(data_source, **self.kwargs)
+            elif plugin_input_type == PluginInputType.FEATURE_SET:
                 feature_set = self.input_data if self.input_data is not None else FeatureSet("abalone_features")
                 updated_properties = self.plugin.update_properties(feature_set, **self.kwargs)
             elif plugin_input_type == PluginInputType.MODEL:
