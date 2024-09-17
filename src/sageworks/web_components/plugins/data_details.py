@@ -4,8 +4,7 @@ from typing import Union
 import logging
 
 # Dash Imports
-from dash import html, callback, no_update, dcc
-from dash.dependencies import Input, Output
+from dash import html, dcc
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet

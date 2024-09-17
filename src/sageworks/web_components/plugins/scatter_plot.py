@@ -62,20 +62,6 @@ class ScatterPlot(PluginInterface):
         }
         checklist_style = {"flex": "1", "color": "white" if is_dark_theme else "black"}
 
-        # Add custom CSS for the dropdown menu
-        custom_css = {
-            "background-color": "#333" if is_dark_theme else "white",  # Background for the dropdown menu
-            "color": "white" if is_dark_theme else "black",  # Text color for the dropdown options
-        }
-
-        # Add the custom CSS to the app's external stylesheets
-        external_stylesheets = [
-            {
-                "href": "/assets/custom.css",
-                "rel": "stylesheet",
-            }
-        ]
-
         # Fill in plugin properties and signals
         self.properties = [
             (f"{component_id}-graph", "figure"),
