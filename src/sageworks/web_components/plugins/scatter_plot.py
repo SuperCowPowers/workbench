@@ -3,6 +3,7 @@ import pandas as pd
 from dash import dcc, html, callback, Input, Output
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
+import dash_bootstrap_components as dbc  # Import Dash Bootstrap Components
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
@@ -16,11 +17,23 @@ class ScatterPlot(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.FEATURE_SET
 
-    def __init__(self):
-        """Initialize the Scatter Plot Plugin."""
+    def __init__(self, theme: str = "LIGHT"):
+        """Initialize the Scatter Plot Plugin.
+
+        Args:
+            theme (str): The theme to use for the plot. Default is "DARKLY".
+        """
         self.component_id = None
         self.hover_columns = []
         self.df = None
+
+        # Store the theme for the plot
+        if theme == "DARKLY":
+            self.theme = dbc.themes.DARKLY
+            self.dark_theme = True
+        else:
+            self.theme = dbc.themes.BOOTSTRAP
+            self.dark_theme = False
 
         # Call the parent class constructor
         super().__init__()
@@ -35,6 +48,33 @@ class ScatterPlot(PluginInterface):
             html.Div: A Dash Div Component containing the graph and dropdowns.
         """
         self.component_id = component_id
+
+        # Determine if the theme is dark
+        is_dark_theme = self.theme == dbc.themes.DARKLY
+
+        # Styles for components based on the theme
+        label_style = {"color": "white" if is_dark_theme else "black", "marginRight": "5px"}
+        dropdown_style = {
+            "flex": "1",
+            "backgroundColor": "#333" if is_dark_theme else "white",
+            "color": "white" if is_dark_theme else "black",
+            "border": "1px solid #444" if is_dark_theme else "1px solid #ccc",
+        }
+        checklist_style = {"flex": "1", "color": "white" if is_dark_theme else "black"}
+
+        # Add custom CSS for the dropdown menu
+        custom_css = {
+            "background-color": "#333" if is_dark_theme else "white",  # Background for the dropdown menu
+            "color": "white" if is_dark_theme else "black",  # Text color for the dropdown options
+        }
+
+        # Add the custom CSS to the app's external stylesheets
+        external_stylesheets = [
+            {
+                "href": "/assets/custom.css",
+                "rel": "stylesheet",
+            }
+        ]
 
         # Fill in plugin properties and signals
         self.properties = [
@@ -58,32 +98,35 @@ class ScatterPlot(PluginInterface):
                 ),
                 html.Div(
                     [
-                        html.Label("X", style={"marginRight": "5px"}),
+                        html.Label("X", style=label_style),
                         dcc.Dropdown(
                             id=f"{component_id}-x-dropdown",
                             placeholder="Select X-axis",
                             value=None,
-                            style={"flex": "1"},
+                            style=dropdown_style,
+                            className="custom-dropdown" if is_dark_theme else "",
                         ),
-                        html.Label("Y", style={"marginLeft": "20px", "marginRight": "5px"}),
+                        html.Label("Y", style={**label_style, "marginLeft": "20px"}),
                         dcc.Dropdown(
                             id=f"{component_id}-y-dropdown",
                             placeholder="Select Y-axis",
                             value=None,
-                            style={"flex": "1"},
+                            style=dropdown_style,
+                            className="custom-dropdown" if is_dark_theme else "",
                         ),
-                        html.Label("Color", style={"marginLeft": "20px", "marginRight": "5px"}),
+                        html.Label("Color", style={**label_style, "marginLeft": "20px"}),
                         dcc.Dropdown(
                             id=f"{component_id}-color-dropdown",
                             placeholder="Select Color",
                             value=None,
-                            style={"flex": "1"},
+                            style=dropdown_style,
+                            className="custom-dropdown" if is_dark_theme else "",
                         ),
                         dcc.Checklist(
                             id=f"{component_id}-regression-line",
                             options=[{"label": "Regression Line", "value": "show"}],
                             value=[],
-                            style={"flex": "1"},
+                            style=checklist_style,
                         ),
                     ],
                     style={
@@ -176,6 +219,7 @@ class ScatterPlot(PluginInterface):
             [0.67, "rgb(140, 140, 48)"],
             [1.0, "rgb(160, 64, 64)"],
         ]
+
         # Create Plotly Scatter Plot
         figure = go.Figure(
             data=go.Scattergl(
@@ -213,15 +257,16 @@ class ScatterPlot(PluginInterface):
                 y1=max_val,
             )
 
-        # Just some fine-tuning of the plot
+        # Apply the selected theme
+        plotly_theme = "plotly_dark" if self.dark_theme else "plotly"
         figure.update_layout(
+            template=plotly_theme,
             margin={"t": 40, "b": 40, "r": 40, "l": 40, "pad": 0},
             xaxis=dict(title=x_col, tickformat=".2f"),  # Add x-axis title
             yaxis=dict(title=y_col, tickformat=".2f"),  # Add y-axis title
             showlegend=False,  # Remove legend
             dragmode="pan",
         )
-
         return figure
 
     def register_internal_callbacks(self):
