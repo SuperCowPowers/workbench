@@ -1,5 +1,6 @@
 import dash
 from dash import html, Output, Input
+import dash_bootstrap_components as dbc
 
 # SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginInputType
@@ -31,7 +32,7 @@ class PluginUnitTest:
         self.component = self.plugin.create_component(f"{self.plugin.__class__.__name__.lower()}_test")
 
         # Create the Dash app
-        self.app = dash.Dash(__name__)
+        self.app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 
         # Set up the layout
         layout_children = [self.component, html.Button("Update Plugin", id="update-button")]
