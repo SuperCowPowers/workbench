@@ -78,6 +78,11 @@ class FeatureSetCore(Artifact):
         # All done
         self.log.info(f"FeatureSet Initialized: {self.uuid}...")
 
+    @property
+    def table(self) -> str:
+        """Get the base table name for this FeatureSet"""
+        return self.data_source.table
+
     def refresh_meta(self):
         """Internal: Refresh our internal AWS Feature Store metadata"""
         self.log.info("Calling refresh_meta() on the underlying DataSource")
@@ -411,6 +416,7 @@ class FeatureSetCore(Artifact):
         from sageworks.core.views import TrainingView
 
         # Create a NEW training view
+        self.log.important(f"Setting Training Holdouts: {len(holdout_ids)} ids...")
         TrainingView.create(self, id_column=id_column, holdout_ids=holdout_ids)
 
     def delete_views(self):

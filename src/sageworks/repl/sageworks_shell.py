@@ -238,6 +238,7 @@ class SageWorksShell:
 
         # These are 'nice to have' imports
         self.commands["pd"] = importlib.import_module("pandas")
+        self.commands["wr"] = importlib.import_module("awswrangler")
         self.commands["pprint"] = importlib.import_module("pprint").pprint
 
     def help(self, *args):
