@@ -71,7 +71,9 @@ class View:
 
             # A direct double check before we auto-create
             if not self.exists(skip_cache=True):
-                self.log.important(f"View {self.view_name} for {self.artifact_name} doesn't exist, attempting to auto-create...")
+                self.log.important(
+                    f"View {self.view_name} for {self.artifact_name} doesn't exist, attempting to auto-create..."
+                )
                 self.auto_created = self._auto_create_view()
 
                 # Check for failure of the auto-creation
