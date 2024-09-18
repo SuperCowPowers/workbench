@@ -16,11 +16,11 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.34">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.35">
     
     
       
-        <title>0.8.13 - SageWorks</title>
+        <title>0.8.14 - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-0813" class="md-skip">
+        <a href="#release-0814" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              0.8.13
+              0.8.14
             
           </span>
         </div>
@@ -1849,7 +1849,7 @@
           
   
   <span class="md-ellipsis">
-    0.8.13
+    0.8.14
   </span>
   
 
@@ -1860,7 +1860,7 @@
         
   
   <span class="md-ellipsis">
-    0.8.13
+    0.8.14
   </span>
   
 
@@ -1894,6 +1894,15 @@
   <a href="#api-changes" class="md-nav__link">
     <span class="md-ellipsis">
       API Changes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bug Fixes
     </span>
   </a>
   
@@ -2243,6 +2252,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bug Fixes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#questions" class="md-nav__link">
     <span class="md-ellipsis">
       Questions?
@@ -2266,13 +2284,13 @@
                   
 
 
-<h1 id="release-0813">Release 0.8.13</h1>
+<h1 id="release-0814">Release 0.8.14</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
 <p>The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines.</p>
-<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.11</code> to <code>0.8.13</code></p>
+<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.11</code> to <code>0.8.14</code></p>
 <h3 id="general">General</h3>
 <p>The View classes have finished their initial refactoring. The 'read' class <code>View()</code> can be constructed either directly or with the <code>ds/fs.view("display")</code> methods. See <a href="../../api_classes/views/">Views</a> for more details. There also a set of classes for constructing views, please see <a href="../../core_classes/views/overview/">View Overview</a></p>
 <h3 id="api-changes">API Changes</h3>
@@ -2286,6 +2304,14 @@
 </span></code></pre></div>
 </li>
 </ul>
+<h3 id="bug-fixes">Bug Fixes</h3>
+<p><strong>Fixed:</strong> There was a corner case where if you had the following sequence:</p>
+<ul>
+<li>New FeatureSet without a training view</li>
+<li>Created a traiing view (like with <code>set_training_holdouts()</code> </li>
+<li>Immediately query/pull from the FS training view</li>
+</ul>
+<p>The corner case was a race-condition where the FeatureSet would not 'know' that a training view was already there and would create a default training view.</p>
 <h3 id="questions">Questions?</h3>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
 <p>The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
@@ -2335,7 +2361,7 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.07f07601.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.56dfad97.min.js"></script>
