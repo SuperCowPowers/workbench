@@ -93,7 +93,7 @@ class PluginInterface(ComponentInterface):
             raise TypeError("Subclasses must define a 'plugin_input_type' of type PluginInputType")
 
     # This subclass check ensures that a subclass of PluginInterface has all required attributes, methods,
-    # and signatures. It returns False any thing is incorrect enabling runtime validation for plugins.
+    # and signatures. It returns False if anything is incorrect enabling runtime validation for plugins.
     # The plugin loader uses issubclass(subclass, cls) to verify plugin subclasses.
     @classmethod
     def __subclasshook__(cls, subclass):

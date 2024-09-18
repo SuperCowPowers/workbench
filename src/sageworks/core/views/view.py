@@ -69,15 +69,18 @@ class View:
         self.auto_created = False
         if kwargs.get("auto_create_view", True) and not self.exists():
 
-            # Auto-create the view
-            if self._auto_create_view():
-                self.auto_created = True
-            else:
-                self.log.error(
-                    f"View {self.view_name} for {self.artifact_name} doesn't exist and cannot be auto-created..."
-                )
-                self.view_name = self.columns = self.column_types = self.source_table = self.base_table_name = None
-                return
+            # A direct double check before we auto-create
+            if not self.exists(skip_cache=True):
+                self.log.important(f"View {self.view_name} for {self.artifact_name} doesn't exist, attempting to auto-create...")
+                self.auto_created = self._auto_create_view()
+
+                # Check for failure of the auto-creation
+                if not self.auto_created:
+                    self.log.error(
+                        f"View {self.view_name} for {self.artifact_name} doesn't exist and cannot be auto-created..."
+                    )
+                    self.view_name = self.columns = self.column_types = self.source_table = self.base_table_name = None
+                    return
 
         # Now fill some details about the view
         self.columns, self.column_types, self.source_table, self.join_view = view_details(
@@ -161,15 +164,21 @@ class View:
         self.log.info("Sleeping for 3 seconds after dropping view to allow AWS to catch up...")
         time.sleep(3)
 
-    def exists(self) -> bool:
+    def exists(self, skip_cache: bool = False) -> bool:
         """Check if the view exists in the database
 
+        Args:
+            skip_cache (bool): Skip the cache and check the database directly (default: False)
         Returns:
             bool: True if the view exists, False otherwise.
         """
         # The BaseView always exists
         if self.view_name == "base":
             return True
+
+        # If we're skipping the cache, we need to check the database directly
+        if skip_cache:
+            return self._check_database()
 
         # Use the meta class to see if the view exists
         views_df = self.meta.views(self.database)
@@ -188,6 +197,16 @@ class View:
         if self.view_name == "base":
             return True
 
+        # Check the database directly
+        if not self._check_database():
+            self._auto_create_view()
+
+    def _check_database(self) -> bool:
+        """Internal: Check if the view exists in the database
+
+        Returns:
+            bool: True if the view exists, False otherwise
+        """
         # Query to check if the table/view exists
         check_table_query = f"""
         SELECT table_name
@@ -195,8 +214,7 @@ class View:
         WHERE table_schema = '{self.database}' AND table_name = '{self.table}'
         """
         _df = self.data_source.query(check_table_query)
-        if _df.empty:
-            self._auto_create_view()
+        return not _df.empty
 
     def _auto_create_view(self) -> bool:
         """Internal: Automatically create a view training, display, and computation views
