@@ -101,9 +101,9 @@ class PluginManager:
                                 # PluginInterface has additional information for failed validation
                                 valid, validation_error = PluginInterface.validate_subclass(attr)
                                 self.log.error(f"Plugin '{attr_name}' failed validation:")
-                                self.log.error(f"\t\tFile: {os.path.join(type_dir, filename)}")
-                                self.log.error(f"\t\tClass: {attr_name}")
-                                self.log.error(f"\t\tDetails: {filename} {validation_error}")
+                                self.log.error(f"\tFile: {os.path.join(type_dir, filename)}")
+                                self.log.error(f"\tClass: {attr_name}")
+                                self.log.error(f"\tDetails: {filename} {validation_error}")
 
                         # For views, check if the class is a subclass of WebView
                         elif plugin_type == "views" and issubclass(attr, WebView):
