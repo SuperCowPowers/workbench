@@ -203,7 +203,9 @@ class PluginInterface(ComponentInterface):
 
         if method_name == "create_component":
             if not issubclass(actual_return_type, Component):
-                return f"Incorrect return type for {method_name} (expected Component, got {actual_return_type.__name__})"
+                return (
+                    f"Incorrect return type for {method_name} (expected Component, got {actual_return_type.__name__})"
+                )
         elif method_name == "update_properties":
             if not (actual_return_type == list or get_origin(actual_return_type) is list):
                 return f"Incorrect return type for {method_name} (expected list, got {actual_return_type.__name__})"
