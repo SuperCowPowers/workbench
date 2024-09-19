@@ -1,8 +1,6 @@
-"""An abstract class that defines the web component interface for SageWorks"""
-
 from abc import abstractmethod
-from inspect import signature
-from typing import Union, get_args, get_origin
+import inspect
+from typing import Union, Tuple, get_args, get_origin
 from enum import Enum
 from dash.development.base_component import Component
 
@@ -93,14 +91,12 @@ class PluginInterface(ComponentInterface):
             raise TypeError("Subclasses must define a 'plugin_input_type' of type PluginInputType")
 
     # This subclass check ensures that a subclass of PluginInterface has all required attributes, methods,
-    # and signatures. It returns False if anything is incorrect enabling runtime validation for plugins.
-    # The plugin loader uses issubclass(subclass, cls) to verify plugin subclasses.
+    # and signatures. It returns True, False, or NotImplemented to support issubclass checks.
     @classmethod
-    def __subclasshook__(cls, subclass):
+    def __subclasshook__(cls, subclass) -> Union[bool, type(NotImplemented)]:
         if cls is PluginInterface:
             # Check if the subclass has all the required attributes
             if not all(hasattr(subclass, attr) for attr in ("auto_load_page", "plugin_input_type")):
-                cls.log.warning(f"Subclass {subclass.__name__} is missing required attributes")
                 return False
 
             # Check if the subclass has all the required methods with correct signatures
@@ -108,67 +104,97 @@ class PluginInterface(ComponentInterface):
             for method in required_methods:
                 # Check for the presence of the method
                 if not hasattr(subclass, method):
-                    cls.log.warning(f"Subclass {subclass.__name__} is missing required method {method}")
                     return False
 
                 # Check if the method is implemented by the subclass itself
                 subclass_method = getattr(subclass, method)
                 if subclass_method.__qualname__.split(".")[0] != subclass.__name__:
-                    cls.log.warning(f"Subclass {subclass.__name__} has not implemented the method {method}")
                     return False
 
-                # Check argument types
+                # Check argument types and return type
                 base_class_method = getattr(cls, method)
                 arg_type_error = cls._check_argument_types(base_class_method, subclass_method)
-                if arg_type_error:
-                    cls.log.warning(f"Subclass {subclass.__name__} error in method '{method}': {arg_type_error}")
-                    return False
-
-                # Check return type
                 return_type_error = cls._check_return_type(base_class_method, subclass_method)
-                if return_type_error:
-                    cls.log.warning(f"Subclass {subclass.__name__} error in method '{method}': {return_type_error}")
+
+                if arg_type_error or return_type_error:
                     return False
 
             # If all checks pass, return True
             return True
         return NotImplemented
 
-    # Helper function to check if an actual type is a subtype of any expected types
+    # Return detailed validation information
+    @classmethod
+    def validate_subclass(cls, subclass) -> Tuple[bool, str]:
+        """Validates the subclass and returns a detailed description of any issues."""
+
+        # Check required attributes
+        if not all(hasattr(subclass, attr) for attr in ("auto_load_page", "plugin_input_type")):
+            return False, f"Missing required attributes in {subclass.__name__}"
+
+        # Get required abstract methods
+        required_methods = set(cls.__abstractmethods__)
+
+        for method in required_methods:
+            if not hasattr(subclass, method):
+                return False, f"Missing required method: {method} in {subclass.__name__}"
+
+            subclass_method = getattr(subclass, method)
+
+            # Check if method is implemented in the subclass itself
+            if subclass_method.__qualname__.split(".")[0] != subclass.__name__:
+                # Get the line number for the method
+                method_info = inspect.getsourcelines(subclass_method)
+                line_number = method_info[1]
+                return False, f"Method {method} is not implemented by {subclass.__name__} (line {line_number})"
+
+            # Check argument types
+            base_class_method = getattr(cls, method)
+            arg_type_error = cls._check_argument_types(base_class_method, subclass_method)
+            if arg_type_error:
+                method_info = inspect.getsourcelines(subclass_method)
+                line_number = method_info[1]
+                return False, f"(line {line_number}): {arg_type_error}"
+
+            # Check return type
+            return_type_error = cls._check_return_type(base_class_method, subclass_method)
+            if return_type_error:
+                method_info = inspect.getsourcelines(subclass_method)
+                line_number = method_info[1]
+                return False, f"(line {line_number}): {return_type_error}"
+
+        return True, "Subclass validation successful"
+
     @staticmethod
-    def _is_subtype_of_any(actual, expected_types):
-        # If the actual type is a Union, check each type in the Union
+    def _is_subtype_of_any(actual: type, expected_types: tuple) -> bool:
+        """Check if a type is a subtype of any expected types."""
         if get_origin(actual) is Union:
             actual_types = get_args(actual)
             return all(any(issubclass(act, exp) for exp in expected_types) for act in actual_types)
-        # Otherwise, check the single actual type
         return any(issubclass(actual, exp) for exp in expected_types)
 
     @classmethod
-    def _check_argument_types(cls, base_class_method, subclass_method):
-        # Extract expected argument types, excluding 'self'
+    def _check_argument_types(cls, base_class_method, subclass_method) -> Union[None, str]:
+        """Check that argument types match between base class and subclass methods."""
         expected_arg_types = [v for k, v in base_class_method.__annotations__.items() if k != "return" and k != "self"]
         actual_arg_types = [
-            param.annotation for param in signature(subclass_method).parameters.values() if param.name != "self"
+            param.annotation for param in inspect.signature(subclass_method).parameters.values() if param.name != "self"
         ]
 
-        # Iterate over expected and actual argument types together
         for expected, actual in zip(expected_arg_types, actual_arg_types):
-            # If the expected type is a Union, use get_args to extract its arguments
             if get_origin(expected) is Union:
                 expected_types = get_args(expected)
-                # Check if the actual type is a subtype of any of the expected types
                 if not cls._is_subtype_of_any(actual, expected_types):
                     return f"Expected argument types {expected_types} do not include the actual argument type {actual}"
             else:
-                # Direct comparison for non-Union types
                 if expected != actual:
                     return f"Expected argument type {expected} does not match actual argument type {actual}"
 
         return None
 
     @classmethod
-    def _check_return_type(cls, base_class_method, subclass_method):
+    def _check_return_type(cls, base_class_method, subclass_method) -> Union[None, str]:
+        """Check that return types match between base class and subclass methods."""
         method_name = base_class_method.__name__
         actual_return_type = subclass_method.__annotations__.get("return", None)
 
@@ -177,11 +203,9 @@ class PluginInterface(ComponentInterface):
 
         if method_name == "create_component":
             if not issubclass(actual_return_type, Component):
-                return (
-                    f"Incorrect return type for {method_name} (expected Component, got {actual_return_type.__name__})"
-                )
+                return f"Incorrect return type for {method_name} (expected Component, got {actual_return_type.__name__})"
         elif method_name == "update_properties":
-            if not (actual_return_type == list or (getattr(actual_return_type, "__origin__", None) is list)):
+            if not (actual_return_type == list or get_origin(actual_return_type) is list):
                 return f"Incorrect return type for {method_name} (expected list, got {actual_return_type.__name__})"
 
         return None

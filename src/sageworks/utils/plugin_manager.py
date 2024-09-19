@@ -91,20 +91,27 @@ class PluginManager:
 
                     # Check if the attribute is a class and is defined in the module
                     if isinstance(attr, type) and attr.__module__ == module.__name__:
+                        self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
+
                         # For web components, check if the class is a subclass of PluginInterface
-                        if plugin_type == "web_components" and issubclass(attr, PluginInterface):
-                            self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
-                            self.plugins[plugin_type][attr_name] = attr
+                        if plugin_type == "web_components":
+                            if issubclass(attr, PluginInterface):
+                                self.plugins[plugin_type][attr_name] = attr
+                            else:
+                                # PluginInterface has additional information for failed validation
+                                valid, validation_error = PluginInterface.validate_subclass(attr)
+                                self.log.error(f"Plugin '{attr_name}' failed validation:")
+                                self.log.error(f"\t\tFile: {os.path.join(type_dir, filename)}")
+                                self.log.error(f"\t\tClass: {attr_name}")
+                                self.log.error(f"\t\tDetails: {filename} {validation_error}")
 
                         # For views, check if the class is a subclass of WebView
                         elif plugin_type == "views" and issubclass(attr, WebView):
-                            self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
                             self.plugins[plugin_type][attr_name] = attr
 
                         # For pages, check if the class has the required page plugin method (page_setup)
                         elif plugin_type == "pages":
                             if hasattr(attr, "page_setup"):
-                                self.log.important(f"Loading page plugin: {attr_name}")
                                 self.plugins[plugin_type][attr_name] = attr
                             else:
                                 self.log.warning(
@@ -113,7 +120,7 @@ class PluginManager:
 
                         # Unexpected type
                         else:
-                            self.log.warning(f"Class {attr_name} in {filename} invalid {plugin_type} plugin")
+                            self.log.error(f"Unexpected plugin type '{plugin_type}' for plugin '{attr_name}'")
 
             # Check for CSS files
             else:
