@@ -72,6 +72,7 @@ class ScatterPlot(PluginInterface):
                     id=f"{component_id}-graph",
                     figure=self.display_text("Waiting for Data..."),
                     config={"scrollZoom": True},
+                    style={"height": "100"},  # Let it fill height
                 ),
                 html.Div(
                     [
@@ -81,8 +82,8 @@ class ScatterPlot(PluginInterface):
                             className="dropdown",
                             placeholder="Select X-axis",
                             value=None,
-                            style={"min-width": "150px", "width": "auto"},  # Auto-size the dropdown
-                            clearable=False,  # Disable the 'x' to clear the selection
+                            style={"min-width": "150px", "width": "auto"},  # Adjust width
+                            clearable=False,
                         ),
                         html.Label("Y", style={"marginLeft": "20px"}),
                         dcc.Dropdown(
@@ -90,8 +91,8 @@ class ScatterPlot(PluginInterface):
                             className="dropdown",
                             placeholder="Select Y-axis",
                             value=None,
-                            style={"min-width": "150px", "width": "auto"},  # Auto-size the dropdown
-                            clearable=False,  # Disable the 'x'
+                            style={"min-width": "150px", "width": "auto"},  # Adjust width
+                            clearable=False,
                         ),
                         html.Label("Color", style={"marginLeft": "20px"}),
                         dcc.Dropdown(
@@ -99,8 +100,8 @@ class ScatterPlot(PluginInterface):
                             className="dropdown",
                             placeholder="Select Color",
                             value=None,
-                            style={"min-width": "150px", "width": "auto"},  # Auto-size the dropdown
-                            clearable=False,  # Disable the 'x'
+                            style={"min-width": "150px", "width": "auto"},  # Adjust width
+                            clearable=False,
                         ),
                         dcc.Checklist(
                             id=f"{component_id}-regression-line",
@@ -112,11 +113,13 @@ class ScatterPlot(PluginInterface):
                         "display": "flex",
                         "flexDirection": "row",
                         "alignItems": "center",
-                        "justifyContent": "space-between",
+                        "justifyContent": "flex-start",  # Align elements to the left
                         "padding": "10px 0",
+                        "gap": "10px",  # Add space between elements
                     },
                 ),
-            ]
+            ],
+            style={"height": "100%"},  # Let it fill height
         )
 
     def update_properties(self, input_data: Union[DataSource, FeatureSet, pd.DataFrame], **kwargs) -> list:
@@ -245,13 +248,15 @@ class ScatterPlot(PluginInterface):
                 title=x_col,
                 tickformat=".2f",
                 showgrid=True,
-                gridcolor="rgba(100,100,100,0.25)"  # Medium grey
+                gridcolor="rgba(100,100,100,0.25)",  # Medium grey
+                zerolinecolor="rgba(80, 80, 150, 0.5)",  # Blue color for the zero line
             ),
             yaxis=dict(
                 title=y_col,
                 tickformat=".2f",
                 showgrid=True,
-                gridcolor="rgba(100,100,100,0.25)"  # Medium grey
+                gridcolor="rgba(100,100,100,0.25)",  # Medium grey
+                zerolinecolor="rgba(80, 80, 150, 0.5)",  # Blue color for the zero line
             ),
             showlegend=False,  # Remove legend
             dragmode="pan",
