@@ -114,6 +114,8 @@ class SageWorksShell:
         self.commands["config"] = self.show_config
         self.commands["status"] = self.status_description
         self.commands["log"] = logging.getLogger("sageworks")
+        self.commands["params"] = importlib.import_module("sageworks.api.parameter_store").ParameterStore()
+        self.commands["df_store"] = importlib.import_module("sageworks.api.df_store").DFStore()
 
     def start(self):
         """Start the SageWorks IPython shell"""
@@ -219,6 +221,7 @@ class SageWorksShell:
         self.commands["Endpoint"] = importlib.import_module("sageworks.api.endpoint").Endpoint
         self.commands["Monitor"] = importlib.import_module("sageworks.api.monitor").Monitor
         self.commands["ParameterStore"] = importlib.import_module("sageworks.api.parameter_store").ParameterStore
+        self.commands["DFStore"] = importlib.import_module("sageworks.api.df_store").DFStore
         self.commands["PandasToFeatures"] = importlib.import_module(
             "sageworks.core.transforms.pandas_transforms"
         ).PandasToFeatures

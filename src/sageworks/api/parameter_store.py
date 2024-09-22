@@ -154,10 +154,18 @@ class ParameterStore:
 
             # Check size and compress if necessary
             if len(value) > 4096:
-                self.log.warning(f"Parameter size exceeds 4KB: Compressing '{name}'...")
-                compressed_value = zlib.compress(value.encode("utf-8"))
+                self.log.warning(f"Parameter {name} exceeds 4KB ({len(value)} Bytes)  Compressing...")
+                compressed_value = zlib.compress(value.encode("utf-8"), level=9)
                 encoded_value = "COMPRESSED:" + base64.b64encode(compressed_value).decode("utf-8")
 
+                # Report on the size of the compressed value
+                compressed_size = len(compressed_value)
+                if compressed_size > 4096:
+                    self.log.error(f"Compressed size {compressed_size} bytes")
+                    self.log.error("Cannot store compressed parameter greater than 4KB")
+                    return
+
+                # Add or update the compressed parameter in Parameter Store
                 try:
                     # Add or update the compressed parameter in Parameter Store
                     self.ssm_client.put_parameter(Name=name, Value=encoded_value, Type="String", Overwrite=overwrite)
@@ -194,6 +202,10 @@ class ParameterStore:
             self.log.info(f"Parameter '{name}' deleted successfully.")
         except Exception as e:
             self.log.error(f"Failed to delete parameter '{name}': {e}")
+
+    def __repr__(self):
+        """Return a string representation of the ParameterStore object."""
+        return "\n".join(self.list())
 
 
 if __name__ == "__main__":
