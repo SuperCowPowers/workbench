@@ -17,18 +17,18 @@ class ScatterPlot(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.FEATURE_SET
 
-    def __init__(self, theme: str = "LIGHT"):
+    def __init__(self, theme: str = "DARK"):
         """Initialize the Scatter Plot Plugin.
 
         Args:
-            theme (str): The theme to use for the plot. Default is "DARKLY".
+            theme (str): The theme to use for the plot. ("LIGHT" or "DARK" default is "DARK")
         """
         self.component_id = None
         self.hover_columns = []
         self.df = None
 
         # Store the theme for the plot
-        if theme == "DARKLY":
+        if theme == "DARK":
             self.theme = dbc.themes.DARKLY
             self.dark_theme = True
         else:
@@ -49,19 +49,6 @@ class ScatterPlot(PluginInterface):
         """
         self.component_id = component_id
 
-        # Determine if the theme is dark
-        is_dark_theme = self.theme == dbc.themes.DARKLY
-
-        # Styles for components based on the theme
-        label_style = {"color": "white" if is_dark_theme else "black", "marginRight": "5px"}
-        dropdown_style = {
-            "flex": "1",
-            "backgroundColor": "#333" if is_dark_theme else "white",
-            "color": "white" if is_dark_theme else "black",
-            "border": "1px solid #444" if is_dark_theme else "1px solid #ccc",
-        }
-        checklist_style = {"flex": "1", "color": "white" if is_dark_theme else "black"}
-
         # Fill in plugin properties and signals
         self.properties = [
             (f"{component_id}-graph", "figure"),
@@ -75,6 +62,10 @@ class ScatterPlot(PluginInterface):
         ]
         self.signals = [(f"{component_id}-graph", "hoverData")]
 
+        # Create the Composite Component
+        # - A Graph Component
+        # - Dropdowns for X, Y, and Color
+        # - Checkbox for Regression Line
         return html.Div(
             [
                 dcc.Graph(
@@ -84,35 +75,37 @@ class ScatterPlot(PluginInterface):
                 ),
                 html.Div(
                     [
-                        html.Label("X", style=label_style),
+                        html.Label("X"),
                         dcc.Dropdown(
                             id=f"{component_id}-x-dropdown",
+                            className="dropdown",
                             placeholder="Select X-axis",
                             value=None,
-                            style=dropdown_style,
-                            className="custom-dropdown" if is_dark_theme else "",
+                            style={"min-width": "150px", "width": "auto"},  # Auto-size the dropdown
+                            clearable=False,  # Disable the 'x' to clear the selection
                         ),
-                        html.Label("Y", style={**label_style, "marginLeft": "20px"}),
+                        html.Label("Y", style={"marginLeft": "20px"}),
                         dcc.Dropdown(
                             id=f"{component_id}-y-dropdown",
+                            className="dropdown",
                             placeholder="Select Y-axis",
                             value=None,
-                            style=dropdown_style,
-                            className="custom-dropdown" if is_dark_theme else "",
+                            style={"min-width": "150px", "width": "auto"},  # Auto-size the dropdown
+                            clearable=False,  # Disable the 'x'
                         ),
-                        html.Label("Color", style={**label_style, "marginLeft": "20px"}),
+                        html.Label("Color", style={"marginLeft": "20px"}),
                         dcc.Dropdown(
                             id=f"{component_id}-color-dropdown",
+                            className="dropdown",
                             placeholder="Select Color",
                             value=None,
-                            style=dropdown_style,
-                            className="custom-dropdown" if is_dark_theme else "",
+                            style={"min-width": "150px", "width": "auto"},  # Auto-size the dropdown
+                            clearable=False,  # Disable the 'x'
                         ),
                         dcc.Checklist(
                             id=f"{component_id}-regression-line",
-                            options=[{"label": "Regression Line", "value": "show"}],
+                            options=[{"label": "Diagonal", "value": "show"}],
                             value=[],
-                            style=checklist_style,
                         ),
                     ],
                     style={
@@ -243,15 +236,27 @@ class ScatterPlot(PluginInterface):
                 y1=max_val,
             )
 
-        # Apply the selected theme
+        # Apply the selected theme and set transparent background
         plotly_theme = "plotly_dark" if self.dark_theme else "plotly"
         figure.update_layout(
             template=plotly_theme,
             margin={"t": 40, "b": 40, "r": 40, "l": 40, "pad": 0},
-            xaxis=dict(title=x_col, tickformat=".2f"),  # Add x-axis title
-            yaxis=dict(title=y_col, tickformat=".2f"),  # Add y-axis title
+            xaxis=dict(
+                title=x_col,
+                tickformat=".2f",
+                showgrid=True,
+                gridcolor="rgba(100,100,100,0.25)"  # Medium grey
+            ),
+            yaxis=dict(
+                title=y_col,
+                tickformat=".2f",
+                showgrid=True,
+                gridcolor="rgba(100,100,100,0.25)"  # Medium grey
+            ),
             showlegend=False,  # Remove legend
             dragmode="pan",
+            paper_bgcolor='rgba(0,0,0,0)',  # Set the paper background to transparent
+            plot_bgcolor='rgba(0,0,0,0)',  # Set the plot background to transparent
         )
         return figure
 

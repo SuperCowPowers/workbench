@@ -18,7 +18,7 @@ class MDQPluginPage:
 
     def __init__(self):
         """Initialize the Plugin Page"""
-        self.page_name = "FeatureSets: Model Data Quality"
+        self.page_name = "FeatureSets: Model Data Quality View"
         self.meta = Meta()
 
         # UI Components
