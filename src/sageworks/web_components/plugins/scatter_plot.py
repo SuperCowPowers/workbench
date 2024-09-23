@@ -72,50 +72,51 @@ class ScatterPlot(PluginInterface):
                     id=f"{component_id}-graph",
                     figure=self.display_text("Waiting for Data..."),
                     config={"scrollZoom": True},
-                    style={"height": "100"},  # Let it fill height
+                    style={"height": "100%"},  # Let it fill height
                 ),
                 html.Div(
                     [
-                        html.Label("X"),
+                        html.Label("X", style={"marginLeft": "40px", "marginRight": "5px", "fontWeight": "bold"}),
                         dcc.Dropdown(
                             id=f"{component_id}-x-dropdown",
                             className="dropdown",
                             placeholder="Select X-axis",
                             value=None,
-                            style={"min-width": "150px", "width": "auto"},  # Adjust width
+                            style={"min-width": "50px", "flex": 1},  # Responsive width
                             clearable=False,
                         ),
-                        html.Label("Y", style={"marginLeft": "20px"}),
+                        html.Label("Y", style={"marginLeft": "30px", "marginRight": "5px", "fontWeight": "bold"}),
                         dcc.Dropdown(
                             id=f"{component_id}-y-dropdown",
                             className="dropdown",
                             placeholder="Select Y-axis",
                             value=None,
-                            style={"min-width": "150px", "width": "auto"},  # Adjust width
+                            style={"min-width": "50px", "flex": 1},  # Responsive width
                             clearable=False,
                         ),
-                        html.Label("Color", style={"marginLeft": "20px"}),
+                        html.Label("Color", style={"marginLeft": "30px", "marginRight": "5px", "fontWeight": "bold"}),
                         dcc.Dropdown(
                             id=f"{component_id}-color-dropdown",
                             className="dropdown",
                             placeholder="Select Color",
                             value=None,
-                            style={"min-width": "150px", "width": "auto"},  # Adjust width
+                            style={"min-width": "50px", "flex": 1},  # Responsive width
                             clearable=False,
                         ),
                         dcc.Checklist(
                             id=f"{component_id}-regression-line",
-                            options=[{"label": "Diagonal", "value": "show"}],
+                            options=[{"label": " Diagonal", "value": "show"}],
                             value=[],
+                            style={"margin": "10px"},
                         ),
                     ],
                     style={
                         "display": "flex",
                         "flexDirection": "row",
-                        "alignItems": "center",
-                        "justifyContent": "flex-start",  # Align elements to the left
                         "padding": "10px 0",
-                        "gap": "10px",  # Add space between elements
+                        "justifyContent": "center",
+                        "alignItems": "center",
+                        "width": "100%",  # Ensure the container takes up full width
                     },
                 ),
             ],

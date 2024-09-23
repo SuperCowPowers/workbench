@@ -61,11 +61,23 @@ class MDQPluginPage:
                 dbc.Row(self.feature_sets_table),
                 dbc.Row(
                     [
-                        dbc.Col(self.feature_set_details_component, width=5),
-                        dbc.Col(self.scatter_plot_component, width=7),
-                    ]
+                        dbc.Col(self.feature_set_details_component, width=3),
+                        dbc.Col(
+                            self.scatter_plot_component,
+                            width=9,
+                            style={"height": "100%"},  # Fill up height from parent row
+                        ),
+                    ],
+                    style={"height": "70%"},  # Fill up 70% of the height from parent container
                 ),
-            ]
+            ],
+            style={
+                "display": "flex",
+                "flex-direction": "column",
+                "height": "100vh",
+                "padding": "20px",
+                "box-sizing": "border-box",
+            }
         )
         return layout
 
