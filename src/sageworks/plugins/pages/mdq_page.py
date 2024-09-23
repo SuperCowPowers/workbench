@@ -77,7 +77,7 @@ class MDQPluginPage:
                 "height": "100vh",
                 "padding": "20px",
                 "box-sizing": "border-box",
-            }
+            },
         )
         return layout
 

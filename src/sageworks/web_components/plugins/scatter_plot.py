@@ -261,8 +261,8 @@ class ScatterPlot(PluginInterface):
             ),
             showlegend=False,  # Remove legend
             dragmode="pan",
-            paper_bgcolor='rgba(0,0,0,0)',  # Set the paper background to transparent
-            plot_bgcolor='rgba(0,0,0,0)',  # Set the plot background to transparent
+            paper_bgcolor="rgba(0,0,0,0)",  # Set the paper background to transparent
+            plot_bgcolor="rgba(0,0,0,0)",  # Set the plot background to transparent
         )
         return figure
 
