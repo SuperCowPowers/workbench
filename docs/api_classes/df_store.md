@@ -4,7 +4,7 @@
     Examples of using the Parameter Storage class are listed at the bottom of this page [Examples](#examples).
     
 ## Why DataFrame Storage?
-Great question, there's a couple of reasons. The first is that the Parameter Store in AWS has a 4KB limit, so that won't support any kinda of 'real data'. The second reason is that DataFrames are used as part of the data engineering/science and ML pipeline construction process and having 'named' DataFrames in a common, easy to reach, storage location comes in super useful.
+Great question, there's a couple of reasons. The first is that the Parameter Store in AWS has a 4KB limit, so that won't support any kind of 'real data'. The second reason is that DataFrames are commonly used as part of the data engineering, science, and ML pipeline construction process. Providing storage of **named** DataFrames in an accessible location that can be inspected and used by your ML Team comes in super handy.
 
 ## Efficient Storage
 All DataFrames are stored in the Parquet format using 'snappy' storage. Parquet is a columnar storage format that efficiently handles large datasets, and using Snappy compression reduces file size while maintaining fast read/write speeds.
