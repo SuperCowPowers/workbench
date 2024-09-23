@@ -482,7 +482,15 @@ class EndpointCore(Artifact):
             if error_code == "ModelError":
                 # Report the error and raise an exception
                 self.log.critical(f"Endpoint prediction error: {err.response.get('Message')}")
-                raise
+
+                # If we've retried this already, raise the exception...
+                if self.endpoint_retry >= 1:
+                    raise
+                else:
+                    self.log.error("Sleeping a bit and then retrying the inference...")
+                    time.sleep(60)
+                    self.endpoint_retry += 1
+                    return self._endpoint_error_handling(predictor, feature_df)
 
             # Handle the ModelNotReadyException by checking the error code
             if error_code == "ModelNotReadyException":
@@ -490,11 +498,12 @@ class EndpointCore(Artifact):
                     self.log.critical(f"Endpoint model not ready, raising exception {err}")
                     self.endpoint_retry = 0
                     raise
-                self.endpoint_retry += 1
-                self.log.error(f"Endpoint model not ready: {err}")
-                self.log.error("Waiting and Retrying...")
-                time.sleep(60)
-                return self._endpoint_error_handling(predictor, feature_df)
+                else:
+                    self.endpoint_retry += 1
+                    self.log.error(f"Endpoint model not ready: {err}")
+                    self.log.error("Waiting and Retrying...")
+                    time.sleep(60)
+                    return self._endpoint_error_handling(predictor, feature_df)
 
             # Base case: DataFrame with 1 Row
             if len(feature_df) == 1:
