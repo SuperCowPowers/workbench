@@ -22,7 +22,7 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
     """
 
     def __init__(
-        self, model: Union[RegressorMixin, XGBRegressor] = XGBRegressor, n_splits: int = 5, random_state: int = 42
+        self, model: Union[RegressorMixin, XGBRegressor] = XGBRegressor(), n_splits: int = 5, random_state: int = 42
     ):
         """
         Initializes the ResidualsCalculator with the specified parameters.
@@ -34,7 +34,7 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         """
         self.n_splits = n_splits
         self.random_state = random_state
-        self.model = model()
+        self.model = model
         self.X = None
         self.y = None
 
@@ -44,7 +44,7 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
 
         Args:
             X (pd.DataFrame): The input features.
-            y (pd.Series, optional): The target variable.
+            y (pd.Series): The target variable.
 
         Returns:
             self: Returns an instance of self.
@@ -64,12 +64,11 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         Returns:
             pd.DataFrame: The transformed DataFrame with additional columns.
         """
+        # Set up K-Fold cross-validation
         kf = KFold(n_splits=self.n_splits, shuffle=True, random_state=self.random_state)
 
-        # Initialize arrays to store predictions and residuals
-        predictions = np.empty_like(self.y)
-        residuals = np.empty_like(self.y, dtype=float)
-        residuals_abs = np.empty_like(self.y, dtype=float)
+        # Initialize lists to store predictions and residuals
+        predictions, residuals, residuals_abs = [], [], []
 
         # Perform cross-validation and collect predictions and residuals
         for train_index, test_index in kf.split(self.X):
@@ -86,16 +85,16 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
             residuals_fold = y_test - y_pred
             residuals_abs_fold = np.abs(residuals_fold)
 
-            # Place the predictions and residuals in the correct positions
-            predictions[test_index] = y_pred
-            residuals[test_index] = residuals_fold
-            residuals_abs[test_index] = residuals_abs_fold
+            # Append predictions and residuals to the lists
+            predictions.append(y_pred)
+            residuals.append(residuals_fold)
+            residuals_abs.append(residuals_abs_fold)
 
         # Create a copy of the provided DataFrame and add the new columns
         result_df = X.copy()
-        result_df["prediction"] = predictions
-        result_df["residuals"] = residuals
-        result_df["residuals_abs"] = residuals_abs
+        result_df["prediction"] = np.concatenate(predictions)
+        result_df["residuals"] = np.concatenate(residuals)
+        result_df["residuals_abs"] = np.concatenate(residuals_abs)
 
         # Train on all data and compute residuals for 100% training
         self.model.fit(self.X, self.y)
