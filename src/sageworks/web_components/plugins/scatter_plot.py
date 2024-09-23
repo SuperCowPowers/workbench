@@ -233,7 +233,7 @@ class ScatterPlot(PluginInterface):
             max_val = max(df[x_col].max(), df[y_col].max())
             figure.add_shape(
                 type="line",
-                line=dict(width=5, color="rgba(1.0, 1.0, 1.0, 0.5)"),
+                line=dict(width=4, color="rgba(1.0, 1.0, 1.0, 0.25)"),
                 x0=min_val,
                 x1=max_val,
                 y0=min_val,

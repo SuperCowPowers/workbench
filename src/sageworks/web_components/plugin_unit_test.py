@@ -1,12 +1,20 @@
 import dash
 from dash import html, Output, Input
 import dash_bootstrap_components as dbc
+import logging
+
+# Import the Path class from the pathlib module
+from pathlib import Path
+
 
 # SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginInputType
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint, Meta
 from sageworks.api.pipeline import Pipeline
 from sageworks.core.artifacts.graph_core import GraphCore
+
+# Setup Logging
+log = logging.getLogger("sageworks")
 
 
 class PluginUnitTest:
@@ -32,7 +40,9 @@ class PluginUnitTest:
         self.component = self.plugin.create_component(f"{self.plugin.__class__.__name__.lower()}_test")
 
         # Create the Dash app
-        self.app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
+        assets_dir = Path(__file__).parent.parent.parent.parent / "applications/aws_dashboard/assets"
+        log.important(f"Using assets directory: {assets_dir}")
+        self.app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], assets_folder=assets_dir)
 
         # Set up the layout
         layout_children = [self.component, html.Button("Update Plugin", id="update-button")]
