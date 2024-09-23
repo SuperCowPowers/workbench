@@ -24,9 +24,9 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
     """
 
     def __init__(
-            self,
-            endpoint: Optional[object] = None,
-            reference_model_class: Union[RegressorMixin, XGBRegressor] = XGBRegressor,
+        self,
+        endpoint: Optional[object] = None,
+        reference_model_class: Union[RegressorMixin, XGBRegressor] = XGBRegressor,
     ):
         """
         Initializes the ResidualsCalculator with the specified parameters.
@@ -154,7 +154,7 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         X = X.copy()
         X.loc[:, self.y.name] = self.y
         results_df = self.endpoint.inference(X)
-        predictions = results_df['prediction']
+        predictions = results_df["prediction"]
 
         # Compute residuals and residuals_abs based on the endpoint's predictions
         residuals = self.y - predictions
