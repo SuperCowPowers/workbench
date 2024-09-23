@@ -1,10 +1,10 @@
-"""MDQView Class: A View that computes various model data quality metrics"""
+"""MDQView Class: A View that computes various endpoint data quality metrics"""
 
 from typing import Union
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.api import FeatureSet, Model
+from sageworks.api import FeatureSet, Model, Endpoint
 from sageworks.core.views.view import View
 from sageworks.core.views.pandas_to_view import PandasToView
 from sageworks.algorithms.dataframe.row_tagger import RowTagger
@@ -12,16 +12,16 @@ from sageworks.algorithms.dataframe.residuals_calculator import ResidualsCalcula
 
 
 class MDQView:
-    """MDQView Class: A View that computes various model data quality metrics
+    """MDQView Class: A View that computes various endpoint data quality metrics
 
     Common Usage:
         ```
-        # Grab a FeatureSet and a Model
+        # Grab a FeatureSet and an Endpoint
         fs = FeatureSet("abalone_features")
-        model = Model("abalone-regression")
+        endpoint = Endpoint("abalone-regression-end")
 
         # Create a ModelDataQuality View
-        mdq_view = MDQView.create(fs, model=model, id_column="id")
+        mdq_view = MDQView.create(fs, endpoint=endpoint, id_column="id")
         my_df = mdq_view.pull_dataframe(head=True)
 
         # Query the view
@@ -33,14 +33,14 @@ class MDQView:
     def create(
         cls,
         fs: FeatureSet,
-        model: Model,
+        endpoint: Endpoint,
         id_column: str,
     ) -> Union[View, None]:
         """Create a Model Data Quality View with metrics
 
         Args:
             fs (FeatureSet): The FeatureSet object
-            model (Model): The Model object to use for the target and features
+            endpoint (Endpoint): The Endpoint object to use for the target and features
             id_column (str): The name of the id column (must be defined for join logic)
 
         Returns:
@@ -49,9 +49,10 @@ class MDQView:
         # Log view creation
         fs.log.important("Creating Model Data Quality View...")
 
-        # Get the target and feature columns from the model
-        target = model.target()
-        features = model.features()
+        # Get the target and feature columns from the endpoints model input
+        model_input = Model(endpoint.get_input())
+        target = model_input.target()
+        features = model_input.features()
 
         # Pull in data from the source table
         df = fs.data_source.query(f"SELECT * FROM {fs.data_source.uuid}")
@@ -123,17 +124,20 @@ class MDQView:
 
 if __name__ == "__main__":
     """Exercise the MDQView functionality"""
-    from sageworks.api import FeatureSet, Model
+    from sageworks.api import FeatureSet, Endpoint
 
     # Get the FeatureSet
     my_fs = FeatureSet("abalone_features")
 
-    # Grab the Model
-    my_model = Model("abalone-regression")
+    # Grab the Endpoint
+    my_endpoint = Endpoint("abalone-regression-end")
 
     # Create a MDQView
-    mdq_view = MDQView.create(my_fs, model=my_model, id_column="id")
+    mdq_view = MDQView.create(my_fs, endpoint=my_endpoint, id_column="id")
 
     # Pull the data quality dataframe
     my_df = mdq_view.pull_dataframe(head=True)
     print(my_df)
+
+    # Query the view
+    df = mdq_view.query(f"SELECT * FROM {mdq_view.table} where residuals > 0.5")
