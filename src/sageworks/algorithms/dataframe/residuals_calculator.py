@@ -5,6 +5,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.model_selection import KFold
 from sklearn.base import RegressorMixin
 from xgboost import XGBRegressor
+from sklearn.utils.validation import check_is_fitted
 
 
 class ResidualsCalculator(BaseEstimator, TransformerMixin):
@@ -16,7 +17,7 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
     columns to the input DataFrame.
 
     Attributes:
-        model (Union[RegressorMixin, XGBRegressor]): The machine learning model used for predictions.
+        model_class (Union[RegressorMixin, XGBRegressor]): The machine learning model class used for predictions.
         n_splits (int): Number of splits for cross-validation.
         random_state (int): Random state for reproducibility.
     """
@@ -28,13 +29,14 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         Initializes the ResidualsCalculator with the specified parameters.
 
         Args:
-            model (Union[RegressorMixin, XGBRegressor]): The machine learning model used for predictions.
+            model (Union[RegressorMixin, XGBRegressor]): The machine learning model class used for predictions.
             n_splits (int): Number of splits for cross-validation.
             random_state (int): Random state for reproducibility.
         """
         self.n_splits = n_splits
         self.random_state = random_state
-        self.model = model()
+        self.model_class = model  # Store the class, instantiate the model later
+        self.model = None  # Lazy model initialization
         self.X = None
         self.y = None
 
@@ -44,19 +46,20 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
 
         Args:
             X (pd.DataFrame): The input features.
-            y (pd.Series, optional): The target variable.
+            y (pd.Series): The target variable.
 
         Returns:
             self: Returns an instance of self.
         """
         self.X = X
         self.y = y
+        self.model = self.model_class()  # Initialize the model when fit is called
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Transforms the input DataFrame by adding 'prediction', 'residuals', 'residuals_abs',
-        'residuals_100', and 'residuals_100_abs' columns.
+        'prediction_100', 'residuals_100', and 'residuals_100_abs' columns.
 
         Args:
             X (pd.DataFrame): The input features.
@@ -64,6 +67,8 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         Returns:
             pd.DataFrame: The transformed DataFrame with additional columns.
         """
+        check_is_fitted(self, ['X', 'y'])  # Ensure fit has been called
+
         kf = KFold(n_splits=self.n_splits, shuffle=True, random_state=self.random_state)
 
         # Initialize pandas Series to store predictions and residuals, aligned by index
@@ -92,7 +97,7 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
             residuals_abs.iloc[test_index] = residuals_abs_fold
 
         # Create a copy of the provided DataFrame and add the new columns
-        result_df = X.copy()
+        result_df = X.copy()  # Create a copy to avoid modifying input X directly
         result_df["prediction"] = predictions
         result_df["residuals"] = residuals
         result_df["residuals_abs"] = residuals_abs
@@ -108,22 +113,6 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         result_df["residuals_100_abs"] = residuals_100_abs
 
         return result_df
-
-    def fit_transform(self, X: pd.DataFrame, y: pd.Series, **fit_params) -> pd.DataFrame:
-        """
-        Fits the model and transforms the input DataFrame by adding 'prediction', 'residuals',
-        'residuals_abs', 'residuals_100', and 'residuals_100_abs' columns.
-
-        Args:
-            X (pd.DataFrame): The input features.
-            y (pd.Series, optional): The target variable.
-            **fit_params: Additional fit parameters.
-
-        Returns:
-            pd.DataFrame: The transformed DataFrame with additional columns.
-        """
-        self.fit(X, y)
-        return self.transform(X)
 
 
 if __name__ == "__main__":
@@ -153,7 +142,7 @@ if __name__ == "__main__":
     residual_columns = ["residuals", "residuals_abs", "residuals_100", "residuals_100_abs"]
     residual_df = result_df[residual_columns]
 
-    # Compute percentage of observations with residuals_100_abs > residual_abs
+    # Compute percentage of observations with residuals_100_abs > residuals_abs
     percentage = (result_df["residuals_100_abs"] > result_df["residuals_abs"]).mean()
     print(f"Percentage of observations with residuals_100_abs > residuals_abs: {percentage:.2f}")
 
