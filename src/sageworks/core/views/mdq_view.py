@@ -94,7 +94,7 @@ class MDQView:
         mdq_df["data_quality"] = mdq_df["data_quality_tags"].apply(cls.calculate_data_quality)
 
         # Compute residuals using ResidualsCalculator
-        residuals_calculator = ResidualsCalculator(n_splits=5, random_state=42)
+        residuals_calculator = ResidualsCalculator(endpoint=endpoint)
         residuals_df = residuals_calculator.fit_transform(df[features], df[target])
 
         # Add id_column to the residuals dataframe and merge with mdq_df
