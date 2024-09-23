@@ -1,4 +1,4 @@
-"""DFStore: Manages SageWorks data in AWS S3 using Pandas DataFrames and AWS Wrangler."""
+"""DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy"""
 
 from typing import Union
 import logging
@@ -12,7 +12,7 @@ from sageworks.utils.config_manager import ConfigManager
 
 
 class DFStore:
-    """DFStore: Manages SageWorks data in AWS S3 using Pandas DataFrames.
+    """DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy
 
     Common Usage:
         ```

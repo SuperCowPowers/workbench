@@ -161,8 +161,9 @@ class ParameterStore:
                 # Report on the size of the compressed value
                 compressed_size = len(compressed_value)
                 if compressed_size > 4096:
-                    self.log.error(f"Compressed size {compressed_size} bytes")
-                    self.log.error("Cannot store compressed parameter greater than 4KB")
+                    doc_link = "https://supercowpowers.github.io/sageworks/api_classes/df_store"
+                    self.log.error(f"Compressed size {compressed_size} bytes, cannot store > 4KB")
+                    self.log.error(f"For larger data use the DFStore() class ({doc_link})")
                     return
 
                 # Add or update the compressed parameter in Parameter Store
