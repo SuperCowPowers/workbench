@@ -1,4 +1,5 @@
 """MDQView Class: A View that computes various model data quality metrics"""
+
 from typing import Union
 import pandas as pd
 
@@ -58,6 +59,7 @@ class MDQView:
         # Super Hack
         if "udm_asy_res_value" in df.columns:
             import numpy as np
+
             df["udm_asy_res_value"] = df["udm_asy_res_value"].replace(0, 1e-10)
             df["log_s"] = np.log10(df["udm_asy_res_value"] / 1e6)
             target = "log_s"
