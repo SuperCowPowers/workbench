@@ -67,7 +67,7 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         Returns:
             pd.DataFrame: The transformed DataFrame with additional columns.
         """
-        check_is_fitted(self, ['X', 'y'])  # Ensure fit has been called
+        check_is_fitted(self, ["X", "y"])  # Ensure fit has been called
 
         kf = KFold(n_splits=self.n_splits, shuffle=True, random_state=self.random_state)
 
