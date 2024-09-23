@@ -66,10 +66,10 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         """
         kf = KFold(n_splits=self.n_splits, shuffle=True, random_state=self.random_state)
 
-        # Initialize arrays to store predictions and residuals
-        predictions = np.empty_like(self.y)
-        residuals = np.empty_like(self.y, dtype=float)
-        residuals_abs = np.empty_like(self.y, dtype=float)
+        # Initialize pandas Series to store predictions and residuals, aligned by index
+        predictions = pd.Series(index=self.y.index, dtype=np.float64)
+        residuals = pd.Series(index=self.y.index, dtype=np.float64)
+        residuals_abs = pd.Series(index=self.y.index, dtype=np.float64)
 
         # Perform cross-validation and collect predictions and residuals
         for train_index, test_index in kf.split(self.X):
@@ -86,10 +86,10 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
             residuals_fold = y_test - y_pred
             residuals_abs_fold = np.abs(residuals_fold)
 
-            # Place the predictions and residuals in the correct positions
-            predictions[test_index] = y_pred
-            residuals[test_index] = residuals_fold
-            residuals_abs[test_index] = residuals_abs_fold
+            # Place the predictions and residuals in the correct positions based on index
+            predictions.iloc[test_index] = y_pred
+            residuals.iloc[test_index] = residuals_fold
+            residuals_abs.iloc[test_index] = residuals_abs_fold
 
         # Create a copy of the provided DataFrame and add the new columns
         result_df = X.copy()
