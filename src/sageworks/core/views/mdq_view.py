@@ -35,6 +35,7 @@ class MDQView:
         fs: FeatureSet,
         endpoint: Endpoint,
         id_column: str,
+        use_reference_model: bool = False,
     ) -> Union[View, None]:
         """Create a Model Data Quality View with metrics
 
@@ -42,6 +43,7 @@ class MDQView:
             fs (FeatureSet): The FeatureSet object
             endpoint (Endpoint): The Endpoint object to use for the target and features
             id_column (str): The name of the id column (must be defined for join logic)
+            use_reference_model (bool): Use the reference model for inference (default: False)
 
         Returns:
             Union[View, None]: The created View object (or None if failed)
@@ -56,14 +58,6 @@ class MDQView:
 
         # Pull in data from the source table
         df = fs.data_source.query(f"SELECT * FROM {fs.data_source.uuid}")
-
-        # Super Hack
-        if "udm_asy_res_value" in df.columns:
-            import numpy as np
-
-            df["udm_asy_res_value"] = df["udm_asy_res_value"].replace(0, 1e-10)
-            df["log_s"] = np.log10(df["udm_asy_res_value"] / 1e6)
-            target = "log_s"
 
         # Check if the target and features are available in the data source
         missing_columns = [col for col in [target] + features if col not in df.columns]
@@ -94,7 +88,10 @@ class MDQView:
         mdq_df["data_quality"] = mdq_df["data_quality_tags"].apply(cls.calculate_data_quality)
 
         # Compute residuals using ResidualsCalculator
-        residuals_calculator = ResidualsCalculator(endpoint=endpoint)
+        if use_reference_model:
+            residuals_calculator = ResidualsCalculator()
+        else:
+            residuals_calculator = ResidualsCalculator(endpoint=endpoint)
         residuals_df = residuals_calculator.fit_transform(df[features], df[target])
 
         # Add id_column to the residuals dataframe and merge with mdq_df
@@ -108,7 +105,8 @@ class MDQView:
         mdq_df = mdq_df.merge(residuals_df, on=id_column, how="left")
 
         # Delegate view creation to PandasToView
-        return PandasToView.create("mdq_view", fs, df=mdq_df, id_column=id_column)
+        view_name = "mdq_ref" if use_reference_model else "mdq"
+        return PandasToView.create(view_name, fs, df=mdq_df, id_column=id_column)
 
     @staticmethod
     def calculate_data_quality(tags):
@@ -119,6 +117,7 @@ class MDQView:
             score -= 0.5
         if "outlier" in tags:
             score -= 0.25
+        score = max(0.0, score)
         return score
 
 
