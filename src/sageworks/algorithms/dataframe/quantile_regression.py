@@ -179,9 +179,9 @@ def solubility_confidence(q_dataframe):
     # Normalize the confidence interval between 0 and 1
     interval_conf = 1 - (interval - np.min(interval)) / (np.max(interval) - np.min(interval))
 
-    # The boundaries are -3 and -4 for solubility
-    decision_boundary_lower = -4
-    decision_boundary_upper = -3
+    # The boundaries are -4 and -5 for solubility
+    decision_boundary_lower = -5
+    decision_boundary_upper = -4
 
     # Element-wise condition check for proximity to decision boundaries
     close_to_boundary = (np.abs(y - decision_boundary_lower) <= 0.2) | (np.abs(y - decision_boundary_upper) <= 0.2)
@@ -209,9 +209,9 @@ def confusion_matrix(confidence_df):
 
     # Define the target boundaries
     def categorize(value):
-        if value < -4:
+        if value < -5:
             return "low"
-        elif -4 <= value <= -3:
+        elif -5 <= value <= -4:
             return "medium"
         else:
             return "high"
