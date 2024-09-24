@@ -419,6 +419,7 @@ class ModelCore(Artifact):
             if inference_path is None:
                 self.log.important(f"No inference data found for {self.model_name}!")
                 self.log.important(f"Returning default inference path for {registered_endpoints[0]}...")
+                self.log.important(f"{endpoint_inference_paths[0]}")
                 return endpoint_inference_paths[0]
             else:
                 return inference_path
