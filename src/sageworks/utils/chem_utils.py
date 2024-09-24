@@ -57,6 +57,21 @@ def log_to_micromolar(log_series: pd.Series) -> pd.Series:
     series_µM = series_mol_per_l * 1e6  # Convert mol/L to µM
     return series_µM
 
+def log_to_category(log_series: pd.Series) -> pd.Series:
+    """
+    Convert a pandas Series of log values to concentration categories.
+
+    Parameters:
+    log_series (pd.Series): Series of logarithmic values (log10).
+
+    Returns:
+    pd.Series: Series of concentration categories.
+    """
+    # Create a solubility classification column
+    bins = [-float("inf"), -5, -4, float("inf")]
+    labels = ["low", "medium", "high"]
+    return pd.cut(log_series, bins=bins, labels=labels)
+
 
 if __name__ == "__main__":
 
@@ -65,7 +80,7 @@ if __name__ == "__main__":
     show(smiles)
 
     # Test the concentration conversion functions
-    df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles], "µM": [100, 10, 1, 0.1, 0.01]})
+    df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles], "µM": [500, 50, 5, 1, 0.1]})
 
     # Convert µM to log10
     df["log10"] = micromolar_to_log(df["µM"])
@@ -73,4 +88,8 @@ if __name__ == "__main__":
 
     # Convert log10 back to µM
     df["µM_new"] = log_to_micromolar(df["log10"])
+    print(df)
+
+    # Convert log10 to categories
+    df["category"] = log_to_category(df["log10"])
     print(df)
