@@ -57,6 +57,7 @@ def log_to_micromolar(log_series: pd.Series) -> pd.Series:
     series_µM = series_mol_per_l * 1e6  # Convert mol/L to µM
     return series_µM
 
+
 def log_to_category(log_series: pd.Series) -> pd.Series:
     """
     Convert a pandas Series of log values to concentration categories.
