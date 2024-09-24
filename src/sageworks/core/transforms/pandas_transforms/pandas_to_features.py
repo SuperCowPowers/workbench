@@ -319,7 +319,7 @@ class PandasToFeatures(Transform):
         """Transform Implementation: Ingest the data into the Feature Group"""
 
         # Now we actually push the data into the Feature Group (called ingestion)
-        self.log.important("Ingesting rows into Feature Group...")
+        self.log.important("Ingesting rows into Feature Group (this may take a while)...")
         ingest_manager = self.output_feature_group.ingest(self.output_df, max_processes=8, wait=False)
         try:
             ingest_manager.wait()
@@ -374,8 +374,8 @@ class PandasToFeatures(Transform):
         # Wait for the rows to be populated
         self.log.info(f"Waiting for AWS Feature Group {self.output_uuid} Offline Storage...")
         not_all_rows_retry = 5
+        sleep_time = 60
         while rows < expected_rows and not_all_rows_retry > 0:
-            sleep_time = 5 if rows else 60
             not_all_rows_retry -= 1 if rows else 0
             time.sleep(sleep_time)
             rows = self.output_feature_set.num_rows()
