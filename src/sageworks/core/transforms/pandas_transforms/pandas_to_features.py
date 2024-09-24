@@ -373,10 +373,11 @@ class PandasToFeatures(Transform):
 
         # Wait for the rows to be populated
         self.log.info(f"Waiting for AWS Feature Group {self.output_uuid} Offline Storage...")
-        not_all_rows_retry = 5
-        sleep_time = 60
-        while rows < expected_rows and not_all_rows_retry > 0:
-            not_all_rows_retry -= 1 if rows else 0
+        max_retry = 20
+        num_retry = 0
+        sleep_time = 30
+        while rows < expected_rows and num_retry < max_retry:
+            num_retry += 1
             time.sleep(sleep_time)
             rows = self.output_feature_set.num_rows()
             self.log.info(f"Offline Storage {self.output_uuid}: {rows} rows out of {expected_rows}")
