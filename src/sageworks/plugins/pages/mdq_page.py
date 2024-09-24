@@ -18,7 +18,7 @@ class MDQPluginPage:
 
     def __init__(self):
         """Initialize the Plugin Page"""
-        self.page_name = "FeatureSets: Model Data Quality View"
+        self.page_name = "FeatureSets: Data Quality from a Modeling Perspective"
         self.meta = Meta()
 
         # UI Components
@@ -65,17 +65,13 @@ class MDQPluginPage:
                         dbc.Col(
                             self.scatter_plot_component,
                             width=9,
-                            style={"height": "100%"},  # Fill up height from parent row
+                            style={"height": "700px"},
                         ),
                     ],
-                    style={"height": "70%"},  # Fill up 70% of the height from parent container
                 ),
             ],
             style={
-                "display": "flex",
-                "flex-direction": "column",
-                "height": "100vh",
-                "padding": "20px",
+                "padding": "30px",
                 "box-sizing": "border-box",
             },
         )
