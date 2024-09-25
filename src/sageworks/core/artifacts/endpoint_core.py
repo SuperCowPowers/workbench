@@ -849,7 +849,7 @@ class EndpointCore(Artifact):
             return
         model_names = [variant["ModelName"] for variant in endpoint_config["ProductionVariants"]]
         for model_name in model_names:
-            self.log.info(f"Deleting Model {model_name}...")
+            self.log.info(f"Deleting Internal Model {model_name}...")
             try:
                 self.sm_client.delete_model(ModelName=model_name)
             except botocore.exceptions.ClientError as error:
