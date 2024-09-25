@@ -58,7 +58,7 @@ def generate_shap_values(
 
         # Multiple shap vals CSV for classifiers
         if model_type == "classifier":
-            
+
             # Reshape so each class has a dataframe
             shap_vals = np.moveaxis(shap_vals, -1, 0)
 
