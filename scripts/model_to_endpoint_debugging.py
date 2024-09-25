@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Hardcoded values
-MODEL_PACKAGE_GROUP_NAME = "abalone-regression-full"
+MODEL_PACKAGE_GROUP_NAME = "abalone-regression-end"
 ENDPOINT_NAME = f"{MODEL_PACKAGE_GROUP_NAME}-end"
 MEM_SIZE = 4096
 MAX_CONCURRENCY = 10

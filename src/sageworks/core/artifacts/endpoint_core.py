@@ -30,8 +30,7 @@ except ImportError as e:
     log = logging.getLogger("sageworks")
     msg = "Please install the scikit-learn package: pip install scikit-learn"
     log.critical(msg)
-    print(msg)  # Optionally print the message
-    raise SystemExit(msg) from e  # Exit the program with the error message
+    raise SystemExit(msg) from e
 
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
@@ -754,7 +753,7 @@ class EndpointCore(Artifact):
             self.log.warning(f"Target column {target_column} is not ordinal, fallback to sorting...")
             labels = sorted(list(set(y_true) | set(y_pred)))
 
-        # Compute the confusion matrix
+        # Compute the confusion matrix (sklearn confusion_matrix)
         conf_mtx = confusion_matrix(y_true, y_pred, labels=labels)
 
         # Create a DataFrame

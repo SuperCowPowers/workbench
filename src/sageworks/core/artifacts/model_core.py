@@ -1030,8 +1030,6 @@ if __name__ == "__main__":
     # Get the Class Labels (if it's a classifier)
     my_model = ModelCore("wine-classification")
     print(f"Class Labels: {my_model.class_labels()}")
-    my_model.set_class_labels(["red", "white"])
-    print(f"Class Labels: {my_model.class_labels()}")
 
     # Delete the Model
     # my_model.delete()
