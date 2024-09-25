@@ -8,7 +8,7 @@ def test_generate_shap_values_reg():
     """Test the generation of SHAP values for a regression model"""
 
     # Grab a test regression endpoint
-    end = Endpoint( "abalone-regression-end")
+    end = Endpoint("abalone-regression-end")
 
     # Running auto_inference with capture=True will invoke the SHAP values generation
     print("Running SHAP values generation for regression")
