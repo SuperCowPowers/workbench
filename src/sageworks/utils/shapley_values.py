@@ -1,3 +1,5 @@
+import numpy as np
+
 try:
     import shap
     from sageworks.utils.extract_model_artifact import ExtractModelArtifact
@@ -56,6 +58,10 @@ def generate_shap_values(
 
         # Multiple shap vals CSV for classifiers
         if model_type == "classifier":
+            
+            # Reshape so each class has a dataframe
+            shap_vals = np.moveaxis(shap_vals, -1, 0)
+
             # Need a separate shapley values CSV for each class
             for i, class_shap_vals in enumerate(shap_vals):
                 df_shap = pd.DataFrame(class_shap_vals, columns=X_pred.columns)
