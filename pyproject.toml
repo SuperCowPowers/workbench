@@ -43,7 +43,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-ml-tools = ["shap>=0.43.0", "networkx>=3.2"]
+ml-tools = ["shap>=0.46.0", "networkx>=3.2"]
 chem = ["rdkit>=2023.9.1", "mordredcommunity>=2.0"]
 ui = [
     "plotly>=5.18.0",
