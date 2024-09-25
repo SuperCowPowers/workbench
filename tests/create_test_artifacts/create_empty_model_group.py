@@ -1,4 +1,4 @@
-"""This Script creates an empty model group, a model group without any models 
+"""This Script creates an empty model group, a model group without any models
 
 Models:
     - empty-model-group
