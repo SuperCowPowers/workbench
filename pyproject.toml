@@ -55,7 +55,7 @@ ui = [
 ]
 dev = ["pytest", "pytest-sugar", "coverage", "pytest-cov", "flake8", "black"]
 all = [
-    "shap>=0.43.0",
+    "shap>=0.46.0",
     "networkx>=3.2",
     "rdkit>=2023.9.1",
     "mordredcommunity>=2.0",
