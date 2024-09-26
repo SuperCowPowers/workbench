@@ -190,15 +190,15 @@ def stack_trace_figure(class_name: str, e: Exception) -> tuple[go.Figure, str]:
     reversed_stack_trace = get_reversed_stack_trace(e)
     header = f"{class_name} Crashed"
     stack_output = f"{header}: \n{reversed_stack_trace}"
-
-    # Now split lines that are too long
-    max_len = 60
-    stack_output = "\n".join(
-        [line[i : i + max_len] for line in stack_output.split("\n") for i in range(0, len(line), max_len)]
-    )
     log.critical(stack_output)
 
-    # Allow HTML in the figure
-    figure = ComponentInterface.display_text(stack_output, figure_height=400, font_size=12)
+    # Now split lines that are too long
+    max_len = 80
+    wrapped_stack_output = "\n".join(
+        [line[i : i + max_len] for line in stack_output.split("\n") for i in range(0, len(line), max_len)]
+    )
+
+    # Send the wrapped stack output as a figure with text
+    figure = ComponentInterface.display_text(wrapped_stack_output, figure_height=400, font_size=16)
 
     return figure, stack_output  # Return both figure and the stack trace
