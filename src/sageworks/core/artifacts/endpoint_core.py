@@ -745,20 +745,25 @@ class EndpointCore(Artifact):
         prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
         y_pred = prediction_df[prediction_col]
 
-        # Check if the target column is an ordinal categorical type
-        if isinstance(y_true.dtype, pd.CategoricalDtype) and y_true.cat.ordered:
-            labels = y_true.cat.categories.tolist()
-        else:
-            # Fallback: sort unique values
-            self.log.warning(f"Target column {target_column} is not ordinal, fallback to sorting...")
-            labels = sorted(list(set(y_true) | set(y_pred)))
+        # Check if our model has class labels, if not we'll use the unique labels in the prediction
+        class_labels = ModelCore(self.model_name).class_labels()
+        if class_labels is None:
+            class_labels = sorted(list(set(y_true) | set(y_pred)))
 
         # Compute the confusion matrix (sklearn confusion_matrix)
-        conf_mtx = confusion_matrix(y_true, y_pred, labels=labels)
+        conf_mtx = confusion_matrix(y_true, y_pred, labels=class_labels)
 
         # Create a DataFrame
-        conf_mtx_df = pd.DataFrame(conf_mtx, index=labels, columns=labels)
+        conf_mtx_df = pd.DataFrame(conf_mtx, index=class_labels, columns=class_labels)
         conf_mtx_df.index.name = "labels"
+
+        # Check if our model has class labels. If so make the index and columns ordered
+        model_class_labels = ModelCore(self.model_name).class_labels()
+        if model_class_labels:
+            self.log.important("Reordering the confusion matrix based on model class labels...")
+            conf_mtx_df.index = pd.Categorical(conf_mtx_df.index, categories=model_class_labels, ordered=True)
+            conf_mtx_df.columns = pd.Categorical(conf_mtx_df.columns, categories=model_class_labels, ordered=True)
+            conf_mtx_df = conf_mtx_df.sort_index().sort_index(axis=1)
         return conf_mtx_df
 
     def endpoint_config_name(self) -> str:
