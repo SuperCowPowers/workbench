@@ -64,7 +64,7 @@ def test_classification_metrics():
     print(metrics)
 
     # Classification Confusion Matrix
-    confusion_matrix = class_endpoint.confusion_matrix(target_column, pred_df)
+    confusion_matrix = class_endpoint.generate_confusion_matrix(target_column, pred_df)
     print(confusion_matrix)
 
     # What happens if we ask for residuals on a classification endpoint?

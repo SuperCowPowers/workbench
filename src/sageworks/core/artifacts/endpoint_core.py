@@ -600,7 +600,7 @@ class EndpointCore(Artifact):
         # CLASSIFIER: Write the confusion matrix to our S3 Model Inference Folder
         model_type = self.model_type()
         if model_type == ModelType.CLASSIFIER.value:
-            conf_mtx = self.confusion_matrix(target_column, pred_results_df)
+            conf_mtx = self.generate_confusion_matrix(target_column, pred_results_df)
             self.log.info(f"Writing confusion matrix to {inference_capture_path}/inference_cm.csv")
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
             wr.s3.to_csv(conf_mtx, f"{inference_capture_path}/inference_cm.csv", index=True)
@@ -732,7 +732,7 @@ class EndpointCore(Artifact):
         score_df = score_df.sort_values(by=[target_column], ascending=True)
         return score_df
 
-    def confusion_matrix(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+    def generate_confusion_matrix(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the confusion matrix for this Endpoint
         Args:
             target_column (str): Name of the target column
@@ -912,6 +912,6 @@ if __name__ == "__main__":
     class_endpoint = EndpointCore("aqsol-mol-class-end")
     auto_predictions = class_endpoint.auto_inference()
 
-    # Get the confusion matrix
+    # Generate the confusion matrix
     target = "solubility_class"
-    print(class_endpoint.confusion_matrix(target, auto_predictions))
+    print(class_endpoint.generate_confusion_matrix(target, auto_predictions))
