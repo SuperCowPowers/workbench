@@ -194,7 +194,7 @@ def stack_trace_figure(class_name: str, e: Exception) -> tuple[go.Figure, str]:
     # Now split lines that are too long
     max_len = 60
     stack_output = "\n".join(
-        [line[i:i + max_len] for line in stack_output.split("\n") for i in range(0, len(line), max_len)]
+        [line[i : i + max_len] for line in stack_output.split("\n") for i in range(0, len(line), max_len)]
     )
     log.critical(stack_output)
 
