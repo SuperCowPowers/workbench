@@ -915,12 +915,3 @@ if __name__ == "__main__":
     # Get the confusion matrix
     target = "solubility_class"
     print(class_endpoint.confusion_matrix(target, auto_predictions))
-
-    # Now convert the "solubility_class" column to an ordinal categorical type
-    # Convert the "solubility_class" column to an ordinal categorical type in one line
-    auto_predictions["solubility_class"] = auto_predictions["solubility_class"].astype(
-        pd.CategoricalDtype(categories=["low", "medium", "high"], ordered=True)
-    )
-
-    # Get the confusion matrix
-    print(class_endpoint.confusion_matrix(target, auto_predictions))
