@@ -23,14 +23,15 @@ class CrashingPlugin(PluginInterface):
         Returns:
             dcc.Graph: The CrashingPlugin Component
         """
+        self.properties = [(f"{component_id}", "figure")]
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_properties(self, model: Model) -> go.Figure:
-        """Create a CrashingPlugin Figure for the numeric columns in the dataframe.
+    def update_properties(self, model: Model) -> list:
+        """Create a CrashingPlugin Figure for the model.
         Args:
             model (Model): A Model Object
         Returns:
-            go.Figure: A Figure object containing the confusion matrix.
+            [go.Figure]: A list with a Figure object
         """
 
         # This is where the plugin crashes
@@ -40,18 +41,19 @@ class CrashingPlugin(PluginInterface):
         fig = go.Figure(my_bad)
         fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10}, height=400)
 
-        return fig
+        return [fig]
 
 
 if __name__ == "__main__":
-    # This class takes in model details and generates a CrashingPlugin
+    # This class takes a model and generates a CrashingPlugin
 
     # Instantiate the CrashingPlugin class
     bad_plugin = CrashingPlugin()
+    bad_plugin.create_component("crashing-plugin")
 
-    # Generate the figure
-    my_model_details = {"key": "value"}
-    fig = bad_plugin.update_properties(my_model_details)
+    # Provide the plugin with a test model
+    my_model = Model("abalone-regression")
+    [fig] = bad_plugin.update_properties(my_model)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

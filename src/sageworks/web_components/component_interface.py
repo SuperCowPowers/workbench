@@ -103,6 +103,9 @@ class ComponentInterface(ABC):
         """
         text_display_text = go.Figure()
 
+        # If the text message has any \n characters, replace them with <br> for HTML
+        text_message = text_message.replace("\n", "<br>")
+
         text_display_text.add_annotation(
             x=0.5,
             y=0.5,
@@ -136,12 +139,9 @@ def create_component_handler(func):
         except Exception as e:
             # Get the class name of the plugin
             class_name = args[0].__class__.__name__ if args else "UnknownPlugin"
-            # Get a few lines from the stack trace
-            stack_trace = "".join(traceback.format_exception(e))
-            header = f"{class_name} Crashed"
-            log.critical(f"{header}: {stack_trace}")
-            ui_error_info = f"{header}: {get_reversed_stack_trace(e)}"
-            figure = ComponentInterface.display_text(ui_error_info, figure_height=400, font_size=14)
+
+            # Generate our stack trace figure
+            figure, _ = stack_trace_figure(class_name, e)
             return dcc.Graph(id="error", figure=figure)
 
     return wrapper
@@ -155,12 +155,9 @@ def update_properties_handler(func):
         except Exception as e:
             # Get the class name of the plugin
             class_name = self.__class__.__name__
-            # Get a few lines from the stack trace
-            stack_trace = "".join(traceback.format_exception(e))
-            header = f"{class_name} Crashed"
-            log.critical(f"{header}: {stack_trace}")
-            ui_error_info = f"{header}: {get_reversed_stack_trace(e)}"
-            figure = ComponentInterface.display_text(ui_error_info, figure_height=400, font_size=14)
+
+            # Generate our stack trace figure
+            figure, error_info = stack_trace_figure(class_name, e)
 
             # Prepare the error output to match the properties format
             error_output = []
@@ -168,13 +165,40 @@ def update_properties_handler(func):
                 if property == "figure":
                     error_output.append(figure)
                 elif property in ["children", "value", "data"]:
-                    error_output.append(ui_error_info)
+                    error_output.append(error_info)
                 elif property == "columnDefs":
                     error_output.append([{"headerName": "Crash", "field": "Crash"}])
                 elif property == "rowData":
-                    error_output.append([{"Crash": ui_error_info}])
+                    error_output.append([{"Crash": error_info}])
                 else:
                     error_output.append(None)  # Fallback for other properties
             return error_output
 
     return wrapper
+
+
+def stack_trace_figure(class_name: str, e: Exception) -> tuple[go.Figure, str]:
+    """This helper method returns a Plotly Figure and the UI error info with the stack trace of an exception
+    Args:
+        class_name (str): The class name of the plugin
+        e (Exception): The exception object
+    Returns:
+        tuple: A tuple containing the Plotly Figure and the stack trace error info
+    """
+
+    # Get the reversed stack trace
+    reversed_stack_trace = get_reversed_stack_trace(e)
+    header = f"{class_name} Crashed"
+    stack_output = f"{header}: \n{reversed_stack_trace}"
+
+    # Now split lines that are too long
+    max_len = 60
+    stack_output = "\n".join(
+        [line[i:i + max_len] for line in stack_output.split("\n") for i in range(0, len(line), max_len)]
+    )
+    log.critical(stack_output)
+
+    # Allow HTML in the figure
+    figure = ComponentInterface.display_text(stack_output, figure_height=400, font_size=12)
+
+    return figure, stack_output  # Return both figure and the stack trace
