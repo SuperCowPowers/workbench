@@ -43,14 +43,14 @@ def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=
     # Sort and Report the active log streams
     active_streams.sort()
     if active_streams:
-        print('Active log streams:', len(active_streams))
+        print("Active log streams:", len(active_streams))
     for stream in active_streams:
         print(f"\t - {stream}")
 
     # Filter the active streams by a substring if provided
     if stream_filter:
         active_streams = [stream for stream in active_streams if stream_filter in stream]
-        print('Filtered active log streams:', len(active_streams))
+        print("Filtered active log streams:", len(active_streams))
 
     # Return the active log streams
 
