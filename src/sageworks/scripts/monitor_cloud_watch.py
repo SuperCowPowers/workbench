@@ -130,7 +130,6 @@ def monitor_log_group(
     start_time,
     end_time=None,
     poll_interval=10,
-    sort_by_stream=False,
     utc_time=False,
     log_level=None,
     before=10,
@@ -147,11 +146,6 @@ def monitor_log_group(
         log_events = get_latest_log_events(client, log_group_name, start_time, end_time, stream_filter)
 
         if log_events:
-            # Sort the events by timestamp by default
-            if sort_by_stream:
-                log_events.sort(key=lambda x: (x["logStreamName"], x["timestamp"]))
-            else:
-                log_events.sort(key=lambda x: x["timestamp"])
 
             # Handle log levels
             log_levels = log_level_map.get(log_level.upper(), [log_level]) if log_level else []
@@ -216,9 +210,6 @@ def parse_args():
     parser.add_argument(
         "--poll-interval", type=int, default=10, help="Polling interval in seconds. Default is 10 seconds."
     )
-    parser.add_argument(
-        "--sort-by-stream", action="store_true", help="Sort the log events by stream name instead of timestamp."
-    )
     parser.add_argument("--utc-time", action="store_true", help="Display timestamps in UTC instead of local.")
     parser.add_argument("--log-level", default="ERROR", help="Log level to filter log messages.")
     parser.add_argument("--before", type=int, default=10, help="Number of lines to include before the log level match.")
@@ -237,15 +228,14 @@ def main():
 
     monitor_log_group(
         "SageWorksLogGroup",
-        start_time,
-        end_time,
-        args.poll_interval,
-        args.sort_by_stream,
-        args.utc_time,
-        args.log_level,
-        args.before,
-        args.after,
-        args.stream,
+        start_time=start_time,
+        end_time=end_time,
+        poll_interval=args.poll_interval,
+        utc_time=args.utc_time,
+        log_level=args.log_level,
+        before=args.before,
+        after=args.after,
+        stream_filter=args.stream,
     )
 
 
