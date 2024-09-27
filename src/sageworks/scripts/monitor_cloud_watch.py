@@ -3,9 +3,9 @@ import argparse
 from datetime import datetime, timedelta, timezone
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 
-# Define the log levels to search for
-search_map = {
-    "ALL": None,
+# Define the log levels to include all log levels above the specified level
+log_level_map = {
+    "ALL": [],
     "IMPORTANT": ["IMPORTANT", "WARNING", "MONITOR", "ERROR", "CRITICAL"],
     "WARNING": ["WARNING", "MONITOR", "ERROR", "CRITICAL"],
     "MONITOR": ["MONITOR", "ERROR", "CRITICAL"],
@@ -22,7 +22,7 @@ def get_cloudwatch_client():
 def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=None):
     """Retrieve log streams that have events after the specified start time."""
 
-    # Get all the streams in the log group (this is a large number of streams
+    # Get all the streams in the log group (this is a large number of streams)
     active_streams = []
     stream_params = {
         "logGroupName": log_group_name,
@@ -54,7 +54,6 @@ def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=
             print("Filtered active log streams:", len(active_streams))
 
     # Return the active log streams
-
     return active_streams
 
 
@@ -133,7 +132,7 @@ def monitor_log_group(
     poll_interval=10,
     sort_by_stream=False,
     utc_time=False,
-    search=None,
+    log_level=None,
     before=10,
     after=0,
     stream_filter=None,
@@ -154,14 +153,14 @@ def monitor_log_group(
             else:
                 log_events.sort(key=lambda x: x["timestamp"])
 
-            # Handle special search terms
-            search_terms = search_map.get(search.upper(), [search]) if search else None
+            # Handle log levels
+            log_levels = log_level_map.get(log_level.upper(), [log_level]) if log_level else []
 
-            # If search is provided, filter log events and include context
-            if search_terms:
+            # If log_level is provided, filter log events and include context
+            if log_levels:
                 ranges = []
                 for i, event in enumerate(log_events):
-                    if any(term in event["message"] for term in search_terms):
+                    if any(term in event["message"] for term in log_levels):
                         # Calculate the start and end index for this match
                         start_index = max(i - before, 0)
                         end_index = min(i + after, len(log_events) - 1)
@@ -221,9 +220,9 @@ def parse_args():
         "--sort-by-stream", action="store_true", help="Sort the log events by stream name instead of timestamp."
     )
     parser.add_argument("--utc-time", action="store_true", help="Display timestamps in UTC instead of local.")
-    parser.add_argument("--search", default="ERROR", help="Search term to filter log messages.")
-    parser.add_argument("--before", type=int, default=10, help="Number of lines to include before the search match.")
-    parser.add_argument("--after", type=int, default=0, help="Number of lines to include after the search match.")
+    parser.add_argument("--log-level", default="ERROR", help="Log level to filter log messages.")
+    parser.add_argument("--before", type=int, default=10, help="Number of lines to include before the log level match.")
+    parser.add_argument("--after", type=int, default=0, help="Number of lines to include after the log level match.")
     parser.add_argument("--stream", help="Filter log streams by a substring.")
 
     return parser.parse_args()
@@ -243,7 +242,7 @@ def main():
         args.poll_interval,
         args.sort_by_stream,
         args.utc_time,
-        args.search,
+        args.log_level,
         args.before,
         args.after,
         args.stream,
