@@ -49,9 +49,7 @@ def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=
     # Filter the active streams by a substring if provided
     if stream_filter and active_streams:
         print(f"Filtering active log streams by '{stream_filter}'...")
-        active_streams = [
-            stream for stream in active_streams if stream_filter in stream
-        ]
+        active_streams = [stream for stream in active_streams if stream_filter in stream]
     for stream in active_streams:
         print(f"\t - {stream}")
 
@@ -59,23 +57,15 @@ def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=
     return active_streams
 
 
-def get_latest_log_events(
-    client, log_group_name, start_time, end_time=None, stream_filter=None
-):
+def get_latest_log_events(client, log_group_name, start_time, end_time=None, stream_filter=None):
     """Retrieve the latest log events from the active/filtered log streams in a CloudWatch Logs group."""
     log_events = []
-    start_time_ms = int(
-        start_time.timestamp() * 1000
-    )  # Convert start_time to milliseconds
+    start_time_ms = int(start_time.timestamp() * 1000)  # Convert start_time to milliseconds
 
     # Get the active log streams with events since start_time
-    active_streams = get_active_log_streams(
-        client, log_group_name, start_time_ms, stream_filter
-    )
+    active_streams = get_active_log_streams(client, log_group_name, start_time_ms, stream_filter)
     if active_streams:
-        print(
-            f"Processing log events from {start_time} UTC on {len(active_streams)} active log streams..."
-        )
+        print(f"Processing log events from {start_time} UTC on {len(active_streams)} active log streams...")
 
     # Iterate over the active streams and fetch log events
     for log_stream_name in active_streams:
@@ -161,16 +151,12 @@ def monitor_log_group(
     print(f"Monitoring log group: {log_group_name} from {start_time} UTC")
     while True:
         # Get the latest log events with stream filtering if provided
-        log_events = get_latest_log_events(
-            client, log_group_name, start_time, end_time, stream_filter
-        )
+        log_events = get_latest_log_events(client, log_group_name, start_time, end_time, stream_filter)
 
         if log_events:
 
             # Handle log levels
-            log_levels = (
-                log_level_map.get(log_level.upper(), [log_level]) if log_level else []
-            )
+            log_levels = log_level_map.get(log_level.upper(), [log_level]) if log_level else []
 
             # If log_level is provided, filter log events and include context
             if log_levels:
@@ -181,10 +167,7 @@ def monitor_log_group(
 
                         # If we have search terms we need to make sure those match
                         if search_terms:
-                            if not any(
-                                term in event["message"].lower()
-                                for term in search_terms
-                            ):
+                            if not any(term in event["message"].lower() for term in search_terms):
                                 continue
 
                         # Calculate the start and end index for this match
@@ -201,12 +184,8 @@ def monitor_log_group(
                     filtered_events.extend(log_events[start : end + 1])
 
                     # These are just blank lines to separate the log message 'groups'
-                    filtered_events.append(
-                        {"logStreamName": None, "timestamp": None, "message": ""}
-                    )
-                    filtered_events.append(
-                        {"logStreamName": None, "timestamp": None, "message": ""}
-                    )
+                    filtered_events.append({"logStreamName": None, "timestamp": None, "message": ""})
+                    filtered_events.append({"logStreamName": None, "timestamp": None, "message": ""})
                 log_events = filtered_events
 
             # Display the log events
@@ -217,9 +196,7 @@ def monitor_log_group(
                     print("")  # Print a blank line
                 else:
                     log_stream_name = event["logStreamName"]
-                    timestamp = datetime.fromtimestamp(
-                        event["timestamp"] / 1000, tz=timezone.utc
-                    )
+                    timestamp = datetime.fromtimestamp(event["timestamp"] / 1000, tz=timezone.utc)
 
                     # Convert the timestamp to local time if utc_time is False
                     if not utc_time:
@@ -267,12 +244,8 @@ def parse_args():
         action="store_true",
         help="Display timestamps in UTC instead of local.",
     )
-    parser.add_argument(
-        "--log-level", default="ERROR", help="Log level to filter log messages."
-    )
-    parser.add_argument(
-        "--search", nargs="+", help="Search terms to filter log messages."
-    )
+    parser.add_argument("--log-level", default="ERROR", help="Log level to filter log messages.")
+    parser.add_argument("--search", nargs="+", help="Search terms to filter log messages.")
     parser.add_argument(
         "--before",
         type=int,
@@ -295,11 +268,7 @@ def main():
 
     # Determine the start time and end time for log monitoring (in UTC)
     start_time = datetime.now(timezone.utc) - timedelta(minutes=args.start_time)
-    end_time = (
-        datetime.now(timezone.utc) - timedelta(minutes=args.end_time)
-        if args.end_time
-        else None
-    )
+    end_time = datetime.now(timezone.utc) - timedelta(minutes=args.end_time) if args.end_time else None
 
     monitor_log_group(
         "SageWorksLogGroup",
