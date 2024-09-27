@@ -1,3 +1,4 @@
+import sys
 import time
 import argparse
 from datetime import datetime, timedelta, timezone
@@ -75,15 +76,14 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
             "startTime": start_time_ms,  # Use start_time in milliseconds
             "startFromHead": True,  # Start from the earliest log event in the stream
         }
-
+        next_event_token = None
         if end_time is not None:
             params["endTime"] = int(end_time.timestamp() * 1000)
 
-        next_event_token = None
-
-        # Create our spinner :)
+        # Process the log events from this log stream
         spinner = Spinner("lightpurple", f"Pulling events from {log_stream_name}:")
         spinner.start()
+        log_stream_events = 0
         while True:
             # Get the log events for the active log stream
             if next_event_token:
@@ -94,15 +94,17 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
             for event in events:
                 event["logStreamName"] = log_stream_name
 
+            # Add the log stream events to our list of all log events
+            log_stream_events += len(events)
             log_events.extend(events)
 
             # Handle pagination for log events
             next_event_token = events_response.get("nextForwardToken")
+
+            # Break the loop if there are no more events to fetch
             if not next_event_token or next_event_token == params.get("nextToken"):
                 spinner.stop()
-                time.sleep(1)
-                print(f"Processed {len(log_events)} log events from {log_stream_name}")
-                time.sleep(2)
+                print(f"Processed {log_stream_events} events from {log_stream_name} (Total: {len(log_events)})")
                 break
 
     # Return the log events
