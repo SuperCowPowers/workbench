@@ -19,75 +19,84 @@ def get_cloudwatch_client():
     return session.client("logs")
 
 
+def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=None):
+    """Retrieve log streams that have events after the specified start time."""
+
+    # Get all the streams in the log group (this is a large number of streams
+    active_streams = []
+    stream_params = {
+        "logGroupName": log_group_name,
+        "orderBy": "LastEventTime",  # This is important later
+        "descending": True,  # Get the most recent streams first
+    }
+    all_log_streams = client.describe_log_streams(**stream_params).get("logStreams", [])
+    for log_stream in all_log_streams:
+        log_stream_name = log_stream["logStreamName"]
+        last_event_timestamp = log_stream.get("lastEventTimestamp")
+
+        # Include streams with events since the specified start time
+        if last_event_timestamp and last_event_timestamp >= start_time_ms:
+            active_streams.append(log_stream_name)
+        else:
+            break  # Streams are sorted by LastEventTime, so we can stop here
+
+    # Sort and Report the active log streams
+    active_streams.sort()
+    if active_streams:
+        print('Active log streams:', len(active_streams))
+    for stream in active_streams:
+        print(f"\t - {stream}")
+
+    # Filter the active streams by a substring if provided
+    if stream_filter:
+        active_streams = [stream for stream in active_streams if stream_filter in stream]
+        print('Filtered active log streams:', len(active_streams))
+
+    # Return the active log streams
+
+    return active_streams
+
+
 def get_latest_log_events(client, log_group_name, start_time, end_time=None, stream_filter=None):
-    """Retrieve the latest log events from filtered log streams in a CloudWatch Logs group."""
+    """Retrieve the latest log events from the active/filtered log streams in a CloudWatch Logs group."""
     try:
         log_events = []
-        next_token = None
         start_time_ms = int(start_time.timestamp() * 1000)  # Convert start_time to milliseconds
 
-        while True:
-            # Create the parameters dictionary for describe_log_streams
-            stream_params = {
+        # Get the active log streams with events since start_time
+        active_streams = get_active_log_streams(client, log_group_name, start_time_ms, stream_filter)
+        if active_streams:
+            print(f"Processing log events from {start_time} UTC on {len(active_streams)} active log streams...")
+
+        # Iterate over the active streams and fetch log events
+        for log_stream_name in active_streams:
+            params = {
                 "logGroupName": log_group_name,
-                "orderBy": "LastEventTime",
-                "descending": True,
+                "logStreamName": log_stream_name,
+                "startTime": start_time_ms,  # Use start_time in milliseconds
+                "startFromHead": True,  # Start from the earliest log event in the stream
             }
 
-            # Only add nextToken if it's not None
-            if next_token:
-                stream_params["nextToken"] = next_token
+            if end_time is not None:
+                params["endTime"] = int(end_time.timestamp() * 1000)
 
-            streams_response = client.describe_log_streams(**stream_params)
+            next_event_token = None
+            while True:
+                # Get the log events for the active log stream
+                if next_event_token:
+                    params["nextToken"] = next_event_token
+                events_response = client.get_log_events(**params)
 
-            for log_stream in streams_response.get("logStreams", []):
-                last_event_timestamp = log_stream.get("lastEventTimestamp")
+                events = events_response.get("events", [])
+                for event in events:
+                    event["logStreamName"] = log_stream_name
 
-                # Skip log streams with no events after the specified start_time
-                if last_event_timestamp and last_event_timestamp < start_time_ms:
-                    continue
+                log_events.extend(events)
 
-                log_stream_name = log_stream["logStreamName"]
-
-                # Filter streams based on the stream_filter substring
-                if stream_filter and stream_filter not in log_stream_name:
-                    continue
-
-                # Create the parameters dictionary for get_log_events
-                params = {
-                    "logGroupName": log_group_name,
-                    "logStreamName": log_stream_name,
-                    "startTime": start_time_ms,  # Use start_time in milliseconds
-                    "startFromHead": True,  # Start from the earliest log event in the stream
-                }
-
-                # Only add endTime if it's not None
-                if end_time is not None:
-                    params["endTime"] = int(end_time.timestamp() * 1000)
-
-                next_event_token = None
-                while True:
-                    # Get the log events for the log stream
-                    if next_event_token:
-                        params["nextToken"] = next_event_token
-                    else:
-                        print(f"Fetching log events with params: {params}")
-                    events_response = client.get_log_events(**params)
-
-                    events = events_response.get("events", [])
-                    for event in events:
-                        event["logStreamName"] = log_stream_name
-
-                    log_events.extend(events)
-
-                    # Handle pagination for log events
-                    next_event_token = events_response.get("nextForwardToken")
-                    if not next_event_token or next_event_token == params.get("nextToken"):
-                        break
-
-            next_token = streams_response.get("nextToken")
-            if not next_token:
-                break
+                # Handle pagination for log events
+                next_event_token = events_response.get("nextForwardToken")
+                if not next_event_token or next_event_token == params.get("nextToken"):
+                    break
 
         return log_events
 
