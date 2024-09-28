@@ -42,11 +42,7 @@ def test():
     assert not my_data.exists()
 
     # Try to get a data source that has Mixed Case
-    try:
-        AthenaSource("tEsT_dAtA")
-        assert False  # Should not get here
-    except ValueError:
-        pass
+    AthenaSource("tEsT_dAtA")  # This will give us some warnings
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')
