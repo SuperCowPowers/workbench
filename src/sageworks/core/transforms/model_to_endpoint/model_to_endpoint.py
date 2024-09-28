@@ -32,7 +32,7 @@ class ModelToEndpoint(Transform):
             serverless(bool): Deploy the Endpoint in serverless mode (default: True)
         """
         # Make sure the endpoint_uuid is a valid name
-        Artifact.ensure_valid_name(endpoint_uuid, delimiter="-")
+        Artifact.is_name_valid(endpoint_uuid, delimiter="-", lower_case=False)
 
         # Call superclass init
         super().__init__(model_uuid, endpoint_uuid)

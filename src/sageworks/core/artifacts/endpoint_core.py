@@ -68,7 +68,7 @@ class EndpointCore(Artifact):
 
         # Make sure the endpoint_uuid is a valid name
         if not legacy:
-            self.ensure_valid_name(endpoint_uuid, delimiter="-")
+            self.is_name_valid(endpoint_uuid, delimiter="-", lower_case=False)
 
         # Call SuperClass Initialization
         super().__init__(endpoint_uuid)

@@ -32,7 +32,7 @@ class GraphCore(Artifact):
         if name is None:
             name = Artifact.generate_valid_name(source)
         else:
-            Artifact.ensure_valid_name(name)
+            Artifact.is_name_valid(name, lower_case=False)
 
         # Call our parent class constructor
         super().__init__(name)

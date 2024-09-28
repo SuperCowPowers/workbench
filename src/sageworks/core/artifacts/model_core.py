@@ -89,7 +89,7 @@ class ModelCore(Artifact):
 
         # Make sure the model name is valid
         if not legacy:
-            self.ensure_valid_name(model_uuid, delimiter="-")
+            self.is_name_valid(model_uuid, delimiter="-", lower_case=False)
 
         # Call SuperClass Initialization
         super().__init__(model_uuid)

@@ -36,7 +36,7 @@ class FeaturesToModel(Transform):
         """
 
         # Make sure the model_uuid is a valid name
-        Artifact.ensure_valid_name(model_uuid, delimiter="-")
+        Artifact.is_name_valid(model_uuid, delimiter="-", lower_case=False)
 
         # Call superclass init
         super().__init__(feature_uuid, model_uuid)

@@ -45,7 +45,7 @@ class Model(ModelCore):
 
         # Ensure the endpoint_name is valid
         if name:
-            Artifact.ensure_valid_name(name, delimiter="-")
+            Artifact.is_name_valid(name, delimiter="-", lower_case=False)
 
         # If the endpoint_name wasn't given generate it
         else:

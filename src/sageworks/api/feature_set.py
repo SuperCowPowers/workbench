@@ -100,7 +100,7 @@ class FeatureSet(FeatureSetCore):
 
         # Ensure the model_name is valid
         if name:
-            Artifact.ensure_valid_name(name, delimiter="-")
+            Artifact.is_name_valid(name, delimiter="-", lower_case=False)
 
         # If the model_name wasn't given generate it
         else:

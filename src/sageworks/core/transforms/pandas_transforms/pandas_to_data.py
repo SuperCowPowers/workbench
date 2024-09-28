@@ -31,7 +31,7 @@ class PandasToData(Transform):
         """
 
         # Make sure the output_uuid is a valid name/id
-        Artifact.ensure_valid_name(output_uuid)
+        Artifact.is_name_valid(output_uuid)
 
         # Call superclass init
         super().__init__("DataFrame", output_uuid)

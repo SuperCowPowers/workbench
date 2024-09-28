@@ -47,7 +47,7 @@ class AthenaSource(DataSourceAbstract):
             force_refresh (bool): Force refresh of AWS Metadata (default: False)
         """
         # Ensure the data_uuid is a valid name/id
-        self.ensure_valid_name(data_uuid)
+        self.is_name_valid(data_uuid)
 
         # Call superclass init
         super().__init__(data_uuid, database)

@@ -30,7 +30,7 @@ class PandasToFeaturesChunked(Transform):
         """PandasToFeaturesChunked Initialization"""
 
         # Make sure the output_uuid is a valid name
-        Artifact.ensure_valid_name(output_uuid)
+        Artifact.is_name_valid(output_uuid)
 
         # Call superclass init
         super().__init__("DataFrame", output_uuid)

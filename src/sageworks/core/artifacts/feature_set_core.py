@@ -43,7 +43,7 @@ class FeatureSetCore(Artifact):
         """
 
         # Make sure the feature_set name is valid
-        self.ensure_valid_name(feature_set_uuid)
+        self.is_name_valid(feature_set_uuid)
 
         # Call superclass init
         super().__init__(feature_set_uuid)

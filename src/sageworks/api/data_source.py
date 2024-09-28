@@ -48,7 +48,7 @@ class DataSource(AthenaSource):
 
         # Ensure the ds_name is valid
         if name:
-            Artifact.ensure_valid_name(name)
+            Artifact.is_name_valid(name)
 
         # If the model_name wasn't given generate it
         else:
@@ -132,7 +132,7 @@ class DataSource(AthenaSource):
 
         # Ensure the feature_set_name is valid
         if name:
-            Artifact.ensure_valid_name(name)
+            Artifact.is_name_valid(name)
 
         # If the feature_set_name wasn't given generate it
         else:
