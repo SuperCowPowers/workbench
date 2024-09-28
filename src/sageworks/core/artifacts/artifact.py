@@ -91,37 +91,41 @@ class Artifact(ABC):
             self.log.info(f"Health Check Passed {self.uuid}")
 
     @classmethod
-    def ensure_valid_name(cls, name: str, delimiter: str = "_"):
-        """Check if the ID adheres to the naming conventions for this Artifact.
+    def is_name_valid(cls, name: str, delimiter: str = "_", lower_case: bool = True) -> bool:
+        """Check if the name adheres to the naming conventions for this Artifact.
 
         Args:
             name (str): The name/id to check.
             delimiter (str): The delimiter to use in the name/id string (default: "_")
-
-        Raises:
-            ValueError: If the name/id is not valid.
-        """
-        valid_name = cls.generate_valid_name(name, delimiter=delimiter)
-        if name != valid_name:
-            error_msg = f"{name} doesn't conform and should be converted to: {valid_name}"
-            cls.log.error(error_msg)
-            raise ValueError(error_msg)
-
-    @staticmethod
-    def generate_valid_name(name: str, delimiter: str = "_") -> str:
-        """Only allow letters and the specified delimiter, also lowercase the string
-
-        Args:
-            name (str): The name/id string to check
-            delimiter (str): The delimiter to use in the name/id string (default: "_")
+            lower_case (bool): Should the name be lowercased? (default: True)
 
         Returns:
-            str: A generated valid name/id
+            bool: True if the name is valid, False otherwise.
         """
-        valid_name = "".join(c for c in name if c.isalnum() or c in ["_", "-"]).lower()
-        valid_name = valid_name.replace("_", delimiter)
-        valid_name = valid_name.replace("-", delimiter)
-        return valid_name
+        valid_name = cls.generate_valid_name(name, delimiter=delimiter, lower_case=lower_case)
+        if name != valid_name:
+            cls.log.warning(f"Artifact name: '{name}' is not valid. Convert it to something like: '{valid_name}'")
+            return False
+        return True
+
+    @staticmethod
+    def generate_valid_name(name: str, delimiter: str = "_", lower_case: bool = True) -> str:
+        """Only allow letters and the specified delimiter, also lowercase the string.
+
+        Args:
+            name (str): The name/id string to check.
+            delimiter (str): The delimiter to use in the name/id string (default: "_")
+            lower_case (bool): Should the name be lowercased? (default: True)
+
+        Returns:
+            str: A generated valid name/id.
+        """
+        valid_name = "".join(c for c in name if c.isalnum() or c in ["_", "-"])
+        if lower_case:
+            valid_name = valid_name.lower()
+
+        # Replace with the chosen delimiter
+        return valid_name.replace("_", delimiter).replace("-", delimiter)
 
     @abstractmethod
     def exists(self) -> bool:
