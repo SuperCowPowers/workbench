@@ -3,7 +3,7 @@ DataSources are set up so that can easily be queried with AWS Athena.
 All DataSources are run through a full set of Exploratory Data Analysis (EDA)
 techniques (data quality, distributions, stats, outliers, etc.) DataSources
 can be viewed and explored within the SageWorks Dashboard UI."""
-import logging
+
 import os
 import pandas as pd
 from typing import Union

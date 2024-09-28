@@ -3,6 +3,7 @@ FeatureSets are set up so they can easily be queried with AWS Athena.
 All FeatureSets are run through a full set of Exploratory Data Analysis (EDA)
 techniques (data quality, distributions, stats, outliers, etc.) FeatureSets
 can be viewed and explored within the SageWorks Dashboard UI."""
+
 from typing import Union
 import pandas as pd
 
