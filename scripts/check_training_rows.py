@@ -1,8 +1,7 @@
 """This script will check if the training rows have any overlap with the hold out ids
 
-   Note: This is an example and may need to be changed to pull in the 'right' hold_out_ids
+   Note: This is an example, feel free to change how the hold_out_ids are pulled
 """
-
 from pprint import pprint
 import awswrangler as wr
 from sageworks.api import ParameterStore, FeatureSet
