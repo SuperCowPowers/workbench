@@ -13,11 +13,8 @@ def test():
     pprint(my_data.details())
 
     # Create a FeatureSet (with a name that has mixed case)
-    try:
-        my_data.to_features("aBaLone-feaTures")
-        assert False  # Should not get here
-    except ValueError:
-        pass
+    fs = my_data.to_features("aBaLone-feaTures")
+    assert fs is None
 
 
 if __name__ == "__main__":

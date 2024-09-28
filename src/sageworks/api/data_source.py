@@ -3,9 +3,10 @@ DataSources are set up so that can easily be queried with AWS Athena.
 All DataSources are run through a full set of Exploratory Data Analysis (EDA)
 techniques (data quality, distributions, stats, outliers, etc.) DataSources
 can be viewed and explored within the SageWorks Dashboard UI."""
-
+import logging
 import os
 import pandas as pd
+from typing import Union
 
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
@@ -114,7 +115,7 @@ class DataSource(AthenaSource):
         id_column: str = None,
         event_time_column: str = None,
         auto_one_hot: bool = False,
-    ) -> FeatureSet:
+    ) -> Union[FeatureSet, None]:
         """
         Convert the DataSource to a FeatureSet
 
@@ -127,12 +128,14 @@ class DataSource(AthenaSource):
             auto_one_hot (bool): Automatically one-hot encode categorical fields (default: False)
 
         Returns:
-            FeatureSet: The FeatureSet created from the DataSource
+            FeatureSet: The FeatureSet created from the DataSource (or None if the FeatureSet isn't created)
         """
 
         # Ensure the feature_set_name is valid
         if name:
-            Artifact.is_name_valid(name)
+            if not Artifact.is_name_valid(name):
+                self.log.critical(f"Invalid FeatureSet name: {name}, not creating FeatureSet!")
+                return None
 
         # If the feature_set_name wasn't given generate it
         else:

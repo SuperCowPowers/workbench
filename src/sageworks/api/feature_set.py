@@ -3,7 +3,7 @@ FeatureSets are set up so they can easily be queried with AWS Athena.
 All FeatureSets are run through a full set of Exploratory Data Analysis (EDA)
 techniques (data quality, distributions, stats, outliers, etc.) FeatureSets
 can be viewed and explored within the SageWorks Dashboard UI."""
-
+from typing import Union
 import pandas as pd
 
 # SageWorks Imports
@@ -81,7 +81,7 @@ class FeatureSet(FeatureSetCore):
         feature_list: list = None,
         target_column: str = None,
         **kwargs,
-    ) -> Model:
+    ) -> Union[Model, None]:
         """Create a Model from the FeatureSet
 
         Args:
@@ -95,12 +95,14 @@ class FeatureSet(FeatureSetCore):
             target_column (str): The target column for the model (use None for unsupervised model)
 
         Returns:
-            Model: The Model created from the FeatureSet
+            Model: The Model created from the FeatureSet (or None if the Model could not be created)
         """
 
         # Ensure the model_name is valid
         if name:
-            Artifact.is_name_valid(name, delimiter="-", lower_case=False)
+            if not Artifact.is_name_valid(name, delimiter="-", lower_case=False):
+                self.log.critical(f"Invalid Model name: {name}, not creating Model!")
+                return None
 
         # If the model_name wasn't given generate it
         else:
