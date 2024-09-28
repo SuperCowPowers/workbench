@@ -3982,7 +3982,7 @@ Args:
 </span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>        <span class="c1"># Make sure the output_uuid is a valid name/id</span>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>        <span class="n">Artifact</span><span class="o">.</span><span class="n">ensure_valid_name</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>        <span class="n">Artifact</span><span class="o">.</span><span class="n">is_name_valid</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>
 </span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>        <span class="c1"># Call superclass init</span>
 </span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;DataFrame&quot;</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">)</span>
@@ -4176,7 +4176,7 @@ Args:
 </span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>    <span class="c1"># Make sure the output_uuid is a valid name/id</span>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="n">Artifact</span><span class="o">.</span><span class="n">ensure_valid_name</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="n">Artifact</span><span class="o">.</span><span class="n">is_name_valid</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>
 </span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="c1"># Call superclass init</span>
 </span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;DataFrame&quot;</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">)</span>
@@ -5003,7 +5003,7 @@ store the information about the data to the AWS Data Catalog sageworks database<
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>
 </span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>        <span class="c1"># Make sure the output_uuid is a valid name</span>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>        <span class="n">Artifact</span><span class="o">.</span><span class="n">ensure_valid_name</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>        <span class="n">Artifact</span><span class="o">.</span><span class="n">is_name_valid</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a>
 </span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>        <span class="c1"># Call superclass init</span>
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;DataFrame&quot;</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">)</span>
@@ -5427,7 +5427,7 @@ Args:
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>
 </span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="c1"># Make sure the output_uuid is a valid name</span>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="n">Artifact</span><span class="o">.</span><span class="n">ensure_valid_name</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="n">Artifact</span><span class="o">.</span><span class="n">is_name_valid</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a>
 </span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="c1"># Call superclass init</span>
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;DataFrame&quot;</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">)</span>
@@ -6300,7 +6300,7 @@ Args:
 </span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;PandasToFeaturesChunked Initialization&quot;&quot;&quot;</span>
 </span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>
 </span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>        <span class="c1"># Make sure the output_uuid is a valid name</span>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>        <span class="n">Artifact</span><span class="o">.</span><span class="n">ensure_valid_name</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>        <span class="n">Artifact</span><span class="o">.</span><span class="n">is_name_valid</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>        <span class="c1"># Call superclass init</span>
 </span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;DataFrame&quot;</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">)</span>
@@ -6400,7 +6400,7 @@ Args:
 </span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;PandasToFeaturesChunked Initialization&quot;&quot;&quot;</span>
 </span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>
 </span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>    <span class="c1"># Make sure the output_uuid is a valid name</span>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>    <span class="n">Artifact</span><span class="o">.</span><span class="n">ensure_valid_name</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>    <span class="n">Artifact</span><span class="o">.</span><span class="n">is_name_valid</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>    <span class="c1"># Call superclass init</span>
 </span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;DataFrame&quot;</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">)</span>

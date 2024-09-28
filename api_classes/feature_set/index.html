@@ -2644,7 +2644,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-100"><a id="__codelineno-0-100" name="__codelineno-0-100"></a>
 </span><span id="__span-0-101"><a id="__codelineno-0-101" name="__codelineno-0-101"></a>        <span class="c1"># Ensure the model_name is valid</span>
 </span><span id="__span-0-102"><a id="__codelineno-0-102" name="__codelineno-0-102"></a>        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
-</span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a>            <span class="n">Artifact</span><span class="o">.</span><span class="n">ensure_valid_name</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+</span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a>            <span class="n">Artifact</span><span class="o">.</span><span class="n">is_name_valid</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">lower_case</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span><span id="__span-0-104"><a id="__codelineno-0-104" name="__codelineno-0-104"></a>
 </span><span id="__span-0-105"><a id="__codelineno-0-105" name="__codelineno-0-105"></a>        <span class="c1"># If the model_name wasn&#39;t given generate it</span>
 </span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a>        <span class="k">else</span><span class="p">:</span>
@@ -3073,7 +3073,7 @@ target_column (str): The target column for the model (use None for unsupervised 
 </span><span id="__span-0-100"><a id="__codelineno-0-100" name="__codelineno-0-100"></a>
 </span><span id="__span-0-101"><a id="__codelineno-0-101" name="__codelineno-0-101"></a>    <span class="c1"># Ensure the model_name is valid</span>
 </span><span id="__span-0-102"><a id="__codelineno-0-102" name="__codelineno-0-102"></a>    <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
-</span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a>        <span class="n">Artifact</span><span class="o">.</span><span class="n">ensure_valid_name</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+</span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a>        <span class="n">Artifact</span><span class="o">.</span><span class="n">is_name_valid</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">lower_case</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span><span id="__span-0-104"><a id="__codelineno-0-104" name="__codelineno-0-104"></a>
 </span><span id="__span-0-105"><a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="c1"># If the model_name wasn&#39;t given generate it</span>
 </span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a>    <span class="k">else</span><span class="p">:</span>

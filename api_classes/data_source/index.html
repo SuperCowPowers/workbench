@@ -2655,7 +2655,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>
 </span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>        <span class="c1"># Ensure the ds_name is valid</span>
 </span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
-</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>            <span class="n">Artifact</span><span class="o">.</span><span class="n">ensure_valid_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>            <span class="n">Artifact</span><span class="o">.</span><span class="n">is_name_valid</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>
 </span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>        <span class="c1"># If the model_name wasn&#39;t given generate it</span>
 </span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a>        <span class="k">else</span><span class="p">:</span>
@@ -2739,7 +2739,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-132"><a id="__codelineno-0-132" name="__codelineno-0-132"></a>
 </span><span id="__span-0-133"><a id="__codelineno-0-133" name="__codelineno-0-133"></a>        <span class="c1"># Ensure the feature_set_name is valid</span>
 </span><span id="__span-0-134"><a id="__codelineno-0-134" name="__codelineno-0-134"></a>        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
-</span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a>            <span class="n">Artifact</span><span class="o">.</span><span class="n">ensure_valid_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a>            <span class="n">Artifact</span><span class="o">.</span><span class="n">is_name_valid</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </span><span id="__span-0-136"><a id="__codelineno-0-136" name="__codelineno-0-136"></a>
 </span><span id="__span-0-137"><a id="__codelineno-0-137" name="__codelineno-0-137"></a>        <span class="c1"># If the feature_set_name wasn&#39;t given generate it</span>
 </span><span id="__span-0-138"><a id="__codelineno-0-138" name="__codelineno-0-138"></a>        <span class="k">else</span><span class="p">:</span>
@@ -2923,7 +2923,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>
 </span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="c1"># Ensure the ds_name is valid</span>
 </span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
-</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="n">Artifact</span><span class="o">.</span><span class="n">ensure_valid_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="n">Artifact</span><span class="o">.</span><span class="n">is_name_valid</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>
 </span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="c1"># If the model_name wasn&#39;t given generate it</span>
 </span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="k">else</span><span class="p">:</span>
@@ -3426,7 +3426,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-132"><a id="__codelineno-0-132" name="__codelineno-0-132"></a>
 </span><span id="__span-0-133"><a id="__codelineno-0-133" name="__codelineno-0-133"></a>    <span class="c1"># Ensure the feature_set_name is valid</span>
 </span><span id="__span-0-134"><a id="__codelineno-0-134" name="__codelineno-0-134"></a>    <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
-</span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a>        <span class="n">Artifact</span><span class="o">.</span><span class="n">ensure_valid_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a>        <span class="n">Artifact</span><span class="o">.</span><span class="n">is_name_valid</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </span><span id="__span-0-136"><a id="__codelineno-0-136" name="__codelineno-0-136"></a>
 </span><span id="__span-0-137"><a id="__codelineno-0-137" name="__codelineno-0-137"></a>    <span class="c1"># If the feature_set_name wasn&#39;t given generate it</span>
 </span><span id="__span-0-138"><a id="__codelineno-0-138" name="__codelineno-0-138"></a>    <span class="k">else</span><span class="p">:</span>
