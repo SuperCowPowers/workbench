@@ -105,7 +105,7 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
             print(f"No active log streams (start_time:{date_display(start_time)}, stream-filter:'{stream_filter}')")
             get_latest_log_events.first_run = False
         else:
-            print("Monitoring for new events...")
+            print("Monitoring for new events (WIP :)...")
         return log_events
 
     # Iterate over the active streams and fetch log events
@@ -272,8 +272,8 @@ def parse_args():
     parser.add_argument(
         "--poll-interval",
         type=int,
-        default=10,
-        help="Polling interval in seconds. Default is 10 seconds.",
+        default=60,
+        help="Polling interval in seconds. Default is 60 seconds.",
     )
     parser.add_argument(
         "--utc-time",
