@@ -40,6 +40,9 @@ def get_cloudwatch_client():
 def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=None):
     """Retrieve log streams that have events after the specified start time."""
 
+    # There seems to be a 15-minute delay in the logs, so we need to adjust the start time
+    start_time_ms = start_time_ms - 15 * 60 * 1000
+
     # Get all the streams in the log group
     active_streams = []
     stream_params = {
@@ -176,7 +179,7 @@ def monitor_log_group(
     log_group_name,
     start_time,
     end_time=None,
-    poll_interval=10,
+    poll_interval=60,
     log_level=None,
     search_terms=None,
     before=10,
@@ -190,46 +193,17 @@ def monitor_log_group(
     if search_terms:
         search_terms = [term.lower() for term in search_terms]
 
+    # Properly convert start time (minutes ago) to a datetime object in UTC
+    start_time = datetime.now(timezone.utc) - timedelta(minutes=start_time)
+    end_time = datetime.now(timezone.utc) - timedelta(minutes=end_time) if end_time else None
+
     print(f"Monitoring log group: {log_group_name} from {date_display(start_time)}")
+
     while True:
         # Get the latest log events with stream filtering if provided
         log_events = get_latest_log_events(client, log_group_name, start_time, end_time, stream_filter)
 
         if log_events:
-
-            # Handle log levels
-            log_levels = log_level_map.get(log_level.upper(), [log_level]) if log_level else []
-
-            # If log_level is provided, filter log events and include context
-            if log_levels:
-                ranges = []
-                for i, event in enumerate(log_events):
-                    # Match the log level in the log message
-                    if any(term in event["message"] for term in log_levels):
-
-                        # If we have search terms we need to make sure those match
-                        if search_terms:
-                            if not any(term in event["message"].lower() for term in search_terms):
-                                continue
-
-                        # Calculate the start and end index for this match
-                        start_index = max(i - before, 0)
-                        end_index = min(i + after, len(log_events) - 1)
-                        ranges.append((start_index, end_index))
-
-                # Merge overlapping ranges
-                merged_ranges = merge_ranges(ranges)
-
-                # Collect filtered events based on merged ranges
-                filtered_events = []
-                for start, end in merged_ranges:
-                    filtered_events.extend(log_events[start : end + 1])
-
-                    # These are just blank lines to separate the log message 'groups'
-                    filtered_events.append({"logStreamName": None, "timestamp": None, "message": ""})
-                    filtered_events.append({"logStreamName": None, "timestamp": None, "message": ""})
-                log_events = filtered_events
-
             # Display the log events
             if not log_events:
                 print("No log events found, matching the specified criteria...")
@@ -242,15 +216,13 @@ def monitor_log_group(
                     message = event["message"].strip()
                     print(f"[{log_stream_name}] [{date_display(timestamp)}] {message}")
 
-            # Update the start time to just after the last event's timestamp
-            if end_time is None:
-                start_time = datetime.now(timezone.utc)
-            else:
-                # Exit the loop after fetching logs for the specified range
-                break
+        # Increment start_time by poll_interval to advance the log window
+        start_time += timedelta(seconds=poll_interval)
+        print(f"Updated start time to: {date_display(start_time)}")
 
         # Wait for the next poll if monitoring real-time logs
         if end_time is None:
+            print("Monitoring for new events...")
             time.sleep(poll_interval)
         else:
             break
@@ -272,8 +244,8 @@ def parse_args():
     parser.add_argument(
         "--poll-interval",
         type=int,
-        default=10,
-        help="Polling interval in seconds. Default is 10 seconds.",
+        default=60,
+        help="Polling interval in seconds. Default is 60 seconds.",
     )
     parser.add_argument(
         "--utc-time",
@@ -302,10 +274,6 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # Determine the start time and end time for log monitoring (in UTC)
-    start_time = datetime.now(timezone.utc) - timedelta(minutes=args.start_time)
-    end_time = datetime.now(timezone.utc) - timedelta(minutes=args.end_time) if args.end_time else None
-
     # Set the global flag to display timestamps in local time
     global local_time
     local_time = not args.utc_time
@@ -313,8 +281,8 @@ def main():
     # Monitor the CloudWatch Logs group
     monitor_log_group(
         "SageWorksLogGroup",
-        start_time=start_time,
-        end_time=end_time,
+        start_time=args.start_time,
+        end_time=args.end_time,
         poll_interval=args.poll_interval,
         log_level=args.log_level,
         search_terms=args.search,
