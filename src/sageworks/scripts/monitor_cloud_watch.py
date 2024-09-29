@@ -23,7 +23,6 @@ def date_display(dt):
     Args:
         dt (datetime): The datetime object to format.
     """
-    # Convert UTC datetime to local timezone
     if local_time:
         dt = dt.astimezone()
         return dt.strftime("%Y-%m-%d %I:%M%p")
@@ -44,8 +43,8 @@ def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=
     active_streams = []
     stream_params = {
         "logGroupName": log_group_name,
-        "orderBy": "LastEventTime",  # Sort by the last event time
-        "descending": True,  # Get the most recent streams first
+        "orderBy": "LastEventTime",
+        "descending": True,
     }
 
     # Loop to retrieve all log streams (maximum 50 per call)
@@ -114,7 +113,7 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
         params = {
             "logGroupName": log_group_name,
             "logStreamName": log_stream_name,
-            "startTime": start_time_ms,  # Use start_time in milliseconds
+            "startTime": start_time_ms,  # Use start_time in milliseconds for the initial run
             "startFromHead": True,  # Start from the earliest log event in the stream
         }
         next_event_token = None
@@ -125,10 +124,13 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
         spinner = Spinner("lightpurple", f"Pulling events from {log_stream_name}:")
         spinner.start()
         log_stream_events = 0
+
+        # Get the log events for the active log stream
         while True:
-            # Get the log events for the active log stream
             if next_event_token:
                 params["nextToken"] = next_event_token
+                params.pop("startTime", None)  # Remove startTime when nextToken is present
+
             events_response = client.get_log_events(**params)
 
             events = events_response.get("events", [])
@@ -204,9 +206,8 @@ def monitor_log_group(
             if log_levels:
                 ranges = []
                 for i, event in enumerate(log_events):
-                    # Match the log level in the log message
+                    # Match any of the log levels in the log message
                     if any(term in event["message"] for term in log_levels):
-
                         # If we have search terms we need to make sure those match
                         if search_terms:
                             if not any(term in event["message"].lower() for term in search_terms):
@@ -235,7 +236,7 @@ def monitor_log_group(
                 print("No log events found, matching the specified criteria...")
             for event in log_events:
                 if event["logStreamName"] is None and event["timestamp"] is None:
-                    print("")  # Print a blank line
+                    print("")
                 else:
                     log_stream_name = event["logStreamName"]
                     timestamp = datetime.fromtimestamp(event["timestamp"] / 1000, tz=timezone.utc)
@@ -246,7 +247,6 @@ def monitor_log_group(
             if end_time is None:
                 start_time = datetime.now(timezone.utc)
             else:
-                # Exit the loop after fetching logs for the specified range
                 break
 
         # Wait for the next poll if monitoring real-time logs
