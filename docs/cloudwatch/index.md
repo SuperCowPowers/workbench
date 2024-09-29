@@ -3,18 +3,18 @@
 !!!tip inline end "Need Help?"
     The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
-The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines. As part of this we're including CloudWatch log forwarding for any use of the SageWorks API (Dashboard, Glue, Lambda, Notebook, Laptop, etc).
+The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines. As part of this we're including CloudWatch log forwarding/aggregation for any service using the SageWorks API (Dashboard, Glue, Lambda, Notebook, Laptop, etc).
 
 
-### Functionality
+### Log Groups and Streams
 The SageWorks logging setup includes the addition of a CloudWatch 'Handler' that forwards all log messages to the `SageWorksLogGroup`
 
-<img alt="sageworks log group" src="https://github.com/user-attachments/assets/a7778232-08db-4950-952c-dd8de650bae8">
 
-### Individual Streams
+**Individual Streams**
+
 Each process running SageWorks will get a unique individual stream.
 
-- **dashboard/\*** (any logs from Web Dashboard)
+- **ecs/DashBoard\*** (any logs from SageWorks Dashboard)
 - **glue/\*** (logs from Glue jobs)
 - **lambda/\*** (logs from Lambda jobs)
 - **docker/\*** (logs from Docker containers)
@@ -49,21 +49,29 @@ cloud_watch --stream glue/my_job
 # Show/search for a message substring
 cloud_watch --search SHAP
 
-# Show ALL logs (includes debug)
-cloud_watch --search ALL
+# Show a log levels (matching and above)
+cloud_watch --log-level WARNING
+cloud_watch --log-level ERROR
+cloud_watch --log-level CRITICAL
+OR
+cloud_watch --log-level ALL  (for all events)
 
-# Show messages this log 'level' or above
-cloud_watch --search IMPORTANT
-cloud_watch --search WARNING
-cloud_watch --search ERROR
-cloud_watch --search CRITICAL
+# Combine flags 
+cloud_watch --log-level ERROR --search SHAP
+cloud_watch --log-level ERROR --stream Dashboard
 ```
+
 These options can be used in combination and try out the other options to make the perfect log search :)
 
 <img alt="sageworks cloud_watch" src="https://github.com/user-attachments/assets/820817de-8f32-47e8-98dc-f3d3f415b2ea">
 
 ### More Information
 Check out our presentation on [SageWorks CloudWatch](https://docs.google.com/presentation/d/1Jtoo7LXWBSF2xCpn9BNLQlnAtN2vIELCzn_-XMu9GAI/edit?usp=sharing)
+
+### Access through AWS Console
+Since we're leveraging AWS functionality you can always use the AWS console to look/investigate the logs. In the AWS console go to **CloudWatch... Log Groups... SageWorksLogGroup**
+
+<img alt="sageworks log group" src="https://github.com/user-attachments/assets/a7778232-08db-4950-952c-dd8de650bae8">
 
     
 ### Questions?
