@@ -13,10 +13,22 @@ log_level_map = {
     "ERROR": ["ERROR", "CRITICAL"],
 }
 
+# Global flag to display timestamps in local time
+local_time = True
+
 
 def date_display(dt):
-    """Convert datetime to a concise human-readable format."""
-    return dt.strftime("%Y-%m-%d %H:%M:%S")
+    """Convert datetime to a concise human-readable format
+
+    Args:
+        dt (datetime): The datetime object to format.
+    """
+    # Convert UTC datetime to local timezone
+    if local_time:
+        dt = dt.astimezone()
+        return dt.strftime("%Y-%m-%d %I:%M%p")
+    else:
+        return dt.strftime("%Y-%m-%d %I:%M%p") + "(UTC)"
 
 
 def get_cloudwatch_client():
@@ -76,6 +88,11 @@ def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=
 
 def get_latest_log_events(client, log_group_name, start_time, end_time=None, stream_filter=None):
     """Retrieve the latest log events from the active/filtered log streams in a CloudWatch Logs group."""
+
+    # Initialize first run attribute
+    if not hasattr(get_latest_log_events, "first_run"):
+        get_latest_log_events.first_run = True
+
     log_events = []
     start_time_ms = int(start_time.timestamp() * 1000)  # Convert start_time to milliseconds
 
@@ -83,8 +100,13 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
     active_streams = get_active_log_streams(client, log_group_name, start_time_ms, stream_filter)
     if active_streams:
         print(f"Processing log events from {date_display(start_time)} on {len(active_streams)} active log streams...")
+        get_latest_log_events.first_run = False
     else:
-        print(f"No active log streams found with start_time:{date_display(start_time)} and stream filter:'{stream_filter}'")
+        if get_latest_log_events.first_run:
+            print(f"No active log streams (start_time:{date_display(start_time)}, stream-filter:'{stream_filter}')")
+            get_latest_log_events.first_run = False
+        else:
+            print("Monitoring for new events...")
         return log_events
 
     # Iterate over the active streams and fetch log events
@@ -155,7 +177,6 @@ def monitor_log_group(
     start_time,
     end_time=None,
     poll_interval=10,
-    utc_time=False,
     log_level=None,
     search_terms=None,
     before=10,
@@ -169,7 +190,7 @@ def monitor_log_group(
     if search_terms:
         search_terms = [term.lower() for term in search_terms]
 
-    print(f"Monitoring log group: {log_group_name} from {start_time} UTC")
+    print(f"Monitoring log group: {log_group_name} from {date_display(start_time)}")
     while True:
         # Get the latest log events with stream filtering if provided
         log_events = get_latest_log_events(client, log_group_name, start_time, end_time, stream_filter)
@@ -218,10 +239,6 @@ def monitor_log_group(
                 else:
                     log_stream_name = event["logStreamName"]
                     timestamp = datetime.fromtimestamp(event["timestamp"] / 1000, tz=timezone.utc)
-
-                    # Convert the timestamp to local time if utc_time is False
-                    if not utc_time:
-                        timestamp = timestamp.astimezone()
                     message = event["message"].strip()
                     print(f"[{log_stream_name}] [{date_display(timestamp)}] {message}")
 
@@ -289,12 +306,16 @@ def main():
     start_time = datetime.now(timezone.utc) - timedelta(minutes=args.start_time)
     end_time = datetime.now(timezone.utc) - timedelta(minutes=args.end_time) if args.end_time else None
 
+    # Set the global flag to display timestamps in local time
+    global local_time
+    local_time = not args.utc_time
+
+    # Monitor the CloudWatch Logs group
     monitor_log_group(
         "SageWorksLogGroup",
         start_time=start_time,
         end_time=end_time,
         poll_interval=args.poll_interval,
-        utc_time=args.utc_time,
         log_level=args.log_level,
         search_terms=args.search,
         before=args.before,
