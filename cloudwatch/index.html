@@ -1636,18 +1636,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#functionality" class="md-nav__link">
+  <a href="#log-groups-and-streams" class="md-nav__link">
     <span class="md-ellipsis">
-      Functionality
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#individual-streams" class="md-nav__link">
-    <span class="md-ellipsis">
-      Individual Streams
+      Log Groups and Streams
     </span>
   </a>
   
@@ -1666,6 +1657,15 @@
   <a href="#more-information" class="md-nav__link">
     <span class="md-ellipsis">
       More Information
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#access-through-aws-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      Access through AWS Console
     </span>
   </a>
   
@@ -1940,11 +1940,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../release_notes/0_8_18/" class="md-nav__link">
+      <a href="../release_notes/0_8_20/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    0.8.18
+    0.8.20
   </span>
   
 
@@ -2262,18 +2262,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#functionality" class="md-nav__link">
+  <a href="#log-groups-and-streams" class="md-nav__link">
     <span class="md-ellipsis">
-      Functionality
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#individual-streams" class="md-nav__link">
-    <span class="md-ellipsis">
-      Individual Streams
+      Log Groups and Streams
     </span>
   </a>
   
@@ -2292,6 +2283,15 @@
   <a href="#more-information" class="md-nav__link">
     <span class="md-ellipsis">
       More Information
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#access-through-aws-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      Access through AWS Console
     </span>
   </a>
   
@@ -2326,14 +2326,13 @@
 <p class="admonition-title">Need Help?</p>
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
-<p>The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines. As part of this we're including CloudWatch log forwarding for any use of the SageWorks API (Dashboard, Glue, Lambda, Notebook, Laptop, etc).</p>
-<h3 id="functionality">Functionality</h3>
+<p>The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines. As part of this we're including CloudWatch log forwarding/aggregation for any service using the SageWorks API (Dashboard, Glue, Lambda, Notebook, Laptop, etc).</p>
+<h3 id="log-groups-and-streams">Log Groups and Streams</h3>
 <p>The SageWorks logging setup includes the addition of a CloudWatch 'Handler' that forwards all log messages to the <code>SageWorksLogGroup</code></p>
-<p><img alt="sageworks log group" src="https://github.com/user-attachments/assets/a7778232-08db-4950-952c-dd8de650bae8"></p>
-<h3 id="individual-streams">Individual Streams</h3>
+<p><strong>Individual Streams</strong></p>
 <p>Each process running SageWorks will get a unique individual stream.</p>
 <ul>
-<li><strong>dashboard/*</strong> (any logs from Web Dashboard)</li>
+<li><strong>ecs/DashBoard*</strong> (any logs from SageWorks Dashboard)</li>
 <li><strong>glue/*</strong> (logs from Glue jobs)</li>
 <li><strong>lambda/*</strong> (logs from Lambda jobs)</li>
 <li><strong>docker/*</strong> (logs from Docker containers)</li>
@@ -2352,7 +2351,7 @@
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>cloud_watch --help
 </span></code></pre></div>
 <p>Here are some example options:</p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a># Show important logs in last 12 hours
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a># Show important logs in last 12 hours
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>cloud_watch --start-time 720 
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a># Show a particular stream
@@ -2361,19 +2360,24 @@
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a># Show/search for a message substring
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>cloud_watch --search SHAP
 </span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a># Show ALL logs (includes debug)
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>cloud_watch --search ALL
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a># Show messages this log &#39;level&#39; or above
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>cloud_watch --search IMPORTANT
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>cloud_watch --search WARNING
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>cloud_watch --search ERROR
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>cloud_watch --search CRITICAL
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a># Show a log levels (matching and above)
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>cloud_watch --log-level WARNING
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>cloud_watch --log-level ERROR
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>cloud_watch --log-level CRITICAL
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>OR
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>cloud_watch --log-level ALL  (for all events)
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a># Combine flags 
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>cloud_watch --log-level ERROR --search SHAP
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>cloud_watch --log-level ERROR --stream Dashboard
 </span></code></pre></div>
-These options can be used in combination and try out the other options to make the perfect log search :)</p>
+<p>These options can be used in combination and try out the other options to make the perfect log search :)</p>
 <p><img alt="sageworks cloud_watch" src="https://github.com/user-attachments/assets/820817de-8f32-47e8-98dc-f3d3f415b2ea"></p>
 <h3 id="more-information">More Information</h3>
 <p>Check out our presentation on <a href="https://docs.google.com/presentation/d/1Jtoo7LXWBSF2xCpn9BNLQlnAtN2vIELCzn_-XMu9GAI/edit?usp=sharing">SageWorks CloudWatch</a></p>
+<h3 id="access-through-aws-console">Access through AWS Console</h3>
+<p>Since we're leveraging AWS functionality you can always use the AWS console to look/investigate the logs. In the AWS console go to <strong>CloudWatch... Log Groups... SageWorksLogGroup</strong></p>
+<p><img alt="sageworks log group" src="https://github.com/user-attachments/assets/a7778232-08db-4950-952c-dd8de650bae8"></p>
 <h3 id="questions">Questions?</h3>
 <p><img align="right" src="../images/scp.png" width="180"></p>
 <p>The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
