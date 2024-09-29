@@ -14,6 +14,11 @@ log_level_map = {
 }
 
 
+def date_display(dt):
+    """Convert datetime to a concise human-readable format."""
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
 def get_cloudwatch_client():
     """Get the CloudWatch Logs client using the SageWorks assumed role session."""
     session = AWSAccountClamp().boto3_session
@@ -23,25 +28,36 @@ def get_cloudwatch_client():
 def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=None):
     """Retrieve log streams that have events after the specified start time."""
 
-    # Get all the streams in the log group (this is a large number of streams)
+    # Get all the streams in the log group
     active_streams = []
     stream_params = {
         "logGroupName": log_group_name,
-        "orderBy": "LastEventTime",  # This is important later
+        "orderBy": "LastEventTime",  # Sort by the last event time
         "descending": True,  # Get the most recent streams first
     }
-    all_log_streams = client.describe_log_streams(**stream_params).get("logStreams", [])
-    for log_stream in all_log_streams:
-        log_stream_name = log_stream["logStreamName"]
-        last_event_timestamp = log_stream.get("lastEventTimestamp")
 
-        # Include streams with events since the specified start time
-        if last_event_timestamp and last_event_timestamp >= start_time_ms:
-            active_streams.append(log_stream_name)
+    # Loop to retrieve all log streams (maximum 50 per call)
+    while True:
+        response = client.describe_log_streams(**stream_params)
+        log_streams = response.get("logStreams", [])
+
+        for log_stream in log_streams:
+            log_stream_name = log_stream["logStreamName"]
+            last_event_timestamp = log_stream.get("lastEventTimestamp")
+
+            # Include streams with events since the specified start time
+            if last_event_timestamp and last_event_timestamp >= start_time_ms:
+                active_streams.append(log_stream_name)
+            else:
+                break  # Stop if we reach streams older than the start time
+
+        # Check if there are more streams to retrieve
+        if "nextToken" in response:
+            stream_params["nextToken"] = response["nextToken"]
         else:
-            break  # Streams are sorted by LastEventTime, so we can stop here
+            break
 
-    # Sort and Report the active log streams
+    # Sort and report the active log streams
     active_streams.sort()
     if active_streams:
         print("Active log streams:", len(active_streams))
@@ -50,6 +66,7 @@ def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=
     if stream_filter and active_streams:
         print(f"Filtering active log streams by '{stream_filter}'...")
         active_streams = [stream for stream in active_streams if stream_filter in stream]
+
     for stream in active_streams:
         print(f"\t - {stream}")
 
@@ -65,7 +82,10 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
     # Get the active log streams with events since start_time
     active_streams = get_active_log_streams(client, log_group_name, start_time_ms, stream_filter)
     if active_streams:
-        print(f"Processing log events from {start_time} UTC on {len(active_streams)} active log streams...")
+        print(f"Processing log events from {date_display(start_time)} on {len(active_streams)} active log streams...")
+    else:
+        print(f"No active log streams found with start_time:{date_display(start_time)} and stream filter:'{stream_filter}'")
+        return log_events
 
     # Iterate over the active streams and fetch log events
     for log_stream_name in active_streams:
@@ -202,10 +222,8 @@ def monitor_log_group(
                     # Convert the timestamp to local time if utc_time is False
                     if not utc_time:
                         timestamp = timestamp.astimezone()
-
-                    formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
                     message = event["message"].strip()
-                    print(f"[{log_stream_name}] [{formatted_time}] {message}")
+                    print(f"[{log_stream_name}] [{date_display(timestamp)}] {message}")
 
             # Update the start time to just after the last event's timestamp
             if end_time is None:
