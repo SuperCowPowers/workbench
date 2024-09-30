@@ -17,15 +17,16 @@ class View:
     """View: Read from a view (training, display, etc) for DataSources and FeatureSets.
 
     Common Usage:
-        ```
-        view = View(DataSource/FeatureSet, "training")
-        training_df = view.pull_dataframe()
+        ```python
 
-        # You can also pull from the DS/FS directly
+        # Grab the Display View for a DataSource
         display_view = ds.view("display")
         print(display_view.columns)
 
-        # Get a DataFrame for the computation view
+        # Pull a DataFrame for the view
+        df = display_view.pull_dataframe()
+
+        # Views also work with FeatureSets
         comp_view = fs.view("computation")
         comp_df = comp_view.pull_dataframe()
 
