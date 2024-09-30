@@ -54,7 +54,7 @@ def generate_shap_values(
     try:
         # Note: For Tree-based models like decision trees, random forests, XGBoost, LightGBM,
         explainer = shap.TreeExplainer(model_artifact)
-        shap_vals = explainer.shap_values(X_pred)
+        shap_vals = explainer.shap_values(X_pred,check_additivity=False)
 
         # Multiple shap vals CSV for classifiers
         if model_type == "classifier":
