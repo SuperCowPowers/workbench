@@ -52,6 +52,7 @@ ui = [
     "dash-bootstrap-templates==1.1.1",
     "dash_ag_grid",
     "tabulate>=0.9.0",
+    "matplotlib>=3.9.2",
 ]
 dev = ["pytest", "pytest-sugar", "coverage", "pytest-cov", "flake8", "black"]
 all = [
