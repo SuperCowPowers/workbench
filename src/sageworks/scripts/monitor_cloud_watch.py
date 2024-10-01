@@ -113,8 +113,8 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
         params = {
             "logGroupName": log_group_name,
             "logStreamName": log_stream_name,
-            "startTime": start_time_ms,  # Use start_time in milliseconds for the initial run
-            "startFromHead": True,  # Start from the earliest log event in the stream
+            "startTime": start_time_ms,  # Use start_time in milliseconds
+            "startFromHead": True,  # Start from the nearest event to start_time
         }
         next_event_token = None
         if end_time is not None:
@@ -129,7 +129,7 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
         while True:
             if next_event_token:
                 params["nextToken"] = next_event_token
-                params.pop("startTime", None)  # Remove startTime when nextToken is present
+                params.pop("startTime", None)  # Remove startTime when using nextToken
 
             events_response = client.get_log_events(**params)
 
