@@ -122,12 +122,6 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     else:
         raise ValueError("Input DataFrame must have a 'smiles' column")
 
-    # There are certain smiles that cause Mordred to crash
-    # We'll replace them with 'equivalent' smiles (these need to be verified)
-    df[smiles_column] = df[smiles_column].replace("[O-]C([O-])=O.[NH4+]CCO.[NH4+]CCO", "[O]C([O])=O.[N]CCO.[N]CCO")
-    df[smiles_column] = df[smiles_column].replace("[NH4+]CCO.[NH4+]CCO.[O-]C([O-])=O", "[N]CCO.[N]CCO.[O]C([O])=O")
-    df[smiles_column] = df[smiles_column].replace("O=S(=O)(Nn1c-nnc1)C1=CC=CC=C1", "O=S(=O)(NN(C=N1)C=N1)C(C=CC1)=CC=1")
-
     # Compute/add all the Molecular Descriptors
     log.info("Computing Molecular Descriptors...")
 
@@ -178,7 +172,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
 if __name__ == "__main__":
 
     # Show a molecule
-    smiles = "CC(CN1CC(C)OC(C)C1)Cc2ccc(cc2)C(C)(C)C"
+    smiles = "CC(CN1CC(C)OC(C)C1)"
     show(smiles)
 
     # Test the concentration conversion functions
