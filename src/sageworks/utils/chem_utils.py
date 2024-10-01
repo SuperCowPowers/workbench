@@ -1,9 +1,39 @@
-"""Chem/RDKIT utilities for Sageworks"""
+"""Chem/RDKIT/Mordred utilities for Sageworks"""
 
+import logging
 import numpy as np
 import pandas as pd
-from rdkit import Chem
-from rdkit.Chem import Draw
+
+# Third Party Imports
+try:
+    from rdkit import Chem
+    from rdkit.Chem import Descriptors
+    from rdkit.ML.Descriptors import MoleculeDescriptors
+    from rdkit import RDLogger
+    from rdkit.Chem import Draw
+
+    # Turn off warnings for RDKIT (revisit this)
+    RDLogger.DisableLog("rdApp.*")
+    NO_RDKIT = False
+except ImportError:
+    print("RDKit Python module not found! pip install rdkit")
+    NO_RDKIT = True
+
+try:
+    from mordred import Calculator
+    from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
+
+    NO_MORDRED = False
+except ImportError:
+    print("Mordred Python module not found! pip install mordred")
+    NO_MORDRED = True
+
+
+# Sageworks Imports
+from sageworks.utils import pandas_utils
+
+# Set up the logger
+log = logging.getLogger("sageworks")
 
 
 def show(smiles: str, size: tuple[int, int] = (500, 500)) -> None:
@@ -74,6 +104,77 @@ def log_to_category(log_series: pd.Series) -> pd.Series:
     return pd.cut(log_series, bins=bins, labels=labels)
 
 
+def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
+    """Compute and add all the Molecular Descriptors
+
+    Args:
+        df(pd.DataFrame): The DataFrame to process and generate RDKit/Mordred Descriptors
+
+    Returns:
+        pd.DataFrame: The input DataFrame with all the RDKit Descriptors added
+    """
+
+    # Check for the smiles column (any capitalization)
+    if "SMILES" in df.columns:
+        smiles_column = "SMILES"
+    elif "smiles" in df.columns:
+        smiles_column = "smiles"
+    else:
+        raise ValueError("Input DataFrame must have a 'smiles' column")
+
+    # There are certain smiles that cause Mordred to crash
+    # We'll replace them with 'equivalent' smiles (these need to be verified)
+    df[smiles_column] = df[smiles_column].replace("[O-]C([O-])=O.[NH4+]CCO.[NH4+]CCO", "[O]C([O])=O.[N]CCO.[N]CCO")
+    df[smiles_column] = df[smiles_column].replace("[NH4+]CCO.[NH4+]CCO.[O-]C([O-])=O", "[N]CCO.[N]CCO.[O]C([O])=O")
+    df[smiles_column] = df[smiles_column].replace("O=S(=O)(Nn1c-nnc1)C1=CC=CC=C1", "O=S(=O)(NN(C=N1)C=N1)C(C=CC1)=CC=1")
+
+    # Compute/add all the Molecular Descriptors
+    log.info("Computing Molecular Descriptors...")
+
+    # Conversion to Molecules
+    molecules = [Chem.MolFromSmiles(smile) for smile in df[smiles_column]]
+
+    # Now get all the RDKIT Descriptors
+    all_descriptors = [x[0] for x in Descriptors._descList]
+
+    # There's an overflow issue that happens with the IPC descriptor, so we'll remove it
+    # See: https://github.com/rdkit/rdkit/issues/1527
+    if "Ipc" in all_descriptors:
+        all_descriptors.remove("Ipc")
+
+    # Make sure we don't have duplicates
+    all_descriptors = list(set(all_descriptors))
+
+    # Super useful Molecular Descriptor Calculator Class
+    calc = MoleculeDescriptors.MolecularDescriptorCalculator(all_descriptors)
+    column_names = calc.GetDescriptorNames()
+    descriptor_values = [calc.CalcDescriptors(m) for m in molecules]
+    rdkit_features_df = pd.DataFrame(descriptor_values, columns=column_names)
+
+    # Now compute Mordred Features
+    descriptor_choice = [AcidBase, Aromatic, Polarizability, RotatableBond]
+    calc = Calculator()
+    for des in descriptor_choice:
+        calc.register(des)
+    mordred_df = calc.pandas(molecules, nproc=1)
+
+    # Return the DataFrame with the RDKit and Mordred Descriptors added
+    output_df = pd.concat([df, rdkit_features_df, mordred_df], axis=1)
+
+    # Get the columns that are descriptors
+    desc_columns = set(output_df.columns) - set(df.columns)
+
+    # Drop any NaNs (and INFs)
+    current_rows = output_df.shape[0]
+    output_df = pandas_utils.drop_nans(output_df, how="any", subset=desc_columns)
+    drop_rows = current_rows - output_df.shape[0]
+    if drop_rows > 0:
+        log.warning(f"Dropped {drop_rows} NaN rows")
+
+    # Return the DataFrame with the RDKit and Mordred Descriptors added
+    return output_df
+
+
 if __name__ == "__main__":
 
     # Show a molecule
@@ -93,4 +194,9 @@ if __name__ == "__main__":
 
     # Convert log10 to categories
     df["category"] = log_to_category(df["log10"])
+    print(df)
+
+    # Compute Molecular Descriptors
+    df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles]})
+    df = compute_molecular_descriptors(df)
     print(df)
