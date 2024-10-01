@@ -18,7 +18,7 @@ class Pipeline:
     """Pipeline: SageWorks Pipeline API Class
 
     Common Usage:
-        ```
+        ```python
         my_pipeline = Pipeline("name")
         my_pipeline.details()
         my_pipeline.execute()  # Execute entire pipeline

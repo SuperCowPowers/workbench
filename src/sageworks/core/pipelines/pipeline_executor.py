@@ -12,7 +12,7 @@ class PipelineExecutor:
     """PipelineExecutor: Internal Class: Executes a SageWorks Pipeline
 
     Common Usage:
-        ```
+        ```python
         my_pipeline = PipelineExecutor(pipeline)
         my_pipeline.execute()  # Execute entire pipeline
         my_pipeline.execute_partial(["data_source", "feature_set"])

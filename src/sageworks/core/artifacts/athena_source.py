@@ -30,7 +30,7 @@ class AthenaSource(DataSourceAbstract):
     """AthenaSource: SageWorks Data Source accessible through Athena
 
     Common Usage:
-        ```
+        ```python
         my_data = AthenaSource(data_uuid, database="sageworks")
         my_data.summary()
         my_data.details()

@@ -13,7 +13,7 @@ class ColumnSubsetView(CreateView):
     """ColumnSubsetView Class: Create a View with a subset of columns
 
     Common Usage:
-        ```
+        ```python
         # Create a ColumnSubsetView with a specific set of columns
         my_view = ColumnSubsetView.create("my_view", fs, column_list=["my_col1", "my_col2"])
 

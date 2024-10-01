@@ -13,7 +13,7 @@ class Endpoint(EndpointCore):
     """Endpoint: SageWorks Endpoint API Class
 
     Common Usage:
-        ```
+        ```python
         my_endpoint = Endpoint(name)
         my_endpoint.details()
         my_endpoint.inference(eval_df)

@@ -48,7 +48,7 @@ class EndpointCore(Artifact):
     """EndpointCore: SageWorks EndpointCore Class
 
     Common Usage:
-        ```
+        ```python
         my_endpoint = EndpointCore(endpoint_uuid)
         prediction_df = my_endpoint.predict(test_df)
         metrics = my_endpoint.regression_metrics(target_column, prediction_df)

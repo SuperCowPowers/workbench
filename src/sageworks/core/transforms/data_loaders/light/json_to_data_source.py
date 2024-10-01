@@ -12,7 +12,7 @@ class JSONToDataSource(Transform):
     """JSONToDataSource: Class to move local JSON Files into a SageWorks DataSource
 
     Common Usage:
-        ```
+        ```python
         json_to_data = JSONToDataSource(json_file_path, data_uuid)
         json_to_data.set_output_tags(["abalone", "json", "whatever"])
         json_to_data.transform()

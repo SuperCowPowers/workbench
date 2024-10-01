@@ -15,7 +15,7 @@ class MDQView:
     """MDQView Class: A View that computes various endpoint data quality metrics
 
     Common Usage:
-        ```
+        ```python
         # Grab a FeatureSet and an Endpoint
         fs = FeatureSet("abalone_features")
         endpoint = Endpoint("abalone-regression-end")

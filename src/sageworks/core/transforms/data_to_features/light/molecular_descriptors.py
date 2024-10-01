@@ -34,7 +34,7 @@ class MolecularDescriptors(DataToFeaturesLight):
     """MolecularDescriptors: Create a FeatureSet (RDKit Descriptors) from a DataSource
 
     Common Usage:
-        ```
+        ```python
         to_features = MolecularDescriptors(data_uuid, feature_uuid)
         to_features.set_output_tags(["aqsol", "whatever"])
         to_features.transform()

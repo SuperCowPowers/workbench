@@ -27,7 +27,7 @@ class FeatureSetCore(Artifact):
     """FeatureSetCore: SageWorks FeatureSetCore Class
 
     Common Usage:
-        ```
+        ```python
         my_features = FeatureSetCore(feature_uuid)
         my_features.summary()
         my_features.details()

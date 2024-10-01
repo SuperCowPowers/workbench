@@ -10,7 +10,7 @@ class DataToDataLight(Transform):
     """DataToDataLight: Base Class for Light DataSource to DataSource using Pandas
 
     Common Usage:
-        ```
+        ```python
         to_data = DataToDataLight(input_data_uuid, output_data_uuid)
         to_data.set_output_tags(["abalone", "public", "whatever"])
         to_data.transform(query=<optional SQL query to filter/process data>)

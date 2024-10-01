@@ -13,7 +13,7 @@ class CSVToDataSource(Transform):
     """CSVToDataSource: Class to move local CSV Files into a SageWorks DataSource
 
     Common Usage:
-        ```
+        ```python
         csv_to_data = CSVToDataSource(csv_file_path, data_uuid)
         csv_to_data.set_output_tags(["abalone", "csv", "whatever"])
         csv_to_data.transform()

@@ -23,7 +23,7 @@ class DataSource(AthenaSource):
     """DataSource: SageWorks DataSource API Class
 
     Common Usage:
-        ```
+        ```python
         my_data = DataSource(name_of_source)
         my_data.details()
         my_features = my_data.to_features()

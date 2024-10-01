@@ -18,7 +18,7 @@ class FeatureSet(FeatureSetCore):
     """FeatureSet: SageWorks FeatureSet API Class
 
     Common Usage:
-        ```
+        ```python
         my_features = FeatureSet(name)
         my_features.details()
         my_features.to_model(

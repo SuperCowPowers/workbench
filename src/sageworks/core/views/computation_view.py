@@ -12,7 +12,7 @@ class ComputationView(ColumnSubsetView):
     """ComputationView Class: Create a View with a subset of columns for computation purposes
 
     Common Usage:
-        ```
+        ```python
         # Create a default ComputationView
         fs = FeatureSet("test_features")
         comp_view = ComputationView.create(fs)

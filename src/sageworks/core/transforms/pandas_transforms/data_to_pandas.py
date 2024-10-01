@@ -11,7 +11,7 @@ class DataToPandas(Transform):
     """DataToPandas: Class to transform a Data Source into a Pandas DataFrame
 
     Common Usage:
-        ```
+        ```python
         data_to_df = DataToPandas(data_source_uuid)
         data_to_df.transform(query=<optional SQL query to filter/process data>)
         data_to_df.transform(max_rows=<optional max rows to sample>)

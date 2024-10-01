@@ -14,7 +14,7 @@ class PipelineManager:
     """PipelineManager: Manages SageWorks Pipelines, listing, creating, and saving them.
 
     Common Usage:
-        ```
+        ```python
         my_manager = PipelineManager()
         my_manager.list_pipelines()
         abalone_pipeline = my_manager.create_from_endpoint("abalone-regression-end")

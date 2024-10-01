@@ -16,7 +16,7 @@ class Model(ModelCore):
     """Model: SageWorks Model API Class.
 
     Common Usage:
-        ```
+        ```python
         my_features = Model(name)
         my_features.details()
         my_features.to_endpoint()

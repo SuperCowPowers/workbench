@@ -15,7 +15,7 @@ class DFStore:
     """DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy
 
     Common Usage:
-        ```
+        ```python
         df_store = DFStore()
 
         # List Data

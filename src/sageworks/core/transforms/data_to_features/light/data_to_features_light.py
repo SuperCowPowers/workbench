@@ -11,7 +11,7 @@ class DataToFeaturesLight(Transform):
     """DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas
 
     Common Usage:
-        ```
+        ```python
         to_features = DataToFeaturesLight(data_uuid, feature_uuid)
         to_features.set_output_tags(["abalone", "public", "whatever"])
         to_features.transform(target_column="target"/None, id_column="id"/None,

@@ -15,7 +15,7 @@ class PandasToData(Transform):
     """PandasToData: Class to publish a Pandas DataFrame as a DataSource
 
     Common Usage:
-        ```
+        ```python
         df_to_data = PandasToData(output_uuid)
         df_to_data.set_output_tags(["test", "small"])
         df_to_data.set_input(test_df)

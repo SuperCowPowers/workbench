@@ -69,7 +69,7 @@ class ModelCore(Artifact):
     """ModelCore: SageWorks ModelCore Class
 
     Common Usage:
-        ```
+        ```python
         my_model = ModelCore(model_uuid)
         my_model.summary()
         my_model.details()

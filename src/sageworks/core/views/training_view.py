@@ -13,7 +13,7 @@ class TrainingView(CreateView):
     """TrainingView Class: A View with an additional training column that marks holdout ids
 
     Common Usage:
-        ```
+        ```python
         # Create a default TrainingView
         fs = FeatureSet("test_features")
         training_view = TrainingView.create(fs)

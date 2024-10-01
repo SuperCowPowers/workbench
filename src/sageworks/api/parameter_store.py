@@ -15,7 +15,7 @@ class ParameterStore:
     """ParameterStore: Manages SageWorks parameters in AWS Systems Manager Parameter Store.
 
     Common Usage:
-        ```
+        ```python
         params = ParameterStore()
 
         # List Parameters

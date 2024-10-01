@@ -17,7 +17,7 @@ class DataToFeaturesHeavy(Transform):
     """DataToFeaturesHeavy: Class to Transform a DataSource into a FeatureSet (Athena/FeatureStore)
 
     Common Usage:
-        ````
+        ```python`
         to_features = DataToFeaturesHeavy(output_uuid)
         to_features.set_output_tags(["heavy", "whatever"])
         to_features.transform(query, id_column, event_time_column=None)

@@ -14,7 +14,7 @@ class DataToFeaturesChunk(Transform):
     """DataToFeaturesChunk: Class to Transform a DataSource into a FeatureSet using Chunking
 
     Common Usage:
-        ```
+        ```python
         data_to_features = DataToFeaturesChunk(input_uuid, output_uuid, 50000)
         data_to_features.set_output_tags(["heavy", "whatever"])
         data_to_features.transform(query, id_column, event_time_column=None)

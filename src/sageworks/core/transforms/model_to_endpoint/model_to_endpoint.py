@@ -17,7 +17,7 @@ class ModelToEndpoint(Transform):
     """ModelToEndpoint: Deploy an Endpoint for a Model
 
     Common Usage:
-        ```
+        ```python
         to_endpoint = ModelToEndpoint(model_uuid, endpoint_uuid)
         to_endpoint.set_output_tags(["aqsol", "public", "whatever"])
         to_endpoint.transform()

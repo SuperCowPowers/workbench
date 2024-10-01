@@ -12,7 +12,7 @@ class DisplayView(ColumnSubsetView):
     """DisplayView Class: Create a View with a subset of columns for display purposes
 
     Common Usage:
-        ```
+        ```python
         # Create a default DisplayView
         fs = FeatureSet("test_features")
         display_view = DisplayView.create(fs)
