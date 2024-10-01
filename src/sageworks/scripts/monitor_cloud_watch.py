@@ -131,6 +131,7 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
                 params["nextToken"] = next_event_token
                 params.pop("startTime", None)  # Remove startTime when using nextToken
 
+            # Fetch the log events (this call takes a while: optimize if we can)
             events_response = client.get_log_events(**params)
 
             events = events_response.get("events", [])

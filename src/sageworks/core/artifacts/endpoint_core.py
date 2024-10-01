@@ -134,6 +134,11 @@ class EndpointCore(Artifact):
         # Call the base class health check
         health_issues = super().health_check()
 
+        # Does this endpoint have a config?
+        # Note: This is not an authoritative check, so improve later
+        if self.endpoint_meta.get("ProductionVariants") is None:
+            health_issues.append("no_config")
+
         # We're going to check for 5xx errors and no activity
         endpoint_metrics = self.endpoint_metrics()
 
