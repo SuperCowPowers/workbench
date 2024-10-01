@@ -21,12 +21,12 @@ class Meta:
     """Meta: A class that provides Metadata for a broad set of AWS Artifacts
 
     Common Usage:
-    ```
-    meta = Meta()
-    meta.account()
-    meta.config()
-    meta.data_sources()
-    ```
+        ```python
+        meta = Meta()
+        meta.account()
+        meta.config()
+        meta.data_sources()
+        ```
     """
 
     def __init__(self):
