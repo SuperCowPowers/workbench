@@ -16,7 +16,7 @@ COPY requirements-no-dash.txt .
 RUN pip install --no-cache-dir -r requirements-no-dash.txt
 
 # Install latest Sageworks
-RUN pip install --no-cache-dir 'sageworks[ml-tool,chem]'==0.8.20
+RUN pip install --no-cache-dir 'sageworks[ml-tool,chem]'==0.8.22
 
 # Remove setuptools (vulnerability)
 RUN apt-get remove --purge -y python3-setuptools python3-pkg-resources

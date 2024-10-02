@@ -34,7 +34,7 @@ COPY nginx.conf /etc/nginx/sites-available/default
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Install latest Sageworks
-RUN pip install --no-cache-dir sageworks==0.8.21
+RUN pip install --no-cache-dir sageworks==0.8.22
 
 # Remove setuptools (vulnerability)
 # Reinstall supervisor after removing setuptools and pkg_resources
