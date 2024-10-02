@@ -8,11 +8,8 @@
             to_features.transform()
 """
 
-import pandas as pd
-
 # Local Imports
 from sageworks.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
-from sageworks.utils import pandas_utils
 from sageworks.utils.chem_utils import compute_molecular_descriptors
 
 
