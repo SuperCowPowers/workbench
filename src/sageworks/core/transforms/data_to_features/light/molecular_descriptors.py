@@ -144,4 +144,4 @@ if __name__ == "__main__":
         data_to_features = MolecularDescriptors("aqsol_data", "aqsol_mol_descriptors")
         data_to_features.set_output_tags(["logS", "public"])
         query = 'SELECT id, "group", solubility, smiles FROM aqsol_data'
-        data_to_features.transform(target_column="solubility", id_column="id", query=query)
+        data_to_features.transform(id_column="id", query=query)

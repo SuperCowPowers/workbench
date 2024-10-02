@@ -111,7 +111,6 @@ class DataSource(AthenaSource):
         self,
         name: str = None,
         tags: list = None,
-        target_column: str = None,
         id_column: str = None,
         event_time_column: str = None,
         auto_one_hot: bool = False,
@@ -120,12 +119,11 @@ class DataSource(AthenaSource):
         Convert the DataSource to a FeatureSet
 
         Args:
-            name (str): Set the name for feature set (must be lowercase). If not specified, a name will be generated
-            tags (list): Set the tags for the feature set. If not specified tags will be generated.
-            target_column (str): Set the target column for the feature set. (Optional)
-            id_column (str): Set the id column for the feature set. If not specified will be generated.
-            event_time_column (str): Set the event time for the feature set. If not specified will be generated.
-            auto_one_hot (bool): Automatically one-hot encode categorical fields (default: False)
+            name (str) Optional: Set the name for feature set (must be lowercase). If not specified, a name will be generated
+            tags (list) Optional: Set the tags for the feature set. If not specified tags will be generated.
+            id_column (str) Optional: Set the id column for the feature set. If not specified will be generated.
+            event_time_column (str) Optional: Set the event time for the feature set. If not specified will be generated.
+            auto_one_hot (bool) Optional: Automatically one-hot encode categorical fields (default: False)
 
         Returns:
             FeatureSet: The FeatureSet created from the DataSource (or None if the FeatureSet isn't created)
@@ -149,7 +147,6 @@ class DataSource(AthenaSource):
         data_to_features = DataToFeaturesLight(self.uuid, name)
         data_to_features.set_output_tags(tags)
         data_to_features.transform(
-            target_column=target_column,
             id_column=id_column,
             event_time_column=event_time_column,
             auto_one_hot=auto_one_hot,

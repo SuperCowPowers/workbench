@@ -42,7 +42,6 @@ class PandasToFeatures(Transform):
         # Set up all my instance attributes
         self.input_type = TransformInput.PANDAS_DF
         self.output_type = TransformOutput.FEATURE_SET
-        self.target_column = None
         self.id_column = None
         self.event_time_column = None
         self.auto_one_hot = auto_one_hot
@@ -58,15 +57,13 @@ class PandasToFeatures(Transform):
         self.output_feature_set = None
         self.expected_rows = 0
 
-    def set_input(self, input_df: pd.DataFrame, target_column=None, id_column=None, event_time_column=None):
+    def set_input(self, input_df: pd.DataFrame, id_column=None, event_time_column=None):
         """Set the Input DataFrame for this Transform
         Args:
             input_df (pd.DataFrame): The input DataFrame
-            target_column (str): The name of the target column (default: None)
             id_column (str): The name of the id column (default: None)
             event_time_column (str): The name of the event_time column (default: None)
         """
-        self.target_column = target_column
         self.id_column = id_column
         self.event_time_column = event_time_column
         self.output_df = input_df.copy()
@@ -200,11 +197,7 @@ class PandasToFeatures(Transform):
         """Convert object and string types to Categorical"""
         categorical_columns = []
         for feature, dtype in self.output_df.dtypes.items():
-            if dtype in ["object", "string", "category"] and feature not in [
-                self.event_time_column,
-                self.id_column,
-                self.target_column,
-            ]:
+            if dtype in ["object", "string", "category"] and feature not in [self.event_time_column, self.id_column]:
                 unique_values = self.output_df[feature].nunique()
                 if 1 < unique_values < 6:
                     self.log.important(f"Converting column {feature} to categorical (unique {unique_values})")

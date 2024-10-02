@@ -173,6 +173,10 @@ class FeaturesToModel(Transform):
             metrics_s3_path = f"{self.model_training_root}/{self.output_uuid}"
             aws_script = aws_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
 
+        else:
+            self.log.critical(f"Unknown ModelType: {self.model_type}")
+            raise ValueError(f"Unknown ModelType: {self.model_type}")
+
         # Now write out the generated model script and return the name
         with open(output_path, "w") as fp:
             fp.write(aws_script)
