@@ -26,7 +26,7 @@ Even though SageWorks makes AWS easier, it's taking something very complex (200+
 The SageWorks API documentation [SageWorks API](https://supercowpowers.github.io/sageworks/) covers our in-depth Python API and contains code examples. The code examples are provided in the Github repo `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
 
 ### Questions?
-The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 <img align="right" src="../docs/images/scp.png" width="180">
 

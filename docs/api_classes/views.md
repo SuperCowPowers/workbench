@@ -75,4 +75,4 @@ print(df.head())
     The SageWorks Classes used to construct viewss are currently in 'Core'. So you can check out the documentation for those classes here: [SageWorks View Creators](../core_classes/views/overview.md)
     
 
-The SuperCowPowers team is happy to anser any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
