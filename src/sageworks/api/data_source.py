@@ -119,10 +119,10 @@ class DataSource(AthenaSource):
         Convert the DataSource to a FeatureSet
 
         Args:
-            name (str) Optional: Set the name for feature set (must be lowercase). If not specified, a name will be generated
-            tags (list) Optional: Set the tags for the feature set. If not specified tags will be generated.
-            id_column (str) Optional: Set the id column for the feature set. If not specified will be generated.
-            event_time_column (str) Optional: Set the event time for the feature set. If not specified will be generated.
+            name (str) Optional: Set the name for feature set (must be lowercase). If not specified, will be generated
+            tags (list) Optional: Set the tags for the feature set. If not specified tags will be generated
+            id_column (str) Optional: Set the id column for the feature set. If not specified will be generated
+            event_time_column (str) Optional: Set the event time for feature set. If not specified will be generated
             auto_one_hot (bool) Optional: Automatically one-hot encode categorical fields (default: False)
 
         Returns:
