@@ -45,7 +45,7 @@ class PandasToFeatures(Transform):
         self.id_column = None
         self.event_time_column = None
         self.one_hot_columns = []
-        self.categorical_dtypes = {}
+        self.categorical_dtypes = {}  # Used for streaming/chunking
         self.output_df = None
         self.table_format = TableFormatEnum.ICEBERG
 
@@ -68,6 +68,7 @@ class PandasToFeatures(Transform):
         self.id_column = id_column
         self.event_time_column = event_time_column
         self.output_df = input_df.copy()
+        self.one_hot_columns = one_hot_columns or []
 
         # Now Prepare the DataFrame for its journey into an AWS FeatureGroup
         self.prep_dataframe()
@@ -314,7 +315,7 @@ class PandasToFeatures(Transform):
 
         # Now we actually push the data into the Feature Group (called ingestion)
         self.log.important("Ingesting rows into Feature Group (this may take a while)...")
-        ingest_manager = self.output_feature_group.ingest(self.output_df, max_processes=8, wait=False)
+        ingest_manager = self.output_feature_group.ingest(self.output_df, max_workers=4, max_processes=16, wait=False)
         try:
             ingest_manager.wait()
         except IngestionError as exc:
@@ -405,4 +406,4 @@ if __name__ == "__main__":
     df_to_features.transform()
 
     # Test non-compliant output UUID
-    df_to_features = PandasToFeatures("test_features-123")
+    # df_to_features = PandasToFeatures("test_features-123")
