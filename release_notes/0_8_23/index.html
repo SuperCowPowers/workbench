@@ -2393,7 +2393,8 @@
 </span></code></pre></div>
 We also have a ticket for the logic change so that we avoid the deprecation warning.</p>
 <h3 id="improvements">Improvements</h3>
-<p>The time to <code>ingest</code> new rows into a FeatureSet is super long, and there's also two parts: Ingestion into the <strong>ONLINE</strong> store and then waiting for the <strong>OFFLINE</strong> store. We're changing the 'knobs' on the first part:</p>
+<p>The time to <code>ingest</code> new rows into a FeatureSet can take a LONG time. Calling the FeatureGroup AWS API and waiting on the results are where the time tasks.</p>
+<p>There will hopefully be a series of optimizations around this process, the first one is simply increasing the number of workers/processes for the ingestion manager class.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>feature_group.ingest(.., max_processes=8)
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>(has been changed to)
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>feature_group.ingest(..., max_processes=16, num_workers=4)
