@@ -574,7 +574,7 @@ class EndpointCore(Artifact):
         # Create the S3 Path for the Inference Capture
         inference_capture_path = f"{self.endpoint_inference_path}/{capture_uuid}"
 
-        # Write the metadata dictionary, and metrics to our S3 Model Inference Folder
+        # Write the metadata dictionary and metrics to our S3 Model Inference Folder
         wr.s3.to_json(
             pd.DataFrame([inference_meta]),
             f"{inference_capture_path}/inference_meta.json",
