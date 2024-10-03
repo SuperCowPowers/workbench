@@ -113,7 +113,7 @@ class DataSource(AthenaSource):
         tags: list = None,
         id_column: str = None,
         event_time_column: str = None,
-        auto_one_hot: bool = False,
+        one_hot_columns: list = None,
     ) -> Union[FeatureSet, None]:
         """
         Convert the DataSource to a FeatureSet
@@ -123,7 +123,7 @@ class DataSource(AthenaSource):
             tags (list) Optional: Set the tags for the feature set. If not specified tags will be generated
             id_column (str) Optional: Set the id column for the feature set. If not specified will be generated
             event_time_column (str) Optional: Set the event time for feature set. If not specified will be generated
-            auto_one_hot (bool) Optional: Automatically one-hot encode categorical fields (default: False)
+            one_hot_columns (list) Optional: Set the columns to be one-hot encoded. (default: None)
 
         Returns:
             FeatureSet: The FeatureSet created from the DataSource (or None if the FeatureSet isn't created)
@@ -149,7 +149,7 @@ class DataSource(AthenaSource):
         data_to_features.transform(
             id_column=id_column,
             event_time_column=event_time_column,
-            auto_one_hot=auto_one_hot,
+            one_hot_columns=one_hot_columns,
         )
 
         # Return the FeatureSet (which will now be up-to-date)

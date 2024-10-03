@@ -26,11 +26,11 @@ class PandasToFeatures(Transform):
         ```
     """
 
-    def __init__(self, output_uuid: str, auto_one_hot=False):
+    def __init__(self, output_uuid: str):
         """PandasToFeatures Initialization
+
         Args:
             output_uuid (str): The UUID of the FeatureSet to create
-            auto_one_hot (bool): Should we automatically one-hot encode categorical columns?
         """
 
         # Make sure the output_uuid is a valid name
@@ -44,7 +44,7 @@ class PandasToFeatures(Transform):
         self.output_type = TransformOutput.FEATURE_SET
         self.id_column = None
         self.event_time_column = None
-        self.auto_one_hot = auto_one_hot
+        self.one_hot_columns = []
         self.categorical_dtypes = {}
         self.output_df = None
         self.table_format = TableFormatEnum.ICEBERG
@@ -57,12 +57,13 @@ class PandasToFeatures(Transform):
         self.output_feature_set = None
         self.expected_rows = 0
 
-    def set_input(self, input_df: pd.DataFrame, id_column=None, event_time_column=None):
+    def set_input(self, input_df: pd.DataFrame, id_column=None, event_time_column=None, one_hot_columns=None):
         """Set the Input DataFrame for this Transform
         Args:
             input_df (pd.DataFrame): The input DataFrame
             id_column (str): The name of the id column (default: None)
             event_time_column (str): The name of the event_time column (default: None)
+            one_hot_columns (list, Optional): The list of columns to one-hot encode (default: None)
         """
         self.id_column = id_column
         self.event_time_column = event_time_column
@@ -253,7 +254,7 @@ class PandasToFeatures(Transform):
         self.output_df = self.output_df.drop(columns=aws_cols, errors="ignore")
 
         # Convert object and string types to Categorical
-        if self.auto_one_hot:
+        if self.one_hot_columns:
             self.auto_convert_columns_to_categorical()
         else:
             self.manual_categorical_converter()
@@ -396,7 +397,7 @@ if __name__ == "__main__":
     data_df = ds.sample()
 
     # Create my DF to Feature Set Transform
-    df_to_features = PandasToFeatures("test_features", auto_one_hot=True)
+    df_to_features = PandasToFeatures("test_features")
     df_to_features.set_input(data_df, id_column="id")
     df_to_features.set_output_tags(["test", "small"])
 

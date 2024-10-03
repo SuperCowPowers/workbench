@@ -56,7 +56,7 @@ output_df = molecular_features.output_df
 print(output_df.head())
 
 # Create a Feature Set
-to_features = PandasToFeatures("solubility_test_features", auto_one_hot=False)
+to_features = PandasToFeatures("solubility_test_features")
 to_features.set_input(output_df, target_column="log_s", id_column="udm_mol_bat_id")
 to_features.set_output_tags(["test", "solubility"])
 to_features.transform()
@@ -69,7 +69,7 @@ DataSource(source_path, name="solubility_test_data")
 molecular_features = MolecularDescriptors("solubility_test_data", "solubility_test_features")
 molecular_features.set_output_tags(["test", "solubility", "molecular_descriptors"])
 query = "SELECT udm_mol_bat_id,  udm_asy_protocol, udm_prj_code, udm_asy_res_value, smiles FROM solubility_test_data"
-molecular_features.transform(target_column="solubility", id_column="udm_mol_bat_id", query=query, auto_one_hot=False)
+molecular_features.transform(target_column="solubility", id_column="udm_mol_bat_id", query=query)
 """
 
 """
