@@ -61,7 +61,9 @@ class DataToFeaturesLight(Transform):
         """
         # Now publish to the output location
         output_features = PandasToFeatures(self.output_uuid)
-        output_features.set_input(self.output_df, id_column=id_column, event_time_column=event_time_column, one_hot_columns=one_hot_columns)
+        output_features.set_input(
+            self.output_df, id_column=id_column, event_time_column=event_time_column, one_hot_columns=one_hot_columns
+        )
         output_features.set_output_tags(self.output_tags)
         output_features.add_output_meta(self.output_meta)
         output_features.transform()
