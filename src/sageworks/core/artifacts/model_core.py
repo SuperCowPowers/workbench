@@ -636,6 +636,16 @@ class ModelCore(Artifact):
             if owner in ["None", "none", ""]:
                 owner = "unknown"
 
+        # Model Class Labels (if it's a classifier)
+        if self.model_type == ModelType.CLASSIFIER:
+            class_labels = self.class_labels()
+            if class_labels is None or ask_everything:
+                class_labels = input("Class Labels? (use commas): ")
+                class_labels = [e.strip() for e in class_labels.split(",")]
+                if class_labels in [["None"], ["none"], [""]]:
+                    class_labels = None
+            self.set_class_labels(class_labels)
+
         # Now that we have all the details, let's onboard the Model with all the args
         return self.onboard_with_args(self.model_type, target_column, feature_columns, endpoints, owner)
 
