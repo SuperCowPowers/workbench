@@ -18,9 +18,11 @@ class ProximityGraph:
             n_neighbors (int): Number of neighbors to consider (default: 5)
         """
         self.n_neighbors = n_neighbors
+        self.nx_graph = nx.Graph()
 
     def build_graph(
-        self, df: pd.DataFrame, features: list, id_column: str, target: str, store_features=True
+        self, df: pd.DataFrame, features: list, id_column: str, target: str,
+        classification: bool = False, class_labels: list = None, store_features=True
     ) -> nx.Graph:
         """
         Processes the input DataFrame and builds a proximity graph.
@@ -30,6 +32,8 @@ class ProximityGraph:
             features (list): List of feature column names to be used for building the proximity graph.
             id_column (str): Name of the ID column in the DataFrame.
             target (str): Name of the target column in the DataFrame.
+            classification (bool): Whether the target column is for classification (default: False).
+            class_labels (list): Optional list of class labels in the desired order (e.g., ["low", "medium", "high"]).
             store_features (bool): Whether to store the features as node attributes (default: True).
 
         Returns:
@@ -39,7 +43,8 @@ class ProximityGraph:
         df = drop_nans(df)
 
         # Initialize KNNSpider with the input DataFrame and the specified features
-        knn_spider = KNNSpider(df, features=features, id_column=id_column, target=target, neighbors=self.n_neighbors)
+        knn_spider = KNNSpider(df, features=features, id_column=id_column, target=target,
+                               classification=classification, class_labels=class_labels, neighbors=self.n_neighbors)
 
         # Use KNNSpider to get all neighbor indices and distances
         indices, distances = knn_spider.get_neighbor_indices_and_distances()
@@ -47,8 +52,8 @@ class ProximityGraph:
         # Compute max distance for scaling (to [0, 1])
         max_distance = distances.max()
 
-        # Create the NetworkX graph
-        graph = nx.Graph()
+        # Initialize an empty graph
+        self.nx_graph = nx.Graph()
 
         # Use the ID column for node IDs instead of relying on the DataFrame index
         node_ids = df[id_column].values
@@ -56,11 +61,11 @@ class ProximityGraph:
         # Add nodes with their features as attributes using the ID column
         for node_id in node_ids:
             if store_features:
-                graph.add_node(
+                self.nx_graph.add_node(
                     node_id, **df[df[id_column] == node_id].iloc[0].to_dict()
                 )  # Use .iloc[0] for correct node attributes
             else:
-                graph.add_node(node_id)
+                self.nx_graph.add_node(node_id)
 
         # Add edges with weights based on inverse distance
         for i, neighbors in enumerate(indices):
@@ -76,11 +81,28 @@ class ProximityGraph:
 
                     # Add the edge to the graph (if the weight is greater than 0.1)
                     if weight > 0.1 or not one_edge_added:
-                        graph.add_edge(src_node, dst_node, weight=weight)
+                        self.nx_graph.add_edge(src_node, dst_node, weight=weight)
                         one_edge_added = True
 
-        # Return the graph
-        return graph
+        # Return the NetworkX graph
+        return self.nx_graph
+
+    def get_neighborhood(self, node_id, radius: int = 1) -> nx.Graph:
+        """
+        Get a subgraph containing nodes within a given number of hops around a specific node.
+
+        Args:
+            node_id: The ID of the node to center the neighborhood around.
+            radius: The number of hops to consider around the node (default: 1).
+
+        Returns:
+            nx.Graph: A subgraph containing the specified neighborhood.
+        """
+        # Use NetworkX's ego_graph to extract the neighborhood within the given radius
+        if node_id in self.nx_graph:
+            return nx.ego_graph(self.nx_graph, node_id, radius=radius)
+        else:
+            raise ValueError(f"Node ID '{node_id}' not found in the graph.")
 
 
 if __name__ == "__main__":
@@ -127,4 +149,11 @@ if __name__ == "__main__":
     # Plot the subgraph
     graph_plot = GraphPlot()
     [fig] = graph_plot.update_properties(subgraph, labels="id", hover_text="all")
+    fig.show()
+
+    # Get a neighborhood subgraph for a specific node
+    neighborhood_subgraph = proximity_graph.get_neighborhood(node_id=df["id"].iloc[0], radius=2)
+
+    # Plot the neighborhood subgraph
+    [fig] = graph_plot.update_properties(neighborhood_subgraph, labels="id", hover_text="all")
     fig.show()
