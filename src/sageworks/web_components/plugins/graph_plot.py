@@ -64,7 +64,8 @@ class GraphPlot(PluginInterface):
         y_nodes = [data["pos"][1] for node, data in graph.nodes(data=True)]
 
         # Check if the degree attribute exists, and if not, compute it
-        if "degree" not in graph.nodes[0]:
+        first_node = next(iter(graph.nodes))
+        if "degree" not in graph.nodes[first_node]:
             self.log.important("Computing node degrees...")
             degrees = dict(graph.degree())
             nx.set_node_attributes(graph, degrees, "degree")
@@ -82,7 +83,7 @@ class GraphPlot(PluginInterface):
         hover_text_fields = kwargs.get("hover_text", ["id", "degree"])
         if hover_text_fields == "all":
             # All fields except for 'pos'
-            hover_text_fields = [key for key in graph.nodes[0] if key != "pos"]
+            hover_text_fields = [key for key in graph.nodes[first_node] if key != "pos"]
 
         # Fill in the hover text
         hover_text = [
