@@ -1,12 +1,12 @@
 import pandas as pd
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 import logging
 
 
 class DataSpider:
-    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target_column: str, neighbors: int = 5):
+    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target_column: str, neighbors: int = 5, classification: bool = False):
         """DataSpider: A simple class for prediction and neighbor lookups using KNN.
 
         Args:
@@ -15,20 +15,27 @@ class DataSpider:
             id_column: Name of the ID column
             target_column: Name of the target column
             neighbors: Number of neighbors to use in the KNN model (default: 5)
+            classification: Boolean indicating if the target column is for classification (default: False)
         """
         self.log = logging.getLogger("sageworks")
         self.df = df.copy()
         self.features = features
         self.id_column = id_column
         self.target_column = target_column
+        self.classification = classification
 
-        # Standardize the feature values and build the KNN regression model
-        self.knn_pipeline = make_pipeline(StandardScaler(), KNeighborsRegressor(n_neighbors=neighbors, weights="distance"))
+        # Use appropriate KNN model based on classification or regression
+        if classification:
+            self.knn_model = KNeighborsClassifier(n_neighbors=neighbors, weights="distance")
+        else:
+            self.knn_model = KNeighborsRegressor(n_neighbors=neighbors, weights="distance")
+
+        # Standardize the feature values and build the pipeline
+        self.knn_pipeline = make_pipeline(StandardScaler(), self.knn_model)
         self.knn_pipeline.fit(df[features], df[target_column])  # Fit with features and the actual target column
 
-        # Store the scaler and the KNN model separately for custom neighbor querying
+        # Store the scaler separately for custom neighbor querying
         self.scaler = self.knn_pipeline[0]
-        self.knn_model = self.knn_pipeline[-1]
 
     def predict(self, query_df: pd.DataFrame):
         """Return predictions for the given query dataframe.
@@ -40,6 +47,21 @@ class DataSpider:
             List of predicted target values.
         """
         return self.knn_pipeline.predict(query_df[self.features])
+
+    def predict_proba(self, query_df: pd.DataFrame):
+        """Return class probabilities for classification tasks.
+
+        Args:
+            query_df: DataFrame with the same feature columns as training data.
+
+        Returns:
+            Probability distributions over classes for each query point.
+        """
+        if self.classification:
+            return self.knn_pipeline.predict_proba(query_df[self.features])
+        else:
+            self.log.warning("predict_proba is only available for classification models.")
+            return None
 
     def get_neighbors(self, query_df: pd.DataFrame):
         """Return neighbors for the given query dataframe.
@@ -53,7 +75,7 @@ class DataSpider:
         # Transform the query data using the same scaler
         query_scaled = self.scaler.transform(query_df[self.features])
 
-        # Get neighbors using the KNeighborsRegressor's internals directly
+        # Get neighbors using the KNN internals directly
         distances, indices = self.knn_model.kneighbors(query_scaled)
 
         # Collect neighbor info
@@ -81,9 +103,8 @@ class DataSpider:
         return result_df
 
 
-# Testing the DataSpider class
+# Testing the DataSpider class with both regression and classification targets
 if __name__ == "__main__":
-    # Change pandas display settings for better readability
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", 1000)
 
@@ -94,22 +115,18 @@ if __name__ == "__main__":
         "feat2": [1.0, 1.0, 1.1, 3.0, 4.0, 1.0, 1.3, 3.2, 4.3, 4.4, 2.0, 2.1, 2.2, 0.1, 0.2, 0.3, 0.5, 0.4, 0.5, 0.6],
         "feat3": [0.1, 0.2, 0.3, 1.6, 2.5, 0.2, 0.3, 1.7, 2.6, 2.7, 1.0, 1.1, 1.2, 0.0, 0.1, 0.2, 0.3, 0.4, 0.3, 0.5],
         "target": [10, 11, 12, 20, 30, 10, 12, 21, 31, 32, 15, 16, 17, 5, 6, 7, 8, 9, 10, 11],
+        "class": [0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     }
     df = pd.DataFrame(data)
 
-    # Create DataSpider instance
-    data_spider = DataSpider(df, ["feat1", "feat2", "feat3"], id_column="ID", target_column="target")
+    # Regression Test
+    reg_spider = DataSpider(df, ["feat1", "feat2", "feat3"], id_column="ID", target_column="target", classification=False)
+    reg_predictions = reg_spider.predict(df.iloc[:2])
+    print("Regression Predictions:\n", reg_predictions)
 
-    # Predict on a sample query point
-    query_df = df[df["ID"] == "id_0"]
-    predictions = data_spider.predict(query_df)
-    print(f"Prediction for query point 'id_0': {predictions}")
-
-    # Query for neighbors of a specific point
-    neighbors = data_spider.get_neighbors(query_df)
-    print("\nNeighbors for query point:\n", neighbors)
-
-    # Different query point
-    query_df2 = df[df["ID"] == "id_10"]
-    neighbors2 = data_spider.get_neighbors(query_df2)
-    print("\nNeighbors for second query point:\n", neighbors2)
+    # Classification Test
+    class_spider = DataSpider(df, ["feat1", "feat2", "feat3"], id_column="ID", target_column="class", classification=True)
+    class_predictions = class_spider.predict(df.iloc[:2])
+    class_probs = class_spider.predict_proba(df.iloc[:2])
+    print("\nClassification Predictions:\n", class_predictions)
+    print("Classification Probabilities:\n", class_probs)
