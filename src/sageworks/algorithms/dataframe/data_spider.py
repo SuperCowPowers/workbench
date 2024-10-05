@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
+import logging
 
 
 class DataSpider:
@@ -15,6 +16,7 @@ class DataSpider:
             target_column: Name of the target column
             neighbors: Number of neighbors to use in the KNN model (default: 5)
         """
+        self.log = logging.getLogger("sageworks")
         self.df = df.copy()
         self.features = features
         self.id_column = id_column
@@ -63,6 +65,7 @@ class DataSpider:
         # Remove the query itself from the neighbor results if it appears
         for i, query_id in enumerate(query_ids):
             if query_id in neighbor_ids[i]:
+                self.log.info(f"Query ID '{query_id}' found in neighbors. Removing...")
                 idx_to_remove = neighbor_ids[i].index(query_id)
                 neighbor_ids[i].pop(idx_to_remove)
                 neighbor_targets[i].pop(idx_to_remove)
@@ -106,7 +109,7 @@ if __name__ == "__main__":
     neighbors = data_spider.get_neighbors(query_df)
     print("\nNeighbors for query point:\n", neighbors)
 
-    # Query for a different point to check consistency
+    # Different query point
     query_df2 = df[df["ID"] == "id_10"]
     neighbors2 = data_spider.get_neighbors(query_df2)
     print("\nNeighbors for second query point:\n", neighbors2)
