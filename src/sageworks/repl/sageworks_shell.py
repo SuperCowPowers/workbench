@@ -11,12 +11,14 @@ import readline  # noqa
 
 try:
     import matplotlib.pyplot as plt  # noqa
+
     HAVE_MATPLOTLIB = True
 except ImportError:
     HAVE_MATPLOTLIB = False
 
 try:
     import plotly.io as pio  # noqa
+
     pio.renderers.default = "browser"
     HAVE_PLOTLY = True
 except ImportError:

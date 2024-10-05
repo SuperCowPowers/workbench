@@ -21,8 +21,14 @@ class ProximityGraph:
         self.nx_graph = nx.Graph()
 
     def build_graph(
-        self, df: pd.DataFrame, features: list, id_column: str, target: str,
-        classification: bool = False, class_labels: list = None, store_features=True
+        self,
+        df: pd.DataFrame,
+        features: list,
+        id_column: str,
+        target: str,
+        classification: bool = False,
+        class_labels: list = None,
+        store_features=True,
     ) -> nx.Graph:
         """
         Processes the input DataFrame and builds a proximity graph.
@@ -43,8 +49,15 @@ class ProximityGraph:
         df = drop_nans(df)
 
         # Initialize KNNSpider with the input DataFrame and the specified features
-        knn_spider = KNNSpider(df, features=features, id_column=id_column, target=target,
-                               classification=classification, class_labels=class_labels, neighbors=self.n_neighbors)
+        knn_spider = KNNSpider(
+            df,
+            features=features,
+            id_column=id_column,
+            target=target,
+            classification=classification,
+            class_labels=class_labels,
+            neighbors=self.n_neighbors,
+        )
 
         # Use KNNSpider to get all neighbor indices and distances
         indices, distances = knn_spider.get_neighbor_indices_and_distances()
