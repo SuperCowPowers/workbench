@@ -69,23 +69,24 @@ class DataSpider:
 
     def get_neighbors(self, query_df: pd.DataFrame):
         """Return neighbors for the given query dataframe."""
+        # Scale the query data using the same scaler as the training data
         query_scaled = self.scaler.transform(query_df[self.features])
+
+        # Retrieve neighbors and distances using the KNN internals
         distances, indices = self.knn_model.kneighbors(query_scaled)
 
+        # Collect neighbor information (IDs, target values, and distances)
         query_ids = query_df[self.id_column].values
         neighbor_ids = [[self.df.iloc[idx][self.id_column] for idx in index_list] for index_list in indices]
         neighbor_targets = [[self.df.iloc[idx][self.target_column] for idx in index_list] for index_list in indices]
         neighbor_distances = [list(dist_list) for dist_list in distances]
 
-        # Remove the query itself from the neighbor results if it appears
+        # Log a message if the query ID is found in its own neighbors
         for i, query_id in enumerate(query_ids):
             if query_id in neighbor_ids[i]:
-                self.log.info(f"Query ID '{query_id}' found in neighbors. Removing...")
-                idx_to_remove = neighbor_ids[i].index(query_id)
-                neighbor_ids[i].pop(idx_to_remove)
-                neighbor_targets[i].pop(idx_to_remove)
-                neighbor_distances[i].pop(idx_to_remove)
+                self.log.info(f"Query ID '{query_id}' is in its own neighbor list.")
 
+        # Create and return a results DataFrame with the full neighbor information
         result_df = pd.DataFrame({
             "query_id": query_ids,
             "neighbor_ids": neighbor_ids,
