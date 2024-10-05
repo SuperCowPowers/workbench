@@ -55,13 +55,22 @@ class DataSpider:
         distances, indices = self.knn_model.kneighbors(query_scaled)
 
         # Collect neighbor info
+        query_ids = query_df[self.id_column].values
         neighbor_ids = [[self.df.iloc[idx][self.id_column] for idx in index_list] for index_list in indices]
         neighbor_targets = [[self.df.iloc[idx][self.target_column] for idx in index_list] for index_list in indices]
         neighbor_distances = [list(dist_list) for dist_list in distances]
 
-        # Create a results DataFrame
+        # Remove the query itself from the neighbor results if it appears
+        for i, query_id in enumerate(query_ids):
+            if query_id in neighbor_ids[i]:
+                idx_to_remove = neighbor_ids[i].index(query_id)
+                neighbor_ids[i].pop(idx_to_remove)
+                neighbor_targets[i].pop(idx_to_remove)
+                neighbor_distances[i].pop(idx_to_remove)
+
+        # Create and return a results DataFrame
         result_df = pd.DataFrame({
-            "query_id": query_df[self.id_column].values,
+            "query_id": query_ids,
             "neighbor_ids": neighbor_ids,
             "neighbor_targets": neighbor_targets,
             "neighbor_distances": neighbor_distances,
@@ -71,11 +80,10 @@ class DataSpider:
 
 # Testing the DataSpider class
 if __name__ == "__main__":
-
     # Change pandas display settings for better readability
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", 1000)
-    
+
     # Generate a 20-row test dataset
     data = {
         "ID": [f"id_{i}" for i in range(20)],
