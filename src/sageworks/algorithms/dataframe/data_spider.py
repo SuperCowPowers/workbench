@@ -132,9 +132,17 @@ if __name__ == "__main__":
     reg_predictions = reg_spider.predict(test_df)
     print("Regression Predictions (Test Data):\n", reg_predictions)
 
+    # Regression Neighbors Test
+    reg_neighbors = reg_spider.get_neighbors(test_df)
+    print("\nRegression Neighbors (Test Data):\n", reg_neighbors)
+
     # Classification Test using Training and Test DataFrames
     class_spider = DataSpider(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target_column="class", classification=True, class_labels=["low", "medium", "high"])
     class_predictions = class_spider.predict(test_df)
     class_probs = class_spider.predict_proba(test_df)
     print("\nClassification Predictions (Test Data):\n", class_predictions)
     print("Classification Probabilities (Test Data, Ordered):\n", class_probs)
+
+    # Classification Neighbors Test
+    class_neighbors = class_spider.get_neighbors(test_df)
+    print("\nClassification Neighbors (Test Data):\n", class_neighbors)
