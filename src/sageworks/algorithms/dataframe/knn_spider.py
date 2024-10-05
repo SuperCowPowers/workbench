@@ -6,7 +6,16 @@ import logging
 
 
 class KNNSpider:
-    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target: str, neighbors: int = 5, classification: bool = False, class_labels: list = None):
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        features: list,
+        id_column: str,
+        target: str,
+        neighbors: int = 5,
+        classification: bool = False,
+        class_labels: list = None,
+    ):
         """KNNSpider: A simple class for prediction and neighbor lookups using KNN.
 
         Args:
@@ -56,7 +65,9 @@ class KNNSpider:
         """Reorder the class labels based on the specified class_labels order."""
         original_labels = list(self.knn_model.classes_)
         if not set(self.class_labels) <= set(original_labels):
-            self.log.warning(f"Some class labels {self.class_labels} are missing from the model's fitted classes: {original_labels}.")
+            self.log.warning(
+                f"Some class labels {self.class_labels} are missing from the model's fitted classes: {original_labels}."
+            )
             self.class_labels = original_labels
         self.class_reorder_map = [original_labels.index(label) for label in self.class_labels]
 
@@ -68,7 +79,7 @@ class KNNSpider:
         """Return class probabilities for classification tasks."""
         if self.classification:
             probas = self.knn_pipeline.predict_proba(query_df[self.features])
-            if hasattr(self, 'class_reorder_map'):
+            if hasattr(self, "class_reorder_map"):
                 reordered_probas = probas[:, self.class_reorder_map]
                 return reordered_probas
             return probas
@@ -108,12 +119,14 @@ class KNNSpider:
                 neighbor_distances[i].pop(idx_to_remove)
 
         # Create and return a results DataFrame with the updated neighbor information
-        result_df = pd.DataFrame({
-            "query_id": query_ids,
-            "neighbor_ids": neighbor_ids,
-            "neighbor_targets": neighbor_targets,
-            "neighbor_distances": neighbor_distances,
-        })
+        result_df = pd.DataFrame(
+            {
+                "query_id": query_ids,
+                "neighbor_ids": neighbor_ids,
+                "neighbor_targets": neighbor_targets,
+                "neighbor_distances": neighbor_distances,
+            }
+        )
         return result_df
 
 
@@ -149,7 +162,9 @@ if __name__ == "__main__":
     test_df["class"] = pd.cut(test_df["target"], bins=3, labels=["low", "medium", "high"])
 
     # Regression Test using Training and Test DataFrames
-    reg_spider = KNNSpider(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="target", classification=False)
+    reg_spider = KNNSpider(
+        training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="target", classification=False
+    )
     reg_predictions = reg_spider.predict(test_df)
     print("Regression Predictions (Test Data):\n", reg_predictions)
 
@@ -158,7 +173,14 @@ if __name__ == "__main__":
     print("\nRegression Neighbors (Test Data):\n", reg_neighbors)
 
     # Classification Test using Training and Test DataFrames
-    class_spider = KNNSpider(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="class", classification=True, class_labels=["low", "medium", "high"])
+    class_spider = KNNSpider(
+        training_df,
+        ["feat1", "feat2", "feat3"],
+        id_column="ID",
+        target="class",
+        classification=True,
+        class_labels=["low", "medium", "high"],
+    )
     class_predictions = class_spider.predict(test_df)
     class_probs = class_spider.predict_proba(test_df)
     print("\nClassification Predictions (Test Data):\n", class_predictions)
@@ -172,4 +194,3 @@ if __name__ == "__main__":
     indices, distances = reg_spider.get_neighbor_indices_and_distances()
     print("\nNeighbor Indices (Training Data):\n", indices)
     print("\nNeighbor Distances (Training Data):\n", distances)
-

@@ -19,7 +19,9 @@ class ProximityGraph:
         """
         self.n_neighbors = n_neighbors
 
-    def build_graph(self, df: pd.DataFrame, features: list, id_column: str, target: str, store_features=True) -> nx.Graph:
+    def build_graph(
+        self, df: pd.DataFrame, features: list, id_column: str, target: str, store_features=True
+    ) -> nx.Graph:
         """
         Processes the input DataFrame and builds a proximity graph.
 
@@ -54,7 +56,9 @@ class ProximityGraph:
         # Add nodes with their features as attributes using the ID column
         for node_id in node_ids:
             if store_features:
-                graph.add_node(node_id, **df[df[id_column] == node_id].iloc[0].to_dict())  # Use .iloc[0] for correct node attributes
+                graph.add_node(
+                    node_id, **df[df[id_column] == node_id].iloc[0].to_dict()
+                )  # Use .iloc[0] for correct node attributes
             else:
                 graph.add_node(node_id)
 
@@ -90,7 +94,15 @@ if __name__ == "__main__":
     df = fs.pull_dataframe()[:100]
 
     # Define the feature columns for the proximity graph
-    feature_columns = ["length", "diameter", "height", "whole_weight", "shucked_weight", "viscera_weight", "shell_weight"]
+    feature_columns = [
+        "length",
+        "diameter",
+        "height",
+        "whole_weight",
+        "shucked_weight",
+        "viscera_weight",
+        "shell_weight",
+    ]
 
     # Initialize the ProximityGraph with specified neighbors
     proximity_graph = ProximityGraph(n_neighbors=5)
