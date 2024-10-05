@@ -5,9 +5,9 @@ from sklearn.preprocessing import StandardScaler
 import logging
 
 
-class DataSpider:
+class KNNSpider:
     def __init__(self, df: pd.DataFrame, features: list, id_column: str, target_column: str, neighbors: int = 5, classification: bool = False, class_labels: list = None):
-        """DataSpider: A simple class for prediction and neighbor lookups using KNN.
+        """KNNSpider: A simple class for prediction and neighbor lookups using KNN.
 
         Args:
             df: Pandas DataFrame
@@ -96,7 +96,7 @@ class DataSpider:
         return result_df
 
 
-# Testing the DataSpider class with separate training and test/evaluation dataframes
+# Testing the KNNSpider class with separate training and test/evaluation dataframes
 if __name__ == "__main__":
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", 1000)
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     test_df["class"] = pd.cut(test_df["target"], bins=3, labels=["low", "medium", "high"])
 
     # Regression Test using Training and Test DataFrames
-    reg_spider = DataSpider(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target_column="target", classification=False)
+    reg_spider = KNNSpider(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target_column="target", classification=False)
     reg_predictions = reg_spider.predict(test_df)
     print("Regression Predictions (Test Data):\n", reg_predictions)
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     print("\nRegression Neighbors (Test Data):\n", reg_neighbors)
 
     # Classification Test using Training and Test DataFrames
-    class_spider = DataSpider(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target_column="class", classification=True, class_labels=["low", "medium", "high"])
+    class_spider = KNNSpider(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target_column="class", classification=True, class_labels=["low", "medium", "high"])
     class_predictions = class_spider.predict(test_df)
     class_probs = class_spider.predict_proba(test_df)
     print("\nClassification Predictions (Test Data):\n", class_predictions)
