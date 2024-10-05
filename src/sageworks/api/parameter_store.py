@@ -48,7 +48,6 @@ class ParameterStore:
     def __init__(self):
         """ParameterStore Init Method"""
         self.log = logging.getLogger("sageworks")
-        self.scope_prefix = "/sageworks"
 
         # Initialize a SageWorks Session (to assume the SageWorks ExecutionRole)
         self.boto3_session = AWSSession().boto3_session
@@ -57,7 +56,7 @@ class ParameterStore:
         self.ssm_client = self.boto3_session.client("ssm")
 
     def list(self) -> list:
-        """List all parameters under the prefix in the AWS Parameter Store.
+        """List all parameters in the AWS Parameter Store.
 
         Returns:
             list: A list of parameter names and details.
@@ -65,9 +64,6 @@ class ParameterStore:
         try:
             # Set up parameters for our search
             params = {"MaxResults": 50}
-
-            # This can filter based on prefix (we're not currently using this)
-            # params["ParameterFilters"] = [{"Key": "Name", "Option": "BeginsWith", "Values": [self.prefix]}]
 
             # Initialize the list to collect parameter names
             all_parameters = []
@@ -89,6 +85,7 @@ class ParameterStore:
 
         except Exception as e:
             self.log.error(f"Failed to list parameters: {e}")
+            return []
 
         # Return the aggregated list of parameter names
         return all_parameters
@@ -132,21 +129,15 @@ class ParameterStore:
                 self.log.error(f"Failed to get parameter '{name}': {e}")
             return None
 
-    def add(self, name: str, value, overwrite: bool = False, outside_scope: bool = False):
+    def add(self, name: str, value, overwrite: bool = True):
         """Add or update a parameter in the AWS Parameter Store.
 
         Args:
             name (str): The name of the parameter.
             value (str | list | dict): The value of the parameter.
-            overwrite (bool): Whether to overwrite an existing parameter.
-            outside_scope (bool): Whether to add the parameter outside the scope prefix
+            overwrite (bool): Whether to overwrite an existing parameter (default: True)
         """
         try:
-            # Check that the name is within the scope prefix
-            if not name.startswith(self.scope_prefix) and not outside_scope:
-                self.log.warning(f"Parameter '{name}' is not within the scope prefix '{self.scope_prefix}'")
-                self.log.warning("Add /sageworks or use the 'outside_scope' flag")
-                return
 
             # Anything that's not a string gets converted to JSON
             if not isinstance(value, str):
@@ -184,20 +175,13 @@ class ParameterStore:
             self.log.critical(f"Failed to add/update parameter '{name}': {e}")
             raise
 
-    def delete(self, name: str, outside_scope: bool = False):
+    def delete(self, name: str):
         """Delete a parameter from the AWS Parameter Store.
 
         Args:
             name (str): The name of the parameter to delete.
-            outside_scope (bool): Whether to delete the parameter outside the scope prefix
         """
         try:
-            # Check that the name is within the scope prefix
-            if not name.startswith(self.scope_prefix) and not outside_scope:
-                self.log.warning(f"Parameter '{name}' is not within the scope prefix '{self.scope_prefix}'")
-                self.log.warning("Add /sageworks or use the 'outside_scope' flag")
-                return
-
             # Delete the parameter from Parameter Store
             self.ssm_client.delete_parameter(Name=name)
             self.log.info(f"Parameter '{name}' deleted successfully.")
