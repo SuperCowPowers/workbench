@@ -6,14 +6,14 @@ import logging
 
 
 class KNNSpider:
-    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target_column: str, neighbors: int = 5, classification: bool = False, class_labels: list = None):
+    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target: str, neighbors: int = 5, classification: bool = False, class_labels: list = None):
         """KNNSpider: A simple class for prediction and neighbor lookups using KNN.
 
         Args:
             df: Pandas DataFrame
             features: List of feature column names
             id_column: Name of the ID column
-            target_column: Name of the target column
+            target: Name of the target column
             neighbors: Number of neighbors to use in the KNN model (default: 5)
             classification: Boolean indicating if the target column is for classification (default: False)
             class_labels: Optional list of class labels in the desired order (e.g., ["low", "medium", "high"])
@@ -22,7 +22,7 @@ class KNNSpider:
         self.df = df.copy()
         self.features = features
         self.id_column = id_column
-        self.target_column = target_column
+        self.target = target
         self.classification = classification
         self.class_labels = class_labels
 
@@ -34,7 +34,7 @@ class KNNSpider:
 
         # Standardize the feature values and build the pipeline
         self.knn_pipeline = make_pipeline(StandardScaler(), self.knn_model)
-        self.knn_pipeline.fit(df[features], df[target_column])  # Fit with features and the actual target column
+        self.knn_pipeline.fit(df[features], df[target])  # Fit with features and the actual target column
 
         # Store the scaler separately for custom neighbor querying
         self.scaler = self.knn_pipeline[0]
@@ -42,6 +42,15 @@ class KNNSpider:
         # If using classification and class_labels are provided, reorder classes
         if self.classification and self.class_labels:
             self._reorder_class_labels()
+
+        # Store the internally fitted feature matrix after scaling
+        self.scaled_X = self.knn_model._fit_X
+
+    def get_neighbor_indices_and_distances(self):
+        """Retrieve neighbor indices and distances for all points in the dataset."""
+        # Use the already scaled feature matrix stored in `self.scaled_X`
+        distances, indices = self.knn_model.kneighbors(self.scaled_X)
+        return indices, distances
 
     def _reorder_class_labels(self):
         """Reorder the class labels based on the specified class_labels order."""
@@ -67,8 +76,17 @@ class KNNSpider:
             self.log.warning("predict_proba is only available for classification models.")
             return None
 
-    def get_neighbors(self, query_df: pd.DataFrame):
-        """Return neighbors for the given query dataframe."""
+    def get_neighbors(self, query_df: pd.DataFrame, include_self: bool = False) -> pd.DataFrame:
+        """Return neighbors for the given query dataframe.
+
+        Args:
+            query_df: Pandas DataFrame with the same features as the training data.
+            include_self: Boolean indicating whether to include the query ID in the neighbor results.
+
+        Returns:
+            pd.DataFrame: DataFrame with query ID, neighbor IDs, neighbor targets, and neighbor distances.
+        """
+
         # Scale the query data using the same scaler as the training data
         query_scaled = self.scaler.transform(query_df[self.features])
 
@@ -78,15 +96,18 @@ class KNNSpider:
         # Collect neighbor information (IDs, target values, and distances)
         query_ids = query_df[self.id_column].values
         neighbor_ids = [[self.df.iloc[idx][self.id_column] for idx in index_list] for index_list in indices]
-        neighbor_targets = [[self.df.iloc[idx][self.target_column] for idx in index_list] for index_list in indices]
+        neighbor_targets = [[self.df.iloc[idx][self.target] for idx in index_list] for index_list in indices]
         neighbor_distances = [list(dist_list) for dist_list in distances]
 
-        # Log a message if the query ID is found in its own neighbors
+        # Automatically remove the query ID itself from the neighbor results
         for i, query_id in enumerate(query_ids):
-            if query_id in neighbor_ids[i]:
-                self.log.info(f"Query ID '{query_id}' is in its own neighbor list.")
+            if query_id in neighbor_ids[i] and not include_self:
+                idx_to_remove = neighbor_ids[i].index(query_id)
+                neighbor_ids[i].pop(idx_to_remove)
+                neighbor_targets[i].pop(idx_to_remove)
+                neighbor_distances[i].pop(idx_to_remove)
 
-        # Create and return a results DataFrame with the full neighbor information
+        # Create and return a results DataFrame with the updated neighbor information
         result_df = pd.DataFrame({
             "query_id": query_ids,
             "neighbor_ids": neighbor_ids,
@@ -128,7 +149,7 @@ if __name__ == "__main__":
     test_df["class"] = pd.cut(test_df["target"], bins=3, labels=["low", "medium", "high"])
 
     # Regression Test using Training and Test DataFrames
-    reg_spider = KNNSpider(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target_column="target", classification=False)
+    reg_spider = KNNSpider(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="target", classification=False)
     reg_predictions = reg_spider.predict(test_df)
     print("Regression Predictions (Test Data):\n", reg_predictions)
 
@@ -137,7 +158,7 @@ if __name__ == "__main__":
     print("\nRegression Neighbors (Test Data):\n", reg_neighbors)
 
     # Classification Test using Training and Test DataFrames
-    class_spider = KNNSpider(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target_column="class", classification=True, class_labels=["low", "medium", "high"])
+    class_spider = KNNSpider(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="class", classification=True, class_labels=["low", "medium", "high"])
     class_predictions = class_spider.predict(test_df)
     class_probs = class_spider.predict_proba(test_df)
     print("\nClassification Predictions (Test Data):\n", class_predictions)
@@ -146,3 +167,9 @@ if __name__ == "__main__":
     # Classification Neighbors Test
     class_neighbors = class_spider.get_neighbors(test_df)
     print("\nClassification Neighbors (Test Data):\n", class_neighbors)
+
+    # Neighbor Indices and Distances Test
+    indices, distances = reg_spider.get_neighbor_indices_and_distances()
+    print("\nNeighbor Indices (Training Data):\n", indices)
+    print("\nNeighbor Distances (Training Data):\n", distances)
+
