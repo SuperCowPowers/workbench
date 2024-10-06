@@ -5,15 +5,18 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 import logging
 
+# SageWorks Imports
+from sageworks.api import FeatureSet, Model
+
 
 class KNNSpider:
     def __init__(
         self,
         df: pd.DataFrame,
         features: list,
-        id_column: str,
         target: str,
-        neighbors: int = 5,
+        id_column: str,
+        neighbors: int = 10,
         classification: bool = False,
         class_labels: list = None,
     ):
@@ -22,9 +25,9 @@ class KNNSpider:
         Args:
             df: Pandas DataFrame
             features: List of feature column names
-            id_column: Name of the ID column
             target: Name of the target column
-            neighbors: Number of neighbors to use in the KNN model (default: 5)
+            id_column: Name of the ID column
+            neighbors: Number of neighbors to use in the KNN model (default: 10)
             classification: Boolean indicating if the target column is for classification (default: False)
             class_labels: Optional list of class labels in the desired order (e.g., ["low", "medium", "high"])
         """
@@ -56,21 +59,38 @@ class KNNSpider:
         # Store the internally fitted feature matrix after scaling
         self.scaled_X = self.knn_model._fit_X
 
+    @classmethod
+    def from_model(cls, model: Model, id_column: str):
+        """Create a KNNSpider instance from a SageWorks model object
+
+        Args:
+            model (Model): A SageWorks model object
+            id_column (str): Name of the ID column
+
+        Returns:
+            KNNSpider: A new instance of the KNNSpider class
+        """
+
+        # Extract necessary information from the SageWorks model
+        fs = FeatureSet(model.get_input())
+        df = fs.view("training").pull_dataframe()
+        features = model.features()
+        target = model.target()
+        classification = model.model_type.value == "classification"
+        if classification:
+            class_labels = model.class_labels()
+        else:
+            class_labels = None
+
+        # Pass the extracted arguments to the existing __init__ method
+        return cls(df,features=features, target=target, id_column=id_column,
+                   classification=classification, class_labels=class_labels)
+
     def get_neighbor_indices_and_distances(self):
         """Retrieve neighbor indices and distances for all points in the dataset."""
         # Use the already scaled feature matrix stored in `self.scaled_X`
         distances, indices = self.knn_model.kneighbors(self.scaled_X)
         return indices, distances
-
-    def _reorder_class_labels(self):
-        """Reorder the class labels based on the specified class_labels order."""
-        original_labels = list(self.knn_model.classes_)
-        if not set(self.class_labels) <= set(original_labels):
-            self.log.warning(
-                f"Some class labels {self.class_labels} are missing from the model's fitted classes: {original_labels}."
-            )
-            self.class_labels = original_labels
-        self.class_reorder_map = [original_labels.index(label) for label in self.class_labels]
 
     def predict(self, query_df: pd.DataFrame):
         """Return predictions for the given query dataframe."""
@@ -166,6 +186,16 @@ class KNNSpider:
         )
         return result_df
 
+    def _reorder_class_labels(self):
+        """Reorder the class labels based on the specified class_labels order."""
+        original_labels = list(self.knn_model.classes_)
+        if not set(self.class_labels) <= set(original_labels):
+            self.log.warning(
+                f"Some class labels {self.class_labels} are missing from the model's fitted classes: {original_labels}."
+            )
+            self.class_labels = original_labels
+        self.class_reorder_map = [original_labels.index(label) for label in self.class_labels]
+
 
 # Testing the KNNSpider class with separate training and test/evaluation dataframes
 if __name__ == "__main__":
@@ -200,7 +230,7 @@ if __name__ == "__main__":
 
     # Regression Test using Training and Test DataFrames
     reg_spider = KNNSpider(
-        training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="target", classification=False
+        training_df, ["feat1", "feat2", "feat3"], target="target",  id_column="ID", classification=False
     )
     reg_predictions = reg_spider.predict(test_df)
     print("Regression Predictions (Test Data):\n", reg_predictions)
@@ -229,11 +259,19 @@ if __name__ == "__main__":
 
     # Neighbor Test using a single query ID
     single_query_id = "id_5"
-    single_query_neighbors = reg_spider.neighbors(single_query_id)
+    single_query_neighbors = class_spider.neighbors(single_query_id)
     print("\nNeighbors for Query ID:", single_query_id)
     print(single_query_neighbors)
 
     # Neighbor Indices and Distances Test
-    indices, distances = reg_spider.get_neighbor_indices_and_distances()
+    indices, distances = class_spider.get_neighbor_indices_and_distances()
     print("\nNeighbor Indices (Training Data):\n", indices)
     print("\nNeighbor Distances (Training Data):\n", distances)
+
+    # Test the `from_model` class method
+    model = Model("abalone-regression")
+    spider_from_model = KNNSpider.from_model(model, id_column="id")
+
+    # Test the `from_model` class method
+    model = Model("wine-classification")
+    spider_from_model = KNNSpider.from_model(model, id_column="id")
