@@ -36,7 +36,7 @@ from sageworks.utils import pandas_utils
 log = logging.getLogger("sageworks")
 
 
-def show(smiles: str, size: tuple[int, int] = (500, 500)) -> None:
+def display(smiles: str, size: tuple[int, int] = (500, 500)) -> None:
     """
     Displays an image of the molecule represented by the given SMILES string.
 
@@ -173,7 +173,7 @@ if __name__ == "__main__":
 
     # Show a molecule
     smiles = "CC(CN1CC(C)OC(C)C1)"
-    show(smiles)
+    display(smiles)
 
     # Test the concentration conversion functions
     df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles], "µM": [500, 50, 5, 1, 0.1]})
