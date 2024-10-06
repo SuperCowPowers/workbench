@@ -83,8 +83,14 @@ class KNNSpider:
             class_labels = None
 
         # Pass the extracted arguments to the existing __init__ method
-        return cls(df,features=features, target=target, id_column=id_column,
-                   classification=classification, class_labels=class_labels)
+        return cls(
+            df,
+            features=features,
+            target=target,
+            id_column=id_column,
+            classification=classification,
+            class_labels=class_labels,
+        )
 
     def get_neighbor_indices_and_distances(self):
         """Retrieve neighbor indices and distances for all points in the dataset."""
@@ -230,7 +236,7 @@ if __name__ == "__main__":
 
     # Regression Test using Training and Test DataFrames
     reg_spider = KNNSpider(
-        training_df, ["feat1", "feat2", "feat3"], target="target",  id_column="ID", classification=False
+        training_df, ["feat1", "feat2", "feat3"], target="target", id_column="ID", classification=False
     )
     reg_predictions = reg_spider.predict(test_df)
     print("Regression Predictions (Test Data):\n", reg_predictions)
