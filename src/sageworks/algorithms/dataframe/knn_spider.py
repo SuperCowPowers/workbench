@@ -1,3 +1,4 @@
+from typing import Union
 import pandas as pd
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.pipeline import make_pipeline
@@ -87,8 +88,44 @@ class KNNSpider:
             self.log.warning("predict_proba is only available for classification models.")
             return None
 
-    def get_neighbors(self, query_df: pd.DataFrame, include_self: bool = False) -> pd.DataFrame:
-        """Return neighbors for the given query dataframe.
+    def neighbors(self, query_id: Union[str, int], include_self: bool = True) -> pd.DataFrame:
+        """Return a filtered DataFrame with neighbors of the given query ID.
+
+        Args:
+            query_id (Union[str, int]): The ID of the query point.
+            include_self (bool): Whether to include the query ID itself in the neighbor results.
+
+        Returns:
+            pd.DataFrame: Filtered DataFrame that includes the query ID and its neighbors.
+        """
+        # Check if the query ID is in the internal DataFrame
+        if query_id not in self.df[self.id_column].values:
+            self.log.warning(f"Query ID '{query_id}' not found in the DataFrame. Returning an empty DataFrame.")
+            return pd.DataFrame()
+
+        # Get a single-row DataFrame for the query ID
+        query_df = self.df[self.df[self.id_column] == query_id]
+
+        # Use the existing method to get neighbors for this single query row
+        neighbors_info_df = self.neighbors_bulk(query_df, include_self)
+
+        # Extract the neighbor IDs and distances from the results
+        neighbor_ids = neighbors_info_df["neighbor_ids"].iloc[0]  # List of neighbor IDs
+        neighbor_distances = neighbors_info_df["neighbor_distances"].iloc[0]  # Corresponding distances
+
+        # Filter the internal DataFrame to include only the neighbors
+        neighbors_df = self.df[self.df[self.id_column].isin(neighbor_ids)]
+
+        # Reindex to ensure the rows are in the same order as `neighbor_ids`
+        neighbors_df = neighbors_df.set_index(self.id_column).reindex(neighbor_ids).reset_index()
+
+        # Attach the corresponding distances to the filtered DataFrame
+        neighbors_df["knn_distance"] = neighbor_distances
+
+        return neighbors_df
+
+    def neighbors_bulk(self, query_df: pd.DataFrame, include_self: bool = False) -> pd.DataFrame:
+        """Return all the neighbors for each row in the given query dataframe.
 
         Args:
             query_df: Pandas DataFrame with the same features as the training data.
@@ -169,7 +206,7 @@ if __name__ == "__main__":
     print("Regression Predictions (Test Data):\n", reg_predictions)
 
     # Regression Neighbors Test
-    reg_neighbors = reg_spider.get_neighbors(test_df)
+    reg_neighbors = reg_spider.neighbors_bulk(test_df)
     print("\nRegression Neighbors (Test Data):\n", reg_neighbors)
 
     # Classification Test using Training and Test DataFrames
@@ -187,8 +224,14 @@ if __name__ == "__main__":
     print("Classification Probabilities (Test Data, Ordered):\n", class_probs)
 
     # Classification Neighbors Test
-    class_neighbors = class_spider.get_neighbors(test_df)
+    class_neighbors = class_spider.neighbors_bulk(test_df)
     print("\nClassification Neighbors (Test Data):\n", class_neighbors)
+
+    # Neighbor Test using a single query ID
+    single_query_id = "id_5"
+    single_query_neighbors = reg_spider.neighbors(single_query_id)
+    print("\nNeighbors for Query ID:", single_query_id)
+    print(single_query_neighbors)
 
     # Neighbor Indices and Distances Test
     indices, distances = reg_spider.get_neighbor_indices_and_distances()
