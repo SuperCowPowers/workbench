@@ -122,7 +122,7 @@ class FeatureSpaceProximity:
         """Provide a summary of target values in the neighborhood of the given query ID, if the target is defined."""
         neighbors_df = self.neighbors(query_id, include_self=False)
         if self.target and not neighbors_df.empty:
-            summary_stats = neighbors_df["target_value"].describe()
+            summary_stats = neighbors_df[self.target].describe()
             return pd.DataFrame(summary_stats).transpose()
         else:
             self.log.warning(f"No target values found for neighbors of Query ID '{query_id}'.")
@@ -189,10 +189,14 @@ if __name__ == "__main__":
 
     # Neighbor within Radius Test using a single query ID
     single_query_id = "id_5"
-
     single_query_neighbors = class_spider.neighbors(single_query_id, radius=radius)
     print(f"\nNeighbors within Radius {radius} Query ID:", single_query_id)
     print(single_query_neighbors)
+
+    # Target Summary Test
+    single_query_id = "id_5"
+    target_summary = class_spider.target_summary(single_query_id)
+    print(f"\nTarget Summary for Query ID '{single_query_id}':\n", target_summary)
 
     # Neighbor Indices and Distances Test
     indices, distances = class_spider.get_neighbor_indices_and_distances()
