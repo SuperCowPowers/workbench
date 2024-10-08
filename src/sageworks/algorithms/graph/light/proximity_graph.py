@@ -2,7 +2,7 @@ import pandas as pd
 import networkx as nx
 
 # SageWorks Imports
-from sageworks.algorithms.dataframe.knn_spider import KNNSpider
+from sageworks.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
 from sageworks.utils.pandas_utils import drop_nans
 
 
@@ -26,8 +26,6 @@ class ProximityGraph:
         features: list,
         id_column: str,
         target: str,
-        classification: bool = False,
-        class_labels: list = None,
         store_features=True,
     ) -> nx.Graph:
         """
@@ -48,18 +46,16 @@ class ProximityGraph:
         # Drop NaNs from the DataFrame using the provided utility
         df = drop_nans(df)
 
-        # Initialize KNNSpider with the input DataFrame and the specified features
-        knn_spider = KNNSpider(
+        # Initialize FeatureSpaceProximity with the input DataFrame and the specified features
+        knn_spider = FeatureSpaceProximity(
             df,
             features=features,
             id_column=id_column,
             target=target,
-            classification=classification,
-            class_labels=class_labels,
             neighbors=self.n_neighbors,
         )
 
-        # Use KNNSpider to get all neighbor indices and distances
+        # Use FeatureSpaceProximity to get all neighbor indices and distances
         indices, distances = knn_spider.get_neighbor_indices_and_distances()
 
         # Compute max distance for scaling (to [0, 1])
@@ -154,19 +150,21 @@ if __name__ == "__main__":
     [fig] = graph_plot.update_properties(my_graph, labels="id", hover_text="all")
     fig.show()
 
-    # Grab a subgraph of the graph
-    nx_graph = my_graph.get_nx_graph()
-    two_hop_neighbors = set(nx.single_source_shortest_path_length(nx_graph, df["id"].iloc[0], cutoff=2).keys())
-    subgraph = nx_graph.subgraph(two_hop_neighbors)
-
-    # Plot the subgraph
-    graph_plot = GraphPlot()
-    [fig] = graph_plot.update_properties(subgraph, labels="id", hover_text="all")
-    fig.show()
-
     # Get a neighborhood subgraph for a specific node
     neighborhood_subgraph = proximity_graph.get_neighborhood(node_id=df["id"].iloc[0], radius=2)
 
     # Plot the neighborhood subgraph
     [fig] = graph_plot.update_properties(neighborhood_subgraph, labels="id", hover_text="all")
+    fig.show()
+
+    # Compute a shortest path subgraph using two random nodes
+    source_node = df["id"].iloc[0]
+    target_node = df["id"].iloc[-1]
+    nx_graph = my_graph.get_nx_graph()
+    short_path = set(nx.shortest_path(nx_graph, source=source_node, target=target_node, weight="weight"))
+    subgraph = nx_graph.subgraph(short_path)
+
+    # Plot the subgraph
+    graph_plot = GraphPlot()
+    [fig] = graph_plot.update_properties(subgraph, labels="id", hover_text="all")
     fig.show()
