@@ -3,7 +3,6 @@
 from typing import Union
 import pandas as pd
 from sklearn.neighbors import NearestNeighbors
-from sklearn.neighbors import LocalOutlierFactor
 from sklearn.preprocessing import StandardScaler
 from pandas.api.types import is_numeric_dtype
 import logging
@@ -167,13 +166,13 @@ class FeatureSpaceProximity:
 
     def outliers(self) -> None:
         """Compute a unified 'outlier' score based on either 'target_z' or 'target_consistency'."""
-        if 'target_z' in self.df.columns:
-            # Normalize Z-Scores to a 0-1 range using a sigmoid function or scaling
-            self.df['outlier'] = (self.df['target_z'].abs() / (self.df['target_z'].abs().max() + 1e-6)).clip(0, 1)
+        if "target_z" in self.df.columns:
+            # Normalize Z-Scores to a 0-1 range
+            self.df["outlier"] = (self.df["target_z"].abs() / (self.df["target_z"].abs().max() + 1e-6)).clip(0, 1)
 
-        elif 'target_consistency' in self.df.columns:
+        elif "target_consistency" in self.df.columns:
             # Calculate outlier score as 1 - consistency
-            self.df['outlier'] = 1 - self.df['target_consistency']
+            self.df["outlier"] = 1 - self.df["target_consistency"]
 
         else:
             self.log.warning("No 'target_z' or 'target_consistency' column found to compute outlier scores.")
@@ -200,7 +199,7 @@ class FeatureSpaceProximity:
             z_scores.append(z_score)
 
         # Add the 'target_z' column to the internal dataframe
-        self.df['target_z'] = z_scores
+        self.df["target_z"] = z_scores
 
     def target_consistency(self) -> None:
         """Compute a Neighborhood Consistency Score for CATEGORICAL targets."""
@@ -224,7 +223,7 @@ class FeatureSpaceProximity:
             consistency_scores.append(consistency_score)
 
         # Add the 'target_consistency' column to the internal dataframe
-        self.df['target_consistency'] = consistency_scores
+        self.df["target_consistency"] = consistency_scores
 
     def get_neighbor_indices_and_distances(self):
         """Retrieve neighbor indices and distances for all points in the dataset."""
