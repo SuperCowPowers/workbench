@@ -1,6 +1,5 @@
 """FeatureSpaceProximity: A class for neighbor lookups using KNN with optional target information."""
 
-
 from typing import Union
 import pandas as pd
 from sklearn.neighbors import NearestNeighbors
@@ -40,7 +39,7 @@ class FeatureSpaceProximity:
 
         Args:
             query_id (Union[str, int]): The ID of the query point.
-            radius (float): Optional radius within which neighbors are to be searched. If not provided, use fixed neighbors.
+            radius (float): Optional radius within which neighbors are to be searched, else use fixed neighbors.
             include_self (bool): Whether to include the query ID itself in the neighbor results.
 
         Returns:
@@ -75,7 +74,7 @@ class FeatureSpaceProximity:
 
         Args:
             query_df: Pandas DataFrame with the same features as the training data.
-            radius: Optional radius within which neighbors are to be searched. If not provided, use fixed neighbors.
+            radius: Optional radius within which neighbors are to be searched, else use fixed neighbors.
             include_self: Boolean indicating whether to include the query ID in the neighbor results.
 
         Returns:
@@ -94,8 +93,12 @@ class FeatureSpaceProximity:
         query_ids = query_df[self.id_column].values
         neighbor_ids = [[self.df.iloc[idx][self.id_column] for idx in index_list] for index_list in indices]
         neighbor_targets = (
-            [[self.df.loc[self.df[self.id_column] == neighbor, self.target].values[0] for neighbor in index_list]
-             for index_list in neighbor_ids] if self.target else None
+            [
+                [self.df.loc[self.df[self.id_column] == neighbor, self.target].values[0] for neighbor in index_list]
+                for index_list in neighbor_ids
+            ]
+            if self.target
+            else None
         )
         neighbor_distances = [list(dist_list) for dist_list in distances]
 
@@ -112,8 +115,10 @@ class FeatureSpaceProximity:
             sorted_neighbors = sorted(zip(neighbor_ids[i], neighbor_distances[i]), key=lambda x: x[1])
             neighbor_ids[i], neighbor_distances[i] = list(zip(*sorted_neighbors)) if sorted_neighbors else ([], [])
             if neighbor_targets:
-                neighbor_targets[i] = [self.df.loc[self.df[self.id_column] == neighbor, self.target].values[0]
-                                       for neighbor in neighbor_ids[i]]
+                neighbor_targets[i] = [
+                    self.df.loc[self.df[self.id_column] == neighbor, self.target].values[0]
+                    for neighbor in neighbor_ids[i]
+                ]
 
         # Create and return a results DataFrame with the updated neighbor information
         result_df = pd.DataFrame(
@@ -172,12 +177,7 @@ if __name__ == "__main__":
     test_df["class"] = pd.cut(test_df["target"], bins=3, labels=["low", "medium", "high"])
 
     # Test using Training and Test DataFrames
-    class_spider = FeatureSpaceProximity(
-        training_df,
-        ["feat1", "feat2", "feat3"],
-        id_column="ID",
-        target="class"
-    )
+    class_spider = FeatureSpaceProximity(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="class")
 
     # Neighbors Test
     class_neighbors = class_spider.neighbors_bulk(test_df)
