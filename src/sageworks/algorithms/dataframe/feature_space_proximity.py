@@ -1,8 +1,4 @@
-from typing import Union
-import pandas as pd
-from sklearn.neighbors import NearestNeighbors
-from sklearn.preprocessing import StandardScaler
-import logging
+"""FeatureSpaceProximity: A class for neighbor lookups using KNN with optional target information."""
 
 
 from typing import Union
@@ -198,14 +194,14 @@ if __name__ == "__main__":
     print(single_query_neighbors)
 
     # Neighbor within Radius Test
-    radius = 0.5
-    radius_query = class_spider.neighbors_bulk(test_df, radius=radius)
-    print(f"\nNeighbors within Radius Bulk {radius} (Test Data):\n", radius_query)
+    my_radius = 0.5
+    radius_query = class_spider.neighbors_bulk(test_df, radius=my_radius)
+    print(f"\nNeighbors within Radius Bulk {my_radius} (Test Data):\n", radius_query)
 
     # Neighbor within Radius Test using a single query ID
     single_query_id = "id_5"
-    single_query_neighbors = class_spider.neighbors(single_query_id, radius=radius)
-    print(f"\nNeighbors within Radius {radius} Query ID:", single_query_id)
+    single_query_neighbors = class_spider.neighbors(single_query_id, radius=my_radius)
+    print(f"\nNeighbors within Radius {my_radius} Query ID:", single_query_id)
     print(single_query_neighbors)
 
     # Target Summary Test
