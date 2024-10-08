@@ -8,18 +8,18 @@ import logging
 
 
 class FeatureSpaceProximity:
-    def __init__(self, df: pd.DataFrame, features: list, id_column: str, neighbors: int = 10, target: str = None):
+    def __init__(self, df: pd.DataFrame, features: list, id_column: str,  target: str = None, neighbors: int = 10):
         """FeatureSpaceProximity: A class for neighbor lookups using KNN with optional target information.
 
         Args:
             df: Pandas DataFrame
             features: List of feature column names
             id_column: Name of the ID column
-            neighbors: Number of neighbors to use in the KNN model (default: 10)
             target: Optional name of the target column to include target-based functionality (default: None)
+            neighbors: Number of neighbors to use in the KNN model (default: 10)
         """
         self.log = logging.getLogger("sageworks")
-        self.df = df.copy()
+        self.df = df
         self.features = features
         self.id_column = id_column
         self.target = target
@@ -28,6 +28,30 @@ class FeatureSpaceProximity:
         self.scaler = StandardScaler().fit(df[features])
         scaled_features = self.scaler.transform(df[features])
         self.knn_model = NearestNeighbors(n_neighbors=neighbors, algorithm="auto").fit(scaled_features)
+
+    @classmethod
+    def from_model(cls, model, id_column: str):
+        """Create a FeatureSpaceProximity instance from a SageWorks model object.
+
+        Args:
+            model (Model): A SageWorks model object.
+            id_column (str): Name of the ID column.
+
+        Returns:
+            FeatureSpaceProximity: A new instance of the FeatureSpaceProximity class.
+        """
+        from sageworks.api import FeatureSet
+
+        # Extract necessary attributes from the SageWorks model
+        fs = FeatureSet(model.get_input())
+        features = model.features()
+        target = model.target()
+
+        # Retrieve the training DataFrame from the feature set
+        df = fs.view("training").pull_dataframe()
+
+        # Create and return a new instance of FeatureSpaceProximity
+        return cls(df=df, features=features, id_column=id_column, target=target)
 
     def get_neighbor_indices_and_distances(self):
         """Retrieve neighbor indices and distances for all points in the dataset."""
@@ -179,7 +203,7 @@ if __name__ == "__main__":
     # Test using Training and Test DataFrames
     class_spider = FeatureSpaceProximity(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="class")
 
-    # Neighbors Test
+    # Neighbors Bulk Test
     class_neighbors = class_spider.neighbors_bulk(test_df)
     print("\nNeighbors Bulk (Test Data):\n", class_neighbors)
 
@@ -198,6 +222,9 @@ if __name__ == "__main__":
     radius_query = class_spider.neighbors_bulk(test_df, radius=my_radius)
     print(f"\nNeighbors within Radius Bulk {my_radius} (Test Data):\n", radius_query)
 
+    radius_query = class_spider.neighbors_bulk(test_df[2:3], radius=1.0)
+    print(f"\nNeighbors within Radius Bulk {my_radius} (Test Data):\n", radius_query)
+
     # Neighbor within Radius Test using a single query ID
     single_query_id = "id_5"
     single_query_neighbors = class_spider.neighbors(single_query_id, radius=my_radius)
@@ -213,3 +240,14 @@ if __name__ == "__main__":
     indices, distances = class_spider.get_neighbor_indices_and_distances()
     print("\nNeighbor Indices (Training Data):\n", indices)
     print("\nNeighbor Distances (Training Data):\n", distances)
+
+    # Create a FeatureSpaceProximity instance from a SageWorks model object
+    from sageworks.api import Model
+    model = Model("abalone-regression")
+    model_spider = FeatureSpaceProximity.from_model(model, "id")
+
+    # Neighbors Test using a single query ID
+    single_query_id = 5
+    single_query_neighbors = model_spider.neighbors(single_query_id)
+    print("\nNeighbors for Query ID:", single_query_id)
+    print(single_query_neighbors)
