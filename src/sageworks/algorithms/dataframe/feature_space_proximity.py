@@ -3,7 +3,9 @@
 from typing import Union
 import pandas as pd
 from sklearn.neighbors import NearestNeighbors
+from sklearn.neighbors import LocalOutlierFactor
 from sklearn.preprocessing import StandardScaler
+from pandas.api.types import is_numeric_dtype
 import logging
 
 
@@ -23,11 +25,21 @@ class FeatureSpaceProximity:
         self.features = features
         self.id_column = id_column
         self.target = target
+        self.knn_neighbors = neighbors
 
         # Standardize the feature values and build the KNN model
         self.scaler = StandardScaler().fit(df[features])
         scaled_features = self.scaler.transform(df[features])
         self.knn_model = NearestNeighbors(n_neighbors=neighbors, algorithm="auto").fit(scaled_features)
+
+        # Compute Z-Scores or Consistency Scores for the target values
+        if self.target and is_numeric_dtype(self.df[self.target]):
+            self.target_z_scores()
+        else:
+            self.target_consistency()
+
+        # Now compute the outlier scores
+        self.outliers()
 
     @classmethod
     def from_model(cls, model, id_column: str):
@@ -52,11 +64,6 @@ class FeatureSpaceProximity:
 
         # Create and return a new instance of FeatureSpaceProximity
         return cls(df=df, features=features, id_column=id_column, target=target)
-
-    def get_neighbor_indices_and_distances(self):
-        """Retrieve neighbor indices and distances for all points in the dataset."""
-        distances, indices = self.knn_model.kneighbors()
-        return indices, distances
 
     def neighbors(self, query_id: Union[str, int], radius: float = None, include_self: bool = True) -> pd.DataFrame:
         """Return neighbors of the given query ID, either by fixed neighbors or within a radius.
@@ -158,8 +165,74 @@ class FeatureSpaceProximity:
 
         return result_df
 
+    def outliers(self) -> None:
+        """Compute a unified 'outlier' score based on either 'target_z' or 'target_consistency'."""
+        if 'target_z' in self.df.columns:
+            # Normalize Z-Scores to a 0-1 range using a sigmoid function or scaling
+            self.df['outlier'] = (self.df['target_z'].abs() / (self.df['target_z'].abs().max() + 1e-6)).clip(0, 1)
+
+        elif 'target_consistency' in self.df.columns:
+            # Calculate outlier score as 1 - consistency
+            self.df['outlier'] = 1 - self.df['target_consistency']
+
+        else:
+            self.log.warning("No 'target_z' or 'target_consistency' column found to compute outlier scores.")
+
+    def target_z_scores(self) -> None:
+        """Compute Z-Scores for NUMERIC target values."""
+        if not self.target:
+            self.log.warning("No target column defined for Z-Score computation.")
+            return
+
+        # Get the neighbors and distances for each internal observation (already excludes the query)
+        distances, indices = self.knn_model.kneighbors()
+
+        # Calculate the Z-Score for each observation in the internal DataFrame
+        z_scores = []
+        for idx, idx_list in enumerate(indices):
+            neighbor_targets = self.df.iloc[idx_list][self.target]  # Get neighbor targets
+            neighbor_mean = neighbor_targets.mean()
+            neighbor_std = neighbor_targets.std(ddof=0)
+
+            # Compute Z-Score for the current observation's target value
+            current_target = self.df.iloc[idx][self.target]  # Get current observation's target value
+            z_score = 0.0 if neighbor_std == 0 else (current_target - neighbor_mean) / neighbor_std
+            z_scores.append(z_score)
+
+        # Add the 'target_z' column to the internal dataframe
+        self.df['target_z'] = z_scores
+
+    def target_consistency(self) -> None:
+        """Compute a Neighborhood Consistency Score for CATEGORICAL targets."""
+        if not self.target:
+            self.log.warning("No target column defined for neighborhood consistency computation.")
+            return
+
+        # Get the neighbors and distances for each internal observation (already excludes the query)
+        distances, indices = self.knn_model.kneighbors()
+
+        # Calculate the Neighborhood Consistency Score for each observation
+        consistency_scores = []
+        for idx, idx_list in enumerate(indices):
+            query_target = self.df.iloc[idx][self.target]  # Get current observation's target value
+
+            # Get the neighbors' target values
+            neighbor_targets = self.df.iloc[idx_list][self.target]
+
+            # Calculate the proportion of neighbors that have the same category as the query observation
+            consistency_score = (neighbor_targets == query_target).mean()
+            consistency_scores.append(consistency_score)
+
+        # Add the 'target_consistency' column to the internal dataframe
+        self.df['target_consistency'] = consistency_scores
+
+    def get_neighbor_indices_and_distances(self):
+        """Retrieve neighbor indices and distances for all points in the dataset."""
+        distances, indices = self.knn_model.kneighbors()
+        return indices, distances
+
     def target_summary(self, query_id: Union[str, int]) -> pd.DataFrame:
-        """Provide a summary of target values in the neighborhood of the given query ID, if the target is defined."""
+        """WIP: Provide a summary of target values in the neighborhood of the given query ID"""
         neighbors_df = self.neighbors(query_id, include_self=False)
         if self.target and not neighbors_df.empty:
             summary_stats = neighbors_df[self.target].describe()
@@ -187,6 +260,9 @@ if __name__ == "__main__":
     # Create a classification column "class" by cutting the target into "low", "medium", "high"
     training_df["class"] = pd.cut(training_df["target"], bins=3, labels=["low", "medium", "high"])
 
+    # Hack to set the value of the 'class' field for the first row
+    # training_df.loc[0, "class"] = "high"
+
     # Test Data (5 rows)
     test_data = {
         "ID": [f"test_id_{i}" for i in range(5)],
@@ -201,43 +277,43 @@ if __name__ == "__main__":
     test_df["class"] = pd.cut(test_df["target"], bins=3, labels=["low", "medium", "high"])
 
     # Test using Training and Test DataFrames
-    class_spider = FeatureSpaceProximity(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="class")
+    spider = FeatureSpaceProximity(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="class")
 
     # Neighbors Bulk Test
-    class_neighbors = class_spider.neighbors_bulk(test_df)
-    print("\nNeighbors Bulk (Test Data):\n", class_neighbors)
+    neighbors = spider.neighbors_bulk(test_df)
+    print("\nNeighbors Bulk (Test Data):\n", neighbors)
 
     # Neighbors Test (with rows from the training data)
-    class_neighbors = class_spider.neighbors_bulk(training_df[:3])
-    print("\nNeighbors Bulk (Training Data):\n", class_neighbors)
+    neighbors = spider.neighbors_bulk(training_df[:3])
+    print("\nNeighbors Bulk (Training Data):\n", neighbors)
 
     # Neighbor Test using a single query ID
     single_query_id = "id_5"
-    single_query_neighbors = class_spider.neighbors(single_query_id)
+    single_query_neighbors = spider.neighbors(single_query_id)
     print("\nNeighbors for Query ID:", single_query_id)
     print(single_query_neighbors)
 
     # Neighbor within Radius Test
     my_radius = 0.5
-    radius_query = class_spider.neighbors_bulk(test_df, radius=my_radius)
+    radius_query = spider.neighbors_bulk(test_df, radius=my_radius)
     print(f"\nNeighbors within Radius Bulk {my_radius} (Test Data):\n", radius_query)
 
-    radius_query = class_spider.neighbors_bulk(test_df[2:3], radius=1.0)
+    radius_query = spider.neighbors_bulk(test_df[2:3], radius=1.0)
     print(f"\nNeighbors within Radius Bulk {my_radius} (Test Data):\n", radius_query)
 
     # Neighbor within Radius Test using a single query ID
     single_query_id = "id_5"
-    single_query_neighbors = class_spider.neighbors(single_query_id, radius=my_radius)
+    single_query_neighbors = spider.neighbors(single_query_id, radius=my_radius)
     print(f"\nNeighbors within Radius {my_radius} Query ID:", single_query_id)
     print(single_query_neighbors)
 
     # Target Summary Test
     single_query_id = "id_5"
-    target_summary = class_spider.target_summary(single_query_id)
+    target_summary = spider.target_summary(single_query_id)
     print(f"\nTarget Summary for Query ID '{single_query_id}':\n", target_summary)
 
     # Neighbor Indices and Distances Test
-    indices, distances = class_spider.get_neighbor_indices_and_distances()
+    indices, distances = spider.get_neighbor_indices_and_distances()
     print("\nNeighbor Indices (Training Data):\n", indices)
     print("\nNeighbor Distances (Training Data):\n", distances)
 
