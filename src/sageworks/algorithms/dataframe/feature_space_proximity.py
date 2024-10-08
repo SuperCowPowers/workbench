@@ -5,20 +5,29 @@ from sklearn.preprocessing import StandardScaler
 import logging
 
 
+from typing import Union
+import pandas as pd
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import StandardScaler
+import logging
+
+
 class FeatureSpaceProximity:
-    def __init__(self, df: pd.DataFrame, features: list, id_column: str, neighbors: int = 10):
-        """FeatureSpaceProximity: A class for managing feature space proximity using KNN.
+    def __init__(self, df: pd.DataFrame, features: list, id_column: str, neighbors: int = 10, target: str = None):
+        """FeatureSpaceProximity: A class for neighbor lookups using KNN with optional target information.
 
         Args:
             df: Pandas DataFrame
             features: List of feature column names
             id_column: Name of the ID column
             neighbors: Number of neighbors to use in the KNN model (default: 10)
+            target: Optional name of the target column to include target-based functionality (default: None)
         """
         self.log = logging.getLogger("sageworks")
         self.df = df.copy()
         self.features = features
         self.id_column = id_column
+        self.target = target
 
         # Standardize the feature values and build the KNN model
         self.scaler = StandardScaler().fit(df[features])
@@ -30,58 +39,94 @@ class FeatureSpaceProximity:
         distances, indices = self.knn_model.kneighbors()
         return indices, distances
 
-    def neighbors(self, query_id: Union[str, int], include_self: bool = True) -> pd.DataFrame:
-        """Return neighbors of the given query ID.
+    def neighbors(self, query_id: Union[str, int], radius: float = None, include_self: bool = True) -> pd.DataFrame:
+        """Return neighbors of the given query ID, either by fixed neighbors or within a radius.
 
         Args:
             query_id (Union[str, int]): The ID of the query point.
+            radius (float): Optional radius within which neighbors are to be searched. If not provided, use fixed neighbors.
             include_self (bool): Whether to include the query ID itself in the neighbor results.
 
         Returns:
-            pd.DataFrame: Filtered DataFrame that includes the query ID and its neighbors.
+            pd.DataFrame: Filtered DataFrame that includes the query ID, its neighbors, and optionally target values.
         """
         if query_id not in self.df[self.id_column].values:
             self.log.warning(f"Query ID '{query_id}' not found in the DataFrame. Returning an empty DataFrame.")
             return pd.DataFrame()
 
+        # Get a single-row DataFrame for the query ID
         query_df = self.df[self.df[self.id_column] == query_id]
-        neighbors_info_df = self.neighbors_bulk(query_df, include_self)
+
+        # Use the neighbors_bulk method with the appropriate radius
+        neighbors_info_df = self.neighbors_bulk(query_df, radius=radius, include_self=include_self)
+
+        # Extract the neighbor IDs and distances from the results
         neighbor_ids = neighbors_info_df["neighbor_ids"].iloc[0]
         neighbor_distances = neighbors_info_df["neighbor_distances"].iloc[0]
 
+        # Filter the internal DataFrame to include only the neighbors
         neighbors_df = self.df[self.df[self.id_column].isin(neighbor_ids)]
         neighbors_df = neighbors_df.set_index(self.id_column).reindex(neighbor_ids).reset_index()
         neighbors_df["knn_distance"] = neighbor_distances
-
         return neighbors_df
 
-    def neighbors_bulk(self, query_df: pd.DataFrame, include_self: bool = False) -> pd.DataFrame:
-        """Return neighbors for each row in the given query dataframe."""
+    def neighbors_bulk(self, query_df: pd.DataFrame, radius: float = None, include_self: bool = False) -> pd.DataFrame:
+        """Return neighbors for each row in the given query dataframe, either by fixed neighbors or within a radius.
+
+        Args:
+            query_df: Pandas DataFrame with the same features as the training data.
+            radius: Optional radius within which neighbors are to be searched. If not provided, use fixed neighbors.
+            include_self: Boolean indicating whether to include the query ID in the neighbor results.
+
+        Returns:
+            pd.DataFrame: DataFrame with query ID, neighbor IDs, neighbor targets, and neighbor distances.
+        """
+        # Scale the query data using the same scaler as the training data
         query_scaled = self.scaler.transform(query_df[self.features])
-        distances, indices = self.knn_model.kneighbors(query_scaled)
+
+        # Retrieve neighbors based on radius or standard neighbors
+        if radius is not None:
+            distances, indices = self.knn_model.radius_neighbors(query_scaled, radius=radius)
+        else:
+            distances, indices = self.knn_model.kneighbors(query_scaled)
+
+        # Collect neighbor information (IDs, target values, and distances)
         query_ids = query_df[self.id_column].values
         neighbor_ids = [[self.df.iloc[idx][self.id_column] for idx in index_list] for index_list in indices]
+        neighbor_targets = (
+            [[self.df.iloc[idx][self.target] for idx in index_list] for index_list in indices] if self.target else None
+        )
         neighbor_distances = [list(dist_list) for dist_list in distances]
 
+        # Automatically remove the query ID itself from the neighbor results if include_self is False
         for i, query_id in enumerate(query_ids):
             if query_id in neighbor_ids[i] and not include_self:
                 idx_to_remove = neighbor_ids[i].index(query_id)
                 neighbor_ids[i].pop(idx_to_remove)
                 neighbor_distances[i].pop(idx_to_remove)
+                if neighbor_targets:
+                    neighbor_targets[i].pop(idx_to_remove)
 
-        result_df = pd.DataFrame({"query_id": query_ids, "neighbor_ids": neighbor_ids, "neighbor_distances": neighbor_distances})
+        # Create and return a results DataFrame with the updated neighbor information
+        result_df = pd.DataFrame(
+            {
+                "query_id": query_ids,
+                "neighbor_ids": neighbor_ids,
+                "neighbor_targets": neighbor_targets,
+                "neighbor_distances": neighbor_distances,
+            }
+        )
         return result_df
 
-    def query_by_radius(self, query_df: pd.DataFrame, radius: float) -> pd.DataFrame:
-        """Return neighbors within a specified radius."""
-        query_scaled = self.scaler.transform(query_df[self.features])
-        radius_indices = self.knn_model.radius_neighbors(query_scaled, radius=radius, return_distance=False)
-
-        query_ids = query_df[self.id_column].values
-        neighbor_ids = [[self.df.iloc[idx][self.id_column] for idx in index_list] for index_list in radius_indices]
-
-        result_df = pd.DataFrame({"query_id": query_ids, "neighbor_ids": neighbor_ids})
-        return result_df
+    def target_summary(self, query_id: Union[str, int]) -> pd.DataFrame:
+        """Provide a summary of target values in the neighborhood of the given query ID, if the target is defined."""
+        neighbors_df = self.neighbors(query_id, include_self=False)
+        if self.target and not neighbors_df.empty:
+            summary_stats = neighbors_df["target_value"].describe()
+            return pd.DataFrame(summary_stats).transpose()
+        else:
+            self.log.warning(f"No target values found for neighbors of Query ID '{query_id}'.")
+            return pd.DataFrame()
 
 
 # Testing the FeatureSpaceProximity class with separate training and test/evaluation dataframes
@@ -115,39 +160,38 @@ if __name__ == "__main__":
     # Create a classification column for the test data
     test_df["class"] = pd.cut(test_df["target"], bins=3, labels=["low", "medium", "high"])
 
-    # Regression Test using Training and Test DataFrames
-    reg_spider = FeatureSpaceProximity(
-        training_df, ["feat1", "feat2", "feat3"], target="target", id_column="ID", classification=False
-    )
-    reg_predictions = reg_spider.predict(test_df)
-    print("Regression Predictions (Test Data):\n", reg_predictions)
-
-    # Regression Neighbors Test
-    reg_neighbors = reg_spider.neighbors_bulk(test_df)
-    print("\nRegression Neighbors (Test Data):\n", reg_neighbors)
-
-    # Classification Test using Training and Test DataFrames
+    # Test using Training and Test DataFrames
     class_spider = FeatureSpaceProximity(
         training_df,
         ["feat1", "feat2", "feat3"],
         id_column="ID",
-        target="class",
-        classification=True,
-        class_labels=["low", "medium", "high"],
+        target="class"
     )
-    class_predictions = class_spider.predict(test_df)
-    class_probs = class_spider.predict_proba(test_df)
-    print("\nClassification Predictions (Test Data):\n", class_predictions)
-    print("Classification Probabilities (Test Data, Ordered):\n", class_probs)
 
-    # Classification Neighbors Test
+    # Neighbors Test
     class_neighbors = class_spider.neighbors_bulk(test_df)
-    print("\nClassification Neighbors (Test Data):\n", class_neighbors)
+    print("\nNeighbors Bulk (Test Data):\n", class_neighbors)
+
+    # Neighbors Test (with rows from the training data)
+    class_neighbors = class_spider.neighbors_bulk(training_df[:3])
+    print("\nNeighbors Bulk (Training Data):\n", class_neighbors)
 
     # Neighbor Test using a single query ID
     single_query_id = "id_5"
     single_query_neighbors = class_spider.neighbors(single_query_id)
     print("\nNeighbors for Query ID:", single_query_id)
+    print(single_query_neighbors)
+
+    # Neighbor within Radius Test
+    radius = 0.5
+    radius_query = class_spider.neighbors_bulk(test_df, radius=radius)
+    print(f"\nNeighbors within Radius Bulk {radius} (Test Data):\n", radius_query)
+
+    # Neighbor within Radius Test using a single query ID
+    single_query_id = "id_5"
+
+    single_query_neighbors = class_spider.neighbors(single_query_id, radius=radius)
+    print(f"\nNeighbors within Radius {radius} Query ID:", single_query_id)
     print(single_query_neighbors)
 
     # Neighbor Indices and Distances Test
