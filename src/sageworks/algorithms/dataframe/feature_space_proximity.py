@@ -8,7 +8,7 @@ import logging
 
 
 class FeatureSpaceProximity:
-    def __init__(self, df: pd.DataFrame, features: list, id_column: str,  target: str = None, neighbors: int = 10):
+    def __init__(self, df: pd.DataFrame, features: list, id_column: str, target: str = None, neighbors: int = 10):
         """FeatureSpaceProximity: A class for neighbor lookups using KNN with optional target information.
 
         Args:
@@ -243,6 +243,7 @@ if __name__ == "__main__":
 
     # Create a FeatureSpaceProximity instance from a SageWorks model object
     from sageworks.api import Model
+
     model = Model("abalone-regression")
     model_spider = FeatureSpaceProximity.from_model(model, "id")
 
