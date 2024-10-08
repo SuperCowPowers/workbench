@@ -64,10 +64,14 @@ class FeatureSpaceProximity:
         neighbor_ids = neighbors_info_df["neighbor_ids"].iloc[0]
         neighbor_distances = neighbors_info_df["neighbor_distances"].iloc[0]
 
-        # Filter the internal DataFrame to include only the neighbors
-        neighbors_df = self.df[self.df[self.id_column].isin(neighbor_ids)]
-        neighbors_df = neighbors_df.set_index(self.id_column).reindex(neighbor_ids).reset_index()
-        neighbors_df["knn_distance"] = neighbor_distances
+        # Sort neighbors by distance (ascending order)
+        sorted_neighbors = sorted(zip(neighbor_ids, neighbor_distances), key=lambda x: x[1])
+        sorted_ids, sorted_distances = zip(*sorted_neighbors)
+
+        # Filter the internal DataFrame to include only the sorted neighbors
+        neighbors_df = self.df[self.df[self.id_column].isin(sorted_ids)]
+        neighbors_df = neighbors_df.set_index(self.id_column).reindex(sorted_ids).reset_index()
+        neighbors_df["knn_distance"] = sorted_distances
         return neighbors_df
 
     def neighbors_bulk(self, query_df: pd.DataFrame, radius: float = None, include_self: bool = False) -> pd.DataFrame:
@@ -94,7 +98,8 @@ class FeatureSpaceProximity:
         query_ids = query_df[self.id_column].values
         neighbor_ids = [[self.df.iloc[idx][self.id_column] for idx in index_list] for index_list in indices]
         neighbor_targets = (
-            [[self.df.iloc[idx][self.target] for idx in index_list] for index_list in indices] if self.target else None
+            [[self.df.loc[self.df[self.id_column] == neighbor, self.target].values[0] for neighbor in index_list]
+             for index_list in neighbor_ids] if self.target else None
         )
         neighbor_distances = [list(dist_list) for dist_list in distances]
 
@@ -107,15 +112,25 @@ class FeatureSpaceProximity:
                 if neighbor_targets:
                     neighbor_targets[i].pop(idx_to_remove)
 
+            # Sort neighbors by distance (ascending order)
+            sorted_neighbors = sorted(zip(neighbor_ids[i], neighbor_distances[i]), key=lambda x: x[1])
+            neighbor_ids[i], neighbor_distances[i] = list(zip(*sorted_neighbors)) if sorted_neighbors else ([], [])
+            if neighbor_targets:
+                neighbor_targets[i] = [self.df.loc[self.df[self.id_column] == neighbor, self.target].values[0]
+                                       for neighbor in neighbor_ids[i]]
+
         # Create and return a results DataFrame with the updated neighbor information
         result_df = pd.DataFrame(
             {
                 "query_id": query_ids,
                 "neighbor_ids": neighbor_ids,
-                "neighbor_targets": neighbor_targets,
                 "neighbor_distances": neighbor_distances,
             }
         )
+
+        if neighbor_targets:
+            result_df["neighbor_targets"] = neighbor_targets
+
         return result_df
 
     def target_summary(self, query_id: Union[str, int]) -> pd.DataFrame:
