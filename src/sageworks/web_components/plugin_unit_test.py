@@ -62,45 +62,59 @@ class PluginUnitTest:
         if not self.plugin.properties:
             raise ValueError("Plugin must have a non-empty 'properties' attribute")
 
+        # Call the internal method to update properties
+        if auto_update:
+            self._trigger_update()
+
         # Set up the test callback for updating the plugin
         @self.app.callback(
             [Output(component_id, property) for component_id, property in self.plugin.properties],
             [Input("update-button", "n_clicks")],
-            prevent_initial_call=True,
         )
         def update_plugin_properties(n_clicks):
-            # Simulate updating the plugin with a DataSource, FeatureSet, Model, Endpoint, or Model Table
-            if plugin_input_type == PluginInputType.DATA_SOURCE:
-                data_source = self.input_data if self.input_data is not None else DataSource("abalone_data")
-                updated_properties = self.plugin.update_properties(data_source, **self.kwargs)
-            elif plugin_input_type == PluginInputType.FEATURE_SET:
-                feature_set = self.input_data if self.input_data is not None else FeatureSet("abalone_features")
-                updated_properties = self.plugin.update_properties(feature_set, **self.kwargs)
-            elif plugin_input_type == PluginInputType.MODEL:
-                model = self.input_data if self.input_data is not None else Model("abalone-regression")
-                updated_properties = self.plugin.update_properties(model, inference_run="auto_inference", **self.kwargs)
-            elif plugin_input_type == PluginInputType.ENDPOINT:
-                endpoint = self.input_data if self.input_data is not None else Endpoint("abalone-regression-end")
-                updated_properties = self.plugin.update_properties(endpoint, **self.kwargs)
-            elif plugin_input_type == PluginInputType.PIPELINE:
-                pipeline = self.input_data if self.input_data is not None else Pipeline("abalone_pipeline_v1")
-                updated_properties = self.plugin.update_properties(pipeline, **self.kwargs)
-            elif plugin_input_type == PluginInputType.GRAPH:
-                graph = self.input_data if self.input_data is not None else GraphCore("karate_club")
-                updated_properties = self.plugin.update_properties(
-                    graph, labels="club", hover_text=["club", "degree"], **self.kwargs
-                )
-            elif plugin_input_type == PluginInputType.MODEL_TABLE:
-                model_df = self.input_data if self.input_data is not None else Meta().models()
-                updated_properties = self.plugin.update_properties(model_df, **self.kwargs)
-            elif plugin_input_type == PluginInputType.PIPELINE_TABLE:
-                pipeline_df = self.input_data if self.input_data is not None else Meta().pipelines()
-                updated_properties = self.plugin.update_properties(pipeline_df, **self.kwargs)
-            else:
-                raise ValueError(f"Invalid test type: {plugin_input_type}")
+            return self._trigger_update()
 
-            # Return the updated properties for the plugin
-            return updated_properties
+        # Set up callbacks for displaying output signals
+        for component_id, property in self.plugin.signals:
+            @self.app.callback(
+                Output(f"test-output-{component_id}-{property}", "children"), Input(component_id, property)
+            )
+            def display_output_signal(signal_value):
+                return f"{signal_value}"
+
+        # Now register any internal callbacks
+        self.plugin.register_internal_callbacks()
+
+    def _trigger_update(self):
+        """Trigger an update for the plugin properties based on its input type."""
+        plugin_input_type = self.plugin.plugin_input_type
+
+        if plugin_input_type == PluginInputType.DATA_SOURCE:
+            data_source = self.input_data if self.input_data is not None else DataSource("abalone_data")
+            return self.plugin.update_properties(data_source, **self.kwargs)
+        elif plugin_input_type == PluginInputType.FEATURE_SET:
+            feature_set = self.input_data if self.input_data is not None else FeatureSet("abalone_features")
+            return self.plugin.update_properties(feature_set, **self.kwargs)
+        elif plugin_input_type == PluginInputType.MODEL:
+            model = self.input_data if self.input_data is not None else Model("abalone-regression")
+            return self.plugin.update_properties(model, inference_run="auto_inference", **self.kwargs)
+        elif plugin_input_type == PluginInputType.ENDPOINT:
+            endpoint = self.input_data if self.input_data is not None else Endpoint("abalone-regression-end")
+            return self.plugin.update_properties(endpoint, **self.kwargs)
+        elif plugin_input_type == PluginInputType.PIPELINE:
+            pipeline = self.input_data if self.input_data is not None else Pipeline("abalone_pipeline_v1")
+            return self.plugin.update_properties(pipeline, **self.kwargs)
+        elif plugin_input_type == PluginInputType.GRAPH:
+            graph = self.input_data if self.input_data is not None else GraphCore("karate_club")
+            return self.plugin.update_properties(graph, labels="club", hover_text=["club", "degree"], **self.kwargs)
+        elif plugin_input_type == PluginInputType.MODEL_TABLE:
+            model_df = self.input_data if self.input_data is not None else Meta().models()
+            return self.plugin.update_properties(model_df, **self.kwargs)
+        elif plugin_input_type == PluginInputType.PIPELINE_TABLE:
+            pipeline_df = self.input_data if self.input_data is not None else Meta().pipelines()
+            return self.plugin.update_properties(pipeline_df, **self.kwargs)
+        else:
+            raise ValueError(f"Invalid test type: {plugin_input_type}")
 
         # Set up callbacks for displaying output signals
         for component_id, property in self.plugin.signals:
