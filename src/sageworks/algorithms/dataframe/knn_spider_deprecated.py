@@ -9,7 +9,7 @@ import logging
 from sageworks.api import FeatureSet, Model
 
 
-class KNNSpider:
+class KNNSpiderDeprecated:
     def __init__(
         self,
         df: pd.DataFrame,
@@ -20,7 +20,7 @@ class KNNSpider:
         classification: bool = False,
         class_labels: list = None,
     ):
-        """KNNSpider: A simple class for prediction and neighbor lookups using KNN.
+        """KNNSpiderDeprecated: A simple class for prediction and neighbor lookups using KNN.
 
         Args:
             df: Pandas DataFrame
@@ -61,14 +61,14 @@ class KNNSpider:
 
     @classmethod
     def from_model(cls, model: Model, id_column: str):
-        """Create a KNNSpider instance from a SageWorks model object
+        """Create a KNNSpiderDeprecated instance from a SageWorks model object
 
         Args:
             model (Model): A SageWorks model object
             id_column (str): Name of the ID column
 
         Returns:
-            KNNSpider: A new instance of the KNNSpider class
+            KNNSpiderDeprecated: A new instance of the KNNSpiderDeprecated class
         """
 
         # Extract necessary information from the SageWorks model
@@ -203,7 +203,7 @@ class KNNSpider:
         self.class_reorder_map = [original_labels.index(label) for label in self.class_labels]
 
 
-# Testing the KNNSpider class with separate training and test/evaluation dataframes
+# Testing the KNNSpiderDeprecated class with separate training and test/evaluation dataframes
 if __name__ == "__main__":
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", 1000)
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     test_df["class"] = pd.cut(test_df["target"], bins=3, labels=["low", "medium", "high"])
 
     # Regression Test using Training and Test DataFrames
-    reg_spider = KNNSpider(
+    reg_spider = KNNSpiderDeprecated(
         training_df, ["feat1", "feat2", "feat3"], target="target", id_column="ID", classification=False
     )
     reg_predictions = reg_spider.predict(test_df)
@@ -246,7 +246,7 @@ if __name__ == "__main__":
     print("\nRegression Neighbors (Test Data):\n", reg_neighbors)
 
     # Classification Test using Training and Test DataFrames
-    class_spider = KNNSpider(
+    class_spider = KNNSpiderDeprecated(
         training_df,
         ["feat1", "feat2", "feat3"],
         id_column="ID",
@@ -276,8 +276,8 @@ if __name__ == "__main__":
 
     # Test the `from_model` class method
     model = Model("abalone-regression")
-    spider_from_model = KNNSpider.from_model(model, id_column="id")
+    spider_from_model = KNNSpiderDeprecated.from_model(model, id_column="id")
 
     # Test the `from_model` class method
     model = Model("wine-classification")
-    spider_from_model = KNNSpider.from_model(model, id_column="id")
+    spider_from_model = KNNSpiderDeprecated.from_model(model, id_column="id")
