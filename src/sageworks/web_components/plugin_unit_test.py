@@ -29,9 +29,6 @@ class PluginUnitTest:
         """
         assert issubclass(plugin_class, PluginInterface), "Plugin class must be a subclass of PluginInterface"
 
-        # Get the input type of the plugin
-        plugin_input_type = plugin_class.plugin_input_type
-
         # If the input data is provided, let's store it for when update_properties is called
         self.input_data = input_data
         self.kwargs = kwargs
@@ -76,6 +73,7 @@ class PluginUnitTest:
 
         # Set up callbacks for displaying output signals
         for component_id, property in self.plugin.signals:
+
             @self.app.callback(
                 Output(f"test-output-{component_id}-{property}", "children"), Input(component_id, property)
             )
