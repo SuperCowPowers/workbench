@@ -32,6 +32,7 @@ from sageworks.utils.repl_utils import cprint, Spinner
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.api.meta import Meta
+from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
 logging.getLogger("sageworks").setLevel(logging.INFO)
 
@@ -123,6 +124,7 @@ class SageWorksShell:
         self.commands["aws_refresh"] = self.aws_refresh
         self.commands["config"] = self.show_config
         self.commands["status"] = self.status_description
+        self.commands["launch"] = self.launch_plugin
         self.commands["log"] = logging.getLogger("sageworks")
         self.commands["params"] = importlib.import_module("sageworks.api.parameter_store").ParameterStore()
         self.commands["df_store"] = importlib.import_module("sageworks.api.df_store").DFStore()
@@ -441,6 +443,24 @@ class SageWorksShell:
         cprint("lightblue", "Please rerun the SageWorks REPL to complete the onboarding process.")
         cprint("darkyellow", "Note: You'll need to start a NEW terminal to inherit the new ENV vars.")
         sys.exit(0)
+
+    @staticmethod
+    def launch_plugin(plugin_class, input_data=None, **kwargs):
+        """Launch a plugin in a browser tab with minimal setup.
+
+        Args:
+            plugin_class (PluginInterface): The plugin class to launch.
+            input_data (Optional): Optional input data (e.g., DataSource, FeatureSet, etc.)
+            **kwargs: Additional keyword arguments for plugin properties.
+        """
+        # Create the PluginUnitTest object
+        plugin_test = PluginUnitTest(plugin_class, input_data, auto_update=True, **kwargs)
+
+        url = "http://127.0.0.1:8050"
+        webbrowser.open(url)
+
+        # Run the server and open in the browser
+        plugin_test.run()
 
 
 # Launch Shell Entry Point

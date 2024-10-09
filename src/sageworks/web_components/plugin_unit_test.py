@@ -18,12 +18,13 @@ log = logging.getLogger("sageworks")
 
 
 class PluginUnitTest:
-    def __init__(self, plugin_class, input_data=None, **kwargs):
+    def __init__(self, plugin_class, input_data=None, auto_update=True, **kwargs):
         """A class to unit test a PluginInterface class.
 
         Args:
             plugin_class (PluginInterface): The PluginInterface class to test
             input_data (Optional): The input data for this plugin (FeatureSet, Model, Endpoint, or DataFrame)
+            auto_update (bool): Whether to automatically update the plugin properties (default: True)
             **kwargs: Additional keyword arguments
         """
         assert issubclass(plugin_class, PluginInterface), "Plugin class must be a subclass of PluginInterface"
