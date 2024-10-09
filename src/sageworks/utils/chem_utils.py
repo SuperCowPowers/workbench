@@ -66,9 +66,9 @@ def micromolar_to_log(series_µM: pd.Series) -> pd.Series:
     pd.Series: Series of logarithmic values (log10).
     """
     # Replace 0 or negative values with a small number to avoid log errors
-    adjusted_series = series_µM.clip(lower=1e-10)
+    adjusted_series = series_µM.clip(lower=1e-9)  # Alignment with another project
 
-    series_mol_per_l = adjusted_series * 1e-6  # Convert µM to mol/L
+    series_mol_per_l = adjusted_series * 1e-6  # Convert µM/L to mol/L
     log_series = np.log10(series_mol_per_l)
     return log_series
 
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     display(smiles)
 
     # Test the concentration conversion functions
-    df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles], "µM": [500, 50, 5, 1, 0.1]})
+    df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles, smiles], "µM": [500, 50, 5, 1, 0.1, 0]})
 
     # Convert µM to log10
     df["log10"] = micromolar_to_log(df["µM"])
