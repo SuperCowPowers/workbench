@@ -27,14 +27,17 @@ class FeatureSpaceProximity:
         self.knn_neighbors = neighbors
 
         # Standardize the feature values and build the KNN model
+        self.log.info("Building KNN model for FeatureSpaceProximity...")
         self.scaler = StandardScaler().fit(df[features])
         scaled_features = self.scaler.transform(df[features])
         self.knn_model = NearestNeighbors(n_neighbors=neighbors, algorithm="auto").fit(scaled_features)
 
         # Compute Z-Scores or Consistency Scores for the target values
         if self.target and is_numeric_dtype(self.df[self.target]):
+            self.log.info("Computing Z-Scores for target values...")
             self.target_z_scores()
         else:
+            self.log.info("Computing target consistency scores...")
             self.target_consistency()
 
         # Now compute the outlier scores
