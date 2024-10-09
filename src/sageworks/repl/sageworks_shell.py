@@ -11,6 +11,7 @@ import readline  # noqa
 
 try:
     import matplotlib.pyplot as plt  # noqa
+
     plt.ion()
 
     HAVE_MATPLOTLIB = True
