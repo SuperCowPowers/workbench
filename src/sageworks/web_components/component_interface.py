@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 import pandas as pd
 from dash import dcc
 from dash.development.base_component import Component
+import dash_bootstrap_components as dbc
 import networkx as nx
 
 # SageWorks Imports
@@ -39,11 +40,24 @@ class ComponentInterface(ABC):
 
     SageworksObject = Union[DataSource, FeatureSet, Model, Endpoint, Pipeline, GraphCore, nx.Graph, pd.DataFrame]
 
-    def __init__(self):
+    def __init__(self, theme: str = "DARK"):
+        """Initialize the Component Interface
+
+        Args:
+            theme (str): The theme to use for the component ("LIGHT" or "DARK" default is "DARK")
+        """
         self.component_id = None
         self.container = None
         self.properties = []
         self.signals = []
+
+        # Store the theme for the Web Component
+        if theme == "DARK":
+            self.theme = dbc.themes.DARKLY
+            self.dark_theme = True
+        else:
+            self.theme = dbc.themes.BOOTSTRAP
+            self.dark_theme = False
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
