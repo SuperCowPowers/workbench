@@ -6,8 +6,8 @@ These classes provide functionality for data in SQL Databases
 """
 
 from .column_stats import ColumnStats
-from .correlations import Correlations
+from .correlations import correlations
 from .descriptive_stats import DescriptiveStats
 from .outliers import Outliers
 
-__all__ = ["ColumnStats", "Correlation", "DescriptiveStats", "Outliers"]
+__all__ = ["ColumnStats", "correlations", "DescriptiveStats", "Outliers"]
