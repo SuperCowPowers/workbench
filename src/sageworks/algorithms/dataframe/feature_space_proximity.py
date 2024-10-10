@@ -2,6 +2,7 @@
 
 from typing import Union
 import pandas as pd
+import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 from pandas.api.types import is_numeric_dtype
@@ -41,6 +42,7 @@ class FeatureSpaceProximity:
             self.target_consistency()
 
         # Now compute the outlier scores
+        self.log.info("Computing outlier scores...")
         self.outliers()
 
     @classmethod
@@ -186,22 +188,21 @@ class FeatureSpaceProximity:
             self.log.warning("No target column defined for Z-Score computation.")
             return
 
-        # Get the neighbors and distances for each internal observation (already excludes the query)
+        # Get the neighbors and distances for each internal observation
         distances, indices = self.knn_model.kneighbors()
 
-        # Calculate the Z-Score for each observation in the internal DataFrame
-        z_scores = []
-        for idx, idx_list in enumerate(indices):
-            neighbor_targets = self.df.iloc[idx_list][self.target]  # Get neighbor targets
-            neighbor_mean = neighbor_targets.mean()
-            neighbor_std = neighbor_targets.std(ddof=0)
+        # Retrieve all neighbor target values in a single operation
+        neighbor_targets = self.df[self.target].values[indices]  # Shape will be (n_samples, n_neighbors)
 
-            # Compute Z-Score for the current observation's target value
-            current_target = self.df.iloc[idx][self.target]  # Get current observation's target value
-            z_score = 0.0 if neighbor_std == 0 else (current_target - neighbor_mean) / neighbor_std
-            z_scores.append(z_score)
+        # Compute the mean and std along the neighbors axis (axis=1)
+        neighbor_means = neighbor_targets.mean(axis=1)
+        neighbor_stds = neighbor_targets.std(axis=1, ddof=0)
 
-        # Add the 'target_z' column to the internal dataframe
+        # Vectorized Z-score calculation
+        current_targets = self.df[self.target].values
+        z_scores = np.where(neighbor_stds == 0, 0.0, (current_targets - neighbor_means) / neighbor_stds)
+
+        # Assign the computed Z-Scores back to the DataFrame
         self.df["target_z"] = z_scores
 
     def target_consistency(self) -> None:
@@ -278,7 +279,7 @@ if __name__ == "__main__":
     # Create a classification column for the test data
     test_df["class"] = pd.cut(test_df["target"], bins=3, labels=["low", "medium", "high"])
 
-    # Test using Training and Test DataFrames
+    # Test the spider using a Classification target
     spider = FeatureSpaceProximity(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="class")
 
     # Neighbors Bulk Test
@@ -318,6 +319,9 @@ if __name__ == "__main__":
     indices, distances = spider.get_neighbor_indices_and_distances()
     print("\nNeighbor Indices (Training Data):\n", indices)
     print("\nNeighbor Distances (Training Data):\n", distances)
+
+    # Test the spider using a Regression target
+    spider = FeatureSpaceProximity(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="target")
 
     # Create a FeatureSpaceProximity instance from a SageWorks model object
     from sageworks.api import Model
