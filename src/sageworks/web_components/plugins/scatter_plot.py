@@ -3,7 +3,6 @@ import pandas as pd
 from dash import dcc, html, callback, Input, Output
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
-import dash_bootstrap_components as dbc  # Import Dash Bootstrap Components
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
@@ -17,24 +16,11 @@ class ScatterPlot(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.FEATURE_SET
 
-    def __init__(self, theme: str = "DARK"):
-        """Initialize the Scatter Plot Plugin.
-
-        Args:
-            theme (str): The theme to use for the plot. ("LIGHT" or "DARK" default is "DARK")
-        """
-        # Initialize the Scatter Plot Plugin
+    def __init__(self):
+        """Initialize the Scatter Plot Plugin"""
         self.component_id = None
         self.hover_columns = []
         self.df = None
-
-        # Store the theme for the plot
-        if theme == "DARK":
-            self.theme = dbc.themes.DARKLY
-            self.dark_theme = True
-        else:
-            self.theme = dbc.themes.BOOTSTRAP
-            self.dark_theme = False
 
         # Call the parent class constructor
         super().__init__()
@@ -64,10 +50,9 @@ class ScatterPlot(PluginInterface):
         self.signals = [(f"{component_id}-graph", "hoverData")]
 
         # Create the Composite Component
-        # - A Graph Component
+        # - A Graph/ScatterPlot Component
         # - Dropdowns for X, Y, and Color
         # - Checkbox for Regression Line
-        # Composite Component (Scatter Plot + Dropdowns)
         return html.Div(
             [
                 # Main Scatter Plot Graph
@@ -192,13 +177,13 @@ class ScatterPlot(PluginInterface):
 
         # Define a custom color scale (blue -> yellow -> orange -> red)
         color_scale = [
-            [0.0, "rgb(64,64,160)"],
+            [0.0, "rgb(64, 64, 160)"],
             [0.33, "rgb(48, 140, 140)"],
             [0.67, "rgb(140, 140, 48)"],
             [1.0, "rgb(160, 64, 64)"],
         ]
 
-        # Create Plotly Scatter Plot
+        # Create an OpenGL Scatter Plot
         figure = go.Figure(
             data=go.Scattergl(
                 x=df[x_col],
@@ -275,12 +260,12 @@ class ScatterPlot(PluginInterface):
             prevent_initial_call=True,
         )
         def update_graph(x_value, y_value, color_value, regression_line):
-            # Get the latest dataframe
-            df = self.df
+            """Update the Scatter Plot Graph based on the dropdown values."""
 
-            if not df.empty and x_value and y_value and color_value:
+            # Check if the dataframe is not empty and the values are not None
+            if not self.df.empty and x_value and y_value and color_value:
                 # Update Plotly Scatter Plot
-                figure = self.create_scatter_plot(df, x_value, y_value, color_value, regression_line)
+                figure = self.create_scatter_plot(self.df, x_value, y_value, color_value, regression_line)
                 return figure
 
             raise PreventUpdate
