@@ -275,17 +275,12 @@ class SageWorksShell:
         help_msg = """    Commands:
         - help: Show this help message
         - docs: Open browser to show SageWorks Documentation
-        - summary: Show a summary of all the AWS Artifacts
-        - incoming_data: List all the incoming S3 data
-        - glue_jobs: List all the Glue Jobs in AWS
         - data_sources: List all the DataSources in AWS
         - feature_sets: List all the FeatureSets in AWS
         - models: List all the Models in AWS
         - endpoints: List all the Endpoints in AWS
-        - pipelines: List all the SageWorks Pipelines
         - config: Show the current SageWorks Config
         - status: Show the current SageWorks Status
-        - aws_refresh: Force a refresh of all AWS Meta Data
         - log_(debug/info/important/warning): Set the SageWorks log level
         - exit: Exit SageWorks REPL"""
         return help_msg
