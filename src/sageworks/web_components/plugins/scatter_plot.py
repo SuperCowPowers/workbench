@@ -23,6 +23,7 @@ class ScatterPlot(PluginInterface):
         Args:
             theme (str): The theme to use for the plot. ("LIGHT" or "DARK" default is "DARK")
         """
+        # Initialize the Scatter Plot Plugin
         self.component_id = None
         self.hover_columns = []
         self.df = None
@@ -130,11 +131,20 @@ class ScatterPlot(PluginInterface):
             list: A list of updated property values (figure, x options, y options, color options).
         """
 
+        # Get the limit for the number of rows to plot
+        limit = kwargs.get("limit", 10000)
+
         # Grab the dataframe from the input data object
         if isinstance(input_data, (DataSource, FeatureSet)):
-            self.df = input_data.view("display").pull_dataframe(limit=10000)
+            self.df = input_data.view("display").pull_dataframe(limit=limit)
+        elif isinstance(input_data, pd.DataFrame):
+            if len(input_data) > limit:
+                self.log.warning(f"Input data has {len(input_data)} rows, sampling to {limit} rows.")
+                self.df = input_data.sample(n=limit)
+            else:
+                self.df = input_data
         else:
-            self.df = input_data
+            raise ValueError("The input data must be a DataSource, FeatureSet, or Pandas DataFrame.")
 
         # Set the default hover columns
         self.hover_columns = kwargs.get("hover_columns", self.df.columns.tolist()[:10])
@@ -179,11 +189,6 @@ class ScatterPlot(PluginInterface):
         Returns:
             go.Figure: A Plotly Figure object.
         """
-
-        # Put in a hard limit on the number of rows to plot
-        if len(df) > 10000:
-            print(f"Too many rows to plot ({len(df)}), limiting to 10000 rows.")
-        df = df.head(10000)
 
         # Define a custom color scale (blue -> yellow -> orange -> red)
         color_scale = [
