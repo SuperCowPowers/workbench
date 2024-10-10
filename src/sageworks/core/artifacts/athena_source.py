@@ -14,14 +14,7 @@ from pprint import pprint
 from sageworks.core.artifacts.data_source_abstract import DataSourceAbstract
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.datetime_utils import convert_all_to_iso8601
-from sageworks.algorithms.sql import (
-    sample_rows,
-    value_counts,
-    descriptive_stats,
-    outliers,
-    column_stats,
-    correlations,
-)
+from sageworks.algorithms import sql
 from sageworks.utils.redis_cache import CustomEncoder
 from sageworks.utils.aws_utils import sageworks_meta_from_catalog_table_meta
 
@@ -285,7 +278,7 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # Call the SQL function to pull a sample of the rows
-        return sample_rows.sample_rows(self)
+        return sql.sample_rows(self)
 
     def descriptive_stats(self, recompute: bool = False) -> dict[dict]:
         """Compute Descriptive Stats for all the numeric columns in a DataSource
@@ -305,7 +298,7 @@ class AthenaSource(DataSourceAbstract):
             return stat_dict
 
         # Call the SQL function to compute descriptive stats
-        stat_dict = descriptive_stats.descriptive_stats(self)
+        stat_dict = sql.descriptive_stats(self)
 
         # Push the descriptive stat data into our DataSource Metadata
         self.upsert_sageworks_meta({"sageworks_descriptive_stats": stat_dict})
@@ -329,7 +322,7 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # Compute outliers using the SQL Outliers class
-        sql_outliers = outliers.Outliers()
+        sql_outliers = sql.outliers.Outliers()
         return sql_outliers.compute_outliers(self, scale=scale, use_stddev=use_stddev)
 
     def smart_sample(self, recompute: bool = False) -> pd.DataFrame:
@@ -388,7 +381,7 @@ class AthenaSource(DataSourceAbstract):
             return correlations_dict
 
         # Call the SQL function to compute correlations
-        correlations_dict = correlations.correlations(self)
+        correlations_dict = sql.correlations(self)
 
         # Push the correlation data into our DataSource Metadata
         self.upsert_sageworks_meta({"sageworks_correlations": correlations_dict})
@@ -417,7 +410,7 @@ class AthenaSource(DataSourceAbstract):
             return columns_stats_dict
 
         # Call the SQL function to compute column stats
-        column_stats_dict = column_stats.column_stats(self, recompute=recompute)
+        column_stats_dict = sql.column_stats(self, recompute=recompute)
 
         # Push the column stats data into our DataSource Metadata
         self.upsert_sageworks_meta({"sageworks_column_stats": column_stats_dict})
@@ -443,7 +436,7 @@ class AthenaSource(DataSourceAbstract):
             return value_counts_dict
 
         # Call the SQL function to compute value_counts
-        value_count_dict = value_counts.value_counts(self)
+        value_count_dict = sql.value_counts(self)
 
         # Push the value_count data into our DataSource Metadata
         self.upsert_sageworks_meta({"sageworks_value_counts": value_count_dict})

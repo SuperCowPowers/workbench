@@ -5,9 +5,11 @@ These classes provide functionality for data in SQL Databases
 - TBD: TBD
 """
 
-from .column_stats import ColumnStats
+from .sample_rows import sample_rows
+from .value_counts import value_counts
+from .column_stats import column_stats
 from .correlations import correlations
-from .descriptive_stats import DescriptiveStats
+from .descriptive_stats import descriptive_stats
 from .outliers import Outliers
 
-__all__ = ["ColumnStats", "correlations", "DescriptiveStats", "Outliers"]
+__all__ = ["sample_rows", "value_counts", "column_stats", "correlations", "descriptive_stats", "Outliers"]

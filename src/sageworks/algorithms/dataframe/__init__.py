@@ -7,6 +7,6 @@ These classes provide functionality for Pandas Dataframes
 
 from .feature_space_proximity import FeatureSpaceProximity
 from .residuals_calculator import ResidualsCalculator
-from .dimensionality_reduction import DimentionalityReduction
+from .dimensionality_reduction import DimensionalityReduction
 
-__all__ = ["FeatureSpaceProximity", "ResidualsCalculator", "DimentionalityReduction"]
+__all__ = ["FeatureSpaceProximity", "ResidualsCalculator", "DimensionalityReduction"]
