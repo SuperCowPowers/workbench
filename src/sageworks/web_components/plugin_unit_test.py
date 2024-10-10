@@ -2,6 +2,7 @@ import dash
 from dash import html, Output, Input
 import dash_bootstrap_components as dbc
 import logging
+import socket
 
 # Import the Path class from the pathlib module
 from pathlib import Path
@@ -128,4 +129,14 @@ class PluginUnitTest:
         self.plugin.register_internal_callbacks()
 
     def run(self):
-        self.app.run_server(debug=True, use_reloader=False)
+        """Run the Dash server for the plugin, handling common errors gracefully."""
+        if not self.is_port_in_use(8050):
+            self.app.run_server(debug=True, use_reloader=False)
+        else:
+            log.error("It looks like another Dash server is running, stop that server and try again.")
+
+    @staticmethod
+    def is_port_in_use(port):
+        """Check if a port is in use."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            return sock.connect_ex(("127.0.0.1", port)) == 0
