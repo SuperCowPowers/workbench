@@ -49,6 +49,12 @@ nav:
       - Transform: core_classes/transforms/transform.md
   - Plugins: 
       - OverView: plugins/index.md
+  - Data Algorithms: 
+      - OverView: data_algorithms/overview.md
+      - DataFrames: data_algorithms/dataframes/overview.md
+      - Graphs: data_algorithms/graphs/overview.md
+      - Spark: data_algorithms/spark/overview.md
+      - SQL: data_algorithms/sql/overview.md
   - SageWorks Enterprise: 
       - OverView: enterprise/index.md
       - Private SaaS: enterprise/private_saas.md

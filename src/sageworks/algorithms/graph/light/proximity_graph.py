@@ -1,5 +1,6 @@
 import pandas as pd
 import networkx as nx
+from typing import Union
 
 # SageWorks Imports
 from sageworks.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
@@ -36,8 +37,6 @@ class ProximityGraph:
             features (list): List of feature column names to be used for building the proximity graph.
             id_column (str): Name of the ID column in the DataFrame.
             target (str): Name of the target column in the DataFrame.
-            classification (bool): Whether the target column is for classification (default: False).
-            class_labels (list): Optional list of class labels in the desired order (e.g., ["low", "medium", "high"]).
             store_features (bool): Whether to store the features as node attributes (default: True).
 
         Returns:
@@ -96,7 +95,7 @@ class ProximityGraph:
         # Return the NetworkX graph
         return self.nx_graph
 
-    def get_neighborhood(self, node_id, radius: int = 1) -> nx.Graph:
+    def get_neighborhood(self, node_id: Union[str, int], radius: int = 1) -> nx.Graph:
         """
         Get a subgraph containing nodes within a given number of hops around a specific node.
 

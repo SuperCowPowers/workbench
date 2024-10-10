@@ -44,7 +44,7 @@ class FeatureSpaceProximity:
         self.outliers()
 
     @classmethod
-    def from_model(cls, model, id_column: str):
+    def from_model(cls, model, id_column: str) -> "FeatureSpaceProximity":
         """Create a FeatureSpaceProximity instance from a SageWorks model object.
 
         Args:
