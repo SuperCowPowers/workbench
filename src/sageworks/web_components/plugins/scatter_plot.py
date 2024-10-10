@@ -66,42 +66,40 @@ class ScatterPlot(PluginInterface):
         # - A Graph Component
         # - Dropdowns for X, Y, and Color
         # - Checkbox for Regression Line
+        # Composite Component (Scatter Plot + Dropdowns)
         return html.Div(
             [
+                # Main Scatter Plot Graph
                 dcc.Graph(
                     id=f"{component_id}-graph",
                     figure=self.display_text("Waiting for Data..."),
                     config={"scrollZoom": True},
-                    style={"height": "100%"},  # Let it fill height
+                    style={"width": "100%", "height": "100%"}  # Let the graph fill its container
                 ),
+
+                # Controls: X, Y, Color Dropdowns, and Regression Line Checkbox
                 html.Div(
                     [
                         html.Label("X", style={"marginLeft": "40px", "marginRight": "5px", "fontWeight": "bold"}),
                         dcc.Dropdown(
                             id=f"{component_id}-x-dropdown",
                             className="dropdown",
-                            placeholder="Select X-axis",
-                            value=None,
                             style={"min-width": "50px", "flex": 1},  # Responsive width
-                            clearable=False,
+                            clearable=False
                         ),
                         html.Label("Y", style={"marginLeft": "30px", "marginRight": "5px", "fontWeight": "bold"}),
                         dcc.Dropdown(
                             id=f"{component_id}-y-dropdown",
                             className="dropdown",
-                            placeholder="Select Y-axis",
-                            value=None,
                             style={"min-width": "50px", "flex": 1},  # Responsive width
-                            clearable=False,
+                            clearable=False
                         ),
                         html.Label("Color", style={"marginLeft": "30px", "marginRight": "5px", "fontWeight": "bold"}),
                         dcc.Dropdown(
                             id=f"{component_id}-color-dropdown",
                             className="dropdown",
-                            placeholder="Select Color",
-                            value=None,
                             style={"min-width": "50px", "flex": 1},  # Responsive width
-                            clearable=False,
+                            clearable=False
                         ),
                         dcc.Checklist(
                             id=f"{component_id}-regression-line",
@@ -110,24 +108,17 @@ class ScatterPlot(PluginInterface):
                             style={"margin": "10px"},
                         ),
                     ],
-                    style={
-                        "display": "flex",
-                        "flexDirection": "row",
-                        "padding": "10px 0",
-                        "justifyContent": "center",
-                        "alignItems": "center",
-                        "width": "100%",  # Ensure the container takes up full width
-                    },
-                ),
+                    style={"padding": "10px", "display": "flex", "gap": "10px"}
+                )
             ],
-            style={"height": "100%"},  # Let it fill height
+            style={"height": "100%", "display": "flex", "flexDirection": "column"}  # Full viewport height
         )
 
     def update_properties(self, input_data: Union[DataSource, FeatureSet, pd.DataFrame], **kwargs) -> list:
         """Update the property values for the plugin component.
 
         Args:
-            input_data (DataSource or FeatureSet): The input data object.
+            input_data (DataSource or FeatureSet or Pandas dataframe): The input data object.
             **kwargs: Additional keyword arguments (plugins can define their own arguments).
                       Note: The current argument processed are:
                             - x: The default x-axis column

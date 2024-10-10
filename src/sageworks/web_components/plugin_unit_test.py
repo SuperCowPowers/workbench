@@ -43,7 +43,7 @@ class PluginUnitTest:
         self.app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], assets_folder=assets_dir)
 
         # Set up the layout
-        container = html.Div(self.component, style={"height": "70vh"})
+        container = html.Div(self.component, style={"height": "75vh"})
         layout_children = [container, html.Button("Update Plugin", id="update-button")]
 
         # Signal output displays
@@ -53,7 +53,7 @@ class PluginUnitTest:
             layout_children.append(html.H4(f"Property: {property}"))
             layout_children.append(html.Div(id=f"test-output-{component_id}-{property}"))
 
-        self.app.layout = html.Div(layout_children)
+        self.app.layout = html.Div(layout_children, style={"padding": "20px"})
 
         # Make sure the plugin has a properties attribute (non-empty list of tuples)
         assert hasattr(self.plugin, "properties"), "Plugin must have a 'properties' attribute"
