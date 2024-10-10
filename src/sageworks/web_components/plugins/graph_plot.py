@@ -1,6 +1,7 @@
 from typing import Union
-from dash import dcc
+from dash import dcc, html, callback, Input, Output
 import plotly.graph_objects as go
+from dash.exceptions import PreventUpdate
 import networkx as nx
 
 # SageWorks Imports
@@ -15,20 +16,80 @@ class GraphPlot(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.GRAPH
 
-    def create_component(self, component_id: str) -> dcc.Graph:
-        """Create a Dash Graph Component without any data.
+    def __init__(self):
+        """Initialize the Graph (Nodes/Edges) Plugin"""
+        self.component_id = None
+        self.hover_columns = []
+        self.graph_figure = None
+        self.nodes = None
+        self.edges = None
+
+        # Call the parent class constructor
+        super().__init__()
+
+    def create_component(self, component_id: str) -> html.Div:
+        """Create a Graph (Node/Edge) Component without any data.
 
         Args:
             component_id (str): The ID of the web component.
 
         Returns:
-            dcc.Graph: A Dash Graph Component.
+            html.Div: A Container of Components for the Graph (Node/Edge) Component.
         """
-        # Fill in plugin properties and signals
-        self.properties = [(f"{component_id}", "figure")]
-        self.signals = [(f"{component_id}", "hoverData")]
+        self.component_id = component_id
 
-        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+        # Fill in plugin properties and signals
+        self.properties = [
+            (f"{component_id}-graph", "figure"),
+            (f"{component_id}-label-dropdown", "options"),
+            (f"{component_id}-color-dropdown", "options"),
+            (f"{component_id}-label-dropdown", "value"),
+            (f"{component_id}-color-dropdown", "value"),
+        ]
+        self.signals = [(f"{component_id}-graph", "hoverData")]
+
+        # Create the Composite Component
+        # - A Graph Node/Edge Component
+        # - Dropdown for Node Labels and Colors
+        return html.Div(
+            [
+                # Main Scatter Plot Graph
+                dcc.Graph(
+                    id=f"{component_id}-graph",
+                    figure=self.display_text("Waiting for Data..."),
+                    config={"scrollZoom": True},
+                    style={"width": "100%", "height": "100%"},  # Let the graph fill its container
+                ),
+
+                # Controls: Label, Color Dropdowns, and TBD Checkbox
+                html.Div(
+                    [
+                        html.Label("Label", style={"marginLeft": "40px", "marginRight": "5px", "fontWeight": "bold"}),
+                        dcc.Dropdown(
+                            id=f"{component_id}-label-dropdown",
+                            className="dropdown",
+                            style={"min-width": "50px", "flex": 1},  # Responsive width
+                            clearable=False,
+                        ),
+                        html.Label("Color", style={"marginLeft": "30px", "marginRight": "5px", "fontWeight": "bold"}),
+                        dcc.Dropdown(
+                            id=f"{component_id}-color-dropdown",
+                            className="dropdown",
+                            style={"min-width": "50px", "flex": 1},  # Responsive width
+                            clearable=False,
+                        ),
+                        dcc.Checklist(
+                            id=f"{component_id}-tbd-checkbox",
+                            options=[{"label": " TBD", "value": "show"}],
+                            value=[],
+                            style={"margin": "10px"},
+                        ),
+                    ],
+                    style={"padding": "10px", "display": "flex", "gap": "10px"},
+                ),
+            ],
+            style={"height": "100%", "display": "flex", "flexDirection": "column"},  # Full viewport height
+        )
 
     def update_properties(self, input_graph: Union[GraphCore, nx.Graph], **kwargs) -> list:
         """Update the property values for the plugin component.
@@ -36,9 +97,15 @@ class GraphPlot(PluginInterface):
         Args:
             input_graph (GraphCore or NetworkX Graph): The input graph data object.
             **kwargs: Additional keyword arguments (plugins can define their own arguments).
+                      Note: The current kwargs processed are:
+                            - label: The default node labels
+                            - color: The default color column
+                            - label_columns: The columns to use for the labels
+                            - color_columns: The columns to use for the color scale
+                            - hover_columns: The columns to show when hovering over a node
 
         Returns:
-            list: A list of updated property values (just [go.Figure] for now).
+            list: A list of updated property values (figure, label options, color options, default label, default color).
         """
 
         # Check if the input graph is a GraphCore object
@@ -80,27 +147,27 @@ class GraphPlot(PluginInterface):
         labels = [data.get(label_field, "") for node, data in graph.nodes(data=True)]
 
         # Are the hover_text fields specified in the kwargs?
-        hover_text_fields = kwargs.get("hover_text", ["id", "degree"])
-        if hover_text_fields == "all":
+        hover_columns = kwargs.get("hover_columns", ["id", "degree"])
+        if hover_columns == "all":
             # All fields except for 'pos'
-            hover_text_fields = [key for key in graph.nodes[first_node] if key != "pos"]
+            hover_columns = [key for key in graph.nodes[first_node] if key != "pos"]
 
         # Fill in the hover text
         hover_text = [
-            "<br>".join([f"{key}: {data.get(key, '')}" for key in hover_text_fields])
+            "<br>".join([f"{key}: {data.get(key, '')}" for key in hover_columns])
             for node, data in graph.nodes(data=True)
         ]
 
-        # Define a color scale for the nodes based on a normalized node degree
+        # Define a custom color scale (blue -> yellow -> orange -> red)
         color_scale = [
-            [0.0, "rgb(64,64,160)"],
+            [0.0, "rgb(64, 64, 160)"],
             [0.33, "rgb(48, 140, 140)"],
             [0.67, "rgb(140, 140, 48)"],
             [1.0, "rgb(160, 64, 64)"],
         ]
 
-        # Create Plotly trace for nodes
-        node_trace = go.Scatter(
+        # Create an OpenGL Scatter Plot for our nodes
+        node_trace = go.Scattergl(
             x=x_nodes,
             y=y_nodes,
             mode="markers+text",  # Include text mode for labels
@@ -118,54 +185,93 @@ class GraphPlot(PluginInterface):
             ),
         )
 
-        # Create Plotly traces for edges
+        # Create OpenGL Scattergl traces for edges
         edge_traces = []
         for edge in graph.edges():
             x0, y0 = graph.nodes[edge[0]]["pos"]
             x1, y1 = graph.nodes[edge[1]]["pos"]
 
-            # Check to see if edge has a weight attribute
-            if "weight" in graph.edges[edge]:
-                weight = graph.edges[edge]["weight"]
-            else:
-                weight = 0.5
+            # Check for edge weight and set defaults
+            weight = graph.edges[edge].get("weight", 0.5)
 
-            # Scale the width and alpha of the edge
+            # Scale the width and alpha of the edge based on the weight
             width = min(5.0, weight * 4.9 + 0.1)  # Scale to [0.1, 5]
             alpha = min(1.0, weight * 0.9 + 0.1)  # Scale to [0.1, 1.0]
 
-            # Create the edge trace and append to the list
+            # Create individual Scattergl trace for each edge with specific styling
             edge_traces.append(
-                go.Scatter(
-                    x=[x0, x1], y=[y0, y1], mode="lines", line=dict(width=width, color=f"rgba(150, 150, 150, {alpha})")
+                go.Scattergl(
+                    x=[x0, x1],
+                    y=[y0, y1],
+                    mode="lines",
+                    line=dict(width=width, color=f"rgba(150, 150, 150, {alpha})"),
+                    showlegend=False,
+                    hoverinfo='skip',  # Skip hover info for edges if not needed
                 )
             )
 
-        # Create figure
-        fig = go.Figure(data=edge_traces + [node_trace])
+        # Create figure with combined node and edge traces
+        self.graph_figure = go.Figure(data=edge_traces + [node_trace])
 
         # Just some fine-tuning of the plot
-        fig.update_layout(
+        plotly_theme = "plotly_dark" if self.dark_theme else "plotly"
+        self.graph_figure.update_layout(
+            template=plotly_theme,
             margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10},
-            height=400,
             xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),  # Remove X axis grid and tick marks
             yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),  # Remove Y axis grid and tick marks
             showlegend=False,  # Remove legend
+            dragmode="pan",
         )
 
-        # Apply dark theme
-        # fig.update_layout(template="plotly_dark")
+        # In update_properties or another method
+        self.nodes = {node: data for node, data in graph.nodes(data=True)}
+        self.edges = list(graph.edges(data=True))
 
-        # Return the figure
-        return [fig]
+        # Extract all unique node attribute fields
+        node_attributes = set()
+        for _, data in graph.nodes(data=True):
+            node_attributes.update(data.keys())
+
+        # Create dropdown options using the unique node attributes
+        label_list = [{"label": attr, "value": attr} for attr in node_attributes]
+        color_list = label_list.copy()  # Use the same attributes for colors initially
+
+        # Set default values
+        default_label = label_field  # Keep the current `label_field` as default
+        default_color = "degree" if "degree" in node_attributes else next(iter(node_attributes), "id")
+
+        # Return the updated properties for the dropdowns and the figure
+        return [self.graph_figure, label_list, color_list, default_label, default_color]
 
     def register_internal_callbacks(self):
         """Register any internal callbacks for the plugin."""
-        pass
+
+        def update_graph(label, color):
+            """Update the Graph (Nodes/Edges) based on the dropdown values."""
+            if not label and not color:
+                raise PreventUpdate
+
+            # Use class variables to access nodes directly
+            nodes = self.nodes  # Use pre-stored node attributes
+
+            # Get the node trace from the graph figure
+            node_trace = self.graph_figure['data'][-1]  # Assumes node trace is the last trace
+
+            # Update node labels dynamically if a label field is selected
+            if label:
+                node_trace['text'] = [nodes[node].get(label, "") for node in nodes]
+
+            # Update node colors dynamically if a color field is selected
+            if color:
+                node_trace['marker']['color'] = [nodes[node].get(color, 0) for node in nodes]
+
+            # Return the updated figure
+            return self.graph_figure
 
 
 if __name__ == "__main__":
-    # This class takes in graph details and generates a Graph Plot (go.Figure)
+    """Run the Unit Test for the Plugin."""
     from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
