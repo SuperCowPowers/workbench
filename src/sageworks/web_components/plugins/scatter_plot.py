@@ -74,9 +74,8 @@ class ScatterPlot(PluginInterface):
                     id=f"{component_id}-graph",
                     figure=self.display_text("Waiting for Data..."),
                     config={"scrollZoom": True},
-                    style={"width": "100%", "height": "100%"}  # Let the graph fill its container
+                    style={"width": "100%", "height": "100%"},  # Let the graph fill its container
                 ),
-
                 # Controls: X, Y, Color Dropdowns, and Regression Line Checkbox
                 html.Div(
                     [
@@ -85,21 +84,21 @@ class ScatterPlot(PluginInterface):
                             id=f"{component_id}-x-dropdown",
                             className="dropdown",
                             style={"min-width": "50px", "flex": 1},  # Responsive width
-                            clearable=False
+                            clearable=False,
                         ),
                         html.Label("Y", style={"marginLeft": "30px", "marginRight": "5px", "fontWeight": "bold"}),
                         dcc.Dropdown(
                             id=f"{component_id}-y-dropdown",
                             className="dropdown",
                             style={"min-width": "50px", "flex": 1},  # Responsive width
-                            clearable=False
+                            clearable=False,
                         ),
                         html.Label("Color", style={"marginLeft": "30px", "marginRight": "5px", "fontWeight": "bold"}),
                         dcc.Dropdown(
                             id=f"{component_id}-color-dropdown",
                             className="dropdown",
                             style={"min-width": "50px", "flex": 1},  # Responsive width
-                            clearable=False
+                            clearable=False,
                         ),
                         dcc.Checklist(
                             id=f"{component_id}-regression-line",
@@ -108,10 +107,10 @@ class ScatterPlot(PluginInterface):
                             style={"margin": "10px"},
                         ),
                     ],
-                    style={"padding": "10px", "display": "flex", "gap": "10px"}
-                )
+                    style={"padding": "10px", "display": "flex", "gap": "10px"},
+                ),
             ],
-            style={"height": "100%", "display": "flex", "flexDirection": "column"}  # Full viewport height
+            style={"height": "100%", "display": "flex", "flexDirection": "column"},  # Full viewport height
         )
 
     def update_properties(self, input_data: Union[DataSource, FeatureSet, pd.DataFrame], **kwargs) -> list:
