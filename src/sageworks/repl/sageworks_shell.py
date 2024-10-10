@@ -217,7 +217,7 @@ class SageWorksShell:
 
     def import_sageworks(self):
         # Import all the SageWorks modules
-        spinner = self.spinner_start("Chatting with AWS:")
+        spinner = self.spinner_start("Importing SageWorks:")
         try:
             self.artifacts_text_view = importlib.import_module(
                 "sageworks.web_views.artifacts_text_view"
@@ -311,8 +311,17 @@ class SageWorksShell:
             spinner.stop()
 
     def summary(self):
+        """Show a summary of all the AWS Artifacts"""
+
+        # Grab information about all the AWS Artifacts
+        spinner = self.spinner_start("Chatting with AWS:")
+        try:
+            view_data = self.artifacts_text_view.view_data()
+        finally:
+            spinner.stop()
+
+        # Print out the AWS Artifacts Summary
         cprint("yellow", "\nAWS Artifacts Summary:")
-        view_data = self.artifacts_text_view.view_data()
         for name, df in view_data.items():
             # Pad the name to 15 characters
             name = (name + " " * 15)[:15]
