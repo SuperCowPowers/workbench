@@ -43,7 +43,8 @@ class PluginUnitTest:
         self.app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], assets_folder=assets_dir)
 
         # Set up the layout
-        layout_children = [self.component, html.Button("Update Plugin", id="update-button")]
+        container = html.Div(self.component, style={"height": "70vh"})
+        layout_children = [container, html.Button("Update Plugin", id="update-button")]
 
         # Signal output displays
         layout_children.append(html.H3("Signals:"))
