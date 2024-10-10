@@ -105,7 +105,7 @@ class ScatterPlot(PluginInterface):
         Args:
             input_data (DataSource or FeatureSet or Pandas dataframe): The input data object.
             **kwargs: Additional keyword arguments (plugins can define their own arguments).
-                      Note: The current argument processed are:
+                      Note: The current kwargs processed are:
                             - x: The default x-axis column
                             - y: The default y-axis column
                             - color: The default color column
