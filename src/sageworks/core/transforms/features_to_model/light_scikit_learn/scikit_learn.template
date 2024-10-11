@@ -91,6 +91,32 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     return df
 
 
+def match_features_case_insensitive(df: pd.DataFrame, feature_list: list) -> list:
+    """
+    Matches and returns a list of case-insensitive column names from the DataFrame
+    based on the input feature list.
+
+    Args:
+        df (pd.DataFrame): The DataFrame with the original columns.
+        feature_list (list): The desired list of feature names (case insensitive).
+
+    Returns:
+        list: A list of matching column names in the DataFrame, preserving the order from feature_list.
+    """
+    # Create a mapping of lower-case column names to original column names
+    column_map = {}
+    for col in df.columns:
+        lower_col = col.lower()
+        # Only store the first column if the lower-case causes duplicates ("ID", "id", "Id") --> "id"
+        if lower_col not in column_map:
+            column_map[lower_col] = col
+
+    # Match feature_list to actual DataFrame columns using case-insensitive matching
+    matched_columns = [column_map[feat.lower()] for feat in feature_list if feat.lower() in column_map]
+
+    return matched_columns
+
+
 if __name__ == "__main__":
     """The main function is for training the Scikit-Learn model"""
 
@@ -307,13 +333,18 @@ def predict_fn(df, model):
     # Grab our feature columns (from training)
     model_dir = os.environ["SM_MODEL_DIR"]
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
-        features = json.load(fp)
-    print(f"Features: {features}")
+        model_features_when_created = json.load(fp)
+    print(f"Model Features: {model_features_when_created}")
 
     # Load our Label Encoder if we have one
     label_encoder = None
     if os.path.exists(os.path.join(model_dir, "label_encoder.joblib")):
         label_encoder = joblib.load(os.path.join(model_dir, "label_encoder.joblib"))
+
+    # We're going match features in a case-insensitive manner, accounting for all the permutations
+    # - Model has a feature list that's any case ("Id", "taCos", "cOunT", "likes_tacos")
+    # - Incoming data has columns that are mixed case ("ID", "Tacos", "Count", "Likes_Tacos")
+    features = match_features_case_insensitive(df, model_features_when_created)
 
     # Determine the appropriate method for making predictions
     if hasattr(model, "predict"):

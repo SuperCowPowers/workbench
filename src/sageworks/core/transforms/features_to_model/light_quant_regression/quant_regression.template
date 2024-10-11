@@ -17,21 +17,48 @@ import pandas as pd
 
 
 # Function to check if dataframe is empty
-def check_dataframe(df: pd.DataFrame) -> None:
+def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
     """
     Check if the provided dataframe is empty and raise an exception if it is.
 
     Args:
         df (pd.DataFrame): DataFrame to check
+        df_name (str): Name of the DataFrame
     """
     if df.empty:
-        msg = f"*** The training data has 0 rows! ***STOPPING***"
+        msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
         print(msg)
         raise ValueError(msg)
+
+def match_features_case_insensitive(df: pd.DataFrame, feature_list: list) -> list:
+    """
+    Matches and returns a list of case-insensitive column names from the DataFrame
+    based on the input feature list.
+
+    Args:
+        df (pd.DataFrame): The DataFrame with the original columns.
+        feature_list (list): The desired list of feature names (case insensitive).
+
+    Returns:
+        list: A list of matching column names in the DataFrame, preserving the order from feature_list.
+    """
+    # Create a mapping of lower-case column names to original column names
+    column_map = {}
+    for col in df.columns:
+        lower_col = col.lower()
+        # Only store the first column if the lower-case causes duplicates ("ID", "id", "Id") --> "id"
+        if lower_col not in column_map:
+            column_map[lower_col] = col
+
+    # Match feature_list to actual DataFrame columns using case-insensitive matching
+    matched_columns = [column_map[feat.lower()] for feat in feature_list if feat.lower() in column_map]
+
+    return matched_columns
 
 
 if __name__ == "__main__":
     """The main function is for training the XGBoost Quantile Regression models"""
+
     # Harness Template Parameters
     target = "{{target_column}}"
     feature_list = {{feature_list}}
@@ -60,7 +87,7 @@ if __name__ == "__main__":
     df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
 
     # Check if the dataframe is empty
-    check_dataframe(df)
+    check_dataframe(df, "training_df")
 
     # Features/Target output
     print(f"Target: {target}")
@@ -214,7 +241,7 @@ def output_fn(output_df, accept_type):
 
 
 def predict_fn(df, models) -> pd.DataFrame:
-    """Make Predictions with our XGB Model
+    """Make Predictions with our XGB Quantile Regression Model
 
     Args:
         df (pd.DataFrame): The input DataFrame
@@ -227,8 +254,13 @@ def predict_fn(df, models) -> pd.DataFrame:
     # Grab our feature columns (from training)
     model_dir = os.environ["SM_MODEL_DIR"]
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
-        features = json.load(fp)
-    print(f"Features: {features}")
+        model_features_when_created = json.load(fp)
+    print(f"Model Features: {model_features_when_created}")
+
+    # We're going match features in a case-insensitive manner, accounting for all the permutations
+    # - Model has a feature list that's any case ("Id", "taCos", "cOunT", "likes_tacos")
+    # - Incoming data has columns that are mixed case ("ID", "Tacos", "Count", "Likes_Tacos")
+    features = match_features_case_insensitive(df, model_features_when_created)
 
     # Predict the features against all the models
     for name, model in models.items():
