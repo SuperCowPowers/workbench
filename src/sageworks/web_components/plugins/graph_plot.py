@@ -59,7 +59,6 @@ class GraphPlot(PluginInterface):
                     config={"scrollZoom": True},
                     style={"width": "100%", "height": "100%"},  # Let the graph fill its container
                 ),
-
                 # Controls: Label, Color Dropdowns, and TBD Checkbox
                 html.Div(
                     [
@@ -104,11 +103,11 @@ class GraphPlot(PluginInterface):
                             - hover_columns: The columns to show when hovering over a node
 
         Returns:
-            list: A list of updated property values (figure, label options, color options, default label, default color).
+            list: A list of updated properties (figure, label_list, color_list, default_label, default)color).
         """
 
         # Get the NetworkX graph from GraphCore or use the provided graph directly
-        self.graph = input_graph.get_nx_graph() if hasattr(input_graph, 'get_nx_graph') else input_graph
+        self.graph = input_graph.get_nx_graph() if hasattr(input_graph, "get_nx_graph") else input_graph
 
         # We'll use the first node to look for node attributes
         first_node = self.graph.nodes[next(iter(self.graph.nodes))]
@@ -184,11 +183,12 @@ class GraphPlot(PluginInterface):
             # Create individual Scattergl trace for each edge with specific styling
             edge_traces.append(
                 go.Scattergl(
-                    x=[x0, x1], y=[y0, y1],
+                    x=[x0, x1],
+                    y=[y0, y1],
                     mode="lines",
                     line=dict(width=width, color=f"rgba(150, 150, 150, {alpha})"),  # Set edge color and transparency
                     showlegend=False,
-                    hoverinfo='skip',  # Skip hover info for edges if not needed
+                    hoverinfo="skip",  # Skip hover info for edges if not needed
                 )
             )
 
@@ -252,11 +252,11 @@ class GraphPlot(PluginInterface):
             nodes = self.graph.nodes
 
             # Get the node trace from the graph figure (assuming last trace is for nodes)
-            node_trace = self.graph_figure['data'][-1]
+            node_trace = self.graph_figure["data"][-1]
 
             # Update node labels dynamically if a label field is selected
             if label:
-                node_trace['text'] = [nodes[node].get(label, "") for node in nodes]
+                node_trace["text"] = [nodes[node].get(label, "") for node in nodes]
 
             # Update node colors dynamically if a color field is selected
             if color:
@@ -265,13 +265,13 @@ class GraphPlot(PluginInterface):
                 if color in nodes[first_node]:
                     color_values = [nodes[node][color] for node in nodes]
                     if isinstance(nodes[first_node][color], (int, float)):
-                        node_trace['marker']['color'] = color_values
+                        node_trace["marker"]["color"] = color_values
                     else:
                         # Enumerate strings as a fallback for categorical values
                         unique_values = {val: idx for idx, val in enumerate(set(color_values))}
-                        node_trace['marker']['color'] = [unique_values[val] for val in color_values]
+                        node_trace["marker"]["color"] = [unique_values[val] for val in color_values]
                 else:
-                    node_trace['marker']['color'] = [0] * len(nodes)  # Default to zero if not present
+                    node_trace["marker"]["color"] = [0] * len(nodes)  # Default to zero if not present
 
             # Return the updated figure
             return self.graph_figure
