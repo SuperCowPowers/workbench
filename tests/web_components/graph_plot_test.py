@@ -15,7 +15,10 @@ def test_graph_plot():
     graph_plot = GraphPlot()
 
     # Generate the figure
-    [figure] = graph_plot.update_properties(graph)
+    properties = graph_plot.update_properties(graph, label="club")
+
+    # The first property should be the figure
+    figure = properties[0]
     figure.show()
 
 
