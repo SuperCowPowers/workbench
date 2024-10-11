@@ -413,10 +413,19 @@ class EndpointCore(Artifact):
             pd.DataFrame: Return the DataFrame with additional columns, prediction and any _proba columns
         """
 
-        # Make sure the eval_df has the features used to train the model
+        # Sanity check: Does the Model have Features?
         features = ModelCore(self.model_name).features()
-        if features and not set(features).issubset(eval_df.columns):
-            raise ValueError(f"DataFrame does not contain required features: {features}")
+        if not features:
+            self.log.warning("Model does not have features defined, using all columns in the DataFrame")
+        else:
+            # Sanity check: Does the DataFrame have the required features?
+            df_columns_lower = set(col.lower() for col in eval_df.columns)
+            features_lower = set(feature.lower() for feature in features)
+
+            # Check if the features are a subset of the DataFrame columns (case-insensitive)
+            if not features_lower.issubset(df_columns_lower):
+                missing_features = features_lower - df_columns_lower
+                raise ValueError(f"DataFrame does not contain required features: {missing_features}")
 
         # Create our Endpoint Predictor Class
         predictor = Predictor(
@@ -872,6 +881,7 @@ class EndpointCore(Artifact):
 
 if __name__ == "__main__":
     """Exercise the Endpoint Class"""
+    from sageworks.api import FeatureSet
     from sageworks.utils.endpoint_utils import fs_evaluation_data
 
     # Grab an EndpointCore object and pull some information from it
@@ -898,6 +908,12 @@ if __name__ == "__main__":
 
     # Health Check
     print(f"Health Check: {my_endpoint.health_check()}")
+
+    # Capitalization Test
+    fs = FeatureSet("abalone_features")
+    cap_df = fs.pull_dataframe()
+    cap_df.columns = [col.upper() for col in cap_df.columns]
+    my_endpoint._predict(cap_df)
 
     # Run Auto Inference on the Endpoint (uses the FeatureSet)
     print("Running Auto Inference...")

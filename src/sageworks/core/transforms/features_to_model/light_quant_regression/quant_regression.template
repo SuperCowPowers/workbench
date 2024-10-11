@@ -17,21 +17,59 @@ import pandas as pd
 
 
 # Function to check if dataframe is empty
-def check_dataframe(df: pd.DataFrame) -> None:
+def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
     """
     Check if the provided dataframe is empty and raise an exception if it is.
 
     Args:
         df (pd.DataFrame): DataFrame to check
+        df_name (str): Name of the DataFrame
     """
     if df.empty:
-        msg = f"*** The training data has 0 rows! ***STOPPING***"
+        msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
         print(msg)
         raise ValueError(msg)
+
+def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
+    """
+    Matches and renames the DataFrame's column names to match the model's feature names (case-insensitive).
+    Prioritizes exact case matches first, then falls back to case-insensitive matching if no exact match exists.
+
+    Args:
+        df (pd.DataFrame): The DataFrame with the original columns.
+        model_features (list): The desired list of feature names (mixed case allowed).
+
+    Returns:
+        pd.DataFrame: The DataFrame with renamed columns to match the model's feature names.
+    """
+    # Create a mapping for exact and case-insensitive matching
+    exact_match_set = set(df.columns)
+    column_map = {}
+
+    # Build the case-insensitive map (if we have any duplicate columns, the first one wins)
+    for col in df.columns:
+        lower_col = col.lower()
+        if lower_col not in column_map:
+            column_map[lower_col] = col
+
+    # Create a dictionary for renaming
+    rename_dict = {}
+    for feature in model_features:
+        # Check for an exact match first
+        if feature in exact_match_set:
+            rename_dict[feature] = feature
+
+        # If not an exact match, fall back to case-insensitive matching
+        elif feature.lower() in column_map:
+            rename_dict[column_map[feature.lower()]] = feature
+
+    # Rename the columns in the DataFrame to match the model's feature names
+    return df.rename(columns=rename_dict)
 
 
 if __name__ == "__main__":
     """The main function is for training the XGBoost Quantile Regression models"""
+
     # Harness Template Parameters
     target = "{{target_column}}"
     feature_list = {{feature_list}}
@@ -60,7 +98,7 @@ if __name__ == "__main__":
     df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
 
     # Check if the dataframe is empty
-    check_dataframe(df)
+    check_dataframe(df, "training_df")
 
     # Features/Target output
     print(f"Target: {target}")
@@ -214,7 +252,7 @@ def output_fn(output_df, accept_type):
 
 
 def predict_fn(df, models) -> pd.DataFrame:
-    """Make Predictions with our XGB Model
+    """Make Predictions with our XGB Quantile Regression Model
 
     Args:
         df (pd.DataFrame): The input DataFrame
@@ -227,16 +265,21 @@ def predict_fn(df, models) -> pd.DataFrame:
     # Grab our feature columns (from training)
     model_dir = os.environ["SM_MODEL_DIR"]
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
-        features = json.load(fp)
-    print(f"Features: {features}")
+        model_features = json.load(fp)
+    print(f"Model Features: {model_features}")
+
+    # We're going match features in a case-insensitive manner, accounting for all the permutations
+    # - Model has a feature list that's any case ("Id", "taCos", "cOunT", "likes_tacos")
+    # - Incoming data has columns that are mixed case ("ID", "Tacos", "Count", "Likes_Tacos")
+    matched_df = match_features_case_insensitive(df, model_features)
 
     # Predict the features against all the models
     for name, model in models.items():
         if name == "rsme":
-            df["mean"] = model.predict(df[features])
+            df["mean"] = model.predict(matched_df[model_features])
             df["prediction"] = df["mean"]
         else:
-            df[name] = model.predict(df[features])
+            df[name] = model.predict(matched_df[model_features])
 
     # Reorganize the columns so they are in alphabetical order
     df = df.reindex(sorted(df.columns), axis=1)

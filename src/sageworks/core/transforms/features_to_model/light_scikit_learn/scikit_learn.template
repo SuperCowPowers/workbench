@@ -91,6 +91,43 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     return df
 
 
+def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
+    """
+    Matches and renames the DataFrame's column names to match the model's feature names (case-insensitive).
+    Prioritizes exact case matches first, then falls back to case-insensitive matching if no exact match exists.
+
+    Args:
+        df (pd.DataFrame): The DataFrame with the original columns.
+        model_features (list): The desired list of feature names (mixed case allowed).
+
+    Returns:
+        pd.DataFrame: The DataFrame with renamed columns to match the model's feature names.
+    """
+    # Create a mapping for exact and case-insensitive matching
+    exact_match_set = set(df.columns)
+    column_map = {}
+
+    # Build the case-insensitive map (if we have any duplicate columns, the first one wins)
+    for col in df.columns:
+        lower_col = col.lower()
+        if lower_col not in column_map:
+            column_map[lower_col] = col
+
+    # Create a dictionary for renaming
+    rename_dict = {}
+    for feature in model_features:
+        # Check for an exact match first
+        if feature in exact_match_set:
+            rename_dict[feature] = feature
+
+        # If not an exact match, fall back to case-insensitive matching
+        elif feature.lower() in column_map:
+            rename_dict[column_map[feature.lower()]] = feature
+
+    # Rename the columns in the DataFrame to match the model's feature names
+    return df.rename(columns=rename_dict)
+
+
 if __name__ == "__main__":
     """The main function is for training the Scikit-Learn model"""
 
@@ -307,24 +344,29 @@ def predict_fn(df, model):
     # Grab our feature columns (from training)
     model_dir = os.environ["SM_MODEL_DIR"]
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
-        features = json.load(fp)
-    print(f"Features: {features}")
+        model_features = json.load(fp)
+    print(f"Model Features: {model_features}")
 
     # Load our Label Encoder if we have one
     label_encoder = None
     if os.path.exists(os.path.join(model_dir, "label_encoder.joblib")):
         label_encoder = joblib.load(os.path.join(model_dir, "label_encoder.joblib"))
 
+    # We're going match features in a case-insensitive manner, accounting for all the permutations
+    # - Model has a feature list that's any case ("Id", "taCos", "cOunT", "likes_tacos")
+    # - Incoming data has columns that are mixed case ("ID", "Tacos", "Count", "Likes_Tacos")
+    matched_df = match_features_case_insensitive(df, model_features)
+
     # Determine the appropriate method for making predictions
     if hasattr(model, "predict"):
         # Use predict method for prediction
-        predictions = model.predict(df[features])
+        predictions = model.predict(matched_df[model_features])
     elif hasattr(model, "fit_predict"):
         # Use fit_predict method for clustering models like DBSCAN
-        predictions = model.fit_predict(df[features])
+        predictions = model.fit_predict(matched_df[model_features])
     elif hasattr(model, "transform"):
         # Use transform method for transformers like PCA
-        predictions = model.transform(df[features])
+        predictions = model.transform(matched_df[model_features])
     else:
         raise ValueError("Model does not have a predict, fit_predict, or transform method.")
 
@@ -337,11 +379,11 @@ def predict_fn(df, model):
 
     # Does our model have a 'predict_proba' method? If so we will call it and add the results to the DataFrame
     if hasattr(model, "predict_proba"):
-        probs = model.predict_proba(df[features])
+        probs = model.predict_proba(matched_df[model_features])
         df["pred_proba"] = [p.tolist() for p in probs]
 
         # Expand the pred_proba column into separate columns for each class
         df = expand_proba_column(df, label_encoder.classes_)
 
-    # All done, return the DataFrame
+    # All done, return the DataFrame with new columns for the predictions
     return df
