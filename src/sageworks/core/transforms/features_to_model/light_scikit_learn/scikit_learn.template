@@ -93,26 +93,30 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
 
 def match_features_case_insensitive(df: pd.DataFrame, feature_list: list) -> list:
     """
-    Matches and returns a list of case-insensitive column names from the DataFrame
-    based on the input feature list.
+    Matches and returns a list of column names from the DataFrame based on the input feature list.
+    Prioritizes exact case matches first, and falls back to case-insensitive matching if no exact match exists.
 
     Args:
         df (pd.DataFrame): The DataFrame with the original columns.
-        feature_list (list): The desired list of feature names (case insensitive).
+        feature_list (list): The desired list of feature names (mixed case allowed).
 
     Returns:
         list: A list of matching column names in the DataFrame, preserving the order from feature_list.
     """
-    # Create a mapping of lower-case column names to original column names
-    column_map = {}
-    for col in df.columns:
-        lower_col = col.lower()
-        # Only store the first column if the lower-case causes duplicates ("ID", "id", "Id") --> "id"
-        if lower_col not in column_map:
-            column_map[lower_col] = col
+    # First, get the set of DataFrame columns for exact matching
+    df_columns_set = set(df.columns)
+    
+    # Create a mapping of lower-case column names to original column names for case-insensitive matching
+    column_map = {col.lower(): col for col in df.columns}
 
-    # Match feature_list to actual DataFrame columns using case-insensitive matching
-    matched_columns = [column_map[feat.lower()] for feat in feature_list if feat.lower() in column_map]
+    matched_columns = []
+    for feature in feature_list:
+        # Check for an exact match first
+        if feature in df_columns_set:
+            matched_columns.append(feature)
+        # If not an exact match, fall back to case-insensitive matching
+        elif feature.lower() in column_map:
+            matched_columns.append(column_map[feature.lower()])
 
     return matched_columns
 
