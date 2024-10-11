@@ -74,34 +74,41 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     return df
 
 
-def match_features_case_insensitive(df: pd.DataFrame, feature_list: list) -> list:
+def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
     """
-    Matches and returns a list of column names from the DataFrame based on the input feature list.
-    Prioritizes exact case matches first, and falls back to case-insensitive matching if no exact match exists.
+    Matches and renames the DataFrame's column names to match the model's feature names (case-insensitive).
+    Prioritizes exact case matches first, then falls back to case-insensitive matching if no exact match exists.
 
     Args:
         df (pd.DataFrame): The DataFrame with the original columns.
-        feature_list (list): The desired list of feature names (mixed case allowed).
+        model_features (list): The desired list of feature names (mixed case allowed).
 
     Returns:
-        list: A list of matching column names in the DataFrame, preserving the order from feature_list.
+        pd.DataFrame: The DataFrame with renamed columns to match the model's feature names.
     """
-    # First, get the set of DataFrame columns for exact matching
-    df_columns_set = set(df.columns)
-    
-    # Create a mapping of lower-case column names to original column names for case-insensitive matching
-    column_map = {col.lower(): col for col in df.columns}
+    # Create a mapping for exact and case-insensitive matching
+    exact_match_set = set(df.columns)
+    column_map = {}
 
-    matched_columns = []
-    for feature in feature_list:
+    # Build the case-insensitive map (if we have any duplicate columns, the first one wins)
+    for col in df.columns:
+        lower_col = col.lower()
+        if lower_col not in column_map:
+            column_map[lower_col] = col
+
+    # Create a dictionary for renaming
+    rename_dict = {}
+    for feature in model_features:
         # Check for an exact match first
-        if feature in df_columns_set:
-            matched_columns.append(feature)
+        if feature in exact_match_set:
+            rename_dict[feature] = feature
+
         # If not an exact match, fall back to case-insensitive matching
         elif feature.lower() in column_map:
-            matched_columns.append(column_map[feature.lower()])
+            rename_dict[column_map[feature.lower()]] = feature
 
-    return matched_columns
+    # Rename the columns in the DataFrame to match the model's feature names
+    return df.rename(columns=rename_dict)
 
 
 if __name__ == "__main__":
@@ -303,14 +310,22 @@ def output_fn(output_df, accept_type):
         )
 
 
-def predict_fn(df, model):
-    """Make Predictions with our XGB Model"""
+def predict_fn(df, model) -> pd.DataFrame:
+    """Make Predictions with our XGB Model
+
+    Args:
+        df (pd.DataFrame): The input DataFrame
+        model: The model use for predictions
+
+    Returns:
+        pd.DataFrame: The DataFrame with the predictions added
+    """
 
     # Grab our feature columns (from training)
     model_dir = os.environ["SM_MODEL_DIR"]
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
-        model_features_when_created = json.load(fp)
-    print(f"Model Features: {model_features_when_created}")
+        model_features = json.load(fp)
+    print(f"Model Features: {model_features}")
 
     # Load our Label Encoder if we have one
     label_encoder = None
@@ -320,10 +335,10 @@ def predict_fn(df, model):
     # We're going match features in a case-insensitive manner, accounting for all the permutations
     # - Model has a feature list that's any case ("Id", "taCos", "cOunT", "likes_tacos")
     # - Incoming data has columns that are mixed case ("ID", "Tacos", "Count", "Likes_Tacos")
-    features = match_features_case_insensitive(df, model_features_when_created)
+    matched_df = match_features_case_insensitive(df, model_features)
 
     # Predict the features against our XGB Model
-    predictions = model.predict(df[features])
+    predictions = model.predict(matched_df[model_features])
 
     # If we have a label encoder, decode the predictions
     if label_encoder:
@@ -334,11 +349,11 @@ def predict_fn(df, model):
 
     # Does our model have a 'predict_proba' method? If so we will call it and add the results to the DataFrame
     if getattr(model, "predict_proba", None):
-        probs = model.predict_proba(df[features])
+        probs = model.predict_proba(matched_df[model_features])
         df["pred_proba"] = [p.tolist() for p in probs]
 
         # Expand the pred_proba column into separate columns for each class
         df = expand_proba_column(df, label_encoder.classes_)
 
-    # All done, return the DataFrame
+    # All done, return the DataFrame with new columns for the predictions
     return df
