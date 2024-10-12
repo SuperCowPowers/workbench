@@ -9,7 +9,7 @@ pd.set_option("display.max_rows", None)
 pd.set_option("display.width", 1000)
 
 # Setup Logging
-logger = logging.getLogger('sageworks')
+logger = logging.getLogger("sageworks")
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
