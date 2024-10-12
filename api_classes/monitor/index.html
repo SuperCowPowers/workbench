@@ -2710,6 +2710,11 @@ Dashboard UI, which provides additional monitor details and performance metrics<
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -2732,7 +2737,7 @@ Dashboard UI, which provides additional monitor details and performance metrics<
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.artifacts.monitor_core.MonitorCore" href="../../core_classes/artifacts/monitor_core/#sageworks.core.artifacts.monitor_core.MonitorCore">MonitorCore</a></code></p>
+              Bases: <code>MonitorCore</code></p>
 
 
         <p>Monitor: SageWorks Monitor API Class</p>
@@ -2757,6 +2762,11 @@ Dashboard UI, which provides additional monitor details and performance metrics<
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>input_df, output_df = mon.get_latest_data_capture()
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/api/monitor.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-13"> 13</a></span>
@@ -3007,7 +3017,9 @@ Dashboard UI, which provides additional monitor details and performance metrics<
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>capture_percentage</code></td>
+            <td>
+                <code>capture_percentage</code>
+            </td>
             <td>
                   <code>int</code>
             </td>
@@ -3072,7 +3084,9 @@ Dashboard UI, which provides additional monitor details and performance metrics<
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>recreate</code></td>
+            <td>
+                <code>recreate</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -3155,7 +3169,9 @@ Dashboard UI, which provides additional monitor details and performance metrics<
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>schedule</code></td>
+            <td>
+                <code>schedule</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3169,7 +3185,9 @@ Dashboard UI, which provides additional monitor details and performance metrics<
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>recreate</code></td>
+            <td>
+                <code>recreate</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -3292,7 +3310,7 @@ Dashboard UI, which provides additional monitor details and performance metrics<
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[<span title="pandas.DataFrame">DataFrame</span>, None]</code>
+                  <code>Union[DataFrame, None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3349,7 +3367,7 @@ Dashboard UI, which provides additional monitor details and performance metrics<
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[<span title="pandas.DataFrame">DataFrame</span>, None]</code>
+                  <code>Union[DataFrame, None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3465,7 +3483,7 @@ Dashboard UI, which provides additional monitor details and performance metrics<
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[<span title="pandas.DataFrame">DataFrame</span>, None]</code>
+                  <code>Union[DataFrame, None]</code>
             </td>
             <td>
               <div class="doc-md-description">

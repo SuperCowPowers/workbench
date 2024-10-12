@@ -2621,6 +2621,11 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -2643,7 +2648,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.artifacts.feature_set_core.FeatureSetCore" href="../../core_classes/artifacts/feature_set_core/#sageworks.core.artifacts.feature_set_core.FeatureSetCore">FeatureSetCore</a></code></p>
+              Bases: <code>FeatureSetCore</code></p>
 
 
         <p>FeatureSet: SageWorks FeatureSet API Class</p>
@@ -2660,6 +2665,11 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/api/feature_set.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-17"> 17</a></span>
@@ -2975,7 +2985,9 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>include_aws_columns</code></td>
+            <td>
+                <code>include_aws_columns</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -3003,7 +3015,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  <code>DataFrame</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3098,7 +3110,9 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>query</code></td>
+            <td>
+                <code>query</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3126,7 +3140,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  <code>DataFrame</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3198,7 +3212,7 @@ target_column (str): The target column for the model (use None for unsupervised 
       <tbody>
           <tr class="doc-section-item">
 <td><code>Model</code></td>            <td>
-                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-internal" title="sageworks.api.model.Model" href="../model/#sageworks.api.model.Model">Model</a>, None]</code>
+                  <code>Union[Model, None]</code>
             </td>
             <td>
               <div class="doc-md-description">

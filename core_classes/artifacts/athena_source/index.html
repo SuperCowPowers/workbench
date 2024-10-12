@@ -3033,6 +3033,11 @@
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -3055,7 +3060,7 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.artifacts.data_source_abstract.DataSourceAbstract" href="../data_source_abstract/#sageworks.core.artifacts.data_source_abstract.DataSourceAbstract">DataSourceAbstract</a></code></p>
+              Bases: <code>DataSourceAbstract</code></p>
 
 
         <p>AthenaSource: SageWorks Data Source accessible through Athena</p>
@@ -3069,6 +3074,11 @@
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">df</span> <span class="o">=</span> <span class="n">my_data</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;select * from </span><span class="si">{</span><span class="n">data_uuid</span><span class="si">}</span><span class="s2"> limit 5&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/artifacts/athena_source.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-22"> 22</a></span>
@@ -4171,7 +4181,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>data_uuid</code></td>
+            <td>
+                <code>data_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -4185,7 +4197,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>database</code></td>
+            <td>
+                <code>database</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -4199,7 +4213,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>force_refresh</code></td>
+            <td>
+                <code>force_refresh</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -4436,7 +4452,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>recompute</code></td>
+            <td>
+                <code>recompute</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -4578,7 +4596,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>recompute</code></td>
+            <td>
+                <code>recompute</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -4838,7 +4858,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>recompute</code></td>
+            <td>
+                <code>recompute</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -4962,7 +4984,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>recompute</code></td>
+            <td>
+                <code>recompute</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -5128,7 +5152,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>query</code></td>
+            <td>
+                <code>query</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -5142,7 +5168,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>silence_errors</code></td>
+            <td>
+                <code>silence_errors</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -5375,7 +5403,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>scale</code></td>
+            <td>
+                <code>scale</code>
+            </td>
             <td>
                   <code>float</code>
             </td>
@@ -5389,7 +5419,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>use_stddev</code></td>
+            <td>
+                <code>use_stddev</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -5417,7 +5449,7 @@
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  <code>DataFrame</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5503,7 +5535,9 @@ The scale parameter can be adjusted to change the IQR multiplier</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>query</code></td>
+            <td>
+                <code>query</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -5531,7 +5565,7 @@ The scale parameter can be adjusted to change the IQR multiplier</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[<span title="pandas.DataFrame">DataFrame</span>, None]</code>
+                  <code>Union[DataFrame, None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5736,7 +5770,7 @@ The scale parameter can be adjusted to change the IQR multiplier</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  <code>DataFrame</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5828,7 +5862,9 @@ The scale parameter can be adjusted to change the IQR multiplier</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>recompute</code></td>
+            <td>
+                <code>recompute</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -5856,7 +5892,7 @@ The scale parameter can be adjusted to change the IQR multiplier</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  <code>DataFrame</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5974,7 +6010,9 @@ The scale parameter can be adjusted to change the IQR multiplier</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>new_meta</code></td>
+            <td>
+                <code>new_meta</code>
+            </td>
             <td>
                   <code>dict</code>
             </td>
@@ -6117,7 +6155,9 @@ The scale parameter can be adjusted to change the IQR multiplier</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>recompute</code></td>
+            <td>
+                <code>recompute</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>

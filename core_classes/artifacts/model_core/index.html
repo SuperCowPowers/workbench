@@ -3285,6 +3285,11 @@
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -3309,6 +3314,11 @@
 
 
         <p>Class for retrieving locked Scikit-Learn inference images</p>
+
+
+
+
+
 
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/artifacts/model_core.py</code></summary>
@@ -3409,7 +3419,7 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.artifacts.artifact.Artifact" href="../artifact/#sageworks.core.artifacts.artifact.Artifact">Artifact</a></code></p>
+              Bases: <code>Artifact</code></p>
 
 
         <p>ModelCore: SageWorks ModelCore Class</p>
@@ -3422,6 +3432,11 @@
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">my_model</span><span class="o">.</span><span class="n">details</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/artifacts/model_core.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-68"> 68</a></span>
@@ -5502,7 +5517,7 @@ Args:
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[list[str], None]</code>
+                  <code>Union[list[str], None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5566,7 +5581,9 @@ Args:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>capture_uuid</code></td>
+            <td>
+                <code>capture_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -5829,7 +5846,9 @@ Args:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>inference_run_uuid</code></td>
+            <td>
+                <code>inference_run_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -6186,7 +6205,7 @@ Returns:
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[list[str], None]</code>
+                  <code>Union[list[str], None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6243,7 +6262,7 @@ Returns:
       <tbody>
           <tr class="doc-section-item">
 <td><code>str</code></td>            <td>
-                  <code><span title="typing.Union">Union</span>[str, None]</code>
+                  <code>Union[str, None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6337,7 +6356,9 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>capture_uuid</code></td>
+            <td>
+                <code>capture_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -6365,7 +6386,7 @@ Returns:
       <tbody>
           <tr class="doc-section-item">
 <td><code>dict</code></td>            <td>
-                  <code><span title="typing.Union">Union</span>[<span title="pandas.DataFrame">DataFrame</span>, None]</code>
+                  <code>Union[DataFrame, None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6485,7 +6506,9 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>capture_uuid</code></td>
+            <td>
+                <code>capture_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -6599,7 +6622,9 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>capture_uuid</code></td>
+            <td>
+                <code>capture_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -6627,7 +6652,7 @@ Returns:
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[<span title="pandas.DataFrame">DataFrame</span>, None]</code>
+                  <code>Union[DataFrame, None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6862,7 +6887,7 @@ Returns:
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="sagemaker.model.Model">Model</span></code>
+                  <code>Model</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -7075,7 +7100,9 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>ask_everything</code></td>
+            <td>
+                <code>ask_everything</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -7275,9 +7302,11 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>model_type</code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="sageworks.core.artifacts.model_core.ModelType" href="#sageworks.core.artifacts.model_core.ModelType">ModelType</a></code>
+                <code>model_type</code>
+            </td>
+            <td>
+                  <code>ModelType</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -7289,7 +7318,9 @@ Returns:
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>target_column</code></td>
+            <td>
+                <code>target_column</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -7303,7 +7334,9 @@ Returns:
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>feature_list</code></td>
+            <td>
+                <code>feature_list</code>
+            </td>
             <td>
                   <code>list</code>
             </td>
@@ -7317,7 +7350,9 @@ Returns:
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>endpoints</code></td>
+            <td>
+                <code>endpoints</code>
+            </td>
             <td>
                   <code>list</code>
             </td>
@@ -7331,7 +7366,9 @@ Returns:
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>owner</code></td>
+            <td>
+                <code>owner</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -7512,7 +7549,9 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>endpoint_name</code></td>
+            <td>
+                <code>endpoint_name</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -7595,7 +7634,9 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>endpoint_name</code></td>
+            <td>
+                <code>endpoint_name</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -7680,7 +7721,9 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>labels</code></td>
+            <td>
+                <code>labels</code>
+            </td>
             <td>
                   <code>list[str]</code>
             </td>
@@ -7749,7 +7792,9 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>feature_columns</code></td>
+            <td>
+                <code>feature_columns</code>
+            </td>
             <td>
                   <code>list[str]</code>
             </td>
@@ -7812,7 +7857,9 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>input</code></td>
+            <td>
+                <code>input</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -7826,7 +7873,9 @@ Returns:
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>force</code></td>
+            <td>
+                <code>force</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -7911,7 +7960,9 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>pipeline</code></td>
+            <td>
+                <code>pipeline</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -7974,7 +8025,9 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>target_column</code></td>
+            <td>
+                <code>target_column</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -8037,7 +8090,9 @@ Returns:
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>capture_uuid</code></td>
+            <td>
+                <code>capture_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -8065,7 +8120,7 @@ Returns:
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[list[<span title="pandas.DataFrame">DataFrame</span>], <span title="pandas.DataFrame">DataFrame</span>, None]</code>
+                  <code>Union[list[DataFrame], DataFrame, None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -8203,7 +8258,7 @@ Returns:
       <tbody>
           <tr class="doc-section-item">
 <td><code>str</code></td>            <td>
-                  <code><span title="typing.Union">Union</span>[str, None]</code>
+                  <code>Union[str, None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -8256,10 +8311,15 @@ Returns:
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><span title="enum.Enum">Enum</span></code></p>
+              Bases: <code>Enum</code></p>
 
 
         <p>Enumerated Types for SageWorks Model Types</p>
+
+
+
+
+
 
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/artifacts/model_core.py</code></summary>

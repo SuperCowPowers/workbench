@@ -2548,6 +2548,11 @@
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -2570,7 +2575,7 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><span title="sageworks.core.views.column_subset_view.ColumnSubsetView">ColumnSubsetView</span></code></p>
+              Bases: <code>ColumnSubsetView</code></p>
 
 
         <p>ComputationView Class: Create a View with a subset of columns for computation purposes</p>
@@ -2590,6 +2595,11 @@
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">df</span> <span class="o">=</span> <span class="n">comp_view</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SELECT * FROM </span><span class="si">{</span><span class="n">comp_view</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2"> where prediction &gt; 0.5&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/views/computation_view.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-11">11</a></span>
@@ -2714,9 +2724,11 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>artifact</code></td>
             <td>
-                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-internal" title="sageworks.api.DataSource" href="../../../api_classes/data_source/#sageworks.api.data_source.DataSource">DataSource</a>, <a class="autorefs autorefs-internal" title="sageworks.api.FeatureSet" href="../../../api_classes/feature_set/#sageworks.api.feature_set.FeatureSet">FeatureSet</a>]</code>
+                <code>artifact</code>
+            </td>
+            <td>
+                  <code>Union[DataSource, FeatureSet]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2728,7 +2740,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>source_table</code></td>
+            <td>
+                <code>source_table</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -2742,9 +2756,11 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>column_list</code></td>
             <td>
-                  <code><span title="typing.Union">Union</span>[list[str], None]</code>
+                <code>column_list</code>
+            </td>
+            <td>
+                  <code>Union[list[str], None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2756,7 +2772,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>column_limit</code></td>
+            <td>
+                <code>column_limit</code>
+            </td>
             <td>
                   <code>int</code>
             </td>
@@ -2784,7 +2802,7 @@
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-internal" title="sageworks.core.views.view.View" href="../../../api_classes/views/#sageworks.core.views.view.View">View</a>, None]</code>
+                  <code>Union[View, None]</code>
             </td>
             <td>
               <div class="doc-md-description">

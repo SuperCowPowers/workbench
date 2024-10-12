@@ -2690,6 +2690,11 @@
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -2737,6 +2742,11 @@
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">comp_view</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/views/view.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-16"> 16</a></span>
@@ -3347,9 +3357,11 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>artifact</code></td>
             <td>
-                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-internal" title="sageworks.api.DataSource" href="../data_source/#sageworks.api.data_source.DataSource">DataSource</a>, <a class="autorefs autorefs-internal" title="sageworks.api.FeatureSet" href="../feature_set/#sageworks.api.feature_set.FeatureSet">FeatureSet</a>]</code>
+                <code>artifact</code>
+            </td>
+            <td>
+                  <code>Union[DataSource, FeatureSet]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3361,7 +3373,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>view_name</code></td>
+            <td>
+                <code>view_name</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3717,7 +3731,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>skip_cache</code></td>
+            <td>
+                <code>skip_cache</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -3818,7 +3834,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>limit</code></td>
+            <td>
+                <code>limit</code>
+            </td>
             <td>
                   <code>int</code>
             </td>
@@ -3832,7 +3850,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>head</code></td>
+            <td>
+                <code>head</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -3860,7 +3880,7 @@
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[<span title="pandas.DataFrame">DataFrame</span>, None]</code>
+                  <code>Union[DataFrame, None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3938,7 +3958,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>query</code></td>
+            <td>
+                <code>query</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3966,7 +3988,7 @@
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[<span title="pandas.DataFrame">DataFrame</span>, None]</code>
+                  <code>Union[DataFrame, None]</code>
             </td>
             <td>
               <div class="doc-md-description">

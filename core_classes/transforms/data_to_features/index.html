@@ -2667,6 +2667,11 @@
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -2689,7 +2694,7 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code>Transform</code></p>
 
 
         <p>DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas</p>
@@ -2702,6 +2707,11 @@
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">to_features</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="o">/</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="s2">&quot;date&quot;</span><span class="o">/</span><span class="kc">None</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="nb">str</span><span class="o">/</span><span class="kc">None</span><span class="p">)</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/data_to_features_light.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
@@ -2872,7 +2882,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>data_uuid</code></td>
+            <td>
+                <code>data_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -2886,7 +2898,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>feature_uuid</code></td>
+            <td>
+                <code>feature_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3112,6 +3126,11 @@ to_features = PandasToFeatures("my_feature_set")
 </details>
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -3134,7 +3153,7 @@ to_features = PandasToFeatures("my_feature_set")
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight" href="#sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight">DataToFeaturesLight</a></code></p>
+              Bases: <code>DataToFeaturesLight</code></p>
 
 
         <p>MolecularDescriptors: Create a FeatureSet (RDKit Descriptors) from a DataSource</p>
@@ -3147,6 +3166,11 @@ to_features = PandasToFeatures("my_feature_set")
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">to_features</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/molecular_descriptors.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-16">16</a></span>
@@ -3243,7 +3267,9 @@ to_features = PandasToFeatures("my_feature_set")
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>data_uuid</code></td>
+            <td>
+                <code>data_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3257,7 +3283,9 @@ to_features = PandasToFeatures("my_feature_set")
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>feature_uuid</code></td>
+            <td>
+                <code>feature_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>

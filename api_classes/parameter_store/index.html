@@ -2653,6 +2653,11 @@
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -2709,6 +2714,11 @@
 </span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="n">param_store</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="s2">&quot;my_data&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/api/parameter_store.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-14"> 14</a></span>
@@ -3175,7 +3185,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>name</code></td>
+            <td>
+                <code>name</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3189,9 +3201,11 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>value</code></td>
             <td>
-                  <code>str | <a class="autorefs autorefs-internal" title="sageworks.api.parameter_store.ParameterStore.list" href="#sageworks.api.parameter_store.ParameterStore.list">list</a> | dict</code>
+                <code>value</code>
+            </td>
+            <td>
+                  <code>str | list | dict</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3203,7 +3217,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>overwrite</code></td>
+            <td>
+                <code>overwrite</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -3342,7 +3358,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>name</code></td>
+            <td>
+                <code>name</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3415,7 +3433,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>name</code></td>
+            <td>
+                <code>name</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3429,7 +3449,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>warn</code></td>
+            <td>
+                <code>warn</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -3443,7 +3465,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>decrypt</code></td>
+            <td>
+                <code>decrypt</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -3471,7 +3495,7 @@
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[str, <a class="autorefs autorefs-internal" title="sageworks.api.parameter_store.ParameterStore.list" href="#sageworks.api.parameter_store.ParameterStore.list">list</a>, dict, None]</code>
+                  <code>Union[str, list, dict, None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3590,7 +3614,7 @@
       <tbody>
           <tr class="doc-section-item">
 <td><code>list</code></td>            <td>
-                  <code><a class="autorefs autorefs-internal" title="sageworks.api.parameter_store.ParameterStore.list" href="#sageworks.api.parameter_store.ParameterStore.list">list</a></code>
+                  <code>list</code>
             </td>
             <td>
               <div class="doc-md-description">

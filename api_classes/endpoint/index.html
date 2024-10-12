@@ -2602,6 +2602,11 @@ Dashboard UI, which provides additional model details and performance metrics</p
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -2624,7 +2629,7 @@ Dashboard UI, which provides additional model details and performance metrics</p
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.artifacts.endpoint_core.EndpointCore" href="../../core_classes/artifacts/endpoint_core/#sageworks.core.artifacts.endpoint_core.EndpointCore">EndpointCore</a></code></p>
+              Bases: <code>EndpointCore</code></p>
 
 
         <p>Endpoint: SageWorks Endpoint API Class</p>
@@ -2637,6 +2642,11 @@ Dashboard UI, which provides additional model details and performance metrics</p
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">my_endpoint</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">eval_df</span><span class="p">)</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/api/endpoint.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-12">12</a></span>
@@ -2763,7 +2773,9 @@ Dashboard UI, which provides additional model details and performance metrics</p
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>capture</code></td>
+            <td>
+                <code>capture</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -2791,7 +2803,7 @@ Dashboard UI, which provides additional model details and performance metrics</p
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  <code>DataFrame</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2912,9 +2924,11 @@ Dashboard UI, which provides additional model details and performance metrics</p
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>eval_df</code></td>
             <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+                <code>eval_df</code>
+            </td>
+            <td>
+                  <code>DataFrame</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2926,7 +2940,9 @@ Dashboard UI, which provides additional model details and performance metrics</p
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>capture_uuid</code></td>
+            <td>
+                <code>capture_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -2940,7 +2956,9 @@ Dashboard UI, which provides additional model details and performance metrics</p
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>id_column</code></td>
+            <td>
+                <code>id_column</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -2968,7 +2986,7 @@ Dashboard UI, which provides additional model details and performance metrics</p
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  <code>DataFrame</code>
             </td>
             <td>
               <div class="doc-md-description">

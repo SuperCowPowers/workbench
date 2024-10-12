@@ -2904,6 +2904,11 @@
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -2938,6 +2943,11 @@
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">my_manager</span><span class="o">.</span><span class="n">save_pipeline</span><span class="p">(</span><span class="s2">&quot;abalone_pipeline_v1&quot;</span><span class="p">,</span> <span class="n">abalone_pipeline</span><span class="p">)</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/api/pipeline_manager.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-13"> 13</a></span>
@@ -3366,7 +3376,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>endpoint_name</code></td>
+            <td>
+                <code>endpoint_name</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3490,7 +3502,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>name</code></td>
+            <td>
+                <code>name</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3652,7 +3666,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>filepath</code></td>
+            <td>
+                <code>filepath</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3752,7 +3768,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>name</code></td>
+            <td>
+                <code>name</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3766,7 +3784,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>pipeline</code></td>
+            <td>
+                <code>pipeline</code>
+            </td>
             <td>
                   <code>dict</code>
             </td>
@@ -3839,7 +3859,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>filepath</code></td>
+            <td>
+                <code>filepath</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3918,7 +3940,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>pipeline</code></td>
+            <td>
+                <code>pipeline</code>
+            </td>
             <td>
                   <code>dict</code>
             </td>
@@ -3932,7 +3956,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>filepath</code></td>
+            <td>
+                <code>filepath</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -4013,6 +4039,11 @@
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -4048,6 +4079,11 @@
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">my_pipeline</span><span class="o">.</span><span class="n">execute_partial</span><span class="p">([</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;endpoint&quot;</span><span class="p">])</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/api/pipeline.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-17"> 17</a></span>
@@ -4580,7 +4616,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>subset</code></td>
+            <td>
+                <code>subset</code>
+            </td>
             <td>
                   <code>list</code>
             </td>
@@ -4737,9 +4775,11 @@ path (str): Current path to the key, used for nested dictionaries.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>input</code></td>
             <td>
-                  <code><span title="typing.Union">Union</span>[str, <span title="pandas.DataFrame">DataFrame</span>]</code>
+                <code>input</code>
+            </td>
+            <td>
+                  <code>Union[str, DataFrame]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4751,7 +4791,9 @@ path (str): Current path to the key, used for nested dictionaries.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>artifact</code></td>
+            <td>
+                <code>artifact</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -4816,7 +4858,9 @@ path (str): Current path to the key, used for nested dictionaries.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>id_column</code></td>
+            <td>
+                <code>id_column</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -4830,7 +4874,9 @@ path (str): Current path to the key, used for nested dictionaries.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>holdout_ids</code></td>
+            <td>
+                <code>holdout_ids</code>
+            </td>
             <td>
                   <code>list[str]</code>
             </td>

@@ -3263,6 +3263,11 @@
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -3285,7 +3290,7 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code>Transform</code></p>
 
 
         <p>DataToPandas: Class to transform a Data Source into a Pandas DataFrame</p>
@@ -3301,6 +3306,11 @@
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">Note</span><span class="p">:</span> <span class="n">query</span> <span class="ow">is</span> <span class="n">the</span> <span class="n">best</span> <span class="n">way</span> <span class="n">to</span> <span class="n">use</span> <span class="n">this</span> <span class="n">class</span><span class="p">,</span> <span class="n">so</span> <span class="n">use</span> <span class="n">it</span> <span class="p">:)</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
@@ -3643,7 +3653,7 @@ Args:
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code>Transform</code></p>
 
 
         <p>FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame</p>
@@ -3656,6 +3666,11 @@ Args:
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">my_df</span> <span class="o">=</span> <span class="n">feature_to_df</span><span class="o">.</span><span class="n">get_output</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
@@ -4005,7 +4020,7 @@ Args:
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code>Transform</code></p>
 
 
         <p>PandasToData: Class to publish a Pandas DataFrame as a DataSource</p>
@@ -4019,6 +4034,11 @@ Args:
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">df_to_data</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-14"> 14</a></span>
@@ -4607,7 +4627,9 @@ store the information about the data to the AWS Data Catalog sageworks database<
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>overwrite</code></td>
+            <td>
+                <code>overwrite</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -4805,7 +4827,7 @@ store the information about the data to the AWS Data Catalog sageworks database<
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code>Transform</code></p>
 
 
         <p>PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet</p>
@@ -4819,6 +4841,11 @@ store the information about the data to the AWS Data Catalog sageworks database<
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">to_features</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-17"> 17</a></span>
@@ -5605,7 +5632,9 @@ store the information about the data to the AWS Data Catalog sageworks database<
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>output_uuid</code></td>
+            <td>
+                <code>output_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -5941,9 +5970,11 @@ their respective categorical types.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>df</code></td>
             <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+                <code>df</code>
+            </td>
+            <td>
+                  <code>DataFrame</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5955,7 +5986,9 @@ their respective categorical types.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>one_hot_columns</code></td>
+            <td>
+                <code>one_hot_columns</code>
+            </td>
             <td>
                   <code>list</code>
             </td>
@@ -5983,7 +6016,7 @@ their respective categorical types.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  <code>DataFrame</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6486,7 +6519,7 @@ Args:
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code>Transform</code></p>
 
 
         <p>PandasToFeaturesChunked:  Class to manage a bunch of chunked Pandas DataFrames into a FeatureSet</p>
@@ -6504,6 +6537,11 @@ Args:
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">to_features</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-13">13</a></span>

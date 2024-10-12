@@ -2758,6 +2758,11 @@
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -2780,7 +2785,7 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code>Transform</code></p>
 
 
         <p>CSVToDataSource: Class to move local CSV Files into a SageWorks DataSource</p>
@@ -2793,6 +2798,11 @@
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">csv_to_data</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/data_loaders/light/csv_to_data_source.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-12">12</a></span>
@@ -2939,7 +2949,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>csv_file_path</code></td>
+            <td>
+                <code>csv_file_path</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -2953,7 +2965,9 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>data_uuid</code></td>
+            <td>
+                <code>data_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3116,7 +3130,7 @@ store the information about the data to the AWS Data Catalog sageworks database<
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code>Transform</code></p>
 
 
         <p>JSONToDataSource: Class to move local JSON Files into a SageWorks DataSource</p>
@@ -3129,6 +3143,11 @@ store the information about the data to the AWS Data Catalog sageworks database<
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">json_to_data</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/data_loaders/light/json_to_data_source.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-11">11</a></span>
@@ -3273,7 +3292,9 @@ store the information about the data to the AWS Data Catalog sageworks database<
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>json_file_path</code></td>
+            <td>
+                <code>json_file_path</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3287,7 +3308,9 @@ store the information about the data to the AWS Data Catalog sageworks database<
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>data_uuid</code></td>
+            <td>
+                <code>data_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3448,7 +3471,7 @@ store the information about the data to the AWS Data Catalog sageworks database<
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.transforms.transform.Transform" href="../transform/#sageworks.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code>Transform</code></p>
 
 
         <p>S3ToDataSourceLight: Class to move LIGHT S3 Files into a SageWorks DataSource</p>
@@ -3461,6 +3484,11 @@ store the information about the data to the AWS Data Catalog sageworks database<
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">s3_to_data</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/data_loaders/light/s3_to_data_source_light.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-12">12</a></span>
@@ -3645,7 +3673,9 @@ store the information about the data to the AWS Data Catalog sageworks database<
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>s3_path</code></td>
+            <td>
+                <code>s3_path</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3659,7 +3689,9 @@ store the information about the data to the AWS Data Catalog sageworks database<
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>data_uuid</code></td>
+            <td>
+                <code>data_uuid</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3673,7 +3705,9 @@ store the information about the data to the AWS Data Catalog sageworks database<
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>datatype</code></td>
+            <td>
+                <code>datatype</code>
+            </td>
             <td>
                   <code>str</code>
             </td>

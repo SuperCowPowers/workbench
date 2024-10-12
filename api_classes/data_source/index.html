@@ -2639,6 +2639,11 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -2661,7 +2666,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="sageworks.core.artifacts.athena_source.AthenaSource" href="../../core_classes/artifacts/athena_source/#sageworks.core.artifacts.athena_source.AthenaSource">AthenaSource</a></code></p>
+              Bases: <code>AthenaSource</code></p>
 
 
         <p>DataSource: SageWorks DataSource API Class</p>
@@ -2674,6 +2679,11 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">my_features</span> <span class="o">=</span> <span class="n">my_data</span><span class="o">.</span><span class="n">to_features</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
+
+
+
+
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/api/data_source.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-22"> 22</a></span>
@@ -3034,7 +3044,9 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>source</code></td>
+            <td>
+                <code>source</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3049,7 +3061,9 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>name</code></td>
+            <td>
+                <code>name</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3063,7 +3077,9 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>tags</code></td>
+            <td>
+                <code>tags</code>
+            </td>
             <td>
                   <code>list[str]</code>
             </td>
@@ -3233,7 +3249,9 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>include_aws_columns</code></td>
+            <td>
+                <code>include_aws_columns</code>
+            </td>
             <td>
                   <code>bool</code>
             </td>
@@ -3261,7 +3279,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  <code>DataFrame</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3358,7 +3376,9 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>query</code></td>
+            <td>
+                <code>query</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -3386,7 +3406,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  <code>DataFrame</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3450,7 +3470,9 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>name</code></td>
+            <td>
+                <code>name</code>
+            </td>
             <td>
                   <code>str) Optional</code>
             </td>
@@ -3464,7 +3486,9 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>tags</code></td>
+            <td>
+                <code>tags</code>
+            </td>
             <td>
                   <code>list) Optional</code>
             </td>
@@ -3478,7 +3502,9 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>id_column</code></td>
+            <td>
+                <code>id_column</code>
+            </td>
             <td>
                   <code>str) Optional</code>
             </td>
@@ -3492,7 +3518,9 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>event_time_column</code></td>
+            <td>
+                <code>event_time_column</code>
+            </td>
             <td>
                   <code>str) Optional</code>
             </td>
@@ -3506,7 +3534,9 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>one_hot_columns</code></td>
+            <td>
+                <code>one_hot_columns</code>
+            </td>
             <td>
                   <code>list) Optional</code>
             </td>
@@ -3534,7 +3564,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
       <tbody>
           <tr class="doc-section-item">
 <td><code>FeatureSet</code></td>            <td>
-                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-internal" title="sageworks.api.feature_set.FeatureSet" href="../feature_set/#sageworks.api.feature_set.FeatureSet">FeatureSet</a>, None]</code>
+                  <code>Union[FeatureSet, None]</code>
             </td>
             <td>
               <div class="doc-md-description">
