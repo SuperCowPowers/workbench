@@ -57,7 +57,10 @@ def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=
             last_event_timestamp = log_stream.get("lastEventTimestamp")
 
             # Include streams with events since the specified start time
-            if last_event_timestamp and last_event_timestamp >= start_time_ms:
+            # Note: There's some issue where the last event timestamp is 'off'
+            #       so we're going to add 60 minutes from the last event timestamp
+            last_event_timestamp += 60 * 60 * 1000
+            if last_event_timestamp >= start_time_ms:
                 active_streams.append(log_stream_name)
             else:
                 break  # Stop if we reach streams older than the start time
