@@ -50,7 +50,7 @@ The SageWorks documentation [SageWorks Docs](https://supercowpowers.github.io/sa
 
 The code examples are provided in the Github repo `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
 
-### Questions?
+## Questions?
 The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 

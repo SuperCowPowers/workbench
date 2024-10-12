@@ -17,6 +17,6 @@ Okay the testing ML Pipeline object only need to be created once, so after that 
 tox
 ```
 
-### Questions?
+## Questions?
 The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 <img align="right" src="../docs/images/scp.png" width="180">
