@@ -39,7 +39,6 @@ class CloudWatchHandler:
                 log_group="SageWorksLogGroup",
                 stream_name=self.log_stream_name,
                 boto3_client=cloudwatch_client,
-                send_interval=5,
             )
             self.cloudwatch_handler.setFormatter(self.formatter)
             log.addHandler(self.cloudwatch_handler)
