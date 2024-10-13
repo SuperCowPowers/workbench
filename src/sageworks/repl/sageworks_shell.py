@@ -121,11 +121,11 @@ class SageWorksShell:
         self.commands["log_info"] = self.log_info
         self.commands["log_important"] = self.log_important
         self.commands["log_warning"] = self.log_warning
-        self.commands["aws_refresh"] = self.aws_refresh
         self.commands["config"] = self.show_config
         self.commands["status"] = self.status_description
         self.commands["launch"] = self.launch_plugin
         self.commands["log"] = logging.getLogger("sageworks")
+        self.commands["meta"] = importlib.import_module("sageworks.api.meta").Meta()
         self.commands["params"] = importlib.import_module("sageworks.api.parameter_store").ParameterStore()
         self.commands["df_store"] = importlib.import_module("sageworks.api.df_store").DFStore()
 
@@ -279,6 +279,9 @@ class SageWorksShell:
         - feature_sets: List all the FeatureSets in AWS
         - models: List all the Models in AWS
         - endpoints: List all the Endpoints in AWS
+        - meta: If you need to refresh AWS Metadata
+            - meta.models(refresh=True): Refresh the Models from AWS
+            - meta.endpoints(refresh=True): Refresh the Endpoints from AWS
         - config: Show the current SageWorks Config
         - status: Show the current SageWorks Status
         - log_(debug/info/important/warning): Set the SageWorks log level
@@ -296,14 +299,6 @@ class SageWorksShell:
         """Open a browser and start the Dash app and open a browser."""
         url = "https://supercowpowers.github.io/sageworks/"
         webbrowser.open(url)
-
-    def aws_refresh(self):
-        """Refresh the AWS Meta Data"""
-        spinner = self.spinner_start("Refreshing AWS Meta Data:")
-        try:
-            self.meta.refresh_all_aws_meta()
-        finally:
-            spinner.stop()
 
     def summary(self):
         """Show a summary of all the AWS Artifacts"""

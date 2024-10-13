@@ -25,7 +25,11 @@ class Meta:
         meta = Meta()
         meta.account()
         meta.config()
+        meta.glue_jobs()
         meta.data_sources()
+        meta.feature_sets()
+        meta.models()
+        meta.endpoints()
         ```
     """
 
@@ -57,13 +61,16 @@ class Meta:
         """
         return self.cm.get_all_config()
 
-    def incoming_data(self) -> pd.DataFrame:
+    def incoming_data(self, refresh: bool = False) -> pd.DataFrame:
         """Get summary data about data in the incoming-data S3 Bucket
+
+        Args:
+            refresh (bool, optional): Force a refresh of the incoming data metadata. Defaults to False.
 
         Returns:
             pd.DataFrame: A summary of the data in the incoming-data S3 Bucket
         """
-        data = self.incoming_data_deep()
+        data = self.incoming_data_deep(refresh=refresh)
         data_summary = []
         for name, info in data.items():
             # Get the name and the size of the S3 Storage Object(s)
@@ -95,9 +102,16 @@ class Meta:
         """
         return self.aws_broker.get_metadata(ServiceCategory.INCOMING_DATA_S3, force_refresh=refresh)
 
-    def glue_jobs(self) -> pd.DataFrame:
-        """Get summary data about AWS Glue Jobs"""
-        glue_meta = self.glue_jobs_deep()
+    def glue_jobs(self, refresh: bool = False) -> pd.DataFrame:
+        """Get summary data about AWS Glue Jobs
+
+        Args:
+            refresh (bool, optional): Force a refresh of the Glue Job metadata. Defaults to False.
+
+        Returns:
+            pd.DataFrame: A summary of the Glue Jobs in AWS
+        """
+        glue_meta = self.glue_jobs_deep(refresh=refresh)
         glue_summary = []
 
         # Get the information about each Glue Job
