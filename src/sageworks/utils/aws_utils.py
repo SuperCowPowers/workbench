@@ -233,7 +233,15 @@ def dict_to_aws_tags(meta_data: dict) -> list:
     chunked_data = {}  # Store any chunked data here
     chunked_keys = []  # Store any keys to remove here
 
+    # AWS Tag Storage has the following constraints:
+    # - 256 char maximum per tag
+    # - 50 tags maximum per artifact (model/endpoint/etc)
+    char_limit = 256
+    max_tags = 50
+
     # Loop through the data: Convert non-string values to JSON strings, and chunk large data
+    output_data = {}
+    current_tags = len(meta_data.keys())
     for key, value in meta_data.items():
         # Convert data to JSON string
         if not isinstance(value, str):
@@ -245,29 +253,29 @@ def dict_to_aws_tags(meta_data: dict) -> list:
             value = base64.b64encode(value.encode()).decode()
 
         # Check if the value will fit in the 256-character limit
-        if len(value) < 256:
-            meta_data[key] = value
+        if len(value) < char_limit:
+            output_data[key] = value
 
-        # If the value is longer than 256 but less than 4096, split it into chunks
-        elif len(value) < 4096:
+        # If the value is longer than 256 but we have room to split it into chunks
+        elif len(value) < (char_limit * (max_tags - current_tags)):
             log.important(f"Chunking metadata for key {key} with length {len(value)}...")
             chunked_keys.append(key)
             chunks = _chunk_data(key, value)
             for chunk in chunks:
                 chunked_data[chunk] = chunks[chunk]
+                current_tags += 1
 
         # Too long to store in AWS Tags
         else:
-            log.error(f"Metadata for key {key} is too long to store in AWS Tags!")
+            log.error(f"Metadata for key '{key}' is quite big {len(value)} and shouldn't be stored in AWS Tags!")
 
-    # Now remove any keys that were chunked and add the chunked data
-    for key in chunked_keys:
-        del meta_data[key]
-    meta_data.update(chunked_data)
+    # Now add the chunked data to the output data
+    output_data.update(chunked_data)
+    log.info(f"Processed tags has {len(output_data.keys())} keys...")
 
     # Now convert to AWS Tags format
     aws_tags = []
-    for key, value in meta_data.items():
+    for key, value in output_data.items():
         aws_tags.append({"Key": key, "Value": value})
     return aws_tags
 
