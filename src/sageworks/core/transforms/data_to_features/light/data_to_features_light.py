@@ -46,6 +46,11 @@ class DataToFeaturesLight(Transform):
         data_to_pandas.transform(query=query)
         self.input_df = data_to_pandas.get_output()
 
+        # Check if there are any columns that are greater than 64 characters
+        for col in self.input_df.columns:
+            if len(col) > 64:
+                raise ValueError(f"Column name '{col}' > 64 characters. AWS FeatureGroup limits to 64 characters.")
+
     def transform_impl(self, **kwargs):
         """Transform the input DataFrame into a Feature Set"""
 
