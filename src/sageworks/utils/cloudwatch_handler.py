@@ -40,14 +40,6 @@ class CloudWatchHandler(logging.Handler):
         self.create_log_group()
         self.create_log_stream()
 
-    def add_cloudwatch_handler(self, log):
-        """Add the custom CloudWatch Logs handler to the provided logger"""
-        try:
-            log.addHandler(self)
-            log.info("CloudWatch logging handler added successfully.")
-        except Exception as e:
-            log.error(f"Failed to set up CloudWatch Logs handler: {e}")
-
     def emit(self, record):
         """Add a log message to the buffer and send when ready"""
         message = self.format(record)

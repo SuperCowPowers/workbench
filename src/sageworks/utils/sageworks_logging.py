@@ -152,10 +152,10 @@ def logging_setup(color_logs=True):
 
     # Add a CloudWatch handler
     try:
-        cloudwatch = CloudWatchHandler()
+        cloudwatch_handler = CloudWatchHandler()
         log.important("Adding CloudWatch logging handler...")
-        log.important(f"Log Stream Name: {cloudwatch.log_stream_name}")
-        cloudwatch.add_cloudwatch_handler(log)
+        log.important(f"Log Stream Name: {cloudwatch_handler.log_stream_name}")
+        log.addHandler(cloudwatch_handler)
         log.info("SageWorks Logging Setup Complete...")
     except Exception as e:
         log.error("Failed to add CloudWatch logging handler....")
