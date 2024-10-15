@@ -3,7 +3,8 @@ import logging
 from datetime import datetime
 import getpass
 import watchtower
-import atexit  # Import atexit for handling cleanup on exit
+
+# import atexit
 
 # SageWorks imports
 from sageworks.utils.execution_environment import (
