@@ -1,8 +1,10 @@
 """Bulk Operation Utilities"""
+
 import logging
 
 # SageWorks imports
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint
+
 log = logging.getLogger("sageworks")
 
 
