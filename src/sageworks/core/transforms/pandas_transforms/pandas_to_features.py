@@ -3,7 +3,6 @@
 import pandas as pd
 import time
 import re
-from botocore.exceptions import ClientError
 from sagemaker.feature_store.feature_group import FeatureGroup, IngestionError
 from sagemaker.feature_store.inputs import TableFormatEnum
 

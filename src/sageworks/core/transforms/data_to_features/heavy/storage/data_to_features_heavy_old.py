@@ -1,7 +1,6 @@
 """DataToFeaturesHeavy: Class to Transform a DataSource into a FeatureSet (Athena/FeatureStore)"""
 
 import time
-import botocore
 import pandas as pd
 from sagemaker.feature_store.feature_group import FeatureGroup
 import awswrangler as wr
