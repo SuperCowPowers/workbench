@@ -26,7 +26,7 @@ def test():
     print(f"Created: {my_model.created()}")
 
     # Delete the Model
-    # my_model.delete()
+    # ModelCore.delete("abalone-regression")
 
 
 if __name__ == "__main__":

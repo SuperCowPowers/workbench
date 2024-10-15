@@ -707,11 +707,6 @@ class ModelCore(Artifact):
             model = cls(model_uuid)
             model._delete()
 
-    def delete(self):  # noqa: F811
-        """Delete the Model Packages and the Model Group"""
-        self.log.warning("Deprecation: delete() is deprecated. Use class method 'Model.delete(model_name)'")
-        self._delete()
-
     def _delete(self):
         """Internal: Delete the Model Packages and the Model Group"""
 
@@ -1055,4 +1050,4 @@ if __name__ == "__main__":
     print(f"Class Labels: {my_model.class_labels()}")
 
     # Delete the Model
-    # my_model.delete()
+    # ModelCore.delete("wine-classification")

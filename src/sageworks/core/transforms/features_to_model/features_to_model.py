@@ -200,8 +200,7 @@ class FeaturesToModel(Transform):
         """
         # Delete the existing model (if it exists)
         self.log.important("Trying to delete existing model...")
-        delete_model = ModelCore(self.output_uuid, force_refresh=True)
-        delete_model.delete()
+        ModelCore.delete(self.output_uuid)
 
         # Set our model description
         self.model_description = description if description is not None else f"Model created from {self.input_uuid}"

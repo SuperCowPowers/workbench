@@ -500,11 +500,6 @@ class AthenaSource(DataSourceAbstract):
             athena_source = cls(data_uuid, database)
             athena_source._delete()
 
-    def delete(self):  # noqa: F811
-        """Delete the AWS Data Catalog Table and S3 Storage Objects"""
-        self.log.warning("Deprecation: delete() is deprecated, use class method 'DataSource.delete(ds_name)'")
-        self._delete()
-
     def _delete(self):
         """Internal: Delete the AWS Data Catalog Table and S3 Storage Objects"""
 
@@ -644,10 +639,3 @@ if __name__ == "__main__":
     # Test Delete
     print("\n\nTesting Delete...")
     AthenaSource.delete("test_data")
-
-    # The rest of the tests are Disabled for now
-    """
-    # Now delete the AWS artifacts associated with this DataSource
-    print('Deleting SageWorks Data Source...')
-    my_data.delete()
-    """

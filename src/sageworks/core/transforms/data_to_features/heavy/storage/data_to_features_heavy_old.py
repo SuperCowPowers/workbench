@@ -53,15 +53,9 @@ class DataToFeaturesHeavy(Transform):
         about the data to the AWS Data Catalog sageworks database and create S3 Objects
         """
 
-        # Do we want to delete the existing FeatureSet?
-        try:
-            delete_fs = FeatureSetCore(self.output_uuid)
-            if delete_fs.exists():
-                delete_fs.delete()
-                time.sleep(5)
-        except botocore.exceptions.ClientError as exc:
-            self.log.info(f"FeatureSet {self.output_uuid} doesn't exist...")
-            self.log.info(exc)
+        # Delete the existing FeatureSet (if it exists)
+        FeatureSetCore.delete(self.output_uuid)
+        time.sleep(5)
 
         # Set the ID and Event Time Columns
         self.id_column = id_column

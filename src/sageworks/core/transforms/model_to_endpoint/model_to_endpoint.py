@@ -47,9 +47,7 @@ class ModelToEndpoint(Transform):
         """Deploy an Endpoint for a Model"""
 
         # Delete endpoint (if it already exists)
-        existing_endpoint = EndpointCore(self.output_uuid, force_refresh=True)
-        if existing_endpoint.exists():
-            existing_endpoint.delete()
+        EndpointCore.delete(self.output_uuid)
 
         # Get the Model Package ARN for our input model
         input_model = ModelCore(self.input_uuid)

@@ -371,11 +371,6 @@ class FeatureSetCore(Artifact):
             feature_set = cls(feature_set_uuid)
             feature_set._delete()
 
-    def delete(self):  # noqa: F811
-        """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
-        self.log.warning("Deprecation: delete() is deprecated, use class method 'FeatureSet.delete(fs_name)'")
-        self._delete()
-
     def _delete(self):
         """Internal: Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
 

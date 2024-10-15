@@ -46,7 +46,7 @@ def test():
 
     # Now delete the AWS artifacts associated with this DataSource
     # print('Deleting SageWorks Data Source...')
-    # my_data.delete()
+    # AthenaSource.delete("tEsT_dAtA")
 
 
 if __name__ == "__main__":

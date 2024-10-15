@@ -75,15 +75,9 @@ class PandasToFeatures(Transform):
 
     def delete_existing(self):
         # Delete the existing FeatureSet if it exists
-        try:
-            delete_fs = FeatureSetCore(self.output_uuid)
-            if delete_fs.exists():
-                self.log.info(f"Deleting the {self.output_uuid} FeatureSet...")
-                delete_fs.delete()
-                time.sleep(1)
-        except ClientError as exc:
-            self.log.info(f"FeatureSet {self.output_uuid} doesn't exist...")
-            self.log.info(exc)
+        self.log.info(f"Deleting the {self.output_uuid} FeatureSet...")
+        FeatureSetCore.delete(self.output_uuid)
+        time.sleep(1)
 
     def _ensure_id_column(self):
         """Internal: AWS Feature Store requires an Id field for all data store"""

@@ -811,11 +811,6 @@ class EndpointCore(Artifact):
             endpoint = cls(endpoint_uuid)
             endpoint._delete()
 
-    def delete(self):  # noqa: F811
-        """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
-        self.log.warning("Deprecation: delete() is deprecated, use class method 'endpoint.delete(endpoint_name)'")
-        self._delete()
-
     def _delete(self):
         """Internal: Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
         self.delete_endpoint_models()
@@ -949,3 +944,6 @@ if __name__ == "__main__":
     # Generate the confusion matrix
     target = "solubility_class"
     print(class_endpoint.generate_confusion_matrix(target, auto_predictions))
+
+    # Test the class method delete
+    EndpointCore.delete("abc-end")
