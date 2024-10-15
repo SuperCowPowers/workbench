@@ -44,13 +44,20 @@ class CloudWatchHandler:
             log.addHandler(self.cloudwatch_handler)
             log.info("CloudWatch logging handler added successfully.")
 
-            # Register the flush function to be called at exit
-            atexit.register(self.flush_handler)
+            # Ensure logs are flushed after each log
+            def flush_handler(record):
+                self.cloudwatch_handler.flush()
+                return True
+
+            # Add a filter to flush the handler after every log
+            log.addFilter(flush_handler)
 
         except Exception as e:
             log.error(f"Failed to set up CloudWatch Logs handler: {e}")
 
-    def flush_handler(self):
+    # Register the flush function to be called at exit
+    # atexit.register(self.on_exit_flush)
+    def on_exit_flush(self):
         """Flush the CloudWatch log handler to ensure all logs are sent"""
         if hasattr(self, "cloudwatch_handler") and self.cloudwatch_handler:
             self.cloudwatch_handler.flush()
