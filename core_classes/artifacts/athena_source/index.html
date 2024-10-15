@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.40">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.41">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.8c3ca2c6.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.0253249f.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
@@ -2331,6 +2331,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../release_notes/0_8_29/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    0.8.29
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../release_notes/0_8_27/" class="md-nav__link">
         
   
@@ -3596,12 +3617,7 @@
 <span class="normal"><a href="#__codelineno-0-535">535</a></span>
 <span class="normal"><a href="#__codelineno-0-536">536</a></span>
 <span class="normal"><a href="#__codelineno-0-537">537</a></span>
-<span class="normal"><a href="#__codelineno-0-538">538</a></span>
-<span class="normal"><a href="#__codelineno-0-539">539</a></span>
-<span class="normal"><a href="#__codelineno-0-540">540</a></span>
-<span class="normal"><a href="#__codelineno-0-541">541</a></span>
-<span class="normal"><a href="#__codelineno-0-542">542</a></span>
-<span class="normal"><a href="#__codelineno-0-543">543</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="k">class</span> <span class="nc">AthenaSource</span><span class="p">(</span><span class="n">DataSourceAbstract</span><span class="p">):</span>
+<span class="normal"><a href="#__codelineno-0-538">538</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="k">class</span> <span class="nc">AthenaSource</span><span class="p">(</span><span class="n">DataSourceAbstract</span><span class="p">):</span>
 </span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;AthenaSource: SageWorks Data Source accessible through Athena</span>
 </span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a>
 </span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">    Common Usage:</span>
@@ -4081,47 +4097,42 @@
 </span><span id="__span-0-500"><a id="__codelineno-0-500" name="__codelineno-0-500"></a>            <span class="n">athena_source</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">database</span><span class="p">)</span>
 </span><span id="__span-0-501"><a id="__codelineno-0-501" name="__codelineno-0-501"></a>            <span class="n">athena_source</span><span class="o">.</span><span class="n">_delete</span><span class="p">()</span>
 </span><span id="__span-0-502"><a id="__codelineno-0-502" name="__codelineno-0-502"></a>
-</span><span id="__span-0-503"><a id="__codelineno-0-503" name="__codelineno-0-503"></a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># noqa: F811</span>
-</span><span id="__span-0-504"><a id="__codelineno-0-504" name="__codelineno-0-504"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete the AWS Data Catalog Table and S3 Storage Objects&quot;&quot;&quot;</span>
-</span><span id="__span-0-505"><a id="__codelineno-0-505" name="__codelineno-0-505"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Deprecation: delete() is deprecated, use class method &#39;DataSource.delete(ds_name)&#39;&quot;</span><span class="p">)</span>
-</span><span id="__span-0-506"><a id="__codelineno-0-506" name="__codelineno-0-506"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_delete</span><span class="p">()</span>
-</span><span id="__span-0-507"><a id="__codelineno-0-507" name="__codelineno-0-507"></a>
-</span><span id="__span-0-508"><a id="__codelineno-0-508" name="__codelineno-0-508"></a>    <span class="k">def</span> <span class="nf">_delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="__span-0-509"><a id="__codelineno-0-509" name="__codelineno-0-509"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Internal: Delete the AWS Data Catalog Table and S3 Storage Objects&quot;&quot;&quot;</span>
-</span><span id="__span-0-510"><a id="__codelineno-0-510" name="__codelineno-0-510"></a>
-</span><span id="__span-0-511"><a id="__codelineno-0-511" name="__codelineno-0-511"></a>        <span class="c1"># Make sure the AthenaSource exists</span>
-</span><span id="__span-0-512"><a id="__codelineno-0-512" name="__codelineno-0-512"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-</span><span id="__span-0-513"><a id="__codelineno-0-513" name="__codelineno-0-513"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Trying to delete a AthenaSource that doesn&#39;t exist: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-0-514"><a id="__codelineno-0-514" name="__codelineno-0-514"></a>
-</span><span id="__span-0-515"><a id="__codelineno-0-515" name="__codelineno-0-515"></a>        <span class="c1"># Delete any views associated with this AthenaSource</span>
-</span><span id="__span-0-516"><a id="__codelineno-0-516" name="__codelineno-0-516"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">delete_views</span><span class="p">()</span>
-</span><span id="__span-0-517"><a id="__codelineno-0-517" name="__codelineno-0-517"></a>
-</span><span id="__span-0-518"><a id="__codelineno-0-518" name="__codelineno-0-518"></a>        <span class="c1"># Delete Data Catalog Table</span>
-</span><span id="__span-0-519"><a id="__codelineno-0-519" name="__codelineno-0-519"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleting DataCatalog Table: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-</span><span id="__span-0-520"><a id="__codelineno-0-520" name="__codelineno-0-520"></a>        <span class="n">wr</span><span class="o">.</span><span class="n">catalog</span><span class="o">.</span><span class="n">delete_table_if_exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_database</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">,</span> <span class="n">boto3_session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">boto3_session</span><span class="p">)</span>
-</span><span id="__span-0-521"><a id="__codelineno-0-521" name="__codelineno-0-521"></a>
-</span><span id="__span-0-522"><a id="__codelineno-0-522" name="__codelineno-0-522"></a>        <span class="c1"># Delete S3 Storage Objects (if they exist)</span>
-</span><span id="__span-0-523"><a id="__codelineno-0-523" name="__codelineno-0-523"></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="__span-0-524"><a id="__codelineno-0-524" name="__codelineno-0-524"></a>            <span class="c1"># Make sure we add the trailing slash</span>
-</span><span id="__span-0-525"><a id="__codelineno-0-525" name="__codelineno-0-525"></a>            <span class="n">s3_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">s3_storage_location</span><span class="p">()</span>
-</span><span id="__span-0-526"><a id="__codelineno-0-526" name="__codelineno-0-526"></a>            <span class="n">s3_path</span> <span class="o">=</span> <span class="n">s3_path</span> <span class="k">if</span> <span class="n">s3_path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">s3_path</span><span class="si">}</span><span class="s2">/&quot;</span>
-</span><span id="__span-0-527"><a id="__codelineno-0-527" name="__codelineno-0-527"></a>
-</span><span id="__span-0-528"><a id="__codelineno-0-528" name="__codelineno-0-528"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleting S3 Storage Objects: </span><span class="si">{</span><span class="n">s3_path</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-</span><span id="__span-0-529"><a id="__codelineno-0-529" name="__codelineno-0-529"></a>            <span class="n">wr</span><span class="o">.</span><span class="n">s3</span><span class="o">.</span><span class="n">delete_objects</span><span class="p">(</span><span class="n">s3_path</span><span class="p">,</span> <span class="n">boto3_session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">boto3_session</span><span class="p">)</span>
-</span><span id="__span-0-530"><a id="__codelineno-0-530" name="__codelineno-0-530"></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="__span-0-531"><a id="__codelineno-0-531" name="__codelineno-0-531"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to delete S3 Storage Objects: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-0-532"><a id="__codelineno-0-532" name="__codelineno-0-532"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Malformed Artifact... good thing it&#39;s being deleted...&quot;</span><span class="p">)</span>
+</span><span id="__span-0-503"><a id="__codelineno-0-503" name="__codelineno-0-503"></a>    <span class="k">def</span> <span class="nf">_delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-0-504"><a id="__codelineno-0-504" name="__codelineno-0-504"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Internal: Delete the AWS Data Catalog Table and S3 Storage Objects&quot;&quot;&quot;</span>
+</span><span id="__span-0-505"><a id="__codelineno-0-505" name="__codelineno-0-505"></a>
+</span><span id="__span-0-506"><a id="__codelineno-0-506" name="__codelineno-0-506"></a>        <span class="c1"># Make sure the AthenaSource exists</span>
+</span><span id="__span-0-507"><a id="__codelineno-0-507" name="__codelineno-0-507"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+</span><span id="__span-0-508"><a id="__codelineno-0-508" name="__codelineno-0-508"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Trying to delete a AthenaSource that doesn&#39;t exist: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-509"><a id="__codelineno-0-509" name="__codelineno-0-509"></a>
+</span><span id="__span-0-510"><a id="__codelineno-0-510" name="__codelineno-0-510"></a>        <span class="c1"># Delete any views associated with this AthenaSource</span>
+</span><span id="__span-0-511"><a id="__codelineno-0-511" name="__codelineno-0-511"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">delete_views</span><span class="p">()</span>
+</span><span id="__span-0-512"><a id="__codelineno-0-512" name="__codelineno-0-512"></a>
+</span><span id="__span-0-513"><a id="__codelineno-0-513" name="__codelineno-0-513"></a>        <span class="c1"># Delete Data Catalog Table</span>
+</span><span id="__span-0-514"><a id="__codelineno-0-514" name="__codelineno-0-514"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleting DataCatalog Table: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+</span><span id="__span-0-515"><a id="__codelineno-0-515" name="__codelineno-0-515"></a>        <span class="n">wr</span><span class="o">.</span><span class="n">catalog</span><span class="o">.</span><span class="n">delete_table_if_exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_database</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">,</span> <span class="n">boto3_session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">boto3_session</span><span class="p">)</span>
+</span><span id="__span-0-516"><a id="__codelineno-0-516" name="__codelineno-0-516"></a>
+</span><span id="__span-0-517"><a id="__codelineno-0-517" name="__codelineno-0-517"></a>        <span class="c1"># Delete S3 Storage Objects (if they exist)</span>
+</span><span id="__span-0-518"><a id="__codelineno-0-518" name="__codelineno-0-518"></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="__span-0-519"><a id="__codelineno-0-519" name="__codelineno-0-519"></a>            <span class="c1"># Make sure we add the trailing slash</span>
+</span><span id="__span-0-520"><a id="__codelineno-0-520" name="__codelineno-0-520"></a>            <span class="n">s3_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">s3_storage_location</span><span class="p">()</span>
+</span><span id="__span-0-521"><a id="__codelineno-0-521" name="__codelineno-0-521"></a>            <span class="n">s3_path</span> <span class="o">=</span> <span class="n">s3_path</span> <span class="k">if</span> <span class="n">s3_path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">s3_path</span><span class="si">}</span><span class="s2">/&quot;</span>
+</span><span id="__span-0-522"><a id="__codelineno-0-522" name="__codelineno-0-522"></a>
+</span><span id="__span-0-523"><a id="__codelineno-0-523" name="__codelineno-0-523"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleting S3 Storage Objects: </span><span class="si">{</span><span class="n">s3_path</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+</span><span id="__span-0-524"><a id="__codelineno-0-524" name="__codelineno-0-524"></a>            <span class="n">wr</span><span class="o">.</span><span class="n">s3</span><span class="o">.</span><span class="n">delete_objects</span><span class="p">(</span><span class="n">s3_path</span><span class="p">,</span> <span class="n">boto3_session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">boto3_session</span><span class="p">)</span>
+</span><span id="__span-0-525"><a id="__codelineno-0-525" name="__codelineno-0-525"></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="__span-0-526"><a id="__codelineno-0-526" name="__codelineno-0-526"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to delete S3 Storage Objects: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-527"><a id="__codelineno-0-527" name="__codelineno-0-527"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Malformed Artifact... good thing it&#39;s being deleted...&quot;</span><span class="p">)</span>
+</span><span id="__span-0-528"><a id="__codelineno-0-528" name="__codelineno-0-528"></a>
+</span><span id="__span-0-529"><a id="__codelineno-0-529" name="__codelineno-0-529"></a>        <span class="c1"># Delete any data in the Cache</span>
+</span><span id="__span-0-530"><a id="__codelineno-0-530" name="__codelineno-0-530"></a>        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_storage</span><span class="o">.</span><span class="n">list_subkeys</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data_source:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">):</span>
+</span><span id="__span-0-531"><a id="__codelineno-0-531" name="__codelineno-0-531"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleting Cache Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+</span><span id="__span-0-532"><a id="__codelineno-0-532" name="__codelineno-0-532"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">data_storage</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 </span><span id="__span-0-533"><a id="__codelineno-0-533" name="__codelineno-0-533"></a>
-</span><span id="__span-0-534"><a id="__codelineno-0-534" name="__codelineno-0-534"></a>        <span class="c1"># Delete any data in the Cache</span>
-</span><span id="__span-0-535"><a id="__codelineno-0-535" name="__codelineno-0-535"></a>        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_storage</span><span class="o">.</span><span class="n">list_subkeys</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data_source:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">):</span>
-</span><span id="__span-0-536"><a id="__codelineno-0-536" name="__codelineno-0-536"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleting Cache Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-</span><span id="__span-0-537"><a id="__codelineno-0-537" name="__codelineno-0-537"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">data_storage</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-</span><span id="__span-0-538"><a id="__codelineno-0-538" name="__codelineno-0-538"></a>
-</span><span id="__span-0-539"><a id="__codelineno-0-539" name="__codelineno-0-539"></a>    <span class="k">def</span> <span class="nf">delete_views</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="__span-0-540"><a id="__codelineno-0-540" name="__codelineno-0-540"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete any views associated with this FeatureSet&quot;&quot;&quot;</span>
-</span><span id="__span-0-541"><a id="__codelineno-0-541" name="__codelineno-0-541"></a>        <span class="kn">from</span> <span class="nn">sageworks.core.views.view_utils</span> <span class="kn">import</span> <span class="n">delete_views_and_supplemental_data</span>
-</span><span id="__span-0-542"><a id="__codelineno-0-542" name="__codelineno-0-542"></a>
-</span><span id="__span-0-543"><a id="__codelineno-0-543" name="__codelineno-0-543"></a>        <span class="n">delete_views_and_supplemental_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</span><span id="__span-0-534"><a id="__codelineno-0-534" name="__codelineno-0-534"></a>    <span class="k">def</span> <span class="nf">delete_views</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-0-535"><a id="__codelineno-0-535" name="__codelineno-0-535"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete any views associated with this FeatureSet&quot;&quot;&quot;</span>
+</span><span id="__span-0-536"><a id="__codelineno-0-536" name="__codelineno-0-536"></a>        <span class="kn">from</span> <span class="nn">sageworks.core.views.view_utils</span> <span class="kn">import</span> <span class="n">delete_views_and_supplemental_data</span>
+</span><span id="__span-0-537"><a id="__codelineno-0-537" name="__codelineno-0-537"></a>
+</span><span id="__span-0-538"><a id="__codelineno-0-538" name="__codelineno-0-538"></a>        <span class="n">delete_views_and_supplemental_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
 
@@ -4750,7 +4761,11 @@
 
 
 <h3 id="sageworks.core.artifacts.athena_source.AthenaSource.delete" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">delete</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">delete</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="s1">&#39;sageworks&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h3>
 
@@ -4761,13 +4776,17 @@
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/athena_source.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-503">503</a></span>
-<span class="normal"><a href="#__codelineno-0-504">504</a></span>
-<span class="normal"><a href="#__codelineno-0-505">505</a></span>
-<span class="normal"><a href="#__codelineno-0-506">506</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-503"><a id="__codelineno-0-503" name="__codelineno-0-503"></a><span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># noqa: F811</span>
-</span><span id="__span-0-504"><a id="__codelineno-0-504" name="__codelineno-0-504"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete the AWS Data Catalog Table and S3 Storage Objects&quot;&quot;&quot;</span>
-</span><span id="__span-0-505"><a id="__codelineno-0-505" name="__codelineno-0-505"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Deprecation: delete() is deprecated, use class method &#39;DataSource.delete(ds_name)&#39;&quot;</span><span class="p">)</span>
-</span><span id="__span-0-506"><a id="__codelineno-0-506" name="__codelineno-0-506"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_delete</span><span class="p">()</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-496">496</a></span>
+<span class="normal"><a href="#__codelineno-0-497">497</a></span>
+<span class="normal"><a href="#__codelineno-0-498">498</a></span>
+<span class="normal"><a href="#__codelineno-0-499">499</a></span>
+<span class="normal"><a href="#__codelineno-0-500">500</a></span>
+<span class="normal"><a href="#__codelineno-0-501">501</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-496"><a id="__codelineno-0-496" name="__codelineno-0-496"></a><span class="nd">@classmethod</span>
+</span><span id="__span-0-497"><a id="__codelineno-0-497" name="__codelineno-0-497"></a><span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">database</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sageworks&quot;</span><span class="p">):</span>
+</span><span id="__span-0-498"><a id="__codelineno-0-498" name="__codelineno-0-498"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete the AWS Data Catalog Table and S3 Storage Objects&quot;&quot;&quot;</span>
+</span><span id="__span-0-499"><a id="__codelineno-0-499" name="__codelineno-0-499"></a>    <span class="k">with</span> <span class="n">quiet_execution</span><span class="p">():</span>
+</span><span id="__span-0-500"><a id="__codelineno-0-500" name="__codelineno-0-500"></a>        <span class="n">athena_source</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">database</span><span class="p">)</span>
+</span><span id="__span-0-501"><a id="__codelineno-0-501" name="__codelineno-0-501"></a>        <span class="n">athena_source</span><span class="o">.</span><span class="n">_delete</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4789,15 +4808,15 @@
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/artifacts/athena_source.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-539">539</a></span>
-<span class="normal"><a href="#__codelineno-0-540">540</a></span>
-<span class="normal"><a href="#__codelineno-0-541">541</a></span>
-<span class="normal"><a href="#__codelineno-0-542">542</a></span>
-<span class="normal"><a href="#__codelineno-0-543">543</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-539"><a id="__codelineno-0-539" name="__codelineno-0-539"></a><span class="k">def</span> <span class="nf">delete_views</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="__span-0-540"><a id="__codelineno-0-540" name="__codelineno-0-540"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete any views associated with this FeatureSet&quot;&quot;&quot;</span>
-</span><span id="__span-0-541"><a id="__codelineno-0-541" name="__codelineno-0-541"></a>    <span class="kn">from</span> <span class="nn">sageworks.core.views.view_utils</span> <span class="kn">import</span> <span class="n">delete_views_and_supplemental_data</span>
-</span><span id="__span-0-542"><a id="__codelineno-0-542" name="__codelineno-0-542"></a>
-</span><span id="__span-0-543"><a id="__codelineno-0-543" name="__codelineno-0-543"></a>    <span class="n">delete_views_and_supplemental_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-534">534</a></span>
+<span class="normal"><a href="#__codelineno-0-535">535</a></span>
+<span class="normal"><a href="#__codelineno-0-536">536</a></span>
+<span class="normal"><a href="#__codelineno-0-537">537</a></span>
+<span class="normal"><a href="#__codelineno-0-538">538</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-534"><a id="__codelineno-0-534" name="__codelineno-0-534"></a><span class="k">def</span> <span class="nf">delete_views</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-0-535"><a id="__codelineno-0-535" name="__codelineno-0-535"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete any views associated with this FeatureSet&quot;&quot;&quot;</span>
+</span><span id="__span-0-536"><a id="__codelineno-0-536" name="__codelineno-0-536"></a>    <span class="kn">from</span> <span class="nn">sageworks.core.views.view_utils</span> <span class="kn">import</span> <span class="n">delete_views_and_supplemental_data</span>
+</span><span id="__span-0-537"><a id="__codelineno-0-537" name="__codelineno-0-537"></a>
+</span><span id="__span-0-538"><a id="__codelineno-0-538" name="__codelineno-0-538"></a>    <span class="n">delete_views_and_supplemental_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6292,7 +6311,7 @@ The scale parameter can be adjusted to change the IQR multiplier</p>
     <script id="__config" type="application/json">{"base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.525ec568.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.83f73b43.min.js"></script>
       
     
   </body>
