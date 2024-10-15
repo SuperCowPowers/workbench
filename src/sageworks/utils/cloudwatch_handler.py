@@ -2,9 +2,6 @@ import os
 import logging
 from datetime import datetime
 import getpass
-import watchtower
-
-# import atexit
 
 # SageWorks imports
 from sageworks.utils.execution_environment import (
@@ -18,51 +15,66 @@ from sageworks.utils.execution_environment import (
 from sageworks.aws_service_broker.aws_session import AWSSession
 
 
-class CloudWatchHandler:
+class CloudWatchHandler(logging.Handler):  # Inherit from logging.Handler
     """A helper class to add a CloudWatch Logs handler to a logger"""
 
     def __init__(self):
-        # Initialize the CloudWatch handler
-
-        # Import ColoredFormatter here to avoid circular imports
-        from sageworks.utils.sageworks_logging import ColoredFormatter
+        super().__init__()  # Initialize the base Handler class
+        from sageworks.utils.sageworks_logging import ColoredFormatter  # Import here to avoid circular imports
 
         self.boto3_session = AWSSession().boto3_session
         self.log_stream_name = self.determine_log_stream()
         self.formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
-        self.cloudwatch_handler = None
+        self.cloudwatch_client = self.boto3_session.client("logs")
+        self.sequence_token = None
+        self.log_group_name = "SageWorksLogGroup"
+        self.create_log_group()
+        self.create_log_stream()
 
     def add_cloudwatch_handler(self, log):
-        """Add a CloudWatch Logs handler to the provided logger"""
+        """Add the custom CloudWatch Logs handler to the provided logger"""
         try:
-            cloudwatch_client = self.boto3_session.client("logs")
-            self.cloudwatch_handler = watchtower.CloudWatchLogHandler(
-                log_group="SageWorksLogGroup",
-                stream_name=self.log_stream_name,
-                boto3_client=cloudwatch_client,
-            )
-            self.cloudwatch_handler.setFormatter(self.formatter)
-            log.addHandler(self.cloudwatch_handler)
+            log.addHandler(self)
             log.info("CloudWatch logging handler added successfully.")
-
-            # Ensure logs are flushed after each log
-            def flush_handler(record):
-                self.cloudwatch_handler.flush()
-                return True
-
-            # Add a filter to flush the handler after every log
-            log.addFilter(flush_handler)
-
         except Exception as e:
             log.error(f"Failed to set up CloudWatch Logs handler: {e}")
 
-    # Register the flush function to be called at exit
-    # atexit.register(self.on_exit_flush)
-    def on_exit_flush(self):
-        """Flush the CloudWatch log handler to ensure all logs are sent"""
-        if hasattr(self, "cloudwatch_handler") and self.cloudwatch_handler:
-            self.cloudwatch_handler.flush()
-            self.cloudwatch_handler.close()
+    def emit(self, record):
+        """Send a log message to CloudWatch"""
+        message = self.format(record)
+        log_event = {
+            "logGroupName": self.log_group_name,
+            "logStreamName": self.log_stream_name,
+            "logEvents": [{"timestamp": int(record.created * 1000), "message": message}],
+        }
+        if self.sequence_token:
+            log_event["sequenceToken"] = self.sequence_token
+
+        try:
+            response = self.cloudwatch_client.put_log_events(**log_event)
+            self.sequence_token = response.get("nextSequenceToken")
+        except self.cloudwatch_client.exceptions.InvalidSequenceTokenException as e:
+            # Update sequence token and retry
+            self.sequence_token = e.response["Error"]["Message"].split()[-1]
+            self.emit(record)  # Retry the log submission
+        except Exception as e:
+            logging.error(f"Failed to send logs to CloudWatch: {e}")
+
+    def create_log_group(self):
+        """Create CloudWatch Log Group if it doesn't exist"""
+        try:
+            self.cloudwatch_client.create_log_group(logGroupName=self.log_group_name)
+        except self.cloudwatch_client.exceptions.ResourceAlreadyExistsException:
+            pass
+
+    def create_log_stream(self):
+        """Create CloudWatch Log Stream if it doesn't exist"""
+        try:
+            self.cloudwatch_client.create_log_stream(
+                logGroupName=self.log_group_name, logStreamName=self.log_stream_name
+            )
+        except self.cloudwatch_client.exceptions.ResourceAlreadyExistsException:
+            pass
 
     def determine_log_stream(self):
         """Determine the log stream name based on the environment."""
@@ -97,5 +109,7 @@ class CloudWatchHandler:
 if __name__ == "__main__":
     # Example usage
     logger = logging.getLogger("SageWorks")
+    logger.setLevel(logging.INFO)
     cloudwatch_handler = CloudWatchHandler()
     cloudwatch_handler.add_cloudwatch_handler(logger)
+    logger.info("Test log message to CloudWatch")
