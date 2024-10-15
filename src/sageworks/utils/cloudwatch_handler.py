@@ -54,6 +54,7 @@ class CloudWatchHandler:
         """Flush the CloudWatch log handler to ensure all logs are sent"""
         if hasattr(self, "cloudwatch_handler") and self.cloudwatch_handler:
             self.cloudwatch_handler.flush()
+            self.cloudwatch_handler.close()
 
     def determine_log_stream(self):
         """Determine the log stream name based on the environment."""

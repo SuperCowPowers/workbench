@@ -14,7 +14,7 @@ def quiet_execution():
     except Exception as e:
         logger.setLevel(logging.WARNING)  # Temporarily lower log level
         logger.warning(f"Exception occurred during deletion: {e}")
-        logger.warning("In general this warning can/should be ignored :)")
+        logger.warning("In general this warning can be ignored :)")
     finally:
         logger.setLevel(original_level)
 
