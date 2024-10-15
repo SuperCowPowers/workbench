@@ -17,6 +17,7 @@ from sageworks.utils.datetime_utils import convert_all_to_iso8601
 from sageworks.algorithms import sql
 from sageworks.utils.redis_cache import CustomEncoder
 from sageworks.utils.aws_utils import sageworks_meta_from_catalog_table_meta
+from sageworks.utils.log_utils import quiet_execution
 
 
 class AthenaSource(DataSourceAbstract):
@@ -492,8 +493,20 @@ class AthenaSource(DataSourceAbstract):
         # Return the details data
         return details
 
+    @classmethod
+    def delete(cls, data_uuid: str, database: str = "sageworks"):
+        """Delete the AWS Data Catalog Table and S3 Storage Objects"""
+        with quiet_execution():
+            athena_source = cls(data_uuid, database)
+            athena_source._delete()
+
     def delete(self):
         """Delete the AWS Data Catalog Table and S3 Storage Objects"""
+        self.log.warning("Deprecation: delete() is deprecated, use class method 'DataSource.delete(ds_name)'")
+        self._delete()
+
+    def _delete(self):
+        """Internal: Delete the AWS Data Catalog Table and S3 Storage Objects"""
 
         # Make sure the AthenaSource exists
         if not self.exists():
@@ -615,21 +628,25 @@ if __name__ == "__main__":
     print(my_data.view("display").columns)
 
     # Set the computation columns
-    print("\n\nSet Computation Columns")
-    print(my_data.set_computation_columns(my_data.columns))
+    # print("\n\nSet Computation Columns")
+    # print(my_data.set_computation_columns(my_data.columns))
 
     # Get the computation columns
     print("\n\nComputation Columns")
     print(my_data.view("computation").columns)
 
     # Test a Data Source that doesn't exist
-    # The rest of the tests are Disabled for now
-    """
     print("\n\nTesting a Data Source that does not exist...")
     my_data = AthenaSource("does_not_exist")
     assert not my_data.exists()
     my_data.sageworks_meta()
 
+    # Test Delete
+    print("\n\nTesting Delete...")
+    AthenaSource.delete("test_data")
+
+    # The rest of the tests are Disabled for now
+    """
     # Now delete the AWS artifacts associated with this DataSource
     print('Deleting SageWorks Data Source...')
     my_data.delete()

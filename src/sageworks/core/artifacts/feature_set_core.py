@@ -16,6 +16,7 @@ from sageworks.core.artifacts.artifact import Artifact
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
+from sageworks.utils.log_utils import quiet_execution
 
 from typing import TYPE_CHECKING
 
@@ -363,8 +364,20 @@ class FeatureSetCore(Artifact):
         # Return the details data
         return details
 
-    def delete(self):
+    @classmethod
+    def delete(cls, feature_set_uuid: str):
         """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
+        with quiet_execution():
+            feature_set = cls(feature_set_uuid)
+            feature_set._delete()
+
+    def delete(self):
+        """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
+        self.log.warning("Deprecation: delete() is deprecated, use class method 'FeatureSet.delete(fs_name)'")
+        self._delete()
+
+    def _delete(self):
+        """Internal: Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
 
         # Delete the Feature Group and ensure that it gets deleted
         self.log.important(f"Deleting FeatureSet {self.uuid}...")
@@ -373,7 +386,7 @@ class FeatureSetCore(Artifact):
         self.ensure_feature_group_deleted(remove_fg)
 
         # Delete our underlying DataSource (Data Catalog Table and S3 Storage Objects)
-        self.data_source.delete()
+        self.data_source._delete()  # noqa: protected-access
 
         # Delete any views
         self.delete_views()
@@ -584,10 +597,13 @@ if __name__ == "__main__":
 
     # Test new recompute_stats method (we're grabbing a datasource from the FeatureSet)
     fs = LocalFeatureSetCore("abalone_features")
-    fs.recompute_stats()
+    # fs.recompute_stats()
 
     # Grab a FeatureSet object and pull some information from it
     my_features = LocalFeatureSetCore("test_features")
+    if not my_features.exists():
+        print("FeatureSet not found!")
+        exit(1)
 
     # Call the various methods
     # What's my AWS ARN and URL
@@ -653,6 +669,6 @@ if __name__ == "__main__":
     training_data = my_features.get_training_data()
 
     # Now delete the AWS artifacts associated with this Feature Set
-    # print('Deleting SageWorks Feature Set...')
-    # my_features.delete()
+    print('Deleting SageWorks Feature Set...')
+    LocalFeatureSetCore.delete("test_features")
     print("Done")

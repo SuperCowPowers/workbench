@@ -42,6 +42,7 @@ from sageworks.core.artifacts.model_core import ModelCore, ModelType
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.endpoint_metrics import EndpointMetrics
 from sageworks.utils.shapley_values import generate_shap_values
+from sageworks.utils.log_utils import quiet_execution
 
 
 class EndpointCore(Artifact):
@@ -803,8 +804,20 @@ class EndpointCore(Artifact):
         self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
         self.upsert_sageworks_meta({"sageworks_input": input})
 
+    @classmethod
+    def delete(cls, endpoint_uuid: str):
+        """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
+        with quiet_execution():
+            endpoint = cls(endpoint_uuid)
+            endpoint._delete()
+
     def delete(self):
         """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
+        self.log.warning("Deprecation: delete() is deprecated, use class method 'endpoint.delete(endpoint_name)'")
+        self._delete()
+
+    def _delete(self):
+        """Internal: Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
         self.delete_endpoint_models()
 
         # Remove this endpoint from the set of registered endpoints in our model

@@ -18,6 +18,7 @@ from sagemaker.model import Model as SagemakerModel
 from sageworks.core.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.aws_utils import newest_path, pull_s3_data
+from sageworks.utils.log_utils import quiet_execution
 
 
 # Enumerated Model Types
@@ -699,8 +700,20 @@ class ModelCore(Artifact):
         self.details(recompute=True)
         return True
 
+    @classmethod
+    def delete(cls, model_uuid: str):
+        """Delete the Model Packages and the Model Group"""
+        with quiet_execution():
+            model = cls(model_uuid)
+            model._delete()
+
     def delete(self):
         """Delete the Model Packages and the Model Group"""
+        self.log.warning("Deprecation: delete() is deprecated. Use class method 'Model.delete(model_name)'")
+        self._delete()
+
+    def _delete(self):
+        """Internal: Delete the Model Packages and the Model Group"""
 
         # If we don't have meta then the model probably doesn't exist
         if self.model_meta is None:
