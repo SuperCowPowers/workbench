@@ -47,7 +47,8 @@ def test_endpoint_deletion():
     create_endpoint()
 
     # Now Delete the endpoint
-    Endpoint("abc-end").delete()
+    # Endpoint("abc-end").delete()
+    Endpoint.delete("abc-end")
 
 
 @pytest.mark.long
@@ -55,7 +56,8 @@ def test_model_deletion():
     create_model()
 
     # Now Delete the Model
-    Model("abc-regression").delete()
+    # Model("abc-regression").delete()
+    Model.delete("abc-regression")
 
 
 @pytest.mark.long
@@ -63,7 +65,8 @@ def test_feature_set_deletion():
     create_feature_set()
 
     # Now Delete the FeatureSet
-    FeatureSet("abc_features").delete()
+    # FeatureSet("abc_features").delete()
+    FeatureSet.delete("abc_features")
 
 
 @pytest.mark.long
@@ -71,7 +74,8 @@ def test_data_source_deletion():
     create_data_source()
 
     # Now Delete the DataSource
-    DataSource("abc").delete()
+    # DataSource("abc").delete()
+    DataSource.delete("abc")
 
 
 if __name__ == "__main__":
