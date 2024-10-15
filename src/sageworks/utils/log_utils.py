@@ -4,14 +4,17 @@ import logging
 from contextlib import contextmanager
 
 
-# A context manager to silence logs
 @contextmanager
-def silence_logs():
+def quiet_execution():
     logger = logging.getLogger("sageworks")
     original_level = logger.level
     try:
         logger.setLevel(logging.CRITICAL + 1)
         yield
+    except Exception as e:
+        logger.setLevel(logging.WARNING)  # Temporarily lower log level
+        logger.warning(f"Exception occurred during deletion: {e}")
+        logger.warning(f"In general this warning can/should be ignored :)")
     finally:
         logger.setLevel(original_level)
 
@@ -23,9 +26,13 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
     log.info("You should see me")
 
-    with silence_logs():
+    with quiet_execution():
         log.info("You should NOT see me")
         log.warning("You should NOT see me")
 
     log.info("You should see me")
     log.warning("You should see this warning")
+
+    with quiet_execution():
+        raise ValueError("This is a test error")
+    log.info("You should see me")
