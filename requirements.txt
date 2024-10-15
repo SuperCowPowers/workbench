@@ -5,7 +5,6 @@ numpy >= 1.26.1
 pandas >= 2.2.1
 awswrangler >= 3.4.0
 sagemaker >= 2.143
-watchtower >= 3.1.0
 cryptography>=42.0.5
 ipython>=8.17.2
 pyreadline3; sys_platform == 'win32'
