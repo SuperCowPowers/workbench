@@ -306,6 +306,7 @@ class FeaturesToModel(Transform):
             metric_definitions = []
 
         # Create a Sagemaker Model with our script
+        image = InferenceImage.get_image_uri(self.sm_session.boto_region_name, "sklearn", "1.2.1")
         self.estimator = SKLearn(
             entry_point=script_path,
             source_dir=self.model_script_dir,
@@ -313,6 +314,7 @@ class FeaturesToModel(Transform):
             instance_type="ml.m5.large",
             sagemaker_session=self.sm_session,
             framework_version="1.2-1",
+            image_uri=image,
             metric_definitions=metric_definitions,
         )
 

@@ -811,7 +811,7 @@ class EndpointCore(Artifact):
             endpoint = cls(endpoint_uuid)
             endpoint._delete()
 
-    def delete(self):
+    def delete(self):  # noqa: F811
         """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
         self.log.warning("Deprecation: delete() is deprecated, use class method 'endpoint.delete(endpoint_name)'")
         self._delete()

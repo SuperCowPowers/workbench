@@ -500,7 +500,7 @@ class AthenaSource(DataSourceAbstract):
             athena_source = cls(data_uuid, database)
             athena_source._delete()
 
-    def delete(self):
+    def delete(self):  # noqa: F811
         """Delete the AWS Data Catalog Table and S3 Storage Objects"""
         self.log.warning("Deprecation: delete() is deprecated, use class method 'DataSource.delete(ds_name)'")
         self._delete()

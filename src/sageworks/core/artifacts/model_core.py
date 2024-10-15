@@ -707,7 +707,7 @@ class ModelCore(Artifact):
             model = cls(model_uuid)
             model._delete()
 
-    def delete(self):
+    def delete(self):  # noqa: F811
         """Delete the Model Packages and the Model Group"""
         self.log.warning("Deprecation: delete() is deprecated. Use class method 'Model.delete(model_name)'")
         self._delete()

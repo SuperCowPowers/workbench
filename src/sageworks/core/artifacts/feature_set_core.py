@@ -371,7 +371,7 @@ class FeatureSetCore(Artifact):
             feature_set = cls(feature_set_uuid)
             feature_set._delete()
 
-    def delete(self):
+    def delete(self):  # noqa: F811
         """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
         self.log.warning("Deprecation: delete() is deprecated, use class method 'FeatureSet.delete(fs_name)'")
         self._delete()
@@ -669,6 +669,6 @@ if __name__ == "__main__":
     training_data = my_features.get_training_data()
 
     # Now delete the AWS artifacts associated with this Feature Set
-    print('Deleting SageWorks Feature Set...')
+    print("Deleting SageWorks Feature Set...")
     LocalFeatureSetCore.delete("test_features")
     print("Done")
