@@ -34,6 +34,15 @@ def test_classification_auto_inference():
     print(pred_df)
 
 
+def test_classification_inference_with_subset_of_labels():
+    eval_data_df = fs_evaluation_data(class_endpoint)[:50]
+
+    # Subset the labels to only include the first 2 classes
+    eval_data_df = eval_data_df[eval_data_df["wine_class"].isin(["TypeA", "TypeB"])]
+    pred_df = class_endpoint.inference(eval_data_df)
+    print(pred_df)
+
+
 def test_manual_inference():
     eval_data_df = fs_evaluation_data(reg_endpoint)[:50]
     pred_df = reg_endpoint.inference(eval_data_df)
@@ -79,6 +88,7 @@ if __name__ == "__main__":
     test_regression_auto_inference()
     test_classification_auto_inference()
     test_manual_inference()
+    test_classification_inference_with_subset_of_labels()
     test_regression_metrics()
     test_classification_metrics()
 

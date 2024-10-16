@@ -692,20 +692,21 @@ class EndpointCore(Artifact):
 
     def classification_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
+
         Args:
             target_column (str): Name of the target column
             prediction_df (pd.DataFrame): DataFrame with the prediction results
+
         Returns:
             pd.DataFrame: DataFrame with the performance metrics
         """
-
-        # Get a list of unique labels
-        labels = prediction_df[target_column].unique()
+        # Get the class labels from the model
+        class_labels = ModelCore(self.model_name).class_labels()
 
         # Calculate scores
         prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
         scores = precision_recall_fscore_support(
-            prediction_df[target_column], prediction_df[prediction_col], average=None, labels=labels
+            prediction_df[target_column], prediction_df[prediction_col], average=None, labels=class_labels
         )
 
         # Calculate ROC AUC
@@ -716,7 +717,7 @@ class EndpointCore(Artifact):
         # Sanity check for older versions that have a single column for probability
         if "pred_proba" in prediction_df.columns:
             self.log.error("Older version of prediction output detected, rerun inference...")
-            roc_auc = [0.0] * len(labels)
+            roc_auc = [0.0] * len(class_labels)
 
         # Convert probability columns to a 2D NumPy array
         else:
@@ -734,7 +735,7 @@ class EndpointCore(Artifact):
         # Put the scores into a dataframe
         score_df = pd.DataFrame(
             {
-                target_column: labels,
+                target_column: class_labels,
                 "precision": scores[0],
                 "recall": scores[1],
                 "fscore": scores[2],
