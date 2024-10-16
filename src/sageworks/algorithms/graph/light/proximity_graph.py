@@ -146,15 +146,15 @@ if __name__ == "__main__":
 
     # Plot the full graph
     graph_plot = GraphPlot()
-    [fig] = graph_plot.update_properties(my_graph, labels="id", hover_text="all")
-    fig.show()
+    properties = graph_plot.update_properties(my_graph, labels="id", hover_text="all")
+    properties[0].show()
 
     # Get a neighborhood subgraph for a specific node
     neighborhood_subgraph = proximity_graph.get_neighborhood(node_id=df["id"].iloc[0], radius=2)
 
     # Plot the neighborhood subgraph
-    [fig] = graph_plot.update_properties(neighborhood_subgraph, labels="id", hover_text="all")
-    fig.show()
+    properties = graph_plot.update_properties(neighborhood_subgraph, labels="id", hover_text="all")
+    properties[0].show()
 
     # Compute a shortest path subgraph using two random nodes
     source_node = df["id"].iloc[0]
@@ -165,5 +165,5 @@ if __name__ == "__main__":
 
     # Plot the subgraph
     graph_plot = GraphPlot()
-    [fig] = graph_plot.update_properties(subgraph, labels="id", hover_text="all")
-    fig.show()
+    properties = graph_plot.update_properties(subgraph, labels="id", hover_text="all")
+    properties[0].show()
