@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../0_8_29/">
+        <link rel="prev" href="../../aws_setup/aws_client_vpn/">
       
       
-        <link rel="next" href="../0_8_23/">
+        <link rel="next" href="../0_8_29/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>0.8.27 - SageWorks</title>
+        <title>0.8.33 - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-0827" class="md-skip">
+        <a href="#release-0833" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              0.8.27
+              0.8.33
             
           </span>
         </div>
@@ -2001,48 +2001,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../0_8_33/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    0.8.33
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../0_8_29/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    0.8.29
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -2059,7 +2017,7 @@
           
   
   <span class="md-ellipsis">
-    0.8.27
+    0.8.33
   </span>
   
 
@@ -2070,7 +2028,7 @@
         
   
   <span class="md-ellipsis">
-    0.8.27
+    0.8.33
   </span>
   
 
@@ -2110,9 +2068,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#minor-improvements" class="md-nav__link">
+  <a href="#improvementsfixes" class="md-nav__link">
     <span class="md-ellipsis">
-      Minor Improvements
+      Improvements/Fixes
     </span>
   </a>
   
@@ -2131,6 +2089,48 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0_8_29/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    0.8.29
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0_8_27/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    0.8.27
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -2525,9 +2525,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#minor-improvements" class="md-nav__link">
+  <a href="#improvementsfixes" class="md-nav__link">
     <span class="md-ellipsis">
-      Minor Improvements
+      Improvements/Fixes
     </span>
   </a>
   
@@ -2557,30 +2557,21 @@
                   
 
 
-<h1 id="release-0827">Release 0.8.27</h1>
+<h1 id="release-0833">Release 0.8.33</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
 <p>The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines.</p>
-<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.23</code> to <code>0.8.27</code></p>
+<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.29</code> to <code>0.8.33</code></p>
 <h3 id="general">General</h3>
-<ul>
-<li>Plugin Launcher: A flexible way to test plugins</li>
-<li>FeatureSpaceProximity (FSP): A Class for investigating feature space, neighbors, distances, etc.</li>
-<li>ProximityGraph: A class to construct NetworkX Graphs. Uses the FSP class to pull neighbors, contruct edges via 'distances', etc.</li>
-<li>Case</li>
-</ul>
+<p><strong>Replaced WatchTower Code:</strong> Had <strong>lots</strong> of issues with WatchTower on Glue/Lambda, the use of forks/threads was overkill for our logging needs, so simply replaced the code with boto3 <code>put_log_events()</code> calls and some simple token handling and buffering.</p>
 <h3 id="api-changes">API Changes</h3>
-<ul>
-<li>
-<p><strong>KNNSpier() --&gt; FeatureSpaceProximity()</strong></p>
-<p>If you were previously using the <code>KNNSpider</code> that class has been replaced with <code>FeatureSpaceProximity</code>. The API is also a bit different please see the documentation on the <a href="../../data_algorithms/dataframes/overview/">FeatureSpaceProximity Class</a>.</p>
-</li>
-</ul>
-<h3 id="minor-improvements">Minor Improvements</h3>
-<p>The model scripts used in deployed AWS Endpoints are now case-insensitive. In general this should make the use of the endpoints a bit more flexible for End-User Applications to hit the endpoints with less pre-processing of their column names.</p>
-<p>CloudWatch default buffers have been increased to 60 seconds as we appears to have been hitting some AWS limits with running 10 concurrent glue jobs.</p>
+<p>None</p>
+<h3 id="improvementsfixes">Improvements/Fixes</h3>
+<p><strong>DataSource from DataFrame:</strong>
+When creating a DataSource from a Pandas Dataframe, the internal <code>transform()</code> was not deleting the existing DataSource (if it existed).</p>
+<p><strong>ROCAUC on subset of classes:</strong> When running inference on input data that only had a subset of the classification labels (e.g. rows only had "low" and "medium" when model was trained on "low", "medium", "high"). The input to ROCAUC needed to be adjusted so that ROCAUC doesn't crash. When this case happens we're returning proper defaults based on scikit learn docs.</p>
 <h2 id="questions">Questions?</h2>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
 <p>The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
