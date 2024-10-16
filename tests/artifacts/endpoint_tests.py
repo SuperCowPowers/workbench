@@ -1,4 +1,5 @@
 """Tests for the Endpoint functionality"""
+
 import pandas as pd
 
 # SageWorks Imports
@@ -77,12 +78,12 @@ def test_classification_roc_auc():
 
     # Okay, now we're going to generate a fake prediction dataframe
     data = {
-        'id': [1, 2, 3, 4, 5],
-        'target': ['TypeB', 'TypeC', 'TypeA', 'TypeB', 'TypeA'],  # True classes
-        'prediction': ['TypeA', 'TypeA', 'TypeB', 'TypeC', 'TypeC'],  # Wrong predictions for all rows
-        'TypeB_proba': [0.33, 0.33, 0.34, 0.33, 0.33],  # Probabilities for class B
-        'TypeC_proba': [0.33, 0.33, 0.33, 0.34, 0.34],  # Probabilities for class C
-        'TypeA_proba': [0.34, 0.34, 0.33, 0.33, 0.33],  # Probabilities for class A
+        "id": [1, 2, 3, 4, 5],
+        "target": ["TypeB", "TypeC", "TypeA", "TypeB", "TypeA"],  # True classes
+        "prediction": ["TypeA", "TypeA", "TypeB", "TypeC", "TypeC"],  # Wrong predictions for all rows
+        "TypeB_proba": [0.33, 0.33, 0.34, 0.33, 0.33],  # Probabilities for class B
+        "TypeC_proba": [0.33, 0.33, 0.33, 0.34, 0.34],  # Probabilities for class C
+        "TypeA_proba": [0.34, 0.34, 0.33, 0.33, 0.33],  # Probabilities for class A
     }
     pred_df = pd.DataFrame(data)
     metrics = class_endpoint.classification_metrics("target", pred_df)
