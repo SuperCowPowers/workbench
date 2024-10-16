@@ -3,12 +3,14 @@
 import awswrangler as wr
 import pandas as pd
 from pandas.errors import ParserError
+import time
 
 # Local imports
 from sageworks.utils.datetime_utils import datetime_to_iso8601
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.artifact import Artifact
+from sageworks.core.artifacts.athena_source import AthenaSource
 
 
 class PandasToData(Transform):
@@ -46,9 +48,18 @@ class PandasToData(Transform):
             self.log.warning("Parquet format works the best in most cases please consider using it")
         self.output_format = output_format
 
+        # Delete the existing DataSource if it exists
+        self.delete_existing()
+
     def set_input(self, input_df: pd.DataFrame):
         """Set the DataFrame Input for this Transform"""
         self.output_df = input_df.copy()
+
+    def delete_existing(self):
+        # Delete the existing FeatureSet if it exists
+        self.log.info(f"Deleting the {self.output_uuid} DataSource...")
+        AthenaSource.delete(self.output_uuid)
+        time.sleep(1)
 
     def convert_object_to_string(self, df: pd.DataFrame) -> pd.DataFrame:
         """Try to automatically convert object columns to string columns"""

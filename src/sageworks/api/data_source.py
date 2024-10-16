@@ -30,31 +30,30 @@ class DataSource(AthenaSource):
         ```
     """
 
-    def __init__(self, source, name: str = None, tags: list = None, **kwargs):
+    def __init__(self, source: Union[str, pd.DataFrame], name: str = None, tags: list = None, **kwargs):
         """
         Initializes a new DataSource object.
 
         Args:
-            source (str): The source of the data. This can be an S3 bucket, file path,
-                          DataFrame object, or an existing DataSource object.
+            source (Union[str, pd.DataFrame]): The source of the data (existing name, filepath, S3 path, or a Pandas DataFrame)
             name (str): The name of the data source (must be lowercase). If not specified, a name will be generated
             tags (list[str]): A list of tags associated with the data source. If not specified tags will be generated.
         """
-
-        # Make sure we have a name for when we use a DataFrame source
-        if name == "dataframe":
-            msg = "Set the 'name' argument in the constructor: DataSource(df, name='my_data')"
-            self.log.critical(msg)
-            raise ValueError(msg)
 
         # Ensure the ds_name is valid
         if name:
             Artifact.is_name_valid(name)
 
-        # If the model_name wasn't given generate it
+        # If the data source name wasn't given, generate it
         else:
             name = extract_data_source_basename(source)
             name = Artifact.generate_valid_name(name)
+
+            # Sanity check for dataframe sources
+            if name == "dataframe":
+                msg = "Set the 'name' argument in the constructor: DataSource(df, name='my_data')"
+                self.log.critical(msg)
+                raise ValueError(msg)
 
         # Set the tags and load the source
         tags = [name] if tags is None else tags
@@ -189,6 +188,13 @@ if __name__ == "__main__":
 
     # Test to Run
     long_tests = False
+
+    # Check logic for creating a new DataSource with DataFrame (without name)
+    df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+    try:
+        test_data = DataSource(df)
+    except ValueError:
+        print("AOK!")
 
     # Retrieve an existing Data Source
     test_data = DataSource("test_data")
