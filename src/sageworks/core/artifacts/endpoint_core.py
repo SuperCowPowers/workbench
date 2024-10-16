@@ -706,7 +706,11 @@ class EndpointCore(Artifact):
         # Calculate precision, recall, fscore, and support, handling zero division
         prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
         scores = precision_recall_fscore_support(
-            prediction_df[target_column], prediction_df[prediction_col], average=None, labels=class_labels, zero_division=0
+            prediction_df[target_column],
+            prediction_df[prediction_col],
+            average=None,
+            labels=class_labels,
+            zero_division=0,
         )
 
         # Identify the probability columns and convert them to a 2D NumPy array
