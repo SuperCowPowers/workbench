@@ -35,7 +35,7 @@ class DataSource(AthenaSource):
         Initializes a new DataSource object.
 
         Args:
-            source (Union[str, pd.DataFrame]): The source of the data (existing name, filepath, S3 path, or a Pandas DataFrame)
+            source (Union[str, pd.DataFrame]): Source of data (existing name, filepath, S3 path, or a Pandas DataFrame)
             name (str): The name of the data source (must be lowercase). If not specified, a name will be generated
             tags (list[str]): A list of tags associated with the data source. If not specified tags will be generated.
         """
