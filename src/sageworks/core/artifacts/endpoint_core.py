@@ -372,6 +372,9 @@ class EndpointCore(Artifact):
 
         # Run predictions on the evaluation data
         prediction_df = self._predict(eval_df)
+        if prediction_df.empty:
+            self.log.warning("No predictions were made. Returning empty DataFrame.")
+            return prediction_df
 
         # Get the target column
         target_column = ModelCore(self.model_name).target()
@@ -413,6 +416,11 @@ class EndpointCore(Artifact):
         Returns:
             pd.DataFrame: Return the DataFrame with additional columns, prediction and any _proba columns
         """
+
+        # Sanity check: Does the DataFrame have 0 rows?
+        if eval_df.empty:
+            self.log.warning("Evaluation DataFrame has 0 rows. No predictions to run.")
+            return pd.DataFrame(columns=eval_df.columns)  # Return empty DataFrame with same structure
 
         # Sanity check: Does the Model have Features?
         features = ModelCore(self.model_name).features()
