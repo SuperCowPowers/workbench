@@ -37,8 +37,23 @@ def test_classification_auto_inference():
 def test_classification_inference_with_subset_of_labels():
     eval_data_df = fs_evaluation_data(class_endpoint)[:50]
 
-    # Subset the labels to only include the first 2 classes
+    # Subset the rows to only include the first 2 classes
     eval_data_df = eval_data_df[eval_data_df["wine_class"].isin(["TypeA", "TypeB"])]
+    pred_df = class_endpoint.inference(eval_data_df)
+    print(pred_df)
+
+    # Subset the rows to only include one label
+    eval_data_df = eval_data_df[eval_data_df["wine_class"].isin(["TypeA"])]
+    pred_df = class_endpoint.inference(eval_data_df)
+    print(pred_df)
+
+    # Try only one row
+    eval_data_df = eval_data_df.iloc[:1]
+    pred_df = class_endpoint.inference(eval_data_df)
+    print(pred_df)
+
+    # Try ZERO rows
+    eval_data_df = eval_data_df.iloc[:0]
     pred_df = class_endpoint.inference(eval_data_df)
     print(pred_df)
 
