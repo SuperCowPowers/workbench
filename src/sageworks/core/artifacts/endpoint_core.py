@@ -698,6 +698,15 @@ class EndpointCore(Artifact):
         prediction_df["residuals_abs"] = np.abs(prediction_df["residuals"])
         return prediction_df
 
+    @staticmethod
+    def validate_probabilities(prediction_df: pd.DataFrame, class_labels: list):
+        """Ensure probability columns are correctly aligned with class labels."""
+        # Check if the probability column names match the class labels
+        actual_columns = [col.replace("_proba", "") for col in prediction_df.columns if col.endswith("_proba")]
+
+        if sorted(class_labels) != sorted(actual_columns):
+            raise ValueError("Probability columns do not match up with the class labels!")
+
     def classification_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
 
@@ -710,6 +719,11 @@ class EndpointCore(Artifact):
         """
         # Get the class labels from the model
         class_labels = ModelCore(self.model_name).class_labels()
+        if class_labels is None:
+            class_labels = prediction_df[target_column].unique().tolist()
+
+        # Validate that probability columns align with class labels
+        self.validate_probabilities(prediction_df, class_labels)
 
         # Calculate precision, recall, fscore, and support, handling zero division
         prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
@@ -721,13 +735,13 @@ class EndpointCore(Artifact):
             zero_division=0,
         )
 
-        # Identify the probability columns and convert them to a 2D NumPy array
-        proba_columns = [col for col in prediction_df.columns if col.endswith("_proba")]
+        # Identify the probability columns and convert them to a 2D array
+        proba_columns = [f"{label}_proba" for label in class_labels]
         y_score = prediction_df[proba_columns].to_numpy()
 
         # One-hot encode the true labels using all class labels (fit with class_labels)
         lb = LabelBinarizer()
-        lb.fit(class_labels)  # Fit on all possible class labels
+        lb.fit(class_labels)
         y_true = lb.transform(prediction_df[target_column])
 
         # Initialize list for ROC AUC scores
@@ -760,7 +774,6 @@ class EndpointCore(Artifact):
 
         # Sort the target labels
         score_df = score_df.sort_values(by=[target_column], ascending=True)
-
         return score_df
 
     def generate_confusion_matrix(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:

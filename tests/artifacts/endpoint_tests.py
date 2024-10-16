@@ -1,4 +1,5 @@
 """Tests for the Endpoint functionality"""
+import pandas as pd
 
 # SageWorks Imports
 from sageworks.core.artifacts.endpoint_core import EndpointCore
@@ -58,6 +59,36 @@ def test_classification_inference_with_subset_of_labels():
     print(pred_df)
 
 
+def test_classification_roc_auc():
+    eval_data_df = fs_evaluation_data(class_endpoint)[:50]
+    pred_df = class_endpoint.inference(eval_data_df)
+
+    # Normal test ROCAUC should 1 (or close to 1)
+    target_column = "wine_class"
+    metrics = class_endpoint.classification_metrics(target_column, pred_df)
+    print(metrics)
+
+    # Now switch the prediction probability columns and check the ROCAUC
+    temp = pred_df["TypeA_proba"]
+    pred_df["TypeA_proba"] = pred_df["TypeB_proba"]
+    pred_df["TypeB_proba"] = temp
+    metrics = class_endpoint.classification_metrics(target_column, pred_df)
+    print(metrics)
+
+    # Okay, now we're going to generate a fake prediction dataframe
+    data = {
+        'id': [1, 2, 3, 4, 5],
+        'target': ['TypeB', 'TypeC', 'TypeA', 'TypeB', 'TypeA'],  # True classes
+        'prediction': ['TypeA', 'TypeA', 'TypeB', 'TypeC', 'TypeC'],  # Wrong predictions for all rows
+        'TypeB_proba': [0.33, 0.33, 0.34, 0.33, 0.33],  # Probabilities for class B
+        'TypeC_proba': [0.33, 0.33, 0.33, 0.34, 0.34],  # Probabilities for class C
+        'TypeA_proba': [0.34, 0.34, 0.33, 0.33, 0.33],  # Probabilities for class A
+    }
+    pred_df = pd.DataFrame(data)
+    metrics = class_endpoint.classification_metrics("target", pred_df)
+    print(metrics)
+
+
 def test_manual_inference():
     eval_data_df = fs_evaluation_data(reg_endpoint)[:50]
     pred_df = reg_endpoint.inference(eval_data_df)
@@ -106,5 +137,6 @@ if __name__ == "__main__":
     test_classification_inference_with_subset_of_labels()
     test_regression_metrics()
     test_classification_metrics()
+    test_classification_roc_auc()
 
     print("All tests passed!")
