@@ -703,36 +703,38 @@ class EndpointCore(Artifact):
         # Get the class labels from the model
         class_labels = ModelCore(self.model_name).class_labels()
 
-        # Calculate scores
+        # Calculate precision, recall, fscore, and support, handling zero division
         prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
         scores = precision_recall_fscore_support(
-            prediction_df[target_column], prediction_df[prediction_col], average=None, labels=class_labels
+            prediction_df[target_column], prediction_df[prediction_col], average=None, labels=class_labels, zero_division=0
         )
 
-        # Calculate ROC AUC
-        # ROC-AUC score measures the model's ability to distinguish between classes;
-        # - A value of 0.5 indicates no discrimination (equivalent to random guessing)
-        # - A score close to 1 indicates high discriminative power
+        # Identify the probability columns and convert them to a 2D NumPy array
+        proba_columns = [col for col in prediction_df.columns if col.endswith("_proba")]
+        y_score = prediction_df[proba_columns].to_numpy()
 
-        # Sanity check for older versions that have a single column for probability
-        if "pred_proba" in prediction_df.columns:
-            self.log.error("Older version of prediction output detected, rerun inference...")
-            roc_auc = [0.0] * len(class_labels)
+        # One-hot encode the true labels using all class labels (fit with class_labels)
+        lb = LabelBinarizer()
+        lb.fit(class_labels)  # Fit on all possible class labels
+        y_true = lb.transform(prediction_df[target_column])
 
-        # Convert probability columns to a 2D NumPy array
-        else:
-            proba_columns = [col for col in prediction_df.columns if col.endswith("_proba")]
-            y_score = prediction_df[proba_columns].to_numpy()
+        # Initialize list for ROC AUC scores
+        roc_auc = []
 
-            # One-hot encode the true labels
-            lb = LabelBinarizer()
-            lb.fit(prediction_df[target_column])
-            y_true = lb.transform(prediction_df[target_column])
+        # Calculate ROC AUC for each class, handling cases where only one class is present
+        for i, label in enumerate(class_labels):
+            y_true_class = y_true[:, i]  # True labels for the current class
+            y_score_class = y_score[:, i]  # Predicted probabilities for the current class
 
-            # Compute ROC AUC
-            roc_auc = roc_auc_score(y_true, y_score, multi_class="ovr", average=None)
+            # Check if both positive and negative examples exist in y_true for the current class
+            if len(np.unique(y_true_class)) < 2:  # Only one class present (all 0s or all 1s)
+                self.log.warning(f"Skipping ROC AUC calculation for class {label} (only one class present in y_true).")
+                roc_auc.append(0.0)  # Assign 0.0 if only one class is present
+            else:
+                auc = roc_auc_score(y_true_class, y_score_class)  # Calculate ROC AUC for this class
+                roc_auc.append(auc)
 
-        # Put the scores into a dataframe
+        # Put the scores into a DataFrame
         score_df = pd.DataFrame(
             {
                 target_column: class_labels,
@@ -746,6 +748,7 @@ class EndpointCore(Artifact):
 
         # Sort the target labels
         score_df = score_df.sort_values(by=[target_column], ascending=True)
+
         return score_df
 
     def generate_confusion_matrix(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
