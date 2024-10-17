@@ -141,11 +141,17 @@ class AWSServiceBroker:
                         f"ThrottlingException: Waiting for {sleep_times[attempt]} seconds before retrying..."
                     )
                     time.sleep(sleep_times[attempt])
+
+                # Handle other AWS Exceptions (non-Throttling)
                 else:
-                    if error_code == "ThrottlingException":
-                        cls.log.critical(f"AWS Throttling Exception: Failed after {max_attempts} attempts!")
-                    cls.log.critical(f"AWS Response: {error.response}")
-                    break  # Exit the loop
+                    # Check specific error codes
+                    if error_code in ["ValidationException", "ResourceNotFoundException"]:
+                        cls.log.warning(f"AWS Validation or NotFound Exception: {error_code} - {error_message}")
+                        cls.log.monitor(f"AWS Validation or NotFound Exception: {error_code} - {error_message}")
+                    else:
+                        # Catch-all for other error codes
+                        cls.log.critical(f"AWS Error: {error_code}, Full Response: {error.response}")
+                    break  # We're not going to retry for non-Throttling Exceptions
 
     @classmethod
     def get_metadata(cls, category: ServiceCategory, force_refresh: bool = False) -> dict:
