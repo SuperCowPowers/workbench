@@ -1,5 +1,6 @@
-from IPython.terminal.embed import InteractiveShellEmbed
+from IPython import start_ipython
 from IPython.terminal.prompts import Prompts
+from IPython.terminal.ipapp import load_default_config
 from pygments.style import Style
 from pygments.token import Token
 import sys
@@ -94,17 +95,6 @@ class SageWorksShell:
         if self.aws_status:
             self.import_sageworks()
 
-        # Set up the Prompt and the IPython shell
-        config = InteractiveShellEmbed.instance().config
-        config.TerminalInteractiveShell.autocall = 2
-        config.TerminalInteractiveShell.prompts_class = SageWorksPrompt
-        config.TerminalInteractiveShell.highlighting_style = CustomPromptStyle
-        self.shell = InteractiveShellEmbed(config=config, banner1="", exit_msg="Goodbye from SageWorks!")
-
-        # Set matplotlib to interactive mode
-        if HAVE_MATPLOTLIB:
-            self.shell.run_line_magic("matplotlib", "auto")
-
         # Register our custom commands
         self.commands["help"] = self.help
         self.commands["docs"] = self.doc_browser
@@ -140,8 +130,22 @@ class SageWorksShell:
             self.help()
             self.summary()
 
-        # Start the REPL
-        self.shell(local_ns=self.commands)
+        # Load the default IPython configuration
+        config = load_default_config()
+        config.TerminalInteractiveShell.autocall = 2
+        config.TerminalInteractiveShell.prompts_class = SageWorksPrompt
+        config.TerminalInteractiveShell.highlighting_style = CustomPromptStyle
+        config.TerminalInteractiveShell.banner1 = ""
+
+        # Merge custom commands and globals into the namespace
+        locs = self.commands.copy()  # Copy the custom commands
+        locs.update(globals())  # Merge with global namespace
+
+        # Start IPython with the config and commands in the namespace
+        try:
+            start_ipython(argv=[], user_ns=locs, config=config)
+        finally:
+            cprint("lightgreen", "Goodbye from SageWorks!\n")
 
     def check_open_source_api_key(self) -> bool:
         """Check the current Configuration Status
