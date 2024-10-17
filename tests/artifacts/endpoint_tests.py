@@ -61,6 +61,8 @@ def test_classification_inference_with_subset_of_labels():
 
 
 def test_classification_roc_auc():
+
+    # Compute performance metrics for our test predictions
     eval_data_df = fs_evaluation_data(class_endpoint)[:50]
     pred_df = class_endpoint.inference(eval_data_df)
 

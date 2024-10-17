@@ -23,7 +23,7 @@ try:
         precision_recall_fscore_support,
         root_mean_squared_error,
     )
-    from sklearn.preprocessing import LabelBinarizer
+    from sklearn.preprocessing import OneHotEncoder
 
 except ImportError as e:
     # Initialize the logger
@@ -735,30 +735,22 @@ class EndpointCore(Artifact):
             zero_division=0,
         )
 
-        # Identify the probability columns and convert them to a 2D array
+        # Identify the probability columns and keep them as a Pandas DataFrame
         proba_columns = [f"{label}_proba" for label in class_labels]
-        y_score = prediction_df[proba_columns].to_numpy()
+        y_score = prediction_df[proba_columns]
 
         # One-hot encode the true labels using all class labels (fit with class_labels)
-        lb = LabelBinarizer()
-        lb.fit(class_labels)
-        y_true = lb.transform(prediction_df[target_column])
+        encoder = OneHotEncoder(categories=[class_labels], sparse_output=False)
+        y_true = encoder.fit_transform(prediction_df[[target_column]])
 
-        # Initialize list for ROC AUC scores
-        roc_auc = []
-
-        # Calculate ROC AUC for each class, handling cases where only one class is present
-        for i, label in enumerate(class_labels):
-            y_true_class = y_true[:, i]  # True labels for the current class
-            y_score_class = y_score[:, i]  # Predicted probabilities for the current class
-
-            # Check if both positive and negative examples exist in y_true for the current class
-            if len(np.unique(y_true_class)) < 2:  # Only one class present (all 0s or all 1s)
-                self.log.warning(f"Skipping ROC AUC calculation for class {label} (only one class present in y_true).")
-                roc_auc.append(0.0)  # Assign 0.0 if only one class is present
-            else:
-                auc = roc_auc_score(y_true_class, y_score_class)  # Calculate ROC AUC for this class
-                roc_auc.append(auc)
+        # Calculate ROC AUC for the multiclass case using 'ovr' (one-vs-rest) strategy
+        try:
+            roc_auc = roc_auc_score(y_true, y_score, multi_class="ovr", average="macro")
+        except ValueError as e:
+            present_classes = prediction_df[target_column].unique().tolist()
+            self.log.warning(f"ROC AUC calculation is missing classes. Predictions only have {present_classes}")
+            self.log.warning(f"{str(e)}")
+            roc_auc = 0.0
 
         # Put the scores into a DataFrame
         score_df = pd.DataFrame(
