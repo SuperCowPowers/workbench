@@ -2591,8 +2591,8 @@
 <p>None</p>
 <h3 id="improvementsfixes">Improvements/Fixes</h3>
 <p><strong>AWS Service Broker:</strong>
-Okay, so the AWS service broker can get pretty dramatic when it's looking for something that just got deleted (or partially deleted), it was throwing CRITICAL log messages. So we've refined the AWS error handling so that it's more granular about the error_codes and has logic that if it's a Validation or ResourceNotFound exception that those logs are reduces to 'warnings'.</p>
-<p><strong>ROCAUC modifications:</strong> Version <code>0.8.33</code> put in quite a few changes, for <code>0.8.34</code> we've added logic to both validate and ensure proper order of the probability columns with the class labels.</p>
+The AWS service broker was dramatic when it pulls meta data for something that just got deleted (or partially deleted), it was throwing CRITICAL log messages. We've refined the AWS error handling so that it's more granular about the error_codes for Validation or ResourceNotFound exceptions those are reduced to WARNINGS.</p>
+<p><strong>ROCAUC modifications:</strong> Version <code>0.8.33</code> put in quite a few changes, for <code>0.8.34</code> we've also added logic to both validate and ensure proper order of the probability columns with the class labels.</p>
 <h2 id="questions">Questions?</h2>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
 <p>The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
