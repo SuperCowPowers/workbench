@@ -49,18 +49,17 @@ class DFStore:
         # Read all the Pipelines from this S3 path
         self.s3_client = self.boto3_session.client("s3")
 
-    def list(self) -> list:
-        """Return a nicely formatted list of object names, sizes (in MB), and modified date."""
-        try:
-            df = self.details()
-            formatted_list = [
-                f"{row['name']}  ({row['size'] / (1024 * 1024):.3f}MB/{row['modified'].strftime('%Y-%m-%d %H:%M:%S')})"
-                for _, row in df.iterrows()
-            ]
-            return formatted_list
-        except Exception as e:
-            self.log.error(f"Failed to list objects: {e}")
-            return []
+    def summary(self) -> pd.DataFrame:
+        """Return a nicely formatted summary of object names, sizes (in MB), and modified dates."""
+        df = self.details()
+
+        # Create a formatted DataFrame
+        formatted_df = pd.DataFrame({
+            "name": df["name"],
+            "size (MB)": (df["size"] / (1024 * 1024)).round(2),  # Convert size to MB
+            "modified": pd.to_datetime(df["modified"]).dt.strftime('%Y-%m-%d %H:%M:%S')  # Format date
+        })
+        return formatted_df
 
     def details(self) -> pd.DataFrame:
         """Return a DataFrame with detailed metadata for all objects in the data_store prefix."""
@@ -75,7 +74,7 @@ class DFStore:
                 full_key = obj["Key"]
 
                 # Reverse logic: Strip the bucket/prefix in the front and .parquet in the end
-                name = full_key.replace(f"{self.prefix}", "").split(".parquet")[0]
+                name = full_key.replace(f"{self.prefix}", "/").split(".parquet")[0]
                 s3_file = f"s3://{self.sageworks_bucket}/{full_key}"
                 size = obj["Size"]
                 modified = obj["LastModified"]
@@ -158,7 +157,21 @@ class DFStore:
 
     def __repr__(self):
         """Return a string representation of the DFStore object."""
-        return "\n".join(self.list())
+        # Use the summary() method and format it to align columns for printing
+        summary_df = self.summary()
+
+        # Dynamically compute the max length of the 'name' column and add 5 spaces for padding
+        max_name_len = summary_df["name"].str.len().max() + 2
+        summary_df["name"] = summary_df["name"].str.ljust(max_name_len)
+
+        # Format the size column to include (MB) and ensure 3 spaces between size and date
+        summary_df["size (MB)"] = summary_df["size (MB)"].apply(lambda x: f"{x:.2f} MB")
+
+        # Enclose the modified date in parentheses and ensure 3 spaces between size and date
+        summary_df["modified"] = summary_df["modified"].apply(lambda x: f" ({x})")
+
+        # Convert the DataFrame to a string, remove headers, and return
+        return summary_df.to_string(index=False, header=False)
 
 
 if __name__ == "__main__":
@@ -167,13 +180,13 @@ if __name__ == "__main__":
     # Create a DFStore manager
     df_store = DFStore()
 
-    # List the data
-    print("Listing Data...")
-    print(df_store.list())
+    # Details of the Dataframe Store
+    print("Detailed Data...")
+    print(df_store.details())
 
     # Add a new DataFrame
-    df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    df_store.add("test_data", df)
+    my_df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+    df_store.add("test_data", my_df)
 
     # Get the DataFrame
     print(f"Getting data 'test_data':\n{df_store.get('test_data')}")
@@ -183,9 +196,13 @@ if __name__ == "__main__":
     df_store.add("test_series", series)
     print(f"Getting data 'test_series':\n{df_store.get('test_series')}")
 
-    # List the data again
-    print("Listing Data...")
-    print(df_store.list())
+    # Summary of the data
+    print("Summary Data...")
+    print(df_store.summary())
+
+    # Repr of the DFStore object
+    print("DFStore Object:")
+    print(df_store)
 
     # Now delete the test data
     df_store.delete("test_data")
