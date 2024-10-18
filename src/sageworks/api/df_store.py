@@ -54,11 +54,13 @@ class DFStore:
         df = self.details()
 
         # Create a formatted DataFrame
-        formatted_df = pd.DataFrame({
-            "name": df["name"],
-            "size (MB)": (df["size"] / (1024 * 1024)).round(2),  # Convert size to MB
-            "modified": pd.to_datetime(df["modified"]).dt.strftime('%Y-%m-%d %H:%M:%S')  # Format date
-        })
+        formatted_df = pd.DataFrame(
+            {
+                "name": df["name"],
+                "size (MB)": (df["size"] / (1024 * 1024)).round(2),  # Convert size to MB
+                "modified": pd.to_datetime(df["modified"]).dt.strftime("%Y-%m-%d %H:%M:%S"),  # Format date
+            }
+        )
         return formatted_df
 
     def details(self) -> pd.DataFrame:
