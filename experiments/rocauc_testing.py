@@ -58,4 +58,4 @@ for i, label in enumerate(class_labels):
     print(f"  Recall: {recall[i]:.2f}")
     print(f"  F1-Score: {fscore[i]:.2f}")
     print(f"  ROC AUC (per class): { roc_auc_per_class[i]}")
-    print(f"  ROC AUC (OVR): {roc_auc_all_in_one}")
+    print(f"  Averaged ROC AUC (OVR): {roc_auc_all_in_one}")
