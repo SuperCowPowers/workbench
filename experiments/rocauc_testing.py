@@ -34,12 +34,9 @@ for i, label in enumerate(class_labels):
     y_true_class = y_true_encoded[:, i]  # True labels for this class
     y_score_class = y_score.iloc[:, i]  # Predicted probabilities for this class
 
-    # Calculate ROC AUC for this class (if there are both 0's and 1's)
-    if len(set(y_true_class)) > 1:
-        auc = roc_auc_score(y_true_class, y_score_class)
-        roc_auc_per_class.append((label, auc))
-    else:
-        roc_auc_per_class.append((label, None))
+    # Calculate ROC AUC for this class
+    auc = roc_auc_score(y_true_class, y_score_class)
+    roc_auc_per_class.append(auc)
 
 # Sanity checks
 #
@@ -60,5 +57,5 @@ for i, label in enumerate(class_labels):
     print(f"  Precision: {precision[i]:.2f}")
     print(f"  Recall: {recall[i]:.2f}")
     print(f"  F1-Score: {fscore[i]:.2f}")
-    auc_value = roc_auc_per_class[i][1] if roc_auc_per_class[i][1] is not None else "N/A"
-    print(f"  ROC AUC: {auc_value}")
+    print(f"  ROC AUC (per class): { roc_auc_per_class[i]}")
+    print(f"  ROC AUC (OVR): {roc_auc_all_in_one}")
