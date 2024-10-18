@@ -1,8 +1,11 @@
+import signal
+import atexit
+import sys
 import time
 import argparse
 from datetime import datetime, timedelta, timezone
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.repl_utils import Spinner
+from sageworks.utils.repl_utils import cprint, Spinner
 
 # Define the log levels to include all log levels above the specified level
 log_level_map = {
@@ -260,6 +263,16 @@ def monitor_log_group(
             break
 
 
+# Function to handle SIGINT (Control-C)
+def signal_handler(sig, frame):
+    sys.exit(0)
+
+
+# Function to handle cleanup tasks at exit
+def cleanup():
+    cprint("lightgreen", "\nGoodbye from SageWorks CloudWatch!")
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Monitor CloudWatch Logs.")
     parser.add_argument(
@@ -305,6 +318,12 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    # Register the signal handler for SIGINT (Control-C)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # Register the cleanup function to be called at exit
+    atexit.register(cleanup)
 
     # Determine the start time and end time for log monitoring (in UTC)
     start_time = datetime.now(timezone.utc) - timedelta(minutes=args.start_time)
