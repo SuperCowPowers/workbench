@@ -11,13 +11,13 @@ class EndpointMetrics:
     def __init__(self):
         """
         EndpointMetrics Class
-        - Invocations: Number of times the endpoint was invoked.
-        - ModelLatency:Time taken by just the model to make a prediction.
-        - OverheadLatency: Total time from request until response (does NOT include ModelLatency)
-        - ModelSetupTime: Time to launch new compute resources for a serverless endpoint.
-        - InvocationModelErrors: The total number of errors (non 200 response codes)
-        - Invocation5XXErrors: The number of server error status codes returned.
-        - Invocation4XXErrors: The number of client error status codes returned.
+        - Invocations: The total number of times the endpoint was invoked via the `InvokeEndpoint` API.
+        - ModelLatency: The time taken by the model to complete inference, excluding network and overhead delays.
+        - OverheadLatency: The total time from request to response, excluding the `ModelLatency`, and including network, request queuing, and other system overhead.
+        - ModelSetupTime: The time it takes to launch new compute resources for serverless endpoints before inference can begin.
+        - InvocationModelErrors: The total number of requests that resulted in non-200 HTTP response codes due to model-level errors.
+        - Invocation5XXErrors: The total number of server-side errors (5xx HTTP status codes) returned by the endpoint.
+        - Invocation4XXErrors: The total number of client-side errors (4xx HTTP status codes) returned by the endpoint.
         """
         self.aws_account_clamp = AWSAccountClamp()
         self.boto3_session = self.aws_account_clamp.boto3_session
@@ -43,13 +43,13 @@ class EndpointMetrics:
         self.stats = ["Sum", "Average", "Average", "Average", "Sum", "Sum"]
 
     def get_metrics(self, endpoint: str, variant: str = "AllTraffic", days_back: int = 3) -> pd.DataFrame:
-        """Get the metric data for a given endpoint
+        """Get the metric data for a given endpoint.
         Args:
-            endpoint(str): The name of the endpoint
-            variant(str): The variant name (default: AllTraffic)
-            days_back(int): The number of days back to fetch metrics
+            endpoint (str): The name of the endpoint.
+            variant (str): The variant name (default: AllTraffic).
+            days_back (int): The number of days back to fetch metrics.
         Returns:
-            pd.DataFrame: The metric data in a dataframe
+            pd.DataFrame: The metric data in a dataframe.
         """
         # Fetch the metrics
         response = self._fetch_metrics(endpoint=endpoint, variant=variant, days_back=days_back)
@@ -64,10 +64,9 @@ class EndpointMetrics:
             values = metric["Values"]
             values = [round(v * self.metric_conversions[metric_name], 2) for v in values]
 
-            # We're going to add the start and end times to the metric data so that
-            # every graph has the same date range (x-axis)
+            # Add the start and end times to the metric data so that all graphs have the same date range (x-axis)
             timestamps.insert(0, self.end_time)
-            timestamps.append(self.start_time - timedelta(hours=1))  # Make sure graph starts at 0
+            timestamps.append(self.start_time - timedelta(hours=1))  # Ensure graph starts at 0
             values.insert(0, 0)
             values.append(0)
 
@@ -75,18 +74,18 @@ class EndpointMetrics:
             metric_df = pd.DataFrame({"timestamps": timestamps, "values": values})
             metric_df.set_index("timestamps", inplace=True, drop=True)
 
-            # Make sure the index is a datetime index
+            # Ensure the index is a datetime index
             metric_df.index = pd.to_datetime(metric_df.index, errors="raise", utc=True)
 
-            # Set our metric data dataframe
+            # Set the metric data dataframe
             metric_data[metric_name] = metric_df
 
-        # Now we're going to merge the dataframes
+        # Merge the dataframes
         metric_df = self._merge_dataframes(metric_data=metric_data)
         return metric_df
 
     def _fetch_metrics(self, endpoint: str, variant: str, days_back: int):
-        """Internal Method: Fetch metrics from CloudWatch"""
+        """Internal Method: Fetch metrics from CloudWatch."""
         start_time_str, end_time_str = self._get_time_range(days_back=days_back)
         metric_data_queries = self._get_metric_data_queries(endpoint=endpoint, variant=variant)
 
@@ -96,7 +95,7 @@ class EndpointMetrics:
         return response
 
     def _get_time_range(self, days_back=3):
-        """Internal Method: Get the time range for the metrics"""
+        """Internal Method: Get the time range for the metrics."""
         now_utc = datetime.now(timezone.utc)
         self.end_time = now_utc
         self.start_time = self.end_time - timedelta(days=days_back)
@@ -108,15 +107,15 @@ class EndpointMetrics:
         return start_time_str, end_time_str
 
     def _get_metric_data_queries(self, endpoint: str, variant: str) -> list[dict]:
-        """Inernal: Get the metric data queries for a given endpoint
+        """Internal: Get the metric data queries for a given endpoint.
         Args:
-            endpoint(str): The name of the endpoint
-            variant(str): The variant name
+            endpoint (str): The name of the endpoint.
+            variant (str): The variant name.
         Returns:
-            list[dict]: The metric data queries
+            list[dict]: The metric data queries.
         """
-        # Change the Period based on the number of days back
-        period = 3600  # Hardcoded to 1 hour for now
+        # Period set to 1 hour
+        period = 3600
         metric_data_queries = []
 
         for metric_name, stat in zip(self.metrics, self.stats):
@@ -142,13 +141,12 @@ class EndpointMetrics:
 
     @staticmethod
     def _merge_dataframes(metric_data: dict) -> pd.DataFrame:
-        """Internal Method: Merge the metric dataframes into a single dataframe
+        """Internal Method: Merge the metric dataframes into a single dataframe.
         Args:
-            metric_data(dict): The metric data in as a dictionary of dataframes
+            metric_data (dict): The metric data as a dictionary of dataframes.
         Returns:
-            pd.DataFrame: The merged metric data
+            pd.DataFrame: The merged metric data.
         """
-        # Merge DataFrames from the dictionary
         merged_df = pd.DataFrame()
         for metric_name, df in metric_data.items():
             if merged_df.empty:
@@ -162,20 +160,20 @@ class EndpointMetrics:
                     how="outer",
                 )
 
-        # Sort by index (which is the timestamp)
+        # Sort by index (timestamp)
         merged_df.sort_index(inplace=True)
 
-        # Resample the index to have 1 hour intervals
+        # Resample the index to 1-hour intervals
         merged_df = merged_df.resample("1h").max()
 
-        # Fill NA values with 0 and reset the index (so we can serialize to JSON)
+        # Fill NA values with 0 and reset index
         merged_df.fillna(0, inplace=True)
         merged_df.reset_index(inplace=True)
         return merged_df
 
 
 if __name__ == "__main__":
-    """Exercise the EndpointMetrics class"""
+    """Exercise the EndpointMetrics class."""
     from pprint import pprint
 
     endpoint = "abalone-regression-end"
