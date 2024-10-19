@@ -108,14 +108,21 @@ def check_latest_version(log: logging.Logger):
     """Check if the current version of SageWorks is up-to-date."""
 
     # Strip Git metadata like '.dev1' or '+dirty'
-    current_version = sageworks.__version__
-    current_version = re.sub(r"\.dev\d+|\+dirty", "", current_version)
+    raw_version = sageworks.__version__
+    current_version = re.sub(r"\.dev\d+|\+dirty", "", raw_version)
+    current_version_tuple = tuple(map(int, (current_version.split("."))))
+
     try:
         response = requests.get("https://pypi.org/pypi/sageworks/json", timeout=5)
         response.raise_for_status()  # Raises an exception for 4xx/5xx responses
         latest_version = response.json()["info"]["version"]
-        if current_version == latest_version:
-            log.info(f"SageWorks is up-to-date ({current_version}).")
+        latest_version_tuple = tuple(map(int, (latest_version.split("."))))
+
+        # Compare the current version to the latest version
+        if current_version_tuple > latest_version_tuple:
+            log.important(f"SageWorks Repository Version: {raw_version}")
+        elif current_version_tuple == latest_version_tuple:
+            log.info(f"SageWorks is up-to-date ({current_version})")
         else:
             log.warning(f"SageWorks update available: {current_version} -> {latest_version}")
 
@@ -175,8 +182,8 @@ def logging_setup(color_logs=True):
     # Add a CloudWatch handler
     try:
         cloudwatch_handler = CloudWatchHandler()
-        log.important("Adding CloudWatch logging handler...")
-        log.important(f"Log Stream Name: {cloudwatch_handler.log_stream_name}")
+        log.info("Adding CloudWatch logging handler...")
+        log.info(f"Log Stream Name: {cloudwatch_handler.log_stream_name}")
         log.addHandler(cloudwatch_handler)
         check_latest_version(log)
     except Exception as e:
