@@ -178,7 +178,6 @@ if __name__ == "__main__":
     """Exercise the EndpointMetrics class"""
     from pprint import pprint
 
-    endpoint = "solubility-test-regression-end"
     endpoint = "abalone-regression-end"
     print(f"Fetching metrics for endpoint: {endpoint}...")
 

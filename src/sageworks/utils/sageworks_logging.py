@@ -1,12 +1,15 @@
 import os
 import sys
+import re
 from collections import defaultdict
 import time
 import logging
 import traceback
+import requests
 from contextlib import contextmanager
 
 # Import the CloudWatchHandler
+import sageworks
 from sageworks.utils.cloudwatch_handler import CloudWatchHandler
 
 
@@ -101,6 +104,25 @@ class ColoredFormatter(logging.Formatter):
         return f"{self.COLORS.get(record.levelname, self.RESET)}{log_message}{self.RESET}"
 
 
+def check_latest_version(log: logging.Logger):
+    """Check if the current version of SageWorks is up-to-date."""
+
+    # Strip Git metadata like '.dev1' or '+dirty'
+    current_version = sageworks.__version__
+    current_version = re.sub(r"\.dev\d+|\+dirty", "", current_version)
+    try:
+        response = requests.get("https://pypi.org/pypi/sageworks/json", timeout=5)
+        response.raise_for_status()  # Raises an exception for 4xx/5xx responses
+        latest_version = response.json()["info"]["version"]
+        if current_version == latest_version:
+            log.info(f"SageWorks is up-to-date ({current_version}).")
+        else:
+            log.warning(f"SageWorks update available: {current_version} -> {latest_version}")
+
+    except requests.exceptions.RequestException as e:
+        log.warning(f"Failed to check for updates: {e}")
+
+
 def logging_setup(color_logs=True):
     """Set up the logging for the application."""
 
@@ -156,7 +178,7 @@ def logging_setup(color_logs=True):
         log.important("Adding CloudWatch logging handler...")
         log.important(f"Log Stream Name: {cloudwatch_handler.log_stream_name}")
         log.addHandler(cloudwatch_handler)
-        log.info("SageWorks Logging Setup Complete...")
+        check_latest_version(log)
     except Exception as e:
         log.error("Failed to add CloudWatch logging handler....")
         log.monitor("Failed to add CloudWatch logging handler....")
