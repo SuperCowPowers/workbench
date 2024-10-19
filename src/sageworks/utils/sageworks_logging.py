@@ -7,9 +7,9 @@ import logging
 import traceback
 import requests
 from contextlib import contextmanager
+from importlib.metadata import version
 
 # Import the CloudWatchHandler
-import sageworks
 from sageworks.utils.cloudwatch_handler import CloudWatchHandler
 
 
@@ -107,8 +107,8 @@ class ColoredFormatter(logging.Formatter):
 def check_latest_version(log: logging.Logger):
     """Check if the current version of SageWorks is up-to-date."""
 
-    # Strip Git metadata like '.dev1' or '+dirty'
-    raw_version = sageworks.__version__
+    # Get the raw version and strip and Git metadata like '.dev1' or '+dirty'
+    raw_version = version("sageworks")
     current_version = re.sub(r"\.dev\d+|\+dirty", "", raw_version)
     current_version_tuple = tuple(map(int, (current_version.split("."))))
 
@@ -119,12 +119,12 @@ def check_latest_version(log: logging.Logger):
         latest_version_tuple = tuple(map(int, (latest_version.split("."))))
 
         # Compare the current version to the latest version
-        if current_version_tuple > latest_version_tuple:
-            log.important(f"SageWorks Repository Version: {raw_version}")
-        elif current_version_tuple == latest_version_tuple:
-            log.info(f"SageWorks is up-to-date ({current_version})")
+        if current_version_tuple >= latest_version_tuple:
+            log.important(f"SageWorks Version: {raw_version}")
         else:
+            log.important(f"SageWorks Version: {raw_version}")
             log.warning(f"SageWorks update available: {current_version} -> {latest_version}")
+            log.monitor(f"SageWorks update available: {current_version} -> {latest_version}")
 
     except requests.exceptions.RequestException as e:
         log.warning(f"Failed to check for updates: {e}")
