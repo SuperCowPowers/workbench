@@ -35,7 +35,7 @@ from sageworks.utils.config_manager import ConfigManager
 from sageworks.api.meta import Meta
 from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
-logging.getLogger("sageworks").setLevel(logging.INFO)
+logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
 
 
 class CustomPromptStyle(Style):
@@ -195,7 +195,6 @@ class SageWorksShell:
         try:
             try:
                 aws_clamp = importlib.import_module("sageworks.aws_service_broker.aws_account_clamp").AWSAccountClamp()
-                cprint("lightgreen", "AWS Account Clamp Created...")
                 aws_clamp.check_aws_identity()
                 cprint("lightgreen", "AWS Account Check AOK!")
             except RuntimeError:
