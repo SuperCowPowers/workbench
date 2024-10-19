@@ -11,6 +11,7 @@ import logging
 
 # SageWorks imports
 from sageworks.api import Model, Endpoint, Meta
+
 log = logging.getLogger("sageworks")
 
 

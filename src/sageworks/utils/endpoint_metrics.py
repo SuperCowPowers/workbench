@@ -13,11 +13,11 @@ class EndpointMetrics:
         EndpointMetrics Class
         - Invocations: The total number of times the endpoint was invoked via the `InvokeEndpoint` API.
         - ModelLatency: The time taken by the model to complete inference, excluding network and overhead delays.
-        - OverheadLatency: The total time from request to response, excluding the `ModelLatency`, and including network, request queuing, and other system overhead.
-        - ModelSetupTime: The time it takes to launch new compute resources for serverless endpoints before inference can begin.
-        - InvocationModelErrors: The total number of requests that resulted in non-200 HTTP response codes due to model-level errors.
-        - Invocation5XXErrors: The total number of server-side errors (5xx HTTP status codes) returned by the endpoint.
-        - Invocation4XXErrors: The total number of client-side errors (4xx HTTP status codes) returned by the endpoint.
+        - OverheadLatency: The total time from request to response, excluding the `ModelLatency`.
+        - ModelSetupTime: The time it takes to launch ^serverless^ endpoints before inference can begin.
+        - InvocationModelErrors: The total number of requests with non-200 HTTP response due to model-level errors.
+        - Invocation5XXErrors: The total number of server-side errors (5xx HTTP status codes).
+        - Invocation4XXErrors: The total number of client-side errors (4xx HTTP status codes).
         """
         self.aws_account_clamp = AWSAccountClamp()
         self.boto3_session = self.aws_account_clamp.boto3_session
