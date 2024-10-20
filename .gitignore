@@ -145,3 +145,6 @@ cdk.out/
 
 # SageWorks Lambda Layer Output files
 sageworks_lambda_layer_output/
+
+# Some test datasets
+test_evaluation_data.csv
