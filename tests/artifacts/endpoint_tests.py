@@ -40,21 +40,22 @@ def test_classification_inference_with_subset_of_labels():
     eval_data_df = fs_evaluation_data(class_endpoint)[:50]
 
     # Subset the rows to only include the first 2 classes
+    print("Using only TypeA and TypeB classes")
     eval_data_df = eval_data_df[eval_data_df["wine_class"].isin(["TypeA", "TypeB"])]
-    pred_df = class_endpoint.inference(eval_data_df)
-    print(pred_df)
+    class_endpoint.inference(eval_data_df)
 
     # Subset the rows to only include one label
+    print("Using only TypeA class")
     eval_data_df = eval_data_df[eval_data_df["wine_class"].isin(["TypeA"])]
-    pred_df = class_endpoint.inference(eval_data_df)
-    print(pred_df)
+    class_endpoint.inference(eval_data_df)
 
     # Try only one row
+    print("Using only one row")
     eval_data_df = eval_data_df.iloc[:1]
-    pred_df = class_endpoint.inference(eval_data_df)
-    print(pred_df)
+    class_endpoint.inference(eval_data_df)
 
     # Try ZERO rows
+    print("Using zero rows")
     eval_data_df = eval_data_df.iloc[:0]
     pred_df = class_endpoint.inference(eval_data_df)
     print(pred_df)
@@ -81,11 +82,11 @@ def test_classification_roc_auc():
     # Okay, now we're going to generate a fake prediction dataframe
     data = {
         "id": [1, 2, 3, 4, 5],
-        "target": ["TypeB", "TypeC", "TypeA", "TypeB", "TypeA"],  # True classes
-        "prediction": ["TypeA", "TypeA", "TypeB", "TypeC", "TypeC"],  # Wrong predictions for all rows
-        "TypeB_proba": [0.33, 0.33, 0.34, 0.33, 0.33],  # Probabilities for class B
-        "TypeC_proba": [0.33, 0.33, 0.33, 0.34, 0.34],  # Probabilities for class C
-        "TypeA_proba": [0.34, 0.34, 0.33, 0.33, 0.33],  # Probabilities for class A
+        "target": ["TypeB", "TypeC", "TypeB", "TypeB", "TypeA"],  # True classes
+        "prediction": ["TypeA", "TypeA", "TypeB", "TypeC", "TypeC"],  # Mostly wrong predictions
+        "TypeB_proba": [0.3, 0.2, 0.4, 0.3, 0.2],  # Probabilities for class B
+        "TypeC_proba": [0.3, 0.4, 0.3, 0.4, 0.4],  # Probabilities for class C
+        "TypeA_proba": [0.4, 0.4, 0.3, 0.3, 0.4],  # Probabilities for class A
     }
     pred_df = pd.DataFrame(data)
     metrics = class_endpoint.classification_metrics("target", pred_df)
@@ -130,6 +131,12 @@ def test_classification_metrics():
     print(residuals)
 
 
+def test_fast_inference():
+    eval_data_df = fs_evaluation_data(class_endpoint)[:50]
+    pred_df = class_endpoint.fast_inference(eval_data_df)
+    print(pred_df)
+
+
 if __name__ == "__main__":
 
     # Run the tests
@@ -141,5 +148,6 @@ if __name__ == "__main__":
     test_regression_metrics()
     test_classification_metrics()
     test_classification_roc_auc()
+    test_fast_inference()
 
     print("All tests passed!")
