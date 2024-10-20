@@ -1,14 +1,9 @@
-"""Endpoints Timing Script
-
-Endpoints:
-    - test-timing-serverless, test-timing-realtime (Model: abalone-regression)
-"""
-
 import sys
 import time
 import logging
 from io import StringIO
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # SageMaker imports
 from sagemaker.serializers import CSVSerializer
@@ -21,7 +16,28 @@ from sageworks.api import FeatureSet, Model, Endpoint
 log = logging.getLogger("sageworks")
 
 
+def plot_timings(timings):
+    """Plots the inference timings."""
+    x = [1, 10, 100, 1000, 10000]
+    plt.figure(figsize=(10, 6))
+
+    plt.plot(x, timings["SageWorks Serverless"], label="SageWorks Serverless", color="blue")
+    plt.plot(x, timings["SageWorks Realtime"], label="SageWorks Realtime", color="green")
+    plt.plot(x, timings["AWS Serverless"], label="AWS Serverless", color="red")
+    plt.plot(x, timings["AWS Realtime"], label="AWS Realtime", color="orange")
+
+    plt.xscale("log")
+    plt.xlabel("Number of Rows")
+    plt.ylabel("Inference Time (seconds)")
+    plt.title("Inference Timing Comparison")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
 if __name__ == "__main__":
+
+    plot = True  # Set this flag to control plotting
 
     # Check that the two Endpoints exist
     if not Endpoint("test-timing-serverless").exists():
@@ -31,6 +47,14 @@ if __name__ == "__main__":
     if not Endpoint("test-timing-realtime").exists():
         log.error("The test-timing-realtime endpoint does not exist. Please create it first.")
         sys.exit(1)
+
+    # Timing results storage
+    timings = {
+        "SageWorks Serverless": [],
+        "SageWorks Realtime": [],
+        "AWS Serverless": [],
+        "AWS Realtime": [],
+    }
 
     # Get the endpoints
     start_time = time.time()
@@ -47,18 +71,9 @@ if __name__ == "__main__":
     # Grab the FeatureSet data
     data = fs.pull_dataframe()
 
-    print("\n*** Timing Inference using SageWorks API ***")
-
-    # Collect inference times on 1, 10, 100, 1000, and 10000 rows
-    for i in [1, 10, 100, 1000, 10000]:
-        data_sample = data.sample(n=i, replace=True)
-        print(f"\nTiming Inference on {len(data_sample)} rows")
-        start_time = time.time()
-        serverless.fast_inference(data_sample)
-        print(f"\tServerless Inference Time: {time.time() - start_time}")
-        start_time = time.time()
-        realtime.fast_inference(data_sample)
-        print(f"\tRealtime Inference Time: {time.time() - start_time}")
+    #
+    # Done with the data pull (we're not including data pull as part of the timing)
+    #
 
     # Now we're going to skip any SageWorks code and just use the AWS SDK
     print("\n*** Timing Inference using JUST the AWS SDK ***")
@@ -89,17 +104,37 @@ if __name__ == "__main__":
         csv_buffer = StringIO()
         data_sample.to_csv(csv_buffer, index=False)
         serverless_predictor.predict(csv_buffer.getvalue())
-        print(f"\tServerless Inference Time: {time.time() - start_time}")
+        aws_serverless_time = time.time() - start_time
+        timings['AWS Serverless'].append(aws_serverless_time)
+        print(f"\tServerless Inference Time: {aws_serverless_time}")
 
         # Convert into a CSV buffer and send it to the AWS realtime predictor
         start_time = time.time()
         csv_buffer = StringIO()
         data_sample.to_csv(csv_buffer, index=False)
         realtime_predictor.predict(csv_buffer.getvalue())
-        print(f"\tRealtime Inference Time: {time.time() - start_time}")
+        aws_realtime_time = time.time() - start_time
+        timings['AWS Realtime'].append(aws_realtime_time)
+        print(f"\tRealtime Inference Time: {aws_realtime_time}")
 
-    # Storage
-    # Construct a DataFrame from the results
-    # results_df = pd.DataFrame.from_records(results[1:], columns=results[0])
-    # print("\n\nPrediction Results DataFrame:")
-    # print(results_df.head())
+    print("\n*** Timing Inference using SageWorks API ***")
+
+    # Collect inference times on 1, 10, 100, 1000, and 10000 rows
+    for i in [1, 10, 100, 1000, 10000]:
+        data_sample = data.sample(n=i, replace=True)
+        print(f"\nTiming Inference on {len(data_sample)} rows")
+        start_time = time.time()
+        serverless.fast_inference(data_sample)
+        serverless_time = time.time() - start_time
+        timings["SageWorks Serverless"].append(serverless_time)
+        print(f"\tServerless Inference Time: {serverless_time}")
+
+        start_time = time.time()
+        realtime.fast_inference(data_sample)
+        realtime_time = time.time() - start_time
+        timings["SageWorks Realtime"].append(realtime_time)
+        print(f"\tRealtime Inference Time: {realtime_time}")
+
+    # Plot timings if the flag is set
+    if plot:
+        plot_timings(timings)
