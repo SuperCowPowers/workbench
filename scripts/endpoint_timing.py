@@ -2,7 +2,6 @@ import sys
 import time
 import logging
 from io import StringIO
-import pandas as pd
 import matplotlib.pyplot as plt
 
 # SageMaker imports
@@ -105,7 +104,7 @@ if __name__ == "__main__":
         data_sample.to_csv(csv_buffer, index=False)
         serverless_predictor.predict(csv_buffer.getvalue())
         aws_serverless_time = time.time() - start_time
-        timings['AWS Serverless'].append(aws_serverless_time)
+        timings["AWS Serverless"].append(aws_serverless_time)
         print(f"\tServerless Inference Time: {aws_serverless_time}")
 
         # Convert into a CSV buffer and send it to the AWS realtime predictor
@@ -114,7 +113,7 @@ if __name__ == "__main__":
         data_sample.to_csv(csv_buffer, index=False)
         realtime_predictor.predict(csv_buffer.getvalue())
         aws_realtime_time = time.time() - start_time
-        timings['AWS Realtime'].append(aws_realtime_time)
+        timings["AWS Realtime"].append(aws_realtime_time)
         print(f"\tRealtime Inference Time: {aws_realtime_time}")
 
     print("\n*** Timing Inference using SageWorks API ***")
