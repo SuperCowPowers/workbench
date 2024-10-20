@@ -758,14 +758,16 @@ class EndpointCore(Artifact):
         encoder = OneHotEncoder(categories=[class_labels], sparse_output=False)
         y_true = encoder.fit_transform(prediction_df[[target_column]])
 
-        # Calculate ROC AUC for the multiclass case using 'ovr' (one-vs-rest) strategy
-        try:
-            roc_auc = roc_auc_score(y_true, y_score, multi_class="ovr", average="macro")
-        except ValueError as e:
-            present_classes = prediction_df[target_column].unique().tolist()
-            self.log.warning(f"ROC AUC calculation is missing classes. Predictions only have {present_classes}")
-            self.log.warning(f"{str(e)}")
-            roc_auc = 0.0
+        # Calculate ROC AUC per label and handle exceptions for missing classes
+        roc_auc_per_label = []
+        for i, label in enumerate(class_labels):
+            try:
+                roc_auc = roc_auc_score(y_true[:, i], y_score.iloc[:, i])
+            except ValueError as e:
+                self.log.warning(f"ROC AUC calculation failed for label {label}.")
+                self.log.warning(f"{str(e)}")
+                roc_auc = 0.0
+            roc_auc_per_label.append(roc_auc)
 
         # Put the scores into a DataFrame
         score_df = pd.DataFrame(
@@ -774,7 +776,7 @@ class EndpointCore(Artifact):
                 "precision": scores[0],
                 "recall": scores[1],
                 "fscore": scores[2],
-                "roc_auc": roc_auc,
+                "roc_auc": roc_auc_per_label,
                 "support": scores[3],
             }
         )
