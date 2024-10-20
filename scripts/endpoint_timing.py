@@ -1,4 +1,4 @@
-"""Endpoints Timing Tests
+"""Endpoints Timing Script
 
 Endpoints:
     - test-timing-serverless, test-timing-realtime (Model: abalone-regression)
@@ -35,11 +35,11 @@ if __name__ == "__main__":
     # Get the endpoints
     start_time = time.time()
     serverless = Endpoint("test-timing-serverless")
-    print(f"Serverless Endpoint Construction Time: {time.time() - start_time}")
+    print(f"SageWorks Serverless Endpoint: Construction Time: {time.time() - start_time}")
 
     start_time = time.time()
     realtime = Endpoint("test-timing-realtime")
-    print(f"Realtime Endpoint Construction Time: {time.time() - start_time}")
+    print(f"SageWorks Realtime Endpoint: Construction Time: {time.time() - start_time}")
 
     # Backtrace the endpoints to get the FeatureSet
     fs = FeatureSet(Model(serverless.get_input()).get_input())
@@ -47,20 +47,24 @@ if __name__ == "__main__":
     # Grab the FeatureSet data
     data = fs.pull_dataframe()
 
-    # Collect inference times on 1, 10, 100, and 1000 rows
-    for i in [1, 10, 100, 1000]:
+    print("\n*** Timing Inference using SageWorks API ***")
+
+    # Collect inference times on 1, 10, 100, 1000, and 10000 rows
+    for i in [1, 10, 100, 1000, 10000]:
         data_sample = data.sample(n=i, replace=True)
-        print(f"Timing Inference on {len(data_sample)} rows")
+        print(f"\nTiming Inference on {len(data_sample)} rows")
         start_time = time.time()
         serverless.fast_inference(data_sample)
-        print(f"Serverless Inference Time: {time.time() - start_time}")
+        print(f"\tServerless Inference Time: {time.time() - start_time}")
         start_time = time.time()
         realtime.fast_inference(data_sample)
-        print(f"Realtime Inference Time: {time.time() - start_time}")
+        print(f"\tRealtime Inference Time: {time.time() - start_time}")
 
     # Now we're going to skip any SageWorks code and just use the AWS SDK
+    print("\n*** Timing Inference using JUST the AWS SDK ***")
 
-    # Create our Endpoint Predictor Classes
+    # Predictor creation
+    start_time = time.time()
     serverless_predictor = Predictor(
         "test-timing-serverless",
         sagemaker_session=serverless.sm_session,
@@ -73,71 +77,29 @@ if __name__ == "__main__":
         serializer=CSVSerializer(),
         deserializer=CSVDeserializer(),
     )
+    print(f"Sagemaker Predictor: Construction Time: {time.time() - start_time}")
 
-    predictor_create = True
-
-    # Serverless: Collect inference times on 1, 10, 100, 1000, 10000 rows
+    # Just AWS: Collect inference times on 1, 10, 100, 1000, and 10000 rows
     for i in [1, 10, 100, 1000, 10000]:
         data_sample = data.sample(n=i, replace=True)
         print(f"\nTiming Inference on {len(data_sample)} rows")
 
-        # Track Total Time
-        total_start_time = time.time()
-
-        # Predictor creation time
-        if predictor_create:
-            start_time = time.time()
-            serverless_predictor = Predictor(
-                "test-timing-serverless",
-                sagemaker_session=serverless.sm_session,
-                serializer=CSVSerializer(),
-                deserializer=CSVDeserializer(),
-            )
-            print(f"Serverless Predictor Creation Time: {time.time() - start_time}")
-
-        # Convert the DataFrame into a CSV buffer
+        # Convert into a CSV buffer and send it to the AWS serverless predictor
+        start_time = time.time()
         csv_buffer = StringIO()
         data_sample.to_csv(csv_buffer, index=False)
+        serverless_predictor.predict(csv_buffer.getvalue())
+        print(f"\tServerless Inference Time: {time.time() - start_time}")
 
-        # Send the CSV Buffer the AWS serverless predictor
+        # Convert into a CSV buffer and send it to the AWS realtime predictor
         start_time = time.time()
-        results = serverless_predictor.predict(csv_buffer.getvalue())
-        print(f"Pure AWS Serverless Inference Time: {time.time() - start_time}")
-
-        # Total Time
-        print(f"Total Time: {time.time() - total_start_time}")
-
-    # Realtime: Collect inference times on 1, 10, 100, 1000, 10000 rows
-    for i in [1, 10, 100, 1000, 10000]:
-        data_sample = data.sample(n=i, replace=True)
-        print(f"\nTiming Inference on {len(data_sample)} rows")
-
-        # Track Total Time
-        total_start_time = time.time()
-
-        # Predictor creation time
-        if predictor_create:
-            start_time = time.time()
-            realtime_predictor = Predictor(
-                "test-timing-realtime",
-                sagemaker_session=realtime.sm_session,
-                serializer=CSVSerializer(),
-                deserializer=CSVDeserializer(),
-            )
-            print(f"Realtime Predictor Creation Time: {time.time() - start_time}")
-
-        # Convert the DataFrame into a CSV buffer
         csv_buffer = StringIO()
         data_sample.to_csv(csv_buffer, index=False)
+        realtime_predictor.predict(csv_buffer.getvalue())
+        print(f"\tRealtime Inference Time: {time.time() - start_time}")
 
-        # Send the CSV Buffer AWS realtime predictor
-        start_time = time.time()
-        results = realtime_predictor.predict(csv_buffer.getvalue())
-        print(f"Pure AWS Realtime Inference Time: {time.time() - start_time}")
-
-        # Total Time
-        print(f"Total Time: {time.time() - total_start_time}")
-
+    # Storage
     # Construct a DataFrame from the results
-    results_df = pd.DataFrame.from_records(results[1:], columns=results[0])
-    print(results_df.head())
+    # results_df = pd.DataFrame.from_records(results[1:], columns=results[0])
+    # print("\n\nPrediction Results DataFrame:")
+    # print(results_df.head())
