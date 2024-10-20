@@ -43,6 +43,7 @@ from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.endpoint_metrics import EndpointMetrics
 from sageworks.utils.shapley_values import generate_shap_values
 from sageworks.utils.log_utils import quiet_execution
+from sageworks.utils.fast_inference import fast_inference
 
 
 class EndpointCore(Artifact):
@@ -408,6 +409,20 @@ class EndpointCore(Artifact):
 
         # Return the prediction DataFrame
         return prediction_df
+
+    def fast_inference(self, eval_df: pd.DataFrame) -> pd.DataFrame:
+        """Run inference on the Endpoint using the provided DataFrame
+
+        Args:
+            eval_df (pd.DataFrame): The DataFrame to run predictions on
+
+        Returns:
+            pd.DataFrame: The DataFrame with predictions
+
+        Note:
+            There's no sanity checks or error handling... just FAST Inference!
+        """
+        return fast_inference(self.uuid, eval_df, self.sm_session)
 
     def _predict(self, eval_df: pd.DataFrame) -> pd.DataFrame:
         """Internal: Run prediction on the given observations in the given DataFrame
@@ -951,12 +966,12 @@ if __name__ == "__main__":
     # Run Inference where we provide the data
     # Note: This dataframe could be from a FeatureSet or any other source
     print("Running Inference...")
-    eval_df = fs_evaluation_data(my_endpoint)
-    pred_results = my_endpoint.inference(eval_df)
+    my_eval_df = fs_evaluation_data(my_endpoint)
+    pred_results = my_endpoint.inference(my_eval_df)
 
     # Now set capture=True to save inference results and metrics
-    eval_df = fs_evaluation_data(my_endpoint)
-    pred_results = my_endpoint.inference(eval_df, capture_uuid="holdout_xyz")
+    my_eval_df = fs_evaluation_data(my_endpoint)
+    pred_results = my_endpoint.inference(my_eval_df, capture_uuid="holdout_xyz")
 
     # Run Inference and metrics for a Classification Endpoint
     class_endpoint = EndpointCore("aqsol-mol-class-end")
@@ -966,5 +981,8 @@ if __name__ == "__main__":
     target = "solubility_class"
     print(class_endpoint.generate_confusion_matrix(target, auto_predictions))
 
+    # Run predictions using the fast_inference method
+    fast_results = my_endpoint.fast_inference(my_eval_df)
+
     # Test the class method delete
-    EndpointCore.delete("abc-end")
+    # EndpointCore.delete("abc-end")

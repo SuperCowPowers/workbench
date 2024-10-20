@@ -52,6 +52,20 @@ class Endpoint(EndpointCore):
         """
         return super().auto_inference(capture)
 
+    def fast_inference(self, eval_df: pd.DataFrame) -> pd.DataFrame:
+        """Run inference on the Endpoint using the provided DataFrame
+
+        Args:
+            eval_df (pd.DataFrame): The DataFrame to run predictions on
+
+        Returns:
+            pd.DataFrame: The DataFrame with predictions
+
+        Note:
+            There's no sanity checks or error handling... just FAST Inference!
+        """
+        return super().fast_inference(eval_df)
+
 
 if __name__ == "__main__":
     """Exercise the Endpoint Class"""
@@ -75,3 +89,6 @@ if __name__ == "__main__":
     # Run predictions using the auto_inference method
     auto_results = my_endpoint.auto_inference()
     pprint(auto_results[[target, "prediction"]])
+
+    # Run predictions using the fast_inference method
+    fast_results = my_endpoint.fast_inference(df)
