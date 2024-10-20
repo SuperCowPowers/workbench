@@ -1,7 +1,6 @@
 """Endpoint Utilities for SageWorks endpoints"""
 
 import logging
-
 import pandas as pd
 
 # SageWorks Imports
@@ -55,8 +54,8 @@ def fs_evaluation_data(end: Endpoint) -> pd.DataFrame:
     # Grab the FeatureSet by backtracking from the Endpoint
     fs = backtrack_to_fs(end)
     table = fs.view("training").table
-    train_df = fs.query(f"SELECT * FROM {table} where training = 0")
-    return train_df
+    eval_df = fs.query(f"SELECT * FROM {table} where training = 0")
+    return eval_df
 
 
 def backtrack_to_fs(end: Endpoint) -> FeatureSet:
@@ -83,18 +82,18 @@ if __name__ == "__main__":
         exit(1)
 
     # Get the training data
-    train_df = fs_training_data(my_endpoint)
-    print(train_df)
+    my_train_df = fs_training_data(my_endpoint)
+    print(my_train_df)
 
     # Make predictions on the Endpoint
     pred_output_df = predictions_using_fs(my_endpoint)
     print(pred_output_df)
 
     # Create a Classification Endpoint
-    endpoint_name = "wine-classification-end"
-    my_endpoint = Endpoint(endpoint_name)
+    my_endpoint_name = "wine-classification-end"
+    my_endpoint = Endpoint(my_endpoint_name)
     if not my_endpoint.exists():
-        print(f"Endpoint {endpoint_name} does not exist.")
+        print(f"Endpoint {my_endpoint_name} does not exist.")
         exit(1)
 
     # Make predictions on the Endpoint
