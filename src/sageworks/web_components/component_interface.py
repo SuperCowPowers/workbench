@@ -21,7 +21,7 @@ from sageworks.core.artifacts.graph_core import GraphCore
 log = logging.getLogger("sageworks")
 
 
-def get_reversed_stack_trace(exception, limit=3):
+def get_reversed_stack_trace(exception, limit=5):
     # Get the full stack trace
     full_stack = traceback.format_exception(type(exception), exception, exception.__traceback__)
     # Reverse the stack and take the last `limit` lines
