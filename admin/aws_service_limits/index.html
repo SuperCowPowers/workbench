@@ -2350,20 +2350,14 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="ServerLess Endpoints">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
+</li>
+      
+        <li class="md-nav__item">
   <a href="#parallel-featuregroup-creation" class="md-nav__link">
     <span class="md-ellipsis">
       Parallel FeatureGroup Creation
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2573,20 +2567,14 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="ServerLess Endpoints">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
+</li>
+      
+        <li class="md-nav__item">
   <a href="#parallel-featuregroup-creation" class="md-nav__link">
     <span class="md-ellipsis">
       Parallel FeatureGroup Creation
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2628,8 +2616,8 @@
 <li>Maximum total concurrency serverless endpoints (defaults to 10): Set to 100-200</li>
 </ul>
 <p><img alt="AWS Service Quotas Dashboard" src="../images/serverless_quotas.png" /></p>
-<h3 id="parallel-featuregroup-creation">Parallel FeatureGroup Creation</h3>
-<p>When running a large set of parallel Glue/Batch Jobs, some clients have hit this limit. </p>
+<h2 id="parallel-featuregroup-creation">Parallel FeatureGroup Creation</h2>
+<p>When running a large set of parallel Glue/Batch Jobs that are creating FeatureGroups, some clients have hit this limit. </p>
 <blockquote>
 <p>"ResourceLimitExceeded: An error occurred (ResourceLimitExceeded) when calling the CreateFeatureGroup operation: The account-level service limit 'Maximum number of feature group creation workflows executing in parallel' is 4 FeatureGroups, with current utilization of 4 FeatureGroups and a request delta of 1 FeatureGroups. Please use AWS Service Quotas to request an increase for this quota. If AWS Service Quotas is not available, contact AWS support to request an increase for this quota."}</p>
 </blockquote>
