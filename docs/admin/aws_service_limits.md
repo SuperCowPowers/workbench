@@ -14,9 +14,9 @@ There are two serverless endpoint quotas that will need to be adjusted.
 
 ![AWS Service Quotas Dashboard](images/serverless_quotas.png)
 
-### Parallel FeatureGroup Creation
+## Parallel FeatureGroup Creation
 
-When running a large set of parallel Glue/Batch Jobs, some clients have hit this limit. 
+When running a large set of parallel Glue/Batch Jobs that are creating FeatureGroups, some clients have hit this limit. 
 
 >
 "ResourceLimitExceeded: An error occurred (ResourceLimitExceeded) when calling the CreateFeatureGroup operation: The account-level service limit 'Maximum number of feature group creation workflows executing in parallel' is 4 FeatureGroups, with current utilization of 4 FeatureGroups and a request delta of 1 FeatureGroups. Please use AWS Service Quotas to request an increase for this quota. If AWS Service Quotas is not available, contact AWS support to request an increase for this quota."}
