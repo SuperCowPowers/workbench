@@ -132,7 +132,7 @@ class ScatterPlot(PluginInterface):
             raise ValueError("The input data must be a DataSource, FeatureSet, or Pandas DataFrame.")
 
         # AWS Feature Groups will also add these implicit columns, so remove these columns
-        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time", "training"]
+        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
         self.df = self.df.drop(columns=aws_cols, errors="ignore")
 
         # Set the default hover columns
