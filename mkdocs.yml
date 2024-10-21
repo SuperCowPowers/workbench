@@ -87,6 +87,7 @@ nav:
     - 0.8.6:  release_notes/0_8_6.md
     - 0.7.8:  release_notes/0_7_8.md
   - Admin: 
+    - AWS Service Limits:  admin/aws_service_limits.md
     - PyPI Release:  admin/pypi_release.md
     - Base Docker Push:  admin/base_docker_push.md
     - Dashboard Docker Push:  admin/dashboard_docker_push.md
