@@ -52,7 +52,7 @@ class AthenaSource(DataSourceAbstract):
         # Setup our AWS Metadata Broker
         try:
             self.catalog_table_meta = self.meta_broker.data_source_details(
-                data_uuid, self.get_database(), refresh=force_refresh
+                data_uuid, database, refresh=force_refresh
             )
         except Exception as e:
             self.log.error(f"Failed to get AWS Metadata: {self.uuid} in database: {self.get_database()}")
@@ -61,17 +61,17 @@ class AthenaSource(DataSourceAbstract):
 
         # If we get a None, let's try again with a force refresh
         if self.catalog_table_meta is None:
-            self.log.warning(f"Unable to find {self.get_database()}:{self.table}, Sleeping and trying again...")
+            self.log.warning(f"Unable to find {database}:{self.table}, Sleeping and trying again...")
             time.sleep(10)
-            self.catalog_table_meta = self.meta_broker.data_source_details(data_uuid, self.get_database(), refresh=True)
+            self.catalog_table_meta = self.meta_broker.data_source_details(data_uuid, database, refresh=True)
             if self.catalog_table_meta is None:
-                self.log.error(f"Unable to find {self.get_database()}:{self.table} in Glue Catalogs...")
+                self.log.error(f"Unable to find {database}:{self.table} in Glue Catalogs...")
 
         # Call superclass post init
         super().__post_init__()
 
         # All done
-        self.log.debug(f"AthenaSource Initialized: {self.get_database()}.{self.table}")
+        self.log.debug(f"AthenaSource Initialized: {database}.{self.table}")
 
     def refresh_meta(self):
         """Refresh our internal AWS Broker catalog metadata"""
