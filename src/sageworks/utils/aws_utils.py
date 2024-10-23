@@ -96,14 +96,14 @@ def list_tags_with_throttle(arn: str, sm_session) -> dict:
             error_code = e.response["Error"]["Code"]
             error_message = e.response["Error"]["Message"]
 
+            # Check for ThrottlingException
             if error_code == "ThrottlingException":
                 log.info(f"ThrottlingException: list_tags on {arn}")
 
-            elif error_code == "ValidationException" and (
-                "does not exist" in error_message or "Resource Not Found" in error_message
-            ):
-                log.warning(f"ValidationException: {arn} does not exist")
-
+            # Check specific (Not Found) exceptions
+            if error_code in ["ValidationException", "ResourceNotFoundException"]:
+                log.warning(f"ARN: {arn} AWS Validation/NotFound Exception: {error_code} - {error_message}")
+                log.warning("Retrying...")
             else:
                 # Handle other ClientErrors that may occur
                 log.error(f"ClientError: {error_code} - {error_message}")
