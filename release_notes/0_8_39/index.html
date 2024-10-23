@@ -20,7 +20,7 @@
     
     
       
-        <title>0.8.37 - SageWorks</title>
+        <title>0.8.39 - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-0837" class="md-skip">
+        <a href="#release-0839" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              0.8.37
+              0.8.39
             
           </span>
         </div>
@@ -2017,7 +2017,7 @@
           
   
   <span class="md-ellipsis">
-    0.8.37
+    0.8.39
   </span>
   
 
@@ -2028,7 +2028,7 @@
         
   
   <span class="md-ellipsis">
-    0.8.37
+    0.8.39
   </span>
   
 
@@ -2659,13 +2659,13 @@
                   
 
 
-<h1 id="release-0837">Release 0.8.37</h1>
+<h1 id="release-0839">Release 0.8.39</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
 <p>The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines.</p>
-<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.36</code> to <code>0.8.37</code></p>
+<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.36</code> to <code>0.8.39</code></p>
 <h3 id="general">General</h3>
 <p>Just a small set of error handling and bug fixes.</p>
 <h3 id="api-changes">API Changes</h3>
@@ -2675,8 +2675,10 @@
 Fixed a corner case where the hoover columns included AWS generated fields.</p>
 <p><strong>Athena Queries:</strong>
 Put in additional error handling and retries when looking for and querying Athena/Glue Catalogs. These changes affect both DataSource and Features (which have DataSources internally for offline storage).</p>
+<p><strong>FeatureSet Creation:</strong>
+Put in additional error handling and retries when pulling AWS meta data for FeatureSets (and internal DataSources).</p>
 <h2 id="specific-code-changes">Specific Code Changes</h2>
-<p><a href="https://github.com/supercowpowers/sageworks/compare/v0.8.36...v0.8.37" target="_blank">Code Diff v0.8.36 --&gt; v0.8.37</a> </p>
+<p><a href="https://github.com/supercowpowers/sageworks/compare/v0.8.36...v0.8.39" target="_blank">Code Diff v0.8.36 --&gt; v0.8.39</a> </p>
 <p>Who doesn't like looking at code! Also +3 points for getting down this far! Here's a cow joke as a reward:</p>
 <blockquote>
 <p><strong><em>That feeling like you’ve done this before?
