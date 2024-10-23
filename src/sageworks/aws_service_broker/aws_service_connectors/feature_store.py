@@ -2,6 +2,7 @@
 
 import sys
 import argparse
+from typing import Union
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
@@ -59,19 +60,19 @@ class FeatureStore(Connector):
         """Get all the feature group names"""
         return list(self.feature_data.keys())
 
-    def _athena_database_name(self, feature_group_name: str) -> str:
+    def _athena_database_name(self, feature_group_name: str) -> Union[str, None]:
         """Internal: Get the Athena Database Name for a specific feature group"""
         try:
             return self.feature_data[feature_group_name]["OfflineStoreConfig"]["DataCatalogConfig"]["Database"].lower()
         except KeyError:
-            return "-"
+            return None
 
-    def _athena_table_name(self, feature_group_name: str) -> str:
+    def _athena_table_name(self, feature_group_name: str) -> Union[str, None]:
         """Internal: Get the Athena Table Name for a specific feature group"""
         try:
             return self.feature_data[feature_group_name]["OfflineStoreConfig"]["DataCatalogConfig"]["TableName"]
         except KeyError:
-            return "-"
+            return None
 
     def _s3_storage(self, feature_group_name: str) -> str:
         """Internal: Get the S3 Location for a specific feature group"""
