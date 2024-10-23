@@ -51,9 +51,7 @@ class AthenaSource(DataSourceAbstract):
 
         # Setup our AWS Metadata Broker
         try:
-            self.catalog_table_meta = self.meta_broker.data_source_details(
-                data_uuid, database, refresh=force_refresh
-            )
+            self.catalog_table_meta = self.meta_broker.data_source_details(data_uuid, database, refresh=force_refresh)
         except Exception as e:
             self.log.error(f"Failed to get AWS Metadata: {self.uuid} in database: {self.get_database()}")
             self.log.error(f"Exception: {e}")
