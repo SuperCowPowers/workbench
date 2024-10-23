@@ -743,7 +743,9 @@ class EndpointCore(Artifact):
         # Get the class labels from the model
         class_labels = ModelCore(self.model_name).class_labels()
         if class_labels is None:
-            self.log.warning("Class labels not found in the model. Guessing class labels from the prediction DataFrame.")
+            self.log.warning(
+                "Class labels not found in the model. Guessing class labels from the prediction DataFrame."
+            )
             class_labels = prediction_df[target_column].unique().tolist()
             self.validate_proba_columns(prediction_df, class_labels, guessing=True)
         else:
