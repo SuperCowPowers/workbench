@@ -9,11 +9,11 @@ from sageworks.utils.repl_utils import cprint, Spinner
 
 # Define the log levels to include all log levels above the specified level
 log_level_map = {
-    "ALL": [],
-    "IMPORTANT": ["IMPORTANT", "WARNING", "MONITOR", "ERROR", "CRITICAL"],
-    "WARNING": ["WARNING", "MONITOR", "ERROR", "CRITICAL"],
-    "MONITOR": ["MONITOR", "ERROR", "CRITICAL"],
-    "ERROR": ["ERROR", "CRITICAL"],
+    "all": [],
+    "important": ["important", "warning", "monitor", "error", "critical"],
+    "warning": ["warning", "monitor", "error", "critical"],
+    "monitor": ["monitor", "error", "critical"],
+    "error": ["error", "critical"],
 }
 
 # Global flag to display timestamps in local time
@@ -196,65 +196,63 @@ def monitor_log_group(
     client = get_cloudwatch_client()
 
     # Convert any search terms to lowercase
+    search_terms = [term.lower() for term in search_terms] if search_terms else []
+
+    # Handle log levels (typically if a search term is used we should use 'all' log levels
     if search_terms:
-        search_terms = [term.lower() for term in search_terms]
+        log_level = "all"
+    log_levels = log_level_map.get(log_level.lower(), [log_level]) if log_level else []
 
     print(f"Monitoring log group: {log_group_name} from {date_display(start_time)}")
+    print(f"Log levels: {log_levels}")
+    print(f"Search terms: {search_terms}")
     while True:
         # Get the latest log events with stream filtering if provided
-        log_events = get_latest_log_events(client, log_group_name, start_time, end_time, stream_filter)
+        all_log_events = get_latest_log_events(client, log_group_name, start_time, end_time, stream_filter)
 
-        if log_events:
+        # Match log levels and search terms, collect ranges, and merge overlapping ranges
+        ranges = []
+        for i, event in enumerate(all_log_events):
+            # Match any of log levels in the log message
+            if not log_levels or any(term in event["message"].lower() for term in log_levels):
 
-            # Handle log levels
-            log_levels = log_level_map.get(log_level.upper(), [log_level]) if log_level else []
+                # Check the search terms
+                if not search_terms or any(term in event["message"].lower() for term in search_terms):
 
-            # If log_level is provided, filter log events and include context
-            if log_levels:
-                ranges = []
-                for i, event in enumerate(log_events):
-                    # Match any of the log levels in the log message
-                    if any(term in event["message"] for term in log_levels):
-                        # If we have search terms we need to make sure those match
-                        if search_terms:
-                            if not any(term in event["message"].lower() for term in search_terms):
-                                continue
+                    # Calculate the start and end index for this match
+                    start_index = max(i - before, 0)
+                    end_index = min(i + after, len(all_log_events) - 1)
+                    ranges.append((start_index, end_index))
 
-                        # Calculate the start and end index for this match
-                        start_index = max(i - before, 0)
-                        end_index = min(i + after, len(log_events) - 1)
-                        ranges.append((start_index, end_index))
+        # Merge overlapping ranges
+        merged_ranges = merge_ranges(ranges)
 
-                # Merge overlapping ranges
-                merged_ranges = merge_ranges(ranges)
+        # Collect filtered events based on merged ranges
+        filtered_events = []
+        for start, end in merged_ranges:
+            filtered_events.extend(all_log_events[start : end + 1])
 
-                # Collect filtered events based on merged ranges
-                filtered_events = []
-                for start, end in merged_ranges:
-                    filtered_events.extend(log_events[start : end + 1])
+            # These are just blank lines to separate the log message 'groups'
+            filtered_events.append({"logStreamName": None, "timestamp": None, "message": ""})
+            filtered_events.append({"logStreamName": None, "timestamp": None, "message": ""})
 
-                    # These are just blank lines to separate the log message 'groups'
-                    filtered_events.append({"logStreamName": None, "timestamp": None, "message": ""})
-                    filtered_events.append({"logStreamName": None, "timestamp": None, "message": ""})
-                log_events = filtered_events
-
-            # Display the log events
-            if not log_events:
-                print("No log events found, matching the specified criteria...")
-            for event in log_events:
-                if event["logStreamName"] is None and event["timestamp"] is None:
-                    print("")
-                else:
-                    log_stream_name = event["logStreamName"]
-                    timestamp = datetime.fromtimestamp(event["timestamp"] / 1000, tz=timezone.utc)
-                    message = event["message"].strip()
-                    print(f"[{log_stream_name}] [{date_display(timestamp)}] {message}")
-
-            # Update the start time to just after the last event's timestamp
-            if end_time is None:
-                start_time = datetime.now(timezone.utc)
+        # Display the filtered log events
+        if not filtered_events:
+            print("No log events found, matching the specified criteria...")
+        for event in filtered_events:
+            if event["logStreamName"] is None and event["timestamp"] is None:
+                print("")
             else:
-                break
+                log_stream_name = event["logStreamName"]
+                timestamp = datetime.fromtimestamp(event["timestamp"] / 1000, tz=timezone.utc)
+                message = event["message"].strip()
+                print(f"[{log_stream_name}] [{date_display(timestamp)}] {message}")
+
+        # Update the start time to just after the last event's timestamp
+        if end_time is None:
+            start_time = datetime.now(timezone.utc)
+        else:
+            break
 
         # Wait for the next poll if monitoring real-time logs
         if end_time is None:
@@ -278,8 +276,8 @@ def parse_args():
     parser.add_argument(
         "--start-time",
         type=int,
-        default=60,
-        help="Start time in minutes ago. Default is 60 minutes ago.",
+        default=600,
+        help="Start time in minutes ago. Default is 600 minutes ago.",
     )
     parser.add_argument(
         "--end-time",
@@ -297,7 +295,7 @@ def parse_args():
         action="store_true",
         help="Display timestamps in UTC instead of local.",
     )
-    parser.add_argument("--log-level", default="ERROR", help="Log level to filter log messages.")
+    parser.add_argument("--log-level", default="error", help="Log level to filter log messages.")
     parser.add_argument("--search", nargs="+", help="Search terms to filter log messages.")
     parser.add_argument(
         "--before",
