@@ -9,6 +9,10 @@
       
       
       
+        <link rel="prev" href="../../aws_setup/aws_client_vpn/">
+      
+      
+        <link rel="next" href="../0_8_36/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -16,7 +20,7 @@
     
     
       
-        <title>Release 0.8.37 - SageWorks</title>
+        <title>0.8.37 - SageWorks</title>
       
     
     
@@ -106,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Release 0.8.37
+              0.8.37
             
           </span>
         </div>
@@ -1960,17 +1964,19 @@
       
   
   
+    
   
   
+  
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" checked>
         
           
           <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
@@ -1984,12 +1990,118 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_16">
             <span class="md-nav__icon md-icon"></span>
             Release Notes
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    0.8.37
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    0.8.37
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#general" class="md-nav__link">
+    <span class="md-ellipsis">
+      General
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Changes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#improvementsfixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Improvements/Fixes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#specific-code-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Specific Code Changes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Questions?
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
             
               
                 
@@ -2555,19 +2667,20 @@
 <p>The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines.</p>
 <p><strong>Note:</strong> These release notes cover the changes from <code>0.8.36</code> to <code>0.8.37</code></p>
 <h3 id="general">General</h3>
-<p><strong>TBD:</strong> TBD</p>
+<p>Just a small set of error handling and bug fixes.</p>
 <h3 id="api-changes">API Changes</h3>
 <p>None</p>
 <h3 id="improvementsfixes">Improvements/Fixes</h3>
 <p><strong>Scatter Plot:</strong>
 Fixed a corner case where the hoover columns included AWS generated fields.</p>
-<p><strong>TBD:</strong> TBD</p>
+<p><strong>Athena Queries:</strong>
+Put in additional error handling and retries when looking for and querying Athena/Glue Catalogs. These changes affect both DataSource and Features (which have DataSources internally for offline storage).</p>
 <h2 id="specific-code-changes">Specific Code Changes</h2>
 <p><a href="https://github.com/supercowpowers/sageworks/compare/v0.8.36...v0.8.37" target="_blank">Code Diff v0.8.36 --&gt; v0.8.37</a> </p>
 <p>Who doesn't like looking at code! Also +3 points for getting down this far! Here's a cow joke as a reward:</p>
 <blockquote>
-<p><strong><em>What’s a cow’s best subject in school?
-    ......Cow-culus.</em></strong></p>
+<p><strong><em>That feeling like you’ve done this before?
+      .... Deja-moo</em></strong></p>
 </blockquote>
 <h2 id="questions">Questions?</h2>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
