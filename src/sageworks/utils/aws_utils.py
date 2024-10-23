@@ -100,7 +100,7 @@ def list_tags_with_throttle(arn: str, sm_session) -> dict:
                 log.info(f"ThrottlingException: list_tags on {arn}")
 
             elif error_code == "ValidationException" and (
-                    "does not exist" in error_message or "Resource Not Found" in error_message
+                "does not exist" in error_message or "Resource Not Found" in error_message
             ):
                 log.warning(f"ValidationException: {arn} does not exist")
 
