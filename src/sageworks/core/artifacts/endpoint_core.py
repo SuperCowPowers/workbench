@@ -714,12 +714,21 @@ class EndpointCore(Artifact):
         return prediction_df
 
     @staticmethod
-    def validate_probabilities(prediction_df: pd.DataFrame, class_labels: list):
-        """Ensure probability columns are correctly aligned with class labels."""
+    def validate_proba_columns(prediction_df: pd.DataFrame, class_labels: list, guessing: bool = False):
+        """Ensure probability columns are correctly aligned with class labels
+
+        Args:
+            prediction_df (pd.DataFrame): DataFrame with the prediction results
+            class_labels (list): List of class labels
+            guessing (bool, optional): Whether we're guessing the class labels. Defaults to False.
+        """
         proba_columns = [col.replace("_proba", "") for col in prediction_df.columns if col.endswith("_proba")]
 
         if sorted(class_labels) != sorted(proba_columns):
-            raise ValueError(f"_proba columns {proba_columns} != class_labels {class_labels}!")
+            if guessing:
+                raise ValueError(f"_proba columns {proba_columns} != GUESSED class_labels {class_labels}!")
+            else:
+                raise ValueError(f"_proba columns {proba_columns} != class_labels {class_labels}!")
 
     def classification_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
@@ -734,10 +743,11 @@ class EndpointCore(Artifact):
         # Get the class labels from the model
         class_labels = ModelCore(self.model_name).class_labels()
         if class_labels is None:
+            self.log.warning("Class labels not found in the model. Guessing class labels from the prediction DataFrame.")
             class_labels = prediction_df[target_column].unique().tolist()
-
-        # Validate that probability columns align with class labels
-        self.validate_probabilities(prediction_df, class_labels)
+            self.validate_proba_columns(prediction_df, class_labels, guessing=True)
+        else:
+            self.validate_proba_columns(prediction_df, class_labels)
 
         # Calculate precision, recall, fscore, and support, handling zero division
         prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"

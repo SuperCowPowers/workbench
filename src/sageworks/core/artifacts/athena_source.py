@@ -50,9 +50,13 @@ class AthenaSource(DataSourceAbstract):
         self.metadata_refresh_needed = False
 
         # Setup our AWS Metadata Broker
-        self.catalog_table_meta = self.meta_broker.data_source_details(
-            data_uuid, self.get_database(), refresh=force_refresh
-        )
+        try:
+            self.catalog_table_meta = self.meta_broker.data_source_details(
+                data_uuid, self.get_database(), refresh=force_refresh
+            )
+        except Exception as e:
+            self.log.error(f"Failed to get AWS Metadata: {e}")
+            self.catalog_table_meta = None
 
         # If we get a None, let's try again with a force refresh
         if self.catalog_table_meta is None:
