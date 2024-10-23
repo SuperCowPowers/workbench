@@ -55,7 +55,8 @@ class AthenaSource(DataSourceAbstract):
                 data_uuid, self.get_database(), refresh=force_refresh
             )
         except Exception as e:
-            self.log.error(f"Failed to get AWS Metadata: {e}")
+            self.log.error(f"Failed to get AWS Metadata: {self.uuid} in database: {self.get_database()}")
+            self.log.error(f"Exception: {e}")
             self.catalog_table_meta = None
 
         # If we get a None, let's try again with a force refresh
