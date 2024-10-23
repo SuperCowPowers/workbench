@@ -98,20 +98,19 @@ def list_tags_with_throttle(arn: str, sm_session) -> dict:
 
             if error_code == "ThrottlingException":
                 log.info(f"ThrottlingException: list_tags on {arn}")
-                time.sleep(sleep_times[attempt])
 
-            elif error_code == "ValidationException":
-                if "does not exist" in error_message:
-                    log.warning(f"ValidationException: {arn} does not exist")
-                    return {}
-                else:
-                    log.error(f"ValidationException: {error_message}")
-                    raise e
+            elif error_code == "ValidationException" and (
+                    "does not exist" in error_message or "Resource Not Found" in error_message
+            ):
+                log.warning(f"ValidationException: {arn} does not exist")
 
             else:
                 # Handle other ClientErrors that may occur
-                log.error(f"Unexpected ClientError: {error_code} - {error_message}")
+                log.error(f"ClientError: {error_code} - {error_message}")
                 raise e
+
+            # Sleep for a bit before trying again
+            time.sleep(sleep_times[attempt])
 
     # If we get here, we've failed to retrieve the tags
     log.error(f"Failed to retrieve tags for {arn}!")

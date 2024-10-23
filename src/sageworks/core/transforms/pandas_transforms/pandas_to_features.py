@@ -335,7 +335,7 @@ class PandasToFeatures(Transform):
         self.expected_rows += len(self.output_df) - len(ingest_manager.failed_rows)
         self.log.info(f"Added rows: {len(self.output_df)}")
         self.log.info(f"Failed rows: {len(ingest_manager.failed_rows)}")
-        self.log.info(f"Total rows to be ingested: {self.expected_rows}")
+        self.log.info(f"Total rows ingested: {self.expected_rows}")
 
     def post_transform(self, **kwargs):
         """Post-Transform: Populating Offline Storage and onboard()"""
@@ -357,7 +357,10 @@ class PandasToFeatures(Transform):
             self.log.debug("FeatureSet being Created...")
             time.sleep(5)
             status = feature_group.describe().get("FeatureGroupStatus")
-        self.log.info(f"FeatureSet {feature_group.name} successfully created")
+        if status == "Created":
+            self.log.info(f"FeatureSet {feature_group.name} successfully created")
+        else:
+            self.log.critical(f"FeatureSet {feature_group.name} creation failed with status: {status}")
 
     def wait_for_rows(self, expected_rows: int):
         """Wait for AWS Feature Group to fully populate the Offline Storage"""
