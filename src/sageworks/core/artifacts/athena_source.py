@@ -53,8 +53,14 @@ class AthenaSource(DataSourceAbstract):
         self.catalog_table_meta = self.meta_broker.data_source_details(
             data_uuid, self.get_database(), refresh=force_refresh
         )
+
+        # If we get a None, let's try again with a force refresh
         if self.catalog_table_meta is None:
-            self.log.error(f"Unable to find {self.get_database()}:{self.table} in Glue Catalogs...")
+            self.log.warning(f"Unable to find {self.get_database()}:{self.table}, Sleeping and trying again...")
+            time.sleep(10)
+            self.catalog_table_meta = self.meta_broker.data_source_details(data_uuid, self.get_database(), refresh=True)
+            if self.catalog_table_meta is None:
+                self.log.error(f"Unable to find {self.get_database()}:{self.table} in Glue Catalogs...")
 
         # Call superclass post init
         super().__post_init__()
@@ -222,38 +228,46 @@ class AthenaSource(DataSourceAbstract):
             return None
 
     def execute_statement(self, query: str, silence_errors: bool = False):
-        """Execute a non-returning SQL statement in Athena
+        """Execute a non-returning SQL statement in Athena with retries.
 
         Args:
             query (str): The query to run against the AthenaSource
             silence_errors (bool): Silence errors (default: False)
         """
-        try:
-            # Start the query execution
-            query_execution_id = wr.athena.start_query_execution(
-                sql=query,
-                database=self.get_database(),
-                boto3_session=self.boto3_session,
-            )
-            self.log.debug(f"QueryExecutionId: {query_execution_id}")
+        attempt = 0
+        max_retries = 3
+        retry_delay = 10
+        while attempt < max_retries:
+            try:
+                # Start the query execution
+                query_execution_id = wr.athena.start_query_execution(
+                    sql=query,
+                    database=self.get_database(),
+                    boto3_session=self.boto3_session,
+                )
+                self.log.debug(f"QueryExecutionId: {query_execution_id}")
 
-            # Wait for the query to complete
-            wr.athena.wait_query(query_execution_id=query_execution_id, boto3_session=self.boto3_session)
-            self.log.debug(f"Statement executed successfully: {query_execution_id}")
-        except wr.exceptions.QueryFailed as e:
-            if "AlreadyExistsException" in str(e):
-                self.log.warning(f"Table already exists. Ignoring: {e}")
-            else:
-                if not silence_errors:
-                    self.log.error(f"Failed to execute statement: {e}")
-                raise
-        except botocore.exceptions.ClientError as e:
-            error_code = e.response["Error"]["Code"]
-            if error_code == "InvalidRequestException":
-                self.log.error(f"Invalid Query: {query}")
-            else:
-                self.log.error(f"Failed to execute statement: {e}")
-            raise
+                # Wait for the query to complete
+                wr.athena.wait_query(query_execution_id=query_execution_id, boto3_session=self.boto3_session)
+                self.log.debug(f"Statement executed successfully: {query_execution_id}")
+                break  # If successful, exit the retry loop
+            except wr.exceptions.QueryFailed as e:
+                if "AlreadyExistsException" in str(e):
+                    self.log.warning(f"Table already exists: {e} \nIgnoring...")
+                    break  # No need to retry for this error
+                elif "ConcurrentModificationException" in str(e):
+                    self.log.warning(f"Concurrent modification detected: {e}\nRetrying...")
+                    attempt += 1
+                    if attempt < max_retries:
+                        time.sleep(retry_delay)
+                    else:
+                        if not silence_errors:
+                            self.log.critical(f"Failed to execute statement after {max_retries} attempts: {e}")
+                        raise
+                else:
+                    if not silence_errors:
+                        self.log.critical(f"Failed to execute statement: {e}")
+                    raise
 
     def s3_storage_location(self) -> str:
         """Get the S3 Storage Location for this Data Source"""

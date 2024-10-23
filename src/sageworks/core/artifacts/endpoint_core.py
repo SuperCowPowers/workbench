@@ -716,11 +716,10 @@ class EndpointCore(Artifact):
     @staticmethod
     def validate_probabilities(prediction_df: pd.DataFrame, class_labels: list):
         """Ensure probability columns are correctly aligned with class labels."""
-        # Check if the probability column names match the class labels
-        actual_columns = [col.replace("_proba", "") for col in prediction_df.columns if col.endswith("_proba")]
+        proba_columns = [col.replace("_proba", "") for col in prediction_df.columns if col.endswith("_proba")]
 
-        if sorted(class_labels) != sorted(actual_columns):
-            raise ValueError("Probability columns do not match up with the class labels!")
+        if sorted(class_labels) != sorted(proba_columns):
+            raise ValueError(f"_proba columns {proba_columns} != class_labels {class_labels}!")
 
     def classification_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
