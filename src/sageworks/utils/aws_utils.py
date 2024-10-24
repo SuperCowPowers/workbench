@@ -99,6 +99,7 @@ def list_tags_with_throttle(arn: str, sm_session) -> dict:
             # Check for ThrottlingException
             if error_code == "ThrottlingException":
                 log.info(f"ThrottlingException: list_tags on {arn}")
+                log.info("Retrying...")
 
             # Check specific (Not Found) exceptions
             elif error_code in ["ValidationException", "ResourceNotFoundException"]:
