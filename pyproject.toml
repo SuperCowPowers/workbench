@@ -91,3 +91,19 @@ packages = { find = { where = ["src"] } }
 [project.scripts]
 sageworks = "sageworks.repl.sageworks_shell:launch_shell"
 cloud_watch = "sageworks.scripts.monitor_cloud_watch:main"
+
+[tool.flake8]
+extend-ignore = ["E203"]
+max-line-length = 120
+
+[tool.pytest.ini_options]
+addopts = "-v --cov-report term-missing"
+python_files = "*.py"
+python_functions = "test"
+norecursedirs = [".tox", ".git", "*.egg-info", "__pycache__", "dist", "build"]
+markers = [
+    "long: marks tests as long (deselect with '-m \"not long\"')"
+]
+
+[tool.coverage.run]
+relative_files = true
