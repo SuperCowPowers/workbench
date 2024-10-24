@@ -92,10 +92,6 @@ packages = { find = { where = ["src"] } }
 sageworks = "sageworks.repl.sageworks_shell:launch_shell"
 cloud_watch = "sageworks.scripts.monitor_cloud_watch:main"
 
-[tool.flake8]
-extend-ignore = ["E203"]
-max-line-length = 120
-
 [tool.pytest.ini_options]
 addopts = "-v --cov-report term-missing"
 python_files = "*.py"
