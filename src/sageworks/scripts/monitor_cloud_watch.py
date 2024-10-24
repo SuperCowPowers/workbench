@@ -111,7 +111,7 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
             print(f"No active log streams (start_time:{date_display(start_time)}, stream-filter:'{stream_filter}')")
             get_latest_log_events.first_run = False
         else:
-            print("Monitoring for new events (WIP)...")
+            print("Monitoring for new events...")
         return log_events
 
     # Iterate over the active streams and fetch log events

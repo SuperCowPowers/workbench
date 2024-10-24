@@ -101,7 +101,7 @@ def list_tags_with_throttle(arn: str, sm_session) -> dict:
                 log.info(f"ThrottlingException: list_tags on {arn}")
 
             # Check specific (Not Found) exceptions
-            if error_code in ["ValidationException", "ResourceNotFoundException"]:
+            elif error_code in ["ValidationException", "ResourceNotFoundException"]:
                 log.warning(f"ARN: {arn} AWS Validation/NotFound Exception: {error_code} - {error_message}")
                 log.warning("Retrying...")
             else:
