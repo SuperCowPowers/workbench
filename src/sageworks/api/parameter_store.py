@@ -129,8 +129,8 @@ class ParameterStore:
                 self.log.error(f"Failed to get parameter '{name}': {e}")
             return None
 
-    def add(self, name: str, value, overwrite: bool = True):
-        """Add or update a parameter in the AWS Parameter Store.
+    def set(self, name: str, value, overwrite: bool = True):
+        """Set or update a parameter in the AWS Parameter Store.
 
         Args:
             name (str): The name of the parameter.
@@ -204,14 +204,14 @@ if __name__ == "__main__":
     print(param_store.list())
 
     # Add a new parameter
-    param_store.add("/sageworks/test", "value", overwrite=True)
+    param_store.set("/sageworks/test", "value", overwrite=True)
 
     # Get the parameter
     print(f"Getting parameter 'test': {param_store.get('/sageworks/test')}")
 
     # Add a dictionary as a parameter
     sample_dict = {"key": "str_value", "awesome_value": 4.2}
-    param_store.add("/sageworks/my_data", sample_dict, overwrite=True)
+    param_store.set("/sageworks/my_data", sample_dict, overwrite=True)
 
     # Retrieve the parameter as a dictionary
     retrieved_value = param_store.get("/sageworks/my_data")
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     param_store.delete("/sageworks/my_data")
 
     # Out of scope tests
-    param_store.add("test", "value")
-    param_store.add("test", "value", outside_scope=True)
+    param_store.set("test", "value")
+    param_store.set("test", "value", outside_scope=True)
     param_store.delete("test")
     param_store.delete("test", outside_scope=True)

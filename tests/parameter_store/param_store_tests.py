@@ -19,17 +19,17 @@ def test_simple_values():
     param_store = ParameterStore()
 
     # String
-    param_store.add("/sageworks/test", "value", overwrite=True)
+    param_store.set("/sageworks/test", "value", overwrite=True)
     return_value = param_store.get("/sageworks/test")
     assert return_value == "value"
 
     # Integer
-    param_store.add("/sageworks/test", 42, overwrite=True)
+    param_store.set("/sageworks/test", 42, overwrite=True)
     return_value = param_store.get("/sageworks/test")
     assert return_value == 42
 
     # Float
-    param_store.add("/sageworks/test", 4.20, overwrite=True)
+    param_store.set("/sageworks/test", 4.20, overwrite=True)
     return_value = param_store.get("/sageworks/test")
     assert return_value == 4.20
 
@@ -39,13 +39,13 @@ def test_lists():
 
     # List of Strings
     value = ["a", "b", "c"]
-    param_store.add("/sageworks/test", value, overwrite=True)
+    param_store.set("/sageworks/test", value, overwrite=True)
     return_value = param_store.get("/sageworks/test")
     assert return_value == value
 
     # List of Ints
     value = [1, 2, 3]
-    param_store.add("/sageworks/test", value, overwrite=True)
+    param_store.set("/sageworks/test", value, overwrite=True)
     return_value = param_store.get("/sageworks/test")
     assert return_value == value
 
@@ -55,7 +55,7 @@ def test_dicts():
 
     # Dictionary with values of strings, lists, integers and floats
     value = {"key": "str_value", "number": 42, "list": [1, 2, 3], "float": 3.14}
-    param_store.add("/sageworks/my_data", value, overwrite=True)
+    param_store.set("/sageworks/my_data", value, overwrite=True)
     return_value = param_store.get("/sageworks/my_data")
     assert return_value == value
 
@@ -73,7 +73,7 @@ def test_4k_limit():
     large_value = {"key": "x" * 5000}
 
     # Try adding a parameter that exceeds the 4KB limit
-    param_store.add("/sageworks/test_large_value", large_value, overwrite=True)
+    param_store.set("/sageworks/test_large_value", large_value, overwrite=True)
 
     # Retrieve the parameter
     return_value = param_store.get("/sageworks/test_large_value")
@@ -90,7 +90,7 @@ def test_compressed_failure():
 
     try:
         # Try adding a parameter that exceeds the 4KB limit
-        param_store.add("/sageworks/large_incompressible_value", large_incompressible_value, overwrite=True)
+        param_store.set("/sageworks/large_incompressible_value", large_incompressible_value, overwrite=True)
     except Exception as e:
         print("Caught expected Exception:", e)
 
