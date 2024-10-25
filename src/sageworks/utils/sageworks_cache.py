@@ -18,8 +18,8 @@ class SageWorksCache:
             prefix: the prefix to use for all keys
             postfix: the postfix to use for all keys
         """
-        self.medium_data = 5 * 1024  # 5KB
-        self.large_data = 20 * 1024  # 20KB
+        self.medium_data = 100 * 1024  # 100KB
+        self.large_data = 1024 * 1024  # 1MB
         if RedisCache().check():
             self._actual_cache = RedisCache(expire=expire, prefix=prefix, postfix=postfix)
         else:
@@ -29,19 +29,21 @@ class SageWorksCache:
 
     def set(self, key, value):
         # Check the size of the value
-        if len(value) > self.large_data:
-            log.warning(f"Large cache value: ({key}: {len(value)})")
-        elif len(value) > self.medium_data:
-            log.important(f"Medium cache value: ({key}: {len(value)})")
+        size = len(str(value))
+        if size > self.large_data:
+            log.warning(f"Cache: Setting large value: ({key}: {size})")
+        elif size > self.medium_data:
+            log.important(f"Cache: Setting medium cache value: ({key}: {size})")
         self._actual_cache.set(key, value)
 
     def get(self, key):
         # Check the size of the value
         value = self._actual_cache.get(key)
-        if value and len(value) > self.large_data:
-            log.warning(f"Large cache value: ({key}: {len(value)})")
-        elif value and len(value) > self.medium_data:
-            log.important(f"Medium cache value: ({key}: {len(value)})")
+        size = len(str(value))
+        if size > self.large_data:
+            log.important(f"Cache: Getting large value: ({key}: {size})")
+        elif size > self.medium_data:
+            log.info(f"Cache: Getting medium value: ({key}: {size})")
         return value
 
     def delete(self, key):
@@ -89,8 +91,8 @@ if __name__ == "__main__":
     # Test medium and large data
     my_cache = SageWorksCache(prefix="test")
     my_cache.set("foo", "a" * 1024)
-    my_cache.set("bar", "a" * 1024 * 6)
-    my_cache.set("baz", "a" * 1024 * 30)
+    my_cache.set("bar", "a" * 1024 * 101)
+    my_cache.set("baz", "a" * 1024 * 1025)
     my_cache.get("foo")
     my_cache.get("bar")
     my_cache.get("baz")
