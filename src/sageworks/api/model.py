@@ -69,7 +69,7 @@ if __name__ == "__main__":
     from pprint import pprint
 
     # Retrieve an existing Data Source
-    my_model = Model("test-model")
+    my_model = Model("abalone-regression")
     pprint(my_model.summary())
     pprint(my_model.details())
 
