@@ -17,8 +17,6 @@ if __name__ == "__main__":
     DataSource.delete("abc")
     DataSource.delete("abc_2")
     FeatureSet.delete("test_features")
-    Model.delete("test-model")
-    Endpoint.delete("test-end")
     Endpoint.delete("abc")
     Endpoint.delete("abc-2")
 
