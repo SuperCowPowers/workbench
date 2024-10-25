@@ -223,6 +223,4 @@ if __name__ == "__main__":
 
     # Out of scope tests
     param_store.set("test", "value")
-    param_store.set("test", "value", outside_scope=True)
     param_store.delete("test")
-    param_store.delete("test", outside_scope=True)
