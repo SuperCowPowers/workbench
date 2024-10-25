@@ -1,15 +1,10 @@
-.PHONY: help clean clean-pyc clean-build list test test-all coverage docs release sdist
+.PHONY: help clean clean-pyc clean-build list 
 
 help:
+	@echo "clean - remove ALL build/python/misc artifacts"
 	@echo "clean-build - remove build artifacts"
-	@echo "clean-pyc - remove Python file artifacts"
-	@echo "lint - check style with flake8"
-	@echo "test - run tests quickly with the default Python"
-	@echo "test-all - run tests on every Python version with tox"
-	@echo "coverage - check code coverage quickly with the default Python"
-	@echo "docs - generate Sphinx HTML documentation, including API docs"
-	@echo "release - package and upload a release"
-	@echo "sdist - package"
+	@echo "clean-pyc - remove Python Complied file artifacts"
+	@echo "clean-misc - remove misc artifacts"
 
 clean: clean-build clean-pyc clean-misc
 
@@ -33,18 +28,3 @@ clean-pyc:
 clean-misc:
 	find . -name '.ipynb_checkpoints' -exec rm -rf {} +
 
-lint:
-	flake8 src/sageworks tests
-
-test:
-	tox
-
-test-all:
-	tox
-
-release: clean
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
-
-sdist: clean
-	python setup.py sdist upload
