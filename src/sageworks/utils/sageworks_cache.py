@@ -18,6 +18,8 @@ class SageWorksCache:
             prefix: the prefix to use for all keys
             postfix: the postfix to use for all keys
         """
+        self.medium_data = 5 * 1024  # 5KB
+        self.large_data = 20 * 1024  # 20KB
         if RedisCache().check():
             self._actual_cache = RedisCache(expire=expire, prefix=prefix, postfix=postfix)
         else:
@@ -26,10 +28,21 @@ class SageWorksCache:
             self._actual_cache = Cache(expire=expire, prefix=prefix, postfix=postfix)
 
     def set(self, key, value):
+        # Check the size of the value
+        if len(value) > self.large_data:
+            log.warning(f"Large cache value: ({key}: {len(value)})")
+        elif len(value) > self.medium_data:
+            log.important(f"Medium cache value: ({key}: {len(value)})")
         self._actual_cache.set(key, value)
 
     def get(self, key):
-        return self._actual_cache.get(key)
+        # Check the size of the value
+        value = self._actual_cache.get(key)
+        if value and len(value) > self.large_data:
+            log.warning(f"Large cache value: ({key}: {len(value)})")
+        elif value and len(value) > self.medium_data:
+            log.important(f"Medium cache value: ({key}: {len(value)})")
+        return value
 
     def delete(self, key):
         self._actual_cache.delete(key)
@@ -71,4 +84,14 @@ if __name__ == "__main__":
     my_cache.list_keys()
     for key in my_cache.list_keys():
         print(key)
+    my_cache.clear()
+
+    # Test medium and large data
+    my_cache = SageWorksCache(prefix="test")
+    my_cache.set("foo", "a" * 1024)
+    my_cache.set("bar", "a" * 1024 * 6)
+    my_cache.set("baz", "a" * 1024 * 30)
+    my_cache.get("foo")
+    my_cache.get("bar")
+    my_cache.get("baz")
     my_cache.clear()
