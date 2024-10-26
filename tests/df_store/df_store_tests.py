@@ -1,13 +1,9 @@
 """Tests for the DataFrame Store functionality"""
 
 import pandas as pd
-import logging
 
 # SageWorks-Bridges Imports
-from sageworks_bridges.aws.df_store import DFStore
-
-# Show debug calls
-logging.getLogger("sageworks-bridges")
+from sageworks.api.df_store import DFStore
 
 # Create a DFStore object
 df_store = DFStore()
