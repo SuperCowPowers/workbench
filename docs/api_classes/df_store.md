@@ -33,7 +33,7 @@ ml/shap_values  (0.019MB/2024-09-23 16:57:21)
  
 # Add a DataFrame
 df = pd.DataFrame({"A": [1]*1000, "B": [3]*1000})
-df_store.add("test/test_df", df)
+df_store.upsert("test/test_df", df)
 
 # List DataFrames (we can just use the REPR)
 df_store

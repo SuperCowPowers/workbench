@@ -23,7 +23,7 @@ class DFStore:
 
         # Add DataFrame
         df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-        df_store.add("my_data", df)
+        df_store.upsert("my_data", df)
 
         # Retrieve DataFrame
         df = df_store.get("my_data")
@@ -188,14 +188,14 @@ if __name__ == "__main__":
 
     # Add a new DataFrame
     my_df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    df_store.add("test_data", my_df)
+    df_store.upsert("test_data", my_df)
 
     # Get the DataFrame
     print(f"Getting data 'test_data':\n{df_store.get('test_data')}")
 
     # Now let's test adding a Series
     series = pd.Series([1, 2, 3, 4], name="Series")
-    df_store.add("test_series", series)
+    df_store.upsert("test_series", series)
     print(f"Getting data 'test_series':\n{df_store.get('test_series')}")
 
     # Summary of the data

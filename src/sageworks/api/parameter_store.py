@@ -27,12 +27,12 @@ class ParameterStore:
          '/sageworks/pipelines/my_pipeline']
 
         # Add Key
-        params.add("key", "value")
+        params.upsert("key", "value")
         value = params.get("key")
 
         # Add any data (lists, dictionaries, etc..)
         my_data = {"key": "value", "number": 4.2, "list": [1,2,3]}
-        params.add("my_data", my_data)
+        params.upsert("my_data", my_data)
 
         # Retrieve data
         return_value = params.get("my_data")
