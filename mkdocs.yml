@@ -74,6 +74,7 @@ nav:
     - AWS Access Management: aws_setup/aws_access_management.md
     - AWS Client VPN: aws_setup/aws_client_vpn.md
   - Release Notes: 
+    - 0.8.41:  release_notes/0_8_41.md
     - 0.8.39:  release_notes/0_8_39.md
     - 0.8.36:  release_notes/0_8_36.md
     - 0.8.35:  release_notes/0_8_35.md
