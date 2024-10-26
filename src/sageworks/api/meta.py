@@ -142,13 +142,16 @@ class Meta:
         """
         return self.aws_broker.get_metadata(ServiceCategory.GLUE_JOBS, force_refresh=refresh)
 
-    def data_sources(self) -> pd.DataFrame:
+    def data_sources(self, refresh: bool = False) -> pd.DataFrame:
         """Get a summary of the Data Sources in AWS
+
+        Args:
+            refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
 
         Returns:
             pd.DataFrame: A summary of the Data Sources in AWS
         """
-        data = self.data_sources_deep()
+        data = self.data_sources_deep(refresh=refresh)
         data_summary = []
 
         # Pull in various bits of metadata for each data source

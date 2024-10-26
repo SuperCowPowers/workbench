@@ -2,6 +2,8 @@
 use RedisCache if it's available, and fall back to Cache if it's not.
 """
 
+from pprint import pformat
+
 from sageworks.utils.cache import Cache
 from sageworks.utils.redis_cache import RedisCache
 
@@ -32,8 +34,9 @@ class SageWorksCache:
         size = len(str(value))
         if size > self.large_data:
             log.warning(f"Cache: Setting large value: ({key}: {size})")
+            self.show_size_details(value)
         elif size > self.medium_data:
-            log.important(f"Cache: Setting medium cache value: ({key}: {size})")
+            log.info(f"Cache: Setting medium cache value: ({key}: {size})")
         self._actual_cache.set(key, value)
 
     def get(self, key):
@@ -41,9 +44,9 @@ class SageWorksCache:
         value = self._actual_cache.get(key)
         size = len(str(value))
         if size > self.large_data:
-            log.important(f"Cache: Getting large value: ({key}: {size})")
+            log.info(f"Cache: Getting large value: ({key}: {size})")
         elif size > self.medium_data:
-            log.info(f"Cache: Getting medium value: ({key}: {size})")
+            log.debug(f"Cache: Getting medium value: ({key}: {size})")
         return value
 
     def delete(self, key):
@@ -60,6 +63,23 @@ class SageWorksCache:
 
     def clear(self):
         return self._actual_cache.clear()
+
+    def show_size_details(self, value):
+        """Print the size of the sub-parts of the value"""
+        size_details = self._size_details(value)
+        log.warning("Cache: Large Data Details")
+        formatted_details = pformat(size_details, width=40)  # Adjust width as needed
+        for line in formatted_details.splitlines():
+            log.warning(f"{line}")
+
+    def _size_details(self, value):
+        """Return the size of the sub-parts of the value"""
+        if isinstance(value, dict):
+            return {k: self._size_details(v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return len(value) * self._size_details(str(value[0]))
+        else:
+            return len(str(value))
 
 
 if __name__ == "__main__":
@@ -96,4 +116,18 @@ if __name__ == "__main__":
     my_cache.get("foo")
     my_cache.get("bar")
     my_cache.get("baz")
+    my_cache.clear()
+
+    # Test more complicated large data
+    mega = 1024 * 1024
+    large_data = {
+        "a": ["foo"] * mega,
+        "b": {
+            "c": "bar" * mega,
+            "d": {"e": [{"f": ["baz"] * mega}, {"g": ["z" * mega]}], "h": "bleh", "i": "blarg" * mega},
+            "j": "blargblarg",
+        },
+    }
+    my_cache.set("large", large_data)
+    my_cache.get("large")
     my_cache.clear()
