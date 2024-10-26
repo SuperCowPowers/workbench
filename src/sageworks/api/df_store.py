@@ -107,8 +107,8 @@ class DFStore:
             self.log.warning(f"Data '{name}' not found in S3.")
             return pd.DataFrame()  # Return an empty DataFrame if not found
 
-    def add(self, name: str, data: Union[pd.DataFrame, pd.Series]):
-        """Add or update a DataFrame or Series in the AWS S3.
+    def upsert(self, name: str, data: Union[pd.DataFrame, pd.Series]):
+        """Insert or update a DataFrame or Series in the AWS S3.
 
         Args:
             name (str): The name of the data.

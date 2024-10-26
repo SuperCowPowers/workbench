@@ -129,8 +129,8 @@ class ParameterStore:
                 self.log.error(f"Failed to get parameter '{name}': {e}")
             return None
 
-    def set(self, name: str, value, overwrite: bool = True):
-        """Set or update a parameter in the AWS Parameter Store.
+    def upsert(self, name: str, value, overwrite: bool = True):
+        """Insert or update a parameter in the AWS Parameter Store.
 
         Args:
             name (str): The name of the parameter.
@@ -157,9 +157,9 @@ class ParameterStore:
                     self.log.error(f"For larger data use the DFStore() class ({doc_link})")
                     return
 
-                # Add or update the compressed parameter in Parameter Store
+                # Insert or update the compressed parameter in Parameter Store
                 try:
-                    # Add or update the compressed parameter in Parameter Store
+                    # Insert or update the compressed parameter in Parameter Store
                     self.ssm_client.put_parameter(Name=name, Value=encoded_value, Type="String", Overwrite=overwrite)
                     self.log.info(f"Parameter '{name}' added/updated successfully with compression.")
                     return
@@ -167,7 +167,7 @@ class ParameterStore:
                     self.log.critical(f"Failed to add/update compressed parameter '{name}': {e}")
                     raise
 
-            # Add or update the parameter normally if under 4KB
+            # Insert or update the parameter normally if under 4KB
             self.ssm_client.put_parameter(Name=name, Value=value, Type="String", Overwrite=overwrite)
             self.log.info(f"Parameter '{name}' added/updated successfully.")
 
@@ -204,14 +204,14 @@ if __name__ == "__main__":
     print(param_store.list())
 
     # Add a new parameter
-    param_store.set("/sageworks/test", "value", overwrite=True)
+    param_store.upsert("/sageworks/test", "value", overwrite=True)
 
     # Get the parameter
     print(f"Getting parameter 'test': {param_store.get('/sageworks/test')}")
 
     # Add a dictionary as a parameter
     sample_dict = {"key": "str_value", "awesome_value": 4.2}
-    param_store.set("/sageworks/my_data", sample_dict, overwrite=True)
+    param_store.upsert("/sageworks/my_data", sample_dict, overwrite=True)
 
     # Retrieve the parameter as a dictionary
     retrieved_value = param_store.get("/sageworks/my_data")
@@ -222,5 +222,5 @@ if __name__ == "__main__":
     param_store.delete("/sageworks/my_data")
 
     # Out of scope tests
-    param_store.set("test", "value")
+    param_store.upsert("test", "value")
     param_store.delete("test")
