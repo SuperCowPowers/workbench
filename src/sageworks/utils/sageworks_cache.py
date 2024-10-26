@@ -34,7 +34,6 @@ class SageWorksCache:
         size = len(str(value))
         if size > self.large_data:
             log.warning(f"Cache: Setting large value: ({key}: {size})")
-            self.show_size_details(value)
         elif size > self.medium_data:
             log.info(f"Cache: Setting medium cache value: ({key}: {size})")
         self._actual_cache.set(key, value)
@@ -66,17 +65,20 @@ class SageWorksCache:
 
     def show_size_details(self, value):
         """Print the size of the sub-parts of the value"""
-        size_details = self._size_details(value)
-        log.warning("Cache: Large Data Details")
-        formatted_details = pformat(size_details, width=40)  # Adjust width as needed
-        for line in formatted_details.splitlines():
-            log.warning(f"{line}")
+        try:
+            size_details = self._size_details(value)
+            log.warning("Cache: Large Data Details")
+            formatted_details = pformat(size_details, width=40)  # Adjust width as needed
+            for line in formatted_details.splitlines():
+                log.warning(f"{line}")
+        except Exception as e:
+            log.error(f"Cache: Error getting size details {e}")
 
     def _size_details(self, value):
         """Return the size of the sub-parts of the value"""
         if isinstance(value, dict):
             return {k: self._size_details(v) for k, v in value.items()}
-        elif isinstance(value, list):
+        elif isinstance(value, list) and value:
             return len(value) * self._size_details(str(value[0]))
         else:
             return len(str(value))
