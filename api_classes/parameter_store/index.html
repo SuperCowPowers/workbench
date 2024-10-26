@@ -603,9 +603,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sageworks.api.parameter_store.ParameterStore.set" class="md-nav__link">
+  <a href="#sageworks.api.parameter_store.ParameterStore.upsert" class="md-nav__link">
     <span class="md-ellipsis">
-      set
+      upsert
     </span>
   </a>
   
@@ -2736,9 +2736,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sageworks.api.parameter_store.ParameterStore.set" class="md-nav__link">
+  <a href="#sageworks.api.parameter_store.ParameterStore.upsert" class="md-nav__link">
     <span class="md-ellipsis">
-      set
+      upsert
     </span>
   </a>
   
@@ -3165,8 +3165,8 @@
 </span><span id="__span-0-129"><a id="__codelineno-0-129" name="__codelineno-0-129"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to get parameter &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span><span id="__span-0-130"><a id="__codelineno-0-130" name="__codelineno-0-130"></a>            <span class="k">return</span> <span class="kc">None</span>
 </span><span id="__span-0-131"><a id="__codelineno-0-131" name="__codelineno-0-131"></a>
-</span><span id="__span-0-132"><a id="__codelineno-0-132" name="__codelineno-0-132"></a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
-</span><span id="__span-0-133"><a id="__codelineno-0-133" name="__codelineno-0-133"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set or update a parameter in the AWS Parameter Store.</span>
+</span><span id="__span-0-132"><a id="__codelineno-0-132" name="__codelineno-0-132"></a>    <span class="k">def</span> <span class="nf">upsert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+</span><span id="__span-0-133"><a id="__codelineno-0-133" name="__codelineno-0-133"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Insert or update a parameter in the AWS Parameter Store.</span>
 </span><span id="__span-0-134"><a id="__codelineno-0-134" name="__codelineno-0-134"></a>
 </span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a><span class="sd">        Args:</span>
 </span><span id="__span-0-136"><a id="__codelineno-0-136" name="__codelineno-0-136"></a><span class="sd">            name (str): The name of the parameter.</span>
@@ -3193,9 +3193,9 @@
 </span><span id="__span-0-157"><a id="__codelineno-0-157" name="__codelineno-0-157"></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;For larger data use the DFStore() class (</span><span class="si">{</span><span class="n">doc_link</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 </span><span id="__span-0-158"><a id="__codelineno-0-158" name="__codelineno-0-158"></a>                    <span class="k">return</span>
 </span><span id="__span-0-159"><a id="__codelineno-0-159" name="__codelineno-0-159"></a>
-</span><span id="__span-0-160"><a id="__codelineno-0-160" name="__codelineno-0-160"></a>                <span class="c1"># Add or update the compressed parameter in Parameter Store</span>
+</span><span id="__span-0-160"><a id="__codelineno-0-160" name="__codelineno-0-160"></a>                <span class="c1"># Insert or update the compressed parameter in Parameter Store</span>
 </span><span id="__span-0-161"><a id="__codelineno-0-161" name="__codelineno-0-161"></a>                <span class="k">try</span><span class="p">:</span>
-</span><span id="__span-0-162"><a id="__codelineno-0-162" name="__codelineno-0-162"></a>                    <span class="c1"># Add or update the compressed parameter in Parameter Store</span>
+</span><span id="__span-0-162"><a id="__codelineno-0-162" name="__codelineno-0-162"></a>                    <span class="c1"># Insert or update the compressed parameter in Parameter Store</span>
 </span><span id="__span-0-163"><a id="__codelineno-0-163" name="__codelineno-0-163"></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">ssm_client</span><span class="o">.</span><span class="n">put_parameter</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">Value</span><span class="o">=</span><span class="n">encoded_value</span><span class="p">,</span> <span class="n">Type</span><span class="o">=</span><span class="s2">&quot;String&quot;</span><span class="p">,</span> <span class="n">Overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
 </span><span id="__span-0-164"><a id="__codelineno-0-164" name="__codelineno-0-164"></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameter &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; added/updated successfully with compression.&quot;</span><span class="p">)</span>
 </span><span id="__span-0-165"><a id="__codelineno-0-165" name="__codelineno-0-165"></a>                    <span class="k">return</span>
@@ -3203,7 +3203,7 @@
 </span><span id="__span-0-167"><a id="__codelineno-0-167" name="__codelineno-0-167"></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to add/update compressed parameter &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span><span id="__span-0-168"><a id="__codelineno-0-168" name="__codelineno-0-168"></a>                    <span class="k">raise</span>
 </span><span id="__span-0-169"><a id="__codelineno-0-169" name="__codelineno-0-169"></a>
-</span><span id="__span-0-170"><a id="__codelineno-0-170" name="__codelineno-0-170"></a>            <span class="c1"># Add or update the parameter normally if under 4KB</span>
+</span><span id="__span-0-170"><a id="__codelineno-0-170" name="__codelineno-0-170"></a>            <span class="c1"># Insert or update the parameter normally if under 4KB</span>
 </span><span id="__span-0-171"><a id="__codelineno-0-171" name="__codelineno-0-171"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">ssm_client</span><span class="o">.</span><span class="n">put_parameter</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">Value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">Type</span><span class="o">=</span><span class="s2">&quot;String&quot;</span><span class="p">,</span> <span class="n">Overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
 </span><span id="__span-0-172"><a id="__codelineno-0-172" name="__codelineno-0-172"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameter &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; added/updated successfully.&quot;</span><span class="p">)</span>
 </span><span id="__span-0-173"><a id="__codelineno-0-173" name="__codelineno-0-173"></a>
@@ -3677,15 +3677,15 @@
 <div class="doc doc-object doc-function">
 
 
-<h3 id="sageworks.api.parameter_store.ParameterStore.set" class="doc doc-heading">
-            <code class="highlight language-python"><span class="nb">set</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+<h3 id="sageworks.api.parameter_store.ParameterStore.upsert" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">upsert</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Set or update a parameter in the AWS Parameter Store.</p>
+        <p>Insert or update a parameter in the AWS Parameter Store.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3796,8 +3796,8 @@
 <span class="normal"><a href="#__codelineno-0-173">173</a></span>
 <span class="normal"><a href="#__codelineno-0-174">174</a></span>
 <span class="normal"><a href="#__codelineno-0-175">175</a></span>
-<span class="normal"><a href="#__codelineno-0-176">176</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-132"><a id="__codelineno-0-132" name="__codelineno-0-132"></a><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
-</span><span id="__span-0-133"><a id="__codelineno-0-133" name="__codelineno-0-133"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Set or update a parameter in the AWS Parameter Store.</span>
+<span class="normal"><a href="#__codelineno-0-176">176</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-132"><a id="__codelineno-0-132" name="__codelineno-0-132"></a><span class="k">def</span> <span class="nf">upsert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+</span><span id="__span-0-133"><a id="__codelineno-0-133" name="__codelineno-0-133"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Insert or update a parameter in the AWS Parameter Store.</span>
 </span><span id="__span-0-134"><a id="__codelineno-0-134" name="__codelineno-0-134"></a>
 </span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a><span class="sd">    Args:</span>
 </span><span id="__span-0-136"><a id="__codelineno-0-136" name="__codelineno-0-136"></a><span class="sd">        name (str): The name of the parameter.</span>
@@ -3824,9 +3824,9 @@
 </span><span id="__span-0-157"><a id="__codelineno-0-157" name="__codelineno-0-157"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;For larger data use the DFStore() class (</span><span class="si">{</span><span class="n">doc_link</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 </span><span id="__span-0-158"><a id="__codelineno-0-158" name="__codelineno-0-158"></a>                <span class="k">return</span>
 </span><span id="__span-0-159"><a id="__codelineno-0-159" name="__codelineno-0-159"></a>
-</span><span id="__span-0-160"><a id="__codelineno-0-160" name="__codelineno-0-160"></a>            <span class="c1"># Add or update the compressed parameter in Parameter Store</span>
+</span><span id="__span-0-160"><a id="__codelineno-0-160" name="__codelineno-0-160"></a>            <span class="c1"># Insert or update the compressed parameter in Parameter Store</span>
 </span><span id="__span-0-161"><a id="__codelineno-0-161" name="__codelineno-0-161"></a>            <span class="k">try</span><span class="p">:</span>
-</span><span id="__span-0-162"><a id="__codelineno-0-162" name="__codelineno-0-162"></a>                <span class="c1"># Add or update the compressed parameter in Parameter Store</span>
+</span><span id="__span-0-162"><a id="__codelineno-0-162" name="__codelineno-0-162"></a>                <span class="c1"># Insert or update the compressed parameter in Parameter Store</span>
 </span><span id="__span-0-163"><a id="__codelineno-0-163" name="__codelineno-0-163"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">ssm_client</span><span class="o">.</span><span class="n">put_parameter</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">Value</span><span class="o">=</span><span class="n">encoded_value</span><span class="p">,</span> <span class="n">Type</span><span class="o">=</span><span class="s2">&quot;String&quot;</span><span class="p">,</span> <span class="n">Overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
 </span><span id="__span-0-164"><a id="__codelineno-0-164" name="__codelineno-0-164"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameter &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; added/updated successfully with compression.&quot;</span><span class="p">)</span>
 </span><span id="__span-0-165"><a id="__codelineno-0-165" name="__codelineno-0-165"></a>                <span class="k">return</span>
@@ -3834,7 +3834,7 @@
 </span><span id="__span-0-167"><a id="__codelineno-0-167" name="__codelineno-0-167"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to add/update compressed parameter &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span><span id="__span-0-168"><a id="__codelineno-0-168" name="__codelineno-0-168"></a>                <span class="k">raise</span>
 </span><span id="__span-0-169"><a id="__codelineno-0-169" name="__codelineno-0-169"></a>
-</span><span id="__span-0-170"><a id="__codelineno-0-170" name="__codelineno-0-170"></a>        <span class="c1"># Add or update the parameter normally if under 4KB</span>
+</span><span id="__span-0-170"><a id="__codelineno-0-170" name="__codelineno-0-170"></a>        <span class="c1"># Insert or update the parameter normally if under 4KB</span>
 </span><span id="__span-0-171"><a id="__codelineno-0-171" name="__codelineno-0-171"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ssm_client</span><span class="o">.</span><span class="n">put_parameter</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">Value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">Type</span><span class="o">=</span><span class="s2">&quot;String&quot;</span><span class="p">,</span> <span class="n">Overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
 </span><span id="__span-0-172"><a id="__codelineno-0-172" name="__codelineno-0-172"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameter &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; added/updated successfully.&quot;</span><span class="p">)</span>
 </span><span id="__span-0-173"><a id="__codelineno-0-173" name="__codelineno-0-173"></a>
