@@ -514,7 +514,7 @@ class AthenaSource(DataSourceAbstract):
     def delete(cls, data_uuid: str, database: str = "sageworks"):
         """Delete the AWS Data Catalog Table and S3 Storage Objects"""
         with quiet_execution():
-            athena_source = cls(data_uuid, database)
+            athena_source = cls(data_uuid, database=database)
             athena_source._delete()
 
     def _delete(self):
