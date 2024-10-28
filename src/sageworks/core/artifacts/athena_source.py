@@ -17,7 +17,6 @@ from sageworks.utils.datetime_utils import convert_all_to_iso8601
 from sageworks.algorithms import sql
 from sageworks.utils.redis_cache import CustomEncoder
 from sageworks.utils.aws_utils import sageworks_meta_from_catalog_table_meta
-from sageworks.utils.log_utils import quiet_execution
 
 
 class AthenaSource(DataSourceAbstract):
@@ -214,20 +213,35 @@ class AthenaSource(DataSourceAbstract):
         Returns:
             pd.DataFrame: The results of the query
         """
-        self.log.debug(f"Executing Query: {query}...")
+
+        # Call internal class _query method
+        return self.database_query(self.get_database(), query)
+
+    @classmethod
+    def database_query(cls, database: str, query: str) -> Union[pd.DataFrame, None]:
+        """Specify the Database and Query the Athena Service
+
+        Args:
+            database (str): The Athena Database to query
+            query (str): The query to run against the AthenaSource
+
+        Returns:
+            pd.DataFrame: The results of the query
+        """
+        cls.log.debug(f"Executing Query: {query}...")
         try:
             df = wr.athena.read_sql_query(
                 sql=query,
-                database=self.get_database(),
+                database=database,
                 ctas_approach=False,
-                boto3_session=self.boto3_session,
+                boto3_session=cls.boto3_session,
             )
             scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
             if scanned_bytes > 0:
-                self.log.debug(f"Athena Query successful (scanned bytes: {scanned_bytes})")
+                cls.log.debug(f"Athena Query successful (scanned bytes: {scanned_bytes})")
             return df
         except wr.exceptions.QueryFailed as e:
-            self.log.critical(f"Failed to execute query: {e}")
+            cls.log.critical(f"Failed to execute query: {e}")
             return None
 
     def execute_statement(self, query: str, silence_errors: bool = False):
@@ -513,9 +527,8 @@ class AthenaSource(DataSourceAbstract):
     @classmethod
     def delete(cls, data_uuid: str, database: str = "sageworks"):
         """Delete the AWS Data Catalog Table and S3 Storage Objects"""
-        with quiet_execution():
-            athena_source = cls(data_uuid, database=database)
-            athena_source._delete()
+        athena_source = cls(data_uuid, database=database)
+        athena_source._delete()
 
     def _delete(self):
         """Internal: Delete the AWS Data Catalog Table and S3 Storage Objects"""
@@ -591,6 +604,9 @@ if __name__ == "__main__":
     # Get Tags associated with this Artifact
     print(f"Tags: {my_data.get_tags()}")
 
+    # Test Queries
+    my_data.query(f"select * from {my_data.table} limit 5")
+
     # Get a sample of the data
     my_df = my_data.sample()
     print(f"Sample Data: {my_df.shape}")
@@ -654,5 +670,5 @@ if __name__ == "__main__":
     my_data.sageworks_meta()
 
     # Test Delete
-    print("\n\nTesting Delete...")
-    AthenaSource.delete("test_data")
+    # print("\n\nTesting Delete...")
+    # AthenaSource.delete("test_data")

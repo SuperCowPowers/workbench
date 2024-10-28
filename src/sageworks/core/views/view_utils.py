@@ -48,57 +48,57 @@ def list_views(data_source: DataSource) -> list[str]:
         list[str]: A list containing only the last part of the view table names
     """
     # Get the list of view tables for this data source
-    view_tables = list_view_tables(data_source)
+    view_tables = list_view_tables(data_source.get_database(), data_source.table)
     data_source_table = data_source.table
 
     # Each view will have the format: {data_table_name}_{view_name}
     return [view_table.replace(data_source_table + "_", "") for view_table in view_tables]
 
 
-def list_view_tables(data_source: DataSource) -> list[str]:
+def list_view_tables(database: str, base_table_name: str) -> list[str]:
     """List all the view tables in a database for a DataSource
 
     Args:
-        data_source (DataSource): The DataSource object
+        database (str): The database name
+        base_table_name (str): The base table name
 
     Returns:
         list[str]: A list of view table names
     """
-    base_table_name = data_source.table
 
     # Use LIKE to match table names that start with base_table_name followed by any characters
     view_query = f"""
     SELECT table_name
     FROM information_schema.tables
-    WHERE table_schema = '{data_source.get_database()}'
+    WHERE table_schema = '{database}'
       AND table_type = 'VIEW'
       AND table_name LIKE '{base_table_name}_%'
     """
-    df = data_source.query(view_query)
+    df = DataSource.database_query(database, view_query)
     return df["table_name"].tolist()
 
 
-def list_supplemental_data_tables(data_source: DataSource) -> list[str]:
+def list_supplemental_data_tables(database: str, base_table_name) -> list[str]:
     """List all supplemental data tables in a database for a DataSource
 
     Args:
-        data_source (DataSource): The DataSource object
+        database (str): The database name
+        base_table_name (str): The base table name
 
     Returns:
         list[str]: A list of supplemental data table names
     """
-    base_table_name = data_source.table
 
     # Use REGEXP_LIKE to match table names that start with an underscore, followed by the base_table_name,
     # followed by one underscore, and no more underscores
     supplemental_data_query = f"""
     SELECT table_name
     FROM information_schema.tables
-    WHERE table_schema = '{data_source.get_database()}'
+    WHERE table_schema = '{database}'
       AND table_type = 'BASE TABLE'
       AND table_name LIKE '{base_table_name}_%'
     """
-    df = data_source.query(supplemental_data_query)
+    df = DataSource.database_query(database, supplemental_data_query)
     return df["table_name"].tolist()
 
 
@@ -137,16 +137,17 @@ def dataframe_to_table(data_source: DataSource, df: pd.DataFrame, table_name: st
         log.critical(f"Failed to create table {table_name} in database {database}.")
 
 
-def delete_views_and_supplemental_data(data_source: DataSource):
+def delete_views_and_supplemental_data(database: str, base_table_name: str):
     """Delete all views and supplemental data in a database
 
     Args:
-        data_source (DataSource): The DataSource object
+        database (str): The database name
+        base_table_name (str): The base table name
     """
-    for view_table in list_view_tables(data_source):
-        delete_table(data_source, view_table)
-    for supplemental_data_table in list_supplemental_data_tables(data_source):
-        delete_table(data_source, supplemental_data_table)
+    for view_table in list_view_tables(database, base_table_name):
+        delete_table(database, view_table)
+    for supplemental_data_table in list_supplemental_data_tables(database, base_table_name):
+        delete_table(database, supplemental_data_table)
 
 
 def delete_table(data_source: DataSource, table_name: str):
@@ -292,7 +293,7 @@ if __name__ == "__main__":
 
     # Test list_view_tables
     print("List Views...")
-    print(list_view_tables(my_data_source))
+    print(list_view_tables(my_data_source.get_database(), my_data_source.table))
 
     # Test list_views
     print("List Views...")

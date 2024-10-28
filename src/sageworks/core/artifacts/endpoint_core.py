@@ -42,7 +42,6 @@ from sageworks.core.artifacts.model_core import ModelCore, ModelType
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.endpoint_metrics import EndpointMetrics
 from sageworks.utils.shapley_values import generate_shap_values
-from sageworks.utils.log_utils import quiet_execution
 from sageworks.utils.fast_inference import fast_inference
 
 
@@ -856,9 +855,8 @@ class EndpointCore(Artifact):
     @classmethod
     def delete(cls, endpoint_uuid: str):
         """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
-        with quiet_execution():
-            endpoint = cls(endpoint_uuid)
-            endpoint._delete()
+        endpoint = cls(endpoint_uuid)
+        endpoint._delete()
 
     def _delete(self):
         """Internal: Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""

@@ -18,7 +18,6 @@ from sagemaker.model import Model as SagemakerModel
 from sageworks.core.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.aws_utils import newest_path, pull_s3_data
-from sageworks.utils.log_utils import quiet_execution
 
 
 # Enumerated Model Types
@@ -703,9 +702,8 @@ class ModelCore(Artifact):
     @classmethod
     def delete(cls, model_uuid: str):
         """Delete the Model Packages and the Model Group"""
-        with quiet_execution():
-            model = cls(model_uuid)
-            model._delete()
+        model = cls(model_uuid)
+        model._delete()
 
     def _delete(self):
         """Internal: Delete the Model Packages and the Model Group"""

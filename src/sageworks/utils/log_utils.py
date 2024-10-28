@@ -5,7 +5,8 @@ from contextlib import contextmanager
 
 
 @contextmanager
-def quiet_execution():
+def quiet_execution_deprecated():
+    """Turns out this can be fairly dangerous, deprecating, as it suppresses errors that are important to see"""
     logger = logging.getLogger("sageworks")
     original_level = logger.level
     try:
@@ -26,13 +27,13 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
     log.info("You should see me")
 
-    with quiet_execution():
+    with quiet_execution_deprecated():
         log.info("You should NOT see me")
         log.warning("You should NOT see me")
 
     log.info("You should see me")
     log.warning("You should see this warning")
 
-    with quiet_execution():
+    with quiet_execution_deprecated():
         raise ValueError("This is a test error")
     log.info("You should see me")

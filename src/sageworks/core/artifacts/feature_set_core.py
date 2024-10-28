@@ -16,7 +16,6 @@ from sageworks.core.artifacts.artifact import Artifact
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.athena_source import AthenaSource
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
-from sageworks.utils.log_utils import quiet_execution
 
 from typing import TYPE_CHECKING
 
@@ -367,9 +366,8 @@ class FeatureSetCore(Artifact):
     @classmethod
     def delete(cls, feature_set_uuid: str):
         """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
-        with quiet_execution():
-            feature_set = cls(feature_set_uuid)
-            feature_set._delete()
+        feature_set = cls(feature_set_uuid)
+        feature_set._delete()
 
     def _delete(self):
         """Internal: Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
