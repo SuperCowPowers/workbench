@@ -1065,4 +1065,4 @@ if __name__ == "__main__":
     print(f"Class Labels: {my_model.class_labels()}")
 
     # Delete the Model
-    # ModelCore.delete("wine-classification")
+    # ModelCore.managed_delete("wine-classification")

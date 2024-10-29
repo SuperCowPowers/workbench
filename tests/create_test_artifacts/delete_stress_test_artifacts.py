@@ -16,19 +16,19 @@ if __name__ == "__main__":
 
     # Delete the DataSources
     for feature_name in feature_names:
-        DataSource.delete(feature_name)
+        DataSource.managed_delete(feature_name)
 
     # Delete the FeatureSets
     for feature_name in feature_names:
-        FeatureSet.delete(feature_name)
+        FeatureSet.managed_delete(feature_name)
 
     # Delete the Models
     for model_name in model_names:
-        Model.delete(model_name)
+        Model.managed_delete(model_name)
 
     # Delete the Endpoints
     for endpoint_name in endpoint_names:
-        Endpoint.delete(endpoint_name)
+        Endpoint.managed_delete(endpoint_name)
 
     time.sleep(5)
     print("All stress test artifacts should now be deleted!")

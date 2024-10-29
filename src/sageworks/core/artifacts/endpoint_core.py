@@ -957,10 +957,6 @@ if __name__ == "__main__":
     from sageworks.api import FeatureSet
     from sageworks.utils.endpoint_utils import fs_evaluation_data
 
-    # Temp
-    end = EndpointCore("foo")
-    end.delete()
-
     # Grab an EndpointCore object and pull some information from it
     my_endpoint = EndpointCore("abalone-regression-end")
 
@@ -1018,4 +1014,4 @@ if __name__ == "__main__":
     fast_results = my_endpoint.fast_inference(my_eval_df)
 
     # Test the class method delete
-    # EndpointCore.delete("abc-end")
+    EndpointCore.managed_delete("abc-end")

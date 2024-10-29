@@ -189,9 +189,6 @@ if __name__ == "__main__":
     # Test to Run
     long_tests = False
 
-    # Delete a Data Source which doesn't exist
-    DataSource.delete("non_existent_data")
-
     # Check logic for creating a new DataSource with DataFrame (without name)
     df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
     try:
