@@ -377,10 +377,10 @@ class FeatureSetCore(Artifact):
         """Class Method: Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects
 
         Args:
-            feature_set_name (str): The Name of the Feature Set to delete
+            feature_set_name (str): The Name of the FeatureSet to delete
         """
 
-        # Get Feature Group details
+        # See if the FeatureSet exists
         try:
             response = cls.sm_client.describe_feature_group(FeatureGroupName=feature_set_name)
         except cls.sm_client.exceptions.ResourceNotFound:
