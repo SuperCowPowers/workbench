@@ -2691,12 +2691,15 @@
 <p>Artifact deletion got a substantial overhaul. The 4 main classes received internal code changes for how they get deleted. Specifically deletion is now handled via a class method that allows an artifact to be delteed without instantiating an object. The API for deletion is actually more flexible now, please see API Changes below.</p>
 <h2 id="api-changes">API Changes</h2>
 <p><strong>Artifact Deletion</strong></p>
-<p>The API for Artifact deletion is more flexible, if you already have an instantiated object, you can simply call <code>delete()</code> on it. If you're deleting an object in batch mode or as part of a re-creation, you can call the class method <code>managed_delete()</code>, see code example sbelow.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>fs = FeatureSet(&quot;my_awesome_fs&quot;)
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>fs.delete()   # Used for notebooks, etc.. 
+<p>The API for Artifact deletion is more flexible, if you already have an instantiated object, you can simply call <code>delete()</code> on it. If you're deleting an object in bulk/batch mode, you can call the class method <code>managed_delete()</code>, see code example below.</p>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>fs = FeatureSet(&quot;my_awesome_fs&quot;)
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>fs.delete()            # Used for notebooks, scripts, etc.. 
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>OR
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>FeatureSet.managed_delete(&quot;my_awesome_fs&quot;) # Bulk/batch/internally
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>FeatureSet.managed_delete(&quot;my_awesome_fs&quot;) # Bulk/batch/internal use
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>&lt;Same API for DataSources, Models and Endpoints&gt;
 </span></code></pre></div>
+<strong>Note:</strong> Internally these use the <strong>same</strong> functionality, the dual API is simply for ease-of-use.</p>
 <h2 id="improvementsfixes">Improvements/Fixes</h2>
 <p><strong>Race Conditions</strong></p>
 <p>In theory, the changes to a <strong>class</strong> based delete will reduce race conditions where an object would try to create itself (just to be deleted) and the AWS Service Broker was encountering partially created (or partially deleted objects) and would barf error messages.</p>
