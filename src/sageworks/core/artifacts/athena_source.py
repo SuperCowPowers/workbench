@@ -17,7 +17,6 @@ from sageworks.utils.datetime_utils import convert_all_to_iso8601
 from sageworks.algorithms import sql
 from sageworks.utils.redis_cache import CustomEncoder
 from sageworks.utils.aws_utils import sageworks_meta_from_catalog_table_meta
-from sageworks.utils.log_utils import quiet_execution
 
 
 class AthenaSource(DataSourceAbstract):
@@ -64,6 +63,7 @@ class AthenaSource(DataSourceAbstract):
             self.catalog_table_meta = self.meta_broker.data_source_details(data_uuid, database, refresh=True)
             if self.catalog_table_meta is None:
                 self.log.error(f"Unable to find {database}:{self.table} in Glue Catalogs...")
+                return
 
         # Call superclass post init
         super().__post_init__()
@@ -214,20 +214,35 @@ class AthenaSource(DataSourceAbstract):
         Returns:
             pd.DataFrame: The results of the query
         """
-        self.log.debug(f"Executing Query: {query}...")
+
+        # Call internal class _query method
+        return self.database_query(self.get_database(), query)
+
+    @classmethod
+    def database_query(cls, database: str, query: str) -> Union[pd.DataFrame, None]:
+        """Specify the Database and Query the Athena Service
+
+        Args:
+            database (str): The Athena Database to query
+            query (str): The query to run against the AthenaSource
+
+        Returns:
+            pd.DataFrame: The results of the query
+        """
+        cls.log.debug(f"Executing Query: {query}...")
         try:
             df = wr.athena.read_sql_query(
                 sql=query,
-                database=self.get_database(),
+                database=database,
                 ctas_approach=False,
-                boto3_session=self.boto3_session,
+                boto3_session=cls.boto3_session,
             )
             scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
             if scanned_bytes > 0:
-                self.log.debug(f"Athena Query successful (scanned bytes: {scanned_bytes})")
+                cls.log.debug(f"Athena Query successful (scanned bytes: {scanned_bytes})")
             return df
         except wr.exceptions.QueryFailed as e:
-            self.log.critical(f"Failed to execute query: {e}")
+            cls.log.critical(f"Failed to execute query: {e}")
             return None
 
     def execute_statement(self, query: str, silence_errors: bool = False):
@@ -510,53 +525,76 @@ class AthenaSource(DataSourceAbstract):
         # Return the details data
         return details
 
-    @classmethod
-    def delete(cls, data_uuid: str, database: str = "sageworks"):
-        """Delete the AWS Data Catalog Table and S3 Storage Objects"""
-        with quiet_execution():
-            athena_source = cls(data_uuid, database)
-            athena_source._delete()
-
-    def _delete(self):
-        """Internal: Delete the AWS Data Catalog Table and S3 Storage Objects"""
+    def delete(self):
+        """Instance Method: Delete the AWS Data Catalog Table and S3 Storage Objects"""
 
         # Make sure the AthenaSource exists
         if not self.exists():
-            self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.table}")
+            self.log.warning(f"Trying to delete an AthenaSource that doesn't exist: {self.uuid}")
+
+        # Call the Class Method to delete the AthenaSource
+        AthenaSource.managed_delete(self.uuid, database=self.get_database())
+
+    @classmethod
+    def managed_delete(cls, data_source_name: str, database: str = "sageworks"):
+        """Class Method: Delete the AWS Data Catalog Table and S3 Storage Objects
+
+        Args:
+            data_source_name (str): Name of DataSource (AthenaSource)
+            database (str): Athena Database Name (default: sageworks)
+        """
+        table = data_source_name  # The table name is the same as the data_source_name
+
+        # Check if the Glue Catalog Table exists
+        if not wr.catalog.does_table_exist(database, table, boto3_session=cls.boto3_session):
+            cls.log.info(f"DataSource {table} not found in database {database}.")
+            return
 
         # Delete any views associated with this AthenaSource
-        self.delete_views()
-
-        # Delete Data Catalog Table
-        self.log.info(f"Deleting DataCatalog Table: {self.get_database()}.{self.table}...")
-        wr.catalog.delete_table_if_exists(self.get_database(), self.table, boto3_session=self.boto3_session)
+        cls.delete_views(table, database)
 
         # Delete S3 Storage Objects (if they exist)
         try:
-            # Make sure we add the trailing slash
-            s3_path = self.s3_storage_location()
-            s3_path = s3_path if s3_path.endswith("/") else f"{s3_path}/"
+            # Make an AWS Query to get the S3 storage location
+            s3_path = wr.catalog.get_table_location(database, table, boto3_session=cls.boto3_session)
 
-            self.log.info(f"Deleting S3 Storage Objects: {s3_path}...")
-            wr.s3.delete_objects(s3_path, boto3_session=self.boto3_session)
+            # Delete Data Catalog Table
+            cls.log.info(f"Deleting DataCatalog Table: {database}.{table}...")
+            wr.catalog.delete_table_if_exists(database, table, boto3_session=cls.boto3_session)
+
+            # Make sure we add the trailing slash
+            s3_path = s3_path if s3_path.endswith("/") else f"{s3_path}/"
+            cls.log.info(f"Deleting S3 Storage Objects: {s3_path}...")
+            wr.s3.delete_objects(s3_path, boto3_session=cls.boto3_session)
         except Exception as e:
-            self.log.error(f"Failed to delete S3 Storage Objects: {e}")
-            self.log.warning("Malformed Artifact... good thing it's being deleted...")
+            cls.log.error(f"Failure when trying to delete {data_source_name}: {e}")
 
         # Delete any data in the Cache
-        for key in self.data_storage.list_subkeys(f"data_source:{self.uuid}:"):
-            self.log.info(f"Deleting Cache Key {key}...")
-            self.data_storage.delete(key)
+        for key in cls.data_storage.list_subkeys(f"data_source:{data_source_name}:"):
+            cls.log.info(f"Deleting Cache Key {key}...")
+            cls.data_storage.delete(key)
 
-    def delete_views(self):
-        """Delete any views associated with this FeatureSet"""
+    @classmethod
+    def delete_views(cls, table: str, database: str):
+        """Delete any views associated with this FeatureSet
+
+        Args:
+            table (str): Name of Athena Table
+            database (str): Athena Database Name
+        """
         from sageworks.core.views.view_utils import delete_views_and_supplemental_data
 
-        delete_views_and_supplemental_data(self)
+        delete_views_and_supplemental_data(table, database, cls.boto3_session)
 
 
 if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
+
+    # Test a Data Source that doesn't exist
+    print("\n\nTesting a Data Source that does not exist...")
+    my_data = AthenaSource("does_not_exist")
+    assert not my_data.exists()
+    my_data.sageworks_meta()
 
     # Retrieve a Data Source
     my_data = AthenaSource("abalone_data")
@@ -590,6 +628,9 @@ if __name__ == "__main__":
 
     # Get Tags associated with this Artifact
     print(f"Tags: {my_data.get_tags()}")
+
+    # Test Queries
+    my_data.query(f"select * from {my_data.table} limit 5")
 
     # Get a sample of the data
     my_df = my_data.sample()
@@ -654,5 +695,5 @@ if __name__ == "__main__":
     my_data.sageworks_meta()
 
     # Test Delete
-    print("\n\nTesting Delete...")
-    AthenaSource.delete("test_data")
+    # print("\n\nTesting Delete...")
+    # AthenaSource.managed_delete("test_data")

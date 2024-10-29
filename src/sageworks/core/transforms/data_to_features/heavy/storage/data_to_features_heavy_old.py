@@ -53,7 +53,7 @@ class DataToFeaturesHeavy(Transform):
         """
 
         # Delete the existing FeatureSet (if it exists)
-        FeatureSetCore.delete(self.output_uuid)
+        FeatureSetCore.managed_delete(self.output_uuid)
         time.sleep(5)
 
         # Set the ID and Event Time Columns

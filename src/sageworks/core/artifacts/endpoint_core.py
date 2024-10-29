@@ -3,6 +3,7 @@
 import time
 from datetime import datetime
 import botocore
+from botocore.exceptions import ClientError
 import pandas as pd
 import numpy as np
 from io import StringIO
@@ -42,7 +43,6 @@ from sageworks.core.artifacts.model_core import ModelCore, ModelType
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.endpoint_metrics import EndpointMetrics
 from sageworks.utils.shapley_values import generate_shap_values
-from sageworks.utils.log_utils import quiet_execution
 from sageworks.utils.fast_inference import fast_inference
 
 
@@ -853,87 +853,103 @@ class EndpointCore(Artifact):
         self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
         self.upsert_sageworks_meta({"sageworks_input": input})
 
+    def delete(self):
+        """ "Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
+        if not self.exists():
+            self.log.warning(f"Trying to delete an Model that doesn't exist: {self.uuid}")
+
+        # Call the Class Method to delete the FeatureSet
+        EndpointCore.managed_delete(endpoint_name=self.uuid)
+
     @classmethod
-    def delete(cls, endpoint_uuid: str):
-        """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
-        with quiet_execution():
-            endpoint = cls(endpoint_uuid)
-            endpoint._delete()
+    def managed_delete(cls, endpoint_name: str):
+        """Delete the Endpoint and associated resources if it exists"""
 
-    def _delete(self):
-        """Internal: Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
-        self.delete_endpoint_models()
-
-        # Remove this endpoint from the set of registered endpoints in our model
-        model = ModelCore(self.model_name)
-        model.remove_endpoint(self.uuid)
-
-        # Grab the Endpoint Config Name from the AWS
-        endpoint_config_name = self.endpoint_config_name()
+        # Check if the endpoint exists
         try:
-            self.log.info(f"Deleting Endpoint Config {endpoint_config_name}...")
-            self.sm_client.delete_endpoint_config(EndpointConfigName=endpoint_config_name)
-        except botocore.exceptions.ClientError:
-            self.log.info(f"Endpoint Config {endpoint_config_name} doesn't exist...")
+            endpoint_info = cls.sm_client.describe_endpoint(EndpointName=endpoint_name)
+        except ClientError as e:
+            if e.response["Error"]["Code"] in ["ValidationException", "ResourceNotFound"]:
+                cls.log.info(f"Endpoint {endpoint_name} not found!")
+                return
+            raise  # Re-raise unexpected errors
 
-        # Check for any monitoring schedules
-        response = self.sm_client.list_monitoring_schedules(EndpointName=self.uuid)
-        monitoring_schedules = response["MonitoringScheduleSummaries"]
+        # Delete underlying models (Endpoints store/use models internally)
+        cls.delete_endpoint_models(endpoint_name)
+
+        # Get Endpoint Config Name and delete if exists
+        endpoint_config_name = endpoint_info["EndpointConfigName"]
+        try:
+            cls.log.info(f"Deleting Endpoint Config {endpoint_config_name}...")
+            cls.sm_client.delete_endpoint_config(EndpointConfigName=endpoint_config_name)
+        except ClientError:
+            cls.log.info(f"Endpoint Config {endpoint_config_name} not found...")
+
+        # Delete any monitoring schedules associated with the endpoint
+        monitoring_schedules = cls.sm_client.list_monitoring_schedules(EndpointName=endpoint_name)[
+            "MonitoringScheduleSummaries"
+        ]
         for schedule in monitoring_schedules:
-            self.log.info(f"Deleting Endpoint Monitoring Schedule {schedule['MonitoringScheduleName']}...")
-            self.sm_client.delete_monitoring_schedule(MonitoringScheduleName=schedule["MonitoringScheduleName"])
+            cls.log.info(f"Deleting Monitoring Schedule {schedule['MonitoringScheduleName']}...")
+            cls.sm_client.delete_monitoring_schedule(MonitoringScheduleName=schedule["MonitoringScheduleName"])
 
-        # Delete any inference, data_capture or monitoring artifacts
-        for s3_path in [self.endpoint_inference_path, self.endpoint_data_capture_path, self.endpoint_monitoring_path]:
+        # Delete related S3 artifacts (inference, data capture, monitoring)
+        endpoint_inference_path = cls.endpoints_s3_path + "/inference/" + endpoint_name
+        endpoint_data_capture_path = cls.endpoints_s3_path + "/data_capture/" + endpoint_name
+        endpoint_monitoring_path = cls.endpoints_s3_path + "/monitoring/" + endpoint_name
+        for s3_path in [endpoint_inference_path, endpoint_data_capture_path, endpoint_monitoring_path]:
+            s3_path = f"{s3_path.rstrip('/')}/"
+            objects = wr.s3.list_objects(s3_path, boto3_session=cls.boto3_session)
+            if objects:
+                cls.log.info(f"Deleting S3 Objects at {s3_path}...")
+                wr.s3.delete_objects(objects, boto3_session=cls.boto3_session)
 
-            # Make sure we add the trailing slash
-            s3_path = s3_path if s3_path.endswith("/") else f"{s3_path}/"
-            objects = wr.s3.list_objects(s3_path, boto3_session=self.boto3_session)
-            for obj in objects:
-                self.log.info(f"Deleting S3 Object {obj}...")
-            wr.s3.delete_objects(objects, boto3_session=self.boto3_session)
+        # Clear related cache data
+        cache_keys = cls.data_storage.list_subkeys(f"endpoint:{endpoint_name}:")
+        for key in cache_keys:
+            cls.log.info(f"Deleting Cache Key {key}...")
+            cls.data_storage.delete(key)
 
-        # Now delete any data in the Cache
-        for key in self.data_storage.list_subkeys(f"endpoint:{self.uuid}:"):
-            self.log.info(f"Deleting Cache Key: {key}")
-            self.data_storage.delete(key)
-
-        # Okay now delete the Endpoint
+        # Delete the endpoint
+        time.sleep(2)  # Allow AWS to catch up
         try:
-            time.sleep(2)  # Let AWS catch up with any deletions performed above
-            self.log.info(f"Deleting Endpoint {self.uuid}...")
-            self.sm_client.delete_endpoint(EndpointName=self.uuid)
-        except botocore.exceptions.ClientError as e:
-            self.log.info("Endpoint ClientError...")
+            cls.log.info(f"Deleting Endpoint {endpoint_name}...")
+            cls.sm_client.delete_endpoint(EndpointName=endpoint_name)
+        except ClientError as e:
+            cls.log.error("Error deleting endpoint.")
             raise e
 
-        # One more sleep to let AWS fully register the endpoint deletion
-        time.sleep(5)
+        time.sleep(5)  # Final sleep for AWS to fully register deletions
 
-    def delete_endpoint_models(self):
-        """Delete the underlying Model for an Endpoint"""
+    @classmethod
+    def delete_endpoint_models(cls, endpoint_name: str):
+        """Delete the underlying Model for an Endpoint
 
-        # Grab the Endpoint Config Name from the AWS
-        endpoint_config_name = self.endpoint_config_name()
+        Args:
+            endpoint_name (str): The name of the endpoint to delete
+        """
+
+        # Grab the Endpoint Config Name from AWS
+        endpoint_config_name = cls.sm_client.describe_endpoint(EndpointName=endpoint_name)["EndpointConfigName"]
 
         # Retrieve the Model Names from the Endpoint Config
         try:
-            endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
+            endpoint_config = cls.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
         except botocore.exceptions.ClientError:
-            self.log.info(f"Endpoint Config {self.uuid} doesn't exist...")
+            cls.log.info(f"Endpoint Config {endpoint_config_name} doesn't exist...")
             return
         model_names = [variant["ModelName"] for variant in endpoint_config["ProductionVariants"]]
         for model_name in model_names:
-            self.log.info(f"Deleting Internal Model {model_name}...")
+            cls.log.info(f"Deleting Internal Model {model_name}...")
             try:
-                self.sm_client.delete_model(ModelName=model_name)
+                cls.sm_client.delete_model(ModelName=model_name)
             except botocore.exceptions.ClientError as error:
                 error_code = error.response["Error"]["Code"]
                 error_message = error.response["Error"]["Message"]
                 if error_code == "ResourceInUse":
-                    self.log.warning(f"Model {model_name} is still in use...")
+                    cls.log.warning(f"Model {model_name} is still in use...")
                 else:
-                    self.log.warning(f"Error: {error_code} - {error_message}")
+                    cls.log.warning(f"Error: {error_code} - {error_message}")
 
 
 if __name__ == "__main__":
@@ -998,4 +1014,4 @@ if __name__ == "__main__":
     fast_results = my_endpoint.fast_inference(my_eval_df)
 
     # Test the class method delete
-    # EndpointCore.delete("abc-end")
+    EndpointCore.managed_delete("abc-end")

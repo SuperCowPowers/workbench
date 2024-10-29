@@ -6,6 +6,7 @@ import urllib.parse
 from typing import Union
 from enum import Enum
 import botocore
+from botocore.exceptions import ClientError
 
 import pandas as pd
 import awswrangler as wr
@@ -18,7 +19,6 @@ from sagemaker.model import Model as SagemakerModel
 from sageworks.core.artifacts.artifact import Artifact
 from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.aws_utils import newest_path, pull_s3_data
-from sageworks.utils.log_utils import quiet_execution
 
 
 # Enumerated Model Types
@@ -700,42 +700,57 @@ class ModelCore(Artifact):
         self.details(recompute=True)
         return True
 
-    @classmethod
-    def delete(cls, model_uuid: str):
+    def delete(self):
         """Delete the Model Packages and the Model Group"""
-        with quiet_execution():
-            model = cls(model_uuid)
-            model._delete()
+        if not self.exists():
+            self.log.warning(f"Trying to delete an Model that doesn't exist: {self.uuid}")
 
-    def _delete(self):
-        """Internal: Delete the Model Packages and the Model Group"""
+        # Call the Class Method to delete the Model Group
+        ModelCore.managed_delete(model_group_name=self.uuid)
 
-        # If we don't have meta then the model probably doesn't exist
-        if self.model_meta is None:
-            self.log.info(f"Model {self.model_name} doesn't appear to exist...")
-            return
+    @classmethod
+    def managed_delete(cls, model_group_name: str):
+        """Delete the Model Packages, Model Group, and S3 Storage Objects
 
-        # First delete the Model Packages within the Model Group
-        for model in self.model_meta:
-            self.log.info(f"Deleting Model Package {model['ModelPackageArn']}...")
-            self.sm_client.delete_model_package(ModelPackageName=model["ModelPackageArn"])
+        Args:
+            model_group_name (str): The name of the Model Group to delete
+        """
+        # Check if the model group exists in SageMaker
+        try:
+            cls.sm_client.describe_model_package_group(ModelPackageGroupName=model_group_name)
+        except ClientError as e:
+            if e.response["Error"]["Code"] in ["ValidationException", "ResourceNotFound"]:
+                cls.log.info(f"Model Group {model_group_name} not found!")
+                return
+            else:
+                raise  # Re-raise unexpected errors
+
+        # Delete Model Packages within the Model Group
+        try:
+            paginator = cls.sm_client.get_paginator("list_model_packages")
+            for page in paginator.paginate(ModelPackageGroupName=model_group_name):
+                for model_package in page["ModelPackageSummaryList"]:
+                    package_arn = model_package["ModelPackageArn"]
+                    cls.log.info(f"Deleting Model Package {package_arn}...")
+                    cls.sm_client.delete_model_package(ModelPackageName=package_arn)
+        except ClientError as e:
+            cls.log.error(f"Error while deleting model packages: {e}")
+            raise
 
         # Delete the Model Package Group
-        self.log.info(f"Deleting Model Group {self.model_name}...")
-        self.sm_client.delete_model_package_group(ModelPackageGroupName=self.model_name)
+        cls.log.info(f"Deleting Model Group {model_group_name}...")
+        cls.sm_client.delete_model_package_group(ModelPackageGroupName=model_group_name)
 
-        # Delete any training artifacts
-        try:
-            s3_delete_path = f"{self.model_training_path}/"
-            self.log.info(f"Deleting Training S3 Objects {s3_delete_path}")
-            wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto3_session)
-        except Exception:
-            self.log.warning(f"Could not find/delete training artifacts for {self.model_name}!")
+        # Delete S3 training artifacts
+        s3_delete_path = f"{cls.models_s3_path}/training/{model_group_name}/"
+        cls.log.info(f"Deleting S3 Objects at {s3_delete_path}...")
+        wr.s3.delete_objects(s3_delete_path, boto3_session=cls.boto3_session)
 
-        # Delete any data in the Cache
-        for key in self.data_storage.list_subkeys(f"model:{self.uuid}:"):
-            self.log.info(f"Deleting Cache Key {key}...")
-            self.data_storage.delete(key)
+        # Delete any related data in the Cache
+        cache_keys = cls.data_storage.list_subkeys(f"model_group:{model_group_name}:")
+        for key in cache_keys:
+            cls.log.info(f"Deleting Cache Key {key}...")
+            cls.data_storage.delete(key)
 
     def _set_model_type(self, model_type: ModelType):
         """Internal: Set the Model Type for this Model"""
@@ -1050,4 +1065,4 @@ if __name__ == "__main__":
     print(f"Class Labels: {my_model.class_labels()}")
 
     # Delete the Model
-    # ModelCore.delete("wine-classification")
+    # ModelCore.managed_delete("wine-classification")

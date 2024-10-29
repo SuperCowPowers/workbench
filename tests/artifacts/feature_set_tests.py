@@ -33,7 +33,7 @@ def test():
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print('Deleting SageWorks Feature Set...')
-    # FeatureSetCore.delete("test_features")
+    # my_features.delete()
 
 
 if __name__ == "__main__":
