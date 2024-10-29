@@ -58,7 +58,7 @@ class PandasToData(Transform):
     def delete_existing(self):
         # Delete the existing FeatureSet if it exists
         self.log.info(f"Deleting the {self.output_uuid} DataSource...")
-        AthenaSource.delete(self.output_uuid)
+        AthenaSource.managed_delete(self.output_uuid)
         time.sleep(1)
 
     def convert_object_to_string(self, df: pd.DataFrame) -> pd.DataFrame:

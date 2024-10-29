@@ -406,6 +406,11 @@ class Artifact(ABC):
         Returns:
             str: String representation of this artifact
         """
+
+        # If the artifact does not exist, return a message
+        if not self.exists():
+            return f"{self.__class__.__name__}: {self.uuid} does not exist"
+
         summary_dict = self.summary()
         display_keys = [
             "aws_arn",

@@ -363,44 +363,66 @@ class FeatureSetCore(Artifact):
         # Return the details data
         return details
 
-    @classmethod
-    def delete(cls, feature_set_uuid: str):
-        """Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
-        feature_set = cls(feature_set_uuid)
-        feature_set._delete()
+    def delete(self):
+        """Instance Method: Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
+        # Make sure the AthenaSource exists
+        if not self.exists():
+            self.log.warning(f"Trying to delete an FeatureSet that doesn't exist: {self.uuid}")
 
-    def _delete(self):
-        """Internal: Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
+        # Call the Class Method to delete the FeatureSet
+        FeatureSetCore.managed_delete(self.uuid)
+
+    @classmethod
+    def managed_delete(cls, feature_set_name: str):
+        """Class Method: Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects
+
+        Args:
+            feature_set_name (str): The Name of the Feature Set to delete
+        """
+
+        # Get Feature Group details
+        try:
+            response = cls.sm_client.describe_feature_group(FeatureGroupName=feature_set_name)
+        except cls.sm_client.exceptions.ResourceNotFound:
+            cls.log.info(f"FeatureSet {feature_set_name} not found!")
+            return
+
+        # Extract database and table information from the response
+        offline_config = response.get("OfflineStoreConfig", {})
+        database = offline_config.get("DataCatalogConfig", {}).get("Database")
+        offline_table = offline_config.get("DataCatalogConfig", {}).get("TableName")
+        data_source_uuid = offline_table  # Our offline storage IS a DataSource
 
         # Delete the Feature Group and ensure that it gets deleted
-        self.log.important(f"Deleting FeatureSet {self.uuid}...")
-        remove_fg = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session)
+        cls.log.important(f"Deleting FeatureSet {feature_set_name}...")
+        remove_fg = FeatureGroup(name=feature_set_name, sagemaker_session=cls.sm_session)
         remove_fg.delete()
-        self.ensure_feature_group_deleted(remove_fg)
+        cls.ensure_feature_group_deleted(remove_fg)
 
         # Delete our underlying DataSource (Data Catalog Table and S3 Storage Objects)
-        self.data_source._delete()  # noqa: protected-access
+        AthenaSource.managed_delete(data_source_uuid, database=database)
 
-        # Delete any views
-        self.delete_views()
+        # Delete any views associated with this FeatureSet
+        cls.delete_views(offline_table, database)
 
         # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
-        s3_delete_path = self.feature_sets_s3_path + f"/{self.uuid}/"
-        self.log.info(f"Deleting All FeatureSet S3 Storage Objects {s3_delete_path}")
-        wr.s3.delete_objects(s3_delete_path, boto3_session=self.boto3_session)
+        s3_delete_path = cls.feature_sets_s3_path + f"/{feature_set_name}/"
+        cls.log.info(f"Deleting All FeatureSet S3 Storage Objects {s3_delete_path}")
+        wr.s3.delete_objects(s3_delete_path, boto3_session=cls.boto3_session)
 
         # Now delete any data in the Cache
-        for key in self.data_storage.list_subkeys(f"feature_set:{self.uuid}:"):
-            self.log.info(f"Deleting Cache Key: {key}")
-            self.data_storage.delete(key)
+        for key in cls.data_storage.list_subkeys(f"feature_set:{feature_set_name}:"):
+            cls.log.info(f"Deleting Cache Key: {key}")
+            cls.data_storage.delete(key)
 
         # Force a refresh of the AWS Metadata (to make sure references to deleted artifacts are gone)
-        self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=True)
+        cls.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=True)
 
-    def ensure_feature_group_deleted(self, feature_group):
+    @classmethod
+    def ensure_feature_group_deleted(cls, feature_group):
         status = "Deleting"
         while status == "Deleting":
-            self.log.debug("FeatureSet being Deleted...")
+            cls.log.debug("FeatureSet being Deleted...")
             try:
                 status = feature_group.describe().get("FeatureGroupStatus")
             except botocore.exceptions.ClientError as error:
@@ -410,7 +432,7 @@ class FeatureSetCore(Artifact):
                 else:
                     raise error
             time.sleep(1)
-        self.log.info(f"FeatureSet {feature_group.name} successfully deleted")
+        cls.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
     def set_training_holdouts(self, id_column: str, holdout_ids: list[str]):
         """Set the hold out ids for the training view for this FeatureSet
@@ -425,11 +447,17 @@ class FeatureSetCore(Artifact):
         self.log.important(f"Setting Training Holdouts: {len(holdout_ids)} ids...")
         TrainingView.create(self, id_column=id_column, holdout_ids=holdout_ids)
 
-    def delete_views(self):
-        """Delete any views associated with this FeatureSet"""
+    @classmethod
+    def delete_views(cls, table: str, database: str):
+        """Delete any views associated with this FeatureSet
+
+        Args:
+            table (str): Name of Athena Table
+            database (str): Athena Database Name
+        """
         from sageworks.core.views.view_utils import delete_views_and_supplemental_data
 
-        delete_views_and_supplemental_data(self.data_source)
+        delete_views_and_supplemental_data(table, database, cls.boto3_session)
 
     def descriptive_stats(self, recompute: bool = False) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource
@@ -588,10 +616,6 @@ if __name__ == "__main__":
     pd.set_option("display.max_columns", 15)
     pd.set_option("display.width", 1000)
 
-    # Test new recompute_stats method (we're grabbing a datasource from the FeatureSet)
-    fs = LocalFeatureSetCore("abalone_features")
-    # fs.recompute_stats()
-
     # Grab a FeatureSet object and pull some information from it
     my_features = LocalFeatureSetCore("test_features")
     if not my_features.exists():
@@ -663,5 +687,5 @@ if __name__ == "__main__":
 
     # Now delete the AWS artifacts associated with this Feature Set
     print("Deleting SageWorks Feature Set...")
-    LocalFeatureSetCore.delete("test_features")
+    my_features.delete()
     print("Done")

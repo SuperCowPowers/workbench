@@ -87,7 +87,7 @@ class View:
 
         # Now fill some details about the view
         self.columns, self.column_types, self.source_table, self.join_view = view_details(
-            self.data_source.get_database(), self.table, self.data_source.boto3_session
+            self.table, self.data_source.get_database(), self.data_source.boto3_session
         )
 
     def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
@@ -144,11 +144,11 @@ class View:
         """Delete the database view (and supplemental data) if it exists."""
 
         # List any supplemental tables for this data source
-        supplemental_tables = list_supplemental_data_tables(self.data_source)
+        supplemental_tables = list_supplemental_data_tables(self.base_table_name, self.database)
         for table in supplemental_tables:
             if self.view_name in table:
                 self.log.important(f"Deleting Supplemental Table {table}...")
-                delete_table(self.data_source, table)
+                delete_table(table, self.database, self.data_source.boto3_session)
 
         # Now drop the view
         self.log.important(f"Dropping View {self.table}...")

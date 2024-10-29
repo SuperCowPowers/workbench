@@ -75,7 +75,7 @@ class PandasToFeatures(Transform):
     def delete_existing(self):
         # Delete the existing FeatureSet if it exists
         self.log.info(f"Deleting the {self.output_uuid} FeatureSet...")
-        FeatureSetCore.delete(self.output_uuid)
+        FeatureSetCore.managed_delete(self.output_uuid)
         time.sleep(1)
 
     def _ensure_id_column(self):

@@ -63,6 +63,7 @@ class AthenaSource(DataSourceAbstract):
             self.catalog_table_meta = self.meta_broker.data_source_details(data_uuid, database, refresh=True)
             if self.catalog_table_meta is None:
                 self.log.error(f"Unable to find {database}:{self.table} in Glue Catalogs...")
+                return
 
         # Call superclass post init
         super().__post_init__()
@@ -524,52 +525,71 @@ class AthenaSource(DataSourceAbstract):
         # Return the details data
         return details
 
-    @classmethod
-    def delete(cls, data_uuid: str, database: str = "sageworks"):
-        """Delete the AWS Data Catalog Table and S3 Storage Objects"""
-        athena_source = cls(data_uuid, database=database)
-        athena_source._delete()
-
-    def _delete(self):
-        """Internal: Delete the AWS Data Catalog Table and S3 Storage Objects"""
+    def delete(self):
+        """Instance Method: Delete the AWS Data Catalog Table and S3 Storage Objects"""
 
         # Make sure the AthenaSource exists
         if not self.exists():
-            self.log.warning(f"Trying to delete a AthenaSource that doesn't exist: {self.table}")
+            self.log.warning(f"Trying to delete an AthenaSource that doesn't exist: {self.uuid}")
+
+        # Call the Class Method to delete the AthenaSource
+        AthenaSource.managed_delete(self.uuid, database=self.get_database())
+
+    @classmethod
+    def managed_delete(cls, data_source_name: str, database: str = "sageworks"):
+        """Class Method: Delete the AWS Data Catalog Table and S3 Storage Objects
+
+        Args:
+            data_source_name (str): Name of DataSource (AthenaSource)
+            database (str): Athena Database Name (default: sageworks)
+        """
+        table = data_source_name
 
         # Delete any views associated with this AthenaSource
-        self.delete_views()
-
-        # Delete Data Catalog Table
-        self.log.info(f"Deleting DataCatalog Table: {self.get_database()}.{self.table}...")
-        wr.catalog.delete_table_if_exists(self.get_database(), self.table, boto3_session=self.boto3_session)
+        cls.delete_views(table, database)
 
         # Delete S3 Storage Objects (if they exist)
         try:
-            # Make sure we add the trailing slash
-            s3_path = self.s3_storage_location()
-            s3_path = s3_path if s3_path.endswith("/") else f"{s3_path}/"
+            # Make an AWS Query to get the S3 storage location
+            s3_path = wr.catalog.get_table_location(database, table, boto3_session=cls.boto3_session)
 
-            self.log.info(f"Deleting S3 Storage Objects: {s3_path}...")
-            wr.s3.delete_objects(s3_path, boto3_session=self.boto3_session)
+            # Delete Data Catalog Table
+            cls.log.info(f"Deleting DataCatalog Table: {database}.{table}...")
+            wr.catalog.delete_table_if_exists(database, table, boto3_session=cls.boto3_session)
+
+            # Make sure we add the trailing slash
+            s3_path = s3_path if s3_path.endswith("/") else f"{s3_path}/"
+            cls.log.info(f"Deleting S3 Storage Objects: {s3_path}...")
+            wr.s3.delete_objects(s3_path, boto3_session=cls.boto3_session)
         except Exception as e:
-            self.log.error(f"Failed to delete S3 Storage Objects: {e}")
-            self.log.warning("Malformed Artifact... good thing it's being deleted...")
+            cls.log.error(f"Failure when trying to delete {data_source_name}: {e}")
 
         # Delete any data in the Cache
-        for key in self.data_storage.list_subkeys(f"data_source:{self.uuid}:"):
-            self.log.info(f"Deleting Cache Key {key}...")
-            self.data_storage.delete(key)
+        for key in cls.data_storage.list_subkeys(f"data_source:{data_source_name}:"):
+            cls.log.info(f"Deleting Cache Key {key}...")
+            cls.data_storage.delete(key)
 
-    def delete_views(self):
-        """Delete any views associated with this FeatureSet"""
+    @classmethod
+    def delete_views(cls, table: str, database: str):
+        """Delete any views associated with this FeatureSet
+
+        Args:
+            table (str): Name of Athena Table
+            database (str): Athena Database Name
+        """
         from sageworks.core.views.view_utils import delete_views_and_supplemental_data
 
-        delete_views_and_supplemental_data(self)
+        delete_views_and_supplemental_data(table, database, cls.boto3_session)
 
 
 if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
+
+    # Test a Data Source that doesn't exist
+    print("\n\nTesting a Data Source that does not exist...")
+    my_data = AthenaSource("does_not_exist")
+    assert not my_data.exists()
+    my_data.sageworks_meta()
 
     # Retrieve a Data Source
     my_data = AthenaSource("abalone_data")
@@ -671,4 +691,4 @@ if __name__ == "__main__":
 
     # Test Delete
     # print("\n\nTesting Delete...")
-    # AthenaSource.delete("test_data")
+    # AthenaSource.managed_delete("test_data")
