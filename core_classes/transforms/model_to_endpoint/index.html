@@ -2886,7 +2886,7 @@
 </span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Deploy an Endpoint for a Model&quot;&quot;&quot;</span>
 </span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>
 </span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>        <span class="c1"># Delete endpoint (if it already exists)</span>
-</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>        <span class="n">EndpointCore</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>        <span class="n">EndpointCore</span><span class="o">.</span><span class="n">managed_delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>        <span class="c1"># Get the Model Package ARN for our input model</span>
 </span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>        <span class="n">input_model</span> <span class="o">=</span> <span class="n">ModelCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">)</span>
@@ -3093,7 +3093,7 @@ Args:
 </span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Deploy an Endpoint for a Model&quot;&quot;&quot;</span>
 </span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>
 </span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="c1"># Delete endpoint (if it already exists)</span>
-</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="n">EndpointCore</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="n">EndpointCore</span><span class="o">.</span><span class="n">managed_delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="c1"># Get the Model Package ARN for our input model</span>
 </span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="n">input_model</span> <span class="o">=</span> <span class="n">ModelCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">)</span>
