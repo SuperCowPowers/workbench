@@ -264,6 +264,8 @@ class SageworksCoreStack(Stack):
         return iam.PolicyStatement(
             actions=[
                 "sagemaker:ListModelPackageGroups",
+                "sagemaker:ListModelPackages",
+                "sagemaker:ListModels",
             ],
             resources=["*"],  # Broad permission necessary for listing operations
         )
@@ -296,7 +298,6 @@ class SageworksCoreStack(Stack):
                 "sagemaker:DescribeModelPackage",
                 "sagemaker:GetModelPackage",
                 "sagemaker:UpdateModelPackage",
-                "sagemaker:ListModelPackages",
                 # Actions for models
                 "sagemaker:CreateModel",
                 "sagemaker:DeleteModel",
