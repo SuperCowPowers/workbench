@@ -543,7 +543,12 @@ class AthenaSource(DataSourceAbstract):
             data_source_name (str): Name of DataSource (AthenaSource)
             database (str): Athena Database Name (default: sageworks)
         """
-        table = data_source_name
+        table = data_source_name  # The table name is the same as the data_source_name
+
+        # Check if the Glue Catalog Table exists
+        if not wr.catalog.does_table_exist(database, table, boto3_session=cls.boto3_session):
+            cls.log.info(f"DataSource {table} not found in database {database}.")
+            return
 
         # Delete any views associated with this AthenaSource
         cls.delete_views(table, database)
