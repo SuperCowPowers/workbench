@@ -719,7 +719,7 @@ class ModelCore(Artifact):
         try:
             cls.sm_client.describe_model_package_group(ModelPackageGroupName=model_group_name)
         except ClientError as e:
-            if e.response['Error']['Code'] in ['ValidationException', 'ResourceNotFound']:
+            if e.response["Error"]["Code"] in ["ValidationException", "ResourceNotFound"]:
                 cls.log.info(f"Model Group {model_group_name} not found!")
                 return
             else:
@@ -727,7 +727,7 @@ class ModelCore(Artifact):
 
         # Delete Model Packages within the Model Group
         try:
-            paginator = cls.sm_client.get_paginator('list_model_packages')
+            paginator = cls.sm_client.get_paginator("list_model_packages")
             for page in paginator.paginate(ModelPackageGroupName=model_group_name):
                 for model_package in page["ModelPackageSummaryList"]:
                     package_arn = model_package["ModelPackageArn"]

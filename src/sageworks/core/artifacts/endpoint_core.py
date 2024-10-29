@@ -854,7 +854,7 @@ class EndpointCore(Artifact):
         self.upsert_sageworks_meta({"sageworks_input": input})
 
     def delete(self):
-        """"Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
+        """ "Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
         if not self.exists():
             self.log.warning(f"Trying to delete an Model that doesn't exist: {self.uuid}")
 
@@ -869,7 +869,7 @@ class EndpointCore(Artifact):
         try:
             endpoint_info = cls.sm_client.describe_endpoint(EndpointName=endpoint_name)
         except ClientError as e:
-            if e.response['Error']['Code'] in ['ValidationException', 'ResourceNotFound']:
+            if e.response["Error"]["Code"] in ["ValidationException", "ResourceNotFound"]:
                 cls.log.info(f"Endpoint {endpoint_name} not found!")
                 return
             raise  # Re-raise unexpected errors
@@ -886,7 +886,9 @@ class EndpointCore(Artifact):
             cls.log.info(f"Endpoint Config {endpoint_config_name} not found...")
 
         # Delete any monitoring schedules associated with the endpoint
-        monitoring_schedules = cls.sm_client.list_monitoring_schedules(EndpointName=endpoint_name)["MonitoringScheduleSummaries"]
+        monitoring_schedules = cls.sm_client.list_monitoring_schedules(EndpointName=endpoint_name)[
+            "MonitoringScheduleSummaries"
+        ]
         for schedule in monitoring_schedules:
             cls.log.info(f"Deleting Monitoring Schedule {schedule['MonitoringScheduleName']}...")
             cls.sm_client.delete_monitoring_schedule(MonitoringScheduleName=schedule["MonitoringScheduleName"])
