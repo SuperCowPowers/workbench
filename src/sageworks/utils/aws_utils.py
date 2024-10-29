@@ -76,7 +76,7 @@ def list_tags_with_throttle(arn: str, sm_session) -> dict:
 
     # Log the call
     log.debug(f"Calling list_tags for {arn}...")
-    sleep_times = [0.25, 0.5, 1, 2, 4, 8]
+    sleep_times = [2, 4, 8, 16, 32, 64, 128]
     max_attempts = len(sleep_times)
 
     # Sanity check the ARN

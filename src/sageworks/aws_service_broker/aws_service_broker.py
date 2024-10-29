@@ -120,7 +120,7 @@ class AWSServiceBroker:
         Args:
             category (ServiceCategory): The Category of metadata to Pull
         """
-        sleep_times = [1, 2, 4, 8, 16, 32, 64, 128]
+        sleep_times = [2, 4, 8, 16, 32, 64, 128, 256, 512]
         max_attempts = len(sleep_times)
         for attempt in range(max_attempts):
             try:
