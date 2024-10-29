@@ -32,7 +32,7 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
         # For each model group report the number of model packages in the group
         package_response = sagemaker_client.list_model_packages(ModelPackageGroupName=model_group_name)
         num_packages = len(package_response["ModelPackageSummaryList"])
-        log.debug(f"Model Group: {model_group_name} ({num_packages} packages)")
+        log.info(f"Model Group: {model_group_name} ({num_packages} packages)")
 
     # Get all the model packages
     all_model_packages = sagemaker_client.list_model_packages(MaxResults=100)
@@ -45,14 +45,14 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
                 standalone_model_packages.append(package)
         else:
             standalone_model_packages.append(package)
-    log.important(f"Found {len(standalone_model_packages)} Standalone Model Packages")
+    log.important(f"Found {len(standalone_model_packages)} Model Packages (not in a Group)")
     for package in standalone_model_packages:
         log.important(f"\t{package['ModelPackageArn']}")
 
     # Get all the model resources (models not in a model group)
     response = sagemaker_client.list_models(MaxResults=100)
     model_names = [model["ModelName"] for model in response["Models"]]
-    log.important(f"Found {len(model_names)} Models (resources)")
+    log.important(f"Found {len(model_names)} Models (not in a Model Package/Group)")
     for model_name in model_names:
         log.debug(f"Model: {model_name}")
 
@@ -67,15 +67,16 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
     for model_group in model_group_set:
         if not any(model_group in model_name for model_name in model_set):
             model_group_without_model.append(model_group)
-    log.important(
-        f"({len(model_group_without_model)}) Possible Model Groups without an Endpoint (Heuristic/substring): "
-    )
-    for model_group in model_group_without_model:
-        log.important(f"{model_group}")
-        if tag:
-            m = ModelCore(model_group)
-            m.add_health_tag("no_endpoint")
-    log.important("Recommendation: Delete these Models Groups or create an Endpoint for them")
+    if len(model_group_without_model) > 0:
+        log.important(
+            f"({len(model_group_without_model)}) Possible Model Groups without an Endpoint (Heuristic/substring): "
+        )
+        for model_group in model_group_without_model:
+            log.important(f"{model_group}")
+            if tag:
+                m = ModelCore(model_group)
+                m.add_health_tag("no_endpoint")
+        log.important("Recommendation: Delete these Models Groups or create an Endpoint for them")
 
     # List all endpoints
     endpoints_response = sagemaker_client.list_endpoints(MaxResults=100)
@@ -105,7 +106,7 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
     log.important(f"Found {len(unused_models)} Model Resources without an Endpoint (Orphans) ")
     for model in unused_models:
         log.important(f"\t{model}")
-    log.important("Recommendation: Delete these Model Resources")
+    log.important("Recommendation: Delete these Models")
 
 
 if __name__ == "__main__":
