@@ -47,7 +47,7 @@ def create_model_pipeline(model_name):
 
 
 # List of model names to run in parallel
-model_names = [f"test-model-{i}" for i in range(1)]
+model_names = [f"stress-model-{i}" for i in range(16)]
 
 if __name__ == "__main__":
     # Use ProcessPoolExecutor to run in parallel
