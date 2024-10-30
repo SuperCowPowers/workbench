@@ -173,8 +173,8 @@ class AWSServiceBroker:
         if force_refresh:
             msg = f"Getting {category} Metadata with force_refresh=True..."
             cls.log.warning(msg)
-            cls.log.monitor(f"Throttling: 10 Second Hold on Force Refresh for {category}")
-            time.sleep(10)  # Sleep for 10 seconds to avoid AWS Throttling
+            cls.log.monitor(f"Throttling: 30 Second Hold on Force Refresh for {category}")
+            time.sleep(30)  # Sleep for 30 seconds to avoid AWS Throttling
 
         # Do we have this AWS data already in the cache?
         meta_data = cls.meta_cache.get(category)

@@ -337,6 +337,10 @@ class PandasToFeatures(Transform):
         self.log.info(f"Failed rows: {len(ingest_manager.failed_rows)}")
         self.log.info(f"Total rows ingested: {self.expected_rows}")
 
+        # We often need to wait a bit for AWS to fully register the new Feature Group
+        self.log.info("Waiting for AWS to register the new Feature Group...")
+        time.sleep(30)
+
     def post_transform(self, **kwargs):
         """Post-Transform: Populating Offline Storage and onboard()"""
         self.log.info("Post-Transform: Populating Offline Storage and onboard()...")
