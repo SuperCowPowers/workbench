@@ -20,7 +20,7 @@
     
     
       
-        <title>0.8.41 - SageWorks</title>
+        <title>0.8.42 - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-0841" class="md-skip">
+        <a href="#release-0842" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              0.8.41
+              0.8.42
             
           </span>
         </div>
@@ -2017,7 +2017,7 @@
           
   
   <span class="md-ellipsis">
-    0.8.41
+    0.8.42
   </span>
   
 
@@ -2028,7 +2028,7 @@
         
   
   <span class="md-ellipsis">
-    0.8.41
+    0.8.42
   </span>
   
 
@@ -2680,31 +2680,33 @@
                   
 
 
-<h1 id="release-0841">Release 0.8.41</h1>
+<h1 id="release-0842">Release 0.8.42</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
 <p>The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines.</p>
-<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.39</code> to <code>0.8.41</code></p>
+<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.39</code> to <code>0.8.42</code></p>
 <h2 id="general">General</h2>
 <p>Artifact deletion got a substantial overhaul. The 4 main classes received internal code changes for how they get deleted. Specifically deletion is now handled via a class method that allows an artifact to be delteed without instantiating an object. The API for deletion is actually more flexible now, please see API Changes below.</p>
 <h2 id="api-changes">API Changes</h2>
 <p><strong>Artifact Deletion</strong></p>
 <p>The API for Artifact deletion is more flexible, if you already have an instantiated object, you can simply call <code>delete()</code> on it. If you're deleting an object in bulk/batch mode, you can call the class method <code>managed_delete()</code>, see code example below.</p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>fs = FeatureSet(&quot;my_awesome_fs&quot;)
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>fs.delete()            # Used for notebooks, scripts, etc.. 
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>fs = FeatureSet(&quot;my_fs&quot;)
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>fs.delete()                        # Used for notebooks, scripts, etc.. 
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>OR
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>FeatureSet.managed_delete(&quot;my_awesome_fs&quot;) # Bulk/batch/internal use
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>FeatureSet.managed_delete(&quot;my_fs&quot;) # Bulk/batch/internal use
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>&lt;Same API for DataSources, Models and Endpoints&gt;
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>&lt;Same API for DataSources, Models, and Endpoints&gt;
 </span></code></pre></div>
 <strong>Note:</strong> Internally these use the <strong>same</strong> functionality, the dual API is simply for ease-of-use.</p>
 <h2 id="improvementsfixes">Improvements/Fixes</h2>
 <p><strong>Race Conditions</strong></p>
 <p>In theory, the changes to a <strong>class</strong> based delete will reduce race conditions where an object would try to create itself (just to be deleted) and the AWS Service Broker was encountering partially created (or partially deleted objects) and would barf error messages.</p>
+<p><strong>Slightly Better Throttling Logic</strong>
+The AWS Throttles have been 'tuned' a bit to back off a bit faster and also not retry the list_tags request when the ARN isn't found.</p>
 <h2 id="specific-code-changes">Specific Code Changes</h2>
-<p><a href="https://github.com/supercowpowers/sageworks/compare/v0.8.39...v0.8.41" target="_blank">Code Diff v0.8.39 --&gt; v0.8.41</a> </p>
+<p><a href="https://github.com/supercowpowers/sageworks/compare/v0.8.39...v0.8.42" target="_blank">Code Diff v0.8.39 --&gt; v0.8.42</a> </p>
 <p>Who doesn't like looking at code! Also +3 points for getting down this far! Here's a cow joke as a reward:</p>
 <blockquote>
 <p><strong><em>That feeling like you’ve done this before?
