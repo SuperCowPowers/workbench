@@ -135,8 +135,7 @@ def glue_job_run_id(job_name: str, session: boto3.Session) -> Union[str, None]:
     except ClientError as e:
         if e.response["Error"]["Code"] == "EntityNotFoundException":
             log.error(f"Glue Job '{job_name}' not found, returning None for Job Run ID.")
-            return None
-        raise  # Re-raise other unexpected errors
+        return None
 
 
 def ecs_job_name():
