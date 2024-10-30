@@ -76,7 +76,7 @@ def list_tags_with_throttle(arn: str, sm_session) -> dict:
 
     # Log the call
     log.debug(f"Calling list_tags for {arn}...")
-    sleep_times = [2, 4, 8, 16, 32, 64, 128]
+    sleep_times = [2, 4, 8, 16, 32, 64]
     max_attempts = len(sleep_times)
 
     # Sanity check the ARN
@@ -98,13 +98,17 @@ def list_tags_with_throttle(arn: str, sm_session) -> dict:
 
             # Check for ThrottlingException
             if error_code == "ThrottlingException":
-                log.info(f"ThrottlingException: list_tags on {arn}")
-                log.info("Retrying...")
+                if attempt < 2:
+                    log.info(f"ThrottlingException ({attempt}): list_tags on {arn}")
+                elif attempt < 4:
+                    log.warning(f"ThrottlingException ({attempt}): list_tags on {arn}")
+                else:
+                    log.error(f"ThrottlingException ({attempt}): list_tags on {arn}")
 
             # Check specific (Not Found) exceptions
             elif error_code in ["ValidationException", "ResourceNotFoundException"]:
-                log.warning(f"ARN: {arn} AWS Validation/NotFound Exception: {error_code} - {error_message}")
-                break
+                log.warning(f"Probably Fine -- {arn} AWS Validation/NotFound Exception: {error_code} - {error_message}")
+                return {}
             else:
                 # Handle other ClientErrors that may occur
                 log.error(f"ClientError: {error_code} - {error_message}")
@@ -540,3 +544,8 @@ if __name__ == "__main__":
     my_features.remove_sageworks_meta("large_meta")
     my_meta = my_features.sageworks_meta()
     pprint(my_meta)
+
+    # Test the list_tags_with_throttle method
+    arn = my_features.arn()
+    tags = list_tags_with_throttle(arn, sm_session)
+    pprint(tags)
