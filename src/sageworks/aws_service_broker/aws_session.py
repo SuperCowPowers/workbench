@@ -98,7 +98,7 @@ class AWSSession:
 
 
 if __name__ == "__main__":
-    """Exercise the AWS Account Clamp Class"""
+    """Exercise the AWS Session Class"""
 
     my_session = AWSSession().boto3_session
     my_sts_client = my_session.client("sts")

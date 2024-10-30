@@ -11,6 +11,7 @@ from sageworks.utils.execution_environment import (
     running_on_ecs,
     running_on_docker,
     glue_job_name,
+    glue_job_run_id,
     ecs_job_name,
 )
 from sageworks.aws_service_broker.aws_session import AWSSession
@@ -105,7 +106,8 @@ class CloudWatchHandler(logging.Handler):
             return f"lambda/{job_name}"
         elif running_on_glue():
             job_name = glue_job_name()
-            return f"glue/{job_name}/{unique_id}"
+            job_run_id = glue_job_run_id(job_name, self.boto3_session) or unique_id
+            return f"glue/{job_name}/{job_run_id}"
         elif running_on_ecs():
             job_name = ecs_job_name()
             return f"ecs/{job_name}"

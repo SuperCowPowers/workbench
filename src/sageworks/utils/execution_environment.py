@@ -4,6 +4,9 @@ import os
 import sys
 import logging
 import requests
+from typing import Union
+import boto3
+from botocore.exceptions import ClientError
 
 # SageWorks imports
 from sageworks.utils.glue_utils import get_resolved_options
@@ -118,6 +121,24 @@ def glue_job_name():
     return job_name
 
 
+def glue_job_run_id(job_name: str, session: boto3.Session) -> Union[str, None]:
+    """Retrieve the most recent Glue Job Run ID for the given job name using a Boto3 session."""
+    try:
+        job_runs = session.client("glue").get_job_runs(JobName=job_name)
+        if job_runs['JobRuns']:
+            job_id = max(job_runs['JobRuns'], key=lambda run: run['StartedOn'])['Id']
+            return job_id[:9]  # Shorten the Job Run ID to 9 characters
+
+        log.error(f"No runs found for Glue Job '{job_name}', returning None for Job Run ID.")
+        return None
+
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'EntityNotFoundException':
+            log.error(f"Glue Job '{job_name}' not found, returning None for Job Run ID.")
+            return None
+        raise  # Re-raise other unexpected errors
+
+
 def ecs_job_name():
     """Get the ECS Job Name from the metadata endpoint or environment variables."""
     # Attempt to get the job name from ECS metadata
@@ -153,6 +174,7 @@ if __name__ == "__main__":
     assert running_on_lambda() is False
     os.environ["AWS_LAMBDA_FUNCTION_NAME"] = "my_lambda_function"
     assert running_on_lambda() is True
+    del os.environ["AWS_LAMBDA_FUNCTION_NAME"]
 
     # Test running_on_docker
     assert running_on_docker() is False
@@ -168,5 +190,10 @@ if __name__ == "__main__":
 
     # Test getting the Glue Job Name
     print(glue_job_name())
+
+    # Test getting the Glue Job Run ID
+    from sageworks.aws_service_broker.aws_session import AWSSession
+    session = AWSSession().boto3_session
+    print(glue_job_run_id("Test_SageWorks_Shell", session))
 
     print("All tests passed!")
