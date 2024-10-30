@@ -2703,8 +2703,8 @@
 <h2 id="improvementsfixes">Improvements/Fixes</h2>
 <p><strong>Race Conditions</strong></p>
 <p>In theory, the changes to a <strong>class</strong> based delete will reduce race conditions where an object would try to create itself (just to be deleted) and the AWS Service Broker was encountering partially created (or partially deleted objects) and would barf error messages.</p>
-<p><strong>Slightly Better Throttling Logic</strong>
-The AWS Throttles have been 'tuned' a bit to back off a bit faster and also not retry the list_tags request when the ARN isn't found.</p>
+<p><strong>Slightly Better Throttling Logic</strong></p>
+<p>The AWS Throttles have been 'tuned' a bit to back off a bit faster and also not retry the list_tags request when the ARN isn't found.</p>
 <h2 id="specific-code-changes">Specific Code Changes</h2>
 <p><a href="https://github.com/supercowpowers/sageworks/compare/v0.8.39...v0.8.42" target="_blank">Code Diff v0.8.39 --&gt; v0.8.42</a> </p>
 <p>Who doesn't like looking at code! Also +3 points for getting down this far! Here's a cow joke as a reward:</p>
