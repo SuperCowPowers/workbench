@@ -112,13 +112,31 @@ class SageworksCoreStack(Stack):
         """
         return iam.PolicyStatement(
             actions=[
-                "glue:GetJobs",  # Retrieve metadata about all the Glue jobs
-                "glue:GetJobRuns",  # Retrieve metadata about Glue job runs
-                "glue:GetJob",  # Retrieve metadata about a specific Glue job
-                "glue:StartJobRun",  # Example additional job-related action
-                "glue:StopJobRun",  # Another example job-related action
+                "glue:GetJobs",
+                "glue:GetJobRuns",
+                "glue:GetJob",
+                "glue:StartJobRun",
+                "glue:StopJobRun",
             ],
             resources=["*"],  # Broad permission necessary for job management
+        )
+
+    @staticmethod
+    def glue_job_connections_policy_statement() -> iam.PolicyStatement:
+        """Create a policy statement for Glue job network and connection permissions."""
+        return iam.PolicyStatement(
+            actions=[
+                # Glue connection actions
+                "glue:GetConnection",
+                "glue:GetConnections",
+                # EC2 network actions for VPC access and ENI management
+                "ec2:Describe*",
+                "ec2:CreateNetworkInterface",
+                "ec2:DeleteNetworkInterface",
+                "ec2:DescribeNetworkInterfaces",
+                "ec2:CreateTags",
+            ],
+            resources=["*"],  # Broad permissions for Glue connections and VPC network queries
         )
 
     def glue_catalog_policy_statement(self) -> iam.PolicyStatement:
@@ -503,6 +521,7 @@ class SageworksCoreStack(Stack):
             self.s3_policy_statement(),
             self.s3_public_policy_statement(),
             self.glue_job_policy_statement(),
+            self.glue_job_connections_policy_statement(),
             self.glue_catalog_policy_statement(),
             self.glue_database_policy_statement(),
             self.athena_policy_statement(),
