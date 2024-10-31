@@ -73,6 +73,8 @@ nav:
     - AWS Tips and Tricks: aws_setup/aws_tips_and_tricks.md
     - AWS Access Management: aws_setup/aws_access_management.md
     - AWS Client VPN: aws_setup/aws_client_vpn.md
+  - Road Maps: 
+    - 0.9.0:  road_maps/0_9_0.md
   - Release Notes: 
     - 0.8.42:  release_notes/0_8_42.md
     - 0.8.39:  release_notes/0_8_39.md
