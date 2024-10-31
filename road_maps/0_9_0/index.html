@@ -2755,7 +2755,7 @@
 <p>One of the important lessons is not to 'over manage' AWS. We want to provide useful, granular Classes and APIs. Getting out of the way is just as important as providing functionality. So <strong>streamlining</strong> will be a big part of our <code>0.9.0</code> roadmap.</p>
 <p><strong>Caching</strong></p>
 <p>Caching needs a substantial overhaul. Right now SageWorks over uses caching. We baked it into our AWSServiceBroker and that gets used by everything.</p>
-<p>Caching only really makes sense when we can't wait for AWS to respond to requests. The Dashboard and Web Interfaces are the only use case where responsiveness is important. Other use cases like nightly batch processing and even scripts or notebooks, waiting for AWS is totally fine.</p>
+<p>Caching only really makes sense when we can't wait for AWS to respond to requests. The Dashboard and Web Interfaces are the only use case where responsiveness is important. Other use cases like nightly batch processing, scripts or notebooks, will work totally fine waiting for AWS responses.</p>
 <p><strong>Class/API Reductions</strong>
 The organic growth of SageWorks was based on user feedback and testing, that organic growth has led to an <strong>abundance</strong> of Classes and API calls. We'll be identifying classes and methods that are 'cruft' from some development push and will be deprecating those.</p>
 <h2 id="deprecation-warnings">Deprecation Warnings</h2>
