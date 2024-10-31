@@ -65,6 +65,7 @@ class FeatureStore(Connector):
         try:
             return self.feature_data[feature_group_name]["OfflineStoreConfig"]["DataCatalogConfig"]["Database"].lower()
         except KeyError:
+            self.log.critical(f"Could not find OfflineStore Database for {feature_group_name}!")
             return None
 
     def _athena_table_name(self, feature_group_name: str) -> Union[str, None]:
@@ -72,6 +73,7 @@ class FeatureStore(Connector):
         try:
             return self.feature_data[feature_group_name]["OfflineStoreConfig"]["DataCatalogConfig"]["TableName"]
         except KeyError:
+            self.log.critical(f"Could not find OfflineStore Table for {feature_group_name}!")
             return None
 
     def _s3_storage(self, feature_group_name: str) -> str:

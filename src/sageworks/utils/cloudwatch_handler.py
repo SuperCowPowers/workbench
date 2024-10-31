@@ -11,7 +11,7 @@ from sageworks.utils.execution_environment import (
     running_on_ecs,
     running_on_docker,
     glue_job_name,
-    glue_job_run_id,
+    # glue_job_run_id,
     ecs_job_name,
 )
 from sageworks.aws_service_broker.aws_session import AWSSession
