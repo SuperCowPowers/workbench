@@ -106,7 +106,8 @@ class CloudWatchHandler(logging.Handler):
             return f"lambda/{job_name}"
         elif running_on_glue():
             job_name = glue_job_name()
-            job_run_id = glue_job_run_id(job_name, self.boto3_session) or unique_id
+            # job_run_id = glue_job_run_id(job_name, self.boto3_session) or unique_id
+            job_run_id = unique_id
             return f"glue/{job_name}/{job_run_id}"
         elif running_on_ecs():
             job_name = ecs_job_name()
