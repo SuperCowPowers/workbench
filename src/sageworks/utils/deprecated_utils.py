@@ -1,23 +1,21 @@
 """Chem/RDKIT/Mordred utilities for Sageworks"""
 
 import logging
-from typing import Optional, Union, Callable, Type
+from typing import Union, Callable, Type
 from functools import wraps
 
 log = logging.getLogger("sageworks")
 
 
-def deprecated(version: Optional[str] = None) -> Callable:
+def deprecated(version: str) -> Callable:
     """Decorator to mark classes or functions as deprecated, logging a warning on use.
 
     Args:
-        version (str, optional): The version in which the class or function is deprecated.
+        version (str): The version in which the class or function is deprecated.
     """
 
     def decorator(cls_or_func: Union[Type, Callable]) -> Union[Type, Callable]:
-        message = f"{cls_or_func.__name__} is deprecated"
-        if version:
-            message += f" and will be removed in version {version}."
+        message = f"{cls_or_func.__name__} is deprecated and will be removed in version {version}."
 
         if isinstance(cls_or_func, type):
             # Class decorator
