@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#road-map-090" class="md-skip">
+        <a href="#road-map-v090" class="md-skip">
           Skip to content
         </a>
       
@@ -2068,6 +2068,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#deprecations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deprecations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#api-changes" class="md-nav__link">
     <span class="md-ellipsis">
       API Changes
@@ -2080,6 +2089,15 @@
   <a href="#improvementsfixes" class="md-nav__link">
     <span class="md-ellipsis">
       Improvements/Fixes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#internal-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
     </span>
   </a>
   
@@ -2702,6 +2720,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#deprecations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deprecations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#api-changes" class="md-nav__link">
     <span class="md-ellipsis">
       API Changes
@@ -2714,6 +2741,15 @@
   <a href="#improvementsfixes" class="md-nav__link">
     <span class="md-ellipsis">
       Improvements/Fixes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#internal-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
     </span>
   </a>
   
@@ -2743,7 +2779,7 @@
                   
 
 
-<h1 id="road-map-090">Road Map 0.9.0</h1>
+<h1 id="road-map-v090">Road Map v0.9.0</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
@@ -2753,11 +2789,19 @@
 <p><strong>Streamlining</strong></p>
 <p>We've learned a lot from our beta testers!</p>
 <p>One of the important lessons is not to 'over manage' AWS. We want to provide useful, granular Classes and APIs. Getting out of the way is just as important as providing functionality. So <strong>streamlining</strong> will be a big part of our <code>0.9.0</code> roadmap.</p>
+<p><strong>Horizontal Scaling</strong></p>
+<p>The framworks is currently struggling with 10 parallel ML pipelines being created concurrently. There's AWS query contention, throttling, and the occasional 'partial state' that we get back from AWS.</p>
+<p>Our plan for <code>0.9.0</code> is to have formalized <strong>horizontal stress testing</strong> that tests everything from 4 to 32 concurrent ML pipelines. Even though 32 may not seem like much, as a for instance AWS has a <strong>hard limit</strong> of 10 simutaneous connections to sagemaker, so even at 32 we'll have to 'get tricky'.</p>
+<p><strong>Full Artifact Load or None</strong></p>
+<p>For the SageWorks’ DataSource, FeatureSet, Model, and Endpoint classes the new functionality will ensure that objects are only instantiated when all required data is fully available, returning <strong>None</strong> if the artifact ID is invalid or if the object is only partially constructed in AWS. </p>
+<p>By preventing partially constructed objects, this approach reduces runtime errors when accessing incomplete attributes and simplifies error handling for clients, enhancing robustness and reliability.</p>
+<p><strong>Onboarding</strong></p>
+<p>We'll have to balance the 'full artifact or None' with the need to <code>onboard()</code> artifacts created outside of SageWorks. Since the knowledge needed to properly <code>onboard()</code> an object is outside the scope of the object cannot automatically do this, so this balance of contraints will be <strong>tricky</strong>.</p>
 <p><strong>Caching</strong></p>
 <p>Caching needs a substantial overhaul. Right now SageWorks over uses caching. We baked it into our AWSServiceBroker and that gets used by everything.</p>
 <p>Caching only really makes sense when we can't wait for AWS to respond to requests. The Dashboard and Web Interfaces are the only use case where responsiveness is important. Other use cases like nightly batch processing, scripts or notebooks, will work totally fine waiting for AWS responses.</p>
-<p><strong>Class/API Reductions</strong>
-The organic growth of SageWorks was based on user feedback and testing, that organic growth has led to an <strong>abundance</strong> of Classes and API calls. We'll be identifying classes and methods that are 'cruft' from some development push and will be deprecating those.</p>
+<p><strong>Class/API Reductions</strong></p>
+<p>The organic growth of SageWorks was based on user feedback and testing, that organic growth has led to an <strong>abundance</strong> of Classes and API calls. We'll be identifying classes and methods that are 'cruft' from some development push and will be deprecating those.</p>
 <h2 id="deprecation-warnings">Deprecation Warnings</h2>
 <p>We're starting to put in deprecation warning as we streamline classes and APIs. If you're using a class or method that's going to be deprecated you'll see a log message like this:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>broker = AWSServiceBroker()
@@ -2769,11 +2813,31 @@ The organic growth of SageWorks was based on user feedback and testing, that org
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>WARNING AWSServiceBroker is deprecated and will be removed in version 0.9.
 </span></code></pre></div>
 <p>In general these warning messages will be annoying but they will help us smoothly transistion and streamline our Classes and APIs.</p>
+<h2 id="deprecations">Deprecations</h2>
+<ul>
+<li><strong>AWSServiceBroker:</strong> Replaced by the <strong>Meta()</strong> class</li>
+<li>Other Stuff</li>
+</ul>
 <h2 id="api-changes">API Changes</h2>
-<p><strong>TBD</strong></p>
-<p>TBD</p>
+<p><strong>Meta()</strong></p>
+<p>The new <code>Meta()</code> class will provide API that aligns with the AWS <code>list</code> and <code>describe</code> API. We'll have functionality for listing objects (models, feature sets, etc) and then functionality around the details for a named artifact.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>meta = Meta()
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>models_list = meta.models()  # List API
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>end_list = meta.endpoints()  # List API
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>fs_dict = meta.feature_set(&quot;my_fs&quot;) # Describe API
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>model_dict = meta.model(&quot;my_model&quot;) # Describe API
+</span></code></pre></div>
+<p>The new Meta() API will be used inside of the Artifact classes (see Internal Changes...Artifacts... below)</p>
 <h2 id="improvementsfixes">Improvements/Fixes</h2>
-<p><strong>TBD</strong></p>
+<p><strong>FeatureSet</strong></p>
+<p>When running concurrent ML pipelines we occasion get a partially constructed FeatureSet, FeatureSets will now 'wait and fail' if they detect partially constructed data (like offline storage not being ready).</p>
+<h2 id="internal-changes">Internal Changes</h2>
+<p><strong>Meta()</strong></p>
+<p>We're going to make a bunch of changes to <code>Meta()</code> specifically around more granular (LESS) caching. Also there will be an <code>AWSMeta()</code> subclass that manages the AWS specific API calls. We'll also put stubs in for <code>AzureMeta()</code> and <code>GCPMeta()</code>, cause hey we might have a client who <strong>really</strong> wants that flexibility.</p>
+<p>The new Meta class will also include API that's more aligned to the AWS <code>list</code> and <code>describe</code> interfacts. Allowing both <strong>broad</strong> and <strong>deep</strong> queries of the Machine Learning Artifacts within AWS.</p>
+<p><strong>Artifacts</strong></p>
+<p>We're getting rid of caching for individual Artifacts, if you're constructing an artifact object, you probably want detailed information that's 'up to date' and waiting a bit is probably fine. <strong>Note:</strong> We'll still make these instantiations as fast as we can, removing the caching logic will as least simplify the implementations.</p>
 <h2 id="questions">Questions?</h2>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
 <p>The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
