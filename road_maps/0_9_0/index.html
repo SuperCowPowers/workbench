@@ -2790,7 +2790,7 @@
 <p>We've learned a lot from our beta testers!</p>
 <p>One of the important lessons is not to 'over manage' AWS. We want to provide useful, granular Classes and APIs. Getting out of the way is just as important as providing functionality. So <strong>streamlining</strong> will be a big part of our <code>0.9.0</code> roadmap.</p>
 <p><strong>Horizontal Scaling</strong></p>
-<p>The framwork is currently struggling with 10 parallel ML pipelines being run concurrently. With 10 simultaneous pipelines we're seeing in AWS query contention, throttling, and the occasional 'partial state' that we get back from AWS.</p>
+<p>The framwork is currently struggling with 10 parallel ML pipelines being run concurrently. When running simultaneous pipelines we're seeing AWS service/query contention, throttling, and the occasional 'partial state' that we get back from AWS.</p>
 <p>Our plan for <code>0.9.0</code> is to have formalized <strong>horizontal stress testing</strong> that tests everything from 4 to 32 concurrent ML pipelines. Even though 32 may not seem like much, AWS has various <strong>quotas and limits</strong> that we'll be hitting, so 32 is a good goal for <code>0.9.0</code>. Obviously once we get to 32 we'll look forward to an architecture that will support 100's of concurrent pipelines.</p>
 <ul>
 <li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-feature-processor-quotas.html">Feature Processor Quotas</a></li>
