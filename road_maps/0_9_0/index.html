@@ -2791,7 +2791,11 @@
 <p>One of the important lessons is not to 'over manage' AWS. We want to provide useful, granular Classes and APIs. Getting out of the way is just as important as providing functionality. So <strong>streamlining</strong> will be a big part of our <code>0.9.0</code> roadmap.</p>
 <p><strong>Horizontal Scaling</strong></p>
 <p>The framworks is currently struggling with 10 parallel ML pipelines being created concurrently. There's AWS query contention, throttling, and the occasional 'partial state' that we get back from AWS.</p>
-<p>Our plan for <code>0.9.0</code> is to have formalized <strong>horizontal stress testing</strong> that tests everything from 4 to 32 concurrent ML pipelines. Even though 32 may not seem like much, as a for instance AWS has a <strong>hard limit</strong> of 10 simutaneous connections to sagemaker, so even at 32 we'll have to 'get tricky'.</p>
+<p>Our plan for <code>0.9.0</code> is to have formalized <strong>horizontal stress testing</strong> that tests everything from 4 to 32 concurrent ML pipelines. Even though 32 may not seem like much, AWS has various <strong>quotas and limits</strong> that we'll be hitting, so 32 is a good goal for <code>0.9.0</code>. Obviously once we get to 32 we'll look forward to an architecture that will support 100's of concurrent pipelines.</p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-feature-processor-quotas.html">Feature Processor Quotas</a></li>
+<li><a href="https://docs.aws.amazon.com/general/latest/gr/sagemaker.html">Sagemaker Endpoint Quotas</a></li>
+</ul>
 <p><strong>Full Artifact Load or None</strong></p>
 <p>For the SageWorks’ DataSource, FeatureSet, Model, and Endpoint classes the new functionality will ensure that objects are only instantiated when all required data is fully available, returning <strong>None</strong> if the artifact ID is invalid or if the object is only partially constructed in AWS. </p>
 <p>By preventing partially constructed objects, this approach reduces runtime errors when accessing incomplete attributes and simplifies error handling for clients, enhancing robustness and reliability.</p>
