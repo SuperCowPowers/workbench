@@ -2,6 +2,7 @@ import botocore
 import logging
 import sys
 import time
+import functools
 import json
 import base64
 import re
@@ -12,6 +13,7 @@ import awswrangler as wr
 from awswrangler.exceptions import NoFilesFound
 from pathlib import Path
 import posixpath
+from botocore.exceptions import ClientError
 from sagemaker.session import Session as SageSession
 from sagemaker import image_uris
 from collections.abc import Mapping, Iterable
@@ -61,6 +63,33 @@ def client_error_info(err: botocore.exceptions.ClientError):
     log.error(f"Operation Name: {operation_name}")
     log.error(f"Service Name: {service_name}")
     log.error(f"Request ID: {request_id}")
+
+
+def aws_throttling(retry_intervals=None):
+    """
+    Decorator to handle AWS throttling exceptions with exponential backoff.
+
+    Args:
+        retry_intervals (list[int], optional): List of intervals in seconds between retries.
+                                               If None, defaults to exponential backoff.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            intervals = retry_intervals if retry_intervals else [2**i for i in range(1, 8)]  # 2, 4,... 128
+            for attempt, delay in enumerate(intervals, start=1):
+                try:
+                    return func(*args, **kwargs)
+                except ClientError as e:
+                    if e.response['Error']['Code'] == 'ThrottlingException':
+                        log.warning(f"ThrottlingException ({attempt}): Retrying in {delay} seconds...")
+                        time.sleep(delay)
+                    else:
+                        raise
+            # Final attempt outside the loop
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def list_tags_with_throttle(arn: str, sm_session) -> dict:
