@@ -2798,7 +2798,7 @@
 </ul>
 <p><strong>Full Artifact Load or None</strong></p>
 <p>For the SageWorks’ DataSource, FeatureSet, Model, and Endpoint classes the new functionality will ensure that objects are only instantiated when all required data is fully available, returning <strong>None</strong> if the artifact ID is invalid or if the object is only partially constructed in AWS. </p>
-<p>By preventing partially constructed objects, this approach reduces runtime errors when accessing incomplete attributes and simplifies error handling for clients, enhancing robustness and reliability.</p>
+<p>By preventing partially constructed objects, this approach reduces runtime errors when accessing incomplete attributes and simplifies error handling for clients, enhancing robustness and reliability. We are looking at Pydantic for formally capturing schema and types (see <a href="https://github.com/pydantic/pydantic">Pydantic</a>).</p>
 <p><strong>Onboarding</strong></p>
 <p>We'll have to balance the 'full artifact or None' with the need to <code>onboard()</code> artifacts created outside of SageWorks. We'll probably have a class method for onboarding, something like:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>my_model = Model.onboard(&quot;some_random_model&quot;)
