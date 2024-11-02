@@ -62,7 +62,7 @@ class ArtifactsTextView(WebView):
 
     def glue_jobs_summary(self) -> pd.DataFrame:
         """Get summary data about AWS Glue Jobs"""
-        return self.meta.glue_jobs()
+        return self.meta.etl_jobs()
 
     def data_sources_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks DataSources"""

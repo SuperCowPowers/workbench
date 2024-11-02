@@ -116,8 +116,7 @@ class AWSAccountClamp:
     @classmethod
     def sagemaker_session(cls) -> "SageSession":
         """Create a sageworks SageMaker session (using our boto3 refreshable session)
-        Args:
-            session (boto3.Session, optional): A boto3 session to use. Defaults to None.
+
         Returns:
             SageSession: A SageMaker session object
         """
@@ -128,8 +127,7 @@ class AWSAccountClamp:
     @classmethod
     def sagemaker_client(cls) -> BaseClient:
         """Create a sageworks SageMaker client (using our boto3 refreshable session)
-        Args:
-            session (boto3.Session, optional): A boto3 session to use. Defaults to None.
+
         Returns:
             BaseClient: A SageMaker client object
         """

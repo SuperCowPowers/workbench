@@ -6,7 +6,7 @@ import botocore
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_service_connectors.connector import Connector
-from sageworks.utils.aws_utils import client_error_info, list_tags_with_throttle, compute_size
+from sageworks.utils.aws_utils import client_error_printout, list_tags_with_throttle, compute_size
 
 
 class Endpoints(Connector):
@@ -74,7 +74,7 @@ class Endpoints(Connector):
             details["InstanceType"] = instance_type
             return details
         except botocore.exceptions.ClientError as e:
-            client_error_info(e)
+            client_error_printout(e)
             details["InstanceType"] = "No Endpoint Config"
             return details
 
