@@ -176,34 +176,34 @@ class AWSMeta(AbstractMeta):
                 model_group_name = group["ModelPackageGroupName"]
                 created = datetime_string(group["CreationTime"])
                 description = group.get("ModelPackageGroupDescription", "-")
-                aws_tags = self.get_aws_tags(group["ModelPackageGroupArn"])
-                health_tags = aws_tags.get("sageworks_health_tags", "healthy")
 
-                # List model packages in the group (latest version first)
-                model_list_response = self.sm_client.list_model_packages(
-                    ModelPackageGroupName=model_group_name,
-                    SortBy="CreationTime",
-                    SortOrder="Descending",
-                    MaxResults=1,  # Get only the latest model
-                )
-                model_list = model_list_response["ModelPackageSummaryList"]
+                # Get the latest model from the model group
+                latest_model = self.get_latest_model_package_info(model_group_name)
 
-                # Handle empty model package groups (no model packages) by adding an error row for that model
-                if not model_list:
-                    model_summary.append(
-                        {"Model Group": model_group_name, "Health": "no_model", "Owner": "-", "Model Type": "-",
-                         "Created": "-", "Ver": "-", "Tags": "-", "Input": "-", "Status": "-", "Description": "-"})
+                # Handle no latest_model (a model package group with no model packages)
+                if latest_model is None:
+                    model_summary.append({
+                        "Model Group": model_group_name,
+                        "Health": "no_model",
+                        "Owner": "-",
+                        "Model Type": "-",
+                        "Created": "-",
+                        "Ver": "-",
+                        "Tags": "-",
+                        "Input": "-",
+                        "Status": "-",
+                        "Description": "-"
+                    })
                     continue
 
-                # Get details for the latest model
+                # Get details for the latest model if specified
                 model_details = {}
+                aws_tags = {}
+                health_tags = "no_health_info"
                 if details:
-                    latest_model = model_list[0]
                     model_details.update(self.sm_client.describe_model_package(ModelPackageName=latest_model["ModelPackageArn"]))
-
-                    # Retrieve Details from AWS Tags
                     aws_tags = self.get_aws_tags(group["ModelPackageGroupArn"])
-                    health_tags = aws_tags.get("sageworks_health_tags") or "healthy"
+                    health_tags = aws_tags.get("sageworks_health_tags", "healthy")
 
                 # Compile model summary
                 summary = {
@@ -211,7 +211,7 @@ class AWSMeta(AbstractMeta):
                     "Health": health_tags,
                     "Owner": aws_tags.get("sageworks_owner", "-"),
                     "Model Type": aws_tags.get("sageworks_model_type", "-"),
-                    "Created": datetime_string(created),
+                    "Created": created,
                     "Ver": model_details.get("ModelPackageVersion", "-"),
                     "Tags": aws_tags.get("sageworks_tags", "-"),
                     "Input": aws_tags.get("sageworks_input", "-"),
@@ -326,6 +326,29 @@ class AWSMeta(AbstractMeta):
         """List the tags for the given AWS ARN"""
         return aws_tags_to_dict(self.sm_session.list_tags(resource_arn=arn))
 
+    @aws_throttle
+    def get_latest_model_package_info(self, model_group_name: str) -> Union[dict, None]:
+        """Get the latest model package information for the given model group.
+
+        Args:
+            model_group_name (str): The name of the model package group.
+
+        Returns:
+            dict: The latest model package information.
+        """
+        model_package_list = self.sm_client.list_model_packages(
+            ModelPackageGroupName=model_group_name,
+            SortBy="CreationTime",
+            SortOrder="Descending",
+            MaxResults=1  # Get only the latest model
+        )
+        # If no model packages are found, return None
+        if not model_package_list["ModelPackageSummaryList"]:
+            return None
+
+        # Return the latest model package
+        return model_package_list["ModelPackageSummaryList"][0]
+
     def _list_catalog_tables(self, database: str, views: bool = False) -> pd.DataFrame:
         """Internal method to retrieve and summarize Glue catalog tables or views.
 
@@ -367,6 +390,7 @@ class AWSMeta(AbstractMeta):
 if __name__ == "__main__":
     """Exercise the SageWorks AWSMeta Class"""
     from pprint import pprint
+    import time
 
     # Pandas Display Options
     pd.set_option("display.max_columns", None)
@@ -410,7 +434,15 @@ if __name__ == "__main__":
 
     # Get the Models
     print("\n\n*** Models ***")
+    start_time = time.time()
     pprint(meta.models())
+    print(f"Elapsed Time Model (no details): {time.time() - start_time:.2f}")
+
+    # Get the Models with Details
+    print("\n\n*** Models with Details ***")
+    start_time = time.time()
+    pprint(meta.models(details=True))
+    print(f"Elapsed Time Model (with details): {time.time() - start_time:.2f}")
 
     # Get the Endpoints
     print("\n\n*** Endpoints ***")
