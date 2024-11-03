@@ -594,10 +594,6 @@ if __name__ == "__main__":
     print("\n\n*** Endpoints ***")
     pprint(meta.endpoints())
 
-    # Get the Pipelines
-    print("\n\n*** Pipelines ***")
-    pprint(meta.pipelines())
-
     # Test out the specific artifact details methods
     print("\n\n*** Glue Job Details ***")
     pprint(meta.glue_job("Glue_Job_1"))

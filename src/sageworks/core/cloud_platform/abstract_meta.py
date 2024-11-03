@@ -14,7 +14,6 @@ from collections.abc import Mapping, Iterable
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.config_manager import ConfigManager
-from sageworks.api.pipeline_manager import PipelineManager
 
 
 class AbstractMeta(ABC):
@@ -34,9 +33,6 @@ class AbstractMeta(ABC):
         # Account and Configuration
         self.account_clamp = AWSAccountClamp()
         self.cm = ConfigManager()
-
-        # Pipeline Manager
-        self.pipeline_manager = PipelineManager()
 
         # Storing the size of various metadata for tracking
         self.metadata_sizes = defaultdict(dict)
@@ -183,20 +179,6 @@ class AbstractMeta(ABC):
             dict: The details of the Endpoint (None if not found)
         """
         pass
-
-    def pipelines(self, refresh: bool = False) -> pd.DataFrame:
-        """Get a summary of the SageWorks Pipelines
-
-        Args:
-            refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
-
-        Returns:
-            pd.DataFrame: A summary of the SageWorks Pipelines
-        """
-        data = self.pipeline_manager.list_pipelines()
-
-        # Return the pipelines summary as a DataFrame
-        return pd.DataFrame(data)
 
     def compute_size(self, obj: object) -> int:
         """Recursively calculate the size of an object including its contents.
