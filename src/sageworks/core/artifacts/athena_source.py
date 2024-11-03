@@ -44,8 +44,8 @@ class AthenaSource(DataSourceAbstract):
         super().__init__(data_uuid, database)
 
         # Setup our AWS Metadata Broker
-        self.catalog_table_meta = self.meta_broker.data_source(data_uuid, database=database)
-        if self.catalog_table_meta is None:
+        self.data_source_meta = self.meta_broker.data_source(data_uuid, database=database)
+        if self.data_source_meta is None:
             self.log.error(f"Unable to find {database}:{self.table} in Glue Catalogs...")
             return
 
@@ -57,14 +57,14 @@ class AthenaSource(DataSourceAbstract):
 
     def refresh_meta(self):
         """Refresh our internal AWS Broker catalog metadata"""
-        self.catalog_table_meta = self.meta_broker.data_source(self.uuid, database=self.get_database())
+        self.data_source_meta = self.meta_broker.data_source(self.uuid, database=self.get_database())
 
     def exists(self) -> bool:
         """Validation Checks for this Data Source"""
 
         # Are we able to pull AWS Metadata for this table_name?"""
-        # Do we have a valid catalog_table_meta?
-        if getattr(self, "catalog_table_meta", None) is None:
+        # Do we have a valid data_source_meta?
+        if getattr(self, "data_source_meta", None) is None:
             self.log.debug(f"AthenaSource {self.table} not found in SageWorks Metadata...")
             return False
         return True
@@ -82,7 +82,7 @@ class AthenaSource(DataSourceAbstract):
 
         # Sanity Check if we have invalid AWS Metadata
         self.log.info(f"Retrieving SageWorks Metadata for Artifact: {self.uuid}...")
-        if self.catalog_table_meta is None:
+        if self.data_source_meta is None:
             if not self.exists():
                 self.log.error(f"DataSource {self.uuid} doesn't appear to exist...")
             else:
@@ -91,7 +91,7 @@ class AthenaSource(DataSourceAbstract):
             return {}
 
         # Get the SageWorks Metadata from the Catalog Table Metadata
-        return sageworks_meta_from_catalog_table_meta(self.catalog_table_meta)
+        return sageworks_meta_from_catalog_table_meta(self.data_source_meta)
 
     def upsert_sageworks_meta(self, new_meta: dict):
         """Add SageWorks specific metadata to this Artifact
@@ -148,7 +148,7 @@ class AthenaSource(DataSourceAbstract):
 
     def aws_meta(self) -> dict:
         """Get the FULL AWS metadata for this artifact"""
-        return self.catalog_table_meta
+        return self.data_source_meta
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
@@ -157,11 +157,11 @@ class AthenaSource(DataSourceAbstract):
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
-        return self.catalog_table_meta["CreateTime"]
+        return self.data_source_meta["CreateTime"]
 
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
-        return self.catalog_table_meta["UpdateTime"]
+        return self.data_source_meta["UpdateTime"]
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
@@ -175,12 +175,12 @@ class AthenaSource(DataSourceAbstract):
     @property
     def columns(self) -> list[str]:
         """Return the column names for this Athena Table"""
-        return [item["Name"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
+        return [item["Name"] for item in self.data_source_meta["StorageDescriptor"]["Columns"]]
 
     @property
     def column_types(self) -> list[str]:
         """Return the column types of the internal AthenaSource"""
-        return [item["Type"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
+        return [item["Type"] for item in self.data_source_meta["StorageDescriptor"]["Columns"]]
 
     def query(self, query: str) -> Union[pd.DataFrame, None]:
         """Query the AthenaSource
@@ -266,7 +266,7 @@ class AthenaSource(DataSourceAbstract):
 
     def s3_storage_location(self) -> str:
         """Get the S3 Storage Location for this Data Source"""
-        return self.catalog_table_meta["StorageDescriptor"]["Location"]
+        return self.data_source_meta["StorageDescriptor"]["Location"]
 
     def athena_test_query(self):
         """Validate that Athena Queries are working"""
