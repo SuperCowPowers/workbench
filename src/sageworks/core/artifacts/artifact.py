@@ -10,7 +10,7 @@ import logging
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.core.cloud_platform.aws.aws_meta import AWSMeta as Meta
 from sageworks.utils.sageworks_cache import SageWorksCache
-from sageworks.utils.aws_utils import list_tags_with_throttle, dict_to_aws_tags, sagemaker_delete_tag
+from sageworks.utils.aws_utils import sagemaker_delete_tag, dict_to_aws_tags
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
 
@@ -128,16 +128,7 @@ class Artifact(ABC):
         Note: This functionality will work for FeatureSets, Models, and Endpoints
               but not for DataSources and Graphs, those classes need to override this method.
         """
-        # First, check our cache
-        meta_data_key = f"{self.uuid}_sageworks_meta"
-        meta_data = self.ephemeral_storage.get(meta_data_key)
-        if meta_data is not None:
-            return meta_data
-
-        # Otherwise, fetch the metadata from AWS, store it in the cache, and return it
-        meta_data = list_tags_with_throttle(self.arn(), self.sm_session)
-        self.ephemeral_storage.set(meta_data_key, meta_data)
-        return meta_data
+        return self.meta_broker.get_aws_tags(self.arn())
 
     def expected_meta(self) -> list[str]:
         """Metadata we expect to see for this Artifact when it's ready
