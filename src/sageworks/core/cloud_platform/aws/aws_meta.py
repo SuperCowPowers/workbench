@@ -177,33 +177,22 @@ class AWSMeta(AbstractMeta):
                 created = datetime_string(group["CreationTime"])
                 description = group.get("ModelPackageGroupDescription", "-")
 
-                # Get the latest model from the model group
-                latest_model = self.get_latest_model_package_info(model_group_name)
-
-                # Handle no latest_model (a model package group with no model packages)
-                if latest_model is None:
-                    model_summary.append({
-                        "Model Group": model_group_name,
-                        "Health": "no_model",
-                        "Owner": "-",
-                        "Model Type": "-",
-                        "Created": "-",
-                        "Ver": "-",
-                        "Tags": "-",
-                        "Input": "-",
-                        "Status": "-",
-                        "Description": "-"
-                    })
-                    continue
-
-                # Get details for the latest model if specified
+                # Initialize variables for details retrieval
                 model_details = {}
                 aws_tags = {}
                 health_tags = "no_health_info"
+                status = "Unknown"
+
+                # If details=True get the latest model package details
                 if details:
-                    model_details.update(self.sm_client.describe_model_package(ModelPackageName=latest_model["ModelPackageArn"]))
-                    aws_tags = self.get_aws_tags(group["ModelPackageGroupArn"])
-                    health_tags = aws_tags.get("sageworks_health_tags", "healthy")
+                    latest_model = self.get_latest_model_package_info(model_group_name)
+                    if latest_model:
+                        model_details.update(self.sm_client.describe_model_package(ModelPackageName=latest_model["ModelPackageArn"]))
+                        aws_tags = self.get_aws_tags(group["ModelPackageGroupArn"])
+                        health_tags = aws_tags.get("sageworks_health_tags", "no_health_info")
+                        status = model_details.get("ModelPackageStatus", "Unknown")
+                    else:
+                        status = "No Models"
 
                 # Compile model summary
                 summary = {
@@ -215,7 +204,7 @@ class AWSMeta(AbstractMeta):
                     "Ver": model_details.get("ModelPackageVersion", "-"),
                     "Tags": aws_tags.get("sageworks_tags", "-"),
                     "Input": aws_tags.get("sageworks_input", "-"),
-                    "Status": model_details.get("ModelPackageStatus", "-"),
+                    "Status": status,
                     "Description": description,
                     "_aws_url": self.model_package_group_console_url(model_group_name),
                 }
@@ -246,7 +235,7 @@ class AWSMeta(AbstractMeta):
 
                 # Retrieve SageWorks metadata from tags
                 sageworks_meta = self.get_aws_tags(endpoint_info["EndpointArn"])
-                health_tags = sageworks_meta.get("sageworks_health_tags", "-") or "healthy"
+                health_tags = sageworks_meta.get("sageworks_health_tags") or "no_health_info"
 
                 # Retrieve endpoint configuration to determine instance type or serverless info
                 endpoint_config_name = endpoint_info["EndpointConfigName"]
