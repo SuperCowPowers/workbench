@@ -17,7 +17,6 @@ from sagemaker.model import Model as SagemakerModel
 
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
-from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.aws_utils import newest_path, pull_s3_data
 
 

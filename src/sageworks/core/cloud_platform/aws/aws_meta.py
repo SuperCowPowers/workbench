@@ -352,7 +352,7 @@ class AWSMeta(AbstractMeta):
             model_group_name (str): The name of the model package group to describe.
 
         Returns:
-            dict: A detailed description of the model package group, including details of each model package (None if not found).
+            dict: A detailed description of the model package group (None if not found).
         """
         # Retrieve Model Package Group details
         model_group_details = self.sm_client.describe_model_package_group(ModelPackageGroupName=model_group_name)
@@ -361,13 +361,14 @@ class AWSMeta(AbstractMeta):
         # Retrieve the list of model package ARNs
         model_package_arns = [
             package["ModelPackageArn"]
-            for package in self.sm_client.list_model_packages(ModelPackageGroupName=model_group_name)["ModelPackageSummaryList"]
+            for package in self.sm_client.list_model_packages(ModelPackageGroupName=model_group_name)[
+                "ModelPackageSummaryList"
+            ]
         ]
 
         # Get detailed information for each model package and add to the list
         model_group_details["ModelPackageList"] = [
-            self.sm_client.describe_model_package(ModelPackageName=arn)
-            for arn in model_package_arns
+            self.sm_client.describe_model_package(ModelPackageName=arn) for arn in model_package_arns
         ]
 
         # Retrieve SageWorks metadata from AWS tags
