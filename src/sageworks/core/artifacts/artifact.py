@@ -9,6 +9,7 @@ import logging
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
+from sageworks.api.meta import Meta
 from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.utils.aws_utils import list_tags_with_throttle, dict_to_aws_tags, sagemaker_delete_tag
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
@@ -24,7 +25,7 @@ class Artifact(ABC):
     sm_session = aws_account_clamp.sagemaker_session()
     sm_client = aws_account_clamp.sagemaker_client()
     aws_region = aws_account_clamp.region
-
+    meta_broker = Meta()
     aws_broker = AWSServiceBroker()
     cm = ConfigManager()
     if not cm.config_okay():
@@ -59,11 +60,6 @@ class Artifact(ABC):
             uuid (str): The UUID of this artifact
         """
         self.uuid = uuid
-
-        # Fixme: This is a circular import, but it's necessary for now
-        from sageworks.api.meta import Meta
-
-        self.meta_broker = Meta()
 
     def __post_init__(self):
         """Artifact Post Initialization"""

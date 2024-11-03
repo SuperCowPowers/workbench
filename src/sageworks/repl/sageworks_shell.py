@@ -351,7 +351,7 @@ class SageWorksShell:
         return self.artifacts_text_view.endpoints_summary()
 
     def pipelines(self):
-        return self.artifacts_text_view.pipelines_summary()
+        return self.artifacts_text_view.endpoints_summary()
 
     @staticmethod
     def log_debug():

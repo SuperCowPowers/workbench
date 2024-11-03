@@ -22,7 +22,6 @@ class Meta:
        meta.feature_sets(details=True/False)
        meta.models(details=True/False)
        meta.endpoints()
-       meta.pipelines()
        meta.views()
 
        # These are 'describe' methods
@@ -99,11 +98,18 @@ if __name__ == "__main__":
     print("\n\n*** Endpoints ***")
     pprint(meta.endpoints())
 
-    # Get the Pipelines
-    print("\n\n*** Pipelines ***")
-    pprint(meta.pipelines())
+    # Test out the specific artifact details methods
+    print("\n\n*** Glue Job Details ***")
+    pprint(meta.glue_job("Glue_Job_1"))
+    print("\n\n*** DataSource Details ***")
+    pprint(meta.data_source("abalone_data"))
+    print("\n\n*** FeatureSet Details ***")
+    pprint(meta.feature_set("abalone_features"))
+    print("\n\n*** Model Details ***")
+    pprint(meta.model("abalone-regression"))
+    print("\n\n*** Endpoint Details ***")
+    pprint(meta.endpoint("abalone-regression-end"))
 
-    # Now do a deep dive on all the Artifacts
-    print("\n\n#")
-    print("# Deep Dives ***")
-    print("#")
+    # Test out a non-existent model
+    print("\n\n*** Model Doesn't Exist ***")
+    pprint(meta.model("non-existent-model"))
