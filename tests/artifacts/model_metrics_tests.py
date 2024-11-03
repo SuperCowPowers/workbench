@@ -61,7 +61,7 @@ def test_inference_predictions():
     end.auto_inference(capture=True)
 
     # Retrieve the inference predictions
-    model_reg = Model("abalone-regression", force_refresh=True)
+    model_reg = Model("abalone-regression")
     if model_reg.get_inference_predictions() is None:
         print(f"Model {model_reg.uuid} has no inference predictions!")
         exit(1)

@@ -43,9 +43,6 @@ class AthenaSource(DataSourceAbstract):
         # Call superclass init
         super().__init__(data_uuid, database)
 
-        # Flag for metadata cache refresh logic
-        self.metadata_refresh_needed = False
-
         # Setup our AWS Metadata Broker
         self.catalog_table_meta = self.meta_broker.data_source(data_uuid, database=database)
         if self.catalog_table_meta is None:
@@ -57,6 +54,10 @@ class AthenaSource(DataSourceAbstract):
 
         # All done
         self.log.debug(f"AthenaSource Initialized: {database}.{self.table}")
+
+    def refresh_meta(self):
+        """Refresh our internal AWS Broker catalog metadata"""
+        self.catalog_table_meta = self.meta_broker.data_source(self.uuid, database=self.get_database())
 
     def exists(self) -> bool:
         """Validation Checks for this Data Source"""
@@ -89,10 +90,6 @@ class AthenaSource(DataSourceAbstract):
                 self.log.critical("Malformed Artifact! Delete this Artifact and recreate it!")
             return {}
 
-        # Check if we need to refresh our metadata
-        if self.metadata_refresh_needed:
-            self.refresh_meta()
-
         # Get the SageWorks Metadata from the Catalog Table Metadata
         return sageworks_meta_from_catalog_table_meta(self.catalog_table_meta)
 
@@ -121,7 +118,6 @@ class AthenaSource(DataSourceAbstract):
                 table=self.table,
                 boto3_session=self.boto3_session,
             )
-            self.metadata_refresh_needed = True
         except botocore.exceptions.ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code == "InvalidInputException":

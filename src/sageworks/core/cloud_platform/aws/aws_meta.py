@@ -323,6 +323,16 @@ class AWSMeta(AbstractMeta):
         """
         feature_set_details = self.sm_client.describe_feature_group(FeatureGroupName=feature_group_name)
 
+        # Retrieve SageWorks metadata from the AWS tags
+        sageworks_meta = self.get_aws_tags(arn=feature_set_details["FeatureGroupArn"])
+        add_data = {
+            "athena_database": self._athena_database_name(feature_set_details),
+            "athena_table": self._athena_table_name(feature_set_details),
+            "s3_storage": self._s3_storage(feature_set_details),
+        }
+        sageworks_meta.update(add_data)
+        feature_set_details["sageworks_meta"] = sageworks_meta
+
         # Just return the FeatureSet details (we may do some schema thing in the future)
         return feature_set_details
 
@@ -425,6 +435,30 @@ class AWSMeta(AbstractMeta):
         region = self.boto3_session.region_name
         aws = "console.aws.amazon.com"
         return f"https://{region}.{aws}/sagemaker/home?region={region}#/endpoints/{endpoint_name}/details"
+
+    # Helper methods to pull specific data out of the AWS Feature Group metadata
+    def _athena_database_name(self, feature_group_info: dict) -> Union[str, None]:
+        """Internal: Get the Athena Database Name for a specific feature group"""
+        try:
+            return feature_group_info["OfflineStoreConfig"]["DataCatalogConfig"]["Database"].lower()
+        except KeyError:
+            feature_group_name = feature_group_info.get("FeatureGroupName", "Unknown")
+            self.log.critical(f"Could not find OfflineStore Database for {feature_group_name}!")
+            return None
+
+    def _athena_table_name(self, feature_group_info: dict) -> Union[str, None]:
+        """Internal: Get the Athena Database Name for a specific feature group"""
+        try:
+            return feature_group_info["OfflineStoreConfig"]["DataCatalogConfig"]["TableName"].lower()
+        except KeyError:
+            feature_group_name = feature_group_info.get("FeatureGroupName", "Unknown")
+            self.log.critical(f"Could not find OfflineStore Table for {feature_group_name}!")
+            return None
+
+    @staticmethod
+    def _s3_storage(feature_group_info: dict) -> str:
+        """Internal: Get the S3 Location for a specific feature group"""
+        return feature_group_info["OfflineStoreConfig"]["S3StorageConfig"]["ResolvedOutputS3Uri"]
 
     @not_found_returns_none
     def s3_describe_objects(self, bucket: str) -> Union[dict, None]:

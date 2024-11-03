@@ -346,7 +346,7 @@ class PandasToFeatures(Transform):
         self.log.info("Post-Transform: Populating Offline Storage and onboard()...")
 
         # Feature Group Ingestion takes a while, so we need to wait for it to finish
-        self.output_feature_set = FeatureSetCore(self.output_uuid, force_refresh=True)
+        self.output_feature_set = FeatureSetCore(self.output_uuid)
         self.log.important("Waiting for AWS Feature Group Offline storage to be ready...")
         self.log.important("This will often take 10-20 minutes...go have coffee or lunch :)")
         self.output_feature_set.set_status("initializing")

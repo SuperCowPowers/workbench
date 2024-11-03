@@ -1,3 +1,4 @@
+import pandas as pd
 from IPython import start_ipython
 from IPython.terminal.prompts import Prompts
 from IPython.terminal.ipapp import load_default_config
@@ -351,7 +352,8 @@ class SageWorksShell:
         return self.artifacts_text_view.endpoints_summary()
 
     def pipelines(self):
-        return self.artifacts_text_view.endpoints_summary()
+        logging.error("Pipelines are not yet supported in the SageWorks REPL")
+        return pd.DataFrame()
 
     @staticmethod
     def log_debug():

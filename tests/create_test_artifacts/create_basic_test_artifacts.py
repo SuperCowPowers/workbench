@@ -15,7 +15,7 @@ Endpoints:
 import sys
 import logging
 from pathlib import Path
-from sageworks.api import DataSource, FeatureSet, Model, ModelType, Endpoint, Meta
+from sageworks.api import DataSource, FeatureSet, Model, ModelType, Endpoint
 from sageworks.utils.test_data_generator import TestDataGenerator
 
 # Setup the logger
@@ -23,8 +23,6 @@ log = logging.getLogger("sageworks")
 
 
 if __name__ == "__main__":
-    # This forces a refresh on all the metadata we get from AWS
-    Meta().refresh_all_aws_meta()
 
     # Get the path to the dataset in the repository data directory
     abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"

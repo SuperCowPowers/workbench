@@ -152,7 +152,7 @@ class DataSource(AthenaSource):
         )
 
         # Return the FeatureSet (which will now be up-to-date)
-        return FeatureSet(name, force_refresh=True)
+        return FeatureSet(name)
 
     def _load_source(self, source: str, name: str, tags: list):
         """Load the source of the data"""

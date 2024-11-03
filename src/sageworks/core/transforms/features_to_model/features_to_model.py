@@ -340,7 +340,7 @@ class FeaturesToModel(Transform):
         self.log.info("Post-Transform: Calling onboard() on the Model...")
 
         # Store the model feature_list and target_column in the sageworks_meta
-        output_model = ModelCore(self.output_uuid, model_type=self.model_type, force_refresh=True)
+        output_model = ModelCore(self.output_uuid, model_type=self.model_type)
         output_model.upsert_sageworks_meta({"sageworks_model_features": self.model_feature_list})
         output_model.upsert_sageworks_meta({"sageworks_model_target": self.target_column})
 

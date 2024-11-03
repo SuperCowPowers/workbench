@@ -19,11 +19,11 @@ class DataSourceFactory:
         if data_source_type == "athena":
             # We're going to check both regular DataSources and DataSources
             # that are storage locations for FeatureSets
-            ds = AthenaSource(uuid, force_refresh=force_refresh)
+            ds = AthenaSource(uuid)
             if ds.exists():
                 return ds
             else:
-                return AthenaSource(uuid, "sagemaker_featurestore", force_refresh=force_refresh)
+                return AthenaSource(uuid, "sagemaker_featurestore")
         else:
             raise NotImplementedError(f"DataSource type {data_source_type} not implemented")
 

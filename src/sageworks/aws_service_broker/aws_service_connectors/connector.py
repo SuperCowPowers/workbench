@@ -6,8 +6,10 @@ import logging
 
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.utils.deprecated_utils import deprecated
 
 
+@deprecated(version="0.9")
 class Connector(ABC):
     """Connector: Abstract Base Class for pulling/refreshing AWS Service metadata"""
 
