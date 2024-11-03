@@ -250,8 +250,7 @@ class AWSMeta(AbstractMeta):
                     # If no instance type, it's a serverless configuration
                     mem_size = production_variant["ServerlessConfig"]["MemorySizeInMB"]
                     concurrency = production_variant["ServerlessConfig"]["MaxConcurrency"]
-                    mem_in_gb = int(mem_size / 1024)
-                    instance_type = f"Serverless ({mem_in_gb}GB/{concurrency})"
+                    instance_type = f"Serverless ({mem_size//1024}GB/{concurrency})"
 
                 # Compile endpoint summary
                 summary = {
@@ -307,8 +306,6 @@ class AWSMeta(AbstractMeta):
         # Retrieve table metadata from the Glue catalog
         glue_client = self.boto3_session.client("glue")
         table_details = glue_client.get_table(DatabaseName=database, Name=table_name)["Table"]
-
-        # Just return the Glue Table details (we may do some schema thing in the future)
         return table_details
 
     @not_found_returns_none
@@ -332,8 +329,6 @@ class AWSMeta(AbstractMeta):
         }
         sageworks_meta.update(add_data)
         feature_set_details["sageworks_meta"] = sageworks_meta
-
-        # Just return the FeatureSet details (we may do some schema thing in the future)
         return feature_set_details
 
     @not_found_returns_none
@@ -347,8 +342,6 @@ class AWSMeta(AbstractMeta):
             dict: A detailed description of the model (None if not found).
         """
         model_details = self.sm_client.describe_model(ModelName=model_name)
-
-        # Just return the Model details (we may do some schema thing in the future)
         return model_details
 
     @not_found_returns_none
@@ -359,11 +352,26 @@ class AWSMeta(AbstractMeta):
             model_group_name (str): The name of the model package group to describe.
 
         Returns:
-            dict: A detailed description of the model package group (None if not found).
+            dict: A detailed description of the model package group, including details of each model package (None if not found).
         """
+        # Retrieve Model Package Group details
         model_group_details = self.sm_client.describe_model_package_group(ModelPackageGroupName=model_group_name)
+        model_package_group_arn = model_group_details["ModelPackageGroupArn"]
 
-        # Just return the Model Group details (we may do some schema thing in the future)
+        # Retrieve the list of model package ARNs
+        model_package_arns = [
+            package["ModelPackageArn"]
+            for package in self.sm_client.list_model_packages(ModelPackageGroupName=model_group_name)["ModelPackageSummaryList"]
+        ]
+
+        # Get detailed information for each model package and add to the list
+        model_group_details["ModelPackageList"] = [
+            self.sm_client.describe_model_package(ModelPackageName=arn)
+            for arn in model_package_arns
+        ]
+
+        # Retrieve SageWorks metadata from AWS tags
+        model_group_details["sageworks_meta"] = self.get_aws_tags(model_package_group_arn)
         return model_group_details
 
     @not_found_returns_none
@@ -381,24 +389,17 @@ class AWSMeta(AbstractMeta):
         endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
         production_variant = endpoint_config["ProductionVariants"][0]
 
-        instance_type = production_variant.get("InstanceType", "Unknown")
+        instance_type = production_variant.get("InstanceType")
         if instance_type is None:
             # If no instance type, it's a serverless configuration
             mem_size = production_variant["ServerlessConfig"]["MemorySizeInMB"]
             concurrency = production_variant["ServerlessConfig"]["MaxConcurrency"]
-            instance_type = f"Serverless ({mem_size / 1024}GB/{concurrency})"
+            instance_type = f"Serverless ({mem_size//1024}GB/{concurrency})"
+        endpoint_details["InstanceType"] = instance_type
 
-        return {
-            "Endpoint Name": endpoint_details["EndpointName"],
-            "Status": endpoint_details["EndpointStatus"],
-            "Instance Type": instance_type,
-            "Created": datetime_string(endpoint_details.get("CreationTime")),
-            "Variant": production_variant.get("VariantName", "-"),
-            "Data Capture Enabled": endpoint_details.get("DataCaptureConfig", {}).get("EnableCapture", "False"),
-            "Sampling Percentage": endpoint_details.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-"),
-            "Tags": self.get_aws_tags(endpoint_details["EndpointArn"]),
-            "Description": endpoint_details.get("EndpointDescription", "-"),
-        }
+        # Retrieve SageWorks metadata from AWS tags
+        endpoint_details["sageworks_meta"] = self.get_aws_tags(endpoint_details["EndpointArn"])
+        return endpoint_details
 
     # These are helper methods to construct the AWS URL for the Artifacts
     @staticmethod
@@ -605,6 +606,7 @@ if __name__ == "__main__":
     pprint(meta.model("abalone-regression"))
     print("\n\n*** Endpoint Details ***")
     pprint(meta.endpoint("abalone-regression-end"))
+    pprint(meta.endpoint("test-timing-realtime"))
 
     # Test out a non-existent model
     print("\n\n*** Model Doesn't Exist ***")

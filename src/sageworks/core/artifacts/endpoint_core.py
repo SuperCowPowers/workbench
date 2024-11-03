@@ -40,7 +40,6 @@ from sagemaker import Predictor
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
 from sageworks.core.artifacts.model_core import ModelCore, ModelType
-from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.endpoint_metrics import EndpointMetrics
 from sageworks.utils.shapley_values import generate_shap_values
 from sageworks.utils.fast_inference import fast_inference
@@ -77,7 +76,7 @@ class EndpointCore(Artifact):
 
         # Grab an AWS Metadata Broker object and pull information for Endpoints
         self.endpoint_name = endpoint_uuid
-        self.endpoint_meta = self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS).get(self.endpoint_name)
+        self.endpoint_meta = self.meta_broker.endpoint(self.endpoint_name)
 
         # Sanity check that we found the endpoint
         if self.endpoint_meta is None:
@@ -111,7 +110,7 @@ class EndpointCore(Artifact):
 
     def refresh_meta(self):
         """Refresh the Artifact's metadata"""
-        self.endpoint_meta = self.aws_broker.get_metadata(ServiceCategory.ENDPOINTS).get(self.endpoint_name)
+        self.endpoint_meta = self.meta_broker.endpoint(self.endpoint_name)
 
     def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""

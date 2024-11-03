@@ -77,20 +77,15 @@ class ModelCore(Artifact):
         ```
     """
 
-    def __init__(
-        self, model_uuid: str, force_refresh: bool = False, model_type: ModelType = None, legacy: bool = False
-    ):
+    def __init__(self, model_uuid: str, model_type: ModelType = None):
         """ModelCore Initialization
         Args:
             model_uuid (str): Name of Model in SageWorks.
-            force_refresh (bool, optional): Force a refresh of the AWS Broker. Defaults to False.
             model_type (ModelType, optional): Set this for newly created Models. Defaults to None.
-            legacy (bool, optional): Force load of legacy models. Defaults to False.
         """
 
         # Make sure the model name is valid
-        if not legacy:
-            self.is_name_valid(model_uuid, delimiter="-", lower_case=False)
+        self.is_name_valid(model_uuid, delimiter="-", lower_case=False)
 
         # Call SuperClass Initialization
         super().__init__(model_uuid)
@@ -105,15 +100,16 @@ class ModelCore(Artifact):
         self.model_name = model_uuid
         self.model_meta = self.meta_broker.model(self.model_name)
         if self.model_meta is None:
-            self.log.important(f"Could not find model {self.model_name} within current visibility scope")
+            self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
             return
         else:
             # Is this a model package group without any models?
-            if len(self.model_meta) == 0:
+            if len(self.model_meta["ModelPackageList"]) == 0:
                 self.log.warning(f"Model Group {self.model_name} has no Model Packages!")
+                self.latest_model = None
                 return
             try:
-                self.latest_model = self.model_meta[0]
+                self.latest_model = self.model_meta["ModelPackageList"][0]
                 self.description = self.latest_model.get("ModelPackageDescription", "-")
                 self.training_job_name = self._extract_training_job_name()
                 if model_type:
@@ -138,8 +134,8 @@ class ModelCore(Artifact):
 
     def refresh_meta(self):
         """Refresh the Artifact's metadata"""
-        self.model_meta = self.aws_broker.get_metadata(ServiceCategory.MODELS).get(self.model_name)
-        self.latest_model = self.model_meta[0]
+        self.model_meta = self.meta_broker.model(self.model_name)
+        self.latest_model = self.model_meta["ModelPackageList"][0]
         self.description = self.latest_model.get("ModelPackageDescription", "-")
         self.training_job_name = self._extract_training_job_name()
 
@@ -314,7 +310,7 @@ class ModelCore(Artifact):
 
     def aws_meta(self) -> dict:
         """Get ALL the AWS metadata for this artifact"""
-        return self.latest_model
+        return self.model_meta
 
     def arn(self) -> str:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
@@ -322,26 +318,24 @@ class ModelCore(Artifact):
 
     def group_arn(self) -> Union[str, None]:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
-        if self.latest_model is None:
-            return None
-        return self.latest_model["ModelPackageGroupArn"]
+        return self.model_meta["ModelPackageGroupArn"]
 
     def model_package_arn(self) -> Union[str, None]:
-        """AWS ARN (Amazon Resource Name) for the Model Package (within the Group)"""
+        """AWS ARN (Amazon Resource Name) for the Latest Model Package (within the Group)"""
         if self.latest_model is None:
             return None
         return self.latest_model["ModelPackageArn"]
 
     def container_info(self) -> dict:
         """Container Info for the Latest Model Package"""
-        return self.latest_model["ModelPackageDetails"]["InferenceSpecification"]["Containers"][0]
+        return self.latest_model["InferenceSpecification"]["Containers"][0]
 
     def container_image(self) -> str:
         """Container Image for the Latest Model Package"""
         return self.container_info()["Image"]
 
     def aws_url(self):
-        """The AWS URL for looking at/querying this data source"""
+        """The AWS URL for looking at/querying this model"""
         return f"https://{self.aws_region}.console.aws.amazon.com/athena/home"
 
     def created(self) -> datetime:
@@ -503,21 +497,19 @@ class ModelCore(Artifact):
         details["model_package_arn"] = self.model_package_arn()
 
         # Sanity check is we have models in the group
-        aws_meta = self.aws_meta()
-        if aws_meta is None:
+        if self.latest_model is None:
             self.log.warning(f"Model Package Group {self.model_name} has no models!")
             return details
 
         # Grab the Model Details
-        details["description"] = aws_meta.get("ModelPackageDescription", "-")
-        details["version"] = aws_meta["ModelPackageVersion"]
-        details["status"] = aws_meta["ModelPackageStatus"]
-        details["approval_status"] = aws_meta.get("ModelApprovalStatus", "unknown")
+        details["description"] = self.latest_model.get("ModelPackageDescription", "-")
+        details["version"] = self.latest_model["ModelPackageVersion"]
+        details["status"] = self.latest_model["ModelPackageStatus"]
+        details["approval_status"] = self.latest_model.get("ModelApprovalStatus", "unknown")
         details["image"] = self.container_image().split("/")[-1]  # Shorten the image uri
 
         # Grab the inference and container info
-        package_details = aws_meta["ModelPackageDetails"]
-        inference_spec = package_details["InferenceSpecification"]
+        inference_spec = self.latest_model["InferenceSpecification"]
         container_info = self.container_info()
         details["framework"] = container_info.get("Framework", "unknown")
         details["framework_version"] = container_info.get("FrameworkVersion", "unknown")
