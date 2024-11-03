@@ -187,7 +187,9 @@ class AWSMeta(AbstractMeta):
                 if details:
                     latest_model = self.get_latest_model_package_info(model_group_name)
                     if latest_model:
-                        model_details.update(self.sm_client.describe_model_package(ModelPackageName=latest_model["ModelPackageArn"]))
+                        model_details.update(
+                            self.sm_client.describe_model_package(ModelPackageName=latest_model["ModelPackageArn"])
+                        )
                         aws_tags = self.get_aws_tags(group["ModelPackageGroupArn"])
                         health_tags = aws_tags.get("sageworks_health_tags", "no_health_info")
                         status = model_details.get("ModelPackageStatus", "Unknown")
@@ -340,8 +342,12 @@ class AWSMeta(AbstractMeta):
             "Num Columns": len(feature_set_details.get("FeatureDefinitions", [])),
             "Online Store": feature_set_details.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "Unknown"),
             "Offline Store": "True" if feature_set_details.get("OfflineStoreConfig") else "Unknown",
-            "S3 Storage URI": feature_set_details.get("OfflineStoreConfig", {}).get("S3StorageConfig", {}).get("S3Uri", "-"),
-            "Glue Table Name": feature_set_details.get("OfflineStoreConfig", {}).get("DataCatalogConfig", {}).get("TableName", "-"),
+            "S3 Storage URI": feature_set_details.get("OfflineStoreConfig", {})
+            .get("S3StorageConfig", {})
+            .get("S3Uri", "-"),
+            "Glue Table Name": feature_set_details.get("OfflineStoreConfig", {})
+            .get("DataCatalogConfig", {})
+            .get("TableName", "-"),
             "Description": feature_set_details.get("Description", "-"),
             "Tags": self.get_aws_tags(feature_set_details["FeatureGroupArn"]),
         }
@@ -480,7 +486,7 @@ class AWSMeta(AbstractMeta):
             ModelPackageGroupName=model_group_name,
             SortBy="CreationTime",
             SortOrder="Descending",
-            MaxResults=1  # Get only the latest model
+            MaxResults=1,  # Get only the latest model
         )
         # If no model packages are found, return None
         if not model_package_list["ModelPackageSummaryList"]:

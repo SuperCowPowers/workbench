@@ -135,7 +135,8 @@ class AbstractMeta(ABC):
         """
         pass
 
-    def data_sources(self, table_name: str, database: str = "sageworks") -> Union[dict, None]:
+    @abstractmethod
+    def data_source(self, table_name: str, database: str = "sageworks") -> Union[dict, None]:
         """Get the details of a specific Data Source
 
         Args:
@@ -147,6 +148,7 @@ class AbstractMeta(ABC):
         """
         pass
 
+    @abstractmethod
     def feature_set(self, feature_group_name: str) -> Union[dict, None]:
         """Get the details of a specific Feature Set
 
@@ -158,6 +160,7 @@ class AbstractMeta(ABC):
         """
         pass
 
+    @abstractmethod
     def model(self, model_name: str) -> Union[dict, None]:
         """Get the details of a specific Model
 
@@ -169,6 +172,7 @@ class AbstractMeta(ABC):
         """
         pass
 
+    @abstractmethod
     def endpoint(self, endpoint_name: str) -> Union[dict, None]:
         """Get the details of a specific Endpoint
 
