@@ -308,22 +308,8 @@ class AWSMeta(AbstractMeta):
         glue_client = self.boto3_session.client("glue")
         table_details = glue_client.get_table(DatabaseName=database, Name=table_name)["Table"]
 
-        # Extract relevant information
-        return {
-            "Table Name": table_details["Name"],
-            "Database": database,
-            "Created": datetime_string(table_details.get("CreateTime")),
-            "Last Modified": datetime_string(table_details.get("UpdateTime")),
-            "Columns": [col["Name"] for col in table_details["StorageDescriptor"]["Columns"]],
-            "Number of Columns": len(table_details["StorageDescriptor"]["Columns"]),
-            "Location": table_details["StorageDescriptor"].get("Location", "-"),
-            "Input Format": table_details["StorageDescriptor"].get("InputFormat", "-"),
-            "Output Format": table_details["StorageDescriptor"].get("OutputFormat", "-"),
-            "Compressed": table_details["StorageDescriptor"].get("Compressed", "-"),
-            "Table Type": table_details.get("TableType", "-"),
-            "Parameters": table_details.get("Parameters", {}),
-            "Tags": table_details.get("Parameters", {}).get("sageworks_tags", "-"),
-        }
+        # Just return the Glue Table details (we may do some schema thing in the future)
+        return table_details
 
     @not_found_returns_none
     def feature_set(self, feature_group_name: str) -> Union[dict, None]:
@@ -336,21 +322,9 @@ class AWSMeta(AbstractMeta):
             dict: A detailed description of the feature group (None if not found).
         """
         feature_set_details = self.sm_client.describe_feature_group(FeatureGroupName=feature_group_name)
-        return {
-            "Feature Group": feature_set_details["FeatureGroupName"],
-            "Created": datetime_string(feature_set_details.get("CreationTime")),
-            "Num Columns": len(feature_set_details.get("FeatureDefinitions", [])),
-            "Online Store": feature_set_details.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "Unknown"),
-            "Offline Store": "True" if feature_set_details.get("OfflineStoreConfig") else "Unknown",
-            "S3 Storage URI": feature_set_details.get("OfflineStoreConfig", {})
-            .get("S3StorageConfig", {})
-            .get("S3Uri", "-"),
-            "Glue Table Name": feature_set_details.get("OfflineStoreConfig", {})
-            .get("DataCatalogConfig", {})
-            .get("TableName", "-"),
-            "Description": feature_set_details.get("Description", "-"),
-            "Tags": self.get_aws_tags(feature_set_details["FeatureGroupArn"]),
-        }
+
+        # Just return the FeatureSet details (we may do some schema thing in the future)
+        return feature_set_details
 
     @not_found_returns_none
     def stand_alone_model(self, model_name: str) -> Union[dict, None]:
@@ -363,15 +337,9 @@ class AWSMeta(AbstractMeta):
             dict: A detailed description of the model (None if not found).
         """
         model_details = self.sm_client.describe_model(ModelName=model_name)
-        return {
-            "Model Name": model_details["ModelName"],
-            "Primary Container": model_details.get("PrimaryContainer", {}).get("Image", "-"),
-            "Execution Role": model_details.get("ExecutionRoleArn", "-"),
-            "Created": datetime_string(model_details.get("CreationTime")),
-            "Status": model_details.get("ModelStatus", "Unknown"),
-            "Tags": self.get_aws_tags(model_details["ModelArn"]),
-            "Description": model_details.get("Description", "-"),
-        }
+
+        # Just return the Model details (we may do some schema thing in the future)
+        return model_details
 
     @not_found_returns_none
     def model(self, model_group_name: str) -> Union[dict, None]:
@@ -384,13 +352,9 @@ class AWSMeta(AbstractMeta):
             dict: A detailed description of the model package group (None if not found).
         """
         model_group_details = self.sm_client.describe_model_package_group(ModelPackageGroupName=model_group_name)
-        return {
-            "Model Group": model_group_details["ModelPackageGroupName"],
-            "Created": datetime_string(model_group_details.get("CreationTime")),
-            "Status": model_group_details.get("ModelPackageGroupStatus", "Unknown"),
-            "Description": model_group_details.get("ModelPackageGroupDescription", "-"),
-            "Tags": self.get_aws_tags(model_group_details["ModelPackageGroupArn"]),
-        }
+
+        # Just return the Model Group details (we may do some schema thing in the future)
+        return model_group_details
 
     @not_found_returns_none
     def endpoint(self, endpoint_name: str) -> Union[dict, None]:

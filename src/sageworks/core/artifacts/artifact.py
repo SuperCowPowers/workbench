@@ -9,7 +9,7 @@ import logging
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
-from sageworks.api.meta import Meta
+from sageworks.core.cloud_platform.aws.aws_meta import AWSMeta as Meta
 from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.utils.aws_utils import list_tags_with_throttle, dict_to_aws_tags, sagemaker_delete_tag
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
@@ -149,11 +149,6 @@ class Artifact(ABC):
 
         # If an artifact has additional expected metadata override this method
         return ["sageworks_status"]
-
-    @abstractmethod
-    def refresh_meta(self):
-        """Refresh the Artifact's metadata"""
-        pass
 
     def ready(self) -> bool:
         """Is the Artifact ready? Is initial setup complete and expected metadata populated?"""

@@ -12,7 +12,6 @@ from pprint import pprint
 
 # SageWorks Imports
 from sageworks.core.artifacts.data_source_abstract import DataSourceAbstract
-from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.datetime_utils import convert_all_to_iso8601
 from sageworks.algorithms import sql
 from sageworks.utils.redis_cache import CustomEncoder
@@ -31,13 +30,12 @@ class AthenaSource(DataSourceAbstract):
         ```
     """
 
-    def __init__(self, data_uuid, database="sageworks", force_refresh: bool = False):
+    def __init__(self, data_uuid, database="sageworks"):
         """AthenaSource Initialization
 
         Args:
             data_uuid (str): Name of Athena Table
             database (str): Athena Database Name (default: sageworks)
-            force_refresh (bool): Force refresh of AWS Metadata (default: False)
         """
         # Ensure the data_uuid is a valid name/id
         self.is_name_valid(data_uuid)
@@ -49,33 +47,16 @@ class AthenaSource(DataSourceAbstract):
         self.metadata_refresh_needed = False
 
         # Setup our AWS Metadata Broker
-        try:
-            self.catalog_table_meta = self.meta_broker.data_source_details(data_uuid, database, refresh=force_refresh)
-        except Exception as e:
-            self.log.error(f"Failed to get AWS Metadata: {self.uuid} in database: {self.get_database()}")
-            self.log.error(f"Exception: {e}")
-            self.catalog_table_meta = None
-
-        # If we get a None, let's try again with a force refresh
+        self.catalog_table_meta = self.meta_broker.data_source(data_uuid, database=database)
         if self.catalog_table_meta is None:
-            self.log.warning(f"Unable to find {database}:{self.table}, Sleeping and trying again...")
-            time.sleep(10)
-            self.catalog_table_meta = self.meta_broker.data_source_details(data_uuid, database, refresh=True)
-            if self.catalog_table_meta is None:
-                self.log.error(f"Unable to find {database}:{self.table} in Glue Catalogs...")
-                return
+            self.log.error(f"Unable to find {database}:{self.table} in Glue Catalogs...")
+            return
 
         # Call superclass post init
         super().__post_init__()
 
         # All done
         self.log.debug(f"AthenaSource Initialized: {database}.{self.table}")
-
-    def refresh_meta(self):
-        """Refresh our internal AWS Broker catalog metadata"""
-        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=True)
-        self.catalog_table_meta = _catalog_meta[self.get_database()].get(self.table)
-        self.metadata_refresh_needed = False
 
     def exists(self) -> bool:
         """Validation Checks for this Data Source"""
@@ -589,12 +570,6 @@ class AthenaSource(DataSourceAbstract):
 
 if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
-
-    # Test a Data Source that doesn't exist
-    print("\n\nTesting a Data Source that does not exist...")
-    my_data = AthenaSource("does_not_exist")
-    assert not my_data.exists()
-    my_data.sageworks_meta()
 
     # Retrieve a Data Source
     my_data = AthenaSource("abalone_data")
