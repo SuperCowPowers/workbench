@@ -15,7 +15,6 @@ Endpoints:
 import sys
 from pathlib import Path
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.api.data_source import DataSource
 from sageworks.api.feature_set import FeatureSet
 from sageworks.api.model import Model, ModelType
@@ -45,9 +44,6 @@ if __name__ == "__main__":
 
     # Check that the Redis Database is available
     redis_check()
-
-    # This forces a refresh on all the data we get from the AWS Broker
-    AWSServiceBroker().get_all_metadata(force_refresh=True)
 
     # Create the abalone_data DataSource
     if not DataSource("abalone_data").exists():

@@ -3,7 +3,6 @@ import sageworks  # noqa: F401
 import logging
 from sageworks.utils.test_data_generator import TestDataGenerator
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint, ModelType
-from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 # Set the logging level
 logging.getLogger("sageworks").setLevel(logging.DEBUG)
@@ -75,8 +74,6 @@ def test_data_source_deletion():
 
 
 if __name__ == "__main__":
-    # This forces a refresh on all the data we get from the AWS Broker
-    AWSServiceBroker().get_all_metadata(force_refresh=True)
 
     test_endpoint_deletion()
     test_model_deletion()
