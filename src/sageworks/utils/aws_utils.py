@@ -112,7 +112,13 @@ def aws_throttle(func=None, retry_intervals=None):
 
 def not_found_returns_none(func):
     """Decorator to handle AWS resource not found (returns None) and re-raising otherwise."""
-    not_found_errors = {"ResourceNotFound", "ResourceNotFoundException", "EntityNotFoundException", "ValidationException", "NoSuchBucket"}
+    not_found_errors = {
+        "ResourceNotFound",
+        "ResourceNotFoundException",
+        "EntityNotFoundException",
+        "ValidationException",
+        "NoSuchBucket",
+    }
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
