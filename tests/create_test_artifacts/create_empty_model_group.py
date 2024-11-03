@@ -7,7 +7,6 @@ Models:
 import logging
 from botocore.exceptions import ClientError
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.api.meta import Meta
 
 # Setup the logger
 log = logging.getLogger("sageworks")
@@ -34,9 +33,7 @@ def create_model_package_group(group_name, boto3_session):
 
 
 if __name__ == "__main__":
-    # This forces a refresh on the metadata we get from AWS
-    Meta().models(refresh=True)
 
     # Create an empty Model Package Group
-    boto3_session = AWSAccountClamp().boto3_session
-    create_model_package_group("empty-model-group", boto3_session)
+    my_boto3_session = AWSAccountClamp().boto3_session
+    create_model_package_group("empty-model-group", my_boto3_session)
