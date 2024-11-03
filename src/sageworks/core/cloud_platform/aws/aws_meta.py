@@ -11,7 +11,7 @@ import awswrangler as wr
 # SageWorks Imports
 from sageworks.core.cloud_platform.abstract_meta import AbstractMeta
 from sageworks.utils.datetime_utils import datetime_string
-from sageworks.utils.aws_utils import aws_not_found, aws_throttle, aws_tags_to_dict
+from sageworks.utils.aws_utils import aws_not_found_is_none, aws_throttle, aws_tags_to_dict
 
 
 class AWSMeta(AbstractMeta):
@@ -42,7 +42,7 @@ class AWSMeta(AbstractMeta):
             pd.DataFrame: A summary of the incoming raw data in the S3 bucket.
         """
         self.log.debug(f"Refreshing metadata for S3 Bucket: {self.incoming_bucket}...")
-        s3_file_info = self._get_s3_file_info(self.incoming_bucket)
+        s3_file_info = self.s3_describe_objects(self.incoming_bucket)
 
         # Check if our bucket does not exist
         if s3_file_info is None:
@@ -86,7 +86,7 @@ class AWSMeta(AbstractMeta):
 
             last_run = job_runs[0] if job_runs else None
             summary = {
-                "Job Name": job_name,
+                "Name": job_name,
                 "Workers": job.get("NumberOfWorkers", "-"),
                 "WorkerType": job.get("WorkerType", "-"),
                 "Start Time": datetime_string(last_run["StartedOn"]) if last_run else "-",
@@ -117,11 +117,11 @@ class AWSMeta(AbstractMeta):
         """
         return self._list_catalog_tables(database, views=True)
 
-    def feature_sets(self, refresh: bool = False) -> pd.DataFrame:
+    def feature_sets(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Feature Sets in AWS.
 
         Args:
-            refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+            details (bool, optional): Get additional details (Defaults to False).
 
         Returns:
             pd.DataFrame: A summary of the Feature Sets in AWS.
@@ -134,17 +134,22 @@ class AWSMeta(AbstractMeta):
         for page in paginator.paginate():
             for fg in page["FeatureGroupSummaries"]:
                 name = fg["FeatureGroupName"]
-                group_info = self.sm_client.describe_feature_group(FeatureGroupName=name)
+
+                # Get details if requested
+                feature_set_details = {}
+                if details:
+                    feature_set_details.update(self.sm_client.describe_feature_group(FeatureGroupName=name))
 
                 # Retrieve SageWorks metadata from tags
-                sageworks_meta = self.list_tags(fg["FeatureGroupArn"])
+                aws_tags = self.get_aws_tags(fg["FeatureGroupArn"])
                 summary = {
                     "Feature Group": name,
-                    "Created": datetime_string(group_info.get("CreationTime")),
-                    "Num Columns": len(group_info.get("FeatureDefinitions", [])),
-                    "Input": sageworks_meta.get("sageworks_input", "-"),
-                    "Tags": sageworks_meta.get("sageworks_tags", "-"),
-                    "Online": str(group_info.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
+                    "Created": datetime_string(feature_set_details.get("CreationTime")),
+                    "Num Columns": len(feature_set_details.get("FeatureDefinitions", [])),
+                    "Input": aws_tags.get("sageworks_input", "-"),
+                    "Tags": aws_tags.get("sageworks_tags", "-"),
+                    "Online": str(feature_set_details.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
+                    "Offline": str(feature_set_details.get("OfflineStoreConfig", {}).get("EnableGlueDataCatalog", "False")),
                     "_aws_url": self.feature_group_console_url(name),
                 }
                 data_summary.append(summary)
@@ -152,8 +157,11 @@ class AWSMeta(AbstractMeta):
         # Return the summary as a DataFrame
         return pd.DataFrame(data_summary).convert_dtypes()
 
-    def models(self) -> pd.DataFrame:
+    def models(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Models in AWS.
+
+        Args:
+            details (bool, optional): Get additional details (Defaults to False).
 
         Returns:
             pd.DataFrame: A summary of the Models in AWS.
@@ -166,6 +174,10 @@ class AWSMeta(AbstractMeta):
         for page in paginator.paginate():
             for group in page["ModelPackageGroupSummaryList"]:
                 model_group_name = group["ModelPackageGroupName"]
+                created = datetime_string(group["CreationTime"])
+                description = group.get("ModelPackageGroupDescription", "-")
+                aws_tags = self.get_aws_tags(group["ModelPackageGroupArn"])
+                health_tags = aws_tags.get("sageworks_health_tags", "healthy")
 
                 # List model packages in the group (latest version first)
                 model_list_response = self.sm_client.list_model_packages(
@@ -176,45 +188,36 @@ class AWSMeta(AbstractMeta):
                 )
                 model_list = model_list_response["ModelPackageSummaryList"]
 
-                # Handle empty model package groups with a concise one-liner
+                # Handle empty model package groups (no model packages) by adding an error row for that model
                 if not model_list:
                     model_summary.append(
-                        {
-                            "Model Group": model_group_name,
-                            "Health": "failed",
-                            "Owner": "empty",
-                            "Model Type": "empty",
-                            "Created": "-",
-                            "Ver": "-",
-                            "Tags": "-",
-                            "Input": "-",
-                            "Status": "-",
-                            "Description": "-",
-                        }
-                    )
+                        {"Model Group": model_group_name, "Health": "no_model", "Owner": "-", "Model Type": "-",
+                         "Created": "-", "Ver": "-", "Tags": "-", "Input": "-", "Status": "-", "Description": "-"})
                     continue
 
                 # Get details for the latest model
-                latest_model = model_list[0]
-                model_details = self.sm_client.describe_model_package(ModelPackageName=latest_model["ModelPackageArn"])
+                model_details = {}
+                if details:
+                    latest_model = model_list[0]
+                    model_details.update(self.sm_client.describe_model_package(ModelPackageName=latest_model["ModelPackageArn"]))
 
-                # Retrieve SageWorks metadata from tags
-                sageworks_meta = self.list_tags(group["ModelPackageGroupArn"])
-                health_tags = sageworks_meta.get("sageworks_health_tags", "-") or "healthy"
+                    # Retrieve Details from AWS Tags
+                    aws_tags = self.get_aws_tags(group["ModelPackageGroupArn"])
+                    health_tags = aws_tags.get("sageworks_health_tags") or "healthy"
 
                 # Compile model summary
                 summary = {
-                    "Model Group": model_details["ModelPackageGroupName"],
+                    "Model Group": model_group_name,
                     "Health": health_tags,
-                    "Owner": sageworks_meta.get("sageworks_owner", "-"),
-                    "Model Type": sageworks_meta.get("sageworks_model_type", "-"),
-                    "Created": datetime_string(model_details.get("CreationTime")),
-                    "Ver": model_details["ModelPackageVersion"],
-                    "Tags": sageworks_meta.get("sageworks_tags", "-"),
-                    "Input": sageworks_meta.get("sageworks_input", "-"),
-                    "Status": model_details["ModelPackageStatus"],
-                    "Description": model_details.get("ModelPackageDescription", "-"),
-                    "_aws_url": self.model_package_group_console_url(model_details["ModelPackageGroupName"]),
+                    "Owner": aws_tags.get("sageworks_owner", "-"),
+                    "Model Type": aws_tags.get("sageworks_model_type", "-"),
+                    "Created": datetime_string(created),
+                    "Ver": model_details.get("ModelPackageVersion", "-"),
+                    "Tags": aws_tags.get("sageworks_tags", "-"),
+                    "Input": aws_tags.get("sageworks_input", "-"),
+                    "Status": model_details.get("ModelPackageStatus", "-"),
+                    "Description": description,
+                    "_aws_url": self.model_package_group_console_url(model_group_name),
                 }
                 model_summary.append(summary)
 
@@ -242,7 +245,7 @@ class AWSMeta(AbstractMeta):
                 endpoint_info = sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
 
                 # Retrieve SageWorks metadata from tags
-                sageworks_meta = self.list_tags(endpoint_info["EndpointArn"])
+                sageworks_meta = self.get_aws_tags(endpoint_info["EndpointArn"])
                 health_tags = sageworks_meta.get("sageworks_health_tags", "-") or "healthy"
 
                 # Retrieve endpoint configuration to determine instance type or serverless info
@@ -313,13 +316,13 @@ class AWSMeta(AbstractMeta):
         aws = "console.aws.amazon.com"
         return f"https://{region}.{aws}/sagemaker/home?region={region}#/endpoints/{endpoint_name}/details"
 
-    @aws_not_found
-    def _get_s3_file_info(self, bucket: str) -> Union[dict, None]:
+    @aws_not_found_is_none
+    def s3_describe_objects(self, bucket: str) -> Union[dict, None]:
         """Internal: Get the S3 File Information for the given bucket"""
         return wr.s3.describe_objects(path=bucket, boto3_session=self.boto3_session)
 
     @aws_throttle
-    def list_tags(self, arn: str) -> dict:
+    def get_aws_tags(self, arn: str) -> dict:
         """List the tags for the given AWS ARN"""
         return aws_tags_to_dict(self.sm_session.list_tags(resource_arn=arn))
 

@@ -19,8 +19,8 @@ class Meta:
        # These are 'list' methods
        meta.etl_jobs()
        meta.data_sources()
-       meta.feature_sets()
-       meta.models()
+       meta.feature_sets(details=True/False)
+       meta.models(details=True/False)
        meta.endpoints()
        meta.pipelines()
        meta.views()

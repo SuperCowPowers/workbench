@@ -110,7 +110,7 @@ def aws_throttle(func=None, retry_intervals=None):
     return wrapper
 
 
-def aws_not_found(func):
+def aws_not_found_is_none(func):
     """Decorator to handle AWS resource not found (returns None) and re-raising otherwise."""
     not_found_errors = {"ResourceNotFound", "ResourceNotFoundException", "NoSuchBucket"}
 
@@ -568,7 +568,7 @@ if __name__ == "__main__":
     #     raise ClientError({"Error": {"Code": "ThrottlingException"}}, "test")
     # test_throttling()
 
-    @aws_not_found
+    @aws_not_found_is_none
     def test_not_found():
         raise ClientError({"Error": {"Code": "ResourceNotFoundException"}}, "test")
 
@@ -576,7 +576,7 @@ if __name__ == "__main__":
 
     try:
 
-        @aws_not_found
+        @aws_not_found_is_none
         def test_other_error():
             # Raise a different error to test the error handler
             raise ClientError({"Error": {"Code": "SomeOtherError"}}, "test")
