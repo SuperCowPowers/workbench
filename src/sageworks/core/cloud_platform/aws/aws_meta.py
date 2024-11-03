@@ -148,8 +148,8 @@ class AWSMeta(AbstractMeta):
                     "Num Columns": len(feature_set_details.get("FeatureDefinitions", [])),
                     "Input": aws_tags.get("sageworks_input", "-"),
                     "Tags": aws_tags.get("sageworks_tags", "-"),
-                    "Online": str(feature_set_details.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "False")),
-                    "Offline": str(feature_set_details.get("OfflineStoreConfig", {}).get("EnableGlueDataCatalog", "False")),
+                    "Online": str(feature_set_details.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "Unknown")),
+                    "Offline": "True" if feature_set_details.get("OfflineStoreConfig") else "Unknown",
                     "_aws_url": self.feature_group_console_url(name),
                 }
                 data_summary.append(summary)
