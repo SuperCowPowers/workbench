@@ -486,7 +486,7 @@ def pull_s3_data(s3_path: str, embedded_index=False) -> Union[pd.DataFrame, None
         return None
 
 
-@deprecated(version="0.9")
+@deprecated(version="0.9", stack_trace=True)
 def compute_size(obj: object) -> int:
     """Recursively calculate the size of an object including its contents.
 

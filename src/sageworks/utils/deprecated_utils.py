@@ -1,17 +1,20 @@
-"""Chem/RDKIT/Mordred utilities for Sageworks"""
+"""Deprecated Utilities for Sageworks"""
 
+import traceback
 import logging
-from typing import Union, Callable, Type
 from functools import wraps
+from typing import Callable, Type, Union
 
+# Initialize the SageWorks logger
 log = logging.getLogger("sageworks")
 
 
-def deprecated(version: str) -> Callable:
-    """Decorator to mark classes or functions as deprecated, logging a warning on use.
+def deprecated(version: str, stack_trace: bool = False) -> Callable:
+    """Decorator to mark classes or functions as deprecated.
 
     Args:
         version (str): The version in which the class or function is deprecated.
+        stack_trace (bool, optional): Include the call stack. Defaults to False.
     """
 
     def decorator(cls_or_func: Union[Type, Callable]) -> Union[Type, Callable]:
@@ -24,6 +27,9 @@ def deprecated(version: str) -> Callable:
             @wraps(original_init)
             def new_init(self, *args, **kwargs):
                 log.warning(message)
+                if stack_trace:
+                    trimmed_stack = "".join(traceback.format_stack()[:-1])
+                    log.warning("Call stack:\n%s", trimmed_stack)
                 original_init(self, *args, **kwargs)
 
             cls_or_func.__init__ = new_init
@@ -33,6 +39,9 @@ def deprecated(version: str) -> Callable:
             @wraps(cls_or_func)
             def wrapper(*args, **kwargs):
                 log.warning(message)
+                if stack_trace:
+                    trimmed_stack = "".join(traceback.format_stack()[:-1])
+                    log.warning("Call stack:\n%s", trimmed_stack)
                 return cls_or_func(*args, **kwargs)
 
             return wrapper
@@ -41,13 +50,12 @@ def deprecated(version: str) -> Callable:
 
 
 if __name__ == "__main__":
-    # Example usage of the deprecated decorator
+
     @deprecated(version="0.9")
     class OldClass:
         def __init__(self):
             print("OldClass initialized")
 
-    # Using OldClass will log a deprecation warning
     instance = OldClass()
 
     class MyClass:
@@ -55,6 +63,5 @@ if __name__ == "__main__":
         def old_method(self):
             print("This is an old method.")
 
-    # Using old_method will log a deprecation warning
     obj = MyClass()
     obj.old_method()
