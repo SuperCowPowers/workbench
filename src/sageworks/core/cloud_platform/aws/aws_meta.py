@@ -11,7 +11,7 @@ import awswrangler as wr
 # SageWorks Imports
 from sageworks.core.cloud_platform.abstract_meta import AbstractMeta
 from sageworks.utils.datetime_utils import datetime_string
-from sageworks.utils.aws_utils import aws_not_found_is_none, aws_throttle, aws_tags_to_dict
+from sageworks.utils.aws_utils import not_found_returns_none, aws_throttle, aws_tags_to_dict
 
 
 class AWSMeta(AbstractMeta):
@@ -269,6 +269,157 @@ class AWSMeta(AbstractMeta):
         # Return the summary as a DataFrame
         return pd.DataFrame(data_summary).convert_dtypes()
 
+    @not_found_returns_none
+    def glue_job(self, job_name: str) -> Union[dict, None]:
+        """Describe a single Glue ETL Job in AWS.
+
+        Args:
+            job_name (str): The name of the Glue job to describe.
+
+        Returns:
+            dict: A detailed description of the Glue job (None if not found).
+        """
+        glue_client = self.boto3_session.client("glue")
+        job_details = glue_client.get_job(JobName=job_name)["Job"]
+        return {
+            "Job Name": job_details["Name"],
+            "Worker Type": job_details.get("WorkerType", "-"),
+            "Number of Workers": job_details.get("NumberOfWorkers", "-"),
+            "Last Modified": datetime_string(job_details.get("LastModifiedOn")),
+            "Role": job_details.get("Role", "-"),
+            "Description": job_details.get("Description", "-"),
+            "Tags": job_details.get("Tags", {}),
+        }
+
+    @not_found_returns_none
+    def data_source(self, table_name: str, database: str = "sageworks") -> Union[dict, None]:
+        """Describe a single Data Source (Glue Table) in AWS.
+
+        Args:
+            table_name (str): The name of the Glue table (data source) to describe.
+            database (str, optional): The Glue database where the table is located. Defaults to 'sageworks'.
+
+        Returns:
+            dict: A detailed description of the data source (None if not found).
+        """
+        # Retrieve table metadata from the Glue catalog
+        glue_client = self.boto3_session.client("glue")
+        table_details = glue_client.get_table(DatabaseName=database, Name=table_name)["Table"]
+
+        # Extract relevant information
+        return {
+            "Table Name": table_details["Name"],
+            "Database": database,
+            "Created": datetime_string(table_details.get("CreateTime")),
+            "Last Modified": datetime_string(table_details.get("UpdateTime")),
+            "Columns": [col["Name"] for col in table_details["StorageDescriptor"]["Columns"]],
+            "Number of Columns": len(table_details["StorageDescriptor"]["Columns"]),
+            "Location": table_details["StorageDescriptor"].get("Location", "-"),
+            "Input Format": table_details["StorageDescriptor"].get("InputFormat", "-"),
+            "Output Format": table_details["StorageDescriptor"].get("OutputFormat", "-"),
+            "Compressed": table_details["StorageDescriptor"].get("Compressed", "-"),
+            "Table Type": table_details.get("TableType", "-"),
+            "Parameters": table_details.get("Parameters", {}),
+            "Tags": table_details.get("Parameters", {}).get("sageworks_tags", "-"),
+        }
+
+    @not_found_returns_none
+    def feature_set(self, feature_group_name: str) -> Union[dict, None]:
+        """Describe a single Feature Set (Feature Group) in AWS.
+
+        Args:
+            feature_group_name (str): The name of the feature group to describe.
+
+        Returns:
+            dict: A detailed description of the feature group (None if not found).
+        """
+        feature_set_details = self.sm_client.describe_feature_group(FeatureGroupName=feature_group_name)
+        return {
+            "Feature Group": feature_set_details["FeatureGroupName"],
+            "Created": datetime_string(feature_set_details.get("CreationTime")),
+            "Num Columns": len(feature_set_details.get("FeatureDefinitions", [])),
+            "Online Store": feature_set_details.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "Unknown"),
+            "Offline Store": "True" if feature_set_details.get("OfflineStoreConfig") else "Unknown",
+            "S3 Storage URI": feature_set_details.get("OfflineStoreConfig", {}).get("S3StorageConfig", {}).get("S3Uri", "-"),
+            "Glue Table Name": feature_set_details.get("OfflineStoreConfig", {}).get("DataCatalogConfig", {}).get("TableName", "-"),
+            "Description": feature_set_details.get("Description", "-"),
+            "Tags": self.get_aws_tags(feature_set_details["FeatureGroupArn"]),
+        }
+
+    @not_found_returns_none
+    def stand_alone_model(self, model_name: str) -> Union[dict, None]:
+        """Describe a single Model in AWS.
+
+        Args:
+            model_name (str): The name of the model to describe.
+
+        Returns:
+            dict: A detailed description of the model (None if not found).
+        """
+        model_details = self.sm_client.describe_model(ModelName=model_name)
+        return {
+            "Model Name": model_details["ModelName"],
+            "Primary Container": model_details.get("PrimaryContainer", {}).get("Image", "-"),
+            "Execution Role": model_details.get("ExecutionRoleArn", "-"),
+            "Created": datetime_string(model_details.get("CreationTime")),
+            "Status": model_details.get("ModelStatus", "Unknown"),
+            "Tags": self.get_aws_tags(model_details["ModelArn"]),
+            "Description": model_details.get("Description", "-"),
+        }
+
+    @not_found_returns_none
+    def model(self, model_group_name: str) -> Union[dict, None]:
+        """Describe a single Model Package Group in AWS.
+
+        Args:
+            model_group_name (str): The name of the model package group to describe.
+
+        Returns:
+            dict: A detailed description of the model package group (None if not found).
+        """
+        model_group_details = self.sm_client.describe_model_package_group(ModelPackageGroupName=model_group_name)
+        return {
+            "Model Group": model_group_details["ModelPackageGroupName"],
+            "Created": datetime_string(model_group_details.get("CreationTime")),
+            "Status": model_group_details.get("ModelPackageGroupStatus", "Unknown"),
+            "Description": model_group_details.get("ModelPackageGroupDescription", "-"),
+            "Tags": self.get_aws_tags(model_group_details["ModelPackageGroupArn"]),
+        }
+
+    @not_found_returns_none
+    def endpoint(self, endpoint_name: str) -> Union[dict, None]:
+        """Describe a single Endpoint in AWS.
+
+        Args:
+            endpoint_name (str): The name of the endpoint to describe.
+
+        Returns:
+            dict: A detailed description of the endpoint (None if not found).
+        """
+        endpoint_details = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
+        endpoint_config_name = endpoint_details.get("EndpointConfigName")
+        endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
+        production_variant = endpoint_config["ProductionVariants"][0]
+
+        instance_type = production_variant.get("InstanceType", "Unknown")
+        if instance_type is None:
+            # If no instance type, it's a serverless configuration
+            mem_size = production_variant["ServerlessConfig"]["MemorySizeInMB"]
+            concurrency = production_variant["ServerlessConfig"]["MaxConcurrency"]
+            instance_type = f"Serverless ({mem_size / 1024}GB/{concurrency})"
+
+        return {
+            "Endpoint Name": endpoint_details["EndpointName"],
+            "Status": endpoint_details["EndpointStatus"],
+            "Instance Type": instance_type,
+            "Created": datetime_string(endpoint_details.get("CreationTime")),
+            "Variant": production_variant.get("VariantName", "-"),
+            "Data Capture Enabled": endpoint_details.get("DataCaptureConfig", {}).get("EnableCapture", "False"),
+            "Sampling Percentage": endpoint_details.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-"),
+            "Tags": self.get_aws_tags(endpoint_details["EndpointArn"]),
+            "Description": endpoint_details.get("EndpointDescription", "-"),
+        }
+
     # These are helper methods to construct the AWS URL for the Artifacts
     @staticmethod
     def s3_to_console_url(s3_path: str) -> str:
@@ -305,7 +456,7 @@ class AWSMeta(AbstractMeta):
         aws = "console.aws.amazon.com"
         return f"https://{region}.{aws}/sagemaker/home?region={region}#/endpoints/{endpoint_name}/details"
 
-    @aws_not_found_is_none
+    @not_found_returns_none
     def s3_describe_objects(self, bucket: str) -> Union[dict, None]:
         """Internal: Get the S3 File Information for the given bucket"""
         return wr.s3.describe_objects(path=bucket, boto3_session=self.boto3_session)
@@ -441,7 +592,20 @@ if __name__ == "__main__":
     print("\n\n*** Pipelines ***")
     pprint(meta.pipelines())
 
-    # Now do a deep dive on all the Artifacts
-    print("\n\n#")
-    print("# Deep Dives ***")
-    print("#")
+    # Test out the specific artifact details methods
+    print("\n\n*** Glue Job Details ***")
+    pprint(meta.glue_job("Glue_Job_1"))
+    print("\n\n*** DataSource Details ***")
+    pprint(meta.data_source("abalone_data"))
+    print("\n\n*** FeatureSet Details ***")
+    pprint(meta.feature_set("abalone_features"))
+    # print("\n\n*** StandAlone Model Details ***")
+    # pprint(meta.stand_alone_model("tbd"))
+    print("\n\n*** Model Details ***")
+    pprint(meta.model("abalone-regression"))
+    print("\n\n*** Endpoint Details ***")
+    pprint(meta.endpoint("abalone-regression-end"))
+
+    # Test out a non-existent model
+    print("\n\n*** Model Doesn't Exist ***")
+    pprint(meta.model("non-existent-model"))

@@ -5,6 +5,7 @@ such as Data Sources, Feature Sets, Models, and Endpoints.
 
 import sys
 import logging
+from typing import Union
 import pandas as pd
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -104,6 +105,7 @@ class AbstractMeta(ABC):
         """
         pass
 
+    @abstractmethod
     def models(self) -> pd.DataFrame:
         """Get a summary of the Models deployed in the Cloud Platform
 
@@ -112,11 +114,69 @@ class AbstractMeta(ABC):
         """
         pass
 
+    @abstractmethod
     def endpoints(self) -> pd.DataFrame:
         """Get a summary of the Endpoints deployed in the Cloud Platform
 
         Returns:
             pd.DataFrame: A summary of the Endpoints in the Cloud Platform
+        """
+        pass
+
+    @abstractmethod
+    def glue_job(self, job_name: str) -> Union[dict, None]:
+        """Get the details of a specific Glue Job
+
+        Args:
+            job_name (str): The name of the Glue Job
+
+        Returns:
+            dict: The details of the Glue Job (None if not found)
+        """
+        pass
+
+    def data_sources(self, table_name: str, database: str = "sageworks") -> Union[dict, None]:
+        """Get the details of a specific Data Source
+
+        Args:
+            table_name (str): The name of the Data Source
+            database (str, optional): The Glue database. Defaults to 'sageworks'.
+
+        Returns:
+            dict: The details of the Data Source (None if not found)
+        """
+        pass
+
+    def feature_set(self, feature_group_name: str) -> Union[dict, None]:
+        """Get the details of a specific Feature Set
+
+        Args:
+            feature_group_name (str): The name of the Feature Set
+
+        Returns:
+            dict: The details of the Feature Set (None if not found)
+        """
+        pass
+
+    def model(self, model_name: str) -> Union[dict, None]:
+        """Get the details of a specific Model
+
+        Args:
+            model_name (str): The name of the Model
+
+        Returns:
+            dict: The details of the Model (None if not found)
+        """
+        pass
+
+    def endpoint(self, endpoint_name: str) -> Union[dict, None]:
+        """Get the details of a specific Endpoint
+
+        Args:
+            endpoint_name (str): The name of the Endpoint
+
+        Returns:
+            dict: The details of the Endpoint (None if not found)
         """
         pass
 
