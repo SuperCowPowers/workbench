@@ -66,9 +66,9 @@ if __name__ == "__main__":
 
     # Verify all expected artifacts
     meta = Meta()
-    feature_sets = meta.feature_sets(refresh=True)
-    models = meta.models(refresh=True)
-    endpoints = meta.endpoints(refresh=True)
+    feature_sets = meta.feature_sets()
+    models = meta.models()
+    endpoints = meta.endpoints()
     missing_artifacts = {
         "feature_sets": [fs for fs in expected_artifacts["feature_sets"] if fs not in feature_sets],
         "models": [m for m in expected_artifacts["models"] if m not in models],

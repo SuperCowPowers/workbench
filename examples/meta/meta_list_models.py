@@ -1,13 +1,14 @@
+from pprint import pprint
 from sageworks.api.meta import Meta
 
 # Create our Meta Class and get a list of our Models
 meta = Meta()
-models = meta.models()
+model_df = meta.models()
 
-print(f"Number of Models: {len(models)}")
-print(models)
+print(f"Number of Models: {len(model_df)}")
+print(model_df)
 
-# Get more details data on the Endpoints
-models_groups = meta.models_deep()
-for name, model_versions in models_groups.items():
-    print(name)
+# Get more details data on the Models
+model_names = model_df["Model Group"].tolist()
+for name in model_names:
+    pprint(meta.model(name))

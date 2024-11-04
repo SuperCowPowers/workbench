@@ -10,14 +10,12 @@ import sys
 import logging
 
 # SageWorks imports
-from sageworks.api import Model, Endpoint, Meta
+from sageworks.api import Model, Endpoint
 
 log = logging.getLogger("sageworks")
 
 
 if __name__ == "__main__":
-    # This forces a refresh on the endpoint metadata we get from AWS
-    Meta().endpoints(refresh=True)
 
     # Grab our Model
     model = Model("abalone-regression")
