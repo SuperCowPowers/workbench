@@ -1,9 +1,9 @@
 import logging
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from sageworks.api import DataSource, FeatureSet, Model, ModelType, Meta
 from sageworks.utils.test_data_generator import TestDataGenerator
 
-parallel_jobs = 4
+parallel_jobs = 16
 
 # Define expected artifacts
 expected_artifacts = {
@@ -47,6 +47,7 @@ def create_model_pipeline(model_name):
 
     # Create the Endpoint for the Model
     endpoint_name = model_name.replace("model", "end")
+    print(f"Creating endpoint {endpoint_name} for model {model_name}")
     m = Model(model_name)
     end = m.to_endpoint(endpoint_name, tags=["test"])
 
@@ -62,13 +63,22 @@ if __name__ == "__main__":
 
     # Use ProcessPoolExecutor to run in parallel
     with ProcessPoolExecutor(max_workers=parallel_jobs) as executor:
-        executor.map(create_model_pipeline, model_names)
+        futures = {executor.submit(create_model_pipeline, model_name): model_name for model_name in model_names}
 
-    # Verify all expected artifacts
+        for future in as_completed(futures):
+            model_name = futures[future]
+            try:
+                future.result()  # Retrieve result to raise any exception if it occurred
+            except Exception as e:
+                print(f"Exception for model '{model_name}': {e}")
+
+    # Grab all currently deployed artifacts
     meta = Meta()
-    feature_sets = meta.feature_sets()
-    models = meta.models()
-    endpoints = meta.endpoints()
+    feature_sets = meta.feature_sets()["Feature Group"].tolist()
+    models = meta.models()["Model Group"].tolist()
+    endpoints = meta.endpoints()["Name"].tolist()
+
+    # Check for missing artifacts
     missing_artifacts = {
         "feature_sets": [fs for fs in expected_artifacts["feature_sets"] if fs not in feature_sets],
         "models": [m for m in expected_artifacts["models"] if m not in models],

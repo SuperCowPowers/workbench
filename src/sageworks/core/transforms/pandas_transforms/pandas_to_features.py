@@ -312,7 +312,7 @@ class PandasToFeatures(Transform):
 
         # Now we actually push the data into the Feature Group (called ingestion)
         self.log.important(f"Ingesting rows into Feature Group {self.output_uuid}...")
-        ingest_manager = self.output_feature_group.ingest(self.output_df, max_workers=4, max_processes=16, wait=False)
+        ingest_manager = self.output_feature_group.ingest(self.output_df, max_workers=8, max_processes=2, wait=False)
         try:
             ingest_manager.wait()
         except IngestionError as exc:

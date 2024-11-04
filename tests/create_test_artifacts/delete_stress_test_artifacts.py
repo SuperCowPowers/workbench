@@ -13,8 +13,8 @@ if __name__ == "__main__":
     endpoint_names = [f"{model}-end" for model in model_names]
 
     # Delete the DataSources
-    for feature_name in feature_names:
-        DataSource.managed_delete(feature_name)
+    for datasource_name in datasource_names:
+        DataSource.managed_delete(datasource_name)
 
     # Delete the FeatureSets
     for feature_name in feature_names:
