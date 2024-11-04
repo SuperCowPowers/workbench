@@ -10,7 +10,6 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.core.pipelines.pipeline_executor import PipelineExecutor
 
 
@@ -55,9 +54,6 @@ class Pipeline:
         else:
             self.log.warning(f"Pipeline {self.name} not found at {self.s3_path}")
             self.pipeline = None
-
-        # Data Storage Cache
-        self.data_storage = SageWorksCache(prefix="data_storage")
 
     def set_input(self, input: Union[str, pd.DataFrame], artifact: str = "data_source"):
         """Set the input for the Pipeline
@@ -123,7 +119,6 @@ class Pipeline:
     def delete(self):
         """Pipeline Deletion"""
         self.log.info(f"Deleting Pipeline: {self.name}...")
-        self.data_storage.delete(f"pipeline:{self.name}:details")
         wr.s3.delete_objects(self.s3_path)
 
     def _get_pipeline(self) -> dict:
