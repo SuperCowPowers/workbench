@@ -12,7 +12,7 @@ except ImportError:
 
 # Sageworks imports
 from sageworks.core.artifacts.artifact import Artifact
-from sageworks.utils.redis_cache import CustomEncoder
+from sageworks.utils.json_utils import CustomEncoder
 
 
 class GraphCore(Artifact):

@@ -14,7 +14,7 @@ from pprint import pprint
 from sageworks.core.artifacts.data_source_abstract import DataSourceAbstract
 from sageworks.utils.datetime_utils import convert_all_to_iso8601
 from sageworks.algorithms import sql
-from sageworks.utils.redis_cache import CustomEncoder
+from sageworks.utils.json_utils import CustomEncoder
 from sageworks.utils.aws_utils import decode_value
 
 
