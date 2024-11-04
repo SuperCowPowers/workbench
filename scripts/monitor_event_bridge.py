@@ -2,7 +2,7 @@ import json
 import time
 
 # Get the boto3 session from the SageWorks Account Clamp
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 session = AWSAccountClamp().boto3_session
 

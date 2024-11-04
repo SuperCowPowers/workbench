@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from sagemaker.session import Session as SageSession
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_session import AWSSession
+from sageworks.core.cloud_platform.aws.aws_session import AWSSession
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
 

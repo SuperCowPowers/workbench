@@ -11,7 +11,7 @@ from collections import defaultdict
 
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.datetime_utils import datetime_string
 from sageworks.utils.aws_utils import not_found_returns_none, aws_throttle, aws_tags_to_dict

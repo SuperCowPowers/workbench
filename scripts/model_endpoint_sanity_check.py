@@ -3,7 +3,7 @@
 import logging
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM
 from sageworks.core.artifacts.model_core import ModelCore
 from sageworks.core.artifacts.endpoint_core import EndpointCore

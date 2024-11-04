@@ -1,6 +1,6 @@
 from sagemaker.session import Session as SageSession
 from sagemaker import image_uris
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 
 def get_image_uri_with_digest(framework, region, version, sm_session: SageSession):

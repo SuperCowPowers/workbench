@@ -14,7 +14,7 @@ Endpoints:
 
 import sys
 from pathlib import Path
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.api.data_source import DataSource
 from sageworks.api.feature_set import FeatureSet
 from sageworks.api.model import Model, ModelType

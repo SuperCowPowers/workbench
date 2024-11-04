@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 import logging
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 
 class WebView(ABC):

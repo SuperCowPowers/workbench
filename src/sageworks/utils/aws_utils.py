@@ -564,7 +564,7 @@ if __name__ == "__main__":
     """Exercise the AWS Utils"""
     from pprint import pprint
     from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-    from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+    from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
     # Grab out SageMaker Session from the AWS Account Clamp
     sm_session = AWSAccountClamp().sagemaker_session()

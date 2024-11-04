@@ -191,7 +191,7 @@ if __name__ == "__main__":
     print(glue_job_name())
 
     # Test getting the Glue Job Run ID
-    from sageworks.aws_service_broker.aws_session import AWSSession
+    from sageworks.core.cloud_platform.aws.aws_session import AWSSession
 
     session = AWSSession().boto3_session
     print(glue_job_run_id("Test_SageWorks_Shell", session))
