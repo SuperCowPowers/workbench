@@ -167,7 +167,9 @@ class SageWorksShell:
         cprint("lightgreen", "Checking AWS Account Connection...")
         try:
             try:
-                aws_clamp = importlib.import_module("sageworks.core.cloud_platform.aws.aws_account_clamp").AWSAccountClamp()
+                aws_clamp = importlib.import_module(
+                    "sageworks.core.cloud_platform.aws.aws_account_clamp"
+                ).AWSAccountClamp()
                 aws_clamp.check_aws_identity()
                 cprint("lightgreen", "AWS Account Check AOK!")
             except RuntimeError:

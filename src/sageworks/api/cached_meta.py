@@ -65,6 +65,7 @@ class CachedMeta(Meta):
     @staticmethod
     def cache_result(method):
         """Decorator to cache method results in meta_cache"""
+
         @wraps(method)
         def wrapper(self, *args, **kwargs):
             # Create a unique cache key based on the method name and arguments
@@ -88,6 +89,7 @@ class CachedMeta(Meta):
             result = method(self, *args, **kwargs)
             self.meta_cache.set(cache_key, result)
             return result
+
         return wrapper
 
     @cache_result
