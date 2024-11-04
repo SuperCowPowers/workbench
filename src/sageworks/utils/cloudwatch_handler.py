@@ -56,6 +56,9 @@ class CloudWatchHandler(logging.Handler):
         if not self.buffer:
             return  # Nothing to send
 
+        # Sort the buffer by timestamp to ensure chronological order
+        self.buffer.sort(key=lambda event: event["timestamp"])
+
         log_event = {
             "logGroupName": self.log_group_name,
             "logStreamName": self.log_stream_name,
