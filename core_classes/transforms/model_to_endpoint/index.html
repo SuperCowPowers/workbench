@@ -2160,6 +2160,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../release_notes/0_8_46/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    0.8.46
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../release_notes/0_8_42/" class="md-nav__link">
         
   
@@ -2963,7 +2984,7 @@
 </span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>
 </span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>        <span class="c1"># This ensures that the endpoint is ready for use</span>
 </span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># We wait for AWS Lag</span>
-</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>        <span class="n">end</span> <span class="o">=</span> <span class="n">EndpointCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>        <span class="n">end</span> <span class="o">=</span> <span class="n">EndpointCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Endpoint </span><span class="si">{</span><span class="n">end</span><span class="o">.</span><span class="n">uuid</span><span class="si">}</span><span class="s2"> is ready for use&quot;</span><span class="p">)</span>
 </span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a>
 </span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>    <span class="k">def</span> <span class="nf">_deploy_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_package_arn</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
@@ -3007,7 +3028,7 @@
 </span><span id="__span-0-105"><a id="__codelineno-0-105" name="__codelineno-0-105"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Post-Transform: Calling onboard() for the Endpoint...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a>
 </span><span id="__span-0-107"><a id="__codelineno-0-107" name="__codelineno-0-107"></a>        <span class="c1"># Onboard the Endpoint</span>
-</span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a>        <span class="n">output_endpoint</span> <span class="o">=</span> <span class="n">EndpointCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a>        <span class="n">output_endpoint</span> <span class="o">=</span> <span class="n">EndpointCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a>        <span class="n">output_endpoint</span><span class="o">.</span><span class="n">onboard_with_args</span><span class="p">(</span><span class="n">input_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
@@ -3110,7 +3131,7 @@ Args:
 </span><span id="__span-0-105"><a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Post-Transform: Calling onboard() for the Endpoint...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a>
 </span><span id="__span-0-107"><a id="__codelineno-0-107" name="__codelineno-0-107"></a>    <span class="c1"># Onboard the Endpoint</span>
-</span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a>    <span class="n">output_endpoint</span> <span class="o">=</span> <span class="n">EndpointCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a>    <span class="n">output_endpoint</span> <span class="o">=</span> <span class="n">EndpointCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a>    <span class="n">output_endpoint</span><span class="o">.</span><span class="n">onboard_with_args</span><span class="p">(</span><span class="n">input_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
@@ -3170,7 +3191,7 @@ Args:
 </span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>
 </span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>    <span class="c1"># This ensures that the endpoint is ready for use</span>
 </span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a>    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># We wait for AWS Lag</span>
-</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>    <span class="n">end</span> <span class="o">=</span> <span class="n">EndpointCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>    <span class="n">end</span> <span class="o">=</span> <span class="n">EndpointCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Endpoint </span><span class="si">{</span><span class="n">end</span><span class="o">.</span><span class="n">uuid</span><span class="si">}</span><span class="s2"> is ready for use&quot;</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>

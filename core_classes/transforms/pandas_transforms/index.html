@@ -2499,6 +2499,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../release_notes/0_8_46/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    0.8.46
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../release_notes/0_8_42/" class="md-nav__link">
         
   
@@ -4570,7 +4591,7 @@ Args:
 </span><span id="__span-0-172"><a id="__codelineno-0-172" name="__codelineno-0-172"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Post-Transform: Calling onboard() for the DataSource...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-173"><a id="__codelineno-0-173" name="__codelineno-0-173"></a>
 </span><span id="__span-0-174"><a id="__codelineno-0-174" name="__codelineno-0-174"></a>        <span class="c1"># Onboard the DataSource</span>
-</span><span id="__span-0-175"><a id="__codelineno-0-175" name="__codelineno-0-175"></a>        <span class="n">output_data_source</span> <span class="o">=</span> <span class="n">DataSourceFactory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-175"><a id="__codelineno-0-175" name="__codelineno-0-175"></a>        <span class="n">output_data_source</span> <span class="o">=</span> <span class="n">DataSourceFactory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-176"><a id="__codelineno-0-176" name="__codelineno-0-176"></a>        <span class="n">output_data_source</span><span class="o">.</span><span class="n">onboard</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
@@ -4800,7 +4821,7 @@ Args:
 </span><span id="__span-0-172"><a id="__codelineno-0-172" name="__codelineno-0-172"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Post-Transform: Calling onboard() for the DataSource...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-173"><a id="__codelineno-0-173" name="__codelineno-0-173"></a>
 </span><span id="__span-0-174"><a id="__codelineno-0-174" name="__codelineno-0-174"></a>    <span class="c1"># Onboard the DataSource</span>
-</span><span id="__span-0-175"><a id="__codelineno-0-175" name="__codelineno-0-175"></a>    <span class="n">output_data_source</span> <span class="o">=</span> <span class="n">DataSourceFactory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-175"><a id="__codelineno-0-175" name="__codelineno-0-175"></a>    <span class="n">output_data_source</span> <span class="o">=</span> <span class="n">DataSourceFactory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-176"><a id="__codelineno-0-176" name="__codelineno-0-176"></a>    <span class="n">output_data_source</span><span class="o">.</span><span class="n">onboard</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
@@ -5787,7 +5808,7 @@ store the information about the data to the AWS Data Catalog sageworks database<
 </span><span id="__span-0-346"><a id="__codelineno-0-346" name="__codelineno-0-346"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Post-Transform: Populating Offline Storage and onboard()...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-347"><a id="__codelineno-0-347" name="__codelineno-0-347"></a>
 </span><span id="__span-0-348"><a id="__codelineno-0-348" name="__codelineno-0-348"></a>        <span class="c1"># Feature Group Ingestion takes a while, so we need to wait for it to finish</span>
-</span><span id="__span-0-349"><a id="__codelineno-0-349" name="__codelineno-0-349"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_feature_set</span> <span class="o">=</span> <span class="n">FeatureSetCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-349"><a id="__codelineno-0-349" name="__codelineno-0-349"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_feature_set</span> <span class="o">=</span> <span class="n">FeatureSetCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-350"><a id="__codelineno-0-350" name="__codelineno-0-350"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="s2">&quot;Waiting for AWS Feature Group Offline storage to be ready...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-351"><a id="__codelineno-0-351" name="__codelineno-0-351"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="s2">&quot;This will often take 10-20 minutes...go have coffee or lunch :)&quot;</span><span class="p">)</span>
 </span><span id="__span-0-352"><a id="__codelineno-0-352" name="__codelineno-0-352"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_feature_set</span><span class="o">.</span><span class="n">set_status</span><span class="p">(</span><span class="s2">&quot;initializing&quot;</span><span class="p">)</span>
@@ -6368,7 +6389,7 @@ their respective categorical types.</p>
 </span><span id="__span-0-346"><a id="__codelineno-0-346" name="__codelineno-0-346"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Post-Transform: Populating Offline Storage and onboard()...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-347"><a id="__codelineno-0-347" name="__codelineno-0-347"></a>
 </span><span id="__span-0-348"><a id="__codelineno-0-348" name="__codelineno-0-348"></a>    <span class="c1"># Feature Group Ingestion takes a while, so we need to wait for it to finish</span>
-</span><span id="__span-0-349"><a id="__codelineno-0-349" name="__codelineno-0-349"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_feature_set</span> <span class="o">=</span> <span class="n">FeatureSetCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-349"><a id="__codelineno-0-349" name="__codelineno-0-349"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_feature_set</span> <span class="o">=</span> <span class="n">FeatureSetCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
 </span><span id="__span-0-350"><a id="__codelineno-0-350" name="__codelineno-0-350"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="s2">&quot;Waiting for AWS Feature Group Offline storage to be ready...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-351"><a id="__codelineno-0-351" name="__codelineno-0-351"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="s2">&quot;This will often take 10-20 minutes...go have coffee or lunch :)&quot;</span><span class="p">)</span>
 </span><span id="__span-0-352"><a id="__codelineno-0-352" name="__codelineno-0-352"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_feature_set</span><span class="o">.</span><span class="n">set_status</span><span class="p">(</span><span class="s2">&quot;initializing&quot;</span><span class="p">)</span>

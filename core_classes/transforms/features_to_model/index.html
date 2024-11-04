@@ -2178,6 +2178,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../release_notes/0_8_46/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    0.8.46
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../release_notes/0_8_42/" class="md-nav__link">
         
   
@@ -3484,7 +3505,7 @@
 </span><span id="__span-0-275"><a id="__codelineno-0-275" name="__codelineno-0-275"></a>
 </span><span id="__span-0-276"><a id="__codelineno-0-276" name="__codelineno-0-276"></a>            <span class="c1"># Grab all the target column class values (class labels)</span>
 </span><span id="__span-0-277"><a id="__codelineno-0-277" name="__codelineno-0-277"></a>            <span class="n">table</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">data_source</span><span class="o">.</span><span class="n">table</span>
-</span><span id="__span-0-278"><a id="__codelineno-0-278" name="__codelineno-0-278"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">class_labels</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;select DISTINCT </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="si">}</span><span class="s2"> FROM </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)[</span>
+</span><span id="__span-0-278"><a id="__codelineno-0-278" name="__codelineno-0-278"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">class_labels</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;select DISTINCT </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="si">}</span><span class="s1"> FROM &quot;</span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)[</span>
 </span><span id="__span-0-279"><a id="__codelineno-0-279" name="__codelineno-0-279"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span>
 </span><span id="__span-0-280"><a id="__codelineno-0-280" name="__codelineno-0-280"></a>            <span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
 </span><span id="__span-0-281"><a id="__codelineno-0-281" name="__codelineno-0-281"></a>
@@ -3549,7 +3570,7 @@
 </span><span id="__span-0-340"><a id="__codelineno-0-340" name="__codelineno-0-340"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Post-Transform: Calling onboard() on the Model...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-341"><a id="__codelineno-0-341" name="__codelineno-0-341"></a>
 </span><span id="__span-0-342"><a id="__codelineno-0-342" name="__codelineno-0-342"></a>        <span class="c1"># Store the model feature_list and target_column in the sageworks_meta</span>
-</span><span id="__span-0-343"><a id="__codelineno-0-343" name="__codelineno-0-343"></a>        <span class="n">output_model</span> <span class="o">=</span> <span class="n">ModelCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-343"><a id="__codelineno-0-343" name="__codelineno-0-343"></a>        <span class="n">output_model</span> <span class="o">=</span> <span class="n">ModelCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">)</span>
 </span><span id="__span-0-344"><a id="__codelineno-0-344" name="__codelineno-0-344"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_sageworks_meta</span><span class="p">({</span><span class="s2">&quot;sageworks_model_features&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_feature_list</span><span class="p">})</span>
 </span><span id="__span-0-345"><a id="__codelineno-0-345" name="__codelineno-0-345"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_sageworks_meta</span><span class="p">({</span><span class="s2">&quot;sageworks_model_target&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="p">})</span>
 </span><span id="__span-0-346"><a id="__codelineno-0-346" name="__codelineno-0-346"></a>
@@ -3996,7 +4017,7 @@ Returns:
 </span><span id="__span-0-340"><a id="__codelineno-0-340" name="__codelineno-0-340"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Post-Transform: Calling onboard() on the Model...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-341"><a id="__codelineno-0-341" name="__codelineno-0-341"></a>
 </span><span id="__span-0-342"><a id="__codelineno-0-342" name="__codelineno-0-342"></a>    <span class="c1"># Store the model feature_list and target_column in the sageworks_meta</span>
-</span><span id="__span-0-343"><a id="__codelineno-0-343" name="__codelineno-0-343"></a>    <span class="n">output_model</span> <span class="o">=</span> <span class="n">ModelCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span> <span class="n">force_refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-343"><a id="__codelineno-0-343" name="__codelineno-0-343"></a>    <span class="n">output_model</span> <span class="o">=</span> <span class="n">ModelCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">)</span>
 </span><span id="__span-0-344"><a id="__codelineno-0-344" name="__codelineno-0-344"></a>    <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_sageworks_meta</span><span class="p">({</span><span class="s2">&quot;sageworks_model_features&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_feature_list</span><span class="p">})</span>
 </span><span id="__span-0-345"><a id="__codelineno-0-345" name="__codelineno-0-345"></a>    <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_sageworks_meta</span><span class="p">({</span><span class="s2">&quot;sageworks_model_target&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="p">})</span>
 </span><span id="__span-0-346"><a id="__codelineno-0-346" name="__codelineno-0-346"></a>
@@ -4267,7 +4288,7 @@ Args:
 </span><span id="__span-0-275"><a id="__codelineno-0-275" name="__codelineno-0-275"></a>
 </span><span id="__span-0-276"><a id="__codelineno-0-276" name="__codelineno-0-276"></a>        <span class="c1"># Grab all the target column class values (class labels)</span>
 </span><span id="__span-0-277"><a id="__codelineno-0-277" name="__codelineno-0-277"></a>        <span class="n">table</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">data_source</span><span class="o">.</span><span class="n">table</span>
-</span><span id="__span-0-278"><a id="__codelineno-0-278" name="__codelineno-0-278"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">class_labels</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;select DISTINCT </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="si">}</span><span class="s2"> FROM </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)[</span>
+</span><span id="__span-0-278"><a id="__codelineno-0-278" name="__codelineno-0-278"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">class_labels</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;select DISTINCT </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="si">}</span><span class="s1"> FROM &quot;</span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)[</span>
 </span><span id="__span-0-279"><a id="__codelineno-0-279" name="__codelineno-0-279"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span>
 </span><span id="__span-0-280"><a id="__codelineno-0-280" name="__codelineno-0-280"></a>        <span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
 </span><span id="__span-0-281"><a id="__codelineno-0-281" name="__codelineno-0-281"></a>
