@@ -7,7 +7,7 @@ import json
 import base64
 import re
 import os
-from typing import Union, List
+from typing import Union, List, Callable, Optional
 import pandas as pd
 import awswrangler as wr
 from awswrangler.exceptions import NoFilesFound
@@ -110,8 +110,13 @@ def aws_throttle(func=None, retry_intervals=None):
     return wrapper
 
 
-def not_found_returns_none(func):
-    """Decorator to handle AWS resource not found (returns None) and re-raising otherwise."""
+def not_found_returns_none(func: Optional[Callable] = None, *, resource_name: str = "AWS resource") -> Callable:
+    """Decorator to handle AWS resource not found (returns None) and re-raising otherwise.
+
+    Args:
+        func (Callable, optional): The function being decorated.
+        resource_name (str): Name of the AWS resource being accessed. Used for clearer error messages.
+    """
     not_found_errors = {
         "ResourceNotFound",
         "ResourceNotFoundException",
@@ -120,21 +125,27 @@ def not_found_returns_none(func):
         "NoSuchBucket",
     }
 
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except ClientError as error:
-            error_code = error.response["Error"]["Code"]
-            if error_code in not_found_errors:
-                log.error(f"Resource not found or inaccessible: {error_code}")
-                log.error("Returning None...")
-                return None
-            else:
-                log.critical(f"Critical error in AWS call: {error_code}")
-                raise
+    def decorator(inner_func: Callable) -> Callable:
+        @functools.wraps(inner_func)
+        def wrapper(*args, **kwargs):
+            try:
+                return inner_func(*args, **kwargs)
+            except ClientError as error:
+                error_code = error.response["Error"]["Code"]
+                if error_code in not_found_errors:
+                    log.warning(f"{resource_name} not found: {error_code}, returning None...")
+                    return None
+                else:
+                    log.critical(f"Critical error in AWS call: {error_code}")
+                    raise
+        return wrapper
 
-    return wrapper
+    # If func is None, the decorator was called with arguments
+    if func is None:
+        return decorator
+    else:
+        # If func is not None, the decorator was used without arguments
+        return decorator(func)
 
 
 @deprecated(version="0.9")
@@ -258,56 +269,13 @@ def decode_value(value):
     return value
 
 
-def aws_tags_to_dict(aws_tags) -> dict:
-    """Internal: AWS Tags are in an odd format, so convert to regular dictionary"""
-
-    # Stitch together any chunked data
-    stitched_data = {}
-    regular_tags = {}
-
-    for item in aws_tags:
-        key = item["Key"]
-        value = item["Value"]
-
-        # Check if this key is a chunk
-        if "_chunk_" in key:
-            base_key, chunk_num = key.rsplit("_chunk_", 1)
-
-            if base_key not in stitched_data:
-                stitched_data[base_key] = {}
-
-            stitched_data[base_key][int(chunk_num)] = value
-        else:
-            regular_tags[key] = decode_value(value)
-
-    # Stitch chunks back together and decode
-    for base_key, chunks in stitched_data.items():
-        # Sort by chunk number and concatenate
-        sorted_chunks = [chunks[i] for i in sorted(chunks.keys())]
-        stitched_base64_str = "".join(sorted_chunks)
-
-        # Decode the stitched base64 string
-        try:
-            stitched_json_str = base64.b64decode(stitched_base64_str).decode("utf-8")
-        except UnicodeDecodeError:
-            stitched_json_str = stitched_base64_str
-        try:
-            stitched_dict = json.loads(stitched_json_str)
-        except json.decoder.JSONDecodeError:
-            stitched_dict = stitched_json_str
-
-        regular_tags[base_key] = stitched_dict
-
-    return regular_tags
-
-
 def is_valid_tag(tag):
     pattern = r"^([a-zA-Z0-9_.:/=+\-@]*)$"
     return re.match(pattern, tag) is not None
 
 
 def dict_to_aws_tags(meta_data: dict) -> list:
-    """AWS Tags are in an odd format, so we need to convert data into the AWS Tag format
+    """AWS Tags are in an odd format, so we need to convert, encode, and chunk the data
     Args:
         meta_data (dict): Dictionary of metadata to convert to AWS Tags
     """
@@ -359,6 +327,49 @@ def dict_to_aws_tags(meta_data: dict) -> list:
     for key, value in output_data.items():
         aws_tags.append({"Key": key, "Value": value})
     return aws_tags
+
+
+def aws_tags_to_dict(aws_tags) -> dict:
+    """Internal: AWS Tags are in an odd format, so convert, decode, and de-chunk"""
+
+    # Stitch together any chunked data
+    stitched_data = {}
+    regular_tags = {}
+
+    for item in aws_tags:
+        key = item["Key"]
+        value = item["Value"]
+
+        # Check if this key is a chunk
+        if "_chunk_" in key:
+            base_key, chunk_num = key.rsplit("_chunk_", 1)
+
+            if base_key not in stitched_data:
+                stitched_data[base_key] = {}
+
+            stitched_data[base_key][int(chunk_num)] = value
+        else:
+            regular_tags[key] = decode_value(value)
+
+    # Stitch chunks back together and decode
+    for base_key, chunks in stitched_data.items():
+        # Sort by chunk number and concatenate
+        sorted_chunks = [chunks[i] for i in sorted(chunks.keys())]
+        stitched_base64_str = "".join(sorted_chunks)
+
+        # Decode the stitched base64 string
+        try:
+            stitched_json_str = base64.b64decode(stitched_base64_str).decode("utf-8")
+        except UnicodeDecodeError:
+            stitched_json_str = stitched_base64_str
+        try:
+            stitched_dict = json.loads(stitched_json_str)
+        except json.decoder.JSONDecodeError:
+            stitched_dict = stitched_json_str
+
+        regular_tags[base_key] = stitched_dict
+
+    return regular_tags
 
 
 def _chunk_data(base_key: str, data: str) -> dict:
@@ -577,7 +588,11 @@ if __name__ == "__main__":
     @not_found_returns_none
     def test_not_found():
         raise ClientError({"Error": {"Code": "ResourceNotFoundException"}}, "test")
+    test_not_found()
 
+    @not_found_returns_none(resource_name="my_not_found_resource")
+    def test_not_found():
+        raise ClientError({"Error": {"Code": "ResourceNotFoundException"}}, "test")
     test_not_found()
 
     try:
