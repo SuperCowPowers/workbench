@@ -109,7 +109,7 @@ def setup_plugin_callbacks(plugins):
         object_uuid = selected_row_data["uuid"]
 
         # Create the Endpoint object
-        endpoint = Endpoint(object_uuid, legacy=True)
+        endpoint = Endpoint(object_uuid)
 
         # Update all the properties for each plugin
         all_props = []
