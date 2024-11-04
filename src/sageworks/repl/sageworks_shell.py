@@ -255,9 +255,6 @@ class SageWorksShell:
         - feature_sets: List all the FeatureSets in AWS
         - models: List all the Models in AWS
         - endpoints: List all the Endpoints in AWS
-        - meta: If you need to refresh AWS Metadata
-            - meta.models(refresh=True): Refresh the Models from AWS
-            - meta.endpoints(refresh=True): Refresh the Endpoints from AWS
         - config: Show the current SageWorks Config
         - status: Show the current SageWorks Status
         - log_(debug/info/important/warning): Set the SageWorks log level

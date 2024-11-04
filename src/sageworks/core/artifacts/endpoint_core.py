@@ -43,6 +43,7 @@ from sageworks.core.artifacts.model_core import ModelCore, ModelType
 from sageworks.utils.endpoint_metrics import EndpointMetrics
 from sageworks.utils.shapley_values import generate_shap_values
 from sageworks.utils.fast_inference import fast_inference
+from sageworks.utils.cache import Cache
 
 
 class EndpointCore(Artifact):
@@ -101,6 +102,9 @@ class EndpointCore(Artifact):
         # This is for endpoint error handling later
         self.endpoint_return_columns = None
         self.endpoint_retry = 0
+
+        # We temporary cache the endpoint metrics
+        self.temp_storage = Cache(prefix="temp_storage", expire=300)  # 5 minutes
 
         # Call SuperClass Post Initialization
         super().__post_init__()
