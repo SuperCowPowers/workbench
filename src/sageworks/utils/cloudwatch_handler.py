@@ -136,4 +136,3 @@ if __name__ == "__main__":
 
     # Test the get_unique_identifier function
     print(cloudwatch_handler.get_unique_identifier("Glue_Job_1"))
-
