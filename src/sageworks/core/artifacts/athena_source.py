@@ -44,7 +44,7 @@ class AthenaSource(DataSourceAbstract):
         super().__init__(data_uuid, database)
 
         # Setup our AWS Metadata Broker
-        self.data_source_meta = self.meta_broker.data_source(data_uuid, database=database)
+        self.data_source_meta = self.meta.data_source(data_uuid, database=database)
         if self.data_source_meta is None:
             self.log.error(f"Unable to find {database}:{self.table} in Glue Catalogs...")
             return
@@ -57,7 +57,7 @@ class AthenaSource(DataSourceAbstract):
 
     def refresh_meta(self):
         """Refresh our internal AWS Broker catalog metadata"""
-        self.data_source_meta = self.meta_broker.data_source(self.uuid, database=self.get_database())
+        self.data_source_meta = self.meta.data_source(self.uuid, database=self.get_database())
 
     def exists(self) -> bool:
         """Validation Checks for this Data Source"""

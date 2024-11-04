@@ -24,7 +24,7 @@ class Artifact(ABC):
     sm_session = aws_account_clamp.sagemaker_session()
     sm_client = aws_account_clamp.sagemaker_client()
     aws_region = aws_account_clamp.region
-    meta_broker = Meta()
+    meta = Meta()
     cm = ConfigManager()
     if not cm.config_okay():
         log = logging.getLogger("sageworks")
@@ -126,7 +126,7 @@ class Artifact(ABC):
         Note: This functionality will work for FeatureSets, Models, and Endpoints
               but not for DataSources and Graphs, those classes need to override this method.
         """
-        return self.meta_broker.get_aws_tags(self.arn())
+        return self.meta.get_aws_tags(self.arn())
 
     def expected_meta(self) -> list[str]:
         """Metadata we expect to see for this Artifact when it's ready

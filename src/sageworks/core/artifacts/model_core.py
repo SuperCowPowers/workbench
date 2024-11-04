@@ -97,7 +97,7 @@ class ModelCore(Artifact):
 
         # Grab an AWS Metadata Broker object and pull information for Models
         self.model_name = model_uuid
-        self.model_meta = self.meta_broker.model(self.model_name)
+        self.model_meta = self.meta.model(self.model_name)
         if self.model_meta is None:
             self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
             return
@@ -133,7 +133,7 @@ class ModelCore(Artifact):
 
     def refresh_meta(self):
         """Refresh the Artifact's metadata"""
-        self.model_meta = self.meta_broker.model(self.model_name)
+        self.model_meta = self.meta.model(self.model_name)
         self.latest_model = self.model_meta["ModelPackageList"][0]
         self.description = self.latest_model.get("ModelPackageDescription", "-")
         self.training_job_name = self._extract_training_job_name()

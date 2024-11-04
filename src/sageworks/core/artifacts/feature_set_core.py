@@ -48,7 +48,7 @@ class FeatureSetCore(Artifact):
         super().__init__(feature_set_uuid)
 
         # Get our FeatureSet metadata
-        self.feature_meta = self.meta_broker.feature_set(self.uuid)
+        self.feature_meta = self.meta.feature_set(self.uuid)
 
         # Sanity check and then set up our FeatureSet attributes
         if self.feature_meta is None:
