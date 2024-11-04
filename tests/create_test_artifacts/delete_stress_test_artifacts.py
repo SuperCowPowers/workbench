@@ -1,7 +1,7 @@
 """This Script Deletes the SageWorks Artifacts used for stress tests"""
 
 import time
-from sageworks.api import DataSource, FeatureSet, Model, Endpoint, Meta
+from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 
 
 if __name__ == "__main__":

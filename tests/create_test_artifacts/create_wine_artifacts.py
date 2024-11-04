@@ -13,7 +13,7 @@ Endpoints:
 import sys
 
 from pathlib import Path
-from sageworks.api import DataSource, FeatureSet, Model, ModelType, Endpoint, Meta
+from sageworks.api import DataSource, FeatureSet, Model, ModelType, Endpoint
 
 
 if __name__ == "__main__":

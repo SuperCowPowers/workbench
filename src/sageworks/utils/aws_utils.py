@@ -138,6 +138,7 @@ def not_found_returns_none(func: Optional[Callable] = None, *, resource_name: st
                 else:
                     log.critical(f"Critical error in AWS call: {error_code}")
                     raise
+
         return wrapper
 
     # If func is None, the decorator was called with arguments
@@ -588,11 +589,13 @@ if __name__ == "__main__":
     @not_found_returns_none
     def test_not_found():
         raise ClientError({"Error": {"Code": "ResourceNotFoundException"}}, "test")
+
     test_not_found()
 
     @not_found_returns_none(resource_name="my_not_found_resource")
     def test_not_found():
         raise ClientError({"Error": {"Code": "ResourceNotFoundException"}}, "test")
+
     test_not_found()
 
     try:
