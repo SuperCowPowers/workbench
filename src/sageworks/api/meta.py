@@ -1,4 +1,4 @@
-"""Meta: An abstract class that provides high level information and summaries of Cloud Platform Artifacts.
+"""Meta: A class that provides high level information and summaries of Cloud Platform Artifacts.
 The Meta class provides 'account' information, configuration, etc. It also provides metadata for Artifacts,
 such as Data Sources, Feature Sets, Models, and Endpoints.
 """
@@ -40,19 +40,12 @@ class Meta(AWSMeta):
        ```
     """
 
-    def __init__(self, use_cache: bool = False):
-        """Meta Initialization
-
-        Args:
-            use_cache (bool, optional): Use a cache for the metadata. Defaults to False.
-        """
+    def __init__(self):
+        """Meta Initialization"""
         self.log = logging.getLogger("sageworks")
 
         # Call the SuperClass Initialization
         super().__init__()
-
-        # We will be caching the metadata?
-        self.use_cache = use_cache
 
     def account(self) -> dict:
         """Cloud Platform Account Info
