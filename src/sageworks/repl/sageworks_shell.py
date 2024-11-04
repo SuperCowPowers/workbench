@@ -220,7 +220,7 @@ class SageWorksShell:
 
             # We're going to include these classes/imports later
             # self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline
-            # self.commands["PipelineManager"] = importlib.import_module("sageworks.api.pipeline_manager").PipelineManager
+            # self.commands["PipelineManager"] = tbd
 
             # These are 'nice to have' imports
             self.commands["pd"] = importlib.import_module("pandas")
