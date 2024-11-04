@@ -15,7 +15,7 @@ from sageworks.core.artifacts.data_source_abstract import DataSourceAbstract
 from sageworks.utils.datetime_utils import convert_all_to_iso8601
 from sageworks.algorithms import sql
 from sageworks.utils.redis_cache import CustomEncoder
-from sageworks.utils.aws_utils import sageworks_meta_from_catalog_table_meta
+from sageworks.utils.aws_utils import decode_value
 
 
 class AthenaSource(DataSourceAbstract):
@@ -90,8 +90,9 @@ class AthenaSource(DataSourceAbstract):
                 self.log.critical("Malformed Artifact! Delete this Artifact and recreate it!")
             return {}
 
-        # Get the SageWorks Metadata from the Catalog Table Metadata
-        return sageworks_meta_from_catalog_table_meta(self.data_source_meta)
+        # Get the SageWorks Metadata from the 'Parameters' section of the DataSource Metadata
+        params = self.data_source_meta.get("Parameters", {})
+        return {key: decode_value(value) for key, value in params.items() if "sageworks" in key}
 
     def upsert_sageworks_meta(self, new_meta: dict):
         """Add SageWorks specific metadata to this Artifact
