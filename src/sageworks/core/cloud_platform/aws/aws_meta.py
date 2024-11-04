@@ -7,14 +7,17 @@ import logging
 from typing import Union
 import pandas as pd
 import awswrangler as wr
+from collections import defaultdict
+
 
 # SageWorks Imports
-from sageworks.core.cloud_platform.abstract_meta import AbstractMeta
+from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.datetime_utils import datetime_string
 from sageworks.utils.aws_utils import not_found_returns_none, aws_throttle, aws_tags_to_dict
 
 
-class AWSMeta(AbstractMeta):
+class AWSMeta:
     """AWSMeta: A class that provides Metadata for a broad set of AWS Platform Artifacts
 
     Note: This is an internal class, the public API for this class is the 'Meta' class.
@@ -25,8 +28,12 @@ class AWSMeta(AbstractMeta):
         """AWSMeta Initialization"""
         self.log = logging.getLogger("sageworks")
 
-        # Call the SuperClass Initialization
-        super().__init__()
+        # Account and Configuration
+        self.account_clamp = AWSAccountClamp()
+        self.cm = ConfigManager()
+
+        # Storing the size of various metadata for tracking
+        self.metadata_sizes = defaultdict(dict)
 
         # Fill in AWS Specific Information
         self.sageworks_bucket = self.cm.get_config("SAGEWORKS_BUCKET")
@@ -34,6 +41,22 @@ class AWSMeta(AbstractMeta):
         self.boto3_session = self.account_clamp.boto3_session
         self.sm_client = self.account_clamp.sagemaker_client()
         self.sm_session = self.account_clamp.sagemaker_session()
+
+    def account(self) -> dict:
+        """Cloud Platform Account Info
+
+        Returns:
+            dict: Cloud Platform Account Info
+        """
+        return self.account_clamp.get_aws_account_info()
+
+    def config(self) -> dict:
+        """Return the current SageWorks Configuration
+
+        Returns:
+            dict: The current SageWorks Configuration
+        """
+        return self.cm.get_all_config()
 
     def incoming_data(self) -> pd.DataFrame:
         """Get summary about the incoming raw data.
