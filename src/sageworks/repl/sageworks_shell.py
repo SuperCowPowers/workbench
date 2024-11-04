@@ -90,7 +90,7 @@ class SageWorksShell:
         self.commands = dict()
         self.artifacts_text_view = None
         self.aws_status = self.check_aws_account()
-        self.redis_status = self.check_redis()
+        self.redis_status = "OK"
         self.open_source_api_key = self.check_open_source_api_key()
         self.meta = Meta()
         if self.aws_status:
@@ -156,34 +156,6 @@ class SageWorksShell:
         """
         config = self.cm.get_all_config()
         return config["API_KEY_INFO"]["license_id"] == "Open Source"
-
-    def check_redis(self) -> str:
-        """Check the Redis Cache
-
-        Returns:
-            str: The Redis status (either "OK", "FAIL", or "LOCAL")
-        """
-        from sageworks.utils.sageworks_cache import SageWorksCache
-
-        # Grab the Redis Host and Port
-        host = self.cm.get_config("REDIS_HOST", "localhost")
-        port = self.cm.get_config("REDIS_PORT", 6379)
-
-        # Check if Redis is running locally
-        status = "OK"
-        if host == "localhost":
-            status = "LOCAL"
-
-        # Open the Redis connection (class object)
-        cprint("lime", f"Checking Redis connection to: {host}:{port}..")
-        if SageWorksCache().check():
-            cprint("lightgreen", "Redis Cache Check Success...")
-        else:
-            cprint("yellow", "Redis Cache Check Failed...check your SageWorks Config...")
-            status = "FAIL"
-
-        # Return the Redis status
-        return status
 
     @staticmethod
     def check_aws_account() -> bool:

@@ -141,7 +141,7 @@ class ModelCore(Artifact):
     def exists(self) -> bool:
         """Does the model metadata exist in the AWS Metadata?"""
         if self.model_meta is None:
-            self.log.debug(f"Model {self.model_name} not found in AWS Metadata!")
+            self.log.info(f"Model {self.model_name} not found in AWS Metadata!")
             return False
         return True
 

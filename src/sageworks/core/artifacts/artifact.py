@@ -9,7 +9,6 @@ import logging
 # SageWorks Imports
 from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
 from sageworks.core.cloud_platform.aws.aws_meta import AWSMeta as Meta
-from sageworks.utils.sageworks_cache import SageWorksCache
 from sageworks.utils.aws_utils import sagemaker_delete_tag, dict_to_aws_tags
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
@@ -42,11 +41,6 @@ class Artifact(ABC):
     feature_sets_s3_path = f"s3://{sageworks_bucket}/feature-sets"
     models_s3_path = f"s3://{sageworks_bucket}/models"
     endpoints_s3_path = f"s3://{sageworks_bucket}/endpoints"
-
-    # Data Cache for Artifacts
-    data_storage = SageWorksCache(prefix="data_storage")
-    temp_storage = SageWorksCache(prefix="temp_storage", expire=300)  # 5 minutes
-    ephemeral_storage = SageWorksCache(prefix="ephemeral_storage", expire=1)  # 1 second
 
     # Delimiter for storing lists in AWS Tags
     tag_delimiter = "::"
