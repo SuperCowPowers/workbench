@@ -35,7 +35,7 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
                 f'(SELECT "{column}", count(*) as sageworks_count '
                 f'FROM "{table}" '
                 f'GROUP BY "{column}" ORDER BY sageworks_count DESC LIMIT 20) '
-                f'UNION ALL '
+                f"UNION ALL "
                 f'(SELECT "{column}", count(*) as sageworks_count '
                 f'FROM "{table}" '
                 f'GROUP BY "{column}" ORDER BY sageworks_count ASC LIMIT 20)'
