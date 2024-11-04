@@ -97,7 +97,7 @@ class DataSource(AthenaSource):
         # Get the table associated with the data
         self.log.info(f"Pulling all data from {self.uuid}...")
         table = super().table
-        query = f"SELECT * FROM {table}"
+        query = f'SELECT * FROM "{table}"'
         df = self.query(query)
 
         # Drop any columns generated from AWS

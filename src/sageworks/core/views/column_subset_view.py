@@ -79,9 +79,9 @@ class ColumnSubsetView(CreateView):
 
         # Create the view query
         create_view_query = f"""
-           CREATE OR REPLACE VIEW {instance.table} AS
-           SELECT {sql_columns} FROM {instance.source_table}
-           """
+            CREATE OR REPLACE VIEW "{instance.table}" AS
+            SELECT {sql_columns} FROM "{instance.source_table}"
+        """
 
         # Execute the CREATE VIEW query
         instance.data_source.execute_statement(create_view_query)

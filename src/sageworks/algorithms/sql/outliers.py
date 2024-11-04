@@ -150,7 +150,7 @@ class Outliers:
         column_details = data_source.view("computation").column_details()
         sql_columns = ", ".join([f'"{col}"' for col in column_details.keys()])
 
-        query = f"SELECT {sql_columns} FROM {table} WHERE "
+        query = f'SELECT {sql_columns} FROM "{table}" WHERE '
         for col, lb, ub in zip(columns, lower_bounds, upper_bounds):
             query += f"({col} < {lb} OR {col} > {ub}) OR "
         query = query[:-4]

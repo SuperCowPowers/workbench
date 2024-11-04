@@ -38,7 +38,7 @@ def fs_training_data(end: Endpoint) -> pd.DataFrame:
     # Grab the FeatureSet by backtracking from the Endpoint
     fs = backtrack_to_fs(end)
     table = fs.view("training").table
-    train_df = fs.query(f"SELECT * FROM {table} where training = 1")
+    train_df = fs.query(f'SELECT * FROM "{table}" where training = 1')
     return train_df
 
 
@@ -54,7 +54,7 @@ def fs_evaluation_data(end: Endpoint) -> pd.DataFrame:
     # Grab the FeatureSet by backtracking from the Endpoint
     fs = backtrack_to_fs(end)
     table = fs.view("training").table
-    eval_df = fs.query(f"SELECT * FROM {table} where training = 0")
+    eval_df = fs.query(f'SELECT * FROM "{table}" where training = 0')
     return eval_df
 
 

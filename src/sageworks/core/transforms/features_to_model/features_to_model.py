@@ -275,7 +275,7 @@ class FeaturesToModel(Transform):
 
             # Grab all the target column class values (class labels)
             table = feature_set.data_source.table
-            self.class_labels = feature_set.query(f"select DISTINCT {self.target_column} FROM {table}")[
+            self.class_labels = feature_set.query(f'select DISTINCT {self.target_column} FROM "{table}"')[
                 self.target_column
             ].to_list()
 

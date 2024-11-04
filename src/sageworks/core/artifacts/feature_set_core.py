@@ -267,7 +267,7 @@ class FeatureSetCore(Artifact):
 
         # Make the query
         table = self.view("training").table
-        query = f"SELECT * FROM {table}"
+        query = f'SELECT * FROM "{table}"'
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
         athena_query.wait()
@@ -667,7 +667,7 @@ if __name__ == "__main__":
     # Set the holdout ids for the training view
     print("Setting hold out ids...")
     table = my_features.view("training").table
-    df = my_features.query(f"SELECT id, name FROM {table}")
+    df = my_features.query(f'SELECT id, name FROM "{table}"')
     my_holdout_ids = [id for id in df["id"] if id < 20]
     my_features.set_training_holdouts("id", my_holdout_ids)
 
