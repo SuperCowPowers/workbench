@@ -120,7 +120,7 @@ class PandasToView(CreateView):
 
         # Construct the CREATE VIEW query
         create_view_query = f"""
-        CREATE OR REPLACE VIEW {self.table} AS
+        CREATE OR REPLACE VIEW "{self.table}" AS
         SELECT {source_columns_str}, {df_columns_str}
         FROM {self.source_table} A
         LEFT JOIN {df_table} B

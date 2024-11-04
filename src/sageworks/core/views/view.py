@@ -104,7 +104,7 @@ class View:
         # Pull the DataFrame
         if head:
             limit = 5
-        pull_query = f"SELECT * FROM {self.table} LIMIT {limit}"
+        pull_query = f'SELECT * FROM "{self.table}" LIMIT {limit}'
         df = self.data_source.query(pull_query)
         return df
 
@@ -152,7 +152,7 @@ class View:
 
         # Now drop the view
         self.log.important(f"Dropping View {self.table}...")
-        drop_view_query = f"DROP VIEW {self.table}"
+        drop_view_query = f'DROP VIEW "{self.table}"'
 
         # Execute the DROP VIEW query
         try:

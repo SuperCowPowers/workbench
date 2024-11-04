@@ -118,7 +118,7 @@ class TrainingView(CreateView):
 
         # Construct the CREATE VIEW query with a simple modulo operation for the 80/20 split
         create_view_query = f"""
-        CREATE OR REPLACE VIEW {self.table} AS
+        CREATE OR REPLACE VIEW "{self.table}" AS
         SELECT {sql_columns}, CASE
             WHEN MOD(ROW_NUMBER() OVER (ORDER BY {id_column}), 10) < 8 THEN 1  -- Assign 80% to training
             ELSE 0  -- Assign roughly 20% to validation/test

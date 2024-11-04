@@ -271,7 +271,7 @@ class AthenaSource(DataSourceAbstract):
 
     def athena_test_query(self):
         """Validate that Athena Queries are working"""
-        query = f"select count(*) as sageworks_count from {self.table}"
+        query = f'select count(*) as sageworks_count from "{self.table}"'
         df = wr.athena.read_sql_query(
             sql=query,
             database=self.get_database(),
@@ -481,7 +481,7 @@ class AthenaSource(DataSourceAbstract):
         details["storage_type"] = "athena"
 
         # Compute our AWS URL
-        query = f"select * from {self.get_database()}.{self.table} limit 10"
+        query = f'select * from "{self.get_database()}.{self.table}" limit 10'
         query_exec_id = wr.athena.start_query_execution(
             sql=query, database=self.get_database(), boto3_session=self.boto3_session
         )
