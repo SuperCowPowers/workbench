@@ -2149,6 +2149,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Improvements
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#internal-changes" class="md-nav__link">
     <span class="md-ellipsis">
       Internal Changes
@@ -2759,6 +2768,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Improvements
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#internal-changes" class="md-nav__link">
     <span class="md-ellipsis">
       Internal Changes
@@ -2838,6 +2856,11 @@
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>Model(force_refresh=True)       -&gt; Gone (remove it)
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>Model(legacy=True)              -&gt; Gone (remove it)
 </span></code></pre></div>
+<h2 id="improvements">Improvements</h2>
+<p><strong>Scalability</strong></p>
+<p>The changes to caching and the Meta() class should allow better horizontal scaling, we'll flex out the stress tests for upcoming releases before <code>0.9.0</code>.</p>
+<p><strong>Table Names starting with Numbers</strong></p>
+<p>Some of the Athena queries didn't properly escape the tables names and if you created a DataSource/FeatureSet with a name that started with a number the query would fail. Fixed now. :)</p>
 <h2 id="internal-changes">Internal Changes</h2>
 <p><strong>Meta()</strong></p>
 <p><code>Meta()</code> doesn't do any caching now. If you want to use Caching as part of your meta data retrieval use the <code>CachedMeta()</code> class.</p>
