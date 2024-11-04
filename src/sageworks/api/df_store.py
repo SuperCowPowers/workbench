@@ -90,8 +90,24 @@ class DFStore:
             self.log.error(f"Failed to get object details: {e}")
             return pd.DataFrame(columns=["name", "s3_file", "size", "created", "modified"])
 
+    def check(self, name: str) -> bool:
+        """Check if a named DataFrame exists in AWS S3.
+
+        Args:
+            name (str): The name of the data to check.
+
+        Returns:
+            bool: True if the data exists, False otherwise.
+        """
+        # Generate the specific S3 prefix for the target name
+        s3_prefix = f"{self.prefix}{name}.parquet/"
+
+        # Use list_objects_v2 to check if any objects exist under this specific prefix
+        response = self.s3_client.list_objects_v2(Bucket=self.sageworks_bucket, Prefix=s3_prefix, MaxKeys=1)
+        return "Contents" in response
+
     def get(self, name: str) -> pd.DataFrame:
-        """Retrieve a DataFrame from the AWS S3.
+        """Retrieve a DataFrame from AWS S3.
 
         Args:
             name (str): The name of the data to retrieve.
@@ -178,6 +194,7 @@ class DFStore:
 
 if __name__ == "__main__":
     """Exercise the DFStore Class"""
+    import time
 
     # Create a DFStore manager
     df_store = DFStore()
@@ -206,6 +223,21 @@ if __name__ == "__main__":
     print("DFStore Object:")
     print(df_store)
 
+    # Check if the data exists
+    print("Check if data exists...")
+    print(df_store.check("test_data"))
+    print(df_store.check("test_series"))
+
+    # Time the check
+    start_time = time.time()
+    print(df_store.check("test_data"))
+    print("--- Check %s seconds ---" % (time.time() - start_time))
+
     # Now delete the test data
     df_store.delete("test_data")
     df_store.delete("test_series")
+
+    # Check if the data exists
+    print("Check if data exists...")
+    print(df_store.check("test_data"))
+    print(df_store.check("test_series"))
