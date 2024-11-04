@@ -97,7 +97,7 @@ class DataSource(AthenaSource):
         # Get the table associated with the data
         self.log.info(f"Pulling all data from {self.uuid}...")
         table = super().table
-        query = f"SELECT * FROM {table}"
+        query = f'SELECT * FROM "{table}"'
         df = self.query(query)
 
         # Drop any columns generated from AWS
@@ -152,7 +152,7 @@ class DataSource(AthenaSource):
         )
 
         # Return the FeatureSet (which will now be up-to-date)
-        return FeatureSet(name, force_refresh=True)
+        return FeatureSet(name)
 
     def _load_source(self, source: str, name: str, tags: list):
         """Load the source of the data"""

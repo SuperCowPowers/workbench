@@ -34,9 +34,9 @@ def aggregate_callbacks(plugins, input_sources, object_type):
 
         # Instantiate the object (Model or Endpoint)
         if object_type == "model":
-            obj = Model(object_uuid, legacy=True)
+            obj = Model(object_uuid)
         else:  # object_type == 'endpoint'
-            obj = Endpoint(object_uuid, legacy=True)
+            obj = Endpoint(object_uuid)
 
         # Update the plugins and collect the updated properties for each slot
         all_property_values = []

@@ -16,9 +16,9 @@ These example show how to use the `Meta()` class to pull lists of artifacts from
     If you'd like to see **exactly** what data/details you get back from the `Meta()` class, you can spin up the SageWorks REPL, use the class and test out all the methods. Try it out! [SageWorks REPL](../repl/index.md)
 
 ```py title="Using SageWorks REPL"
-[●●●]SageWorks:scp_sandbox> meta = Meta()
-[●●●]SageWorks:scp_sandbox> model_info = meta.models()
-[●●●]SageWorks:scp_sandbox> model_info
+meta = Meta()
+model_df = meta.models()
+model_df
                Model Group   Health Owner  ...             Input     Status                Description
 0      wine-classification  healthy     -  ...     wine_features  Completed  Wine Classification Model
 1  abalone-regression-full  healthy     -  ...  abalone_features  Completed   Abalone Regression Model
@@ -34,15 +34,15 @@ from sageworks.api.meta import Meta
 
 # Create our Meta Class and get a list of our Models
 meta = Meta()
-models = meta.models()
+model_df = meta.models()
 
-print(f"Number of Models: {len(models)}")
-print(models)
+print(f"Number of Models: {len(model_df)}")
+print(model_df)
 
-# Get more details data on the Endpoints
-models_groups = meta.models_deep()
-for name, model_versions in models_groups.items():
-    print(name)
+# Get more details data on the Models
+model_names = model_df["Model Group"].tolist()
+for name in model_names:
+    pprint(meta.model(name))
 ```
 
 **Output**
@@ -62,23 +62,23 @@ abalone-regression
 
 **Getting Model Performance Metrics**
 
-```py title="meta_models.py"
+```py title="meta_model_metrics.py"
 from sageworks.api.meta import Meta
 
-# Create our Meta Class to get metadata about our Models
+# Create our Meta Class and get a list of our Models
 meta = Meta()
-model_info = meta.models_deep()
+model_df = meta.models()
 
-# Print out the summary of our Models
-for name, info in model_info.items():
-    print(f"{name}")
-    latest = info[0]  # We get a list of models, so we only want the latest
-    print(f"\tARN: {latest['ModelPackageGroupArn']}")
-    print(f"\tDescription: {latest['ModelPackageDescription']}")
-    print(f"\tTags: {latest['sageworks_meta']['sageworks_tags']}")
-    performance_metrics = latest["sageworks_meta"]["sageworks_inference_metrics"]
-    print(f"\tPerformance Metrics:")
-    print(f"\t\t{performance_metrics}")
+print(f"Number of Models: {len(model_df)}")
+print(model_df)
+
+# Get more details data on the Models
+model_names = model_df["Model Group"].tolist()
+for name in model_names[:5]:
+    model_details = meta.model(name)
+    print(f"\n\nModel: {name}")
+    performance_metrics = model_details["sageworks_meta"]["sageworks_inference_metrics"]
+    print(f"\tPerformance Metrics: {performance_metrics}")
 ```
 
 **Output**
@@ -102,19 +102,19 @@ abalone-regression
 **List the Endpoints in AWS**
 
 ```py title="meta_list_endpoints.py"
+from pprint import pprint
 from sageworks.api.meta import Meta
 
 # Create our Meta Class and get a list of our Endpoints
 meta = Meta()
-endpoints = meta.endpoints()
-print(f"Number of Endpoints: {len(endpoints)}")
-print(endpoints)
+endpoint_df = meta.endpoints()
+print(f"Number of Endpoints: {len(endpoint_df)}")
+print(endpoint_df)
 
 # Get more details data on the Endpoints
-endpoints_deep = meta.endpoints_deep()
-for name, info in endpoints_deep.items():
-    print(name)
-    print(info.keys())
+endpoint_names = endpoint_df["Name"].tolist()
+for name in endpoint_names:
+    pprint(meta.endpoint(name))
 ```
 
 **Output**
@@ -127,9 +127,7 @@ Number of Endpoints: 2
 
 [2 rows x 10 columns]
 wine-classification-end
-dict_keys(['EndpointName', 'EndpointArn', 'EndpointConfigName', 'ProductionVariants', 'EndpointStatus', 'CreationTime', 'LastModifiedTime', 'ResponseMetadata', 'InstanceType', 'sageworks_meta'])
-abalone-regression-end
-dict_keys(['EndpointName', 'EndpointArn', 'EndpointConfigName', 'ProductionVariants', 'EndpointStatus', 'CreationTime', 'LastModifiedTime', 'ResponseMetadata', 'InstanceType', 'sageworks_meta'])
+<lots of details about endpoints>
 ```
 
 

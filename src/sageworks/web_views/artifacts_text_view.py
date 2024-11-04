@@ -5,7 +5,7 @@ from typing import Dict
 
 # SageWorks Imports
 from sageworks.web_views.web_view import WebView
-from sageworks.api.meta import Meta
+from sageworks.api.cached_meta import CachedMeta as Meta
 
 
 class ArtifactsTextView(WebView):
@@ -41,7 +41,6 @@ class ArtifactsTextView(WebView):
             "FEATURE_SETS": self.feature_sets_summary(),
             "MODELS": self.models_summary(),
             "ENDPOINTS": self.endpoints_summary(),
-            "PIPELINES": self.pipelines_summary(),
         }
         return summary_data
 
@@ -62,7 +61,7 @@ class ArtifactsTextView(WebView):
 
     def glue_jobs_summary(self) -> pd.DataFrame:
         """Get summary data about AWS Glue Jobs"""
-        return self.meta.glue_jobs()
+        return self.meta.etl_jobs()
 
     def data_sources_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks DataSources"""
@@ -79,10 +78,6 @@ class ArtifactsTextView(WebView):
     def endpoints_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Endpoints"""
         return self.meta.endpoints()
-
-    def pipelines_summary(self) -> pd.DataFrame:
-        """Get summary data about the SageWorks Pipelines"""
-        return self.meta.pipelines()
 
 
 if __name__ == "__main__":

@@ -12,11 +12,10 @@ from pprint import pprint
 
 # SageWorks Imports
 from sageworks.core.artifacts.data_source_abstract import DataSourceAbstract
-from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 from sageworks.utils.datetime_utils import convert_all_to_iso8601
 from sageworks.algorithms import sql
-from sageworks.utils.redis_cache import CustomEncoder
-from sageworks.utils.aws_utils import sageworks_meta_from_catalog_table_meta
+from sageworks.utils.json_utils import CustomEncoder
+from sageworks.utils.aws_utils import decode_value
 
 
 class AthenaSource(DataSourceAbstract):
@@ -31,13 +30,12 @@ class AthenaSource(DataSourceAbstract):
         ```
     """
 
-    def __init__(self, data_uuid, database="sageworks", force_refresh: bool = False):
+    def __init__(self, data_uuid, database="sageworks"):
         """AthenaSource Initialization
 
         Args:
             data_uuid (str): Name of Athena Table
             database (str): Athena Database Name (default: sageworks)
-            force_refresh (bool): Force refresh of AWS Metadata (default: False)
         """
         # Ensure the data_uuid is a valid name/id
         self.is_name_valid(data_uuid)
@@ -45,25 +43,11 @@ class AthenaSource(DataSourceAbstract):
         # Call superclass init
         super().__init__(data_uuid, database)
 
-        # Flag for metadata cache refresh logic
-        self.metadata_refresh_needed = False
-
         # Setup our AWS Metadata Broker
-        try:
-            self.catalog_table_meta = self.meta_broker.data_source_details(data_uuid, database, refresh=force_refresh)
-        except Exception as e:
-            self.log.error(f"Failed to get AWS Metadata: {self.uuid} in database: {self.get_database()}")
-            self.log.error(f"Exception: {e}")
-            self.catalog_table_meta = None
-
-        # If we get a None, let's try again with a force refresh
-        if self.catalog_table_meta is None:
-            self.log.warning(f"Unable to find {database}:{self.table}, Sleeping and trying again...")
-            time.sleep(10)
-            self.catalog_table_meta = self.meta_broker.data_source_details(data_uuid, database, refresh=True)
-            if self.catalog_table_meta is None:
-                self.log.error(f"Unable to find {database}:{self.table} in Glue Catalogs...")
-                return
+        self.data_source_meta = self.meta.data_source(data_uuid, database=database)
+        if self.data_source_meta is None:
+            self.log.error(f"Unable to find {database}:{self.table} in Glue Catalogs...")
+            return
 
         # Call superclass post init
         super().__post_init__()
@@ -73,16 +57,14 @@ class AthenaSource(DataSourceAbstract):
 
     def refresh_meta(self):
         """Refresh our internal AWS Broker catalog metadata"""
-        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.DATA_CATALOG, force_refresh=True)
-        self.catalog_table_meta = _catalog_meta[self.get_database()].get(self.table)
-        self.metadata_refresh_needed = False
+        self.data_source_meta = self.meta.data_source(self.uuid, database=self.get_database())
 
     def exists(self) -> bool:
         """Validation Checks for this Data Source"""
 
         # Are we able to pull AWS Metadata for this table_name?"""
-        # Do we have a valid catalog_table_meta?
-        if getattr(self, "catalog_table_meta", None) is None:
+        # Do we have a valid data_source_meta?
+        if getattr(self, "data_source_meta", None) is None:
             self.log.debug(f"AthenaSource {self.table} not found in SageWorks Metadata...")
             return False
         return True
@@ -100,7 +82,7 @@ class AthenaSource(DataSourceAbstract):
 
         # Sanity Check if we have invalid AWS Metadata
         self.log.info(f"Retrieving SageWorks Metadata for Artifact: {self.uuid}...")
-        if self.catalog_table_meta is None:
+        if self.data_source_meta is None:
             if not self.exists():
                 self.log.error(f"DataSource {self.uuid} doesn't appear to exist...")
             else:
@@ -108,12 +90,9 @@ class AthenaSource(DataSourceAbstract):
                 self.log.critical("Malformed Artifact! Delete this Artifact and recreate it!")
             return {}
 
-        # Check if we need to refresh our metadata
-        if self.metadata_refresh_needed:
-            self.refresh_meta()
-
-        # Get the SageWorks Metadata from the Catalog Table Metadata
-        return sageworks_meta_from_catalog_table_meta(self.catalog_table_meta)
+        # Get the SageWorks Metadata from the 'Parameters' section of the DataSource Metadata
+        params = self.data_source_meta.get("Parameters", {})
+        return {key: decode_value(value) for key, value in params.items() if "sageworks" in key}
 
     def upsert_sageworks_meta(self, new_meta: dict):
         """Add SageWorks specific metadata to this Artifact
@@ -140,7 +119,6 @@ class AthenaSource(DataSourceAbstract):
                 table=self.table,
                 boto3_session=self.boto3_session,
             )
-            self.metadata_refresh_needed = True
         except botocore.exceptions.ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code == "InvalidInputException":
@@ -171,7 +149,7 @@ class AthenaSource(DataSourceAbstract):
 
     def aws_meta(self) -> dict:
         """Get the FULL AWS metadata for this artifact"""
-        return self.catalog_table_meta
+        return self.data_source_meta
 
     def aws_url(self):
         """The AWS URL for looking at/querying this data source"""
@@ -180,11 +158,11 @@ class AthenaSource(DataSourceAbstract):
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""
-        return self.catalog_table_meta["CreateTime"]
+        return self.data_source_meta["CreateTime"]
 
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
-        return self.catalog_table_meta["UpdateTime"]
+        return self.data_source_meta["UpdateTime"]
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
@@ -198,12 +176,12 @@ class AthenaSource(DataSourceAbstract):
     @property
     def columns(self) -> list[str]:
         """Return the column names for this Athena Table"""
-        return [item["Name"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
+        return [item["Name"] for item in self.data_source_meta["StorageDescriptor"]["Columns"]]
 
     @property
     def column_types(self) -> list[str]:
         """Return the column types of the internal AthenaSource"""
-        return [item["Type"] for item in self.catalog_table_meta["StorageDescriptor"]["Columns"]]
+        return [item["Type"] for item in self.data_source_meta["StorageDescriptor"]["Columns"]]
 
     def query(self, query: str) -> Union[pd.DataFrame, None]:
         """Query the AthenaSource
@@ -289,11 +267,11 @@ class AthenaSource(DataSourceAbstract):
 
     def s3_storage_location(self) -> str:
         """Get the S3 Storage Location for this Data Source"""
-        return self.catalog_table_meta["StorageDescriptor"]["Location"]
+        return self.data_source_meta["StorageDescriptor"]["Location"]
 
     def athena_test_query(self):
         """Validate that Athena Queries are working"""
-        query = f"select count(*) as sageworks_count from {self.table}"
+        query = f'select count(*) as sageworks_count from "{self.table}"'
         df = wr.athena.read_sql_query(
             sql=query,
             database=self.get_database(),
@@ -503,7 +481,7 @@ class AthenaSource(DataSourceAbstract):
         details["storage_type"] = "athena"
 
         # Compute our AWS URL
-        query = f"select * from {self.get_database()}.{self.table} limit 10"
+        query = f'select * from "{self.get_database()}.{self.table}" limit 10'
         query_exec_id = wr.athena.start_query_execution(
             sql=query, database=self.get_database(), boto3_session=self.boto3_session
         )
@@ -589,12 +567,6 @@ class AthenaSource(DataSourceAbstract):
 
 if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
-
-    # Test a Data Source that doesn't exist
-    print("\n\nTesting a Data Source that does not exist...")
-    my_data = AthenaSource("does_not_exist")
-    assert not my_data.exists()
-    my_data.sageworks_meta()
 
     # Retrieve a Data Source
     my_data = AthenaSource("abalone_data")

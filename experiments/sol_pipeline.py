@@ -15,7 +15,6 @@ from sageworks.api.endpoint import Endpoint
 from sageworks.core.transforms.data_to_features.light.molecular_descriptors import (
     MolecularDescriptors,
 )
-from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 from sageworks.api.pipeline import Pipeline
 from sageworks.utils.pandas_utils import stratified_split
 
@@ -26,8 +25,6 @@ pipeline_name = "test_solubility_class_nightly_100_v0"
 
 
 if __name__ == "__main__":
-    # This forces a refresh on all the data we get from the AWs Broker
-    AWSServiceBroker().get_all_metadata(force_refresh=True)
 
     # Grab all the information from the Pipeline (as a dictionary)
     pipe = Pipeline(pipeline_name).pipeline

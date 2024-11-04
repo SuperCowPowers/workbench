@@ -6,7 +6,7 @@ import json
 
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 
 

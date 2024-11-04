@@ -61,7 +61,7 @@ class ModelToEndpoint(Transform):
 
         # This ensures that the endpoint is ready for use
         time.sleep(5)  # We wait for AWS Lag
-        end = EndpointCore(self.output_uuid, force_refresh=True)
+        end = EndpointCore(self.output_uuid)
         self.log.important(f"Endpoint {end.uuid} is ready for use")
 
     def _deploy_model(self, model_package_arn: str):
@@ -105,7 +105,7 @@ class ModelToEndpoint(Transform):
         self.log.info("Post-Transform: Calling onboard() for the Endpoint...")
 
         # Onboard the Endpoint
-        output_endpoint = EndpointCore(self.output_uuid, force_refresh=True)
+        output_endpoint = EndpointCore(self.output_uuid)
         output_endpoint.onboard_with_args(input_model=self.input_uuid)
 
 

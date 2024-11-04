@@ -1,24 +1,24 @@
-"""Meta: A class that provides high level information and summaries of Cloud Platform Artifacts.
-The Meta class provides 'account' information, configuration, etc. It also provides metadata for Artifacts,
-such as Data Sources, Feature Sets, Models, and Endpoints.
-"""
+"""CachedMeta: A class that provides caching for the Meta() class"""
 
 import logging
 from typing import Union
 import pandas as pd
+from functools import wraps
+from concurrent.futures import ThreadPoolExecutor
 
 
 # SageWorks Imports
-from sageworks.core.cloud_platform.aws.aws_meta import AWSMeta
+from sageworks.api.meta import Meta
+from sageworks.utils.sageworks_cache import SageWorksCache
 
 
-class Meta(AWSMeta):
-    """Meta: A class that provides metadata functionality for Cloud Platform Artifacts.
+class CachedMeta(Meta):
+    """CachedMeta: A class that provides metadata functionality for Cloud Platform Artifacts.
 
     Common Usage:
        ```python
-       from sageworks.api.meta import Meta
-       meta = Meta()
+       from sageworks.api.meta import CachedMeta
+       meta = CachedMeta()
 
        # Get the AWS Account Info
        meta.account()
@@ -41,12 +41,58 @@ class Meta(AWSMeta):
     """
 
     def __init__(self):
-        """Meta Initialization"""
+        """CachedMeta Initialization"""
         self.log = logging.getLogger("sageworks")
 
         # Call the SuperClass Initialization
         super().__init__()
 
+        # Create the Cache
+        self.meta_cache = SageWorksCache(prefix="meta")
+        self.fresh_cache = SageWorksCache(prefix="meta_fresh", expire=60)  # 60-second expiration
+
+        # Create a ThreadPoolExecutor for refreshing stale data
+        self.thread_pool = ThreadPoolExecutor(max_workers=5)
+
+    def list_meta_cache(self):
+        """List the current Meta Cache"""
+        self.meta_cache.list_keys()
+
+    def clear_meta_cache(self):
+        """Clear the current Meta Cache"""
+        self.meta_cache.clear()
+
+    @staticmethod
+    def cache_result(method):
+        """Decorator to cache method results in meta_cache"""
+
+        @wraps(method)
+        def wrapper(self, *args, **kwargs):
+            # Create a unique cache key based on the method name and arguments
+            cache_key = CachedMeta._flatten_redis_key(method, *args, **kwargs)
+
+            # Check for fresh data, spawn thread to refresh if stale
+            if self.fresh_cache.get(cache_key) is None:
+                self.log.info(f"Async: Metadata for {cache_key} is stale, launching refresh thread...")
+                self.fresh_cache.set(cache_key, True)  # Set fresh flag with auto-expire
+
+                # Spawn a thread to refresh data without blocking
+                self.thread_pool.submit(self._refresh_data_in_background, method, *args, **kwargs)
+
+            # Return data (fresh or stale) if available
+            cached_value = self.meta_cache.get(cache_key)
+            if cached_value is not None:
+                return cached_value
+
+            # Fall back to calling the method if no cached data found
+            self.log.important(f"Blocking: Getting Metadata for {cache_key}")
+            result = method(self, *args, **kwargs)
+            self.meta_cache.set(cache_key, result)
+            return result
+
+        return wrapper
+
+    @cache_result
     def account(self) -> dict:
         """Cloud Platform Account Info
 
@@ -55,6 +101,7 @@ class Meta(AWSMeta):
         """
         return super().account()
 
+    @cache_result
     def config(self) -> dict:
         """Return the current SageWorks Configuration
 
@@ -63,6 +110,7 @@ class Meta(AWSMeta):
         """
         return super().config()
 
+    @cache_result
     def incoming_data(self) -> pd.DataFrame:
         """Get summary data about data in the incoming raw data
 
@@ -71,6 +119,7 @@ class Meta(AWSMeta):
         """
         return super().incoming_data()
 
+    @cache_result
     def etl_jobs(self) -> pd.DataFrame:
         """Get summary data about Extract, Transform, Load (ETL) Jobs
 
@@ -79,6 +128,7 @@ class Meta(AWSMeta):
         """
         return super().etl_jobs()
 
+    @cache_result
     def data_sources(self) -> pd.DataFrame:
         """Get a summary of the Data Sources deployed in the Cloud Platform
 
@@ -87,6 +137,7 @@ class Meta(AWSMeta):
         """
         return super().data_sources()
 
+    @cache_result
     def views(self, database: str = "sageworks") -> pd.DataFrame:
         """Get a summary of the all the Views, for the given database, in AWS
 
@@ -98,6 +149,7 @@ class Meta(AWSMeta):
         """
         return super().views(database=database)
 
+    @cache_result
     def feature_sets(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Feature Sets deployed in the Cloud Platform
 
@@ -109,6 +161,7 @@ class Meta(AWSMeta):
         """
         return super().feature_sets(details=details)
 
+    @cache_result
     def models(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Models deployed in the Cloud Platform
 
@@ -120,6 +173,7 @@ class Meta(AWSMeta):
         """
         return super().models(details=details)
 
+    @cache_result
     def endpoints(self) -> pd.DataFrame:
         """Get a summary of the Endpoints deployed in the Cloud Platform
 
@@ -128,6 +182,7 @@ class Meta(AWSMeta):
         """
         return super().endpoints()
 
+    @cache_result
     def glue_job(self, job_name: str) -> Union[dict, None]:
         """Get the details of a specific Glue Job
 
@@ -139,6 +194,7 @@ class Meta(AWSMeta):
         """
         return super().glue_job(job_name=job_name)
 
+    @cache_result
     def data_source(self, data_source_name: str, database: str = "sageworks") -> Union[dict, None]:
         """Get the details of a specific Data Source
 
@@ -149,8 +205,9 @@ class Meta(AWSMeta):
         Returns:
             dict: The details of the Data Source (None if not found)
         """
-        return super().data_source(table_name=data_source_name, database=database)
+        return super().data_source(data_source_name=data_source_name, database=database)
 
+    @cache_result
     def feature_set(self, feature_set_name: str) -> Union[dict, None]:
         """Get the details of a specific Feature Set
 
@@ -160,8 +217,9 @@ class Meta(AWSMeta):
         Returns:
             dict: The details of the Feature Set (None if not found)
         """
-        return super().feature_set(feature_group_name=feature_set_name)
+        return super().feature_set(feature_set_name=feature_set_name)
 
+    @cache_result
     def model(self, model_name: str) -> Union[dict, None]:
         """Get the details of a specific Model
 
@@ -171,8 +229,9 @@ class Meta(AWSMeta):
         Returns:
             dict: The details of the Model (None if not found)
         """
-        return super().model(model_group_name=model_name)
+        return super().model(model_name=model_name)
 
+    @cache_result
     def endpoint(self, endpoint_name: str) -> Union[dict, None]:
         """Get the details of a specific Endpoint
 
@@ -184,9 +243,33 @@ class Meta(AWSMeta):
         """
         return super().endpoint(endpoint_name=endpoint_name)
 
+    def _refresh_data_in_background(self, method, *args, **kwargs):
+        """Background task to refresh AWS metadata."""
+        result = method(self, *args, **kwargs)
+        cache_key = self._flatten_redis_key(method, *args, **kwargs)
+        self.meta_cache[cache_key] = result  # Update the metadata cache
+        self.fresh_cache[cache_key] = True  # Refresh the fresh cache with 60-second expiration
+
+    @staticmethod
+    def _flatten_redis_key(method, *args, **kwargs):
+        """Flatten the args and kwargs into a single string"""
+        arg_str = "_".join(str(arg) for arg in args)
+        kwarg_str = "_".join(f"{k}_{v}" for k, v in sorted(kwargs.items()))
+        return f"{method.__name__}_{arg_str}_{kwarg_str}".replace(" ", "").replace("'", "")
+
+    def __del__(self):
+        """Destructor to shut down the thread pool gracefully."""
+        if self.thread_pool:
+            self.close()
+
+    def close(self):
+        """Explicitly close the thread pool, if needed."""
+        self.log.info("Shutting down the ThreadPoolExecutor...")
+        self.thread_pool.shutdown(wait=True)
+
 
 if __name__ == "__main__":
-    """Exercise the SageWorks AWSMeta Class"""
+    """Exercise the SageWorks AWSCachedMeta Class"""
     from pprint import pprint
     import time
 
@@ -195,7 +278,13 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Create the class
-    meta = Meta()
+    meta = CachedMeta()
+
+    # List the current Meta Cache
+    meta.list_meta_cache()
+
+    # Clear the current Meta Cache
+    # meta.clear_meta_cache()
 
     # Get the AWS Account Info
     print("*** AWS Account ***")
@@ -253,8 +342,6 @@ if __name__ == "__main__":
     pprint(meta.data_source("abalone_data"))
     print("\n\n*** FeatureSet Details ***")
     pprint(meta.feature_set("abalone_features"))
-    # print("\n\n*** StandAlone Model Details ***")
-    # pprint(meta.stand_alone_model("tbd"))
     print("\n\n*** Model Details ***")
     pprint(meta.model("abalone-regression"))
     print("\n\n*** Endpoint Details ***")

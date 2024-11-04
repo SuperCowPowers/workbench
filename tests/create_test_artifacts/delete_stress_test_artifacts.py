@@ -1,12 +1,10 @@
 """This Script Deletes the SageWorks Artifacts used for stress tests"""
 
 import time
-from sageworks.api import DataSource, FeatureSet, Model, Endpoint, Meta
+from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 
 
 if __name__ == "__main__":
-    # This forces a refresh on all the data we get from the AWs Broker
-    Meta().refresh_all_aws_meta()
 
     # Generated Model Names
     model_names = [f"stress-model-{i}" for i in range(16)]

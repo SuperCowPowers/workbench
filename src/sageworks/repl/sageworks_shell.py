@@ -1,3 +1,4 @@
+import pandas as pd
 from IPython import start_ipython
 from IPython.terminal.prompts import Prompts
 from IPython.terminal.ipapp import load_default_config
@@ -89,7 +90,7 @@ class SageWorksShell:
         self.commands = dict()
         self.artifacts_text_view = None
         self.aws_status = self.check_aws_account()
-        self.redis_status = self.check_redis()
+        self.redis_status = "OK"
         self.open_source_api_key = self.check_open_source_api_key()
         self.meta = Meta()
         if self.aws_status:
@@ -156,34 +157,6 @@ class SageWorksShell:
         config = self.cm.get_all_config()
         return config["API_KEY_INFO"]["license_id"] == "Open Source"
 
-    def check_redis(self) -> str:
-        """Check the Redis Cache
-
-        Returns:
-            str: The Redis status (either "OK", "FAIL", or "LOCAL")
-        """
-        from sageworks.utils.sageworks_cache import SageWorksCache
-
-        # Grab the Redis Host and Port
-        host = self.cm.get_config("REDIS_HOST", "localhost")
-        port = self.cm.get_config("REDIS_PORT", 6379)
-
-        # Check if Redis is running locally
-        status = "OK"
-        if host == "localhost":
-            status = "LOCAL"
-
-        # Open the Redis connection (class object)
-        cprint("lime", f"Checking Redis connection to: {host}:{port}..")
-        if SageWorksCache().check():
-            cprint("lightgreen", "Redis Cache Check Success...")
-        else:
-            cprint("yellow", "Redis Cache Check Failed...check your SageWorks Config...")
-            status = "FAIL"
-
-        # Return the Redis status
-        return status
-
     @staticmethod
     def check_aws_account() -> bool:
         """Check if the AWS Account is Set up Correctly
@@ -194,7 +167,9 @@ class SageWorksShell:
         cprint("lightgreen", "Checking AWS Account Connection...")
         try:
             try:
-                aws_clamp = importlib.import_module("sageworks.aws_service_broker.aws_account_clamp").AWSAccountClamp()
+                aws_clamp = importlib.import_module(
+                    "sageworks.core.cloud_platform.aws.aws_account_clamp"
+                ).AWSAccountClamp()
                 aws_clamp.check_aws_identity()
                 cprint("lightgreen", "AWS Account Check AOK!")
             except RuntimeError:
@@ -282,9 +257,6 @@ class SageWorksShell:
         - feature_sets: List all the FeatureSets in AWS
         - models: List all the Models in AWS
         - endpoints: List all the Endpoints in AWS
-        - meta: If you need to refresh AWS Metadata
-            - meta.models(refresh=True): Refresh the Models from AWS
-            - meta.endpoints(refresh=True): Refresh the Endpoints from AWS
         - config: Show the current SageWorks Config
         - status: Show the current SageWorks Status
         - log_(debug/info/important/warning): Set the SageWorks log level
@@ -351,7 +323,8 @@ class SageWorksShell:
         return self.artifacts_text_view.endpoints_summary()
 
     def pipelines(self):
-        return self.artifacts_text_view.pipelines_summary()
+        logging.error("Pipelines are not yet supported in the SageWorks REPL")
+        return pd.DataFrame()
 
     @staticmethod
     def log_debug():

@@ -20,7 +20,7 @@ def count_distinct_query(columns: list[str], table_name: str):
         str: The query to compute the distinct values count for the given columns
     """
     distinct_counts = [f'COUNT(DISTINCT "{column}") AS count_{column}' for column in columns]
-    sql_query = f'SELECT  {", ".join(distinct_counts)} FROM {table_name};'
+    sql_query = f'SELECT  {", ".join(distinct_counts)} FROM "{table_name}";'
     return sql_query
 
 
@@ -33,7 +33,7 @@ def count_nulls_query(columns: list[str], table_name: str) -> str:
         str: The query to compute the null values counts for the given columns
     """
     null_counts = [f'COUNT(CASE WHEN "{column}" IS NULL THEN 1 END) AS count_{column}' for column in columns]
-    sql_query = f'SELECT  {", ".join(null_counts)} FROM {table_name};'
+    sql_query = f'SELECT  {", ".join(null_counts)} FROM "{table_name}";'
     return sql_query
 
 
@@ -46,7 +46,7 @@ def count_zeros_query(columns: list[str], table_name: str) -> str:
         str: The query to compute the zero values counts for the given columns
     """
     zero_counts = [f'COUNT(CASE WHEN "{column}" = 0 THEN 1 END) AS count_{column}' for column in columns]
-    sql_query = f'SELECT  {", ".join(zero_counts)} FROM {table_name};'
+    sql_query = f'SELECT  {", ".join(zero_counts)} FROM "{table_name}";'
     return sql_query
 
 

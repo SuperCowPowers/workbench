@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from sagemaker.session import Session as SageSession
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_session import AWSSession
+from sageworks.core.cloud_platform.aws.aws_session import AWSSession
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
 
@@ -116,8 +116,7 @@ class AWSAccountClamp:
     @classmethod
     def sagemaker_session(cls) -> "SageSession":
         """Create a sageworks SageMaker session (using our boto3 refreshable session)
-        Args:
-            session (boto3.Session, optional): A boto3 session to use. Defaults to None.
+
         Returns:
             SageSession: A SageMaker session object
         """
@@ -128,8 +127,7 @@ class AWSAccountClamp:
     @classmethod
     def sagemaker_client(cls) -> BaseClient:
         """Create a sageworks SageMaker client (using our boto3 refreshable session)
-        Args:
-            session (boto3.Session, optional): A boto3 session to use. Defaults to None.
+
         Returns:
             BaseClient: A SageMaker client object
         """

@@ -1,5 +1,6 @@
 """FeatureSet: SageWorks Feature Set accessible through Athena"""
 
+import sys
 import time
 from datetime import datetime, timezone
 
@@ -15,7 +16,6 @@ from sagemaker.feature_store.feature_store import FeatureStore
 from sageworks.core.artifacts.artifact import Artifact
 from sageworks.core.artifacts.data_source_factory import DataSourceFactory
 from sageworks.core.artifacts.athena_source import AthenaSource
-from sageworks.aws_service_broker.aws_service_broker import ServiceCategory
 
 from typing import TYPE_CHECKING
 
@@ -34,12 +34,11 @@ class FeatureSetCore(Artifact):
         ```
     """
 
-    def __init__(self, feature_set_uuid: str, force_refresh: bool = False):
+    def __init__(self, feature_set_uuid: str):
         """FeatureSetCore Initialization
 
         Args:
             feature_set_uuid (str): Name of Feature Set
-            force_refresh (bool): Force a refresh of the Feature Set metadata (default: False)
         """
 
         # Make sure the feature_set name is valid
@@ -48,9 +47,8 @@ class FeatureSetCore(Artifact):
         # Call superclass init
         super().__init__(feature_set_uuid)
 
-        # Setup our AWS Broker catalog metadata
-        _catalog_meta = self.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=force_refresh)
-        self.feature_meta = _catalog_meta.get(self.uuid)
+        # Get our FeatureSet metadata
+        self.feature_meta = self.meta.feature_set(self.uuid)
 
         # Sanity check and then set up our FeatureSet attributes
         if self.feature_meta is None:
@@ -269,7 +267,7 @@ class FeatureSetCore(Artifact):
 
         # Make the query
         table = self.view("training").table
-        query = f"SELECT * FROM {table}"
+        query = f'SELECT * FROM "{table}"'
         athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
         athena_query.wait()
@@ -414,9 +412,6 @@ class FeatureSetCore(Artifact):
         for key in cls.data_storage.list_subkeys(f"feature_set:{feature_set_name}:"):
             cls.log.info(f"Deleting Cache Key: {key}")
             cls.data_storage.delete(key)
-
-        # Force a refresh of the AWS Metadata (to make sure references to deleted artifacts are gone)
-        cls.aws_broker.get_metadata(ServiceCategory.FEATURE_STORE, force_refresh=True)
 
     @classmethod
     def ensure_feature_group_deleted(cls, feature_group):
@@ -620,7 +615,7 @@ if __name__ == "__main__":
     my_features = LocalFeatureSetCore("test_features")
     if not my_features.exists():
         print("FeatureSet not found!")
-        exit(1)
+        sys.exit(1)
 
     # Call the various methods
     # What's my AWS ARN and URL
@@ -672,7 +667,7 @@ if __name__ == "__main__":
     # Set the holdout ids for the training view
     print("Setting hold out ids...")
     table = my_features.view("training").table
-    df = my_features.query(f"SELECT id, name FROM {table}")
+    df = my_features.query(f'SELECT id, name FROM "{table}"')
     my_holdout_ids = [id for id in df["id"] if id < 20]
     my_features.set_training_holdouts("id", my_holdout_ids)
 
@@ -686,6 +681,6 @@ if __name__ == "__main__":
     training_data = my_features.get_training_data()
 
     # Now delete the AWS artifacts associated with this Feature Set
-    print("Deleting SageWorks Feature Set...")
-    my_features.delete()
-    print("Done")
+    # print("Deleting SageWorks Feature Set...")
+    # my_features.delete()
+    # print("Done")

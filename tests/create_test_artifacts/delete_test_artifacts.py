@@ -5,12 +5,9 @@ from sageworks.api.data_source import DataSource
 from sageworks.api.feature_set import FeatureSet
 from sageworks.api.model import Model
 from sageworks.api.endpoint import Endpoint
-from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 
 if __name__ == "__main__":
-    # This forces a refresh on all the data we get from the AWs Broker
-    AWSServiceBroker().get_all_metadata(force_refresh=True)
 
     # Delete the test_data Artifacts
     DataSource.managed_delete("test_data")

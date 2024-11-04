@@ -16,7 +16,7 @@ import awswrangler as wr
 
 # SageWorks Imports
 from sageworks.core.artifacts.endpoint_core import EndpointCore
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.s3_utils import read_s3_file
 from sageworks.utils import endpoint_utils
 

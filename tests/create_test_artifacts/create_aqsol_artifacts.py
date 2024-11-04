@@ -20,14 +20,11 @@ from sageworks.api.model import Model, ModelType
 from sageworks.api.endpoint import Endpoint
 
 from sageworks.core.transforms.data_to_features.light.molecular_descriptors import MolecularDescriptors
-from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
 
 log = logging.getLogger("sageworks")
 
 
 if __name__ == "__main__":
-    # This forces a refresh on all the data we get from the AWs Broker
-    AWSServiceBroker().get_all_metadata(force_refresh=True)
 
     # Get the path to the dataset in S3
     s3_path = "s3://sageworks-public-data/comp_chem/aqsol_public_data.csv"

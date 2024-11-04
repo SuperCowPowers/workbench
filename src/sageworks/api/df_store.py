@@ -7,7 +7,7 @@ import pandas as pd
 from botocore.exceptions import ClientError
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.config_manager import ConfigManager
 
 

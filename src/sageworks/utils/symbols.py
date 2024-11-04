@@ -13,6 +13,7 @@ health_icons = {
     "healthy": "🟢",
     "unknown_error": "⚫",
     "no_activity": "➖",
+    "no_health_info": "➖",
 }
 
 

@@ -172,7 +172,7 @@ class PandasToData(Transform):
         self.log.info("Post-Transform: Calling onboard() for the DataSource...")
 
         # Onboard the DataSource
-        output_data_source = DataSourceFactory(self.output_uuid, force_refresh=True)
+        output_data_source = DataSourceFactory(self.output_uuid)
         output_data_source.onboard()
 
 

@@ -4,7 +4,7 @@ import sys
 import time
 import argparse
 from datetime import datetime, timedelta, timezone
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.repl_utils import cprint, Spinner
 
 # Define the log levels to include all log levels above the specified level

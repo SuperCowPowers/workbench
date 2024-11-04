@@ -2,19 +2,25 @@ import botocore
 import logging
 import sys
 import time
+import functools
 import json
 import base64
 import re
 import os
-from typing import Union, List
+from typing import Union, List, Callable, Optional
 import pandas as pd
 import awswrangler as wr
 from awswrangler.exceptions import NoFilesFound
 from pathlib import Path
 import posixpath
+from botocore.exceptions import ClientError
 from sagemaker.session import Session as SageSession
 from sagemaker import image_uris
 from collections.abc import Mapping, Iterable
+
+
+# SageWorks Imports
+from sageworks.utils.deprecated_utils import deprecated
 
 # SageWorks Logger
 log = logging.getLogger("sageworks")
@@ -47,7 +53,7 @@ def get_image_uri_with_digest(framework, region, version, sm_session: SageSessio
         raise ValueError("Image details not found for the specified tag.")
 
 
-def client_error_info(err: botocore.exceptions.ClientError):
+def client_error_printout(err: botocore.exceptions.ClientError):
     """Helper method to get information about a botocore.exceptions.ClientError"""
     error_code = err.response["Error"]["Code"]
     error_message = err.response["Error"]["Message"]
@@ -63,6 +69,87 @@ def client_error_info(err: botocore.exceptions.ClientError):
     log.error(f"Request ID: {request_id}")
 
 
+def aws_throttle(func=None, retry_intervals=None):
+    """
+    Decorator to handle AWS throttling exceptions with exponential backoff.
+
+    Args:
+        func: This is a decorator detail just ignore it.
+        retry_intervals (list[int], optional): List of intervals in seconds between retries.
+                                               If None, defaults to exponential backoff.
+    """
+    if func is None:
+        return lambda f: aws_throttle(f, retry_intervals=retry_intervals)
+
+    default_intervals = [2**i for i in range(1, 9)]  # Default exponential backoff: 2, 4, 8... 256 seconds
+    intervals = retry_intervals or default_intervals
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        for attempt, delay in enumerate(intervals, start=1):
+            try:
+                return func(*args, **kwargs)
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "ThrottlingException":
+                    log_level = log.critical if delay > 100 else log.error if delay > 30 else log.warning
+                    log_level(f"{func.__name__}: ThrottlingException ({attempt}): Retrying in {delay} seconds...")
+                    time.sleep(delay)
+                else:
+                    raise
+        # If we exhaust all retries, raise an exception
+        raise ClientError(
+            {
+                "Error": {
+                    "Code": "ThrottlingException",
+                    "Message": f"{func.__name__} failed after {len(intervals)} retries",
+                }
+            },
+            func.__name__,
+        )
+
+    return wrapper
+
+
+def not_found_returns_none(func: Optional[Callable] = None, *, resource_name: str = "AWS resource") -> Callable:
+    """Decorator to handle AWS resource not found (returns None) and re-raising otherwise.
+
+    Args:
+        func (Callable, optional): The function being decorated.
+        resource_name (str): Name of the AWS resource being accessed. Used for clearer error messages.
+    """
+    not_found_errors = {
+        "ResourceNotFound",
+        "ResourceNotFoundException",
+        "EntityNotFoundException",
+        "ValidationException",
+        "NoSuchBucket",
+    }
+
+    def decorator(inner_func: Callable) -> Callable:
+        @functools.wraps(inner_func)
+        def wrapper(*args, **kwargs):
+            try:
+                return inner_func(*args, **kwargs)
+            except ClientError as error:
+                error_code = error.response["Error"]["Code"]
+                if error_code in not_found_errors:
+                    log.warning(f"{resource_name} not found: {error_code}, returning None...")
+                    return None
+                else:
+                    log.critical(f"Critical error in AWS call: {error_code}")
+                    raise
+
+        return wrapper
+
+    # If func is None, the decorator was called with arguments
+    if func is None:
+        return decorator
+    else:
+        # If func is not None, the decorator was used without arguments
+        return decorator(func)
+
+
+@deprecated(version="0.9")
 def list_tags_with_throttle(arn: str, sm_session) -> dict:
     """A Wrapper around SageMaker's list_tags method that handles throttling
     Args:
@@ -89,7 +176,7 @@ def list_tags_with_throttle(arn: str, sm_session) -> dict:
         try:
             # Call the AWS List Tags method
             aws_tags = sm_session.list_tags(arn)
-            meta = _aws_tags_to_dict(aws_tags)  # Convert the AWS Tags to a dictionary
+            meta = aws_tags_to_dict(aws_tags)  # Convert the AWS Tags to a dictionary
             return meta
 
         except botocore.exceptions.ClientError as e:
@@ -122,6 +209,7 @@ def list_tags_with_throttle(arn: str, sm_session) -> dict:
     return {}
 
 
+@deprecated(version="0.9")
 def sagemaker_delete_tag(arn: str, sm_session: SageSession, key_to_remove: str):
     """Delete a tag from a SageMaker resource
     Args:
@@ -153,6 +241,19 @@ def sagemaker_delete_tag(arn: str, sm_session: SageSession, key_to_remove: str):
             sm_client.delete_tags(ResourceArn=arn, TagKeys=keys_to_remove)
 
 
+@deprecated(version="0.9")
+def sageworks_meta_from_catalog_table_meta(table_meta: dict) -> dict:
+    """Retrieve the SageWorks metadata from AWS Data Catalog table metadata
+    Args:
+        table_meta (dict): The AWS Data Catalog table metadata
+    Returns:
+        dict: The SageWorks metadata that's stored in the Parameters field
+    """
+    # Get the Parameters field from the table metadata
+    params = table_meta.get("Parameters", {})
+    return {key: decode_value(value) for key, value in params.items() if "sageworks" in key}
+
+
 def decode_value(value):
     # Try to base64 decode the value
     try:
@@ -169,68 +270,13 @@ def decode_value(value):
     return value
 
 
-def sageworks_meta_from_catalog_table_meta(table_meta: dict) -> dict:
-    """Retrieve the SageWorks metadata from AWS Data Catalog table metadata
-    Args:
-        table_meta (dict): The AWS Data Catalog table metadata
-    Returns:
-        dict: The SageWorks metadata that's stored in the Parameters field
-    """
-    # Get the Parameters field from the table metadata
-    params = table_meta.get("Parameters", {})
-    return {key: decode_value(value) for key, value in params.items() if "sageworks" in key}
-
-
-def _aws_tags_to_dict(aws_tags) -> dict:
-    """Internal: AWS Tags are in an odd format, so convert to regular dictionary"""
-
-    # Stitch together any chunked data
-    stitched_data = {}
-    regular_tags = {}
-
-    for item in aws_tags:
-        key = item["Key"]
-        value = item["Value"]
-
-        # Check if this key is a chunk
-        if "_chunk_" in key:
-            base_key, chunk_num = key.rsplit("_chunk_", 1)
-
-            if base_key not in stitched_data:
-                stitched_data[base_key] = {}
-
-            stitched_data[base_key][int(chunk_num)] = value
-        else:
-            regular_tags[key] = decode_value(value)
-
-    # Stitch chunks back together and decode
-    for base_key, chunks in stitched_data.items():
-        # Sort by chunk number and concatenate
-        sorted_chunks = [chunks[i] for i in sorted(chunks.keys())]
-        stitched_base64_str = "".join(sorted_chunks)
-
-        # Decode the stitched base64 string
-        try:
-            stitched_json_str = base64.b64decode(stitched_base64_str).decode("utf-8")
-        except UnicodeDecodeError:
-            stitched_json_str = stitched_base64_str
-        try:
-            stitched_dict = json.loads(stitched_json_str)
-        except json.decoder.JSONDecodeError:
-            stitched_dict = stitched_json_str
-
-        regular_tags[base_key] = stitched_dict
-
-    return regular_tags
-
-
 def is_valid_tag(tag):
     pattern = r"^([a-zA-Z0-9_.:/=+\-@]*)$"
     return re.match(pattern, tag) is not None
 
 
 def dict_to_aws_tags(meta_data: dict) -> list:
-    """AWS Tags are in an odd format, so we need to convert data into the AWS Tag format
+    """AWS Tags are in an odd format, so we need to convert, encode, and chunk the data
     Args:
         meta_data (dict): Dictionary of metadata to convert to AWS Tags
     """
@@ -282,6 +328,49 @@ def dict_to_aws_tags(meta_data: dict) -> list:
     for key, value in output_data.items():
         aws_tags.append({"Key": key, "Value": value})
     return aws_tags
+
+
+def aws_tags_to_dict(aws_tags) -> dict:
+    """Internal: AWS Tags are in an odd format, so convert, decode, and de-chunk"""
+
+    # Stitch together any chunked data
+    stitched_data = {}
+    regular_tags = {}
+
+    for item in aws_tags:
+        key = item["Key"]
+        value = item["Value"]
+
+        # Check if this key is a chunk
+        if "_chunk_" in key:
+            base_key, chunk_num = key.rsplit("_chunk_", 1)
+
+            if base_key not in stitched_data:
+                stitched_data[base_key] = {}
+
+            stitched_data[base_key][int(chunk_num)] = value
+        else:
+            regular_tags[key] = decode_value(value)
+
+    # Stitch chunks back together and decode
+    for base_key, chunks in stitched_data.items():
+        # Sort by chunk number and concatenate
+        sorted_chunks = [chunks[i] for i in sorted(chunks.keys())]
+        stitched_base64_str = "".join(sorted_chunks)
+
+        # Decode the stitched base64 string
+        try:
+            stitched_json_str = base64.b64decode(stitched_base64_str).decode("utf-8")
+        except UnicodeDecodeError:
+            stitched_json_str = stitched_base64_str
+        try:
+            stitched_dict = json.loads(stitched_json_str)
+        except json.decoder.JSONDecodeError:
+            stitched_dict = stitched_json_str
+
+        regular_tags[base_key] = stitched_dict
+
+    return regular_tags
 
 
 def _chunk_data(base_key: str, data: str) -> dict:
@@ -409,6 +498,7 @@ def pull_s3_data(s3_path: str, embedded_index=False) -> Union[pd.DataFrame, None
         return None
 
 
+@deprecated(version="0.9", stack_trace=True)
 def compute_size(obj: object) -> int:
     """Recursively calculate the size of an object including its contents.
 
@@ -426,6 +516,7 @@ def compute_size(obj: object) -> int:
         return sys.getsizeof(obj)
 
 
+@deprecated(version="0.9")
 def num_columns_ds(data_info):
     """Helper: Compute the number of columns from the storage descriptor data"""
     try:
@@ -434,6 +525,7 @@ def num_columns_ds(data_info):
         return "-"
 
 
+@deprecated(version="0.9")
 def num_columns_fs(data_info):
     """Helper: Compute the number of columns from the feature group data"""
     try:
@@ -442,6 +534,7 @@ def num_columns_fs(data_info):
         return "-"
 
 
+@deprecated(version="0.9")
 def aws_url(artifact_info, artifact_type, aws_account_clamp):
     """Helper: Try to extract the AWS URL from the Artifact Info Object"""
     if artifact_type == "S3":
@@ -471,12 +564,52 @@ if __name__ == "__main__":
     """Exercise the AWS Utils"""
     from pprint import pprint
     from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-    from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+    from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
     # Grab out SageMaker Session from the AWS Account Clamp
     sm_session = AWSAccountClamp().sagemaker_session()
     boto3_session = AWSAccountClamp().boto3_session
 
+    # Get the Sagemaker client from the AWS Account Clamp
+    sm_client = AWSAccountClamp().sagemaker_client()
+
+    @aws_throttle
+    def list_sagemaker_models():
+        response = sm_client.list_models()
+        return response["Models"]
+
+    print(list_sagemaker_models())
+
+    # Test the aws_throttle decorator with ThrottlingExceptions
+    # @aws_throttle
+    # def test_throttling():
+    #     raise ClientError({"Error": {"Code": "ThrottlingException"}}, "test")
+    # test_throttling()
+
+    @not_found_returns_none
+    def test_not_found():
+        raise ClientError({"Error": {"Code": "ResourceNotFoundException"}}, "test")
+
+    test_not_found()
+
+    @not_found_returns_none(resource_name="my_not_found_resource")
+    def test_not_found():
+        raise ClientError({"Error": {"Code": "ResourceNotFoundException"}}, "test")
+
+    test_not_found()
+
+    try:
+
+        @not_found_returns_none
+        def test_other_error():
+            # Raise a different error to test the error handler
+            raise ClientError({"Error": {"Code": "SomeOtherError"}}, "test")
+
+        test_other_error()
+    except ClientError:
+        print("AOK Expected Error :)")
+
+    # Test a FeatureSetCore object (that uses some of these methods)
     my_features = FeatureSetCore("test_features")
     my_meta = my_features.sageworks_meta()
     pprint(my_meta)

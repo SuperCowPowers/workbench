@@ -1,5 +1,5 @@
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 boto3_session = AWSAccountClamp().boto3_session
 

@@ -74,7 +74,7 @@ class DataToFeaturesLight(Transform):
         output_features.transform()
 
         # Spin up the FeatureSet and onboard
-        fs = FeatureSetCore(self.output_uuid, force_refresh=True)
+        fs = FeatureSetCore(self.output_uuid)
         fs.onboard()
 
 

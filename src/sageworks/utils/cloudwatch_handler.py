@@ -14,7 +14,7 @@ from sageworks.utils.execution_environment import (
     # glue_job_run_id,
     ecs_job_name,
 )
-from sageworks.aws_service_broker.aws_session import AWSSession
+from sageworks.core.cloud_platform.aws.aws_session import AWSSession
 
 
 class CloudWatchHandler(logging.Handler):

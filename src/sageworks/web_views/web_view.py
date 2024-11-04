@@ -5,8 +5,7 @@ from abc import ABC, abstractmethod
 import logging
 
 # SageWorks Imports
-from sageworks.aws_service_broker.aws_service_broker import AWSServiceBroker
-from sageworks.aws_service_broker.aws_account_clamp import AWSAccountClamp
+from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 
 class WebView(ABC):
@@ -14,8 +13,7 @@ class WebView(ABC):
         """WebView: A View in the database sense: Pulls from the AWS Service Broker and does slice and dice"""
         self.log = logging.getLogger("sageworks")
 
-        # Grab an AWS Metadata Broker object for pulling AWS Service information
-        self.aws_broker = AWSServiceBroker()
+        # Grab our AWS Account Clamp
         self.aws_account_clamp = AWSAccountClamp()
         self.boto3_session = self.aws_account_clamp.boto3_session
         self.sm_session = self.aws_account_clamp.sagemaker_session()
