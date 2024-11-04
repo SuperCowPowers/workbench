@@ -88,7 +88,6 @@ class SageWorksShell:
 
         # Perform AWS connection test and other checks
         self.commands = dict()
-        self.artifacts_text_view = None
         self.aws_status = self.check_aws_account()
         self.redis_status = "OK"
         self.open_source_api_key = self.check_open_source_api_key()
@@ -197,42 +196,38 @@ class SageWorksShell:
         # Import all the SageWorks modules
         spinner = self.spinner_start("Importing SageWorks:")
         try:
-            self.artifacts_text_view = importlib.import_module(
-                "sageworks.web_views.artifacts_text_view"
-            ).ArtifactsTextView()
+            # These are the classes we want to expose to the REPL
+            self.commands["DataSource"] = importlib.import_module("sageworks.api.data_source").DataSource
+            self.commands["FeatureSet"] = importlib.import_module("sageworks.api.feature_set").FeatureSet
+            self.commands["Model"] = importlib.import_module("sageworks.api.model").Model
+            self.commands["ModelType"] = importlib.import_module("sageworks.api.model").ModelType
+            self.commands["Endpoint"] = importlib.import_module("sageworks.api.endpoint").Endpoint
+            self.commands["Monitor"] = importlib.import_module("sageworks.api.monitor").Monitor
+            self.commands["ParameterStore"] = importlib.import_module("sageworks.api.parameter_store").ParameterStore
+            self.commands["DFStore"] = importlib.import_module("sageworks.api.df_store").DFStore
+            self.commands["PandasToFeatures"] = importlib.import_module(
+                "sageworks.core.transforms.pandas_transforms"
+            ).PandasToFeatures
+            self.commands["Meta"] = importlib.import_module("sageworks.api.meta").Meta
+            self.commands["View"] = importlib.import_module("sageworks.core.views.view").View
+            self.commands["DisplayView"] = importlib.import_module("sageworks.core.views.display_view").DisplayView
+            self.commands["TrainingView"] = importlib.import_module("sageworks.core.views.training_view").TrainingView
+            self.commands["ComputationView"] = importlib.import_module(
+                "sageworks.core.views.computation_view"
+            ).ComputationView
+            self.commands["MDQView"] = importlib.import_module("sageworks.core.views.mdq_view").MDQView
+            self.commands["PandasToView"] = importlib.import_module("sageworks.core.views.pandas_to_view").PandasToView
+
+            # We're going to include these classes/imports later
+            # self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline
+            # self.commands["PipelineManager"] = importlib.import_module("sageworks.api.pipeline_manager").PipelineManager
+
+            # These are 'nice to have' imports
+            self.commands["pd"] = importlib.import_module("pandas")
+            self.commands["wr"] = importlib.import_module("awswrangler")
+            self.commands["pprint"] = importlib.import_module("pprint").pprint
         finally:
             spinner.stop()
-
-        # These are the classes we want to expose to the REPL
-        self.commands["DataSource"] = importlib.import_module("sageworks.api.data_source").DataSource
-        self.commands["FeatureSet"] = importlib.import_module("sageworks.api.feature_set").FeatureSet
-        self.commands["Model"] = importlib.import_module("sageworks.api.model").Model
-        self.commands["ModelType"] = importlib.import_module("sageworks.api.model").ModelType
-        self.commands["Endpoint"] = importlib.import_module("sageworks.api.endpoint").Endpoint
-        self.commands["Monitor"] = importlib.import_module("sageworks.api.monitor").Monitor
-        self.commands["ParameterStore"] = importlib.import_module("sageworks.api.parameter_store").ParameterStore
-        self.commands["DFStore"] = importlib.import_module("sageworks.api.df_store").DFStore
-        self.commands["PandasToFeatures"] = importlib.import_module(
-            "sageworks.core.transforms.pandas_transforms"
-        ).PandasToFeatures
-        self.commands["Meta"] = importlib.import_module("sageworks.api.meta").Meta
-        self.commands["View"] = importlib.import_module("sageworks.core.views.view").View
-        self.commands["DisplayView"] = importlib.import_module("sageworks.core.views.display_view").DisplayView
-        self.commands["TrainingView"] = importlib.import_module("sageworks.core.views.training_view").TrainingView
-        self.commands["ComputationView"] = importlib.import_module(
-            "sageworks.core.views.computation_view"
-        ).ComputationView
-        self.commands["MDQView"] = importlib.import_module("sageworks.core.views.mdq_view").MDQView
-        self.commands["PandasToView"] = importlib.import_module("sageworks.core.views.pandas_to_view").PandasToView
-
-        # We're going to include these classes/imports later
-        # self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline
-        # self.commands["PipelineManager"] = importlib.import_module("sageworks.api.pipeline_manager").PipelineManager
-
-        # These are 'nice to have' imports
-        self.commands["pd"] = importlib.import_module("pandas")
-        self.commands["wr"] = importlib.import_module("awswrangler")
-        self.commands["pprint"] = importlib.import_module("pprint").pprint
 
     def help(self, *args):
         """Custom help command for the SageWorks REPL
@@ -281,13 +276,21 @@ class SageWorksShell:
         # Grab information about all the AWS Artifacts
         spinner = self.spinner_start("Chatting with AWS:")
         try:
-            view_data = self.artifacts_text_view.view_data()
+            # We're filling in Summary Data for all the AWS Services
+            summary_data = {
+                "INCOMING_DATA": self.meta.incoming_data(),
+                "ETL_JOBS": self.meta.etl_jobs(),
+                "DATA_SOURCES": self.meta.data_sources(),
+                "FEATURE_SETS": self.meta.feature_sets(),
+                "MODELS": self.meta.models(),
+                "ENDPOINTS": self.meta.endpoints(),
+            }
         finally:
             spinner.stop()
 
         # Print out the AWS Artifacts Summary
         cprint("yellow", "\nAWS Artifacts Summary:")
-        for name, df in view_data.items():
+        for name, df in summary_data.items():
             # Pad the name to 15 characters
             name = (name + " " * 15)[:15]
 
@@ -305,22 +308,22 @@ class SageWorksShell:
             cprint(["lightpurple", "\t" + name, "lightgreen", str(df.shape[0]) + "  ", "purple_blue", examples])
 
     def incoming_data(self):
-        return self.artifacts_text_view.incoming_data_summary()
+        return self.meta.incoming_data()
 
     def glue_jobs(self):
-        return self.artifacts_text_view.glue_jobs_summary()
+        return self.meta.etl_jobs()
 
     def data_sources(self):
-        return self.artifacts_text_view.data_sources_summary()
+        return self.meta.data_sources()
 
-    def feature_sets(self):
-        return self.artifacts_text_view.feature_sets_summary()
+    def feature_sets(self, details: bool = False):
+        return self.meta.feature_sets(details=details)
 
-    def models(self):
-        return self.artifacts_text_view.models_summary()
+    def models(self, details: bool = False):
+        return self.meta.models(details=details)
 
     def endpoints(self):
-        return self.artifacts_text_view.endpoints_summary()
+        return self.meta.endpoints()
 
     def pipelines(self):
         logging.error("Pipelines are not yet supported in the SageWorks REPL")
