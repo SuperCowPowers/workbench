@@ -69,7 +69,7 @@ class Meta(AWSMeta):
             dict: The current SageWorks Configuration
         """
         return super().config()
-    
+
     def incoming_data(self) -> pd.DataFrame:
         """Get summary data about data in the incoming raw data
 
@@ -93,7 +93,7 @@ class Meta(AWSMeta):
             pd.DataFrame: A summary of the Data Sources deployed in the Cloud Platform
         """
         return super().data_sources()
-    
+
     def views(self, database: str = "sageworks") -> pd.DataFrame:
         """Get a summary of the all the Views, for the given database, in AWS
 
@@ -104,7 +104,7 @@ class Meta(AWSMeta):
             pd.DataFrame: A summary of all the Views, for the given database, in AWS
         """
         return super().views(database=database)
-    
+
     def feature_sets(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Feature Sets deployed in the Cloud Platform
 
@@ -115,7 +115,7 @@ class Meta(AWSMeta):
             pd.DataFrame: A summary of the Feature Sets deployed in the Cloud Platform
         """
         return super().feature_sets(details=details)
-    
+
     def models(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Models deployed in the Cloud Platform
 
@@ -134,7 +134,7 @@ class Meta(AWSMeta):
             pd.DataFrame: A summary of the Endpoints in the Cloud Platform
         """
         return super().endpoints()
-    
+
     def glue_job(self, job_name: str) -> Union[dict, None]:
         """Get the details of a specific Glue Job
 
@@ -168,7 +168,7 @@ class Meta(AWSMeta):
             dict: The details of the Feature Set (None if not found)
         """
         return super().feature_set(feature_group_name=feature_set_name)
-    
+
     def model(self, model_name: str) -> Union[dict, None]:
         """Get the details of a specific Model
 
