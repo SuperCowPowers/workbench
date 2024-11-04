@@ -19,6 +19,8 @@ from sageworks.core.artifacts.athena_source import AthenaSource
 
 from typing import TYPE_CHECKING
 
+from sageworks.utils.aws_utils import aws_throttle
+
 if TYPE_CHECKING:
     from sageworks.core.views import View
 
@@ -393,8 +395,7 @@ class FeatureSetCore(Artifact):
 
         # Delete the Feature Group and ensure that it gets deleted
         cls.log.important(f"Deleting FeatureSet {feature_set_name}...")
-        remove_fg = FeatureGroup(name=feature_set_name, sagemaker_session=cls.sm_session)
-        remove_fg.delete()
+        remove_fg = cls.aws_feature_group_delete(feature_set_name)
         cls.ensure_feature_group_deleted(remove_fg)
 
         # Delete our underlying DataSource (Data Catalog Table and S3 Storage Objects)
@@ -412,6 +413,13 @@ class FeatureSetCore(Artifact):
         for key in cls.data_storage.list_subkeys(f"feature_set:{feature_set_name}:"):
             cls.log.info(f"Deleting Cache Key: {key}")
             cls.data_storage.delete(key)
+
+    @classmethod
+    @aws_throttle
+    def aws_feature_group_delete(cls, feature_set_name):
+        remove_fg = FeatureGroup(name=feature_set_name, sagemaker_session=cls.sm_session)
+        remove_fg.delete()
+        return remove_fg
 
     @classmethod
     def ensure_feature_group_deleted(cls, feature_group):
