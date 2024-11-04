@@ -13,14 +13,10 @@ sagemaker_client = AWSAccountClamp().sagemaker_client()
 
 # Setup logging
 log = logging.getLogger("sageworks")
+log.setLevel(logging.INFO)
 
 
-def run_sanity_checks(verbose: bool = False, tag: bool = False):
-    # Set the log level based on the verbose flag
-    if verbose:
-        log.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(IMPORTANT_LEVEL_NUM)
+def run_sanity_checks(tag: bool = False, delete_stuff: bool = False):
 
     # Get all the model groups
     response = sagemaker_client.list_model_package_groups(MaxResults=100)
@@ -54,7 +50,7 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
     model_names = [model["ModelName"] for model in response["Models"]]
     log.important(f"Found {len(model_names)} Models (not in a Model Package/Group)")
     for model_name in model_names:
-        log.debug(f"Model: {model_name}")
+        log.info(f"\tModel: {model_name}")
 
     # Each ModelGroup should have an endpoint and having an endpoint means
     # that a 'Model' Resource is created, so if we find a ModelGroup without
@@ -92,7 +88,7 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
         )
         for variant in endpoint_config_desc["ProductionVariants"]:
             if variant["ModelName"] in model_names:
-                log.debug(f"\t{endpoint['EndpointName']} --> {variant['ModelName']}")
+                log.info(f"\t{endpoint['EndpointName']} --> {variant['ModelName']}")
                 found_models.append(variant["ModelName"])
             else:
                 log.warning(f"\t{endpoint['EndpointName']} --> Model not found: {variant['ModelName']}")
@@ -107,6 +103,15 @@ def run_sanity_checks(verbose: bool = False, tag: bool = False):
     for model in unused_models:
         log.important(f"\t{model}")
     log.important("Recommendation: Delete these Models")
+    if delete_stuff:
+        for model in unused_models:
+            delete_model(model, sagemaker_client)
+            ModelCore.managed_delete(model)
+
+
+def delete_model(model_name: str, sm_client):
+    log.important(f"Deleting Model '{model_name}'...")
+    sm_client.delete_model(ModelName=model_name)
 
 
 if __name__ == "__main__":
@@ -114,9 +119,9 @@ if __name__ == "__main__":
 
     # We're going to have a --verbose flag and that's it
     parser = argparse.ArgumentParser()
-    parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--tag", action="store_true")
+    parser.add_argument("--delete-stuff", action="store_true")
     args, commands = parser.parse_known_args()
 
     # Call the sanity checks
-    run_sanity_checks(verbose=args.verbose, tag=args.tag)
+    run_sanity_checks(tag=args.tag, delete_stuff=args.delete_stuff)
