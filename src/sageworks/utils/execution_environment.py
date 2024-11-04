@@ -6,7 +6,7 @@ import logging
 import requests
 from typing import Union
 import boto3
-from botocore.exceptions import ClientError
+from datetime import datetime, timezone
 
 # SageWorks imports
 from sageworks.utils.glue_utils import get_resolved_options
@@ -122,19 +122,26 @@ def glue_job_name():
 
 
 def glue_job_run_id(job_name: str, session: boto3.Session) -> Union[str, None]:
-    """Retrieve the most recent Glue Job Run ID for the given job name using a Boto3 session."""
+    """Retrieve the Glue Job Run ID closest to the current time for the given job name."""
     try:
+        # Set current time in UTC
+        current_time = datetime.now(timezone.utc)
+
         job_runs = session.client("glue").get_job_runs(JobName=job_name)
         if job_runs["JobRuns"]:
-            job_id = max(job_runs["JobRuns"], key=lambda run: run["StartedOn"])["Id"]
+            # Find the job run with the StartedOn time closest to the current time
+            closest_job_run = min(job_runs["JobRuns"], key=lambda run: abs(run["StartedOn"] - current_time))
+            job_id = closest_job_run["Id"]
             return job_id[:9]  # Shorten the Job Run ID to 9 characters
 
         log.error(f"No runs found for Glue Job '{job_name}', returning None for Job Run ID.")
         return None
 
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "EntityNotFoundException":
-            log.error(f"Glue Job '{job_name}' not found, returning None for Job Run ID.")
+    except session.client("glue").exceptions.EntityNotFoundException:
+        log.error(f"Glue Job '{job_name}' not found, returning None for Job Run ID.")
+        return None
+    except Exception as e:
+        log.error(f"An error occurred while retrieving job run ID: {e}")
         return None
 
 

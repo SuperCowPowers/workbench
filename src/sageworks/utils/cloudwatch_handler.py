@@ -1,6 +1,6 @@
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 import getpass
 import time  # For managing send intervals
 
@@ -11,7 +11,7 @@ from sageworks.utils.execution_environment import (
     running_on_ecs,
     running_on_docker,
     glue_job_name,
-    # glue_job_run_id,
+    glue_job_run_id,
     ecs_job_name,
 )
 from sageworks.core.cloud_platform.aws.aws_session import AWSSession
@@ -72,13 +72,17 @@ class CloudWatchHandler(logging.Handler):
             response = self.cloudwatch_client.put_log_events(**log_event)
             self.sequence_token = response.get("nextSequenceToken")
             self.buffer.clear()  # Clear the buffer after successful send
-            self.last_sent_time = time.time()  # Update the last sent time
         except self.cloudwatch_client.exceptions.InvalidSequenceTokenException as e:
-            # Update sequence token and retry
+            # Extract token and retry only the put_log_events call
             self.sequence_token = e.response["Error"]["Message"].split()[-1]
-            self.send_logs()  # Retry the log submission
+            log_event["sequenceToken"] = self.sequence_token
+            self.cloudwatch_client.put_log_events(**log_event)  # Retry without recursion
+            self.buffer.clear()
         except Exception as e:
             logging.error(f"Failed to send logs to CloudWatch: {e}")
+
+        # Update last sent time after successful send
+        self.last_sent_time = time.time()
 
     def flush(self):
         """Ensure all logs are sent"""
@@ -102,16 +106,13 @@ class CloudWatchHandler(logging.Handler):
 
     def determine_log_stream(self):
         """Determine the log stream name based on the environment."""
-        unique_id = self.get_unique_identifier()
-
         if running_on_lambda():
             job_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "unknown")
             return f"lambda/{job_name}"
         elif running_on_glue():
             job_name = glue_job_name()
-            # job_run_id = glue_job_run_id(job_name, self.boto3_session) or unique_id
-            job_run_id = unique_id
-            return f"glue/{job_name}/{job_run_id}"
+            unique_id = self.get_unique_identifier(job_name)
+            return f"glue/{job_name}/{unique_id}"
         elif running_on_ecs():
             job_name = ecs_job_name()
             return f"ecs/{job_name}"
@@ -120,16 +121,9 @@ class CloudWatchHandler(logging.Handler):
         else:
             return f"laptop/{getpass.getuser()}"
 
-    @staticmethod
-    def get_unique_identifier():
+    def get_unique_identifier(self, job_name):
         """Get a unique identifier for the log stream."""
-        job_id = CloudWatchHandler.get_job_id_from_environment()
-        return job_id or datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
-
-    @staticmethod
-    def get_job_id_from_environment():
-        """Try to retrieve the job ID from Glue or Lambda environment variables."""
-        return os.environ.get("GLUE_JOB_ID") or os.environ.get("AWS_LAMBDA_REQUEST_ID")
+        return glue_job_run_id(job_name, self.boto3_session) or datetime.now(timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
 
 
 if __name__ == "__main__":
@@ -139,3 +133,7 @@ if __name__ == "__main__":
     cloudwatch_handler = CloudWatchHandler()
     logger.addHandler(cloudwatch_handler)
     logger.info("Test log message to CloudWatch")
+
+    # Test the get_unique_identifier function
+    print(cloudwatch_handler.get_unique_identifier("Glue_Job_1"))
+
