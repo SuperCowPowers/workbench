@@ -20,7 +20,7 @@ def descriptive_stats_query(columns: list[str], table_name: str) -> str:
     Returns:
         str: The SQL query to compute descriptive stats
     """
-    query = f"SELECT <<column_descriptive_stats>> FROM {table_name}"
+    query = f'SELECT <<column_descriptive_stats>> FROM "{table_name}"'
     column_descriptive_stats = ""
     for c in columns:
         column_descriptive_stats += (

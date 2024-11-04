@@ -20,7 +20,7 @@ def correlation_query(columns: list[str], table_name: str) -> str:
     Returns:
         str: The SQL query to compute correlations
     """
-    query = f"SELECT <<cross_correlations>> FROM {table_name}"
+    query = f'SELECT <<cross_correlations>> FROM "{table_name}"'
     cross_correlations = ""
     for c in columns:
         for d in columns:
