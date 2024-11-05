@@ -9,6 +9,7 @@ import logging
 # SageWorks Imports
 from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.core.cloud_platform.aws.aws_meta import AWSMeta as Meta
+from sageworks.core.cloud_platform.aws.aws_df_store import AWSDFStore as DFStore
 from sageworks.utils.aws_utils import sagemaker_delete_tag, dict_to_aws_tags
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
@@ -42,6 +43,9 @@ class Artifact(ABC):
     models_s3_path = f"s3://{sageworks_bucket}/models"
     endpoints_s3_path = f"s3://{sageworks_bucket}/endpoints"
 
+    # Grab our Dataframe Storage
+    df_store = DFStore()
+
     # Delimiter for storing lists in AWS Tags
     tag_delimiter = "::"
 
@@ -51,12 +55,7 @@ class Artifact(ABC):
         Args:
             uuid (str): The UUID of this artifact
         """
-        from sageworks.api.df_store import DFStore  # Avoid circular import
-
         self.uuid = uuid
-
-        # Create a DataFrame Store for this Artifact
-        self.df_store = DFStore()
 
     def __post_init__(self):
         """Artifact Post Initialization"""
