@@ -36,7 +36,9 @@ def cache_dataframe(location: str):
             log.info(f"Caching DataFrame to {full_path}")
             self.df_cache.upsert(df_path, dataframe)
             return dataframe
+
         return wrapper
+
     return decorator
 
 

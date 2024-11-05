@@ -223,7 +223,7 @@ class Artifact(ABC):
             return
 
         # Add the new metadata to the existing metadata
-        self.log.info(f"Upserting SageWorks Metadata for Artifact: {aws_arn}...")
+        self.log.important(f"Adding Tags to {self.uuid}:{str(new_meta)[:50]}...")
         aws_tags = dict_to_aws_tags(new_meta)
         try:
             self.sm_client.add_tags(ResourceArn=aws_arn, Tags=aws_tags)

@@ -1,5 +1,5 @@
 """AthenaSource: SageWorks Data Source accessible through Athena"""
-import os
+
 from typing import Union
 import pandas as pd
 import awswrangler as wr
@@ -554,6 +554,7 @@ class AthenaSource(DataSourceAbstract):
 if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
     import logging
+
     log = logging.getLogger("sageworks")
     log.setLevel(logging.DEBUG)
 

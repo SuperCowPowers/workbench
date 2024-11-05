@@ -327,7 +327,8 @@ class FeatureSetCore(Artifact):
         details["aws_url"] = self.aws_url()
 
         # Store the AWS URL in the SageWorks Metadata
-        self.upsert_sageworks_meta({"aws_url": details["aws_url"]})
+        # FIXME: We need to revisit this but doing an upsert just for aws_url is silly
+        # self.upsert_sageworks_meta({"aws_url": details["aws_url"]})
 
         # Now get a summary of the underlying DataSource
         details["storage_summary"] = self.data_source.summary()
