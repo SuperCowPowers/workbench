@@ -20,7 +20,7 @@ def cache_dataframe(location: str):
         @wraps(method)
         def wrapper(self, *args, **kwargs):
             # Construct the full cache location
-            full_location = f"/sageworks/data_source/{self.uuid}/{location}".replace("//", "/")
+            full_location = f"/sageworks/dataframe_cache/{self.uuid}/{location}".replace("//", "/")
 
             # Check for cached data at the specified location
             cached_df = self.df_store.get(full_location)

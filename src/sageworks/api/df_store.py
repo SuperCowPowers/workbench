@@ -107,7 +107,7 @@ class DFStore:
         response = self.s3_client.list_objects_v2(Bucket=self.sageworks_bucket, Prefix=s3_prefix, MaxKeys=1)
         return "Contents" in response
 
-    @not_found_returns_none(resource_name="DFStore.get(): Data not found in S3.")
+    @not_found_returns_none
     def get(self, location: str) -> Union[pd.DataFrame, None]:
         """Retrieve a DataFrame from AWS S3.
 
@@ -138,9 +138,9 @@ class DFStore:
         s3_uri = self._generate_s3_uri(location)
         try:
             wr.s3.to_parquet(df=data, path=s3_uri, dataset=True, mode="overwrite")
-            self.log.info(f"Data '{location}' added/updated successfully in S3.")
+            self.log.info(f"Dataframe cached {location}...")
         except Exception as e:
-            self.log.critical(f"Failed to add/update data '{location}': {e}")
+            self.log.error(f"Failed to cache dataframe '{location}': {e}")
             raise
 
     def delete(self, location: str):
@@ -162,6 +162,30 @@ class DFStore:
             self.log.info(f"Data '{location}' deleted successfully from S3.")
         except Exception as e:
             self.log.error(f"Failed to delete data '{location}': {e}")
+
+    def delete_recursive(self, location: str):
+        """Recursively delete all data under the specified location in AWS S3.
+
+        Args:
+            location (str): The location prefix of the data to delete.
+        """
+        # Construct the full prefix for S3
+        s3_prefix = f"{self.prefix}{location}".replace("//", "/")
+
+        # List all objects under the given prefix
+        try:
+            response = self.s3_client.list_objects_v2(Bucket=self.sageworks_bucket, Prefix=s3_prefix)
+            if "Contents" not in response:
+                self.log.warning(f"No data found under '{location}' to delete.")
+                return
+
+            # Gather all keys to delete
+            keys = [{"Key": obj["Key"]} for obj in response["Contents"]]
+            self.s3_client.delete_objects(Bucket=self.sageworks_bucket, Delete={"Objects": keys})
+            self.log.info(f"Successfully deleted all data under '{location}'.")
+
+        except Exception as e:
+            self.log.error(f"Failed to delete data recursively at '{location}': {e}")
 
     def _generate_s3_uri(self, location: str) -> str:
         """Generate the S3 URI for the given location."""
@@ -238,6 +262,15 @@ if __name__ == "__main__":
     print("Check if data exists...")
     print(df_store.check("/testing/test_data"))
     print(df_store.check("/testing/test_series"))
+
+    # Add a bunch of dataframes and then test recursive delete
+    for i in range(10):
+        df_store.upsert(f"/testing/data_{i}", pd.DataFrame({"A": [1, 2], "B": [3, 4]}))
+    print("Before Recursive Delete:")
+    print(df_store.summary())
+    df_store.delete_recursive("/testing")
+    print("After Recursive Delete:")
+    print(df_store.summary())
 
     # Get a non-existent DataFrame
     print("Getting non-existent data...")
