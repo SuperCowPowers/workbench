@@ -44,7 +44,7 @@ class Artifact(ABC):
     endpoints_s3_path = f"s3://{sageworks_bucket}/endpoints"
 
     # Grab our Dataframe Storage
-    df_store = DFStore()
+    df_cache = DFStore(path_prefix="/sageworks/dataframe_cache")
 
     # Delimiter for storing lists in AWS Tags
     tag_delimiter = "::"

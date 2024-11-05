@@ -891,9 +891,9 @@ class EndpointCore(Artifact):
                 cls.log.info(f"Deleting S3 Objects at {s3_path}...")
                 wr.s3.delete_objects(objects, boto3_session=cls.boto3_session)
 
-        # Delete any dataframes that were stored in the DF Store
+        # Delete any dataframes that were stored in the Dataframe Cache
         cls.log.info("Deleting Dataframe Cache...")
-        cls.df_store.delete_recursive(f"/sageworks/dataframe_cache/{endpoint_name}")
+        cls.df_cache.delete_recursive(endpoint_name)
 
         # Delete the endpoint
         time.sleep(2)  # Allow AWS to catch up

@@ -1,5 +1,5 @@
 """AthenaSource: SageWorks Data Source accessible through Athena"""
-
+import os
 from typing import Union
 import pandas as pd
 import awswrangler as wr
@@ -43,7 +43,8 @@ class AthenaSource(DataSourceAbstract):
         # Call superclass init
         super().__init__(data_uuid, database)
 
-        # Setup our AWS Metadata Broker
+        # Grab our metadata from the Meta class
+        self.log.info(f"Retrieving metadata for: {self.uuid}...")
         self.data_source_meta = self.meta.data_source(data_uuid, database=database)
         if self.data_source_meta is None:
             self.log.error(f"Unable to find {database}:{self.table} in Glue Catalogs...")
@@ -81,7 +82,6 @@ class AthenaSource(DataSourceAbstract):
         """Get the SageWorks specific metadata for this Artifact"""
 
         # Sanity Check if we have invalid AWS Metadata
-        self.log.info(f"Retrieving SageWorks Metadata for Artifact: {self.uuid}...")
         if self.data_source_meta is None:
             if not self.exists():
                 self.log.error(f"DataSource {self.uuid} doesn't appear to exist...")
@@ -100,6 +100,7 @@ class AthenaSource(DataSourceAbstract):
         Args:
             new_meta (dict): Dictionary of new metadata to add
         """
+        self.log.important(f"Upserting SageWorks Metadata {self.uuid}:{str(new_meta)[:50]}...")
 
         # Give a warning message for keys that don't start with sageworks_
         for key in new_meta.keys():
@@ -477,7 +478,8 @@ class AthenaSource(DataSourceAbstract):
         details["aws_url"] = f"{base_url}?region={self.aws_region}#query/history/{query_exec_id}"
 
         # Push the aws_url data into our DataSource Metadata
-        self.upsert_sageworks_meta({"sageworks_details": {"aws_url": details["aws_url"]}})
+        # FIXME: We need to revisit this but doing an upsert just for aws_url is silly
+        # self.upsert_sageworks_meta({"sageworks_details": {"aws_url": details["aws_url"]}})
 
         # Convert any datetime fields to ISO-8601 strings
         details = convert_all_to_iso8601(details)
@@ -532,9 +534,9 @@ class AthenaSource(DataSourceAbstract):
         except Exception as e:
             cls.log.error(f"Failure when trying to delete {data_source_name}: {e}")
 
-        # Delete any dataframes that were stored in the DF Store
+        # Delete any dataframes that were stored in the Dataframe Cache
         cls.log.info("Deleting Dataframe Cache...")
-        cls.df_store.delete_recursive(f"/sageworks/dataframe_cache/{data_source_name}")
+        cls.df_cache.delete_recursive(data_source_name)
 
     @classmethod
     def delete_views(cls, table: str, database: str):
@@ -551,12 +553,18 @@ class AthenaSource(DataSourceAbstract):
 
 if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
+    import logging
+    log = logging.getLogger("sageworks")
+    log.setLevel(logging.DEBUG)
 
     # Retrieve a Data Source
     my_data = AthenaSource("abalone_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
+
+    # Are we ready?
+    print(f"Ready: {my_data.ready()}")
 
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")

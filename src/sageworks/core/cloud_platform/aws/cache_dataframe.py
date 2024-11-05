@@ -13,17 +13,18 @@ def cache_dataframe(location: str):
     Args:
         location (str): The final part of the cache path (e.g., 'sample', 'features').
 
-    This decorator assumes it is applied to a SageWorks Artifact class (has self.uuid and self.df_store).
+    This decorator assumes it is applied to a SageWorks Artifact class (has self.uuid and self.df_cache).
     """
 
     def decorator(method):
         @wraps(method)
         def wrapper(self, *args, **kwargs):
             # Construct the full cache location
-            full_path = f"/sageworks/dataframe_cache/{self.uuid}/{location}".replace("//", "/")
+            df_path = f"{self.uuid}/{location}".replace("//", "/")
+            full_path = f"{self.df_cache.path_prefix}/{df_path}"
 
             # Check for cached data at the specified location
-            cached_df = self.df_store.get(full_path)
+            cached_df = self.df_cache.get(df_path)
             if cached_df is not None:
                 log.info(f"Returning cached DataFrame from {full_path}")
                 return cached_df
@@ -33,11 +34,9 @@ def cache_dataframe(location: str):
 
             # Cache the result at the specified location
             log.info(f"Caching DataFrame to {full_path}")
-            self.df_store.upsert(full_path, dataframe)
+            self.df_cache.upsert(df_path, dataframe)
             return dataframe
-
         return wrapper
-
     return decorator
 
 

@@ -31,12 +31,16 @@ class DFStore(AWSDFStore):
         ```
     """
 
-    def __init__(self):
-        """DFStore Init Method"""
+    def __init__(self, path_prefix: Union[str, None] = None):
+        """DFStore Init Method
+
+        Args:
+            path_prefix (Union[str, None], optional): Add a path prefix to storage locations (Defaults to None)
+        """
         self.log = logging.getLogger("sageworks")
 
         # Initialize the SuperClass
-        super().__init__()
+        super().__init__(path_prefix=path_prefix)
 
     def summary(self) -> pd.DataFrame:
         """Return a nicely formatted summary of object locations, sizes (in MB), and modified dates.

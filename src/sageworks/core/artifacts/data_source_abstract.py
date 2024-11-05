@@ -215,6 +215,20 @@ class DataSourceAbstract(Artifact):
         """
         pass
 
+    @abstractmethod
+    def correlations(self, recompute: bool = False) -> dict[dict]:
+        """Compute Correlations for all the numeric columns in a DataSource
+
+        Args:
+            recompute (bool): Recompute the column stats (default: False)
+
+        Returns:
+            dict(dict): A dictionary of correlations for each column in this format
+                 {'col1': {'col2': 0.5, 'col3': 0.9, 'col4': 0.4, ...},
+                  'col2': {'col1': 0.5, 'col3': 0.8, 'col4': 0.3, ...}}
+        """
+        pass
+
     def details(self) -> dict:
         """Additional Details about this DataSourceAbstract Artifact"""
         details = self.summary()
@@ -243,10 +257,10 @@ class DataSourceAbstract(Artifact):
         if not super().ready():
             return False
 
-        # When we call these methods they either return the cached data or compute it
-        self.sample()
-        self.outliers()
-        self.smart_sample()
+        # If we don't have a smart_sample we're probably not ready
+        if not self.df_cache.check(f"{self.uuid}/smart_sample"):
+            self.log.warning(f"DataSource {self.uuid} not ready...")
+            return False
 
         # Okay so we have sample, outliers, and smart_sample so we are ready
         return True
@@ -287,9 +301,12 @@ class DataSourceAbstract(Artifact):
         self.view("computation").ensure_exists()
 
         # Compute the sample, column stats, outliers, and smart_sample
-        self.sample(recompute=True)
+        self.df_cache.delete(f"{self.uuid}/sample")
+        self.sample()
         self.column_stats(recompute=True)
         self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts
-        self.outliers(recompute=True)
-        self.smart_sample(recompute=True)
+        self.df_cache.delete(f"{self.uuid}/outliers")
+        self.outliers()
+        self.df_cache.delete(f"{self.uuid}/smart_sample")
+        self.smart_sample()
         return True
