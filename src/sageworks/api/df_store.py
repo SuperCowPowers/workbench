@@ -4,11 +4,11 @@ from typing import Union
 import logging
 import awswrangler as wr
 import pandas as pd
-from botocore.exceptions import ClientError
 
 # SageWorks Imports
 from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.config_manager import ConfigManager
+from sageworks.utils.aws_utils import not_found_returns_none
 
 
 class DFStore:
@@ -50,13 +50,13 @@ class DFStore:
         self.s3_client = self.boto3_session.client("s3")
 
     def summary(self) -> pd.DataFrame:
-        """Return a nicely formatted summary of object names, sizes (in MB), and modified dates."""
+        """Return a nicely formatted summary of object locations, sizes (in MB), and modified dates."""
         df = self.details()
 
         # Create a formatted DataFrame
         formatted_df = pd.DataFrame(
             {
-                "name": df["name"],
+                "location": df["location"],
                 "size (MB)": (df["size"] / (1024 * 1024)).round(2),  # Convert size to MB
                 "modified": pd.to_datetime(df["modified"]).dt.strftime("%Y-%m-%d %H:%M:%S"),  # Format date
             }
@@ -68,7 +68,7 @@ class DFStore:
         try:
             response = self.s3_client.list_objects_v2(Bucket=self.sageworks_bucket, Prefix=self.prefix)
             if "Contents" not in response:
-                return pd.DataFrame(columns=["name", "s3_file", "size", "modified"])
+                return pd.DataFrame(columns=["location", "s3_file", "size", "modified"])
 
             # Collect details for each object
             data = []
@@ -76,58 +76,55 @@ class DFStore:
                 full_key = obj["Key"]
 
                 # Reverse logic: Strip the bucket/prefix in the front and .parquet in the end
-                name = full_key.replace(f"{self.prefix}", "/").split(".parquet")[0]
+                location = full_key.replace(f"{self.prefix}", "/").split(".parquet")[0]
                 s3_file = f"s3://{self.sageworks_bucket}/{full_key}"
                 size = obj["Size"]
                 modified = obj["LastModified"]
-                data.append([name, s3_file, size, modified])
+                data.append([location, s3_file, size, modified])
 
             # Create and return DataFrame
-            df = pd.DataFrame(data, columns=["name", "s3_file", "size", "modified"])
+            df = pd.DataFrame(data, columns=["location", "s3_file", "size", "modified"])
             return df
 
         except Exception as e:
             self.log.error(f"Failed to get object details: {e}")
-            return pd.DataFrame(columns=["name", "s3_file", "size", "created", "modified"])
+            return pd.DataFrame(columns=["location", "s3_file", "size", "created", "modified"])
 
-    def check(self, name: str) -> bool:
-        """Check if a named DataFrame exists in AWS S3.
+    def check(self, location: str) -> bool:
+        """Check if a DataFrame exists at the specified location
 
         Args:
-            name (str): The name of the data to check.
+            location (str): The location of the data to check.
 
         Returns:
             bool: True if the data exists, False otherwise.
         """
-        # Generate the specific S3 prefix for the target name
-        s3_prefix = f"{self.prefix}{name}.parquet/"
+        # Generate the specific S3 prefix for the target location
+        s3_prefix = f"{self.prefix}{location}.parquet/"
+        s3_prefix = s3_prefix.replace("//", "/")  # Remove any double slashes
 
         # Use list_objects_v2 to check if any objects exist under this specific prefix
         response = self.s3_client.list_objects_v2(Bucket=self.sageworks_bucket, Prefix=s3_prefix, MaxKeys=1)
         return "Contents" in response
 
-    def get(self, name: str) -> pd.DataFrame:
+    @not_found_returns_none(resource_name="DFStore.get(): Data not found in S3.")
+    def get(self, location: str) -> Union[pd.DataFrame, None]:
         """Retrieve a DataFrame from AWS S3.
 
         Args:
-            name (str): The name of the data to retrieve.
+            location (str): The location of the data to retrieve.
 
         Returns:
-            pd.DataFrame: The retrieved DataFrame.
+            pd.DataFrame: The retrieved DataFrame or None if not found.
         """
-        s3_uri = self._generate_s3_uri(name)
-        try:
-            df = wr.s3.read_parquet(s3_uri)
-            return df
-        except ClientError:
-            self.log.warning(f"Data '{name}' not found in S3.")
-            return pd.DataFrame()  # Return an empty DataFrame if not found
+        s3_uri = self._generate_s3_uri(location)
+        return wr.s3.read_parquet(s3_uri)
 
-    def upsert(self, name: str, data: Union[pd.DataFrame, pd.Series]):
+    def upsert(self, location: str, data: Union[pd.DataFrame, pd.Series]):
         """Insert or update a DataFrame or Series in the AWS S3.
 
         Args:
-            name (str): The name of the data.
+            location (str): The location of the data.
             data (Union[pd.DataFrame, pd.Series]): The data to be stored.
         """
         # Check if the data is a Pandas Series, convert it to a DataFrame
@@ -138,37 +135,37 @@ class DFStore:
         if not isinstance(data, pd.DataFrame):
             raise ValueError("Only Pandas DataFrame or Series objects are supported.")
 
-        s3_uri = self._generate_s3_uri(name)
+        s3_uri = self._generate_s3_uri(location)
         try:
             wr.s3.to_parquet(df=data, path=s3_uri, dataset=True, mode="overwrite")
-            self.log.info(f"Data '{name}' added/updated successfully in S3.")
+            self.log.info(f"Data '{location}' added/updated successfully in S3.")
         except Exception as e:
-            self.log.critical(f"Failed to add/update data '{name}': {e}")
+            self.log.critical(f"Failed to add/update data '{location}': {e}")
             raise
 
-    def delete(self, name: str):
+    def delete(self, location: str):
         """Delete a DataFrame from the AWS S3.
 
         Args:
-            name (str): The name of the data to delete.
+            location (str): The location of the data to delete.
         """
-        s3_uri = self._generate_s3_uri(name)
+        s3_uri = self._generate_s3_uri(location)
 
         # Check if the folder (prefix) exists in S3
         if not wr.s3.list_objects(s3_uri):
-            self.log.warning(f"Data '{name}' does not exist in S3. Cannot delete.")
+            self.log.warning(f"Data '{location}' does not exist in S3. Cannot delete.")
             return
 
         # Delete the data from S3
         try:
             wr.s3.delete_objects(s3_uri)
-            self.log.info(f"Data '{name}' deleted successfully from S3.")
+            self.log.info(f"Data '{location}' deleted successfully from S3.")
         except Exception as e:
-            self.log.error(f"Failed to delete data '{name}': {e}")
+            self.log.error(f"Failed to delete data '{location}': {e}")
 
-    def _generate_s3_uri(self, name: str) -> str:
-        """Generate the S3 URI for the given name."""
-        s3_path = f"{self.sageworks_bucket}/{self.prefix}{name}.parquet"
+    def _generate_s3_uri(self, location: str) -> str:
+        """Generate the S3 URI for the given location."""
+        s3_path = f"{self.sageworks_bucket}/{self.prefix}{location}.parquet"
         s3_path = s3_path.replace("//", "/")
         s3_uri = f"s3://{s3_path}"
         return s3_uri
@@ -178,9 +175,9 @@ class DFStore:
         # Use the summary() method and format it to align columns for printing
         summary_df = self.summary()
 
-        # Dynamically compute the max length of the 'name' column and add 5 spaces for padding
-        max_name_len = summary_df["name"].str.len().max() + 2
-        summary_df["name"] = summary_df["name"].str.ljust(max_name_len)
+        # Dynamically compute the max length of the 'location' column and add 5 spaces for padding
+        max_location_len = summary_df["location"].str.len().max() + 2
+        summary_df["location"] = summary_df["location"].str.ljust(max_location_len)
 
         # Format the size column to include (MB) and ensure 3 spaces between size and date
         summary_df["size (MB)"] = summary_df["size (MB)"].apply(lambda x: f"{x:.2f} MB")
@@ -205,15 +202,15 @@ if __name__ == "__main__":
 
     # Add a new DataFrame
     my_df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    df_store.upsert("test_data", my_df)
+    df_store.upsert("/testing/test_data", my_df)
 
     # Get the DataFrame
-    print(f"Getting data 'test_data':\n{df_store.get('test_data')}")
+    print(f"Getting data 'test_data':\n{df_store.get('/testing/test_data')}")
 
     # Now let's test adding a Series
     series = pd.Series([1, 2, 3, 4], name="Series")
-    df_store.upsert("test_series", series)
-    print(f"Getting data 'test_series':\n{df_store.get('test_series')}")
+    df_store.upsert("/testing/test_series", series)
+    print(f"Getting data 'test_series':\n{df_store.get('/testing/test_series')}")
 
     # Summary of the data
     print("Summary Data...")
@@ -225,19 +222,23 @@ if __name__ == "__main__":
 
     # Check if the data exists
     print("Check if data exists...")
-    print(df_store.check("test_data"))
-    print(df_store.check("test_series"))
+    print(df_store.check("/testing/test_data"))
+    print(df_store.check("/testing/test_series"))
 
     # Time the check
     start_time = time.time()
-    print(df_store.check("test_data"))
+    print(df_store.check("/testing/test_data"))
     print("--- Check %s seconds ---" % (time.time() - start_time))
 
     # Now delete the test data
-    df_store.delete("test_data")
-    df_store.delete("test_series")
+    df_store.delete("/testing/test_data")
+    df_store.delete("/testing/test_series")
 
     # Check if the data exists
     print("Check if data exists...")
-    print(df_store.check("test_data"))
-    print(df_store.check("test_series"))
+    print(df_store.check("/testing/test_data"))
+    print(df_store.check("/testing/test_series"))
+
+    # Get a non-existent DataFrame
+    print("Getting non-existent data...")
+    print(df_store.get("/testing/no_where"))
