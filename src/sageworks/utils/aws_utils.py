@@ -138,6 +138,9 @@ def not_found_returns_none(func: Optional[Callable] = None, *, resource_name: st
                 else:
                     log.critical(f"Critical error in AWS call: {error_code}")
                     raise
+            except wr.exceptions.NoFilesFound:
+                log.important(f"No Resource Found: {resource_name}. Returning None...")
+                return None
 
         return wrapper
 
