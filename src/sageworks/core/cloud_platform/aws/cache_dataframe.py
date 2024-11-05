@@ -20,20 +20,20 @@ def cache_dataframe(location: str):
         @wraps(method)
         def wrapper(self, *args, **kwargs):
             # Construct the full cache location
-            full_location = f"/sageworks/dataframe_cache/{self.uuid}/{location}".replace("//", "/")
+            full_path = f"/sageworks/dataframe_cache/{self.uuid}/{location}".replace("//", "/")
 
             # Check for cached data at the specified location
-            cached_df = self.df_store.get(full_location)
+            cached_df = self.df_store.get(full_path)
             if cached_df is not None:
-                log.info(f"Returning cached DataFrame from {full_location}")
+                log.info(f"Returning cached DataFrame from {full_path}")
                 return cached_df
 
             # Call the original method to fetch the DataFrame
             dataframe = method(self, *args, **kwargs)
 
             # Cache the result at the specified location
-            log.info(f"Caching DataFrame to {full_location}")
-            self.df_store.upsert(full_location, dataframe)
+            log.info(f"Caching DataFrame to {full_path}")
+            self.df_store.upsert(full_path, dataframe)
             return dataframe
 
         return wrapper

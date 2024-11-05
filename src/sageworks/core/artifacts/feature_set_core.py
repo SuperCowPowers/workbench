@@ -401,12 +401,8 @@ class FeatureSetCore(Artifact):
         wr.s3.delete_objects(s3_delete_path, boto3_session=cls.boto3_session)
 
         # Delete any dataframes that were stored in the DF Store
-        cls.log.warning("FeatureSet: Put in DF Store Deletion Logic...")
-        """
-        for key in cls.data_storage.list_subkeys(f"feature_set:{feature_set_name}:"):
-            cls.log.info(f"Deleting Cache Key: {key}")
-            cls.data_storage.delete(key)
-        """
+        cls.log.info("Deleting Dataframe Cache...")
+        cls.df_store.delete_recursive(f"/sageworks/dataframe_cache/{feature_set_name}")
 
     @classmethod
     @aws_throttle

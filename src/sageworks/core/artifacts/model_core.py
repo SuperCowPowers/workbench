@@ -727,13 +727,8 @@ class ModelCore(Artifact):
         wr.s3.delete_objects(s3_delete_path, boto3_session=cls.boto3_session)
 
         # Delete any dataframes that were stored in the DF Store
-        cls.log.warning("Model: Put in DF Store Deletion Logic...")
-        """
-        cache_keys = cls.data_storage.list_subkeys(f"model_group:{model_group_name}:")
-        for key in cache_keys:
-            cls.log.info(f"Deleting Cache Key {key}...")
-            cls.data_storage.delete(key)
-        """
+        cls.log.info("Deleting Dataframe Cache...")
+        cls.df_store.delete_recursive(f"/sageworks/dataframe_cache/{model_group_name}")
 
     def _set_model_type(self, model_type: ModelType):
         """Internal: Set the Model Type for this Model"""

@@ -533,12 +533,8 @@ class AthenaSource(DataSourceAbstract):
             cls.log.error(f"Failure when trying to delete {data_source_name}: {e}")
 
         # Delete any dataframes that were stored in the DF Store
-        cls.log.warning("DataSource: Put in DF Store Deletion Logic...")
-        """
-        for key in cls.df_store.list_subkeys(f"data_source:{data_source_name}:"):
-            cls.log.info(f"Deleting Cache Key {key}...")
-            cls.data_storage.delete(key)
-        """
+        cls.log.info("Deleting Dataframe Cache...")
+        cls.df_store.delete_recursive(f"/sageworks/dataframe_cache/{data_source_name}")
 
     @classmethod
     def delete_views(cls, table: str, database: str):
