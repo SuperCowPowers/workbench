@@ -20,7 +20,7 @@ class PandasToFeatures(Transform):
         ```python
         to_features = PandasToFeatures(output_uuid)
         to_features.set_output_tags(["abalone", "public", "whatever"])
-        to_features.set_input(df, id_column="id"/None, event_time_column="date"/None)
+        to_features.set_input(df)
         to_features.transform()
         ```
     """

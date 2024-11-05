@@ -481,14 +481,7 @@ class ModelCore(Artifact):
         Returns:
             dict: Dictionary of details about this Model
         """
-
-        # Check if we have cached version of the Model Details
-        storage_key = f"model:{self.uuid}:details"
-        cached_details = self.data_storage.get(storage_key)
-        if cached_details and not recompute:
-            return cached_details
-
-        self.log.info("Recomputing Model Details...")
+        self.log.info("Computing Model Details...")
         details = self.summary()
         details["pipeline"] = self.get_pipeline()
         details["model_type"] = self.model_type.value
@@ -526,9 +519,6 @@ class ModelCore(Artifact):
 
         # Grab the inference metadata
         details["inference_meta"] = self.get_inference_metadata()
-
-        # Cache the details
-        self.data_storage.set(storage_key, details)
 
         # Return the details
         return details
@@ -736,11 +726,9 @@ class ModelCore(Artifact):
         cls.log.info(f"Deleting S3 Objects at {s3_delete_path}...")
         wr.s3.delete_objects(s3_delete_path, boto3_session=cls.boto3_session)
 
-        # Delete any related data in the Cache
-        cache_keys = cls.data_storage.list_subkeys(f"model_group:{model_group_name}:")
-        for key in cache_keys:
-            cls.log.info(f"Deleting Cache Key {key}...")
-            cls.data_storage.delete(key)
+        # Delete any dataframes that were stored in the Dataframe Cache
+        cls.log.info("Deleting Dataframe Cache...")
+        cls.df_cache.delete_recursive(model_group_name)
 
     def _set_model_type(self, model_type: ModelType):
         """Internal: Set the Model Type for this Model"""

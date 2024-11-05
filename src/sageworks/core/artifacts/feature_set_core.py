@@ -322,18 +322,13 @@ class FeatureSetCore(Artifact):
             dict(dict): A dictionary of details about this FeatureSet
         """
 
-        # Check if we have cached version of the FeatureSet Details
-        storage_key = f"feature_set:{self.uuid}:details"
-        cached_details = self.data_storage.get(storage_key)
-        if cached_details and not recompute:
-            return cached_details
-
-        self.log.info(f"Recomputing FeatureSet Details ({self.uuid})...")
+        self.log.info(f"Computing FeatureSet Details ({self.uuid})...")
         details = self.summary()
         details["aws_url"] = self.aws_url()
 
         # Store the AWS URL in the SageWorks Metadata
-        self.upsert_sageworks_meta({"aws_url": details["aws_url"]})
+        # FIXME: We need to revisit this but doing an upsert just for aws_url is silly
+        # self.upsert_sageworks_meta({"aws_url": details["aws_url"]})
 
         # Now get a summary of the underlying DataSource
         details["storage_summary"] = self.data_source.summary()
@@ -356,9 +351,6 @@ class FeatureSetCore(Artifact):
         # Add the column details and column stats
         details["column_details"] = self.column_details()
         details["column_stats"] = self.column_stats()
-
-        # Cache the details
-        self.data_storage.set(storage_key, details)
 
         # Return the details data
         return details
@@ -409,10 +401,9 @@ class FeatureSetCore(Artifact):
         cls.log.info(f"Deleting All FeatureSet S3 Storage Objects {s3_delete_path}")
         wr.s3.delete_objects(s3_delete_path, boto3_session=cls.boto3_session)
 
-        # Now delete any data in the Cache
-        for key in cls.data_storage.list_subkeys(f"feature_set:{feature_set_name}:"):
-            cls.log.info(f"Deleting Cache Key: {key}")
-            cls.data_storage.delete(key)
+        # Delete any dataframes that were stored in the Dataframe Cache
+        cls.log.info("Deleting Dataframe Cache...")
+        cls.df_cache.delete_recursive(feature_set_name)
 
     @classmethod
     @aws_throttle

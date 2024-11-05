@@ -1,7 +1,6 @@
 """AthenaSource: SageWorks Data Source accessible through Athena"""
 
 from typing import Union
-from io import StringIO
 import pandas as pd
 import awswrangler as wr
 from datetime import datetime
@@ -16,6 +15,7 @@ from sageworks.utils.datetime_utils import convert_all_to_iso8601
 from sageworks.algorithms import sql
 from sageworks.utils.json_utils import CustomEncoder
 from sageworks.utils.aws_utils import decode_value
+from sageworks.core.cloud_platform.aws.cache_dataframe import cache_dataframe
 
 
 class AthenaSource(DataSourceAbstract):
@@ -43,7 +43,8 @@ class AthenaSource(DataSourceAbstract):
         # Call superclass init
         super().__init__(data_uuid, database)
 
-        # Setup our AWS Metadata Broker
+        # Grab our metadata from the Meta class
+        self.log.info(f"Retrieving metadata for: {self.uuid}...")
         self.data_source_meta = self.meta.data_source(data_uuid, database=database)
         if self.data_source_meta is None:
             self.log.error(f"Unable to find {database}:{self.table} in Glue Catalogs...")
@@ -81,7 +82,6 @@ class AthenaSource(DataSourceAbstract):
         """Get the SageWorks specific metadata for this Artifact"""
 
         # Sanity Check if we have invalid AWS Metadata
-        self.log.info(f"Retrieving SageWorks Metadata for Artifact: {self.uuid}...")
         if self.data_source_meta is None:
             if not self.exists():
                 self.log.error(f"DataSource {self.uuid} doesn't appear to exist...")
@@ -100,6 +100,7 @@ class AthenaSource(DataSourceAbstract):
         Args:
             new_meta (dict): Dictionary of new metadata to add
         """
+        self.log.important(f"Upserting SageWorks Metadata {self.uuid}:{str(new_meta)[:50]}...")
 
         # Give a warning message for keys that don't start with sageworks_
         for key in new_meta.keys():
@@ -281,16 +282,6 @@ class AthenaSource(DataSourceAbstract):
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
-    def sample_impl(self) -> pd.DataFrame:
-        """Pull a sample of rows from the DataSource
-
-        Returns:
-            pd.DataFrame: A sample DataFrame for an Athena DataSource
-        """
-
-        # Call the SQL function to pull a sample of the rows
-        return sql.sample_rows(self)
-
     def descriptive_stats(self, recompute: bool = False) -> dict[dict]:
         """Compute Descriptive Stats for all the numeric columns in a DataSource
 
@@ -317,7 +308,19 @@ class AthenaSource(DataSourceAbstract):
         # Return the descriptive stats
         return stat_dict
 
-    def outliers_impl(self, scale: float = 1.5, use_stddev=False) -> pd.DataFrame:
+    @cache_dataframe("sample")
+    def sample(self) -> pd.DataFrame:
+        """Pull a sample of rows from the DataSource
+
+        Returns:
+            pd.DataFrame: A sample DataFrame for an Athena DataSource
+        """
+
+        # Call the SQL function to pull a sample of the rows
+        return sql.sample_rows(self)
+
+    @cache_dataframe("outliers")
+    def outliers(self, scale: float = 1.5, use_stddev=False) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
 
         Args:
@@ -336,6 +339,7 @@ class AthenaSource(DataSourceAbstract):
         sql_outliers = sql.outliers.Outliers()
         return sql_outliers.compute_outliers(self, scale=scale, use_stddev=use_stddev)
 
+    @cache_dataframe("smart_sample")
     def smart_sample(self, recompute: bool = False) -> pd.DataFrame:
         """Get a smart sample dataframe for this DataSource
 
@@ -346,19 +350,14 @@ class AthenaSource(DataSourceAbstract):
             pd.DataFrame: A combined DataFrame of sample data + outliers
         """
 
-        # Check if we have cached smart_sample data
-        storage_key = f"data_source:{self.uuid}:smart_sample"
-        if not recompute and self.data_storage.get(storage_key):
-            return pd.read_json(StringIO(self.data_storage.get(storage_key)))
-
         # Compute/recompute the smart sample
         self.log.important(f"Computing Smart Sample {self.uuid}...")
 
         # Outliers DataFrame
-        outlier_rows = self.outliers(recompute=recompute)
+        outlier_rows = self.outliers()
 
         # Sample DataFrame
-        sample_rows = self.sample(recompute=recompute)
+        sample_rows = self.sample()
         sample_rows["outlier_group"] = "sample"
 
         # Combine the sample rows with the outlier rows
@@ -367,9 +366,6 @@ class AthenaSource(DataSourceAbstract):
         # Drop duplicates
         all_except_outlier_group = [col for col in all_rows.columns if col != "outlier_group"]
         all_rows = all_rows.drop_duplicates(subset=all_except_outlier_group, ignore_index=True)
-
-        # Cache the smart_sample data
-        self.data_storage.set(storage_key, all_rows.to_json())
 
         # Return the smart_sample data
         return all_rows
@@ -464,14 +460,7 @@ class AthenaSource(DataSourceAbstract):
         Returns:
             dict(dict): A dictionary of details about this AthenaSource
         """
-
-        # Check if we have cached version of the DataSource Details
-        storage_key = f"data_source:{self.uuid}:details"
-        cached_details = self.data_storage.get(storage_key)
-        if cached_details and not recompute:
-            return cached_details
-
-        self.log.info(f"Recomputing DataSource Details ({self.uuid})...")
+        self.log.info(f"Computing DataSource Details ({self.uuid})...")
 
         # Get the details from the base class
         details = super().details()
@@ -489,16 +478,14 @@ class AthenaSource(DataSourceAbstract):
         details["aws_url"] = f"{base_url}?region={self.aws_region}#query/history/{query_exec_id}"
 
         # Push the aws_url data into our DataSource Metadata
-        self.upsert_sageworks_meta({"sageworks_details": {"aws_url": details["aws_url"]}})
+        # FIXME: We need to revisit this but doing an upsert just for aws_url is silly
+        # self.upsert_sageworks_meta({"sageworks_details": {"aws_url": details["aws_url"]}})
 
         # Convert any datetime fields to ISO-8601 strings
         details = convert_all_to_iso8601(details)
 
         # Add the column stats
         details["column_stats"] = self.column_stats()
-
-        # Cache the details
-        self.data_storage.set(storage_key, details)
 
         # Return the details data
         return details
@@ -547,10 +534,9 @@ class AthenaSource(DataSourceAbstract):
         except Exception as e:
             cls.log.error(f"Failure when trying to delete {data_source_name}: {e}")
 
-        # Delete any data in the Cache
-        for key in cls.data_storage.list_subkeys(f"data_source:{data_source_name}:"):
-            cls.log.info(f"Deleting Cache Key {key}...")
-            cls.data_storage.delete(key)
+        # Delete any dataframes that were stored in the Dataframe Cache
+        cls.log.info("Deleting Dataframe Cache...")
+        cls.df_cache.delete_recursive(data_source_name)
 
     @classmethod
     def delete_views(cls, table: str, database: str):
@@ -567,12 +553,19 @@ class AthenaSource(DataSourceAbstract):
 
 if __name__ == "__main__":
     """Exercise the AthenaSource Class"""
+    import logging
+
+    log = logging.getLogger("sageworks")
+    log.setLevel(logging.DEBUG)
 
     # Retrieve a Data Source
     my_data = AthenaSource("abalone_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
+
+    # Are we ready?
+    print(f"Ready: {my_data.ready()}")
 
     # What's my SageWorks UUID
     print(f"UUID: {my_data.uuid}")

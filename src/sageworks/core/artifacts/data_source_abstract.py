@@ -2,7 +2,6 @@
 
 from abc import abstractmethod
 import pandas as pd
-from io import StringIO
 import time
 
 # SageWorks Imports
@@ -145,28 +144,10 @@ class DataSourceAbstract(Artifact):
         """
         pass
 
-    def sample(self, recompute: bool = False) -> pd.DataFrame:
-        """Return a sample DataFrame from this DataSource
-        Args:
-            recompute (bool): Recompute the sample (default: False)
-        Returns:
-            pd.DataFrame: A sample DataFrame from this DataSource
-        """
-
-        # Check if we have a cached sample of rows
-        storage_key = f"data_source:{self.uuid}:sample"
-        if not recompute and self.data_storage.get(storage_key):
-            return pd.read_json(StringIO(self.data_storage.get(storage_key)))
-
-        # No Cache, so we have to compute a sample of data
-        self.log.info(f"Sampling {self.uuid}...")
-        df = self.sample_impl()
-        self.data_storage.set(storage_key, df.to_json())
-        return df
-
     @abstractmethod
-    def sample_impl(self) -> pd.DataFrame:
+    def sample(self) -> pd.DataFrame:
         """Return a sample DataFrame from this DataSourceAbstract
+
         Returns:
             pd.DataFrame: A sample DataFrame from this DataSource
         """
@@ -184,36 +165,16 @@ class DataSourceAbstract(Artifact):
         """
         pass
 
-    def outliers(self, scale: float = 1.5, recompute: bool = False) -> pd.DataFrame:
-        """Return a DataFrame of outliers from this DataSource
-        Args:
-            scale (float): The scale to use for the IQR (default: 1.5)
-            recompute (bool): Recompute the outliers (default: False)
-        Returns:
-            pd.DataFrame: A DataFrame of outliers from this DataSource
-        Notes:
-            Uses the IQR * 1.5 (~= 2.5 Sigma) method to compute outliers
-            The scale parameter can be adjusted to change the IQR multiplier
-        """
-
-        # Check if we have cached outliers
-        storage_key = f"data_source:{self.uuid}:outliers"
-        if not recompute and self.data_storage.get(storage_key):
-            return pd.read_json(StringIO(self.data_storage.get(storage_key)))
-
-        # No Cache, so we have to compute the outliers
-        self.log.info(f"Computing Outliers {self.uuid}...")
-        df = self.outliers_impl(scale=scale)
-        self.data_storage.set(storage_key, df.to_json())
-        return df
-
     @abstractmethod
-    def outliers_impl(self, scale: float = 1.5) -> pd.DataFrame:
+    def outliers(self, scale: float = 1.5) -> pd.DataFrame:
         """Return a DataFrame of outliers from this DataSource
+
         Args:
             scale (float): The scale to use for the IQR (default: 1.5)
+
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
+
         Notes:
             Uses the IQR * 1.5 (~= 2.5 Sigma) method to compute outliers
             The scale parameter can be adjusted to change the IQR multiplier
@@ -254,6 +215,20 @@ class DataSourceAbstract(Artifact):
         """
         pass
 
+    @abstractmethod
+    def correlations(self, recompute: bool = False) -> dict[dict]:
+        """Compute Correlations for all the numeric columns in a DataSource
+
+        Args:
+            recompute (bool): Recompute the column stats (default: False)
+
+        Returns:
+            dict(dict): A dictionary of correlations for each column in this format
+                 {'col1': {'col2': 0.5, 'col3': 0.9, 'col4': 0.4, ...},
+                  'col2': {'col1': 0.5, 'col3': 0.8, 'col4': 0.3, ...}}
+        """
+        pass
+
     def details(self) -> dict:
         """Additional Details about this DataSourceAbstract Artifact"""
         details = self.summary()
@@ -282,23 +257,12 @@ class DataSourceAbstract(Artifact):
         if not super().ready():
             return False
 
-        # Check if the samples and outliers have been computed
-        storage_key = f"data_source:{self.uuid}:sample"
-        if not self.data_storage.get(storage_key):
-            self.log.important(f"DataSource {self.uuid} doesn't have sample() calling it...")
-            self.sample()
-        storage_key = f"data_source:{self.uuid}:outliers"
-        if not self.data_storage.get(storage_key):
-            self.log.important(f"DataSource {self.uuid} doesn't have outliers() calling it...")
-            try:
-                self.outliers()
-            except KeyError:
-                self.log.error("DataSource outliers() failed...recomputing columns stats and trying again...")
-                self.column_stats(recompute=True)
-                self.refresh_meta()
-                self.outliers()
+        # If we don't have a smart_sample we're probably not ready
+        if not self.df_cache.check(f"{self.uuid}/smart_sample"):
+            self.log.warning(f"DataSource {self.uuid} not ready...")
+            return False
 
-        # Okay so we have the samples and outliers, so we are ready
+        # Okay so we have sample, outliers, and smart_sample so we are ready
         return True
 
     def onboard(self) -> bool:
@@ -337,9 +301,12 @@ class DataSourceAbstract(Artifact):
         self.view("computation").ensure_exists()
 
         # Compute the sample, column stats, outliers, and smart_sample
-        self.sample(recompute=True)
+        self.df_cache.delete(f"{self.uuid}/sample")
+        self.sample()
         self.column_stats(recompute=True)
         self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts
-        self.outliers(recompute=True)
-        self.smart_sample(recompute=True)
+        self.df_cache.delete(f"{self.uuid}/outliers")
+        self.outliers()
+        self.df_cache.delete(f"{self.uuid}/smart_sample")
+        self.smart_sample()
         return True

@@ -25,6 +25,7 @@ class FeatureSet(FeatureSetCore):
             ModelType.REGRESSOR,
             name="abalone-regression",
             target_column="class_number_of_rings"
+            feature_list=["my", "best", "features"])
         )
         ```
     """

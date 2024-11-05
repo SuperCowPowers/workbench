@@ -9,7 +9,7 @@ import logging
 # SageWorks Imports
 from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.core.cloud_platform.aws.aws_meta import AWSMeta as Meta
-from sageworks.utils.sageworks_cache import SageWorksCache
+from sageworks.core.cloud_platform.aws.aws_df_store import AWSDFStore as DFStore
 from sageworks.utils.aws_utils import sagemaker_delete_tag, dict_to_aws_tags
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
@@ -43,8 +43,8 @@ class Artifact(ABC):
     models_s3_path = f"s3://{sageworks_bucket}/models"
     endpoints_s3_path = f"s3://{sageworks_bucket}/endpoints"
 
-    # Data Cache for Artifacts
-    data_storage = SageWorksCache(prefix="data_storage")
+    # Grab our Dataframe Storage
+    df_cache = DFStore(path_prefix="/sageworks/dataframe_cache")
 
     # Delimiter for storing lists in AWS Tags
     tag_delimiter = "::"
@@ -223,7 +223,7 @@ class Artifact(ABC):
             return
 
         # Add the new metadata to the existing metadata
-        self.log.info(f"Upserting SageWorks Metadata for Artifact: {aws_arn}...")
+        self.log.important(f"Adding Tags to {self.uuid}:{str(new_meta)[:50]}...")
         aws_tags = dict_to_aws_tags(new_meta)
         try:
             self.sm_client.add_tags(ResourceArn=aws_arn, Tags=aws_tags)

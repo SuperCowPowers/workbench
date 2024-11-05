@@ -281,7 +281,6 @@ if __name__ == "__main__":
     """Exercise the ViewManager Class"""
     # See tests/views/views_tests.py for more examples
     import numpy as np
-    from sageworks.api import DataSource, FeatureSet
     from sageworks.core.views.pandas_to_view import PandasToView
 
     # Show trace calls
