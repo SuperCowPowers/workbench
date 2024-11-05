@@ -1,4 +1,5 @@
 """Cache Dataframe Decorator: Easy decorator to cache DataFrames using AWS S3/Parquet/Snappy"""
+
 import logging
 from functools import wraps
 
@@ -14,6 +15,7 @@ def cache_dataframe(location: str):
 
     This decorator assumes it is applied to a SageWorks Artifact class (has self.uuid and self.df_store).
     """
+
     def decorator(method):
         @wraps(method)
         def wrapper(self, *args, **kwargs):
@@ -33,7 +35,9 @@ def cache_dataframe(location: str):
             log.info(f"Caching DataFrame to {full_location}")
             self.df_store.upsert(full_location, dataframe)
             return dataframe
+
         return wrapper
+
     return decorator
 
 
@@ -41,5 +45,6 @@ if __name__ == "__main__":
     """Exercise the DataFrame Decorator"""
 
     from sageworks.api.data_source import DataSource
+
     ds = DataSource("test_data")
     ds.sample()  # Since the method uses the decorator, the result will be cached

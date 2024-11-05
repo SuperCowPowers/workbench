@@ -237,15 +237,6 @@ class EndpointCore(Artifact):
         Returns:
             dict(dict): A dictionary of details about this Endpoint
         """
-        # Check if we have cached version of the FeatureSet Details
-        details_key = f"endpoint:{self.uuid}:details"
-
-        cached_details = self.data_storage.get(details_key)
-        if cached_details and not recompute:
-            # Update the endpoint metrics before returning cached details
-            endpoint_metrics = self.endpoint_metrics()
-            cached_details["endpoint_metrics"] = endpoint_metrics
-            return cached_details
 
         # Fill in all the details about this Endpoint
         details = self.summary()
@@ -273,9 +264,6 @@ class EndpointCore(Artifact):
 
         # Add endpoint metrics from CloudWatch
         details["endpoint_metrics"] = self.endpoint_metrics()
-
-        # Cache the details
-        self.data_storage.set(details_key, details)
 
         # Return the details
         return details
@@ -903,11 +891,14 @@ class EndpointCore(Artifact):
                 cls.log.info(f"Deleting S3 Objects at {s3_path}...")
                 wr.s3.delete_objects(objects, boto3_session=cls.boto3_session)
 
-        # Clear related cache data
+        # Delete any dataframes that were stored in the DF Store
+        cls.log.warning("Model: Put in DF Store Deletion Logic...")
+        """
         cache_keys = cls.data_storage.list_subkeys(f"endpoint:{endpoint_name}:")
         for key in cache_keys:
             cls.log.info(f"Deleting Cache Key {key}...")
             cls.data_storage.delete(key)
+        """
 
         # Delete the endpoint
         time.sleep(2)  # Allow AWS to catch up
