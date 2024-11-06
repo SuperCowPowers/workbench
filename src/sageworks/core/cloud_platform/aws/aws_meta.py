@@ -555,6 +555,10 @@ class AWSMeta:
 
         return pd.DataFrame(data_summary).convert_dtypes()
 
+    def close(self):
+        """Close the AWSMeta Class"""
+        self.log.debug("Closing the AWSMeta Class")
+
     def __repr__(self):
         return f"AWSMeta({self.account_clamp.account_id}: {self.account_clamp.region})"
 
