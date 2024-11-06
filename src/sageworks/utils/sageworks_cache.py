@@ -84,7 +84,7 @@ class SageWorksCache:
             return len(str(value))
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(\n" f"    {repr(self._actual_cache)}\n" ")"
+        return f"SageWorksCache({repr(self._actual_cache)})"
 
 
 if __name__ == "__main__":
@@ -93,6 +93,9 @@ if __name__ == "__main__":
     # Create the SageWorks Cache
     my_cache = SageWorksCache(prefix="test")
     assert my_cache.check()
+
+    # Test the __repr__ method
+    print(my_cache)
 
     # Delete anything in the test database
     my_cache.clear()

@@ -268,7 +268,7 @@ class CachedMeta(Meta):
         self.thread_pool.shutdown(wait=True)
 
     def __repr__(self):
-        return f"CachedMeta()\n\t{super().__repr__()}"
+        return f"CachedMeta()\n\t{repr(self.meta_cache)}\n\t{super().__repr__()}"
 
 
 if __name__ == "__main__":
