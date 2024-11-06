@@ -445,15 +445,14 @@ class SageWorksShell:
             self.meta_status = "CACHED"
             cprint("lightblue", "Using Cached Meta...")
         else:
-            with silence_logs():
-                self.meta.close()
             self.meta_status = "DIRECT"
             cprint("lightblue", "Using Direct Meta...")
-            self.meta = Meta()
+            with silence_logs():
+                self.meta.close()
+                self.meta = Meta()
 
     def switch_to_cached_meta(self):
-        with silence_logs():
-            self.meta = CachedMeta()
+        self.meta = CachedMeta()
         if self.meta.check():
             self.meta_status = "CACHED"
             cprint("lightblue", "Switched to Cached Meta...")
