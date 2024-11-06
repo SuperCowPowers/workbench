@@ -130,6 +130,11 @@ class SageWorksShell:
         self.commands["cached_meta"] = self.switch_to_cached_meta
         self.commands["direct_meta"] = self.switch_to_direct_meta
 
+        # Set some default dataframe display options
+        pd.set_option("display.max_colwidth", 30)
+        pd.set_option("display.max_columns", 15)
+        pd.set_option("display.width", 1200)
+
     def start(self):
         """Start the SageWorks IPython shell"""
         cprint("magenta", "\nWelcome to SageWorks!")
@@ -452,15 +457,17 @@ class SageWorksShell:
                 self.meta = Meta()
 
     def switch_to_cached_meta(self):
-        self.meta = CachedMeta()
-        if self.meta.check():
-            self.meta_status = "CACHED"
-            cprint("lightblue", "Switched to Cached Meta...")
-        else:
-            self.meta.close()
-            self.meta_status = "FAIL"
-            cprint("orange", "Failed to Switch to Cached Meta...")
-            self.meta = Meta()
+        with silence_logs():
+            self.meta = CachedMeta()
+            if self.meta.check():
+                self.meta_status = "CACHED"
+                cprint("lightblue", "Switched to Cached Meta...")
+            else:
+                self.meta.close()
+                self.meta_status = "FAIL"
+                cprint("orange", "Failed to Switch to Cached Meta...")
+                cprint("lightblue", "Using Direct Meta...")
+                self.meta = Meta()
 
     def switch_to_direct_meta(self):
         # Close the current Meta object (if it exists)
