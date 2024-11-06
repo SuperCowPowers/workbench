@@ -130,11 +130,6 @@ class SageWorksShell:
         self.commands["cached_meta"] = self.switch_to_cached_meta
         self.commands["direct_meta"] = self.switch_to_direct_meta
 
-        # Set some default dataframe display options
-        pd.set_option("display.max_colwidth", 30)
-        pd.set_option("display.max_columns", 15)
-        pd.set_option("display.width", 1200)
-
     def start(self):
         """Start the SageWorks IPython shell"""
         cprint("magenta", "\nWelcome to SageWorks!")
