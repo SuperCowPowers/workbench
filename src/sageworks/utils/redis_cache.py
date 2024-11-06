@@ -1,9 +1,6 @@
-"""A Redis Database Cache Class"""
-
 import json
 import numpy as np
 import pandas as pd
-
 import redis
 import logging
 from datetime import datetime, date
@@ -18,53 +15,15 @@ log = logging.getLogger("sageworks")
 class RedisCache:
     """A Redis Database Cache Class
     Usage:
-         redis_cache = RedisCache(expire=10)
-         redis_cache.set('foo', 'bar')
-         redis_cache.get('foo')
-         > bar
-         time.sleep(11)
-         redis_cache.get('foo')
-         > None
-         redis_cache.clear()
+        redis_cache = RedisCache(expire=10)
+        redis_cache.set('foo', 'bar')
+        redis_cache.get('foo')
+        > bar
+        time.sleep(11)
+        redis_cache.get('foo')
+        > None
+        redis_cache.clear()
     """
-
-    # Setup logger (class attribute)
-    log = logging.getLogger("sageworks")
-
-    # Try to read Redis configuration from the SageWorks ConfigManager
-    cm = ConfigManager()
-    host = cm.get_config("REDIS_HOST", "localhost")
-    port = cm.get_config("REDIS_PORT", 6379)
-    password = cm.get_config("REDIS_PASSWORD")
-
-    # Open the Redis connection (class object)
-    log.info(f"Opening Redis connection to: {host}:{port}...")
-    redis_db = None
-    try:
-        # Create a temporary connection to test the connection
-        _redis_db = redis.Redis(host, port=port, password=password, socket_timeout=1)
-        _redis_db.ping()
-
-        # Now create the actual connection
-        redis_db = redis.Redis(
-            host,
-            port=port,
-            password=password,
-            charset="utf-8",
-            decode_responses=True,
-            db=0,
-        )
-        log.info(f"Redis connection success: {host}:{port}...")
-    except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError) as e:
-        log.error(f"Redis Database connection failed: {host}:{port} - {str(e)}")
-        log.error("1. AWS Glue/Lambda: Check VPC settings (Inbound Rules, Security Groups).")
-        log.error("2. Local/Notebooks: Check if VPN is active or required for Redis access.")
-        log.error("3. Redis Configuration: Ensure Redis server is running and accessible.")
-        redis_db = None
-
-    @classmethod
-    def check(cls):
-        return cls.redis_db is not None
 
     def __init__(self, expire=None, prefix="", postfix=""):
         """RedisCache Initialization
@@ -73,13 +32,45 @@ class RedisCache:
             prefix: the prefix to use for all keys
             postfix: the postfix to use for all keys
         """
-
         # Setup instance variables
         self.expire = expire
         self.base_prefix = "sageworks:"  # Prefix all keys with the SageWorks namespace
         self.prefix = prefix if not prefix or prefix.endswith(":") else prefix + ":"
         self.prefix = self.base_prefix + self.prefix
         self.postfix = postfix if not postfix or postfix.startswith(":") else ":" + postfix
+
+        # Load Redis configuration from the SageWorks ConfigManager
+        cm = ConfigManager()
+        self.host = cm.get_config("REDIS_HOST", "localhost")
+        self.port = cm.get_config("REDIS_PORT", 6379)
+        self.password = cm.get_config("REDIS_PASSWORD")
+
+        # Attempt to establish a connection to Redis
+        log.info(f"Opening Redis connection to: {self.host}:{self.port}...")
+        self.redis_db = None
+        try:
+            # Create a temporary connection to test the connection
+            _redis_db = redis.Redis(self.host, port=self.port, password=self.password, socket_timeout=1)
+            _redis_db.ping()
+
+            # Now create the actual connection
+            self.redis_db = redis.Redis(
+                self.host,
+                port=self.port,
+                password=self.password,
+                charset="utf-8",
+                decode_responses=True,
+                db=0,
+            )
+            log.info(f"Redis connection success: {self.host}:{self.port}...")
+        except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError) as e:
+            log.error(f"Redis Database connection failed: {self.host}:{self.port} - {str(e)}")
+            log.error("1. AWS Glue/Lambda: Check VPC settings (Inbound Rules, Security Groups).")
+            log.error("2. Local/Notebooks: Check if VPN is active or required for Redis access.")
+            log.error("3. Redis Configuration: Ensure Redis server is running and accessible.")
+
+    def check(self):
+        return self.redis_db is not None
 
     def set(self, key, value):
         """Add an item to the redis_cache, all items are JSON serialized
@@ -104,21 +95,16 @@ class RedisCache:
         # Never except a key or value with a 'falsey' value
         if not key or not value:
             return
-
-        # Set the value in redis with optional postfix and the expire
         self.redis_db.set(self.prefix + str(key) + self.postfix, value, ex=self.expire)
 
     def _get(self, key):
         """Internal Method: Get an item from the redis_db_cache"""
         if not key:
             return None
-
-        # Get the value in redis with optional postfix
         return self.redis_db.get(self.prefix + str(key) + self.postfix)
 
     def delete(self, key):
         """Delete an item from the redis_cache"""
-
         # Delete the key and its full key (if either exists)
         self.redis_db.delete(key)
         self.redis_db.delete(self.prefix + str(key) + self.postfix)
@@ -133,6 +119,7 @@ class RedisCache:
 
     def clear(self, all_keys=False):
         """Clear the redis_cache
+
         Args:
             all_keys: if True, clear all keys in the redis_cache, otherwise only clear keys with the prefix
         """
@@ -146,6 +133,7 @@ class RedisCache:
 
     def dump(self, all_keys=False):
         """Dump the redis_cache (for debugging)
+
         Args:
            all_keys: if True, print out ALL keys in the redis_cache, otherwise only keys with the prefix
         """
@@ -156,12 +144,12 @@ class RedisCache:
             for key in self.redis_db.scan_iter(self.prefix + "*"):
                 print(key, ":", self.redis_db.get(key))
 
-    @classmethod
-    def size(cls):
-        return cls.redis_db.dbsize()
+    def size(self):
+        return self.redis_db.dbsize()
 
     def get_key_info(self):
         """Get information about all keys in the Redis database
+
         Returns:
             A list of dictionaries containing key information: name, size, and last modified date.
         """
@@ -176,10 +164,9 @@ class RedisCache:
         return keys_info
 
     def get_memory_config(self):
-        """Get Redis memory usage and configuration settings as a dictionary."""
+        """Get Redis memory usage and configuration settings as a dictionary"""
         info = {}
         try:
-            # Get memory information
             memory_info = self.redis_db.info("memory")
             info["used_memory"] = memory_info.get("used_memory", "N/A")
             info["used_memory_human"] = memory_info.get("used_memory_human", "N/A")
@@ -189,7 +176,6 @@ class RedisCache:
             log.error(f"Error retrieving memory info from Redis: {e}")
 
         try:
-            # Attempt to get max memory setting from Redis config
             max_memory = self.redis_db.config_get("maxmemory")
             info["maxmemory"] = max_memory.get("maxmemory", "N/A")
         except redis.exceptions.RedisError as e:
@@ -199,7 +185,7 @@ class RedisCache:
         return info
 
     def report_memory_config(self):
-        """Print Redis memory usage and configuration settings."""
+        """Print Redis memory usage and configuration settings"""
         info = self.get_memory_config()
         print("Redis Memory Usage Report:")
         print(f"\tUsed Memory: {info.get('used_memory_human', 'N/A')} ({info.get('used_memory', 'N/A')} bytes)")
@@ -208,22 +194,13 @@ class RedisCache:
         print(f"\tMax Memory Policy: {info.get('maxmemory_policy', 'N/A')}")
 
     def get_largest_keys(self, n=5):
-        """Get the N largest keys in the Redis database by size.
-        Args:
-            n: The number of largest keys to return
-        Returns:
-            A list of dictionaries containing key information: name, size, and last modified date.
-        """
+        """Get the N largest keys in the Redis database by size"""
         keys_info = self.get_key_info()
-        # Sort by size and get the top N largest keys
         largest_keys = sorted(keys_info, key=lambda x: x["size"], reverse=True)[:n]
         return largest_keys
 
     def report_largest_keys(self, n=5):
-        """Print the N largest keys in the Redis database by size.
-        Args:
-            n: The number of largest keys to report
-        """
+        """Print the N largest keys in the Redis database by size"""
         largest_keys = self.get_largest_keys(n)
         print(f"Top {n} largest keys in Redis:")
         for key_info in largest_keys:
@@ -232,21 +209,10 @@ class RedisCache:
             print(f"\t{size_mb:.2f}MB {key_info['key']}   ({days} days)")
 
     def delete_keys_older_than(self, days, dry_run=True):
-        """Delete keys in the Redis database that are older than a specified number of days.
-
-        Args:
-            days: The number of days after which keys should be considered old and deleted.
-            dry_run: If True, do not actually delete keys, just log what would be deleted.
-        """
-        # Convert days to seconds
-        age_threshold = days * 86400  # 1 day = 86400 seconds
-
-        # Iterate over all keys in Redis
+        """Delete keys in the Redis database that are older than a specified number of days"""
+        age_threshold = days * 86400
         for key in self.redis_db.scan_iter("*"):
-            # Get the last modified time (idletime) in seconds
             last_modified = self.redis_db.object("idletime", key)
-
-            # If the key's idle time is greater than the age threshold, delete it
             if last_modified and last_modified > age_threshold:
                 days_mod = last_modified // 86400
                 if dry_run:
@@ -264,7 +230,6 @@ class RedisCache:
 
 
 if __name__ == "__main__":
-    """Exercise the RedisCache class"""
     from pprint import pprint
     import time
 
