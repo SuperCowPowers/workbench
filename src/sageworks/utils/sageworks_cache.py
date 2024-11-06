@@ -26,7 +26,7 @@ class SageWorksCache:
             self._actual_cache = RedisCache(expire=expire, prefix=prefix, postfix=postfix)
         else:
             # If Redis isn't available, fall back to an In-Memory Cache
-            log.critical("Redis connect failed, using In-Memory Cache...")
+            log.error("Redis connect failed, using In-Memory Cache...")
             self._actual_cache = Cache(expire=expire, prefix=prefix, postfix=postfix)
 
     def set(self, key, value):

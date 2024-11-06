@@ -57,9 +57,9 @@ class RedisCache:
         log.info(f"Redis connection success: {host}:{port}...")
     except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError) as e:
         log.error(f"Redis Database connection failed: {host}:{port} - {str(e)}")
-        log.critical("1. AWS Glue/Lambda: Check VPC settings (Inbound Rules, Security Groups).")
-        log.critical("2. Local/Notebooks: Check if VPN is active or required for Redis access.")
-        log.critical("3. Redis Configuration: Ensure Redis server is running and accessible.")
+        log.error("1. AWS Glue/Lambda: Check VPC settings (Inbound Rules, Security Groups).")
+        log.error("2. Local/Notebooks: Check if VPN is active or required for Redis access.")
+        log.error("3. Redis Configuration: Ensure Redis server is running and accessible.")
         redis_db = None
 
     @classmethod

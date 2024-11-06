@@ -99,11 +99,11 @@ class SageWorksShell:
         if self.cm.get_config("USE_CACHED_META"):
             cprint("lightblue", "Using Cached Meta...")
             self.meta = CachedMeta()
-            self.redis_status = "OK"
+            self.meta_status = "OK"
         else:
             cprint("lightblue", "Using Direct Meta...")
             self.meta = Meta()
-            self.redis_status = "LOCAL"
+            self.meta_status = "LOCAL"
 
         # Register our custom commands
         self.commands["help"] = self.help
@@ -125,10 +125,12 @@ class SageWorksShell:
         self.commands["status"] = self.status_description
         self.commands["launch"] = self.launch_plugin
         self.commands["log"] = logging.getLogger("sageworks")
-        self.commands["meta"] = self.meta
+        self.commands["meta"] = self.get_meta
         self.commands["params"] = importlib.import_module("sageworks.api.parameter_store").ParameterStore()
         self.commands["df_store"] = importlib.import_module("sageworks.api.df_store").DFStore()
         self.commands["version"] = lambda: print(version)
+        self.commands["cached_meta"] = self.switch_to_cached_meta
+        self.commands["direct_meta"] = self.switch_to_direct_meta
 
     def start(self):
         """Start the SageWorks IPython shell"""
@@ -374,12 +376,12 @@ class SageWorksShell:
         else:
             _status_lights.append((Token.Red, "●"))
 
-        # Redis Status
-        if self.redis_status == "OK":
+        # Cached Meta Status
+        if self.meta_status == "CACHED":
             _status_lights.append((Token.Green, "●"))
-        elif self.redis_status == "LOCAL":
+        elif self.meta_status == "DIRECT":
             _status_lights.append((Token.Blue, "●"))
-        elif self.redis_status == "FAIL":
+        elif self.meta_status == "FAIL":
             _status_lights.append((Token.Orange, "●"))
         else:  # Unknown
             _status_lights.append((Token.Grey, "●"))
@@ -404,12 +406,12 @@ class SageWorksShell:
             cprint("red", "\t● AWS Account: Failed to Connect")
 
         # Redis
-        if self.redis_status == "OK":
-            cprint("lightgreen", "\t● Redis: OK")
-        elif self.redis_status == "LOCAL":
-            cprint("lightblue", "\t● Redis: Local")
-        elif self.redis_status == "FAIL":
-            cprint("orange", "\t● Redis: Failed to Connect")
+        if self.meta_status == "CACHED":
+            cprint("lightgreen", "\t● Meta: Cached")
+        elif self.meta_status == "DIRECT":
+            cprint("lightblue", "\t● Meta: Direct")
+        elif self.meta_status == "FAIL":
+            cprint("orange", "\t● Meta: Failed to Connect")
 
         # API Key
         if self.open_source_api_key:
@@ -432,6 +434,20 @@ class SageWorksShell:
         cprint("lightblue", "Please rerun the SageWorks REPL to complete the onboarding process.")
         cprint("darkyellow", "Note: You'll need to start a NEW terminal to inherit the new ENV vars.")
         sys.exit(0)
+
+    # Helpers method to switch from direct Meta to Cached Meta
+    def switch_to_cached_meta(self):
+        self.meta = CachedMeta()
+        self.meta_status = "CACHED"
+        cprint("lightblue", "Switched to Cached Meta...")
+
+    def switch_to_direct_meta(self):
+        self.meta = Meta()
+        self.meta_status = "DIRECT"
+        cprint("lightblue", "Switched to Direct Meta...")
+
+    def get_meta(self):
+        return self.meta
 
     @staticmethod
     def launch_plugin(plugin_class, input_data=None, **kwargs):
