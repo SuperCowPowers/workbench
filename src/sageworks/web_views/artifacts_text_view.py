@@ -5,7 +5,7 @@ from typing import Dict
 
 # SageWorks Imports
 from sageworks.web_views.web_view import WebView
-from sageworks.api.cached_meta import CachedMeta as Meta
+from sageworks.api import CachedMeta as Meta
 
 
 class ArtifactsTextView(WebView):

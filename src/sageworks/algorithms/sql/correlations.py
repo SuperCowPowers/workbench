@@ -14,11 +14,18 @@ log = logging.getLogger("sageworks")
 
 def correlation_query(columns: list[str], table_name: str) -> str:
     """Build a query to compute the correlations between columns in a table
+
     Args:
         columns(list(str)): The columns to compute correlations on
         table_name(str): The table to compute correlations on
+
     Returns:
         str: The SQL query to compute correlations
+
+    Notes: Pearson correlation coefficient ranges from -1 to 1:
+           +1 indicates a perfect positive linear relationship.
+           -1 indicates a perfect negative linear relationship.
+            0 indicates no linear relationship.
     """
     query = f'SELECT <<cross_correlations>> FROM "{table_name}"'
     cross_correlations = ""

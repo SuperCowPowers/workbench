@@ -49,7 +49,7 @@ class CachedMeta(Meta):
 
         # Create the Cache
         self.meta_cache = SageWorksCache(prefix="meta")
-        self.fresh_cache = SageWorksCache(prefix="meta_fresh", expire=60)  # 60-second expiration
+        self.fresh_cache = SageWorksCache(prefix="meta_fresh", expire=120)  # 120-second expiration
 
         # Create a ThreadPoolExecutor for refreshing stale data
         self.thread_pool = ThreadPoolExecutor(max_workers=5)

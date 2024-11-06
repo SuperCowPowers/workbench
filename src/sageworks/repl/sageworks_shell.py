@@ -35,7 +35,7 @@ from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_N
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.log_utils import silence_logs
 from sageworks.api.meta import Meta
-from sageworks.api.cached_meta import CachedMeta
+from sageworks.api import CachedMeta
 from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
 logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
