@@ -12,8 +12,6 @@ def silence_logs():
     try:
         logger.setLevel(logging.ERROR + 1)
         yield
-    except Exception as e:
-        raise
     finally:
         logger.setLevel(original_level)
 
