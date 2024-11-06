@@ -22,10 +22,15 @@ class SageWorksCache:
         """
         self.medium_data = 100 * 1024  # 100KB
         self.large_data = 1024 * 1024  # 1MB
-        if RedisCache().check():
-            self._actual_cache = RedisCache(expire=expire, prefix=prefix, postfix=postfix)
+
+        # Create a RedisCache instance and check its connection
+        self._using_redis = True
+        redis_cache = RedisCache(expire=expire, prefix=prefix, postfix=postfix)
+        if redis_cache.check():
+            self._actual_cache = redis_cache
         else:
             # If Redis isn't available, fall back to an In-Memory Cache
+            self._using_redis = False
             log.error("Redis connect failed, using In-Memory Cache...")
             self._actual_cache = Cache(expire=expire, prefix=prefix, postfix=postfix)
 
@@ -58,7 +63,7 @@ class SageWorksCache:
         return self._actual_cache.list_subkeys(key)
 
     def check(self):
-        return RedisCache().check()
+        return self._using_redis
 
     def clear(self):
         return self._actual_cache.clear()
@@ -92,7 +97,6 @@ if __name__ == "__main__":
 
     # Create the SageWorks Cache
     my_cache = SageWorksCache(prefix="test")
-    assert my_cache.check()
 
     # Test the __repr__ method
     print(my_cache)

@@ -54,6 +54,10 @@ class CachedMeta(Meta):
         # Create a ThreadPoolExecutor for refreshing stale data
         self.thread_pool = ThreadPoolExecutor(max_workers=5)
 
+    def check(self):
+        """Check if our underlying caches are working"""
+        return self.meta_cache.check()
+
     def list_meta_cache(self):
         """List the current Meta Cache"""
         self.meta_cache.list_keys()
@@ -282,6 +286,7 @@ if __name__ == "__main__":
 
     # Create the class
     meta = CachedMeta()
+    print(f"Check: {meta.check()}")
 
     # Test the __repr__ method
     print(meta)
