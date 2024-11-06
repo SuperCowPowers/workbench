@@ -89,6 +89,10 @@ class SageWorksShell:
             cprint("yellow", "SageWorks Config incomplete...running onboarding procedure...")
             self.onboard()
 
+        # Our Metadata Object pull information from the Cloud Platform
+        self.meta = None
+        self.meta_status = "DIRECT"
+
         # Perform AWS connection test and other checks
         self.commands = dict()
         self.aws_status = self.check_aws_account()
@@ -96,11 +100,8 @@ class SageWorksShell:
         if self.aws_status:
             self.import_sageworks()
 
-        # Do we want regular meta or do we want cached meta?
-        if self.cm.get_config("USE_CACHED_META"):
-            self.switch_to_cached_meta()
-        else:
-            self.switch_to_direct_meta()
+        # Try cached meta (if that fails it will be set to direct meta)
+        self.try_cached_meta()
 
         # Register our custom commands
         self.commands["help"] = self.help
@@ -155,6 +156,10 @@ class SageWorksShell:
         try:
             start_ipython(argv=[], user_ns=locs, config=config)
         finally:
+            spinner = self.spinner_start("Goodbye to AWS:")
+            with silence_logs():
+                self.meta.close()
+            spinner.stop()
             cprint("lightgreen", "Goodbye from SageWorks!\n")
 
     def check_open_source_api_key(self) -> bool:
@@ -433,6 +438,19 @@ class SageWorksShell:
         sys.exit(0)
 
     # Helpers method to switch from direct Meta to Cached Meta
+    def try_cached_meta(self):
+        with silence_logs():
+            self.meta = CachedMeta()
+        if self.meta.check():
+            self.meta_status = "CACHED"
+            cprint("lightblue", "Using Cached Meta...")
+        else:
+            with silence_logs():
+                self.meta.close()
+            self.meta_status = "DIRECT"
+            cprint("lightblue", "Using Direct Meta...")
+            self.meta = Meta()
+
     def switch_to_cached_meta(self):
         with silence_logs():
             self.meta = CachedMeta()
@@ -440,11 +458,16 @@ class SageWorksShell:
             self.meta_status = "CACHED"
             cprint("lightblue", "Switched to Cached Meta...")
         else:
+            self.meta.close()
             self.meta_status = "FAIL"
             cprint("orange", "Failed to Switch to Cached Meta...")
             self.meta = Meta()
 
     def switch_to_direct_meta(self):
+        # Close the current Meta object (if it exists)
+        if self.meta:
+            self.meta.close()
+        # Create a new direct Meta object
         self.meta = Meta()
         self.meta_status = "DIRECT"
         cprint("lightblue", "Switched to Direct Meta...")
