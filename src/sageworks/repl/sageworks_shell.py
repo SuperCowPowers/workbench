@@ -33,6 +33,7 @@ except ImportError:
 from sageworks.utils.repl_utils import cprint, Spinner
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from sageworks.utils.config_manager import ConfigManager
+from sageworks.utils.log_utils import silence_logs
 from sageworks.api.meta import Meta
 from sageworks.api.cached_meta import CachedMeta
 from sageworks.web_components.plugin_unit_test import PluginUnitTest
@@ -97,13 +98,9 @@ class SageWorksShell:
 
         # Do we want regular meta or do we want cached meta?
         if self.cm.get_config("USE_CACHED_META"):
-            cprint("lightblue", "Using Cached Meta...")
-            self.meta = CachedMeta()
-            self.meta_status = "OK"
+            self.switch_to_cached_meta()
         else:
-            cprint("lightblue", "Using Direct Meta...")
-            self.meta = Meta()
-            self.meta_status = "LOCAL"
+            self.switch_to_direct_meta()
 
         # Register our custom commands
         self.commands["help"] = self.help
@@ -437,9 +434,15 @@ class SageWorksShell:
 
     # Helpers method to switch from direct Meta to Cached Meta
     def switch_to_cached_meta(self):
-        self.meta = CachedMeta()
-        self.meta_status = "CACHED"
-        cprint("lightblue", "Switched to Cached Meta...")
+        with silence_logs():
+            self.meta = CachedMeta()
+        if self.meta.check():
+            self.meta_status = "CACHED"
+            cprint("lightblue", "Switched to Cached Meta...")
+        else:
+            self.meta_status = "FAIL"
+            cprint("orange", "Failed to Switch to Cached Meta...")
+            self.meta = Meta()
 
     def switch_to_direct_meta(self):
         self.meta = Meta()

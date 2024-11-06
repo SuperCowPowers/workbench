@@ -5,17 +5,15 @@ from contextlib import contextmanager
 
 
 @contextmanager
-def quiet_execution_deprecated():
-    """Turns out this can be fairly dangerous, deprecating, as it suppresses errors that are important to see"""
+def silence_logs():
+    """Be careful, this can be fairly dangerous, as it suppresses errors that are important to see"""
     logger = logging.getLogger("sageworks")
     original_level = logger.level
     try:
-        logger.setLevel(logging.CRITICAL + 1)
+        logger.setLevel(logging.ERROR + 1)
         yield
     except Exception as e:
-        logger.setLevel(logging.WARNING)  # Temporarily lower log level
-        logger.warning(f"Exception occurred during deletion: {e}")
-        logger.warning("In general this warning can be ignored :)")
+        raise
     finally:
         logger.setLevel(original_level)
 
@@ -27,13 +25,13 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
     log.info("You should see me")
 
-    with quiet_execution_deprecated():
+    with silence_logs():
         log.info("You should NOT see me")
         log.warning("You should NOT see me")
 
     log.info("You should see me")
     log.warning("You should see this warning")
 
-    with quiet_execution_deprecated():
+    with silence_logs():
         raise ValueError("This is a test error")
     log.info("You should see me")
