@@ -77,7 +77,7 @@ class CachedMeta(Meta):
 
             # Check for fresh data, spawn thread to refresh if stale
             if self.fresh_cache.get(cache_key) is None:
-                self.log.info(f"Async: Metadata for {cache_key} is stale, launching refresh thread...")
+                self.log.debug(f"Async: Metadata for {cache_key} is stale, launching refresh thread...")
                 self.fresh_cache.set(cache_key, True)  # Set fresh flag with auto-expire
 
                 # Spawn a thread to refresh data without blocking
@@ -263,13 +263,16 @@ class CachedMeta(Meta):
 
     def __del__(self):
         """Destructor to shut down the thread pool gracefully."""
-        if self.thread_pool:
-            self.close()
+        self.close()
 
     def close(self):
         """Explicitly close the thread pool, if needed."""
-        self.log.info("Shutting down the ThreadPoolExecutor...")
-        self.thread_pool.shutdown(wait=True)
+        if self.thread_pool:
+            self.log.important("Shutting down the ThreadPoolExecutor...")
+            try:
+                self.thread_pool.shutdown(wait=True)  # Gracefully shutdown
+            except RuntimeError as e:
+                self.log.error(f"Error during thread pool shutdown: {e}")
 
     def __repr__(self):
         return f"CachedMeta()\n\t{repr(self.meta_cache)}\n\t{super().__repr__()}"
