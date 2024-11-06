@@ -142,7 +142,7 @@ class ConfigManager:
             "SAGEWORKS_PLUGINS",
             "REDIS_HOST",
             "REDIS_PORT",
-            "REDIS_PASSWORD",
+            "REDIS_PASSWORD"
         ]
         params = ParameterStore()
         for key in overwrites:
@@ -226,6 +226,10 @@ class ConfigManager:
             if self.config["SAGEWORKS_BUCKET"] == "env-will-overwrite":
                 self.log.critical("SAGEWORKS_BUCKET needs to be set with ENV var...")
                 return False
+
+        # The USE_CACHED_META is kinda nice to overwrite with ENV var
+        if "USE_CACHED_META" in os.environ:
+            self.config["USE_CACHED_META"] = os.environ["USE_CACHED_META"]
         return True
 
     def get_api_key_info(self) -> Dict[str, Any]:

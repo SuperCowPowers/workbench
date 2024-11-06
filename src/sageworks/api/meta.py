@@ -184,6 +184,9 @@ class Meta(AWSMeta):
         """
         return super().endpoint(endpoint_name=endpoint_name)
 
+    def __repr__(self):
+        return f"Meta()\n\t{super().__repr__()}"
+
 
 if __name__ == "__main__":
     """Exercise the SageWorks AWSMeta Class"""
@@ -196,6 +199,9 @@ if __name__ == "__main__":
 
     # Create the class
     meta = Meta()
+
+    # Test the __repr__ method
+    print(meta)
 
     # Get the AWS Account Info
     print("*** AWS Account ***")

@@ -122,6 +122,9 @@ class Cache:
             for key in list(self.store.keys()):
                 self.get(key)
 
+    def __repr__(self):
+        return f"MemoryCache(Prefix={self.prefix})"
+
 
 if __name__ == "__main__":
     """Exercise the Cache class"""

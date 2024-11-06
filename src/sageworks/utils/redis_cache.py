@@ -56,14 +56,10 @@ class RedisCache:
         )
         log.info(f"Redis connection success: {host}:{port}...")
     except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError) as e:
-        log.critical(f"Redis Database connection failed: {host}:{port} - {str(e)}")
-        log.critical("SageWorks is now running in a degraded state...")
-        log.critical("Possible causes and diagnostics:")
-        log.critical("1. AWS Glue/Lambda: Check VPC settings, ensure access to Redis (Inbound Rules, Security Groups).")
+        log.error(f"Redis Database connection failed: {host}:{port} - {str(e)}")
+        log.critical("1. AWS Glue/Lambda: Check VPC settings (Inbound Rules, Security Groups).")
         log.critical("2. Local/Notebooks: Check if VPN is active or required for Redis access.")
-        log.critical("3. Firewall/Network: Ensure no network/firewall blocks between the client and Redis server.")
-        log.critical("4. Redis Configuration: Ensure Redis server is running and accessible.")
-        log.critical("5. Credentials: Check if the password or authentication is correct.")
+        log.critical("3. Redis Configuration: Ensure Redis server is running and accessible.")
         redis_db = None
 
     @classmethod
@@ -261,6 +257,11 @@ class RedisCache:
 
         log.info(f"Completed deletion of keys older than {days} days.")
 
+    def __repr__(self):
+        if self.redis_db is None:
+            return f"RedisCache(Prefix={self.prefix}  Host={self.host}:{self.port}) Failed to Connect!"
+        return f"RedisCache(Prefix={self.prefix}  Host={self.host}:{self.port})"
+
 
 if __name__ == "__main__":
     """Exercise the RedisCache class"""
@@ -272,6 +273,9 @@ if __name__ == "__main__":
     if not my_redis_cache.check():
         print("Redis not available, exiting...")
         exit(1)
+
+    # Test the REPR
+    print(my_redis_cache)
 
     # Delete anything in the test database
     my_redis_cache.clear()

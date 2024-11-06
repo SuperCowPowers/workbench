@@ -34,6 +34,7 @@ from sageworks.utils.repl_utils import cprint, Spinner
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.api.meta import Meta
+from sageworks.api.cached_meta import CachedMeta
 from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
 logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
@@ -77,7 +78,8 @@ class SageWorksPrompt(Prompts):
 class SageWorksShell:
     def __init__(self):
         # Give the SageWorks Version
-        cprint("lightpurple", f"SageWorks Version: {importlib.import_module('sageworks').__version__}")
+        version = importlib.import_module("sageworks").__version__
+        cprint("lightpurple", f"SageWorks Version: {version}")
 
         # Check the SageWorks config
         self.cm = ConfigManager()
@@ -89,11 +91,19 @@ class SageWorksShell:
         # Perform AWS connection test and other checks
         self.commands = dict()
         self.aws_status = self.check_aws_account()
-        self.redis_status = "OK"
         self.open_source_api_key = self.check_open_source_api_key()
-        self.meta = Meta()
         if self.aws_status:
             self.import_sageworks()
+
+        # Do we want regular meta or do we want cached meta?
+        if self.cm.get_config("USE_CACHED_META"):
+            cprint("lightblue", "Using Cached Meta...")
+            self.meta = CachedMeta()
+            self.redis_status = "OK"
+        else:
+            cprint("lightblue", "Using Direct Meta...")
+            self.meta = Meta()
+            self.redis_status = "LOCAL"
 
         # Register our custom commands
         self.commands["help"] = self.help
@@ -115,9 +125,10 @@ class SageWorksShell:
         self.commands["status"] = self.status_description
         self.commands["launch"] = self.launch_plugin
         self.commands["log"] = logging.getLogger("sageworks")
-        self.commands["meta"] = importlib.import_module("sageworks.api.meta").Meta()
+        self.commands["meta"] = self.meta
         self.commands["params"] = importlib.import_module("sageworks.api.parameter_store").ParameterStore()
         self.commands["df_store"] = importlib.import_module("sageworks.api.df_store").DFStore()
+        self.commands["version"] = lambda: print(version)
 
     def start(self):
         """Start the SageWorks IPython shell"""

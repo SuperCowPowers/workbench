@@ -9,6 +9,7 @@ import logging
 # SageWorks Imports
 from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.core.cloud_platform.aws.aws_meta import AWSMeta as Meta
+from sageworks.api.cached_meta import CachedMeta
 from sageworks.core.cloud_platform.aws.aws_df_store import AWSDFStore as DFStore
 from sageworks.utils.aws_utils import sagemaker_delete_tag, dict_to_aws_tags
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
@@ -24,7 +25,6 @@ class Artifact(ABC):
     sm_session = aws_account_clamp.sagemaker_session()
     sm_client = aws_account_clamp.sagemaker_client()
     aws_region = aws_account_clamp.region
-    meta = Meta()
     cm = ConfigManager()
     if not cm.config_okay():
         log = logging.getLogger("sageworks")
@@ -45,6 +45,12 @@ class Artifact(ABC):
 
     # Grab our Dataframe Storage
     df_cache = DFStore(path_prefix="/sageworks/dataframe_cache")
+
+    # Do we want regular meta or do we want cached meta?
+    if cm.get_config("USE_CACHED_META"):
+        meta = CachedMeta()
+    else:
+        meta = Meta()
 
     # Delimiter for storing lists in AWS Tags
     tag_delimiter = "::"
@@ -443,6 +449,9 @@ if __name__ == "__main__":
     from sageworks.api.data_source import DataSource
     from sageworks.api.feature_set import FeatureSet
 
+    cm = ConfigManager()
+    cm.set_config("USE_CACHED_META", True)
+
     # Create a DataSource (which is a subclass of Artifact)
     data_source = DataSource("test_data")
 
@@ -467,3 +476,14 @@ if __name__ == "__main__":
 
     # Test new input method
     fs.set_input("test_data")
+
+    # Test out using Cached Meta Data
+    cm = ConfigManager()
+    cm.set_config("USE_CACHED_META", True)
+    fs = FeatureSet("test_features")
+    print(f"UUID: {fs.uuid}")
+    print(f"Ready: {fs.ready()}")
+    print(f"Status: {fs.get_status()}")
+    print(f"Input: {fs.get_input()}")
+    print(fs.smart_sample())
+    cm.set_config("USE_CACHED_META", False)

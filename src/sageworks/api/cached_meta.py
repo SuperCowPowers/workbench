@@ -267,6 +267,9 @@ class CachedMeta(Meta):
         self.log.info("Shutting down the ThreadPoolExecutor...")
         self.thread_pool.shutdown(wait=True)
 
+    def __repr__(self):
+        return f"CachedMeta()\n\t{super().__repr__()}"
+
 
 if __name__ == "__main__":
     """Exercise the SageWorks AWSCachedMeta Class"""
@@ -279,6 +282,9 @@ if __name__ == "__main__":
 
     # Create the class
     meta = CachedMeta()
+
+    # Test the __repr__ method
+    print(meta)
 
     # List the current Meta Cache
     meta.list_meta_cache()
