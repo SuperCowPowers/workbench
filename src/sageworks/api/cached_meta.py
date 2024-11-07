@@ -39,6 +39,7 @@ class CachedMeta(Meta):
        meta.endpoint("abalone-endpoint")
        ```
     """
+
     _instance = None  # Class attribute to hold the singleton instance
 
     def __new__(cls, *args, **kwargs):
