@@ -47,6 +47,7 @@ class PandasToFeatures(Transform):
         self.categorical_dtypes = {}  # Used for streaming/chunking
         self.output_df = None
         self.table_format = TableFormatEnum.ICEBERG
+        self.incoming_hold_out_ids = None
 
         # Delete the existing FeatureSet if it exists
         self.delete_existing()
@@ -275,6 +276,13 @@ class PandasToFeatures(Transform):
         # - String (timestamp/datetime types need to be converted to string)
         self.output_df = self.convert_column_types(self.output_df)
 
+        # Check for a training column (SageWorks uses dynamic training columns)
+        if "training" in self.output_df.columns:
+            self.log.important("Training column detected: Since FeatureSets are read only SageWorks creates 'training views'")
+            self.log.important("that can be dynamically changed. We'll use this 'training' column to create a training view.")
+            self.incoming_hold_out_ids = self.output_df[self.output_df["training"] == 0][self.id_column].tolist()
+            self.output_df = self.output_df.drop(columns=["training"])
+
     def create_feature_group(self):
         """Create a Feature Group, load our Feature Definitions, and wait for it to be ready"""
 
@@ -355,6 +363,10 @@ class PandasToFeatures(Transform):
         # Call the FeatureSet onboard method to compute a bunch of EDA stuff
         self.output_feature_set.onboard()
 
+        # Set Hold Out Ids (if we got them during creation)
+        if self.incoming_hold_out_ids:
+            self.output_feature_set.set_training_holdouts(self.id_column, self.incoming_hold_out_ids)
+
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")
         while status == "Creating":
@@ -401,12 +413,14 @@ if __name__ == "__main__":
     ds = DataSource("test_data")
     data_df = ds.sample()
 
+    # Test setting a training column
+    data_df["training"] = 0
+    data_df.loc[0:10, "training"] = 1
+
     # Create my DF to Feature Set Transform (with one-hot encoding)
     df_to_features = PandasToFeatures("test_features")
     df_to_features.set_input(data_df, id_column="id", one_hot_columns=["food"])
     df_to_features.set_output_tags(["test", "small"])
-
-    # Store this dataframe as a SageWorks Feature Set
     df_to_features.transform()
 
     # Test non-compliant output UUID
