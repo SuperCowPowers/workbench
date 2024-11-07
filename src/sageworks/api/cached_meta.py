@@ -53,9 +53,10 @@ class CachedMeta(Meta):
             return  # Prevent reinitialization
 
         self.log = logging.getLogger("sageworks")
+        self.log.important("Initializing CachedMeta...")
         super().__init__()
 
-        # Create the Cache
+        # Create both our Meta Cache and Fresh Cache (tracks if data is stale)
         self.meta_cache = SageWorksCache(prefix="meta")
         self.fresh_cache = SageWorksCache(prefix="meta_fresh", expire=30)  # 30-second expiration
 
