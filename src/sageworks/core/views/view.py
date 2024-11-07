@@ -56,7 +56,7 @@ class View:
 
         # Is this a DataSource or a FeatureSet?
         self.is_feature_set = isinstance(artifact, FeatureSetCore)
-        self.auto_id_column = artifact.record_id if self.is_feature_set else None
+        self.auto_id_column = artifact.id_column if self.is_feature_set else None
 
         # Get the data_source from the artifact
         self.artifact_name = artifact.uuid

@@ -58,7 +58,7 @@ class FeatureSetCore(Artifact):
             self.data_source = None
             return
         else:
-            self.record_id = self.feature_meta["RecordIdentifierFeatureName"]
+            self.id_column = self.feature_meta["RecordIdentifierFeatureName"]
             self.event_time = self.feature_meta["EventTimeFeatureName"]
 
             # Pull Athena and S3 Storage information from metadata
@@ -306,7 +306,7 @@ class FeatureSetCore(Artifact):
 
         query = (
             f"SELECT {columns} "
-            f"    FROM (SELECT *, row_number() OVER (PARTITION BY {self.record_id} "
+            f"    FROM (SELECT *, row_number() OVER (PARTITION BY {self.id_column} "
             f"        ORDER BY {self.event_time} desc, api_invocation_time DESC, write_time DESC) AS row_num "
             f'        FROM "{table_name}") '
             "    WHERE row_num = 1 and NOT is_deleted;"
