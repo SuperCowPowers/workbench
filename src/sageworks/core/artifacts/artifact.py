@@ -371,8 +371,9 @@ class Artifact(ABC):
         health_issues = []
         if not self.ready():
             return ["needs_onboard"]
-        if "unknown" in self.aws_url():
-            health_issues.append("aws_url_unknown")
+        # FIXME: Revisit AWS URL check
+        # if "unknown" in self.aws_url():
+        #    health_issues.append("aws_url_unknown")
         return health_issues
 
     def summary(self) -> dict:
