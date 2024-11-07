@@ -233,7 +233,8 @@ class FeatureSetCore(Artifact):
 
     def aws_url(self):
         """The AWS URL for looking at/querying the underlying data source"""
-        return self.data_source.details().get("aws_url", "unknown")
+        sageworks_details = self.data_source.sageworks_meta().get("sageworks_details", {})
+        return sageworks_details.get("aws_url", "unknown")
 
     def created(self) -> datetime:
         """Return the datetime when this artifact was created"""

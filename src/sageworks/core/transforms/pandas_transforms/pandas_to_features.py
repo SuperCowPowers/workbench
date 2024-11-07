@@ -278,8 +278,10 @@ class PandasToFeatures(Transform):
 
         # Check for a training column (SageWorks uses dynamic training columns)
         if "training" in self.output_df.columns:
-            self.log.important("Training column detected: Since FeatureSets are read only SageWorks creates 'training views'")
-            self.log.important("that can be dynamically changed. We'll use this 'training' column to create a training view.")
+            self.log.important(
+                """Training column detected: Since FeatureSets are read-only, SageWorks creates a training view
+                that can be dynamically changed. We'll use this training column to create a training view."""
+            )
             self.incoming_hold_out_ids = self.output_df[self.output_df["training"] == 0][self.id_column].tolist()
             self.output_df = self.output_df.drop(columns=["training"])
 
@@ -409,7 +411,10 @@ if __name__ == "__main__":
     pd.set_option("display.max_columns", 15)
     pd.set_option("display.width", 1000)
 
-    # Crab the test_data DataSource
+    # Temp
+    fs = FeatureSetCore("test_features")
+
+    # Grab the test_data DataSource
     ds = DataSource("test_data")
     data_df = ds.sample()
 

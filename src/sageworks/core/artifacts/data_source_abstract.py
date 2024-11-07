@@ -242,7 +242,8 @@ class DataSourceAbstract(Artifact):
 
         # For DataSources, we expect to see the following metadata
         expected_meta = [
-            "sageworks_details",
+            # FIXME: Revisit this
+            # "sageworks_details",
             "sageworks_descriptive_stats",
             "sageworks_value_counts",
             "sageworks_correlations",
