@@ -58,9 +58,11 @@ class Artifact(ABC):
         # Do we want regular meta or do we want cached meta?
         if self.cm.get_config("USE_CACHED_META"):
             from sageworks.api import CachedMeta  # noqa: F401 Avoid Circular Import
+
             self.meta = CachedMeta()
         else:
             from sageworks.api import Meta
+
             self.meta = Meta()
 
     def __post_init__(self):
