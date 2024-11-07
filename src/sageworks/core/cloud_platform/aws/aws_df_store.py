@@ -4,6 +4,7 @@ from typing import Union
 import logging
 import awswrangler as wr
 import pandas as pd
+import re
 
 # SageWorks Imports
 from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
@@ -43,7 +44,7 @@ class AWSDFStore:
         self.log = logging.getLogger("sageworks")
         self._base_prefix = "df_store/"
         self.path_prefix = self._base_prefix + path_prefix if path_prefix else self._base_prefix
-        self.path_prefix = self.path_prefix.replace("//", "/")  # Remove any double slashes
+        self.path_prefix = re.sub(r'/+', '/', self.path_prefix)  # Collapse slashes
 
         # Initialize a SageWorks Session and retrieve the S3 bucket from ConfigManager
         config = ConfigManager()
@@ -107,7 +108,7 @@ class AWSDFStore:
         """
         # Generate the specific S3 prefix for the target location
         s3_prefix = f"{self.path_prefix}/{location}.parquet/"
-        s3_prefix = s3_prefix.replace("//", "/")  # Remove any double slashes
+        s3_prefix = re.sub(r'/+', '/', s3_prefix)  # Collapse slashes
 
         # Use list_objects_v2 to check if any objects exist under this specific prefix
         response = self.s3_client.list_objects_v2(Bucket=self.sageworks_bucket, Prefix=s3_prefix, MaxKeys=1)
@@ -176,19 +177,20 @@ class AWSDFStore:
             location (str): The location prefix of the data to delete.
         """
         # Construct the full prefix for S3
-        s3_prefix = f"{self.path_prefix}{location}".replace("//", "/")
+        s3_prefix = re.sub(r'/+', '/', f"{self.path_prefix}/{location}")  # Collapse slashes
 
         # List all objects under the given prefix
         try:
             response = self.s3_client.list_objects_v2(Bucket=self.sageworks_bucket, Prefix=s3_prefix)
             if "Contents" not in response:
-                self.log.debug(f"No data found under '{location}' to delete.")
+                self.log.info(f"No data found under '{s3_prefix}' to delete.")
                 return
 
             # Gather all keys to delete
             keys = [{"Key": obj["Key"]} for obj in response["Contents"]]
-            self.s3_client.delete_objects(Bucket=self.sageworks_bucket, Delete={"Objects": keys})
-            self.log.info(f"Successfully deleted all data under '{location}'.")
+            response = self.s3_client.delete_objects(Bucket=self.sageworks_bucket, Delete={"Objects": keys})
+            for response in response.get("Deleted", []):
+                self.log.info(f"Deleted: {response['Key']}")
 
         except Exception as e:
             self.log.error(f"Failed to delete data recursively at '{location}': {e}")
@@ -196,7 +198,7 @@ class AWSDFStore:
     def _generate_s3_uri(self, location: str) -> str:
         """Generate the S3 URI for the given location."""
         s3_path = f"{self.sageworks_bucket}/{self.path_prefix}/{location}.parquet"
-        s3_path = s3_path.replace("//", "/")
+        s3_path = re.sub(r'/+', '/', s3_path)  # Collapse slashes
         s3_uri = f"s3://{s3_path}"
         return s3_uri
 
@@ -204,6 +206,10 @@ class AWSDFStore:
         """Return a string representation of the AWSDFStore object."""
         # Use the summary() method and format it to align columns for printing
         summary_df = self.summary()
+
+        # Sanity check: If there are no objects, return a message
+        if summary_df.empty:
+            return "AWSDFStore: No data objects found in the store."
 
         # Dynamically compute the max length of the 'location' column and add 5 spaces for padding
         max_location_len = summary_df["location"].str.len().max() + 2
