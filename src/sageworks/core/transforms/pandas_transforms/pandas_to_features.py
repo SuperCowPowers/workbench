@@ -57,13 +57,14 @@ class PandasToFeatures(Transform):
         self.output_feature_set = None
         self.expected_rows = 0
 
-    def set_input(self, input_df: pd.DataFrame, id_column=None, event_time_column=None, one_hot_columns=None):
+    def set_input(self, input_df: pd.DataFrame, id_column, event_time_column=None, one_hot_columns=None):
         """Set the Input DataFrame for this Transform
+
         Args:
-            input_df (pd.DataFrame): The input DataFrame
-            id_column (str): The name of the id column (default: None)
-            event_time_column (str): The name of the event_time column (default: None)
-            one_hot_columns (list, Optional): The list of columns to one-hot encode (default: None)
+            input_df (pd.DataFrame): The input DataFrame.
+            id_column (str): The ID column (must be specified, use "auto" for auto-generated IDs).
+            event_time_column (str, optional): The name of the event time column (default: None).
+            one_hot_columns (list, optional): The list of columns to one-hot encode (default: None).
         """
         self.id_column = id_column
         self.event_time_column = event_time_column
@@ -80,12 +81,15 @@ class PandasToFeatures(Transform):
         time.sleep(1)
 
     def _ensure_id_column(self):
-        """Internal: AWS Feature Store requires an Id field for all data store"""
-        if self.id_column is None or self.id_column not in self.output_df.columns:
-            if "id" not in self.output_df.columns:
-                self.log.info("Generating an id column before FeatureSet Creation...")
-                self.output_df["id"] = self.output_df.index
-            self.id_column = "id"
+        """Internal: AWS Feature Store requires an Id field"""
+        if self.id_column in ["auto", "index"]:
+            self.log.info("Generating an 'auto_id' column from the dataframe index..")
+            self.output_df["auto_id"] = self.output_df.index
+            return
+        if self.id_column not in self.output_df.columns:
+            error_msg = f"Id column {self.id_column} not found in the DataFrame"
+            self.log.critical(error_msg)
+            raise ValueError(error_msg)
 
     def _ensure_event_time(self):
         """Internal: AWS Feature Store requires an event_time field for all data stored"""

@@ -4,7 +4,6 @@
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.transforms.pandas_transforms.data_to_pandas import DataToPandas
 from sageworks.core.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
-from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 
 
 class DataToFeaturesLight(Transform):
@@ -57,12 +56,13 @@ class DataToFeaturesLight(Transform):
         # This is a reference implementation that should be overridden by the subclass
         self.output_df = self.input_df
 
-    def post_transform(self, id_column=None, event_time_column=None, one_hot_columns=None, **kwargs):
+    def post_transform(self, id_column, event_time_column=None, one_hot_columns=None, **kwargs):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set
+
         Args:
-            id_column(str) Optional: The name of the id column in the output DataFrame (default: None)
-            event_time_column(str) Optional: The name of the event time column in the output DataFrame (default: None)
-            one_hot_columns(list) Optional: The list of columns to one-hot encode (default: None)
+            id_column (str): The ID column (must be specified, use "auto" for auto-generated IDs).
+            event_time_column (str, optional): The name of the event time column (default: None).
+            one_hot_columns (list, optional): The list of columns to one-hot encode (default: None).
         """
         # Now publish to the output location
         output_features = PandasToFeatures(self.output_uuid)
@@ -73,17 +73,11 @@ class DataToFeaturesLight(Transform):
         output_features.add_output_meta(self.output_meta)
         output_features.transform()
 
-        # Spin up the FeatureSet and onboard
-        fs = FeatureSetCore(self.output_uuid)
-        fs.onboard()
-
 
 if __name__ == "__main__":
     """Exercise the DataToFeaturesLight Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "test_data"
-    output_uuid = "test_features"
-    data_to_features = DataToFeaturesLight(input_uuid, output_uuid)
+    data_to_features = DataToFeaturesLight("test_data", "test_features")
     data_to_features.set_output_tags(["test", "small"])
     data_to_features.transform(id_column="id", event_time_column="date")
