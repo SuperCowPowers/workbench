@@ -20,7 +20,7 @@ def create_feature_set():
 
     # If the feature set doesn't exist, create it
     if not FeatureSet("abc_features").exists():
-        DataSource("abc").to_features("abc_features")
+        DataSource("abc").to_features("abc_features", id_column="id")
 
 
 def create_model():

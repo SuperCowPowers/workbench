@@ -108,9 +108,9 @@ class DataSource(AthenaSource):
 
     def to_features(
         self,
-        name: str = None,
+        name: str,
+        id_column: str,
         tags: list = None,
-        id_column: str = None,
         event_time_column: str = None,
         one_hot_columns: list = None,
     ) -> Union[FeatureSet, None]:
@@ -118,26 +118,20 @@ class DataSource(AthenaSource):
         Convert the DataSource to a FeatureSet
 
         Args:
-            name (str) Optional: Set the name for feature set (must be lowercase). If not specified, will be generated
-            tags (list) Optional: Set the tags for the feature set. If not specified tags will be generated
-            id_column (str) Optional: Set the id column for the feature set. If not specified will be generated
-            event_time_column (str) Optional: Set the event time for feature set. If not specified will be generated
-            one_hot_columns (list) Optional: Set the columns to be one-hot encoded. (default: None)
+            name (str): Set the name for feature set (must be lowercase).
+            id_column (str): The ID column (must be specified, use "auto" for auto-generated IDs).
+            tags (list, optional: Set the tags for the feature set. If not specified tags will be generated
+            event_time_column (str, optional): Set the event time for feature set. If not specified will be generated
+            one_hot_columns (list, optional): Set the columns to be one-hot encoded. (default: None)
 
         Returns:
             FeatureSet: The FeatureSet created from the DataSource (or None if the FeatureSet isn't created)
         """
 
         # Ensure the feature_set_name is valid
-        if name:
-            if not Artifact.is_name_valid(name):
-                self.log.critical(f"Invalid FeatureSet name: {name}, not creating FeatureSet!")
-                return None
-
-        # If the feature_set_name wasn't given generate it
-        else:
-            name = self.uuid.replace("_data", "") + "_features"
-            name = Artifact.generate_valid_name(name)
+        if not Artifact.is_name_valid(name):
+            self.log.critical(f"Invalid FeatureSet name: {name}, not creating FeatureSet!")
+            return None
 
         # Set the Tags
         tags = [name] if tags is None else tags
@@ -192,7 +186,7 @@ if __name__ == "__main__":
     # Check logic for creating a new DataSource with DataFrame (without name)
     df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
     try:
-        test_data = DataSource(df)
+        DataSource(df)
     except ValueError:
         print("AOK!")
 

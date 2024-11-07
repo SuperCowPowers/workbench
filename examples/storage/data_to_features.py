@@ -14,6 +14,6 @@ df.drop("class_number_of_rings", axis=1, inplace=True)
 
 # Create the FeatureSet
 pandas_to_features = PandasToFeatures("abalone_classification")
-pandas_to_features.set_input(df, target_column="clam_age_class")
+pandas_to_features.set_input(df, id_column="auto")
 pandas_to_features.set_output_tags(["abalone", "classification"])
 pandas_to_features.transform()

@@ -57,7 +57,7 @@ print(output_df.head())
 
 # Create a Feature Set
 to_features = PandasToFeatures("solubility_test_features")
-to_features.set_input(output_df, target_column="log_s", id_column="udm_mol_bat_id")
+to_features.set_input(output_df, id_column="udm_mol_bat_id")
 to_features.set_output_tags(["test", "solubility"])
 to_features.transform()
 

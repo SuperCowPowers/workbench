@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # Create the wine_features FeatureSet
     if recreate or not FeatureSet("wine_features").exists():
         ds = DataSource("wine_data")
-        ds.to_features("wine_features", tags=["wine", "classification"])
+        ds.to_features("wine_features", id_column="auto", tags=["wine", "classification"])
 
     # Create the wine classification Model
     if recreate or not Model("wine-classification").exists():

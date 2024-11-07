@@ -19,8 +19,8 @@ class PandasToFeatures(Transform):
     Common Usage:
         ```python
         to_features = PandasToFeatures(output_uuid)
-        to_features.set_output_tags(["abalone", "public", "whatever"])
-        to_features.set_input(df)
+        to_features.set_output_tags(["my", "awesome", "data"])
+        to_features.set_input(df, id_column="my_id")
         to_features.transform()
         ```
     """
