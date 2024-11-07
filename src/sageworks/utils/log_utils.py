@@ -1,5 +1,6 @@
 """Log Utilities"""
 
+import os
 import logging
 from contextlib import contextmanager
 
@@ -7,6 +8,13 @@ from contextlib import contextmanager
 @contextmanager
 def silence_logs():
     """Be careful, this can be fairly dangerous, as it suppresses errors that are important to see"""
+
+    # Skip this if the SAGEWORKS_DEBUG environment variable is set to True
+    if os.getenv("SAGEWORKS_DEBUG", "False").lower() == "true":
+        yield
+        return
+
+    # Suppress all logs greater than ERROR
     logger = logging.getLogger("sageworks")
     original_level = logger.level
     try:

@@ -166,8 +166,7 @@ def logging_setup(color_logs=True):
     log.addHandler(stream_handler)
 
     # Setup logging level
-    debug_env = os.getenv("SAGEWORKS_DEBUG", "False")
-    if debug_env.lower() == "true":
+    if os.getenv("SAGEWORKS_DEBUG", "False").lower() == "true":
         log.setLevel(logging.DEBUG)
         log.debug("Debugging enabled via SAGEWORKS_DEBUG environment variable.")
     else:

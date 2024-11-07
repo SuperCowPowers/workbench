@@ -49,7 +49,7 @@ class CachedMeta(Meta):
 
         # Create the Cache
         self.meta_cache = SageWorksCache(prefix="meta")
-        self.fresh_cache = SageWorksCache(prefix="meta_fresh", expire=120)  # 120-second expiration
+        self.fresh_cache = SageWorksCache(prefix="meta_fresh", expire=60)  # 60-second expiration
 
         # Create a ThreadPoolExecutor for refreshing stale data
         self.thread_pool = ThreadPoolExecutor(max_workers=5)
@@ -77,7 +77,7 @@ class CachedMeta(Meta):
 
             # Check for fresh data, spawn thread to refresh if stale
             if self.fresh_cache.get(cache_key) is None:
-                self.log.debug(f"Async: Metadata for {cache_key} is stale, launching refresh thread...")
+                self.log.info(f"Async: Metadata for {cache_key} is stale, launching refresh thread...")
                 self.fresh_cache.set(cache_key, True)  # Set fresh flag with auto-expire
 
                 # Spawn a thread to refresh data without blocking
@@ -249,10 +249,10 @@ class CachedMeta(Meta):
 
     def _refresh_data_in_background(self, method, *args, **kwargs):
         """Background task to refresh AWS metadata."""
-        result = method(self, *args, **kwargs)
         cache_key = self._flatten_redis_key(method, *args, **kwargs)
-        self.meta_cache[cache_key] = result  # Update the metadata cache
-        self.fresh_cache[cache_key] = True  # Refresh the fresh cache with 60-second expiration
+        self.fresh_cache[cache_key] = True
+        result = method(self, *args, **kwargs)
+        self.meta_cache[cache_key] = result
 
     @staticmethod
     def _flatten_redis_key(method, *args, **kwargs):
@@ -273,6 +273,8 @@ class CachedMeta(Meta):
                 self.thread_pool.shutdown(wait=True)  # Gracefully shutdown
             except RuntimeError as e:
                 self.log.error(f"Error during thread pool shutdown: {e}")
+            finally:
+                self.thread_pool = None
 
     def __repr__(self):
         return f"CachedMeta()\n\t{repr(self.meta_cache)}\n\t{super().__repr__()}"
