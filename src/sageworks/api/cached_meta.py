@@ -13,7 +13,7 @@ from sageworks.utils.sageworks_cache import SageWorksCache
 
 
 class CachedMeta(Meta):
-    """CachedMeta: A class that provides metadata functionality for Cloud Platform Artifacts.
+    """CachedMeta: Singleton class for caching metadata functionality.
 
     Common Usage:
        ```python
@@ -39,20 +39,30 @@ class CachedMeta(Meta):
        meta.endpoint("abalone-endpoint")
        ```
     """
+    _instance = None  # Class attribute to hold the singleton instance
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(CachedMeta, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self):
         """CachedMeta Initialization"""
-        self.log = logging.getLogger("sageworks")
+        if hasattr(self, "_initialized") and self._initialized:
+            return  # Prevent reinitialization
 
-        # Call the SuperClass Initialization
+        self.log = logging.getLogger("sageworks")
         super().__init__()
 
         # Create the Cache
         self.meta_cache = SageWorksCache(prefix="meta")
-        self.fresh_cache = SageWorksCache(prefix="meta_fresh", expire=60)  # 60-second expiration
+        self.fresh_cache = SageWorksCache(prefix="meta_fresh", expire=30)  # 30-second expiration
 
         # Create a ThreadPoolExecutor for refreshing stale data
         self.thread_pool = ThreadPoolExecutor(max_workers=5)
+
+        # Mark the instance as initialized
+        self._initialized = True
 
     def check(self):
         """Check if our underlying caches are working"""
@@ -78,10 +88,10 @@ class CachedMeta(Meta):
             # Check for fresh data, spawn thread to refresh if stale
             if self.fresh_cache.get(cache_key) is None:
                 self.log.info(f"Async: Metadata for {cache_key} is stale, launching refresh thread...")
-                self.fresh_cache.set(cache_key, True)  # Set fresh flag with auto-expire
+                self.fresh_cache.set(cache_key, True)  # Mark as refreshed
 
                 # Spawn a thread to refresh data without blocking
-                self.thread_pool.submit(self._refresh_data_in_background, method, *args, **kwargs)
+                self.thread_pool.submit(self._refresh_data_in_background, cache_key, method, *args, **kwargs)
 
             # Return data (fresh or stale) if available
             cached_value = self.meta_cache.get(cache_key)
@@ -247,12 +257,11 @@ class CachedMeta(Meta):
         """
         return super().endpoint(endpoint_name=endpoint_name)
 
-    def _refresh_data_in_background(self, method, *args, **kwargs):
+    def _refresh_data_in_background(self, cache_key, method, *args, **kwargs):
         """Background task to refresh AWS metadata."""
-        cache_key = self._flatten_redis_key(method, *args, **kwargs)
-        self.fresh_cache[cache_key] = True
+        self.log.info(f"Refreshing Metadata for {cache_key}")
         result = method(self, *args, **kwargs)
-        self.meta_cache[cache_key] = result
+        self.meta_cache.set(cache_key, result)
 
     @staticmethod
     def _flatten_redis_key(method, *args, **kwargs):
