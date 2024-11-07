@@ -44,7 +44,7 @@ class AWSDFStore:
         self.log = logging.getLogger("sageworks")
         self._base_prefix = "df_store/"
         self.path_prefix = self._base_prefix + path_prefix if path_prefix else self._base_prefix
-        self.path_prefix = re.sub(r'/+', '/', self.path_prefix)  # Collapse slashes
+        self.path_prefix = re.sub(r"/+", "/", self.path_prefix)  # Collapse slashes
 
         # Initialize a SageWorks Session and retrieve the S3 bucket from ConfigManager
         config = ConfigManager()
@@ -108,7 +108,7 @@ class AWSDFStore:
         """
         # Generate the specific S3 prefix for the target location
         s3_prefix = f"{self.path_prefix}/{location}.parquet/"
-        s3_prefix = re.sub(r'/+', '/', s3_prefix)  # Collapse slashes
+        s3_prefix = re.sub(r"/+", "/", s3_prefix)  # Collapse slashes
 
         # Use list_objects_v2 to check if any objects exist under this specific prefix
         response = self.s3_client.list_objects_v2(Bucket=self.sageworks_bucket, Prefix=s3_prefix, MaxKeys=1)
@@ -177,7 +177,7 @@ class AWSDFStore:
             location (str): The location prefix of the data to delete.
         """
         # Construct the full prefix for S3
-        s3_prefix = re.sub(r'/+', '/', f"{self.path_prefix}/{location}")  # Collapse slashes
+        s3_prefix = re.sub(r"/+", "/", f"{self.path_prefix}/{location}")  # Collapse slashes
 
         # List all objects under the given prefix
         try:
@@ -198,7 +198,7 @@ class AWSDFStore:
     def _generate_s3_uri(self, location: str) -> str:
         """Generate the S3 URI for the given location."""
         s3_path = f"{self.sageworks_bucket}/{self.path_prefix}/{location}.parquet"
-        s3_path = re.sub(r'/+', '/', s3_path)  # Collapse slashes
+        s3_path = re.sub(r"/+", "/", s3_path)  # Collapse slashes
         s3_uri = f"s3://{s3_path}"
         return s3_uri
 
