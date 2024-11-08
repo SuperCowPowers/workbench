@@ -336,12 +336,16 @@ class EndpointCore(Artifact):
             capture (bool, optional): Capture the inference results and metrics (default=False)
         """
 
-        # This import needs to happen here (instead of top of file) to avoid circular imports
-        from sageworks.utils.endpoint_utils import fs_evaluation_data
+        # Backtrack to the FeatureSet
+        model_name = self.get_input()
+        fs_name = ModelCore(model_name).get_input()
+        fs = FeatureSet(fs_name)
 
-        eval_data_df = fs_evaluation_data(self)
+        # Grab the evaluation data from the FeatureSet
+        table = fs.view("training").table
+        eval_df = fs.query(f'SELECT * FROM "{table}" where training = 0')
         capture_uuid = "auto_inference" if capture else None
-        return self.inference(eval_data_df, capture_uuid)
+        return self.inference(eval_df, capture_uuid, id_column=fs.id_column)
 
     def inference(self, eval_df: pd.DataFrame, capture_uuid: str = None, id_column: str = None) -> pd.DataFrame:
         """Run inference and compute performance metrics with optional capture
