@@ -568,6 +568,27 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_classes/cached_meta/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cached Meta
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2179,6 +2200,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Internal Changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#internal-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Caching
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2834,6 +2870,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Internal Changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#internal-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Caching
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2906,9 +2957,29 @@ If you're data doesn't have a id column you can specify "auto"</p>
 <p>For more details see: <a href="../../api_classes/feature_set/">FeatureSet Class</a></p>
 <p>The new Meta() API will be used inside of the Artifact classes (see Internal Changes...Artifacts... below)</p>
 <h2 id="improvements">Improvements</h2>
-<p><strong>TBD</strong></p>
+<p><strong>DFStore</strong></p>
+<p>Robust handling of slashes, so now it will 'just work' with various upserts and gets:</p>
+<div class="language-text highlight"><pre><span></span><code>```
+# These all give you /ml/shap_value dataframe
+df_store.get(&quot;/ml/shap_values&quot;)
+df_store.get(&quot;ml/shap_values&quot;)
+df_store.get(&quot;//ml/shap_values&quot;)
+```
+</code></pre></div>
 <h2 id="internal-changes">Internal Changes</h2>
-<p><strong>TBD</strong></p>
+<p>There's a whole new directory structure that helps isolate Cloud Platform specific funcitonality.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>- sageworks/src
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>     - core/cloud_platform
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>        - aws
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>        - azure
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>        - gcp
+</span></code></pre></div>
+<ul>
+<li>The <code>DFStore</code> now uses <code>AWSDFStore</code> as its concrete implementation class.</li>
+<li>Both <code>CachedMeta</code> and <code>AWSAccountClamp</code> have had a revamp of their singleton logic.</li>
+</ul>
+<h3 id="internal-caching">Internal Caching</h3>
+<p>So as part of our <a href="../../road_maps/0_9_0/">v0.9.0 Roadmap</a> we're continuing to revamp caching. We're experimenting with <a href="../../api_classes/cached_meta/">CachedMeta Class</a> inside the Artifact classes. Caching continues to be challenging for the framework, it's an absolute must for Web Inferface/UI performance and then it needs to get out of the way for batch jobs and the concurrent building of ML pipelines.</p>
 <h2 id="specific-code-changes">Specific Code Changes</h2>
 <p><a href="https://github.com/supercowpowers/sageworks/compare/v0.8.46...v0.8.50" target="_blank">Code Diff v0.8.46 --&gt; v0.8.50</a> </p>
 <p>Who doesn't like looking at code! Also +3 points for getting down this far! Here's a cow joke as a reward:</p>

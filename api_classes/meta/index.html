@@ -778,6 +778,27 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cached_meta/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cached Meta
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4636,11 +4657,7 @@ such as Data Sources, Feature Sets, Models, and Endpoints.</p>
 
     </div>
 
-</div><div class="admonition warning inline end">
-<p class="admonition-title">Refresh</p>
-<p>Setting <code>refresh</code> to <code>True</code> will lead to substantial performance issues, so don't do it :).</p>
-</div>
-<h2 id="examples">Examples</h2>
+</div><h2 id="examples">Examples</h2>
 <p>These example show how to use the <code>Meta()</code> class to pull lists of artifacts from AWS. DataSources, FeatureSets, Models, Endpoints and more. If you're building a web interface plugin, the <strong>Meta</strong> class is a great place to start.</p>
 <div class="admonition tip">
 <p class="admonition-title">SageWorks REPL</p>
@@ -4657,7 +4674,7 @@ such as Data Sources, Feature Sets, Models, and Endpoints.</p>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">[</span><span class="mi">3</span> <span class="n">rows</span> <span class="n">x</span> <span class="mi">10</span> <span class="n">columns</span><span class="p">]</span>
 </span></code></pre></div>
 <p><strong>List the Models in AWS</strong></p>
-<div class="language-py highlight"><span class="filename">meta_list_models.py</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">sageworks.api.meta</span> <span class="kn">import</span> <span class="n">Meta</span>
+<div class="language-py highlight"><span class="filename">meta_list_models.py</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">sageworks.api</span> <span class="kn">import</span> <span class="n">Meta</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Create our Meta Class and get a list of our Models</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">meta</span> <span class="o">=</span> <span class="n">Meta</span><span class="p">()</span>
@@ -4684,7 +4701,7 @@ such as Data Sources, Feature Sets, Models, and Endpoints.</p>
 </span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">abalone</span><span class="o">-</span><span class="n">regression</span>
 </span></code></pre></div>
 <p><strong>Getting Model Performance Metrics</strong></p>
-<div class="language-py highlight"><span class="filename">meta_model_metrics.py</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">sageworks.api.meta</span> <span class="kn">import</span> <span class="n">Meta</span>
+<div class="language-py highlight"><span class="filename">meta_model_metrics.py</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">sageworks.api</span> <span class="kn">import</span> <span class="n">Meta</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># Create our Meta Class and get a list of our Models</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">meta</span> <span class="o">=</span> <span class="n">Meta</span><span class="p">()</span>
@@ -4718,7 +4735,7 @@ such as Data Sources, Feature Sets, Models, and Endpoints.</p>
 </span></code></pre></div>
 <p><strong>List the Endpoints in AWS</strong></p>
 <div class="language-py highlight"><span class="filename">meta_list_endpoints.py</span><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kn">from</span> <span class="nn">sageworks.api.meta</span> <span class="kn">import</span> <span class="n">Meta</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kn">from</span> <span class="nn">sageworks.api</span> <span class="kn">import</span> <span class="n">Meta</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
 </span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Create our Meta Class and get a list of our Endpoints</span>
 </span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">meta</span> <span class="o">=</span> <span class="n">Meta</span><span class="p">()</span>
@@ -4743,7 +4760,7 @@ such as Data Sources, Feature Sets, Models, and Endpoints.</p>
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Not Finding some particular AWS Data?</p>
-<p>The SageWorks Meta API Class also has <code>_details()</code> methods, so make sure to check those out.</p>
+<p>The SageWorks Meta API Class also has <code>(details=True)</code> arguments, so make sure to check those out.</p>
 </div>
 
 
