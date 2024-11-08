@@ -2945,7 +2945,8 @@
 
               <details class="quote">
                 <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/data_to_features_light.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-0-10">10</a></span>
 <span class="normal"><a href="#__codelineno-0-11">11</a></span>
 <span class="normal"><a href="#__codelineno-0-12">12</a></span>
 <span class="normal"><a href="#__codelineno-0-13">13</a></span>
@@ -3009,66 +3010,63 @@
 <span class="normal"><a href="#__codelineno-0-71">71</a></span>
 <span class="normal"><a href="#__codelineno-0-72">72</a></span>
 <span class="normal"><a href="#__codelineno-0-73">73</a></span>
-<span class="normal"><a href="#__codelineno-0-74">74</a></span>
-<span class="normal"><a href="#__codelineno-0-75">75</a></span>
-<span class="normal"><a href="#__codelineno-0-76">76</a></span>
-<span class="normal"><a href="#__codelineno-0-77">77</a></span>
-<span class="normal"><a href="#__codelineno-0-78">78</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="k">class</span> <span class="nc">DataToFeaturesLight</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12"></a>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    Common Usage:</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">        ```python</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">        to_features = DataToFeaturesLight(data_uuid, feature_uuid)</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">        to_features.set_output_tags([&quot;abalone&quot;, &quot;public&quot;, &quot;whatever&quot;])</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">        to_features.transform(id_column=&quot;id&quot;/None, event_time_column=&quot;date&quot;/None, query=str/None)</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">        ```</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20"></a>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;DataToFeaturesLight Initialization</span>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">        Args:</span>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">            data_uuid (str): The UUID of the SageWorks DataSource to be transformed</span>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">            feature_uuid (str): The UUID of the SageWorks FeatureSet to be created</span>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a>        <span class="c1"># Call superclass init</span>
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">)</span>
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>        <span class="c1"># Set up all my instance attributes</span>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">input_type</span> <span class="o">=</span> <span class="n">TransformInput</span><span class="o">.</span><span class="n">DATA_SOURCE</span>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span> <span class="o">=</span> <span class="n">TransformOutput</span><span class="o">.</span><span class="n">FEATURE_SET</span>
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>
-</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a>    <span class="k">def</span> <span class="nf">pre_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Pull the input DataSource into our Input Pandas DataFrame</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">        Args:</span>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">            query(str): Optional query to filter the input DataFrame</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>        <span class="c1"># Grab the Input (Data Source)</span>
-</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a>        <span class="n">data_to_pandas</span> <span class="o">=</span> <span class="n">DataToPandas</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">)</span>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>        <span class="n">data_to_pandas</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
-</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="n">data_to_pandas</span><span class="o">.</span><span class="n">get_output</span><span class="p">()</span>
-</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>
-</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>        <span class="c1"># Check if there are any columns that are greater than 64 characters</span>
-</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">64</span><span class="p">:</span>
-</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column name &#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&#39; &gt; 64 characters. AWS FeatureGroup limits to 64 characters.&quot;</span><span class="p">)</span>
-</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>
-</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="k">def</span> <span class="nf">transform_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform the input DataFrame into a Feature Set&quot;&quot;&quot;</span>
-</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>
-</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="c1"># This is a reference implementation that should be overridden by the subclass</span>
-</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span>
-</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>
-</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="k">def</span> <span class="nf">post_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">one_hot_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;At this point the output DataFrame should be populated, so publish it as a Feature Set</span>
+<span class="normal"><a href="#__codelineno-0-74">74</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="k">class</span> <span class="nc">DataToFeaturesLight</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;DataToFeaturesLight: Base Class for Light DataSource to FeatureSet using Pandas</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11"></a>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="sd">    Common Usage:</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">        ```python</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">        to_features = DataToFeaturesLight(data_uuid, feature_uuid)</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">        to_features.set_output_tags([&quot;abalone&quot;, &quot;public&quot;, &quot;whatever&quot;])</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">        to_features.transform(id_column=&quot;id&quot;/None, event_time_column=&quot;date&quot;/None, query=str/None)</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">        ```</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19"></a>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;DataToFeaturesLight Initialization</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22"></a>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">        Args:</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">            data_uuid (str): The UUID of the SageWorks DataSource to be transformed</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">            feature_uuid (str): The UUID of the SageWorks FeatureSet to be created</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a>        <span class="c1"># Call superclass init</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">)</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>        <span class="c1"># Set up all my instance attributes</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">input_type</span> <span class="o">=</span> <span class="n">TransformInput</span><span class="o">.</span><span class="n">DATA_SOURCE</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span> <span class="o">=</span> <span class="n">TransformOutput</span><span class="o">.</span><span class="n">FEATURE_SET</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="k">def</span> <span class="nf">pre_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Pull the input DataSource into our Input Pandas DataFrame</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">        Args:</span>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">            query(str): Optional query to filter the input DataFrame</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>        <span class="c1"># Grab the Input (Data Source)</span>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>        <span class="n">data_to_pandas</span> <span class="o">=</span> <span class="n">DataToPandas</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">)</span>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a>        <span class="n">data_to_pandas</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="n">data_to_pandas</span><span class="o">.</span><span class="n">get_output</span><span class="p">()</span>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a>
+</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>        <span class="c1"># Check if there are any columns that are greater than 64 characters</span>
+</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">64</span><span class="p">:</span>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column name &#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&#39; &gt; 64 characters. AWS FeatureGroup limits to 64 characters.&quot;</span><span class="p">)</span>
+</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="k">def</span> <span class="nf">transform_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform the input DataFrame into a Feature Set&quot;&quot;&quot;</span>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>        <span class="c1"># This is a reference implementation that should be overridden by the subclass</span>
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span>
+</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>
+</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>    <span class="k">def</span> <span class="nf">post_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">one_hot_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;At this point the output DataFrame should be populated, so publish it as a Feature Set</span>
+</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>
 </span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">        Args:</span>
-</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">            id_column(str) Optional: The name of the id column in the output DataFrame (default: None)</span>
-</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">            event_time_column(str) Optional: The name of the event time column in the output DataFrame (default: None)</span>
-</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">            one_hot_columns(list) Optional: The list of columns to one-hot encode (default: None)</span>
+</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">            id_column (str): The ID column (must be specified, use &quot;auto&quot; for auto-generated IDs).</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">            event_time_column (str, optional): The name of the event time column (default: None).</span>
+</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">            one_hot_columns (list, optional): The list of columns to one-hot encode (default: None).</span>
 </span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>        <span class="c1"># Now publish to the output location</span>
 </span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a>        <span class="n">output_features</span> <span class="o">=</span> <span class="n">PandasToFeatures</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
@@ -3078,10 +3076,6 @@
 </span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a>        <span class="n">output_features</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_tags</span><span class="p">)</span>
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>        <span class="n">output_features</span><span class="o">.</span><span class="n">add_output_meta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_meta</span><span class="p">)</span>
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a>        <span class="n">output_features</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
-</span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a>
-</span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a>        <span class="c1"># Spin up the FeatureSet and onboard</span>
-</span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a>        <span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureSetCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
-</span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a>        <span class="n">fs</span><span class="o">.</span><span class="n">onboard</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
 
@@ -3159,7 +3153,8 @@
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/data_to_features_light.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-21">21</a></span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#__codelineno-0-21">21</a></span>
 <span class="normal"><a href="#__codelineno-0-22">22</a></span>
 <span class="normal"><a href="#__codelineno-0-23">23</a></span>
 <span class="normal"><a href="#__codelineno-0-24">24</a></span>
@@ -3173,23 +3168,22 @@
 <span class="normal"><a href="#__codelineno-0-32">32</a></span>
 <span class="normal"><a href="#__codelineno-0-33">33</a></span>
 <span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;DataToFeaturesLight Initialization</span>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">    Args:</span>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">        data_uuid (str): The UUID of the SageWorks DataSource to be transformed</span>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">        feature_uuid (str): The UUID of the SageWorks FeatureSet to be created</span>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a>    <span class="c1"># Call superclass init</span>
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">)</span>
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>    <span class="c1"># Set up all my instance attributes</span>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">input_type</span> <span class="o">=</span> <span class="n">TransformInput</span><span class="o">.</span><span class="n">DATA_SOURCE</span>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span> <span class="o">=</span> <span class="n">TransformOutput</span><span class="o">.</span><span class="n">FEATURE_SET</span>
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="normal"><a href="#__codelineno-0-35">35</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;DataToFeaturesLight Initialization</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22"></a>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">        data_uuid (str): The UUID of the SageWorks DataSource to be transformed</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">        feature_uuid (str): The UUID of the SageWorks FeatureSet to be created</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a>    <span class="c1"># Call superclass init</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_uuid</span><span class="p">,</span> <span class="n">feature_uuid</span><span class="p">)</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="c1"># Set up all my instance attributes</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">input_type</span> <span class="o">=</span> <span class="n">TransformInput</span><span class="o">.</span><span class="n">DATA_SOURCE</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span> <span class="o">=</span> <span class="n">TransformOutput</span><span class="o">.</span><span class="n">FEATURE_SET</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="kc">None</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3200,22 +3194,82 @@
 
 
 <h3 id="sageworks.core.transforms.data_to_features.light.data_to_features_light.DataToFeaturesLight.post_transform" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">one_hot_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">post_transform</span><span class="p">(</span><span class="n">id_column</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">one_hot_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>At this point the output DataFrame should be populated, so publish it as a Feature Set
-Args:
-    id_column(str) Optional: The name of the id column in the output DataFrame (default: None)
-    event_time_column(str) Optional: The name of the event time column in the output DataFrame (default: None)
-    one_hot_columns(list) Optional: The list of columns to one-hot encode (default: None)</p>
+        <p>At this point the output DataFrame should be populated, so publish it as a Feature Set</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>id_column</code>
+            </td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The ID column (must be specified, use "auto" for auto-generated IDs).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>event_time_column</code>
+            </td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The name of the event time column (default: None).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>one_hot_columns</code>
+            </td>
+            <td>
+                  <code>list</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The list of columns to one-hot encode (default: None).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/data_to_features_light.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-60">60</a></span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-59">59</a></span>
+<span class="normal"><a href="#__codelineno-0-60">60</a></span>
 <span class="normal"><a href="#__codelineno-0-61">61</a></span>
 <span class="normal"><a href="#__codelineno-0-62">62</a></span>
 <span class="normal"><a href="#__codelineno-0-63">63</a></span>
@@ -3229,16 +3283,13 @@ Args:
 <span class="normal"><a href="#__codelineno-0-71">71</a></span>
 <span class="normal"><a href="#__codelineno-0-72">72</a></span>
 <span class="normal"><a href="#__codelineno-0-73">73</a></span>
-<span class="normal"><a href="#__codelineno-0-74">74</a></span>
-<span class="normal"><a href="#__codelineno-0-75">75</a></span>
-<span class="normal"><a href="#__codelineno-0-76">76</a></span>
-<span class="normal"><a href="#__codelineno-0-77">77</a></span>
-<span class="normal"><a href="#__codelineno-0-78">78</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="k">def</span> <span class="nf">post_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">one_hot_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;At this point the output DataFrame should be populated, so publish it as a Feature Set</span>
+<span class="normal"><a href="#__codelineno-0-74">74</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="k">def</span> <span class="nf">post_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_column</span><span class="p">,</span> <span class="n">event_time_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">one_hot_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;At this point the output DataFrame should be populated, so publish it as a Feature Set</span>
+</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>
 </span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">    Args:</span>
-</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">        id_column(str) Optional: The name of the id column in the output DataFrame (default: None)</span>
-</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">        event_time_column(str) Optional: The name of the event time column in the output DataFrame (default: None)</span>
-</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">        one_hot_columns(list) Optional: The list of columns to one-hot encode (default: None)</span>
+</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">        id_column (str): The ID column (must be specified, use &quot;auto&quot; for auto-generated IDs).</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">        event_time_column (str, optional): The name of the event time column (default: None).</span>
+</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">        one_hot_columns (list, optional): The list of columns to one-hot encode (default: None).</span>
 </span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>    <span class="c1"># Now publish to the output location</span>
 </span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a>    <span class="n">output_features</span> <span class="o">=</span> <span class="n">PandasToFeatures</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
@@ -3248,10 +3299,6 @@ Args:
 </span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a>    <span class="n">output_features</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_tags</span><span class="p">)</span>
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>    <span class="n">output_features</span><span class="o">.</span><span class="n">add_output_meta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_meta</span><span class="p">)</span>
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="n">output_features</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
-</span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a>
-</span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a>    <span class="c1"># Spin up the FeatureSet and onboard</span>
-</span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a>    <span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureSetCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="p">)</span>
-</span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a>    <span class="n">fs</span><span class="o">.</span><span class="n">onboard</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3275,7 +3322,8 @@ Args:
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/data_to_features_light.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-38">38</a></span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-37">37</a></span>
+<span class="normal"><a href="#__codelineno-0-38">38</a></span>
 <span class="normal"><a href="#__codelineno-0-39">39</a></span>
 <span class="normal"><a href="#__codelineno-0-40">40</a></span>
 <span class="normal"><a href="#__codelineno-0-41">41</a></span>
@@ -3288,22 +3336,21 @@ Args:
 <span class="normal"><a href="#__codelineno-0-48">48</a></span>
 <span class="normal"><a href="#__codelineno-0-49">49</a></span>
 <span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="k">def</span> <span class="nf">pre_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Pull the input DataSource into our Input Pandas DataFrame</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">    Args:</span>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">        query(str): Optional query to filter the input DataFrame</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="c1"># Grab the Input (Data Source)</span>
-</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a>    <span class="n">data_to_pandas</span> <span class="o">=</span> <span class="n">DataToPandas</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">)</span>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="n">data_to_pandas</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
-</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="n">data_to_pandas</span><span class="o">.</span><span class="n">get_output</span><span class="p">()</span>
-</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>
-</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="c1"># Check if there are any columns that are greater than 64 characters</span>
-</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">64</span><span class="p">:</span>
-</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column name &#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&#39; &gt; 64 characters. AWS FeatureGroup limits to 64 characters.&quot;</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-51">51</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="k">def</span> <span class="nf">pre_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Pull the input DataSource into our Input Pandas DataFrame</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">        query(str): Optional query to filter the input DataFrame</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>    <span class="c1"># Grab the Input (Data Source)</span>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="n">data_to_pandas</span> <span class="o">=</span> <span class="n">DataToPandas</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">)</span>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a>    <span class="n">data_to_pandas</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="n">data_to_pandas</span><span class="o">.</span><span class="n">get_output</span><span class="p">()</span>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a>
+</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="c1"># Check if there are any columns that are greater than 64 characters</span>
+</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">64</span><span class="p">:</span>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column name &#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&#39; &gt; 64 characters. AWS FeatureGroup limits to 64 characters.&quot;</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3325,15 +3372,15 @@ Args:
 
             <details class="quote">
               <summary>Source code in <code>src/sageworks/core/transforms/data_to_features/light/data_to_features_light.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-54">54</a></span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#__codelineno-0-54">54</a></span>
 <span class="normal"><a href="#__codelineno-0-55">55</a></span>
 <span class="normal"><a href="#__codelineno-0-56">56</a></span>
-<span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="k">def</span> <span class="nf">transform_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform the input DataFrame into a Feature Set&quot;&quot;&quot;</span>
-</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>
-</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="c1"># This is a reference implementation that should be overridden by the subclass</span>
-</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span>
+<span class="normal"><a href="#__codelineno-0-57">57</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="k">def</span> <span class="nf">transform_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform the input DataFrame into a Feature Set&quot;&quot;&quot;</span>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="c1"># This is a reference implementation that should be overridden by the subclass</span>
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3371,7 +3418,7 @@ Args:
   <summary>An alternative to using this class is to use the <code>compute_molecular_descriptors</code> function directly.</summary>
   <p>df_features = compute_molecular_descriptors(df)
 to_features = PandasToFeatures("my_feature_set")
-   to_features.set_input(df_features)
+   to_features.set_input(df_features, id_column="id")
    to_features.set_output_tags(["blah", "whatever"])
    to_features.transform()</p>
 </details>
