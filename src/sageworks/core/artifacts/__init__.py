@@ -15,7 +15,7 @@ from .artifact import Artifact
 from .athena_source import AthenaSource
 from .data_source_abstract import DataSourceAbstract
 from .feature_set_core import FeatureSetCore
-from .model_core import ModelCore
+from .model_core import ModelCore, ModelType
 from .endpoint_core import EndpointCore
 
-__all__ = ["Artifact", "AthenaSource", "DataSourceAbstract", "FeatureSetCore", "ModelCore", "EndpointCore"]
+__all__ = ["Artifact", "AthenaSource", "DataSourceAbstract", "FeatureSetCore", "ModelCore", "ModelType", "EndpointCore"]

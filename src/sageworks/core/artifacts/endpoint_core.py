@@ -39,7 +39,7 @@ from sagemaker import Predictor
 
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
-from sageworks.core.artifacts.model_core import ModelCore, ModelType
+from sageworks.core.artifacts import FeatureSetCore, ModelCore, ModelType
 from sageworks.utils.endpoint_metrics import EndpointMetrics
 from sageworks.utils.shapley_values import generate_shap_values
 from sageworks.utils.fast_inference import fast_inference
@@ -339,7 +339,7 @@ class EndpointCore(Artifact):
         # Backtrack to the FeatureSet
         model_name = self.get_input()
         fs_name = ModelCore(model_name).get_input()
-        fs = FeatureSet(fs_name)
+        fs = FeatureSetCore(fs_name)
 
         # Grab the evaluation data from the FeatureSet
         table = fs.view("training").table
