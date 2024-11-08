@@ -327,7 +327,7 @@ def integration_test():
 
     # Create the class and run the report
     feature_spider = FeatureSpider(
-        feature_df, features=feature_columns, target_column=target_column, id_column="id", neighbors=2
+        feature_df, features=feature_columns, target_column=target_column, id_column=fs.id_column, neighbors=2
     )
     feature_spider.coincident(1.0)
 

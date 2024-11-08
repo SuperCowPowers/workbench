@@ -138,7 +138,9 @@ if __name__ == "__main__":
     proximity_graph = ProximityGraph(n_neighbors=5)
 
     # Build the proximity graph using the specified features and ID column
-    nx_graph = proximity_graph.build_graph(df, features=feature_columns, id_column="id", target="class_number_of_rings")
+    nx_graph = proximity_graph.build_graph(
+        df, features=feature_columns, id_column=fs.id_column, target="class_number_of_rings"
+    )
 
     # Create a SageWorks GraphCore object
     my_graph = GraphCore(nx_graph, "abalone_proximity_graph")

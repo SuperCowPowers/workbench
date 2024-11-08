@@ -46,12 +46,11 @@ class FeatureSpaceProximity:
         self.outliers()
 
     @classmethod
-    def from_model(cls, model, id_column: str) -> "FeatureSpaceProximity":
+    def from_model(cls, model) -> "FeatureSpaceProximity":
         """Create a FeatureSpaceProximity instance from a SageWorks model object.
 
         Args:
             model (Model): A SageWorks model object.
-            id_column (str): Name of the ID column.
 
         Returns:
             FeatureSpaceProximity: A new instance of the FeatureSpaceProximity class.
@@ -67,7 +66,7 @@ class FeatureSpaceProximity:
         df = fs.view("training").pull_dataframe()
 
         # Create and return a new instance of FeatureSpaceProximity
-        return cls(df=df, features=features, id_column=id_column, target=target)
+        return cls(df=df, features=features, id_column=fs.id_column, target=target)
 
     def neighbors(self, query_id: Union[str, int], radius: float = None, include_self: bool = True) -> pd.DataFrame:
         """Return neighbors of the given query ID, either by fixed neighbors or within a radius.

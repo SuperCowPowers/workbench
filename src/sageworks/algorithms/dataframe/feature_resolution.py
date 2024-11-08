@@ -209,7 +209,9 @@ def unit_test():
     feature_columns = m.features()
 
     # Create the class and run the report
-    resolution = FeatureResolution(test_df, features=feature_columns, target_column=target_column, id_column="id")
+    resolution = FeatureResolution(
+        test_df, features=feature_columns, target_column=target_column, id_column=fs.id_column
+    )
     df = resolution.compute(within_distance=0.01, min_target_difference=1.0)
     print(df)
 
@@ -228,7 +230,9 @@ def recursive_test():
     feature_columns = m.features()
 
     # Create the class and run the report
-    resolution = FeatureResolution(test_df, features=feature_columns, target_column=target_column, id_column="id")
+    resolution = FeatureResolution(
+        test_df, features=feature_columns, target_column=target_column, id_column=fs.id_column
+    )
     df = resolution.recursive_compute(within_distance=0.01, min_target_difference=1.0)
     print(df)
 
