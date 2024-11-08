@@ -21,7 +21,7 @@ def delete_invalid_views(database_scope):
             try:
                 # Attempt a simple query to check if the view is valid
                 print(f"Checking view: {view}...")
-                query = f"SELECT * FROM \"{view}\" limit 0"
+                query = f'SELECT * FROM "{view}" limit 0'
                 wr.athena.read_sql_query(sql=query, database=database, ctas_approach=False, boto3_session=boto3_session)
             except Exception as e:
                 if "INVALID_VIEW" in str(e):
