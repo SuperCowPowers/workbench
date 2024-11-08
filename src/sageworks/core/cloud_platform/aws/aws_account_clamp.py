@@ -8,12 +8,7 @@ from botocore.exceptions import (
 )
 from botocore.client import BaseClient
 import logging
-
-# We import SageSession lazily, so we'll leave this hint here for type checkers
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from sagemaker.session import Session as SageSession
+from sagemaker.session import Session as SageSession
 
 # SageWorks Imports
 from sageworks.core.cloud_platform.aws.aws_session import AWSSession
@@ -120,8 +115,6 @@ class AWSAccountClamp:
         Returns:
             SageSession: A SageMaker session object
         """
-        from sagemaker.session import Session as SageSession
-
         return SageSession(boto_session=cls.boto3_session)
 
     @classmethod
