@@ -2943,10 +2943,10 @@
 <p><strong>FeatureSet</strong></p>
 <p>When creating a FeatureSet the <code>id_column</code> is now a required argument.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ds = DataSource(&quot;test_data&quot;)
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>fs = ds.to_features(&quot;test_features&quot;, id_column=&quot;id&quot;) &lt;-- Required
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>fs = ds.to_features(&quot;test_features&quot;, id_column=&quot;my_id&quot;) &lt;-- Required
 </span></code></pre></div>
 <p><div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>to_features = PandasToFeatures(&quot;my_feature_set&quot;)
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>to_features.set_input(df_features, id_column=&quot;id&quot;)  &lt;-- Required
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>to_features.set_input(df_features, id_column=&quot;my_id&quot;)  &lt;-- Required
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>to_features.set_output_tags([&quot;blah&quot;, &quot;whatever&quot;])
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>to_features.transform()
 </span></code></pre></div>
