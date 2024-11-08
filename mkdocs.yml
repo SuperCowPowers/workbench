@@ -16,6 +16,7 @@ nav:
     - DataFrame Store: api_classes/df_store.md
     - Pipelines: api_classes/pipelines.md
     - Monitor: api_classes/monitor.md
+    - Cached Meta: api_classes/cached_meta.md
   - Blogs/Research: 
     - OverView: blogs_research/index.md
     - Residual Analysis: blogs_research/residual_analysis.md 
