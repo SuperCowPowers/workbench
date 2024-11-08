@@ -16,73 +16,67 @@ from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 
 
 class AWSAccountClamp:
+    """AWSAccountClamp: Singleton class for connecting to an AWS Account"""
 
-    # Initialize Class Attributes
-    log = None
-    cm = None
-    sageworks_bucket_name = None
-    account_id = None
-    region = None
-    boto3_session = None
-    instance = None
+    _instance = None  # Class attribute to hold the singleton instance
 
     def __new__(cls):
-        """AWSAccountClamp Singleton Pattern"""
-        if cls.instance is None:
-            # Initialize class attributes here
-            cls.log = logging.getLogger("sageworks")
-            cls.log.info("Creating the AWSAccountClamp Singleton...")
+        if cls._instance is None:
+            cls._instance = super(AWSAccountClamp, cls).__new__(cls)
+        return cls._instance
 
-            # Pull in our config from the config manager
-            cls.cm = ConfigManager()
-            if not cls.cm.config_okay():
-                cls.log.error("SageWorks Configuration Incomplete...")
-                cls.log.error("Run the 'sageworks' command and follow the prompts...")
-                raise FatalConfigError()
-            cls.sageworks_bucket_name = cls.cm.get_config("SAGEWORKS_BUCKET")
+    def __init__(self):
+        """AWSAccountClamp Initialization"""
+        if hasattr(self, "_initialized") and self._initialized:
+            return  # Prevent reinitialization
 
-            # Grab our AWS Boto3 Session
-            cls.aws_session = AWSSession()
-            cls.boto3_session = cls.aws_session.boto3_session
+        # Setup code (only runs once)
+        self.log = logging.getLogger("sageworks")
+        self.log.info("Creating the AWSAccountClamp Singleton...")
 
-            # Check our AWS Identity
-            try:
-                cls.account_id = boto3.client("sts").get_caller_identity()["Account"]
-                cls.region = boto3.session.Session().region_name
-            except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
-                cls.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
-                raise FatalConfigError()
+        # ConfigManager and AWS setup
+        self.cm = ConfigManager()
+        if not self.cm.config_okay():
+            self.log.error("SageWorks Configuration Incomplete...")
+            self.log.error("Run the 'sageworks' command and follow the prompts...")
+            raise FatalConfigError()
+        self.sageworks_bucket_name = self.cm.get_config("SAGEWORKS_BUCKET")
+        self.aws_session = AWSSession()
+        self.boto3_session = self.aws_session.boto3_session
 
-            # Check our SageWorks API Key and Load the License
-            cls.log.info("Checking SageWorks API License...")
-            cls.cm.load_and_check_license(cls.account_id)
-            cls.cm.print_license_info()
+        # Check our AWS Identity
+        try:
+            self.account_id = boto3.client("sts").get_caller_identity()["Account"]
+            self.region = boto3.session.Session().region_name
+        except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
+            self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+            raise FatalConfigError()
 
-            # Create the Singleton Instance
-            cls.instance = super(AWSAccountClamp, cls).__new__(cls)
+        # Check our SageWorks API Key and Load the License
+        self.log.info("Checking SageWorks API License...")
+        self.cm.load_and_check_license(self.account_id)
+        self.cm.print_license_info()
 
-        # Return the singleton
-        return cls.instance
+        # Mark the instance as initialized
+        self._initialized = True
 
-    @classmethod
-    def check_aws_identity(cls) -> bool:
+    def check_aws_identity(self) -> bool:
         """Check the AWS Identity currently active"""
         # Check AWS Identity Token
         sts = boto3.client("sts")
         try:
             identity = sts.get_caller_identity()
-            cls.log.info("AWS Account Info:")
-            cls.log.info(f"Account: {identity['Account']}")
-            cls.log.info(f"Identity ARN: {identity['Arn']}")
-            cls.log.info(f"Region: {cls.region}")
+            self.log.info("AWS Account Info:")
+            self.log.info(f"Account: {identity['Account']}")
+            self.log.info(f"Identity ARN: {identity['Arn']}")
+            self.log.info(f"Region: {self.region}")
             return True
         except (ClientError, UnauthorizedSSOTokenError):
             msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
-            cls.log.critical(msg)
+            self.log.critical(msg)
             raise RuntimeError(msg)
 
-    @classmethod
-    def get_aws_account_info(cls) -> dict:
+    def get_aws_account_info(self) -> dict:
         """Get the AWS Account Information
 
         Returns:
@@ -94,37 +88,34 @@ class AWSAccountClamp:
             identity = sts.get_caller_identity()
             info["Account"] = identity["Account"]
             info["IdentityArn"] = identity["Arn"]
-            info["Region"] = cls.region
+            info["Region"] = self.region
             return info
         except (ClientError, UnauthorizedSSOTokenError):
-            cls.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+            self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
             return info
 
-    @classmethod
-    def check_s3_access(cls) -> bool:
-        s3 = cls.boto3_session.client("s3")
+    def check_s3_access(self) -> bool:
+        s3 = self.boto3_session.client("s3")
         results = s3.list_buckets()
         for bucket in results["Buckets"]:
-            cls.log.info(f"\t{bucket['Name']}")
+            self.log.info(f"\t{bucket['Name']}")
         return True
 
-    @classmethod
-    def sagemaker_session(cls) -> "SageSession":
+    def sagemaker_session(self) -> "SageSession":
         """Create a sageworks SageMaker session (using our boto3 refreshable session)
 
         Returns:
             SageSession: A SageMaker session object
         """
-        return SageSession(boto_session=cls.boto3_session)
+        return SageSession(boto_session=self.boto3_session)
 
-    @classmethod
-    def sagemaker_client(cls) -> BaseClient:
+    def sagemaker_client(self) -> BaseClient:
         """Create a sageworks SageMaker client (using our boto3 refreshable session)
 
         Returns:
             BaseClient: A SageMaker client object
         """
-        return cls.boto3_session.client("sagemaker")
+        return self.boto3_session.client("sagemaker")
 
 
 if __name__ == "__main__":
