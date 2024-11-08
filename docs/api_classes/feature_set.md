@@ -14,9 +14,9 @@ All of the SageWorks Examples are in the Sageworks Repository under the `example
 from sageworks.api.data_source import DataSource
 
 # Convert the Data Source to a Feature Set
-test_data = DataSource('test_data')
-my_features = test_data.to_features()
-print(my_features.details())
+ds = DataSource('test_data')
+fs = ds.to_features("test_features", id_column="id")
+print(fs.details())
 ```
 
 **FeatureSet EDA Statistics**
