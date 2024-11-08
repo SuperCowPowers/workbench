@@ -16,8 +16,8 @@ def correlation_query(columns: list[str], table_name: str) -> str:
     """Build a query to compute the correlations between columns in a table
 
     Args:
-        columns(list(str)): The columns to compute correlations on
-        table_name(str): The table to compute correlations on
+        columns (list(str)): The columns to compute correlations on
+        table_name (str): The table to compute correlations on
 
     Returns:
         str: The SQL query to compute correlations
