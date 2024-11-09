@@ -5,6 +5,7 @@
        operation and since this will only be run once for existing clients and never
        again, we don't want to sweat the details.
 """
+
 import json
 import re
 import base64
