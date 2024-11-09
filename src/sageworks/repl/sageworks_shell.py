@@ -59,9 +59,9 @@ if not ConfigManager().config_okay():
     onboard()
 
 # Delayed SageWorks Imports
-from sageworks.api.meta import Meta
-from sageworks.api import CachedMeta
-from sageworks.web_components.plugin_unit_test import PluginUnitTest
+from sageworks.api.meta import Meta  # noqa E402 (We need to delay these imports on purpose)
+from sageworks.api import CachedMeta  # noqa E402
+from sageworks.web_components.plugin_unit_test import PluginUnitTest  # noqa E402
 
 
 # Set the log level to important
