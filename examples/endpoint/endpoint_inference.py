@@ -10,7 +10,7 @@ endpoint = Endpoint("abalone-regression-end")
 model = Model(endpoint.get_input())
 fs = FeatureSet(model.get_input())
 athena_table = fs.view("training").table
-df = fs.query(f"SELECT * FROM {athena_table} where training = 0")
+df = fs.query(f"SELECT * FROM {athena_table} where training = FALSE")
 
 # Run inference/predictions on the Endpoint
 results_df = endpoint.inference(df)

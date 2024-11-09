@@ -81,7 +81,7 @@ if __name__ == "__main__":
     model = Model(my_endpoint.get_input())
     my_features = FeatureSet(model.get_input())
     table = my_features.view("training").table
-    df = my_features.query(f'SELECT * FROM "{table}" where training = 0')
+    df = my_features.query(f'SELECT * FROM "{table}" where training = FALSE')
     results = my_endpoint.inference(df)
     target = model.target()
     pprint(results[[target, "prediction"]])

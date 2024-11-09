@@ -123,7 +123,7 @@ def test_inference_with_capture_uuid():
     # Grab a dataframe for inference
     my_features = FeatureSet("abalone_features")
     table = my_features.view("training").table
-    df = my_features.query(f'SELECT * FROM "{table}" where training = 0')
+    df = my_features.query(f'SELECT * FROM "{table}" where training = FALSE')
 
     # Run inference
     my_endpoint = Endpoint("abalone-regression-end")

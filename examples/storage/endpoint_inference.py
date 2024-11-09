@@ -22,7 +22,7 @@ def run_inference(endpoint_name):
     feature_set = ModelCore(model).get_input()
     features = FeatureSetCore(feature_set)
     table = features.view("training").table
-    test_df = features.query(f'SELECT * FROM "{table}" where training = 0')
+    test_df = features.query(f'SELECT * FROM "{table}" where training = FALSE')
 
     # Drop some columns
     test_df.drop(["write_time", "api_invocation_time", "is_deleted"], axis=1, inplace=True)

@@ -23,7 +23,7 @@ class TrainingView(CreateView):
         training_view = TrainingView.create(fs, column_list=["my_col1", "my_col2"])
 
         # Query the view
-        df = training_view.query(f"SELECT * FROM {training_view.table} where training = True")
+        df = training_view.query(f"SELECT * FROM {training_view.table} where training = TRUE")
         ```
     """
 
@@ -33,7 +33,7 @@ class TrainingView(CreateView):
         feature_set: FeatureSet,
         source_table: str = None,
         id_column: str = None,
-        holdout_ids: Union[list[str], None] = None,
+        holdout_ids: Union[list[str], list[int], None] = None,
     ) -> Union[View, None]:
         """Factory method to create and return a TrainingView instance.
 
@@ -41,7 +41,7 @@ class TrainingView(CreateView):
             feature_set (FeatureSet): A FeatureSet object
             source_table (str, optional): The table/view to create the view from. Defaults to None.
             id_column (str, optional): The name of the id column. Defaults to None.
-            holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None.
+            holdout_ids (Union[list[str], list[int], None], optional): A list of holdout ids. Defaults to None.
 
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)

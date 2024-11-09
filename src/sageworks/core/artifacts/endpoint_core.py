@@ -343,7 +343,7 @@ class EndpointCore(Artifact):
 
         # Grab the evaluation data from the FeatureSet
         table = fs.view("training").table
-        eval_df = fs.query(f'SELECT * FROM "{table}" where training = 0')
+        eval_df = fs.query(f'SELECT * FROM "{table}" where training = FALSE')
         capture_uuid = "auto_inference" if capture else None
         return self.inference(eval_df, capture_uuid, id_column=fs.id_column)
 
