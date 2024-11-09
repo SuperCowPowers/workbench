@@ -34,10 +34,37 @@ from sageworks.utils.repl_utils import cprint, Spinner
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.log_utils import silence_logs
+
+
+def onboard():
+    """Onboard a new user to SageWorks"""
+    cprint("lightgreen", "Welcome to SageWorks!")
+    cprint("lightblue", "Looks like this is your first time using SageWorks...")
+    cprint("lightblue", "Let's get you set up...")
+
+    # Create a Site Specific Config File
+    cm = ConfigManager()
+    cm.create_site_config()
+    cm.platform_specific_instructions()
+
+    # Tell the user to restart the shell
+    cprint("lightblue", "After doing these instructions ^")
+    cprint("lightblue", "Please rerun the SageWorks REPL to complete the onboarding process.")
+    cprint("darkyellow", "Note: You'll need to start a NEW terminal to inherit the new ENV vars.")
+    sys.exit(0)
+
+
+# Check config and onboard if necessary
+if not ConfigManager().config_okay():
+    onboard()
+
+# Delayed SageWorks Imports
 from sageworks.api.meta import Meta
 from sageworks.api import CachedMeta
 from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
+
+# Set the log level to important
 logging.getLogger("sageworks").setLevel(IMPORTANT_LEVEL_NUM)
 
 
@@ -86,8 +113,7 @@ class SageWorksShell:
         self.cm = ConfigManager()
         if not self.cm.config_okay():
             # Invoke Onboarding Procedure
-            cprint("yellow", "SageWorks Config incomplete...running onboarding procedure...")
-            self.onboard()
+            onboard()
 
         # Our Metadata Object pull information from the Cloud Platform
         self.meta = None
@@ -420,22 +446,6 @@ class SageWorksShell:
             cprint("lightpurple", "\t● API Key: Open Source")
         else:
             cprint("lightgreen", "\t● API Key: Enterprise")
-
-    def onboard(self):
-        """Onboard a new user to SageWorks"""
-        cprint("lightgreen", "Welcome to SageWorks!")
-        cprint("lightblue", "Looks like this is your first time using SageWorks...")
-        cprint("lightblue", "Let's get you set up...")
-
-        # Create a Site Specific Config File
-        self.cm.create_site_config()
-        self.cm.platform_specific_instructions()
-
-        # Tell the user to restart the shell
-        cprint("lightblue", "After doing these instructions ^")
-        cprint("lightblue", "Please rerun the SageWorks REPL to complete the onboarding process.")
-        cprint("darkyellow", "Note: You'll need to start a NEW terminal to inherit the new ENV vars.")
-        sys.exit(0)
 
     # Helpers method to switch from direct Meta to Cached Meta
     def try_cached_meta(self):
