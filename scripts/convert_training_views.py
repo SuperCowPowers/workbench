@@ -1,3 +1,10 @@
+"""Convert training views from 0/1 to FALSE/TRUE in the specified AWS Glue database.
+
+   Note: This script is a 'schema' change for the training views, and is a 'one-time'
+       operation. The code quality here is not as important as the correctness of the
+       operation and since this will only be run once for existing clients and never
+       again, we don't want to sweat the details.
+"""
 import json
 import re
 import base64
