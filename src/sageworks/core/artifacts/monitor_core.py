@@ -489,7 +489,7 @@ if __name__ == "__main__":
     #
 
     # Make predictions on the Endpoint using the FeatureSet evaluation data
-    pred_df = endpoint_utils.predictions_using_fs(my_endpoint)
+    pred_df = my_endpoint.auto_inference()
     print(pred_df.head())
 
     # Check that data capture is working

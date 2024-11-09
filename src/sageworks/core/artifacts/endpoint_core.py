@@ -336,10 +336,17 @@ class EndpointCore(Artifact):
             capture (bool, optional): Capture the inference results and metrics (default=False)
         """
 
-        # Backtrack to the FeatureSet
-        model_name = self.get_input()
-        fs_name = ModelCore(model_name).get_input()
-        fs = FeatureSetCore(fs_name)
+        # Sanity Check that we have a model
+        model = ModelCore(self.get_input())
+        if not model.exists():
+            self.log.error("No model found for this endpoint. Returning empty DataFrame.")
+            return pd.DataFrame()
+
+        # Now get the FeatureSet and make sure it exists
+        fs = FeatureSetCore(model.get_input())
+        if not fs.exists():
+            self.log.error("No FeatureSet found for this endpoint. Returning empty DataFrame.")
+            return pd.DataFrame()
 
         # Grab the evaluation data from the FeatureSet
         table = fs.view("training").table
