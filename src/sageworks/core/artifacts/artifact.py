@@ -18,24 +18,24 @@ class Artifact(ABC):
 
     # Class-level shared resources
     log = logging.getLogger("sageworks")
+
+    # Config Manager
+    cm = ConfigManager()
+    if not cm.config_okay():
+        log = logging.getLogger("sageworks")
+        log.critical("SageWorks Configuration Incomplete...")
+        log.critical("Run the 'sageworks' command and follow the prompts...")
+        raise FatalConfigError()
+
+    # AWS Account Clamp
     aws_account_clamp = AWSAccountClamp()
     boto3_session = aws_account_clamp.boto3_session
     sm_session = aws_account_clamp.sagemaker_session()
     sm_client = aws_account_clamp.sagemaker_client()
     aws_region = aws_account_clamp.region
-    cm = ConfigManager()
-    if not cm.config_okay():
-        log = logging.getLogger("sageworks")
-        log.error("SageWorks Configuration Incomplete...")
-        log.error("Run the 'sageworks' command and follow the prompts...")
-        raise FatalConfigError()
-
-    sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
-    if sageworks_bucket is None:
-        log.critical("Could not find ENV var for SAGEWORKS_BUCKET!")
-        sys.exit(1)
 
     # Setup Bucket Paths
+    sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
     data_sources_s3_path = f"s3://{sageworks_bucket}/data-sources"
     feature_sets_s3_path = f"s3://{sageworks_bucket}/feature-sets"
     models_s3_path = f"s3://{sageworks_bucket}/models"
