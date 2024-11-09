@@ -23,7 +23,7 @@ class TrainingView(CreateView):
         training_view = TrainingView.create(fs, column_list=["my_col1", "my_col2"])
 
         # Query the view
-        df = training_view.query(f"SELECT * FROM {training_view.table} where training = 1")
+        df = training_view.query(f"SELECT * FROM {training_view.table} where training = True")
         ```
     """
 
@@ -87,8 +87,8 @@ class TrainingView(CreateView):
         create_view_query = f"""
         CREATE OR REPLACE VIEW {instance.table} AS
         SELECT {sql_columns}, CASE
-            WHEN {id_column} IN ({formatted_holdout_ids}) THEN 0
-            ELSE 1
+            WHEN {id_column} IN ({formatted_holdout_ids}) THEN False
+            ELSE True
         END AS training
         FROM {instance.source_table}
         """
@@ -120,8 +120,8 @@ class TrainingView(CreateView):
         create_view_query = f"""
         CREATE OR REPLACE VIEW "{self.table}" AS
         SELECT {sql_columns}, CASE
-            WHEN MOD(ROW_NUMBER() OVER (ORDER BY {id_column}), 10) < 8 THEN 1  -- Assign 80% to training
-            ELSE 0  -- Assign roughly 20% to validation/test
+            WHEN MOD(ROW_NUMBER() OVER (ORDER BY {id_column}), 10) < 8 THEN True  -- Assign 80% to training
+            ELSE False  -- Assign roughly 20% to validation/test
         END AS training
         FROM {self.base_table_name}
         """
