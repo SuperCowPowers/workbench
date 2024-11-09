@@ -24,7 +24,6 @@ src="https://github.com/SuperCowPowers/sageworks/assets/4806709/10a969ed-3415-4d
 - feature_sets
 - models
 - endpoints
-- aws_refresh
 - and more...
 
 
