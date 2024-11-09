@@ -654,8 +654,7 @@ class EndpointCore(Artifact):
         self.log.important(f"Recomputing Details for {self.uuid} to show latest Inference Results...")
         self.details(recompute=True)
 
-    @staticmethod
-    def regression_metrics(target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+    def regression_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
         Args:
             target_column (str): Name of the target column
@@ -663,6 +662,11 @@ class EndpointCore(Artifact):
         Returns:
             pd.DataFrame: DataFrame with the performance metrics
         """
+
+        # Sanity Check the prediction DataFrame
+        if prediction_df.empty:
+            self.log.warning("No predictions were made. Returning empty DataFrame.")
+            return pd.DataFrame()
 
         # Compute the metrics
         y_true = prediction_df[target_column]
