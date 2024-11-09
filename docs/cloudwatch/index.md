@@ -3,7 +3,7 @@
 !!!tip inline end "Need Help?"
     The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
-The SageWorks framework continues to 'flex' to support different real world use cases when operating a set of production machine learning pipelines. As part of this we're including CloudWatch log forwarding/aggregation for any service using the SageWorks API (Dashboard, Glue, Lambda, Notebook, Laptop, etc).
+The SageWorks framework continues to flex to support different real world use cases when operating a set of production machine learning pipelines. As part of this we're including CloudWatch log forwarding/aggregation for any service using the SageWorks API (Dashboard, Glue, Lambda, Notebook, Laptop, etc).
 
 
 ### Log Groups and Streams
