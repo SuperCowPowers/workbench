@@ -106,6 +106,7 @@ class ModelCore(Artifact):
             if len(self.model_meta["ModelPackageList"]) == 0:
                 self.log.warning(f"Model Group {self.model_name} has no Model Packages!")
                 self.latest_model = None
+                self.add_health_tag("model_not_found")
                 return
             try:
                 self.latest_model = self.model_meta["ModelPackageList"][0]
@@ -152,6 +153,10 @@ class ModelCore(Artifact):
         """
         # Call the base class health check
         health_issues = super().health_check()
+
+        # Check if the model exists
+        if self.latest_model is None:
+            health_issues.append("model_not_found")
 
         # Model Type
         if self._get_model_type() == ModelType.UNKNOWN:
@@ -1057,3 +1062,6 @@ if __name__ == "__main__":
 
     # Delete the Model
     # ModelCore.managed_delete("wine-classification")
+
+    # Check for a model that doesn't exist
+    my_model = ModelCore("empty-model-group")
