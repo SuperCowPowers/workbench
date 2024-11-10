@@ -144,12 +144,12 @@ def delete_views_and_supplemental_data(base_table_name: str, database: str, boto
         database (str): The database name
         boto3_session: The boto3 session
     """
-    log.important(f"Deleting views and supplemental data for {base_table_name}:{database}.")
+    log.info(f"Deleting views and supplemental data for {base_table_name}:{database}.")
     for view_table in list_view_tables(base_table_name, database):
-        log.important(f"Deleting view {view_table}:{database}...")
+        log.info(f"Deleting view {view_table}:{database}...")
         delete_table(view_table, database, boto3_session)
     for supplemental_data_table in list_supplemental_data_tables(base_table_name, database):
-        log.important(f"Deleting supplemental {supplemental_data_table}:{database}...")
+        log.info(f"Deleting supplemental {supplemental_data_table}:{database}...")
         delete_table(supplemental_data_table, database, boto3_session)
 
 
