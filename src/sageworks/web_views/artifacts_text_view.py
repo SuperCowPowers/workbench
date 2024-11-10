@@ -69,11 +69,11 @@ class ArtifactsTextView(WebView):
 
     def feature_sets_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks FeatureSets"""
-        return self.meta.feature_sets()
+        return self.meta.feature_sets(details=True)
 
     def models_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Models"""
-        return self.meta.models()
+        return self.meta.models(details=True)
 
     def endpoints_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Endpoints"""
