@@ -12,6 +12,7 @@ from sageworks.api.meta import Meta
 from sageworks.utils.sageworks_cache import SageWorksCache
 
 
+# Decorator to cache method results from the Meta class
 def cache_result(method):
     """Decorator to cache method results in meta_cache"""
 
