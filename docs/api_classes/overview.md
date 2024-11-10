@@ -47,7 +47,7 @@ endpoint = Endpoint("abalone-regression-end")
 
 # Get a DataFrame of data (not used to train) and run predictions
 athena_table = fs.view("training").table
-df = fs.query(f"SELECT * FROM {athena_table} where training = 0")
+df = fs.query(f"SELECT * FROM {athena_table} where training = FALSE")
 results = endpoint.predict(df)
 print(results[["class_number_of_rings", "prediction"]])
 ```

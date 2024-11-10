@@ -175,8 +175,8 @@ if __name__ == "__main__":
     # Does the dataframe have a training column?
     elif "training" in all_df.columns:
         print("Found training column, splitting data based on training column")
-        df_train = all_df[all_df["training"] == 1].copy()
-        df_val = all_df[all_df["training"] == 0].copy()
+        df_train = all_df[all_df["training"]].copy()
+        df_val = all_df[~all_df["training"]].copy()
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")

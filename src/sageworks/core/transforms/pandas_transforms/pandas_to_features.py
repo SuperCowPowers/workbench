@@ -286,7 +286,7 @@ class PandasToFeatures(Transform):
                 """Training column detected: Since FeatureSets are read-only, SageWorks creates a training view
                 that can be dynamically changed. We'll use this training column to create a training view."""
             )
-            self.incoming_hold_out_ids = self.output_df[self.output_df["training"] == 0][self.id_column].tolist()
+            self.incoming_hold_out_ids = self.output_df[~self.output_df["training"]][self.id_column].tolist()
             self.output_df = self.output_df.drop(columns=["training"])
 
     def create_feature_group(self):
@@ -423,8 +423,8 @@ if __name__ == "__main__":
     data_df = ds.sample()
 
     # Test setting a training column
-    data_df["training"] = 0
-    data_df.loc[0:10, "training"] = 1
+    data_df["training"] = False
+    data_df.loc[0:10, "training"] = True
 
     # Create my DF to Feature Set Transform (with one-hot encoding)
     df_to_features = PandasToFeatures("test_features")

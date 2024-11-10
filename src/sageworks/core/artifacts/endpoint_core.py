@@ -336,14 +336,21 @@ class EndpointCore(Artifact):
             capture (bool, optional): Capture the inference results and metrics (default=False)
         """
 
-        # Backtrack to the FeatureSet
-        model_name = self.get_input()
-        fs_name = ModelCore(model_name).get_input()
-        fs = FeatureSetCore(fs_name)
+        # Sanity Check that we have a model
+        model = ModelCore(self.get_input())
+        if not model.exists():
+            self.log.error("No model found for this endpoint. Returning empty DataFrame.")
+            return pd.DataFrame()
+
+        # Now get the FeatureSet and make sure it exists
+        fs = FeatureSetCore(model.get_input())
+        if not fs.exists():
+            self.log.error("No FeatureSet found for this endpoint. Returning empty DataFrame.")
+            return pd.DataFrame()
 
         # Grab the evaluation data from the FeatureSet
         table = fs.view("training").table
-        eval_df = fs.query(f'SELECT * FROM "{table}" where training = 0')
+        eval_df = fs.query(f'SELECT * FROM "{table}" where training = FALSE')
         capture_uuid = "auto_inference" if capture else None
         return self.inference(eval_df, capture_uuid, id_column=fs.id_column)
 
@@ -647,8 +654,7 @@ class EndpointCore(Artifact):
         self.log.important(f"Recomputing Details for {self.uuid} to show latest Inference Results...")
         self.details(recompute=True)
 
-    @staticmethod
-    def regression_metrics(target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+    def regression_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
         Args:
             target_column (str): Name of the target column
@@ -656,6 +662,11 @@ class EndpointCore(Artifact):
         Returns:
             pd.DataFrame: DataFrame with the performance metrics
         """
+
+        # Sanity Check the prediction DataFrame
+        if prediction_df.empty:
+            self.log.warning("No predictions were made. Returning empty DataFrame.")
+            return pd.DataFrame()
 
         # Compute the metrics
         y_true = prediction_df[target_column]
