@@ -41,7 +41,7 @@ class ArtifactsWebView(ArtifactsTextView):
             s3_data_df["Name"] = hyperlinked_names
 
         # Drop the AWS URL column and return the dataframe
-        s3_data_df.drop(columns=["_aws_url"], inplace=True)
+        s3_data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return s3_data_df
 
     def glue_jobs_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
@@ -72,7 +72,7 @@ class ArtifactsWebView(ArtifactsTextView):
             glue_df["Name"] = hyperlinked_names
 
         # Drop the AWS URL column and return the dataframe
-        glue_df.drop(columns=["_aws_url"], inplace=True)
+        glue_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return glue_df
 
     def data_sources_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
@@ -103,7 +103,7 @@ class ArtifactsWebView(ArtifactsTextView):
             data_df["Name"] = hyperlinked_names
 
         # Drop the AWS URL column and return the dataframe
-        data_df.drop(columns=["_aws_url"], inplace=True)
+        data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return data_df
 
     def feature_sets_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
@@ -134,7 +134,7 @@ class ArtifactsWebView(ArtifactsTextView):
             feature_df["Feature Group"] = hyperlinked_names
 
         # Drop the AWS URL column and return the dataframe
-        feature_df.drop(columns=["_aws_url"], inplace=True)
+        feature_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return feature_df
 
     def models_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
@@ -158,6 +158,9 @@ class ArtifactsWebView(ArtifactsTextView):
         model_df["uuid"] = model_df["Model Group"]
         if add_hyperlinks:
             model_df["Model Group"] = model_df["Model Group"].map(lambda x: self.hyperlinks(x, "models", ""))
+
+        # Drop the AWS URL column
+        model_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
 
         # Add Health Symbols to the Model Group Name
         if "Health" in model_df.columns:
@@ -186,6 +189,9 @@ class ArtifactsWebView(ArtifactsTextView):
         endpoint_df["uuid"] = endpoint_df["Name"]
         if add_hyperlinks:
             endpoint_df["Name"] = endpoint_df["Name"].map(lambda x: self.hyperlinks(x, "endpoints", ""))
+
+        # Drop the AWS URL column
+        endpoint_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
 
         # Add Health Symbols to the Endpoint Name
         if "Health" in endpoint_df.columns:
