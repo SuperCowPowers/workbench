@@ -248,8 +248,9 @@ class ModelCore(Artifact):
         if capture_uuid == "model_training":
             # Sanity check the sageworks metadata
             if self.sageworks_meta() is None:
-                self.log.critical(f"Model {self.model_name} has no sageworks_meta(). Onboard() or delete this model!")
-                return
+                error_msg = f"Model {self.model_name} has no sageworks_meta(). Either onboard() or delete this model!"
+                self.log.critical(error_msg)
+                raise ValueError(error_msg)
 
             metrics = self.sageworks_meta().get("sageworks_training_metrics")
             return pd.DataFrame.from_dict(metrics) if metrics else None
@@ -271,6 +272,13 @@ class ModelCore(Artifact):
         Returns:
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
+
+        # Sanity check the sageworks metadata
+        if self.sageworks_meta() is None:
+            error_msg = f"Model {self.model_name} has no sageworks_meta(). Either onboard() or delete this model!"
+            self.log.critical(error_msg)
+            raise ValueError(error_msg)
+
         # Grab the metrics from the SageWorks Metadata (try inference first, then training)
         if capture_uuid == "latest":
             cm = self.sageworks_meta().get("sageworks_inference_cm")
