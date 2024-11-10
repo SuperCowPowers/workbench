@@ -47,8 +47,16 @@ def test_retrieval_with_capture_uuid():
 
 def test_validation_predictions():
     print("\n\n*** Validation Predictions ***")
-    pprint(model_reg._get_validation_predictions().head())
-    pprint(model_class._get_validation_predictions().head())
+    val_preds = model_reg._get_validation_predictions()
+    if val_preds is None:
+        print(f"Model {model_reg.uuid} has no validation predictions!")
+    else:
+        pprint(model_reg._get_validation_predictions().head())
+    val_preds = model_class._get_validation_predictions()
+    if val_preds is None:
+        print(f"Model {model_class.uuid} has no validation predictions!")
+    else:
+        pprint(model_class._get_validation_predictions().head())
 
 
 def test_inference_predictions():

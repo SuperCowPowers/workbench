@@ -491,8 +491,15 @@ class AWSMeta:
         return wr.s3.describe_objects(path=bucket, boto3_session=self.boto3_session)
 
     @aws_throttle
-    def get_aws_tags(self, arn: str) -> dict:
+    def get_aws_tags(self, arn: str) -> Union[dict, None]:
         """List the tags for the given AWS ARN"""
+
+        # Sanity check the ARN
+        if arn is None:
+            self.log.error("ARN is None, cannot retrieve tags.")
+            return None
+
+        # Grab the tags from AWS
         return aws_tags_to_dict(self.sm_session.list_tags(resource_arn=arn))
 
     @aws_throttle

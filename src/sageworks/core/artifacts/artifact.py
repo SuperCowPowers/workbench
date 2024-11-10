@@ -4,6 +4,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 import logging
+from typing import Union
 
 # SageWorks Imports
 from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
@@ -128,8 +129,12 @@ class Artifact(ABC):
         """Does the Artifact exist? Can we connect to it?"""
         pass
 
-    def sageworks_meta(self) -> dict:
+    def sageworks_meta(self) -> Union[dict, None]:
         """Get the SageWorks specific metadata for this Artifact
+
+        Returns:
+            Union[dict, None]: Dictionary of SageWorks metadata for this Artifact
+
         Note: This functionality will work for FeatureSets, Models, and Endpoints
               but not for DataSources and Graphs, those classes need to override this method.
         """

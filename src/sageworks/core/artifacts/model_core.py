@@ -246,6 +246,11 @@ class ModelCore(Artifact):
 
         # Grab the metrics captured during model training (could return None)
         if capture_uuid == "model_training":
+            # Sanity check the sageworks metadata
+            if self.sageworks_meta() is None:
+                self.log.critical(f"Model {self.model_name} has no sageworks_meta(). Onboard() or delete this model!")
+                return
+
             metrics = self.sageworks_meta().get("sageworks_training_metrics")
             return pd.DataFrame.from_dict(metrics) if metrics else None
 
@@ -317,7 +322,7 @@ class ModelCore(Artifact):
 
     def group_arn(self) -> Union[str, None]:
         """AWS ARN (Amazon Resource Name) for the Model Package Group"""
-        return self.model_meta["ModelPackageGroupArn"]
+        return self.model_meta["ModelPackageGroupArn"] if self.model_meta else None
 
     def model_package_arn(self) -> Union[str, None]:
         """AWS ARN (Amazon Resource Name) for the Latest Model Package (within the Group)"""
@@ -325,9 +330,9 @@ class ModelCore(Artifact):
             return None
         return self.latest_model["ModelPackageArn"]
 
-    def container_info(self) -> dict:
+    def container_info(self) -> Union[dict, None]:
         """Container Info for the Latest Model Package"""
-        return self.latest_model["InferenceSpecification"]["Containers"][0]
+        return self.latest_model["InferenceSpecification"]["Containers"][0] if self.latest_model else None
 
     def container_image(self) -> str:
         """Container Image for the Latest Model Package"""
