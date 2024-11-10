@@ -138,7 +138,9 @@ class AWSMeta:
         Returns:
             pd.DataFrame: A summary of all the Views, for the given database, in AWS
         """
-        return self._list_catalog_tables(database, views=True)
+        summary = self._list_catalog_tables(database, views=True)
+        summary.drop(columns=["Owner"], inplace=True, errors="ignore")  # Drop the Owner column
+        return summary
 
     def feature_sets(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Feature Sets in AWS.
@@ -167,6 +169,7 @@ class AWSMeta:
                 aws_tags = self.get_aws_tags(fg["FeatureGroupArn"])
                 summary = {
                     "Feature Group": name,
+                    "Owner": aws_tags.get("sageworks_owner", "-"),
                     "Created": datetime_string(feature_set_details.get("CreationTime")),
                     "Num Columns": len(feature_set_details.get("FeatureDefinitions", [])),
                     "Input": aws_tags.get("sageworks_input", "-"),
@@ -203,8 +206,8 @@ class AWSMeta:
                 # Initialize variables for details retrieval
                 model_details = {}
                 aws_tags = {}
-                health_tags = "no_health_info"
                 status = "Unknown"
+                health_tags = ""
 
                 # If details=True get the latest model package details
                 if details:
@@ -214,9 +217,10 @@ class AWSMeta:
                             self.sm_client.describe_model_package(ModelPackageName=latest_model["ModelPackageArn"])
                         )
                         aws_tags = self.get_aws_tags(group["ModelPackageGroupArn"])
-                        health_tags = aws_tags.get("sageworks_health_tags", "no_health_info")
+                        health_tags = aws_tags.get("sageworks_health_tags", "")
                         status = model_details.get("ModelPackageStatus", "Unknown")
                     else:
+                        health_tags = "model_not_found"
                         status = "No Models"
 
                 # Compile model summary
@@ -260,7 +264,7 @@ class AWSMeta:
 
                 # Retrieve SageWorks metadata from tags
                 sageworks_meta = self.get_aws_tags(endpoint_info["EndpointArn"])
-                health_tags = sageworks_meta.get("sageworks_health_tags") or "no_health_info"
+                health_tags = sageworks_meta.get("sageworks_health_tags", "")
 
                 # Retrieve endpoint configuration to determine instance type or serverless info
                 endpoint_config_name = endpoint_info["EndpointConfigName"]
@@ -549,6 +553,7 @@ class AWSMeta:
         for table in filtered_tables:
             summary = {
                 "Name": table["Name"],
+                "Owner": table.get("Parameters", {}).get("sageworks_owner", "-"),
                 "Database": database,
                 "Modified": datetime_string(table["UpdateTime"]),
                 "Tags": table.get("Parameters", {}).get("sageworks_tags", "-"),
