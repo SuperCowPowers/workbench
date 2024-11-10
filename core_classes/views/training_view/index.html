@@ -2864,7 +2864,7 @@
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">training_view</span> <span class="o">=</span> <span class="n">TrainingView</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">column_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;my_col1&quot;</span><span class="p">,</span> <span class="s2">&quot;my_col2&quot;</span><span class="p">])</span>
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Query the view</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">df</span> <span class="o">=</span> <span class="n">training_view</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SELECT * FROM </span><span class="si">{</span><span class="n">training_view</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2"> where training = 1&quot;</span><span class="p">)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">df</span> <span class="o">=</span> <span class="n">training_view</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SELECT * FROM </span><span class="si">{</span><span class="n">training_view</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2"> where training = TRUE&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 </details>
 
@@ -3006,7 +3006,7 @@
 </span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">        training_view = TrainingView.create(fs, column_list=[&quot;my_col1&quot;, &quot;my_col2&quot;])</span>
 </span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a>
 </span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">        # Query the view</span>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">        df = training_view.query(f&quot;SELECT * FROM {training_view.table} where training = 1&quot;)</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">        df = training_view.query(f&quot;SELECT * FROM {training_view.table} where training = TRUE&quot;)</span>
 </span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">        ```</span>
 </span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a>
@@ -3016,7 +3016,7 @@
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>        <span class="n">feature_set</span><span class="p">:</span> <span class="n">FeatureSet</span><span class="p">,</span>
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>        <span class="n">source_table</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>        <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>        <span class="n">holdout_ids</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>        <span class="n">holdout_ids</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">View</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 </span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Factory method to create and return a TrainingView instance.</span>
 </span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>
@@ -3024,7 +3024,7 @@
 </span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">            feature_set (FeatureSet): A FeatureSet object</span>
 </span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">            source_table (str, optional): The table/view to create the view from. Defaults to None.</span>
 </span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">            id_column (str, optional): The name of the id column. Defaults to None.</span>
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">            holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None.</span>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">            holdout_ids (Union[list[str], list[int], None], optional): A list of holdout ids. Defaults to None.</span>
 </span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a>
 </span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">        Returns:</span>
 </span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">            Union[View, None]: The created View object (or None if failed to create the view)</span>
@@ -3070,8 +3070,8 @@
 </span><span id="__span-0-87"><a id="__codelineno-0-87" name="__codelineno-0-87"></a>        <span class="n">create_view_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 </span><span id="__span-0-88"><a id="__codelineno-0-88" name="__codelineno-0-88"></a><span class="s2">        CREATE OR REPLACE VIEW </span><span class="si">{</span><span class="n">instance</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2"> AS</span>
 </span><span id="__span-0-89"><a id="__codelineno-0-89" name="__codelineno-0-89"></a><span class="s2">        SELECT </span><span class="si">{</span><span class="n">sql_columns</span><span class="si">}</span><span class="s2">, CASE</span>
-</span><span id="__span-0-90"><a id="__codelineno-0-90" name="__codelineno-0-90"></a><span class="s2">            WHEN </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2"> IN (</span><span class="si">{</span><span class="n">formatted_holdout_ids</span><span class="si">}</span><span class="s2">) THEN 0</span>
-</span><span id="__span-0-91"><a id="__codelineno-0-91" name="__codelineno-0-91"></a><span class="s2">            ELSE 1</span>
+</span><span id="__span-0-90"><a id="__codelineno-0-90" name="__codelineno-0-90"></a><span class="s2">            WHEN </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2"> IN (</span><span class="si">{</span><span class="n">formatted_holdout_ids</span><span class="si">}</span><span class="s2">) THEN False</span>
+</span><span id="__span-0-91"><a id="__codelineno-0-91" name="__codelineno-0-91"></a><span class="s2">            ELSE True</span>
 </span><span id="__span-0-92"><a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="s2">        END AS training</span>
 </span><span id="__span-0-93"><a id="__codelineno-0-93" name="__codelineno-0-93"></a><span class="s2">        FROM </span><span class="si">{</span><span class="n">instance</span><span class="o">.</span><span class="n">source_table</span><span class="si">}</span>
 </span><span id="__span-0-94"><a id="__codelineno-0-94" name="__codelineno-0-94"></a><span class="s2">        &quot;&quot;&quot;</span>
@@ -3103,8 +3103,8 @@
 </span><span id="__span-0-120"><a id="__codelineno-0-120" name="__codelineno-0-120"></a>        <span class="n">create_view_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 </span><span id="__span-0-121"><a id="__codelineno-0-121" name="__codelineno-0-121"></a><span class="s2">        CREATE OR REPLACE VIEW &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot; AS</span>
 </span><span id="__span-0-122"><a id="__codelineno-0-122" name="__codelineno-0-122"></a><span class="s2">        SELECT </span><span class="si">{</span><span class="n">sql_columns</span><span class="si">}</span><span class="s2">, CASE</span>
-</span><span id="__span-0-123"><a id="__codelineno-0-123" name="__codelineno-0-123"></a><span class="s2">            WHEN MOD(ROW_NUMBER() OVER (ORDER BY </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2">), 10) &lt; 8 THEN 1  -- Assign 80% to training</span>
-</span><span id="__span-0-124"><a id="__codelineno-0-124" name="__codelineno-0-124"></a><span class="s2">            ELSE 0  -- Assign roughly 20% to validation/test</span>
+</span><span id="__span-0-123"><a id="__codelineno-0-123" name="__codelineno-0-123"></a><span class="s2">            WHEN MOD(ROW_NUMBER() OVER (ORDER BY </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2">), 10) &lt; 8 THEN True  -- Assign 80% to training</span>
+</span><span id="__span-0-124"><a id="__codelineno-0-124" name="__codelineno-0-124"></a><span class="s2">            ELSE False  -- Assign roughly 20% to validation/test</span>
 </span><span id="__span-0-125"><a id="__codelineno-0-125" name="__codelineno-0-125"></a><span class="s2">        END AS training</span>
 </span><span id="__span-0-126"><a id="__codelineno-0-126" name="__codelineno-0-126"></a><span class="s2">        FROM </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">base_table_name</span><span class="si">}</span>
 </span><span id="__span-0-127"><a id="__codelineno-0-127" name="__codelineno-0-127"></a><span class="s2">        &quot;&quot;&quot;</span>
@@ -3208,7 +3208,7 @@
                 <code>holdout_ids</code>
             </td>
             <td>
-                  <code><span title="typing.Union">Union</span>[list[str], None]</code>
+                  <code><span title="typing.Union">Union</span>[list[str], list[int], None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3323,7 +3323,7 @@
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>    <span class="n">feature_set</span><span class="p">:</span> <span class="n">FeatureSet</span><span class="p">,</span>
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="n">source_table</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>    <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="n">holdout_ids</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="n">holdout_ids</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">View</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 </span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Factory method to create and return a TrainingView instance.</span>
 </span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>
@@ -3331,7 +3331,7 @@
 </span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">        feature_set (FeatureSet): A FeatureSet object</span>
 </span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">        source_table (str, optional): The table/view to create the view from. Defaults to None.</span>
 </span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">        id_column (str, optional): The name of the id column. Defaults to None.</span>
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">        holdout_ids (Union[list[str], None], optional): A list of holdout ids. Defaults to None.</span>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">        holdout_ids (Union[list[str], list[int], None], optional): A list of holdout ids. Defaults to None.</span>
 </span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a>
 </span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">    Returns:</span>
 </span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">        Union[View, None]: The created View object (or None if failed to create the view)</span>
@@ -3377,8 +3377,8 @@
 </span><span id="__span-0-87"><a id="__codelineno-0-87" name="__codelineno-0-87"></a>    <span class="n">create_view_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 </span><span id="__span-0-88"><a id="__codelineno-0-88" name="__codelineno-0-88"></a><span class="s2">    CREATE OR REPLACE VIEW </span><span class="si">{</span><span class="n">instance</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2"> AS</span>
 </span><span id="__span-0-89"><a id="__codelineno-0-89" name="__codelineno-0-89"></a><span class="s2">    SELECT </span><span class="si">{</span><span class="n">sql_columns</span><span class="si">}</span><span class="s2">, CASE</span>
-</span><span id="__span-0-90"><a id="__codelineno-0-90" name="__codelineno-0-90"></a><span class="s2">        WHEN </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2"> IN (</span><span class="si">{</span><span class="n">formatted_holdout_ids</span><span class="si">}</span><span class="s2">) THEN 0</span>
-</span><span id="__span-0-91"><a id="__codelineno-0-91" name="__codelineno-0-91"></a><span class="s2">        ELSE 1</span>
+</span><span id="__span-0-90"><a id="__codelineno-0-90" name="__codelineno-0-90"></a><span class="s2">        WHEN </span><span class="si">{</span><span class="n">id_column</span><span class="si">}</span><span class="s2"> IN (</span><span class="si">{</span><span class="n">formatted_holdout_ids</span><span class="si">}</span><span class="s2">) THEN False</span>
+</span><span id="__span-0-91"><a id="__codelineno-0-91" name="__codelineno-0-91"></a><span class="s2">        ELSE True</span>
 </span><span id="__span-0-92"><a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="s2">    END AS training</span>
 </span><span id="__span-0-93"><a id="__codelineno-0-93" name="__codelineno-0-93"></a><span class="s2">    FROM </span><span class="si">{</span><span class="n">instance</span><span class="o">.</span><span class="n">source_table</span><span class="si">}</span>
 </span><span id="__span-0-94"><a id="__codelineno-0-94" name="__codelineno-0-94"></a><span class="s2">    &quot;&quot;&quot;</span>
