@@ -12,6 +12,36 @@ from sageworks.api.meta import Meta
 from sageworks.utils.sageworks_cache import SageWorksCache
 
 
+def cache_result(method):
+    """Decorator to cache method results in meta_cache"""
+
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        # Create a unique cache key based on the method name and arguments
+        cache_key = CachedMeta._flatten_redis_key(method, *args, **kwargs)
+
+        # Check for fresh data, spawn thread to refresh if stale
+        if self.fresh_cache.get(cache_key) is None:
+            self.log.info(f"Async: Metadata for {cache_key} is stale, launching refresh thread...")
+            self.fresh_cache.set(cache_key, True)  # Mark as refreshed
+
+            # Spawn a thread to refresh data without blocking
+            self.thread_pool.submit(self._refresh_data_in_background, cache_key, method, *args, **kwargs)
+
+        # Return data (fresh or stale) if available
+        cached_value = self.meta_cache.get(cache_key)
+        if cached_value is not None:
+            return cached_value
+
+        # Fall back to calling the method if no cached data found
+        self.log.important(f"Blocking: Getting Metadata for {cache_key}")
+        result = method(self, *args, **kwargs)
+        self.meta_cache.set(cache_key, result)
+        return result
+
+    return wrapper
+
+
 class CachedMeta(Meta):
     """CachedMeta: Singleton class for caching metadata functionality.
 
@@ -77,36 +107,6 @@ class CachedMeta(Meta):
     def clear_meta_cache(self):
         """Clear the current Meta Cache"""
         self.meta_cache.clear()
-
-    @staticmethod
-    def cache_result(method):
-        """Decorator to cache method results in meta_cache"""
-
-        @wraps(method)
-        def wrapper(self, *args, **kwargs):
-            # Create a unique cache key based on the method name and arguments
-            cache_key = CachedMeta._flatten_redis_key(method, *args, **kwargs)
-
-            # Check for fresh data, spawn thread to refresh if stale
-            if self.fresh_cache.get(cache_key) is None:
-                self.log.info(f"Async: Metadata for {cache_key} is stale, launching refresh thread...")
-                self.fresh_cache.set(cache_key, True)  # Mark as refreshed
-
-                # Spawn a thread to refresh data without blocking
-                self.thread_pool.submit(self._refresh_data_in_background, cache_key, method, *args, **kwargs)
-
-            # Return data (fresh or stale) if available
-            cached_value = self.meta_cache.get(cache_key)
-            if cached_value is not None:
-                return cached_value
-
-            # Fall back to calling the method if no cached data found
-            self.log.important(f"Blocking: Getting Metadata for {cache_key}")
-            result = method(self, *args, **kwargs)
-            self.meta_cache.set(cache_key, result)
-            return result
-
-        return wrapper
 
     @cache_result
     def account(self) -> dict:
