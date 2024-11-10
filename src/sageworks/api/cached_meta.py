@@ -23,7 +23,7 @@ def cache_result(method):
 
         # Check for fresh data, spawn thread to refresh if stale
         if self.fresh_cache.get(cache_key) is None:
-            self.log.info(f"Async: Metadata for {cache_key} is stale, launching refresh thread...")
+            self.log.debug(f"Async: Metadata for {cache_key} refresh thread started...")
             self.fresh_cache.set(cache_key, True)  # Mark as refreshed
 
             # Spawn a thread to refresh data without blocking
@@ -262,9 +262,9 @@ class CachedMeta(Meta):
 
     def _refresh_data_in_background(self, cache_key, method, *args, **kwargs):
         """Background task to refresh AWS metadata."""
-        self.log.info(f"Refreshing Metadata for {cache_key}")
         result = method(self, *args, **kwargs)
         self.meta_cache.set(cache_key, result)
+        self.log.debug(f"Updated Metadata for {cache_key}")
 
     @staticmethod
     def _flatten_redis_key(method, *args, **kwargs):
