@@ -1,4 +1,4 @@
-# CachedCachedMeta
+# CachedMeta
 
 !!! tip inline end "CachedMeta Examples"
     Examples of using the CachedMeta class are listed at the bottom of this page [Examples](#examples).
