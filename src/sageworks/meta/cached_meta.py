@@ -13,6 +13,8 @@ from sageworks.utils.sageworks_cache import SageWorksCache
 
 
 # Decorator to cache method results from the Meta class
+# Note: This has to be outside the class definition to work properly in Python 3.9
+#       When we deprecated support for 3.9, move this back into the class definition
 def cache_result(method):
     """Decorator to cache method results in meta_cache"""
 
@@ -103,7 +105,7 @@ class CachedMeta(Meta):
 
     def list_meta_cache(self):
         """List the current Meta Cache"""
-        self.meta_cache.list_keys()
+        return self.meta_cache.list_keys()
 
     def clear_meta_cache(self):
         """Clear the current Meta Cache"""
