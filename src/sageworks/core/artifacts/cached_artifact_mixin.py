@@ -13,7 +13,7 @@ class CachedArtifactMixin:
             self.log = logging.getLogger("sageworks")
         super().__init__(*args, **kwargs)
         self.artifact_cache = SageWorksCache(prefix=f"{self.__class__.__name__.lower()}:{self.uuid}")
-        self.fresh_cache = SageWorksCache(prefix=f"{self.__class__.__name__.lower()}:{self.uuid}_fresh", expire=30)
+        self.fresh_cache = SageWorksCache(prefix=f"{self.__class__.__name__.lower()}_fresh:{self.uuid}", expire=30)
         self.thread_pool = ThreadPoolExecutor(max_workers=5)
 
     @staticmethod
@@ -22,10 +22,10 @@ class CachedArtifactMixin:
 
         @wraps(method)
         def wrapper(self, *args, **kwargs):
-            cache_key = f"{method.__name__}_{args}_{kwargs}"
+            cache_key = CachedArtifactMixin._flatten_redis_key(method, *args, **kwargs)
 
             if self.fresh_cache.get(cache_key) is None:
-                self.log.debug(f"Async: Results for {cache_key} refresh thread started...")
+                self.log.important(f"Async: Results for {cache_key} refresh thread started...")
                 self.fresh_cache.set(cache_key, True)
                 self.thread_pool.submit(self._refresh_data_in_background, cache_key, method, *args, **kwargs)
 
@@ -40,6 +40,13 @@ class CachedArtifactMixin:
 
         return wrapper
 
+    @staticmethod
+    def _flatten_redis_key(method, *args, **kwargs):
+        """Flatten the args and kwargs into a single string"""
+        arg_str = "_".join(str(arg) for arg in args)
+        kwarg_str = "_".join(f"{k}_{v}" for k, v in sorted(kwargs.items()))
+        return f"{method.__name__}_{arg_str}_{kwarg_str}".replace(" ", "").replace("'", "")
+
     def _refresh_data_in_background(self, cache_key, method, *args, **kwargs):
         """Background data refresh method"""
         try:
@@ -47,6 +54,21 @@ class CachedArtifactMixin:
             self.artifact_cache.set(cache_key, result)
         except Exception as e:
             self.log.error(f"Error refreshing data for {cache_key}: {e}")
+
+    def __del__(self):
+        """Destructor to shut down the thread pool gracefully."""
+        self.close()
+
+    def close(self):
+        """Explicitly close the thread pool, if needed."""
+        if self.thread_pool:
+            self.log.important("Shutting down the ThreadPoolExecutor...")
+            try:
+                self.thread_pool.shutdown(wait=True)  # Gracefully shutdown
+            except RuntimeError as e:
+                self.log.error(f"Error during thread pool shutdown: {e}")
+            finally:
+                self.thread_pool = None
 
 
 if __name__ == "__main__":
@@ -63,9 +85,7 @@ if __name__ == "__main__":
         @CachedArtifactMixin.cache_result
         def details(self):
             """Example method that will use caching"""
-            # Original implementation of the method
             return super().details()
-
 
     # Create a CachedModel instance
     my_model = CachedModel("abalone-regression")
