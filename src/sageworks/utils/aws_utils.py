@@ -447,25 +447,16 @@ def newest_path(s3_locations: list[str], sm_session: SageSession) -> Union[str, 
     Returns:
         str: The full S3 bucket and prefix combination with the newest files, or None if no files are found.
     """
-    # Get the S3 client
     s3_client = sm_session.boto_session.client("s3")
-
-    newest_location = None
-    latest_time = None
+    newest_location, latest_time = None, None
 
     for location in s3_locations:
-        # Extract bucket and prefix from the location
-        bucket, prefix = location.replace("s3://", "").split("/", 1)
-
-        # List files under the current prefix
+        bucket, prefix = location.replace("s3://", "", 1).split("/", 1)
         response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
-        # Check if there are files
-        if "Contents" in response:
-            # Find the latest file in the current location
-            for file in response["Contents"]:
-                if newest_location is None or file["LastModified"] > latest_time:
-                    newest_location = location
-                    latest_time = file["LastModified"]
+
+        for file in response.get("Contents", []):
+            if latest_time is None or file["LastModified"] > latest_time:
+                newest_location, latest_time = location, file["LastModified"]
 
     return newest_location
 

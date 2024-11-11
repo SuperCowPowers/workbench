@@ -54,16 +54,22 @@ class Artifact(ABC):
     else:
         meta = Meta()
 
-    def __init__(self, uuid: str):
+    def __init__(self, uuid: str, skip_health_check: bool = False):
         """Initialize the Artifact Base Class
 
         Args:
             uuid (str): The UUID of this artifact
+            skip_health_check (bool): Skip the health check on this artifact (default: False)
         """
         self.uuid = uuid
+        self.skip_health_check = skip_health_check
 
     def __post_init__(self):
         """Artifact Post Initialization"""
+
+        # Do they want to skip the health check?
+        if self.skip_health_check:
+            return
 
         # Do I exist? (very metaphysical)
         if not self.exists():
@@ -75,8 +81,6 @@ class Artifact(ABC):
         if health_issues:
             if "needs_onboard" in health_issues:
                 self.log.important(f"Artifact {self.uuid} needs to be onboarded")
-            elif health_issues == ["no_activity"]:
-                self.log.debug(f"Artifact {self.uuid} has no activity")
             else:
                 self.log.warning(f"Health Check Failed {self.uuid}: {health_issues}")
             for issue in health_issues:

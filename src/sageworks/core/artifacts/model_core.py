@@ -76,18 +76,19 @@ class ModelCore(Artifact):
         ```
     """
 
-    def __init__(self, model_uuid: str, model_type: ModelType = None):
+    def __init__(self, model_uuid: str, model_type: ModelType = None, **kwargs):
         """ModelCore Initialization
         Args:
             model_uuid (str): Name of Model in SageWorks.
             model_type (ModelType, optional): Set this for newly created Models. Defaults to None.
+            **kwargs: Additional keyword arguments
         """
 
         # Make sure the model name is valid
         self.is_name_valid(model_uuid, delimiter="-", lower_case=False)
 
         # Call SuperClass Initialization
-        super().__init__(model_uuid)
+        super().__init__(model_uuid, **kwargs)
 
         # Initialize our class attributes
         self.latest_model = None
