@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 
 # SageWorks Imports
 from sageworks.web_components import table
-from sageworks.api.meta import Meta
+from sageworks.meta import Meta
 from sageworks.web_components.plugins.model_details import ModelDetails
 from sageworks.web_components.model_plot import ModelPlot
 from sageworks.api.model import Model

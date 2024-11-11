@@ -11,6 +11,7 @@ from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.core.cloud_platform.aws.aws_df_store import AWSDFStore as DFStore
 from sageworks.utils.aws_utils import sagemaker_delete_tag, dict_to_aws_tags
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
+from sageworks.meta import Meta, CachedMeta
 
 
 class Artifact(ABC):
@@ -41,11 +42,17 @@ class Artifact(ABC):
     models_s3_path = f"s3://{sageworks_bucket}/models"
     endpoints_s3_path = f"s3://{sageworks_bucket}/endpoints"
 
+    # Delimiter for storing lists in AWS Tags
+    tag_delimiter = "::"
+
     # Grab our Dataframe Storage
     df_cache = DFStore(path_prefix="/sageworks/dataframe_cache")
 
-    # Delimiter for storing lists in AWS Tags
-    tag_delimiter = "::"
+    # Do we want regular meta or do we want cached meta?
+    if cm.get_config("USE_CACHED_META"):
+        meta = CachedMeta()
+    else:
+        meta = Meta()
 
     def __init__(self, uuid: str):
         """Initialize the Artifact Base Class
@@ -54,16 +61,6 @@ class Artifact(ABC):
             uuid (str): The UUID of this artifact
         """
         self.uuid = uuid
-
-        # Do we want regular meta or do we want cached meta?
-        if self.cm.get_config("USE_CACHED_META"):
-            from sageworks.api import CachedMeta  # noqa: F401 Avoid Circular Import
-
-            self.meta = CachedMeta()
-        else:
-            from sageworks.api import Meta
-
-            self.meta = Meta()
 
     def __post_init__(self):
         """Artifact Post Initialization"""

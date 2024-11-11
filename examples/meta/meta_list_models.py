@@ -1,5 +1,5 @@
 from pprint import pprint
-from sageworks.api.meta import Meta
+from sageworks.meta import Meta
 
 # Create our Meta Class and get a list of our Models
 meta = Meta()

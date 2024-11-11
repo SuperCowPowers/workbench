@@ -34,6 +34,7 @@ from sageworks.utils.repl_utils import cprint, Spinner
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.log_utils import silence_logs
+from sageworks.meta import Meta, CachedMeta
 
 
 def onboard():
@@ -59,8 +60,6 @@ if not ConfigManager().config_okay():
     onboard()
 
 # Delayed SageWorks Imports
-from sageworks.api.meta import Meta  # noqa E402 (We need to delay these imports on purpose)
-from sageworks.api import CachedMeta  # noqa E402
 from sageworks.web_components.plugin_unit_test import PluginUnitTest  # noqa E402
 
 

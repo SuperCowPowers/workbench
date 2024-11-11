@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 # SageWorks Imports
-from sageworks.api.meta import Meta
+from sageworks.meta import Meta
 from sageworks.utils.sageworks_cache import SageWorksCache
 
 
