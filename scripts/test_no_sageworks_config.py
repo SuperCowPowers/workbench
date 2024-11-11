@@ -3,7 +3,7 @@ import os
 os.environ.pop("SAGEWORKS_CONFIG", None)
 
 try:
-    from sageworks.api import Meta
+    from sageworks.meta import Meta
 except Exception as e:
     # Print out the exeception
     print("error: ", e)

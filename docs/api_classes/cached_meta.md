@@ -3,7 +3,7 @@
 !!! tip inline end "CachedMeta Examples"
     Examples of using the CachedMeta class are listed at the bottom of this page [Examples](#examples).
     
-::: sageworks.api.cached_meta
+::: sageworks.meta.cached_meta
 
 
 ## Examples
@@ -27,7 +27,7 @@ model_df
 **List the Models in AWS**
 
 ```py title="CachedMeta_list_models.py"
-from sageworks.api import CachedMeta
+from sageworks.meta import CachedMeta
 
 # Create our CachedMeta Class and get a list of our Models
 CachedMeta = CachedMeta()
@@ -60,7 +60,7 @@ abalone-regression
 **Getting Model Performance Metrics**
 
 ```py title="CachedMeta_model_metrics.py"
-from sageworks.api import CachedMeta
+from sageworks.meta import CachedMeta
 
 # Create our CachedMeta Class and get a list of our Models
 CachedMeta = CachedMeta()
@@ -100,7 +100,7 @@ abalone-regression
 
 ```py title="CachedMeta_list_endpoints.py"
 from pprint import pprint
-from sageworks.api import CachedMeta
+from sageworks.meta import CachedMeta
 
 # Create our CachedMeta Class and get a list of our Endpoints
 CachedMeta = CachedMeta()

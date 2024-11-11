@@ -1,5 +1,5 @@
 import awswrangler as wr
-from sageworks.api import Meta
+from sageworks.meta import Meta
 
 
 def delete_invalid_views(database_scope):

@@ -10,7 +10,8 @@ from pathlib import Path
 
 # SageWorks Imports
 from sageworks.web_components.plugin_interface import PluginInterface, PluginInputType
-from sageworks.api import DataSource, FeatureSet, Model, Endpoint, Meta
+from sageworks.api import DataSource, FeatureSet, Model, Endpoint
+from sageworks.meta import Meta
 from sageworks.api.pipeline import Pipeline
 from sageworks.core.artifacts.graph_core import GraphCore
 
