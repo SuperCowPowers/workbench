@@ -148,7 +148,7 @@ class SageWorksShell:
         self.commands["status"] = self.status_description
         self.commands["launch"] = self.launch_plugin
         self.commands["log"] = logging.getLogger("sageworks")
-        self.commands["meta"] = self.get_meta
+        self.commands["get_meta"] = self.get_meta
         self.commands["params"] = importlib.import_module("sageworks.api.parameter_store").ParameterStore()
         self.commands["df_store"] = importlib.import_module("sageworks.api.df_store").DFStore()
         self.commands["version"] = lambda: print(version)
@@ -248,7 +248,8 @@ class SageWorksShell:
             self.commands["PandasToFeatures"] = importlib.import_module(
                 "sageworks.core.transforms.pandas_transforms"
             ).PandasToFeatures
-            self.commands["Meta"] = importlib.import_module("sageworks.api.meta").Meta
+            self.commands["Meta"] = importlib.import_module("sageworks.meta").Meta
+            self.commands["CachedMeta"] = importlib.import_module("sageworks.meta").CachedMeta
             self.commands["View"] = importlib.import_module("sageworks.core.views.view").View
             self.commands["DisplayView"] = importlib.import_module("sageworks.core.views.display_view").DisplayView
             self.commands["TrainingView"] = importlib.import_module("sageworks.core.views.training_view").TrainingView
@@ -461,17 +462,16 @@ class SageWorksShell:
                 self.meta = Meta()
 
     def switch_to_cached_meta(self):
-        with silence_logs():
-            self.meta = CachedMeta()
-            if self.meta.check():
-                self.meta_status = "CACHED"
-                cprint("lightblue", "Switched to Cached Meta...")
-            else:
-                self.meta.close()
-                self.meta_status = "FAIL"
-                cprint("orange", "Failed to Switch to Cached Meta...")
-                cprint("lightblue", "Using Direct Meta...")
-                self.meta = Meta()
+        self.meta = CachedMeta()
+        if self.meta.check():
+            self.meta_status = "CACHED"
+            cprint("lightblue", "Switched to Cached Meta...")
+        else:
+            self.meta.close()
+            self.meta_status = "FAIL"
+            cprint("orange", "Failed to Switch to Cached Meta...")
+            cprint("lightblue", "Using Direct Meta...")
+            self.meta = Meta()
 
     def switch_to_direct_meta(self):
         # Close the current Meta object (if it exists)
