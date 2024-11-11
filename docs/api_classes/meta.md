@@ -3,7 +3,7 @@
 !!! tip inline end "Meta Examples"
     Examples of using the Meta class are listed at the bottom of this page [Examples](#examples).
     
-::: sageworks.api.meta
+::: sageworks.meta.meta
 
 
 ## Examples
