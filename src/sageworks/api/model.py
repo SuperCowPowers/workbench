@@ -17,9 +17,9 @@ class Model(ModelCore):
 
     Common Usage:
         ```python
-        my_features = Model(name)
-        my_features.details()
-        my_features.to_endpoint()
+        my_model = Model(name)
+        my_model.details()
+        my_model.to_endpoint()
         ```
     """
 
