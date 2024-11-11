@@ -454,9 +454,6 @@ if __name__ == "__main__":
     from sageworks.api.data_source import DataSource
     from sageworks.api.feature_set import FeatureSet
 
-    cm = ConfigManager()
-    cm.set_config("USE_CACHED_META", True)
-
     # Create a DataSource (which is a subclass of Artifact)
     data_source = DataSource("test_data")
 
@@ -481,14 +478,4 @@ if __name__ == "__main__":
 
     # Test new input method
     fs.set_input("test_data")
-
-    # Test out using Cached Meta Data
-    cm = ConfigManager()
-    cm.set_config("USE_CACHED_META", True)
-    fs = FeatureSet("test_features")
-    print(f"UUID: {fs.uuid}")
-    print(f"Ready: {fs.ready()}")
-    print(f"Status: {fs.get_status()}")
     print(f"Input: {fs.get_input()}")
-    print(fs.smart_sample())
-    cm.set_config("USE_CACHED_META", False)
