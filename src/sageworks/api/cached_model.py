@@ -1,4 +1,5 @@
 """CachedModel: Caches the method results for SageWorks Models"""
+
 from typing import Union
 
 # SageWorks Imports
@@ -19,6 +20,7 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         my_model.sageworks_meta()
         ```
     """
+
     def __init__(self, uuid: str):
         """CachedModel Initialization"""
         # Call the initializer of ModelCore, passing the uuid argument
