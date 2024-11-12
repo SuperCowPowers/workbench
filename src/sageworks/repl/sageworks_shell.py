@@ -241,7 +241,7 @@ class SageWorksShell:
             self.commands["DataSource"] = importlib.import_module("sageworks.api.data_source").DataSource
             self.commands["FeatureSet"] = importlib.import_module("sageworks.api.feature_set").FeatureSet
             self.commands["Model"] = importlib.import_module("sageworks.api.model").Model
-            self.commands["CachedModel"] = importlib.import_module("sageworks.api.cached_model").CachedModel
+            self.commands["CachedModel"] = importlib.import_module("sageworks.cached.cached_model").CachedModel
             self.commands["ModelType"] = importlib.import_module("sageworks.api.model").ModelType
             self.commands["Endpoint"] = importlib.import_module("sageworks.api.endpoint").Endpoint
             self.commands["Monitor"] = importlib.import_module("sageworks.api.monitor").Monitor
@@ -250,8 +250,8 @@ class SageWorksShell:
             self.commands["PandasToFeatures"] = importlib.import_module(
                 "sageworks.core.transforms.pandas_transforms"
             ).PandasToFeatures
-            self.commands["Meta"] = importlib.import_module("sageworks.meta").Meta
-            self.commands["CachedMeta"] = importlib.import_module("sageworks.meta").CachedMeta
+            self.commands["Meta"] = importlib.import_module("sageworks.api").Meta
+            self.commands["CachedMeta"] = importlib.import_module("sageworks.cached.cached_meta").CachedMeta
             self.commands["View"] = importlib.import_module("sageworks.core.views.view").View
             self.commands["DisplayView"] = importlib.import_module("sageworks.core.views.display_view").DisplayView
             self.commands["TrainingView"] = importlib.import_module("sageworks.core.views.training_view").TrainingView

@@ -26,8 +26,8 @@ model_df
 
 **List the Models in AWS**
 
-```py title="CachedMeta_list_models.py"
-from sageworks.meta import CachedMeta
+```python
+from sageworks.cached.cached_meta import CachedMeta
 
 # Create our CachedMeta Class and get a list of our Models
 CachedMeta = CachedMeta()
@@ -59,8 +59,8 @@ abalone-regression
 
 **Getting Model Performance Metrics**
 
-```py title="CachedMeta_model_metrics.py"
-from sageworks.meta import CachedMeta
+```python
+from sageworks.cached.cached_meta import CachedMeta
 
 # Create our CachedMeta Class and get a list of our Models
 CachedMeta = CachedMeta()
@@ -98,9 +98,9 @@ abalone-regression
 
 **List the Endpoints in AWS**
 
-```py title="CachedMeta_list_endpoints.py"
+```python
 from pprint import pprint
-from sageworks.meta import CachedMeta
+from sageworks.cached.cached_meta import CachedMeta
 
 # Create our CachedMeta Class and get a list of our Endpoints
 CachedMeta = CachedMeta()
