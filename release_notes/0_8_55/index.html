@@ -2930,13 +2930,13 @@
 For more details see: <a href="../../core_classes/views/training_view/">Training View</a></p>
 <p><strong>Model Instantiation</strong></p>
 <p>We got a request to reduce the time for Model() object instantiation. SageWorks checks a lot of stuff to ensure that when you create a model everything is ready to do. We've added an optional flag to skip the health check for faster object creation:</p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>%time model = Model(&quot;my_model&quot;)
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>CPU times: user 194 ms, sys: 22.6 ms, total: 217 ms
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>Wall time: 1.92 s
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>%time Model(&quot;abalone-regression&quot;)
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>CPU times: user 227 ms, sys: 19.5 ms, total: 246 ms
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>Wall time: 2.97 s
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>%time model = Model(&quot;my_model&quot;, skip_health_check=True)
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>CPU times: user 91.9 ms, sys: 11.5 ms, total: 103 ms
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>Wall time: 903 ms
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>%time CachedModel(&quot;abalone-regression&quot;)
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>CPU times: user 8.83 ms, sys: 2.64 ms, total: 11.5 ms
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>Wall time: 22.7 ms
 </span></code></pre></div>
 For more details see: <a href="../../core_classes/artifacts/model_core/">ModelCore</a></p>
 <h2 id="improvements">Improvements</h2>
