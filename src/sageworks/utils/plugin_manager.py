@@ -47,7 +47,6 @@ class PluginManager:
             return
 
         # Check if the config directory is local file or S3
-        self.log.important(f"Loading plugins from {self.config_plugin_dir}...")
         if not self.config_plugin_dir.startswith("s3://"):
             self.loading_dir = self.config_plugin_dir
 

@@ -24,7 +24,6 @@ class CachedModel(CachedArtifactMixin, ModelCore):
 
     def __init__(self, uuid: str):
         """CachedModel Initialization"""
-        # Call the initializer of ModelCore, passing the uuid argument
         ModelCore.__init__(self, model_uuid=uuid, use_cached_meta=True)
 
     @CachedArtifactMixin.cache_result

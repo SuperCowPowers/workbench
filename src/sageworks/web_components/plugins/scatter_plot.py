@@ -135,6 +135,9 @@ class ScatterPlot(PluginInterface):
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
         self.df = self.df.drop(columns=aws_cols, errors="ignore")
 
+        # Drop any columns with NaNs
+        self.df = self.df.dropna(axis=1, how="any")
+
         # Set the default hover columns
         self.hover_columns = kwargs.get("hover_columns", self.df.columns.tolist()[:10])
 
