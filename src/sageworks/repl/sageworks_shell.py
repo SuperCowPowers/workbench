@@ -240,6 +240,7 @@ class SageWorksShell:
             self.commands["DataSource"] = importlib.import_module("sageworks.api.data_source").DataSource
             self.commands["FeatureSet"] = importlib.import_module("sageworks.api.feature_set").FeatureSet
             self.commands["Model"] = importlib.import_module("sageworks.api.model").Model
+            self.commands["CachedModel"] = importlib.import_module("sageworks.api.cached_model").CachedModel
             self.commands["ModelType"] = importlib.import_module("sageworks.api.model").ModelType
             self.commands["Endpoint"] = importlib.import_module("sageworks.api.endpoint").Endpoint
             self.commands["Monitor"] = importlib.import_module("sageworks.api.monitor").Monitor
