@@ -1,5 +1,10 @@
+import time
+from sageworks.meta import CachedMeta
 from sageworks.api.cached_model import CachedModel
 
-# Instantiate the Model object
-for _ in range(20):
-    model = CachedModel("abalone-regression")
+# Instantiate all the Model objects
+models = CachedMeta().models()
+for model_name in models["Model Group"]:
+    start_time = time.time()
+    model = CachedModel(model_name)
+    print(f"{model_name} instantiation Time: {time.time() - start_time:.3f} seconds")
