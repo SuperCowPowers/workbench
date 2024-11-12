@@ -4,7 +4,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.web_views.artifacts_web_view import ArtifactsWebView
-from sageworks.core.artifacts.model_core import ModelCore
+from sageworks.cached.cached_model import CachedModel
 
 
 class ModelWebView(ArtifactsWebView):
@@ -35,7 +35,7 @@ class ModelWebView(ArtifactsWebView):
         Returns:
             dict: The details for the given Model (or None if not found)
         """
-        model = ModelCore(model_uuid)
+        model = CachedModel(model_uuid)
         if not model.exists():
             return {"Status": "Not Found"}
         elif not model.ready():

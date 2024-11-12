@@ -9,7 +9,7 @@ from dash.dependencies import Input, Output, State
 from sageworks.web_views.endpoint_web_view import EndpointWebView
 from sageworks.web_components import table, endpoint_metric_plots
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
-from sageworks.api.endpoint import Endpoint
+from sageworks.cached.cached_endpoint import CachedEndpoint
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
@@ -109,7 +109,7 @@ def setup_plugin_callbacks(plugins):
         object_uuid = selected_row_data["uuid"]
 
         # Create the Endpoint object
-        endpoint = Endpoint(object_uuid)
+        endpoint = CachedEndpoint(object_uuid)
 
         # Update all the properties for each plugin
         all_props = []

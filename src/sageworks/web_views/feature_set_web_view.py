@@ -4,7 +4,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.web_views.artifacts_web_view import ArtifactsWebView
-from sageworks.core.artifacts.feature_set_core import FeatureSetCore
+from sageworks.cached.cached_feature_set import CachedFeatureSet
 
 
 class FeatureSetWebView(ArtifactsWebView):
@@ -35,7 +35,7 @@ class FeatureSetWebView(ArtifactsWebView):
         Returns:
             pd.DataFrame: The smart-sample DataFrame
         """
-        fs = FeatureSetCore(feature_uuid)
+        fs = CachedFeatureSet(feature_uuid)
         if not fs.exists():
             return pd.DataFrame({"uuid": [feature_uuid], "status": ["NOT FOUND"]})
         if not fs.ready():
@@ -57,7 +57,7 @@ class FeatureSetWebView(ArtifactsWebView):
         Returns:
             dict: The details for the given FeatureSet (or None if not found)
         """
-        fs = FeatureSetCore(feature_uuid)
+        fs = CachedFeatureSet(feature_uuid)
         if not fs.exists() or not fs.ready():
             return None
 

@@ -4,7 +4,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.web_views.artifacts_web_view import ArtifactsWebView
-from sageworks.api.data_source import DataSource
+from sageworks.cached.cached_data_source import CachedDataSource
 
 
 class DataSourceWebView(ArtifactsWebView):
@@ -36,7 +36,7 @@ class DataSourceWebView(ArtifactsWebView):
         Returns:
             pd.DataFrame: The smart-sample DataFrame
         """
-        ds = DataSource(data_uuid)
+        ds = CachedDataSource(data_uuid)
         if not ds.exists():
             return pd.DataFrame({"uuid": [data_uuid], "status": ["NOT FOUND"]})
         if not ds.ready():
@@ -59,7 +59,7 @@ class DataSourceWebView(ArtifactsWebView):
             dict: The details for the given DataSource (or None if not found)
         """
         # Grab the DataSource, if it exists and is ready
-        ds = DataSource(data_uuid)
+        ds = CachedDataSource(data_uuid)
         if not ds.exists() or not ds.ready():
             return None
 

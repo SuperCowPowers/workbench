@@ -5,7 +5,7 @@ from typing import Dict
 
 # SageWorks Imports
 from sageworks.web_views.web_view import WebView
-from sageworks.meta import CachedMeta as Meta
+from sageworks.cached.cached_meta import CachedMeta
 
 
 class ArtifactsTextView(WebView):
@@ -19,8 +19,8 @@ class ArtifactsTextView(WebView):
         pd.set_option("display.max_colwidth", 35)
         pd.set_option("display.width", 600)
 
-        # Create a Meta object to get all the AWS Metadata for Artifacts
-        self.meta = Meta()
+        # Create a CachedMeta object to get all the Metadata for Artifacts
+        self.meta = CachedMeta()
 
     def refresh(self, force_refresh: bool = False) -> None:
         """Refresh data/metadata associated with this view"""
