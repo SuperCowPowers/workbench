@@ -1,5 +1,5 @@
-"""Meta: A class that provides high level information and summaries of Cloud Platform Artifacts.
-The Meta class provides 'account' information, configuration, etc. It also provides metadata for Artifacts,
+"""CloudMeta: A class that provides high level information and summaries of Cloud Platform Artifacts.
+The CloudMeta class provides 'account' information, configuration, etc. It also provides metadata for Artifacts,
 such as Data Sources, Feature Sets, Models, and Endpoints.
 """
 
@@ -9,16 +9,16 @@ import pandas as pd
 
 
 # SageWorks Imports
-from sageworks.core.cloud_platform.cloud_meta import CloudMeta
+from sageworks.core.cloud_platform.aws.aws_meta import AWSMeta
 
 
-class Meta(CloudMeta):
-    """Meta: A class that provides metadata functionality for Cloud Platform Artifacts.
+class CloudMeta(AWSMeta):
+    """CloudMeta: A class that provides metadata functionality for Cloud Platform Artifacts.
 
     Common Usage:
        ```python
-       from sageworks.api import Meta
-       meta = Meta()
+       from sageworks.api import CloudMeta
+       meta = CloudMeta()
 
        # Get the AWS Account Info
        meta.account()
@@ -39,6 +39,13 @@ class Meta(CloudMeta):
        meta.endpoint("abalone-endpoint")
        ```
     """
+
+    def __init__(self):
+        """CloudMeta Initialization"""
+        self.log = logging.getLogger("sageworks")
+
+        # Call the SuperClass Initialization
+        super().__init__()
 
     def account(self) -> dict:
         """Cloud Platform Account Info
@@ -178,7 +185,7 @@ class Meta(CloudMeta):
         return super().endpoint(endpoint_name=endpoint_name)
 
     def __repr__(self):
-        return f"Meta()\n\t{super().__repr__()}"
+        return f"CloudMeta()\n\t{super().__repr__()}"
 
 
 if __name__ == "__main__":
@@ -191,7 +198,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Create the class
-    meta = Meta()
+    meta = CloudMeta()
 
     # Test the __repr__ method
     print(meta)

@@ -11,7 +11,7 @@ from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.core.cloud_platform.aws.aws_df_store import AWSDFStore as DFStore
 from sageworks.utils.aws_utils import sagemaker_delete_tag, dict_to_aws_tags
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
-from sageworks.api import Meta
+from sageworks.core.cloud_platform.cloud_meta import CloudMeta
 from sageworks.cached import CachedMeta
 
 
@@ -50,7 +50,7 @@ class Artifact(ABC):
     df_cache = DFStore(path_prefix="/sageworks/dataframe_cache")
 
     # Grab our Cloud Platform Metadata Class
-    meta = Meta()
+    meta = CloudMeta()
 
     def __init__(self, uuid: str, use_cached_meta: bool = False):
         """Initialize the Artifact Base Class

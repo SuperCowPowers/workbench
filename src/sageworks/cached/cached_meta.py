@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 # SageWorks Imports
-from sageworks.api import Meta
+from sageworks.core.cloud_platform.cloud_meta import CloudMeta
 from sageworks.utils.sageworks_cache import SageWorksCache
 
 
@@ -45,12 +45,12 @@ def cache_result(method):
     return wrapper
 
 
-class CachedMeta(Meta):
+class CachedMeta(CloudMeta):
     """CachedMeta: Singleton class for caching metadata functionality.
 
     Common Usage:
        ```python
-       from sageworks.meta import CachedMeta
+       from sageworks.cached import CachedMeta
        meta = CachedMeta()
 
        # Get the AWS Account Info

@@ -7,9 +7,8 @@ import pandas as pd
 import awswrangler as wr
 
 # SageWorks Imports
-from sageworks.api import DataSource, FeatureSet
+from sageworks.api import DataSource, FeatureSet, Meta
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.api import Meta
 from sageworks.core.views.view_utils import list_supplemental_data_tables, delete_table, view_details
 
 
