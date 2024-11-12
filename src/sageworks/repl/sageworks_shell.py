@@ -35,7 +35,7 @@ from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_N
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.log_utils import silence_logs
 from sageworks.api import Meta
-from sageworks.cached import CachedMeta
+from sageworks.cached.cached_meta import CachedMeta
 
 
 def onboard():

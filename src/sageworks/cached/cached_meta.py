@@ -50,7 +50,7 @@ class CachedMeta(CloudMeta):
 
     Common Usage:
        ```python
-       from sageworks.cached import CachedMeta
+       from sageworks.cached.cached_meta import CachedMeta
        meta = CachedMeta()
 
        # Get the AWS Account Info

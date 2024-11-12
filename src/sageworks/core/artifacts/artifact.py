@@ -12,7 +12,7 @@ from sageworks.core.cloud_platform.aws.aws_df_store import AWSDFStore as DFStore
 from sageworks.utils.aws_utils import sagemaker_delete_tag, dict_to_aws_tags
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
 from sageworks.core.cloud_platform.cloud_meta import CloudMeta
-from sageworks.cached import CachedMeta
+from sageworks.cached.cached_meta import CachedMeta
 
 
 class Artifact(ABC):
