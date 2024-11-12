@@ -49,7 +49,6 @@ if __name__ == "__main__":
     test_cached_feature_set()
     test_cached_model()
     test_cached_endpoint()
-    
+
     # Shutdown the ThreadPoolExecutor (note: users should NOT call this)
     CachedEndpoint._shutdown()
-

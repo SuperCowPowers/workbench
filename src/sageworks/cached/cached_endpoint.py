@@ -1,7 +1,6 @@
 """CachedEndpoint: Caches the method results for SageWorks Endpoints"""
 
 from typing import Union
-import pandas as pd
 
 # SageWorks Imports
 from sageworks.core.artifacts.endpoint_core import EndpointCore

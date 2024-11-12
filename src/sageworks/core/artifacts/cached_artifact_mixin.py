@@ -60,7 +60,7 @@ class CachedArtifactMixin:
     @classmethod
     def _shutdown(cls):
         """Explicitly shutdown the thread pool, if needed.
-           Note: You should NOT call this method unless you know what you're doing."""
+        Note: You should NOT call this method unless you know what you're doing."""
         if cls.thread_pool:
             cls.log.important("Shutting down the ThreadPoolExecutor...")
             time.sleep(5)
