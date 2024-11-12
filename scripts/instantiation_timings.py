@@ -1,5 +1,5 @@
-from sageworks.api import Model
+from sageworks.api.cached_model import CachedModel
 
 # Instantiate the Model object
 for _ in range(20):
-    model = Model("abalone-regression", skip_health_check=True)
+    model = CachedModel("abalone-regression")
