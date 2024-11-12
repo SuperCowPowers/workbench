@@ -11,7 +11,7 @@ from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.core.cloud_platform.aws.aws_df_store import AWSDFStore as DFStore
 from sageworks.utils.aws_utils import sagemaker_delete_tag, dict_to_aws_tags
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
-from sageworks.meta import Meta
+from sageworks.meta import Meta, CachedMeta
 
 
 class Artifact(ABC):
@@ -51,22 +51,20 @@ class Artifact(ABC):
     # Grab our Cloud Platform Metadata Class
     meta = Meta()
 
-    def __init__(self, uuid: str, skip_health_check: bool = False):
+    def __init__(self, uuid: str, use_cached_meta: bool = False):
         """Initialize the Artifact Base Class
 
         Args:
             uuid (str): The UUID of this artifact
-            skip_health_check (bool): Skip the health check on this artifact (default: False)
+            use_cached_meta (bool): Should we use cached metadata? (default: False)
         """
         self.uuid = uuid
-        self.skip_health_check = skip_health_check
+        if use_cached_meta:
+            self.log.info(f"Using Cached Metadata for {self.uuid}")
+            self.meta = CachedMeta()
 
     def __post_init__(self):
         """Artifact Post Initialization"""
-
-        # Do they want to skip the health check?
-        if self.skip_health_check:
-            return
 
         # Do I exist? (very metaphysical)
         if not self.exists():
