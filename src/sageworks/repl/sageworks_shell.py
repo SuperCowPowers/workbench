@@ -34,7 +34,8 @@ from sageworks.utils.repl_utils import cprint, Spinner
 from sageworks.utils.sageworks_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.log_utils import silence_logs
-from sageworks.meta import Meta, CachedMeta
+from sageworks.api import Meta
+from sageworks.cached import CachedMeta
 
 
 def onboard():

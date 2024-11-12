@@ -8,7 +8,7 @@ import dash_bootstrap_components as dbc
 # SageWorks Imports
 from sageworks.api import FeatureSet
 from sageworks.web_components import table
-from sageworks.meta import Meta
+from sageworks.api import Meta
 from sageworks.web_components.plugins.data_details import DataDetails
 from sageworks.web_components.plugins.scatter_plot import ScatterPlot
 

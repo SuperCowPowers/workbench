@@ -4,7 +4,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.web_views.web_view import WebView
-from sageworks.meta import Meta
+from sageworks.api import Meta
 
 
 class ModelPluginView(WebView):

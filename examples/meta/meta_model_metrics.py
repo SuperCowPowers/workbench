@@ -1,4 +1,4 @@
-from sageworks.meta import Meta
+from sageworks.api import Meta
 
 # Create our Meta Class and get a list of our Models
 meta = Meta()

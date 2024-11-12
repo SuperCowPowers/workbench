@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 
 # SageWorks Imports
 from sageworks.web_components import table
-from sageworks.meta import Meta
+from sageworks.api import Meta
 
 
 class PluginPage2:

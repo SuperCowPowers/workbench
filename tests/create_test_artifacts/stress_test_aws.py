@@ -1,7 +1,7 @@
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from sageworks.api import DataSource, FeatureSet, Model, ModelType
-from sageworks.meta import Meta
+from sageworks.api import Meta
 from sageworks.utils.test_data_generator import TestDataGenerator
 
 parallel_jobs = 16

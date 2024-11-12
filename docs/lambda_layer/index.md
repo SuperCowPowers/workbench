@@ -61,7 +61,7 @@ from sageworks.utils.lambda_utils import load_lambda_layer
 load_lambda_layer()
 
 # After 'load_lambda_layer()' we can use other SageWorks imports
-from sageworks.meta import Meta
+from sageworks.api import Meta
 from sageworks.api import Model 
 
 def lambda_handler(event, context):

@@ -27,7 +27,7 @@ model_df
 **List the Models in AWS**
 
 ```py title="meta_list_models.py"
-from sageworks.meta import Meta
+from sageworks.api import Meta
 
 # Create our Meta Class and get a list of our Models
 meta = Meta()
@@ -60,7 +60,7 @@ abalone-regression
 **Getting Model Performance Metrics**
 
 ```py title="meta_model_metrics.py"
-from sageworks.meta import Meta
+from sageworks.api import Meta
 
 # Create our Meta Class and get a list of our Models
 meta = Meta()
@@ -100,7 +100,7 @@ abalone-regression
 
 ```py title="meta_list_endpoints.py"
 from pprint import pprint
-from sageworks.meta import Meta
+from sageworks.api import Meta
 
 # Create our Meta Class and get a list of our Endpoints
 meta = Meta()

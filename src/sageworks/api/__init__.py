@@ -16,6 +16,7 @@ from .data_source import DataSource
 from .feature_set import FeatureSet
 from .model import Model, ModelType
 from .endpoint import Endpoint
+from .meta import Meta
 from .parameter_store import ParameterStore
 from .df_store import DFStore
 
@@ -25,6 +26,7 @@ __all__ = [
     "Model",
     "ModelType",
     "Endpoint",
+    "Meta",
     "ParameterStore",
     "DFStore",
 ]

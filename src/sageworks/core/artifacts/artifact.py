@@ -11,7 +11,8 @@ from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.core.cloud_platform.aws.aws_df_store import AWSDFStore as DFStore
 from sageworks.utils.aws_utils import sagemaker_delete_tag, dict_to_aws_tags
 from sageworks.utils.config_manager import ConfigManager, FatalConfigError
-from sageworks.meta import Meta, CachedMeta
+from sageworks.api import Meta
+from sageworks.cached import CachedMeta
 
 
 class Artifact(ABC):

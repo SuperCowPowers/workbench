@@ -17,7 +17,7 @@ class Meta(AWSMeta):
 
     Common Usage:
        ```python
-       from sageworks.meta import Meta
+       from sageworks.api import Meta
        meta = Meta()
 
        # Get the AWS Account Info
