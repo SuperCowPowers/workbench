@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class DataSourceAbstract(Artifact):
-    def __init__(self, data_uuid: str, database: str = "sageworks"):
+    def __init__(self, data_uuid: str, database: str = "sageworks", **kwargs):
         """DataSourceAbstract: Abstract Base Class for all data sources
         Args:
             data_uuid(str): The UUID for this Data Source
@@ -22,7 +22,7 @@ class DataSourceAbstract(Artifact):
         """
 
         # Call superclass init
-        super().__init__(data_uuid)
+        super().__init__(data_uuid, **kwargs)
 
         # Set up our instance attributes
         self._database = database

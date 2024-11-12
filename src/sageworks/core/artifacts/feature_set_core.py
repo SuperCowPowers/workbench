@@ -36,7 +36,7 @@ class FeatureSetCore(Artifact):
         ```
     """
 
-    def __init__(self, feature_set_uuid: str):
+    def __init__(self, feature_set_uuid: str, **kwargs):
         """FeatureSetCore Initialization
 
         Args:
@@ -47,7 +47,7 @@ class FeatureSetCore(Artifact):
         self.is_name_valid(feature_set_uuid)
 
         # Call superclass init
-        super().__init__(feature_set_uuid)
+        super().__init__(feature_set_uuid, **kwargs)
 
         # Get our FeatureSet metadata
         self.feature_meta = self.meta.feature_set(self.uuid)

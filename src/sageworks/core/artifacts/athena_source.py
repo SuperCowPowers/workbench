@@ -30,7 +30,7 @@ class AthenaSource(DataSourceAbstract):
         ```
     """
 
-    def __init__(self, data_uuid, database="sageworks"):
+    def __init__(self, data_uuid, database="sageworks", **kwargs):
         """AthenaSource Initialization
 
         Args:
@@ -41,7 +41,7 @@ class AthenaSource(DataSourceAbstract):
         self.is_name_valid(data_uuid)
 
         # Call superclass init
-        super().__init__(data_uuid, database)
+        super().__init__(data_uuid, database, **kwargs)
 
         # Grab our metadata from the Meta class
         self.log.info(f"Retrieving metadata for: {self.uuid}...")

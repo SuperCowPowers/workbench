@@ -59,23 +59,20 @@ class EndpointCore(Artifact):
         ```
     """
 
-    def __init__(self, endpoint_uuid, force_refresh: bool = False, legacy: bool = False):
+    def __init__(self, endpoint_uuid, **kwargs):
         """EndpointCore Initialization
 
         Args:
             endpoint_uuid (str): Name of Endpoint in SageWorks
-            force_refresh (bool, optional): Force a refresh of the AWS Broker. Defaults to False.
-            legacy (bool, optional): Force load of legacy models. Defaults to False.
         """
 
         # Make sure the endpoint_uuid is a valid name
-        if not legacy:
-            self.is_name_valid(endpoint_uuid, delimiter="-", lower_case=False)
+        self.is_name_valid(endpoint_uuid, delimiter="-", lower_case=False)
 
         # Call SuperClass Initialization
-        super().__init__(endpoint_uuid)
+        super().__init__(endpoint_uuid, **kwargs)
 
-        # Grab an AWS Metadata Broker object and pull information for Endpoints
+        # Grab an Cloud Metadata object and pull information for Endpoints
         self.endpoint_name = endpoint_uuid
         self.endpoint_meta = self.meta.endpoint(self.endpoint_name)
 

@@ -1,6 +1,7 @@
 """CachedArtifactMixin for caching method results in Artifact subclasses"""
 
 import logging
+import time
 from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
 from sageworks.utils.sageworks_cache import SageWorksCache
@@ -57,10 +58,12 @@ class CachedArtifactMixin:
             instance.log.error(f"Error refreshing data for {cache_key}: {e}")
 
     @classmethod
-    def close(cls):
-        """Explicitly close the thread pool, if needed."""
+    def _shutdown(cls):
+        """Explicitly shutdown the thread pool, if needed.
+           Note: You should NOT call this method unless you know what you're doing."""
         if cls.thread_pool:
             cls.log.important("Shutting down the ThreadPoolExecutor...")
+            time.sleep(5)
             try:
                 cls.thread_pool.shutdown(wait=True)  # Gracefully shutdown
             except RuntimeError as e:
@@ -78,4 +81,4 @@ if __name__ == "__main__":
     pprint(my_model.summary())
     pprint(my_model.details())
     pprint(my_model.health_check())
-    CachedArtifactMixin.close()
+    CachedArtifactMixin._shutdown()

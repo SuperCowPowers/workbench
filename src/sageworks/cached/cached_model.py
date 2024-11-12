@@ -103,4 +103,6 @@ if __name__ == "__main__":
     pprint(my_model.details())
     pprint(my_model.health_check())
     print(my_model.get_endpoint_inference_path())
-    my_model.close()
+
+    # Shutdown the ThreadPoolExecutor (note: users should NOT call this)
+    my_model._shutdown()
