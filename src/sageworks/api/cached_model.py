@@ -7,19 +7,22 @@ from sageworks.core.artifacts.cached_artifact_mixin import CachedArtifactMixin
 
 
 class CachedModel(CachedArtifactMixin, ModelCore):
-    """CachedModel: SageWorks CachedModel API Class.
+    """CachedModel: Caches the method results for SageWorks Models
+
+    Note: Cached method values may lag underlying Model changes.
 
     Common Usage:
         ```python
         my_model = CachedModel(name)
         my_model.details()
-        my_model.to_endpoint()
+        my_model.health_check()
+        my_model.sageworks_meta()
         ```
     """
     def __init__(self, uuid: str):
         """CachedModel Initialization"""
         # Call the initializer of ModelCore, passing the uuid argument
-        ModelCore.__init__(self, model_uuid=uuid)
+        ModelCore.__init__(self, model_uuid=uuid, use_cached_meta=True)
 
     @CachedArtifactMixin.cache_result
     def summary(self, **kwargs) -> dict:
