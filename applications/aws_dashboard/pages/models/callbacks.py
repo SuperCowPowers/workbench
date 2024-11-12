@@ -8,7 +8,7 @@ from dash.dependencies import Input, Output, State
 # SageWorks Imports
 from sageworks.web_components import table, model_plot
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
-from sageworks.api.cached_model import CachedModel
+from sageworks.cached import CachedModel
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")

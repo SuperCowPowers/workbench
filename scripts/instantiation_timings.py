@@ -1,6 +1,6 @@
 import time
 from sageworks.cached import CachedMeta
-from sageworks.api.cached_model import CachedModel
+from sageworks.cached import CachedModel
 
 # Instantiate all the Model objects
 models = CachedMeta().models()

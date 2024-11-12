@@ -7,5 +7,6 @@ These class provide Caching for the SageWorks package, offering quick access to 
 """
 
 from .cached_meta import CachedMeta
+from .cached_model import CachedModel
 
-__all__ = ["CachedMeta"]
+__all__ = ["CachedMeta", "CachedModel"]
