@@ -3,7 +3,6 @@ The Meta class provides 'account' information, configuration, etc. It also provi
 such as Data Sources, Feature Sets, Models, and Endpoints.
 """
 
-import logging
 from typing import Union
 import pandas as pd
 
