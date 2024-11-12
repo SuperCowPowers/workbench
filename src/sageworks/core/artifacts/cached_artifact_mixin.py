@@ -72,7 +72,7 @@ class CachedArtifactMixin:
 # Example usage of CachedModel
 if __name__ == "__main__":
     from pprint import pprint
-    from sageworks.cached import CachedModel
+    from sageworks.cached.cached_model import CachedModel
 
     my_model = CachedModel("abalone-regression")
     pprint(my_model.summary())
