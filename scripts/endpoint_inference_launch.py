@@ -8,8 +8,10 @@ import logging
 import boto3
 import sagemaker
 
-# SageMaker imports
+# SageWorks Imports
+os.environ["SAGEWORKS_SKIP_LOGGING"] = "True"  # For extra speed :p
 from sageworks.utils.fast_inference import fast_inference
+
 
 # Set up logging
 log = logging.getLogger()
