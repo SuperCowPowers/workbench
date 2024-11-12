@@ -8,7 +8,7 @@ from dash.dependencies import Input, Output, State
 # SageWorks Imports
 from sageworks.web_components import table, model_plot
 from sageworks.utils.pandas_utils import deserialize_aws_broker_data
-from sageworks.api.model import Model
+from sageworks.api.cached_model import CachedModel
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
@@ -70,7 +70,7 @@ def update_model_plot_component(app: Dash):
         # Get the selected row data and grab the uuid
         selected_row_data = table_data[selected_rows[0]]
         model_uuid = selected_row_data["uuid"]
-        m = Model(model_uuid)
+        m = CachedModel(model_uuid)
 
         # Model Details Markdown component
         model_plot_fig = model_plot.ModelPlot().update_properties(m, inference_run)
@@ -103,7 +103,7 @@ def setup_plugin_callbacks(plugins):
         object_uuid = selected_row_data["uuid"]
 
         # Create the Model object
-        model = Model(object_uuid)
+        model = CachedModel(object_uuid)
 
         # Update all the properties for each plugin
         all_props = []
