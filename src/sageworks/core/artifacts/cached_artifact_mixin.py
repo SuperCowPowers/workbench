@@ -9,17 +9,11 @@ from sageworks.utils.sageworks_cache import SageWorksCache
 class CachedArtifactMixin:
     """Mixin for caching methods in Artifact subclasses"""
 
-    # Class-level caches and thread pool
+    # Class-level caches, thread pool, and shutdown flag
     log = logging.getLogger("sageworks")
     artifact_cache = SageWorksCache(prefix="artifact_cache")
     fresh_cache = SageWorksCache(prefix="artifact_fresh_cache", expire=30)
     thread_pool = ThreadPoolExecutor(max_workers=5)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Instance-level log setup
-        if not hasattr(self, "log"):
-            self.log = CachedArtifactMixin.log
 
     @staticmethod
     def _flatten_redis_key(method, *args, **kwargs):
