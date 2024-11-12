@@ -19,7 +19,10 @@ nav:
   - Caching Classes:
     - OverView: cached/overview.md
     - Cached Meta: cached/cached_meta.md
+    - Cached DataSource: cached/cached_data_source.md
+    - Cached FeatureSet: cached/cached_feature_set.md
     - Cached Model: cached/cached_model.md
+    - Cached Endpoint: cached/cached_endpoint.md
   - Blogs/Research: 
     - OverView: blogs_research/index.md
     - Residual Analysis: blogs_research/residual_analysis.md 

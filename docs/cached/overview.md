@@ -1,6 +1,6 @@
 # Caching Overview
 !!! tip inline end "Caching is Crazy"
-    Yes, but it's a necessary evil, AWS often takes multiple seconds to respond and doesn't like to be spammed. So those two things in combination necessitate the use of Cached Classes. 
+    Yes, but it's a necessary evil for Web Interfaces. AWS APIs (boto3, Sagemaker) often takes multiple seconds to respond and will often throttle requests if spammed. So for quicker response and less spamming we're using Cached Classes for any Web Interface work.
 
 ## Welcome to the SageWorks Cached Classes
 
