@@ -1,6 +1,7 @@
 """CachedModel: Caches the method results for SageWorks Models"""
 
 from typing import Union
+import pandas as pd
 
 # SageWorks Imports
 from sageworks.core.artifacts.model_core import ModelCore
@@ -54,6 +55,15 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         return super().health_check(**kwargs)
 
     @CachedArtifactMixin.cache_result
+    def sageworks_meta(self) -> Union[str, None]:
+        """Retrieve the Enumerated Model Type (REGRESSOR, CLASSIFER, etc).
+
+        Returns:
+            str: The Enumerated Model Type
+        """
+        return super().sageworks_meta()
+
+    @CachedArtifactMixin.cache_result
     def get_endpoint_inference_path(self) -> Union[str, None]:
         """Retrieve the Endpoint Inference Path.
 
@@ -63,13 +73,16 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         return super().get_endpoint_inference_path()
 
     @CachedArtifactMixin.cache_result
-    def sageworks_meta(self) -> Union[str, None]:
-        """Retrieve the Enumerated Model Type (REGRESSOR, CLASSIFER, etc).
+    def get_inference_predictions(self, capture_uuid: str = "auto_inference") -> Union[pd.DataFrame, None]:
+        """Retrieve the captured prediction results for this model
+
+        Args:
+            capture_uuid (str, optional): Specific capture_uuid (default: training_holdout)
 
         Returns:
-            str: The Enumerated Model Type
+            pd.DataFrame: DataFrame of the Captured Predictions (might be None)
         """
-        return super().sageworks_meta()
+        return super().get_inference_predictions(capture_uuid=capture_uuid)
 
 
 if __name__ == "__main__":
