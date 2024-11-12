@@ -3,7 +3,10 @@
 from pprint import pprint
 
 # SageWorks Imports
-from sageworks.cached import CachedDataSource, CachedFeatureSet, CachedModel, CachedEndpoint
+from sageworks.cached.cached_data_source import CachedDataSource
+from sageworks.cached.cached_feature_set import CachedFeatureSet
+from sageworks.cached.cached_model import CachedModel
+from sageworks.cached.cached_endpoint import CachedEndpoint
 
 
 def test_cached_data_source():
