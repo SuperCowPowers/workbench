@@ -73,6 +73,15 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         return super().get_endpoint_inference_path()
 
     @CachedArtifactMixin.cache_result
+    def list_inference_runs(self) -> list[str]:
+        """Retrieve the captured prediction results for this model
+
+        Returns:
+            list[str]: List of Inference Runs
+        """
+        return super().list_inference_runs()
+
+    @CachedArtifactMixin.cache_result
     def get_inference_predictions(self, capture_uuid: str = "auto_inference") -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 

@@ -192,7 +192,7 @@ class ModelCore(Artifact):
         """List the inference runs for this model
 
         Returns:
-            list[str]: List of inference run UUIDs
+            list[str]: List of inference runs
         """
 
         # Check if we have a model (if not return empty list)
