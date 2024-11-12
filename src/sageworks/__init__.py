@@ -29,6 +29,7 @@ SageWorks Main Classes
      |      json_to_data.set_output_tags(["abalone", "json", "whatever"])
      |      json_to_data.transform()
 """
+import os
 from importlib.metadata import version
 
 try:
@@ -39,4 +40,6 @@ except Exception:
 # SageWorks Logging
 from sageworks.utils.sageworks_logging import logging_setup
 
-logging_setup()
+# Check the environment variable to decide whether to set up logging
+if os.getenv("SAGEWORKS_SKIP_LOGGING", "False").lower() != "true":
+    logging_setup()
