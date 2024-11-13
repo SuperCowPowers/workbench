@@ -13,7 +13,7 @@ class CachedArtifactMixin:
     # Class-level caches, thread pool, and shutdown flag
     log = logging.getLogger("sageworks")
     artifact_cache = SageWorksCache(prefix="artifact_cache")
-    fresh_cache = SageWorksCache(prefix="artifact_fresh_cache", expire=30)
+    fresh_cache = SageWorksCache(prefix="artifact_fresh_cache", expire=90)
     thread_pool = ThreadPoolExecutor(max_workers=5)
 
     @staticmethod

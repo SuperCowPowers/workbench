@@ -91,7 +91,7 @@ class CachedMeta(CloudMeta):
 
         # Create both our Meta Cache and Fresh Cache (tracks if data is stale)
         self.meta_cache = SageWorksCache(prefix="meta")
-        self.fresh_cache = SageWorksCache(prefix="meta_fresh", expire=30)  # 30-second expiration
+        self.fresh_cache = SageWorksCache(prefix="meta_fresh", expire=90)  # 90-second expiration
 
         # Create a ThreadPoolExecutor for refreshing stale data
         self.thread_pool = ThreadPoolExecutor(max_workers=5)
