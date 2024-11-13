@@ -683,9 +683,16 @@ class EndpointCore(Artifact):
         prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
         y_pred = prediction_df[prediction_col]
 
-        # Add the residuals and the absolute values to the DataFrame
-        prediction_df["residuals"] = y_true - y_pred
-        prediction_df["residuals_abs"] = np.abs(prediction_df["residuals"])
+        # Check for classification scenario
+        if not pd.api.types.is_numeric_dtype(y_true) or not pd.api.types.is_numeric_dtype(y_pred):
+            self.log.warning("Target and Prediction columns are not numeric. Computing 'diffs'...")
+            prediction_df["residuals"] = (y_true != y_pred).astype(int)
+            prediction_df["residuals_abs"] = prediction_df["residuals"]
+        else:
+            # Compute numeric residuals for regression
+            prediction_df["residuals"] = y_true - y_pred
+            prediction_df["residuals_abs"] = np.abs(prediction_df["residuals"])
+
         return prediction_df
 
     @staticmethod
