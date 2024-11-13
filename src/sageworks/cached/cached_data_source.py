@@ -27,37 +27,37 @@ class CachedDataSource(CachedArtifactMixin, AthenaSource):
 
     @CachedArtifactMixin.cache_result
     def summary(self, **kwargs) -> dict:
-        """Retrieve the CachedDataSource Details.
+        """Retrieve the DataSource Details.
 
         Returns:
-            dict: A dictionary of details about the CachedDataSource
+            dict: A dictionary of details about the DataSource
         """
         return super().summary(**kwargs)
 
     @CachedArtifactMixin.cache_result
     def details(self, **kwargs) -> dict:
-        """Retrieve the CachedDataSource Details.
+        """Retrieve the DataSource Details.
 
         Returns:
-            dict: A dictionary of details about the CachedDataSource
+            dict: A dictionary of details about the DataSource
         """
         return super().details(**kwargs)
 
     @CachedArtifactMixin.cache_result
     def health_check(self, **kwargs) -> dict:
-        """Retrieve the CachedDataSource Health Check.
+        """Retrieve the DataSource Health Check.
 
         Returns:
-            dict: A dictionary of health check details for the CachedDataSource
+            dict: A dictionary of health check details for the DataSource
         """
         return super().health_check(**kwargs)
 
     @CachedArtifactMixin.cache_result
-    def sageworks_meta(self) -> Union[str, None]:
-        """Retrieve the Enumerated Model Type (REGRESSOR, CLASSIFER, etc).
+    def sageworks_meta(self) -> Union[dict, None]:
+        """Retrieve the SageWorks Metadata for this DataSource.
 
         Returns:
-            str: The Enumerated Model Type
+            Union[dict, None]: Dictionary of SageWorks metadata for this Artifact
         """
         return super().sageworks_meta()
 

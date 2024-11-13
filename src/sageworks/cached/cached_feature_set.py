@@ -27,37 +27,37 @@ class CachedFeatureSet(CachedArtifactMixin, FeatureSetCore):
 
     @CachedArtifactMixin.cache_result
     def summary(self, **kwargs) -> dict:
-        """Retrieve the CachedFeatureSet Details.
+        """Retrieve the FeatureSet Details.
 
         Returns:
-            dict: A dictionary of details about the CachedFeatureSet
+            dict: A dictionary of details about the FeatureSet
         """
         return super().summary(**kwargs)
 
     @CachedArtifactMixin.cache_result
     def details(self, **kwargs) -> dict:
-        """Retrieve the CachedFeatureSet Details.
+        """Retrieve the FeatureSet Details.
 
         Returns:
-            dict: A dictionary of details about the CachedFeatureSet
+            dict: A dictionary of details about the FeatureSet
         """
         return super().details(**kwargs)
 
     @CachedArtifactMixin.cache_result
     def health_check(self, **kwargs) -> dict:
-        """Retrieve the CachedFeatureSet Health Check.
+        """Retrieve the FeatureSet Health Check.
 
         Returns:
-            dict: A dictionary of health check details for the CachedFeatureSet
+            dict: A dictionary of health check details for the FeatureSet
         """
         return super().health_check(**kwargs)
 
     @CachedArtifactMixin.cache_result
     def sageworks_meta(self) -> Union[str, None]:
-        """Retrieve the Enumerated Model Type (REGRESSOR, CLASSIFER, etc).
+        """Retrieve the SageWorks Metadata for this DataSource.
 
         Returns:
-            str: The Enumerated Model Type
+            Union[dict, None]: Dictionary of SageWorks metadata for this Artifact
         """
         return super().sageworks_meta()
 
