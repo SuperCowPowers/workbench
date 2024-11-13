@@ -250,15 +250,6 @@ class EndpointCore(Artifact):
         else:
             details["variant"] = "-"
 
-        # Add the underlying model details
-        details["model_name"] = self.model_name
-        model_details = self.model_details()
-        details["model_type"] = model_details.get("model_type", "unknown")
-        details["model_metrics"] = model_details.get("model_metrics")
-        details["confusion_matrix"] = model_details.get("confusion_matrix")
-        details["predictions"] = model_details.get("predictions")
-        details["inference_meta"] = model_details.get("inference_meta")
-
         # Add endpoint metrics from CloudWatch
         details["endpoint_metrics"] = self.endpoint_metrics()
 
@@ -311,21 +302,6 @@ class EndpointCore(Artifact):
         self.details(recompute=True)
         return True
 
-    def model_details(self) -> dict:
-        """Return the details about the model used in this Endpoint"""
-        if self.model_name == "unknown":
-            return {}
-        else:
-            model = ModelCore(self.model_name)
-            if model.exists():
-                return model.details()
-            else:
-                return {}
-
-    def model_type(self) -> str:
-        """Return the type of model used in this Endpoint"""
-        return self.details().get("model_type", "unknown")
-
     def auto_inference(self, capture: bool = False) -> pd.DataFrame:
         """Run inference on the endpoint using FeatureSet data
 
@@ -373,7 +349,8 @@ class EndpointCore(Artifact):
             return prediction_df
 
         # Get the target column
-        target_column = ModelCore(self.model_name).target()
+        model = ModelCore(self.model_name)
+        target_column = model.target()
 
         # Sanity Check that the target column is present
         if target_column not in prediction_df.columns:
@@ -382,11 +359,11 @@ class EndpointCore(Artifact):
             return prediction_df
 
         # Compute the standard performance metrics for this model
-        model_type = self.model_type()
-        if model_type in [ModelType.REGRESSOR.value, ModelType.QUANTILE_REGRESSOR.value]:
+        model_type = model.model_type
+        if model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]:
             prediction_df = self.residuals(target_column, prediction_df)
             metrics = self.regression_metrics(target_column, prediction_df)
-        elif model_type == ModelType.CLASSIFIER.value:
+        elif model_type == ModelType.CLASSIFIER:
             metrics = self.classification_metrics(target_column, prediction_df)
         else:
             # Unknown Model Type: Give log message and set metrics to empty dataframe
@@ -400,7 +377,9 @@ class EndpointCore(Artifact):
         # Capture the inference results and metrics
         if capture_uuid is not None:
             description = capture_uuid.replace("_", " ").title()
-            self._capture_inference_results(capture_uuid, prediction_df, target_column, metrics, description, id_column)
+            self._capture_inference_results(
+                capture_uuid, prediction_df, target_column, model_type, metrics, description, id_column
+            )
 
         # Return the prediction DataFrame
         return prediction_df
@@ -573,6 +552,7 @@ class EndpointCore(Artifact):
         capture_uuid: str,
         pred_results_df: pd.DataFrame,
         target_column: str,
+        model_type: ModelType,
         metrics: pd.DataFrame,
         description: str,
         id_column: str = None,
@@ -583,6 +563,7 @@ class EndpointCore(Artifact):
             capture_uuid (str): UUID of the inference capture
             pred_results_df (pd.DataFrame): DataFrame with the prediction results
             target_column (str): Name of the target column
+            model_type (ModelType): Type of the model (e.g. REGRESSOR, CLASSIFIER)
             metrics (pd.DataFrame): DataFrame with the performance metrics
             description (str): Description of the inference results
             id_column (str, optional): Name of the ID column (default=None)
@@ -631,15 +612,14 @@ class EndpointCore(Artifact):
         wr.s3.to_csv(subset_df, f"{inference_capture_path}/inference_predictions.csv", index=False)
 
         # CLASSIFIER: Write the confusion matrix to our S3 Model Inference Folder
-        model_type = self.model_type()
-        if model_type == ModelType.CLASSIFIER.value:
+        if model_type == ModelType.CLASSIFIER:
             conf_mtx = self.generate_confusion_matrix(target_column, pred_results_df)
             self.log.info(f"Writing confusion matrix to {inference_capture_path}/inference_cm.csv")
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
             wr.s3.to_csv(conf_mtx, f"{inference_capture_path}/inference_cm.csv", index=True)
 
         # Generate SHAP values for our Prediction Dataframe
-        generate_shap_values(self.endpoint_name, model_type, pred_results_df, inference_capture_path)
+        generate_shap_values(self.endpoint_name, model_type.value, pred_results_df, inference_capture_path)
 
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
@@ -697,10 +677,6 @@ class EndpointCore(Artifact):
         Returns:
             pd.DataFrame: DataFrame with two new columns called 'residuals' and 'residuals_abs'
         """
-        # Sanity Check that this is a regression model
-        if self.model_type() not in [ModelType.REGRESSOR.value, ModelType.QUANTILE_REGRESSOR.value]:
-            self.log.warning("Residuals are only computed for regression models")
-            return prediction_df
 
         # Compute the residuals
         y_true = prediction_df[target_column]
@@ -1000,7 +976,7 @@ if __name__ == "__main__":
     pred_results = my_endpoint.inference(my_eval_df, capture_uuid="holdout_xyz")
 
     # Run Inference and metrics for a Classification Endpoint
-    class_endpoint = EndpointCore("aqsol-mol-class-end")
+    class_endpoint = EndpointCore("wine-classification-end")
     auto_predictions = class_endpoint.auto_inference()
 
     # Generate the confusion matrix
