@@ -20,7 +20,7 @@
     
     
       
-        <title>0.8.57 - SageWorks</title>
+        <title>0.8.58 - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-0857" class="md-skip">
+        <a href="#release-0858" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              0.8.57
+              0.8.58
             
           </span>
         </div>
@@ -2269,7 +2269,7 @@
           
   
   <span class="md-ellipsis">
-    0.8.57
+    0.8.58
   </span>
   
 
@@ -2280,7 +2280,7 @@
         
   
   <span class="md-ellipsis">
-    0.8.57
+    0.8.58
   </span>
   
 
@@ -3046,13 +3046,13 @@
                   
 
 
-<h1 id="release-0857">Release 0.8.57</h1>
+<h1 id="release-0858">Release 0.8.58</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
 <p>The SageWorks framework continues to flex to support different real world use cases when operating a set of production machine learning pipelines.</p>
-<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.55</code> to <code>0.8.57</code></p>
+<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.55</code> to <code>0.8.58</code></p>
 <h2 id="general">General</h2>
 <p>This release is an incremental release as part of the road map for <code>v.0.9.0</code>. Please see the full details of the planned changes here: <a href="../../road_maps/0_9_0/">v0.9.0 Roadmap</a>. </p>
 <h3 id="caching-refatoring">Caching Refatoring</h3>
@@ -3080,10 +3080,12 @@ For more details see: <a href="../../cached/cached_model/">CachedModel</a></p>
 <h2 id="improvements">Improvements</h2>
 <p><strong>Dashboard Responsiveness</strong></p>
 <p>The whole point of these Cached Classes is to improve Dashboard/Web Interface responsiveness. The Dashboard uses both the CachedMeta and Cached(Artifact) classes to make both overview and drilldowns faster.</p>
+<p><strong>Supporting a Client Use Case</strong>
+There was a use case where a set of plugin pages needed to iterate over all the models to gather and aggregate information. We've supported that use case with a new decorator that avoids overloading AWS/Throttling issues.</p>
 <p><strong>Internal</strong>
-There was a small whoops with the refresh thread timing, that has been fixed. The Dashboard now refreshed all data every 90 seconds, so if you don't see you're new model on the dashboard... just wait longer. :)</p>
+The Dashboard now refreshes all data every 90 seconds, so if you don't see you're new model on the dashboard... just wait longer. :)</p>
 <h2 id="specific-code-changes">Specific Code Changes</h2>
-<p><a href="https://github.com/supercowpowers/sageworks/compare/v0.8.55...v0.8.57" target="_blank">Code Diff v0.8.55 --&gt; v0.8.57</a> </p>
+<p><a href="https://github.com/supercowpowers/sageworks/compare/v0.8.55...v0.8.58" target="_blank">Code Diff v0.8.55 --&gt; v0.8.58</a> </p>
 <p>Who doesn't like looking at code! Also +3 points for getting down this far! Here's a cow joke as a reward:</p>
 <blockquote>
 <p><strong><em>What do you call a nonsense meeting?
