@@ -6,7 +6,7 @@ from sageworks.utils.sageworks_cache import disable_refresh
 
 # Instantiate all the Model objects
 models = CachedMeta().models()["Model Group"].tolist()
-models = models[:10]  # Ten for testing
+# models = models[:10]  # Ten for testing
 
 TEST_NORMAL = False
 TEST_CACHE_REFRESH = False
@@ -31,6 +31,7 @@ if TEST_CACHE_REFRESH:
 
 # Cached Models (Refresh Disabled)
 if TEST_CACHE_NO_REFRESH:
+    no_refresh_start_time = time.time()
     with disable_refresh():
         print("CachedModel() No Refresh")
         for model_name in models:
@@ -38,6 +39,7 @@ if TEST_CACHE_NO_REFRESH:
             # model = CachedModel(model_name, refresh_enabled=True)
             model = CachedModel(model_name)
             print(f"{model_name} instantiation Time: {time.time() - start_time:.3f} seconds")
+    print(f"Total Time {len(models)} models: {time.time() - no_refresh_start_time:.3f} seconds")
 
 
 # Sleep to let's Cache Threads spin down
