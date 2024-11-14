@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import logging
 import importlib
+import threading
 from typing import Union, Dict, List, Any
 
 # SageWorks Imports
@@ -205,13 +206,35 @@ class PluginManager:
 
     def get_pages(self) -> dict:
         """
-        Retrieve a dict of plugins pages
+        Retrieve a dict of plugin pages with a timeout mechanism using threads.
 
         Returns:
-           dict: A dict of INSTANTIATED plugin pages.
+            dict: A dict of instantiated plugin pages or excludes pages that take too long.
         """
-        pages = self.plugins["pages"]
-        return {name: page() for name, page in pages.items()}
+        pages = self.plugins["pages"]  # Dictionary of page name to page class
+        instantiated_pages = {}
+        timeout_seconds = 10  # Timeout threshold
+
+        def instantiate_page(name, page_func):
+            """Attempt to instantiate a page and log errors if it fails or times out."""
+            result = [None]
+            thread = threading.Thread(target=lambda: result.__setitem__(0, page_func()))
+            thread.start()
+            thread.join(timeout_seconds)
+
+            if thread.is_alive():
+                self.log.critical(f"Page {name} load longer than {timeout_seconds} seconds...")
+            else:
+                instantiated_pages[name] = result[0]
+
+        # Instantiate each page with the timeout mechanism
+        for name, page in pages.items():
+            try:
+                instantiate_page(name, page)
+            except Exception as e:
+                logging.critical(f"Error instantiating page '{name}': {e}")
+
+        return instantiated_pages
 
     def get_css_files(self) -> List[str]:
         """
