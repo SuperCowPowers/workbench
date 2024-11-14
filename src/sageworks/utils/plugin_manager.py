@@ -206,6 +206,16 @@ class PluginManager:
 
     def get_pages(self) -> dict:
         """
+        Retrieve a dict of plugins pages
+
+        Returns:
+            dict: A dict of INSTANTIATED plugin pages.
+        """
+        pages = self.plugins["pages"]
+        return {name: page() for name, page in pages.items()}
+
+    def get_pages_with_timeout(self) -> dict:
+        """
         Retrieve a dict of plugin pages with a timeout mechanism using threads.
 
         Returns:
