@@ -36,7 +36,6 @@ if TEST_CACHE_NO_REFRESH:
         print("CachedModel() No Refresh")
         for model_name in models:
             start_time = time.time()
-            # model = CachedModel(model_name, refresh_enabled=True)
             model = CachedModel(model_name)
             print(f"{model_name} instantiation Time: {time.time() - start_time:.3f} seconds")
     print(f"Total Time {len(models)} models: {time.time() - no_refresh_start_time:.3f} seconds")
