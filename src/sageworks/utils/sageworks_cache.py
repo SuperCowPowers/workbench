@@ -3,7 +3,7 @@ use RedisCache if it's available, and fall back to Cache if it's not.
 """
 
 from pprint import pformat
-
+from contextlib import contextmanager
 from sageworks.utils.cache import Cache
 from sageworks.utils.redis_cache import RedisCache
 
@@ -12,7 +12,21 @@ import logging
 log = logging.getLogger("sageworks")
 
 
+# Context manager for disabling refresh
+@contextmanager
+def disable_refresh():
+    log.warning("SageWorksCache: Disabling Refresh")
+    SageWorksCache.refresh_enabled = False
+    yield
+    log.warning("SageWorksCache: Enabling Refresh")
+    SageWorksCache.refresh_enabled = True
+
+
 class SageWorksCache:
+
+    # Class attribute to control refresh treads (on/off)
+    refresh_enabled = True
+
     def __init__(self, expire=None, prefix="", postfix=""):
         """SageWorksCache Initialization
         Args:
