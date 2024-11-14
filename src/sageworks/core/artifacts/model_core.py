@@ -96,7 +96,7 @@ class ModelCore(Artifact):
         self.model_training_path = None
         self.endpoint_inference_path = None
 
-        # Grab an AWS Metadata Broker object and pull information for Models
+        # Grab an Cloud Platform Meta object and pull information for this Model
         self.model_name = model_uuid
         self.model_meta = self.meta.model(self.model_name)
         if self.model_meta is None:
