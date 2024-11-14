@@ -49,9 +49,6 @@ class Artifact(ABC):
     # Grab our Dataframe Storage
     df_cache = DFStore(path_prefix="/sageworks/dataframe_cache")
 
-    # Grab our Cloud Platform Metadata Class
-    meta = CloudMeta()
-
     def __init__(self, uuid: str, use_cached_meta: bool = False):
         """Initialize the Artifact Base Class
 
@@ -63,6 +60,8 @@ class Artifact(ABC):
         if use_cached_meta:
             self.log.info(f"Using Cached Metadata for {self.uuid}")
             self.meta = CachedMeta()
+        else:
+            self.meta = CloudMeta()
 
     def __post_init__(self):
         """Artifact Post Initialization"""
