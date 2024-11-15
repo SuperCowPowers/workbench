@@ -62,7 +62,7 @@ class CachedArtifactMixin:
         Note: You should NOT call this method unless you know what you're doing."""
         if cls.thread_pool:
             cls.log.important("Shutting down the ThreadPoolExecutor...")
-            time.sleep(5)
+            time.sleep(10)
             try:
                 cls.thread_pool.shutdown(wait=True)  # Gracefully shutdown
             except RuntimeError as e:
