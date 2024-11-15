@@ -20,7 +20,6 @@ from sageworks.core.artifacts.artifact import Artifact
 from sageworks.utils.aws_utils import newest_path, pull_s3_data
 
 
-# Enumerated Model Types
 class ModelType(Enum):
     """Enumerated Types for SageWorks Model Types"""
 
@@ -28,7 +27,9 @@ class ModelType(Enum):
     REGRESSOR = "regressor"
     CLUSTERER = "clusterer"
     TRANSFORMER = "transformer"
+    UNSUPERVISED = "unsupervised"
     QUANTILE_REGRESSOR = "quantile_regressor"
+    DETECTOR = "detector"
     UNKNOWN = "unknown"
 
 
