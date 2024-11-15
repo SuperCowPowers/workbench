@@ -26,13 +26,15 @@ class FeaturesToModel(Transform):
         ```
     """
 
-    def __init__(self, feature_uuid: str, model_uuid: str, model_type: ModelType = ModelType.UNKNOWN, model_class=None):
+    def __init__(self, feature_uuid: str, model_uuid: str, model_type: ModelType,
+                 model_class=None, model_import_str=None):
         """FeaturesToModel Initialization
         Args:
             feature_uuid (str): UUID of the FeatureSet to use as input
             model_uuid (str): UUID of the Model to create as output
             model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.
             model_class (str): The class of the model (optional)
+            model_import_str (str): The import string for the model (optional
         """
 
         # Make sure the model_uuid is a valid name
@@ -40,16 +42,6 @@ class FeaturesToModel(Transform):
 
         # Call superclass init
         super().__init__(feature_uuid, model_uuid)
-
-        # If the model_type is UNKNOWN the model_class must be specified
-        if model_type == ModelType.UNKNOWN:
-            if model_class is None:
-                msg = "ModelType is UNKNOWN, must specify a model_class!"
-                self.log.critical(msg)
-                raise ValueError(msg)
-            else:
-                self.log.info("ModelType is UNKNOWN, using model_class to determine the type...")
-                model_type = self._determine_model_type(model_class)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.FEATURE_SET
@@ -63,49 +55,6 @@ class FeaturesToModel(Transform):
         self.model_feature_list = None
         self.target_column = None
         self.class_labels = None
-
-    def _determine_model_type(self, model_class: str) -> ModelType:
-        """Determine the ModelType from the model_class
-        Args:
-            model_class (str): The class of the model
-        Returns:
-            ModelType: The determined ModelType
-        """
-        model_class_lower = model_class.lower()
-
-        # Direct mapping for specific models
-        specific_model_mapping = {
-            "logisticregression": ModelType.CLASSIFIER,
-            "linearregression": ModelType.REGRESSOR,
-            "ridge": ModelType.REGRESSOR,
-            "lasso": ModelType.REGRESSOR,
-            "elasticnet": ModelType.REGRESSOR,
-            "bayesianridge": ModelType.REGRESSOR,
-            "svc": ModelType.CLASSIFIER,
-            "svr": ModelType.REGRESSOR,
-            "gaussiannb": ModelType.CLASSIFIER,
-            "kmeans": ModelType.CLUSTERER,
-            "dbscan": ModelType.CLUSTERER,
-            "meanshift": ModelType.CLUSTERER,
-        }
-
-        if model_class_lower in specific_model_mapping:
-            return specific_model_mapping[model_class_lower]
-
-        # General pattern matching
-        if "regressor" in model_class_lower:
-            return ModelType.REGRESSOR
-        elif "classifier" in model_class_lower:
-            return ModelType.CLASSIFIER
-        elif "quantile" in model_class_lower:
-            return ModelType.QUANTILE_REGRESSOR
-        elif "cluster" in model_class_lower:
-            return ModelType.CLUSTERER
-        elif "transform" in model_class_lower:
-            return ModelType.TRANSFORMER
-        else:
-            self.log.critical(f"Unknown ModelType for model_class: {model_class}")
-            return ModelType.UNKNOWN
 
     def generate_model_script(self, target_column: str, feature_list: list[str], train_all_data: bool) -> str:
         """Fill in the model template with specific target and feature_list
@@ -384,14 +333,14 @@ class FeaturesToModel(Transform):
 if __name__ == "__main__":
     """Exercise the FeaturesToModel Class"""
 
+    """
     # Regression Model
     input_uuid = "abalone_features"
     output_uuid = "abalone-regression"
-    to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.REGRESSOR)
+    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.REGRESSOR)
     to_model.set_output_tags(["abalone", "public"])
     to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
 
-    """
     # Classification Model
     input_uuid = "wine_features"
     output_uuid = "wine-classification"
@@ -409,22 +358,32 @@ if __name__ == "__main__":
     to_model.transform(target_column="class_number_of_rings", description="Abalone Quantile Regression")
     """
 
-    # Scikit-Learn KNN Regression Model (Abalone)
-    """
-    input_uuid = "abalone_features"
-    output_uuid = "abalone-knn-reg"
-    to_model = FeaturesToModel(input_uuid, output_uuid, model_class="KNeighborsRegressor")
-    to_model.set_output_tags(["abalone", "knn"])
+    # Scikit-Learn Clustering Model
+    input_uuid = "wine_features"
+    output_uuid = "wine-clusters"
+    to_model = FeaturesToModel(
+        input_uuid,
+        output_uuid,
+        model_class="KMeans",  # Clustering algorithm
+        model_import_str="from sklearn.cluster import KMeans",  # Import statement for KMeans
+        model_type=ModelType.CLUSTERER
+    )
+    to_model.set_output_tags(["wine", "clustering"])
     new_model = to_model.transform(
-        target_column="class_number_of_rings", description="Abalone KNN Regression", train_all_data=True
+        target_column="wine_class", description="Wine Clustering", train_all_data=True
     )
 
-    # Scikit-Learn Random Forest Classification Model (Wine)
-    input_uuid = "wine_features"
-    output_uuid = "wine-rfc-class"
-    to_model = FeaturesToModel(input_uuid, output_uuid, model_class="RandomForestClassifier")
-    to_model.set_output_tags(["wine", "rfc"])
-    new_model = to_model.transform(
-        target_column="wine_class", description="Wine RF Classification", train_all_data=True
+    # Scikit-Learn 2D Projection Model
+    input_uuid = "abalone_features"
+    output_uuid = "abalone-2d-projection"
+    to_model = FeaturesToModel(
+        input_uuid,
+        output_uuid,
+        model_class="TSNE",  # 2D projection algorithm
+        model_import_str="from sklearn.manifold import TSNE",  # Import statement for t-SNE
+        model_type=ModelType.TRANSFORMER
     )
-    """
+    to_model.set_output_tags(["abalone", "2d-projection"])
+    new_model = to_model.transform(
+        target_column=None, description="Abalone 2D Projection", train_all_data=True
+    )
