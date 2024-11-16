@@ -370,7 +370,8 @@ if __name__ == "__main__":
     to_model.transform(target_column="class_number_of_rings", description="Abalone Quantile Regression")
     """
 
-    # Scikit-Learn Clustering Model
+    """
+    # Scikit-Learn Kmeans Clustering Model
     input_uuid = "wine_features"
     output_uuid = "wine-clusters"
     to_model = FeaturesToModel(
@@ -381,17 +382,33 @@ if __name__ == "__main__":
         model_type=ModelType.CLUSTERER,
     )
     to_model.set_output_tags(["wine", "clustering"])
-    new_model = to_model.transform(target_column=None, description="Wine Clustering", train_all_data=True)
+    to_model.transform(target_column=None, description="Wine Clustering", train_all_data=True)
+    """
 
+    # Scikit-Learn DBSCAN Clustering Model
+    input_uuid = "wine_features"
+    output_uuid = "wine-clusters-dbscan"
+    to_model = FeaturesToModel(
+        input_uuid,
+        output_uuid,
+        model_class="DBSCAN",  # Density-based clustering algorithm
+        model_import_str="from sklearn.cluster import DBSCAN",  # Import statement for DBSCAN
+        model_type=ModelType.CLUSTERER,
+    )
+    to_model.set_output_tags(["wine", "density-based clustering"])
+    to_model.transform(target_column=None, description="Wine Clustering with DBSCAN", train_all_data=True)
+
+    """
     # Scikit-Learn 2D Projection Model using UMAP
     input_uuid = "wine_features"
     output_uuid = "wine-2d-projection"
     to_model = FeaturesToModel(
         input_uuid,
         output_uuid,
-        model_class="UMAP",  # Modern 2D projection algorithm
-        model_import_str="from umap import UMAP",  # Import statement for UMAP
+        model_class="UMAP",
+        model_import_str="from umap import UMAP",
         model_type=ModelType.PROJECTION,
     )
     to_model.set_output_tags(["wine", "2d-projection"])
-    new_model = to_model.transform(target_column=None, description="Wine 2D Projection", train_all_data=True)
+    to_model.transform(target_column=None, description="Wine 2D Projection", train_all_data=True)
+    """
