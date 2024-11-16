@@ -367,7 +367,6 @@ if __name__ == "__main__":
     """
 
     # Scikit-Learn Clustering Model
-    """
     input_uuid = "wine_features"
     output_uuid = "wine-clusters"
     to_model = FeaturesToModel(
@@ -381,7 +380,6 @@ if __name__ == "__main__":
     new_model = to_model.transform(
         target_column=None, description="Wine Clustering", train_all_data=True
     )
-    """
 
     # Scikit-Learn 2D Projection Model using UMAP
     input_uuid = "wine_features"
@@ -391,7 +389,7 @@ if __name__ == "__main__":
         output_uuid,
         model_class="UMAP",  # Modern 2D projection algorithm
         model_import_str="from umap import UMAP",  # Import statement for UMAP
-        model_type=ModelType.TRANSFORMER
+        model_type=ModelType.PROJECTION
     )
     to_model.set_output_tags(["wine", "2d-projection"])
     new_model = to_model.transform(
