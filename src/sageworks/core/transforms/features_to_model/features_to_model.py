@@ -385,18 +385,18 @@ if __name__ == "__main__":
     to_model.transform(target_column=None, description="Wine Clustering", train_all_data=True)
     """
 
-    # Scikit-Learn DBSCAN Clustering Model
+    # Scikit-Learn HDBSCAN Clustering Model
     input_uuid = "wine_features"
-    output_uuid = "wine-clusters-dbscan"
+    output_uuid = "wine-clusters-hdbscan"
     to_model = FeaturesToModel(
         input_uuid,
         output_uuid,
-        model_class="DBSCAN",  # Density-based clustering algorithm
-        model_import_str="from sklearn.cluster import DBSCAN",  # Import statement for DBSCAN
+        model_class="HDBSCAN",  # Density-based clustering algorithm
+        model_import_str="from sklearn.cluster import HDBSCAN",
         model_type=ModelType.CLUSTERER,
     )
     to_model.set_output_tags(["wine", "density-based clustering"])
-    to_model.transform(target_column=None, description="Wine Clustering with DBSCAN", train_all_data=True)
+    to_model.transform(target_column=None, description="Wine Clustering with HDBSCAN", train_all_data=True)
 
     """
     # Scikit-Learn 2D Projection Model using UMAP
