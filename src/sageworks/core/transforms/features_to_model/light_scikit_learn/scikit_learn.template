@@ -1,3 +1,15 @@
+# Template Placeholders
+TEMPLATE_PARAMS = {
+    "model_imports": "{{model_imports}}",
+    "model_type": "{{model_type}}",
+    "target_column": "{{target_column}}",
+    "feature_list": "{{feature_list}}",
+    "model_class": "{{model_class}}",
+    "model_metrics_s3_path": "{{model_metrics_s3_path}}",
+    "train_all_data": "{{train_all_data}}"
+}
+
+# Model Imports
 {{model_imports}}
 
 import awswrangler as wr
@@ -12,9 +24,8 @@ import os
 import pandas as pd
 from typing import List
 
-# This is going to be global so that it can be used both in the training and inference code
-model_type = "{{model_type}}"
-
+# Global model_type for both training and inference
+model_type = TEMPLATE_PARAMS["model_type"]
 
 # Function to check if dataframe is empty
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
@@ -24,7 +35,6 @@ def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
         print(msg)
         raise ValueError(msg)
 
-
 # Function to expand probability column into individual class probability columns
 def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFrame:
     """Expand 'pred_proba' column into separate columns for each class label."""
@@ -32,57 +42,67 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     if proba_column not in df.columns:
         raise ValueError('DataFrame does not contain a "pred_proba" column')
 
+    # Create new columns for each class label's probability
     new_col_names = [f"{label}_proba" for label in class_labels]
     proba_df = pd.DataFrame(df[proba_column].tolist(), columns=new_col_names)
+
+    # Drop the original 'pred_proba' column and reset the index
     df = df.drop(columns=[proba_column]).reset_index(drop=True)
+
+    # Concatenate the new probability columns with the original DataFrame
     df = pd.concat([df, proba_df], axis=1)
     return df
-
 
 # Function to match DataFrame columns to model features (case-insensitive)
 def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
     """Match and rename DataFrame columns to match the model's features, case-insensitively."""
+    # Create a set of exact matches from the DataFrame columns
     exact_match_set = set(df.columns)
+
+    # Create a case-insensitive map of DataFrame columns
     column_map = {col.lower(): col for col in df.columns}
     rename_dict = {}
 
+    # Build a dictionary for renaming columns based on case-insensitive matching
     for feature in model_features:
         if feature in exact_match_set:
             rename_dict[feature] = feature
         elif feature.lower() in column_map:
             rename_dict[column_map[feature.lower()]] = feature
 
+    # Rename columns in the DataFrame to match model features
     return df.rename(columns=rename_dict)
-
 
 if __name__ == "__main__":
     # Template Parameters
-    target = {{target_column}}  # Can be None for unsupervised models
-    feature_list = {{feature_list}}
-    model_class = {{model_class}}
-    model_metrics_s3_path = "{{model_metrics_s3_path}}"
-    train_all_data = "{{train_all_data}}"
+    target = TEMPLATE_PARAMS["target_column"]  # Can be None for unsupervised models
+    feature_list = TEMPLATE_PARAMS["feature_list"]
+    model_class = TEMPLATE_PARAMS["model_class"]
+    model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
+    train_all_data = TEMPLATE_PARAMS["train_all_data"]
     validation_split = 0.2
 
-    # SageMaker arguments
+    # SageMaker arguments for input/output directories
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-data-dir", type=str, default=os.environ["SM_OUTPUT_DATA_DIR"])
     parser.add_argument("--model-dir", type=str, default=os.environ["SM_MODEL_DIR"])
     parser.add_argument("--train", type=str, default=os.environ["SM_CHANNEL_TRAIN"])
     args = parser.parse_args()
 
-    # Load training data
+    # Load training data from the specified directory
     training_files = [
         os.path.join(args.train, file)
         for file in os.listdir(args.train) if file.endswith(".csv")
     ]
     all_df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
+
+    # Check if the DataFrame is empty
     check_dataframe(all_df, "training_df")
 
-    # Initialize the model
+    # Initialize the model using the specified model class
     model = model_class()
 
-    # Handle logic based on model_type
+    # Handle logic based on the model_type
     if model_type in ["classifier", "regressor"]:
         # Supervised Models: Prepare for training
         if train_all_data == "True":
@@ -104,72 +124,78 @@ if __name__ == "__main__":
             df_train[target] = label_encoder.fit_transform(df_train[target])
             df_val[target] = label_encoder.transform(df_val[target])
 
-        # Prepare features and targets
+        # Prepare features and targets for training
         X_train = df_train[feature_list]
         X_val = df_val[feature_list]
         y_train = df_train[target] if target else None
         y_val = df_val[target] if target else None
 
-        # Train the model
+        # Train the model using the training data
         model.fit(X_train, y_train)
 
         # Make predictions and handle classification-specific logic
         preds = model.predict(X_val)
         if model_type == "classifier" and target:
+            # Get class probabilities and expand them into separate columns
             probs = model.predict_proba(X_val)
             df_val["pred_proba"] = [p.tolist() for p in probs]
             df_val = expand_proba_column(df_val, label_encoder.classes_)
+
+            # Decode the target and prediction labels
             df_val[target] = label_encoder.inverse_transform(df_val[target])
             preds = label_encoder.inverse_transform(preds)
 
-        # Save predictions to S3
+        # Add predictions to the validation DataFrame
         df_val["prediction"] = preds
+
+        # Save the validation predictions to S3
         output_columns = [target, "prediction"] + [col for col in df_val.columns if col.endswith("_proba")]
         wr.s3.to_csv(df_val[output_columns], path=f"{model_metrics_s3_path}/validation_predictions.csv", index=False)
 
     elif model_type == "clusterer":
-        # Unsupervised Clustering Models
+        # Unsupervised Clustering Models: Assign cluster labels
         all_df["cluster"] = model.fit_predict(all_df[feature_list])
 
     elif model_type in ["transformer", "projection"]:
-        # Unsupervised Transformation/Projection Models
+        # Unsupervised Transformation/Projection Models: Apply transformation
         transformed_data = model.fit_transform(all_df[feature_list])
+        # Add transformed components to the DataFrame
         for i in range(transformed_data.shape[1]):
             all_df[f"component_{i+1}"] = transformed_data[:, i]
 
-    # Save model and any necessary assets
+    # Save the trained model and any necessary assets
     joblib.dump(model, os.path.join(args.model_dir, "scikit_model.joblib"))
     if model_type == "classifier" and label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
+
+    # Save the feature list to validate input during predictions
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
         json.dump(feature_list, fp)
-
 
 # Functions for inference
 def model_fn(model_dir):
     """Load and return the model from the specified directory."""
     return joblib.load(os.path.join(model_dir, "scikit_model.joblib"))
 
-
 def input_fn(input_data, content_type):
     """Parse input data and return a DataFrame."""
     if content_type == "text/csv":
+        # Read CSV input data
         return pd.read_csv(StringIO(input_data))
     raise ValueError(f"{content_type} not supported!")
-
 
 def output_fn(output_df, accept_type):
     """Format output data and return as a CSV string."""
     if accept_type == "text/csv":
+        # Return output data as a CSV string
         return output_df.to_csv(index=False), "text/csv"
     raise RuntimeError(f"{accept_type} not supported!")
-
 
 def predict_fn(df, model):
     """Make predictions or apply transformations using the model and return the DataFrame with results."""
     model_dir = os.environ["SM_MODEL_DIR"]
 
-    # Load feature columns
+    # Load feature columns from the saved file
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
         model_features = json.load(fp)
 
@@ -200,7 +226,7 @@ def predict_fn(df, model):
         transformed_data = model.transform(matched_df[model_features])
 
         if model_type == "projection" and transformed_data.shape[1] == 2:
-            # Special case for 2D projections
+            # Special case for 2D projections: use 'x' and 'y' labels
             results["x"] = transformed_data[:, 0]
             results["y"] = transformed_data[:, 1]
         else:
@@ -226,4 +252,5 @@ def predict_fn(df, model):
         df["pred_proba"] = [p.tolist() for p in probs]
         df = expand_proba_column(df, label_encoder.classes_)
 
+    # Return the modified DataFrame
     return df
