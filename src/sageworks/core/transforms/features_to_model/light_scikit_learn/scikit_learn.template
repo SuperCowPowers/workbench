@@ -9,7 +9,7 @@ TEMPLATE_PARAMS = {
     "train_all_data": "{{train_all_data}}"
 }
 
-# Model Imports
+# Model Imports (this will be replaced with the imports for the template)
 {{model_imports}}
 
 import awswrangler as wr
@@ -156,12 +156,24 @@ if __name__ == "__main__":
         # Unsupervised Clustering Models: Assign cluster labels
         all_df["cluster"] = model.fit_predict(all_df[feature_list])
 
-    elif model_type in ["transformer", "projection"]:
-        # Unsupervised Transformation/Projection Models: Apply transformation
+    elif model_type == "projection":
+        # Projection Models: Apply transformation and label first three components as x, y, z
         transformed_data = model.fit_transform(all_df[feature_list])
-        # Add transformed components to the DataFrame
+        num_components = transformed_data.shape[1]
+
+        # Special labels for the first three components, if they exist
+        special_labels = ["x", "y", "z"]
+        for i in range(num_components):
+            if i < len(special_labels):
+                all_df[special_labels[i]] = transformed_data[:, i]
+            else:
+                all_df[f"component_{i + 1}"] = transformed_data[:, i]
+
+    elif model_type == "transformer":
+        # Transformer Models: Apply transformation and use generic component labels
+        transformed_data = model.fit_transform(all_df[feature_list])
         for i in range(transformed_data.shape[1]):
-            all_df[f"component_{i+1}"] = transformed_data[:, i]
+            all_df[f"component_{i + 1}"] = transformed_data[:, i]
 
     # Save the trained model and any necessary assets
     joblib.dump(model, os.path.join(args.model_dir, "scikit_model.joblib"))

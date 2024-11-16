@@ -12,6 +12,7 @@ from sageworks.core.transforms.transform import Transform, TransformInput, Trans
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.artifacts.model_core import ModelCore, ModelType, InferenceImage
 from sageworks.core.artifacts.artifact import Artifact
+from sageworks.utils.model_script_utils import fill_template
 
 
 class FeaturesToModel(Transform):
@@ -67,8 +68,7 @@ class FeaturesToModel(Transform):
            str: The name of the generated model script
         """
 
-        # FIXME: Revisit all of this since it's a bit wonky
-        # Did they specify a Scikit-Learn model class?
+        # Scikit-Learn models require a model_class and model_import_str
         if self.model_class:
             self.log.info(f"Using Scikit-Learn model class: {self.model_class}")
             if not self.model_import_str:
@@ -85,16 +85,19 @@ class FeaturesToModel(Transform):
             with open(template_path, "r") as fp:
                 scikit_template = fp.read()
 
-            # Template replacements
-            aws_script = scikit_template.replace("{{model_imports}}", self.model_import_str)
-            aws_script = aws_script.replace("{{model_type}}", self.model_type.value)
-            aws_script = aws_script.replace("{{model_class}}", self.model_class)
-            aws_script = aws_script.replace("{{target_column}}", f"'{target_column}'" if target_column else "None")
-            feature_list_str = json.dumps(feature_list)
-            aws_script = aws_script.replace("{{feature_list}}", feature_list_str)
-            metrics_s3_path = f"{self.model_training_root}/{self.output_uuid}"
-            aws_script = aws_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
-            aws_script = aws_script.replace("{{train_all_data}}", str(train_all_data))
+            # Fill in the scikit-learn template with a bunch of parameters
+            params = {
+                "model_imports": self.model_import_str,
+                "model_type": self.model_type.value,
+                "model_class": self.model_class,
+                "target_column": target_column,
+                "feature_list": feature_list,
+                "model_metrics_s3_path": f"{self.model_training_root}/{self.output_uuid}",
+                "train_all_data": train_all_data
+            }
+
+            # Call the utility function to fill in the template
+            aws_script = fill_template(scikit_template, params)
 
         elif self.model_type == ModelType.REGRESSOR or self.model_type == ModelType.CLASSIFIER:
             script_name = "generated_xgb_model.py"
