@@ -22,7 +22,7 @@ try:
         roc_auc_score,
         confusion_matrix,
         precision_recall_fscore_support,
-        root_mean_squared_error,
+        mean_squared_error,
     )
     from sklearn.preprocessing import OneHotEncoder
 
@@ -31,6 +31,7 @@ except ImportError as e:
     log = logging.getLogger("sageworks")
     msg = "Please install the scikit-learn package: pip install scikit-learn"
     log.critical(msg)
+    log.critical(e)
     raise SystemExit(msg) from e
 
 from sagemaker.serializers import CSVSerializer
@@ -651,7 +652,7 @@ class EndpointCore(Artifact):
         y_pred = prediction_df[prediction_col]
 
         mae = mean_absolute_error(y_true, y_pred)
-        rmse = root_mean_squared_error(y_true, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_true, y_pred))
         r2 = r2_score(y_true, y_pred)
         # Mean Absolute Percentage Error
         mape = np.mean(np.where(y_true != 0, np.abs((y_true - y_pred) / y_true), np.abs(y_true - y_pred))) * 100
