@@ -229,23 +229,23 @@ def predict_fn(df, model):
     # Initialize a dictionary to store the results
     results = {}
 
-    # Perform the appropriate action based on model capabilities
+    # Determine how to handle the model based on its available methods
     if hasattr(model, "predict"):
         # For supervised models (classifier or regressor)
         predictions = model.predict(matched_df[model_features])
         results["prediction"] = predictions
 
     elif hasattr(model, "fit_predict"):
-        # For clustering models
+        # For clustering models (e.g., DBSCAN)
         clusters = model.fit_predict(matched_df[model_features])
         results["cluster"] = clusters
 
-    elif hasattr(model, "transform"):
-        # For dimensionality reduction or projection models
-        transformed_data = model.transform(matched_df[model_features])
+    elif hasattr(model, "fit_transform") and not hasattr(model, "predict"):
+        # For transformation/projection models (e.g., t-SNE, PCA)
+        transformed_data = model.fit_transform(matched_df[model_features])
 
+        # Handle 2D projection models specifically
         if model_type == "projection" and transformed_data.shape[1] == 2:
-            # Special case for 2D projections: use 'x' and 'y' labels
             results["x"] = transformed_data[:, 0]
             results["y"] = transformed_data[:, 1]
         else:
@@ -255,7 +255,7 @@ def predict_fn(df, model):
 
     else:
         # Raise an error if the model does not support the expected methods
-        raise ValueError("Model does not support predict, fit_predict, or transform methods.")
+        raise ValueError("Model does not support predict, fit_predict, or fit_transform methods.")
 
     # Decode predictions if using a label encoder (for classification)
     if label_encoder and "prediction" in results:
