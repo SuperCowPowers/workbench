@@ -43,7 +43,8 @@ if __name__ == "__main__":
 
     # Hard Code for now :)
     home_dir = os.path.expanduser("~")
-    template_path = f"{home_dir}/work/sageworks/src/sageworks/core/transforms/features_to_model/light_scikit_learn/scikit_learn.template"
+    sage_src_path = "work/sageworks/src/sageworks/core/transforms/features_to_model"
+    template_path = f"{home_dir}/{sage_src_path}/light_scikit_learn/scikit_learn.template"
 
     # Define the template and params
     my_template = open(template_path).read()
@@ -52,11 +53,23 @@ if __name__ == "__main__":
         "model_type": "clusterer",
         "model_class": "KMeans",
         "target_column": None,
-        "feature_list": ["alcohol", "malic_acid", "ash", "alcalinity_of_ash", "magnesium", "total_phenols",
-                         "flavanoids", "nonflavanoid_phenols", "proanthocyanins", "color_intensity", "hue",
-                         "od280_od315_of_diluted_wines", "proline"],
+        "feature_list": [
+            "alcohol",
+            "malic_acid",
+            "ash",
+            "alcalinity_of_ash",
+            "magnesium",
+            "total_phenols",
+            "flavanoids",
+            "nonflavanoid_phenols",
+            "proanthocyanins",
+            "color_intensity",
+            "hue",
+            "od280_od315_of_diluted_wines",
+            "proline",
+        ],
         "model_metrics_s3_path": "s3://sandbox-sageworks-artifacts/models/training/wine-clusters",
-        "train_all_data": True
+        "train_all_data": True,
     }
     aws_script = fill_template(my_template, my_params)
     print(aws_script)

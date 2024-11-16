@@ -27,8 +27,9 @@ class FeaturesToModel(Transform):
         ```
     """
 
-    def __init__(self, feature_uuid: str, model_uuid: str, model_type: ModelType,
-                 model_class=None, model_import_str=None):
+    def __init__(
+        self, feature_uuid: str, model_uuid: str, model_type: ModelType, model_class=None, model_import_str=None
+    ):
         """FeaturesToModel Initialization
         Args:
             feature_uuid (str): UUID of the FeatureSet to use as input
@@ -93,7 +94,7 @@ class FeaturesToModel(Transform):
                 "target_column": target_column,
                 "feature_list": feature_list,
                 "model_metrics_s3_path": f"{self.model_training_root}/{self.output_uuid}",
-                "train_all_data": train_all_data
+                "train_all_data": train_all_data,
             }
 
             # Call the utility function to fill in the template
@@ -377,12 +378,10 @@ if __name__ == "__main__":
         output_uuid,
         model_class="KMeans",  # Clustering algorithm
         model_import_str="from sklearn.cluster import KMeans",  # Import statement for KMeans
-        model_type=ModelType.CLUSTERER
+        model_type=ModelType.CLUSTERER,
     )
     to_model.set_output_tags(["wine", "clustering"])
-    new_model = to_model.transform(
-        target_column=None, description="Wine Clustering", train_all_data=True
-    )
+    new_model = to_model.transform(target_column=None, description="Wine Clustering", train_all_data=True)
 
     # Scikit-Learn 2D Projection Model using UMAP
     input_uuid = "wine_features"
@@ -392,9 +391,7 @@ if __name__ == "__main__":
         output_uuid,
         model_class="UMAP",  # Modern 2D projection algorithm
         model_import_str="from umap import UMAP",  # Import statement for UMAP
-        model_type=ModelType.PROJECTION
+        model_type=ModelType.PROJECTION,
     )
     to_model.set_output_tags(["wine", "2d-projection"])
-    new_model = to_model.transform(
-        target_column=None, description="Wine 2D Projection", train_all_data=True
-    )
+    new_model = to_model.transform(target_column=None, description="Wine 2D Projection", train_all_data=True)
