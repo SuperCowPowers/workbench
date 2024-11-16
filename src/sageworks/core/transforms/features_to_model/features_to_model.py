@@ -48,6 +48,7 @@ class FeaturesToModel(Transform):
         self.output_type = TransformOutput.MODEL
         self.model_type = model_type
         self.model_class = model_class
+        self.model_import_str = model_import_str
         self.estimator = None
         self.model_script_dir = None
         self.model_description = None
@@ -70,6 +71,12 @@ class FeaturesToModel(Transform):
         # Did they specify a Scikit-Learn model class?
         if self.model_class:
             self.log.info(f"Using Scikit-Learn model class: {self.model_class}")
+            if not self.model_import_str:
+                msg = "Must specify model_import_str if model_class is specified!"
+                self.log.critical(msg)
+                raise ValueError(msg)
+
+            # Set up our scikit-learn model script
             script_name = "generated_scikit_model.py"
             dir_path = Path(__file__).parent.absolute()
             self.model_script_dir = os.path.join(dir_path, "light_scikit_learn")
@@ -79,11 +86,12 @@ class FeaturesToModel(Transform):
                 scikit_template = fp.read()
 
             # Template replacements
-            aws_script = scikit_template.replace("{{model_class}}", self.model_class)
-            aws_script = aws_script.replace("{{target_column}}", target_column)
+            aws_script = scikit_template.replace("{{model_imports}}", self.model_import_str)
+            aws_script = aws_script.replace("{{model_type}}", self.model_type.value)
+            aws_script = aws_script.replace("{{model_class}}", self.model_class)
+            aws_script = aws_script.replace("{{target_column}}", f"'{target_column}'" if target_column else "None")
             feature_list_str = json.dumps(feature_list)
             aws_script = aws_script.replace("{{feature_list}}", feature_list_str)
-            aws_script = aws_script.replace("{{model_type}}", self.model_type.value)
             metrics_s3_path = f"{self.model_training_root}/{self.output_uuid}"
             aws_script = aws_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
             aws_script = aws_script.replace("{{train_all_data}}", str(train_all_data))
@@ -359,6 +367,7 @@ if __name__ == "__main__":
     """
 
     # Scikit-Learn Clustering Model
+    """
     input_uuid = "wine_features"
     output_uuid = "wine-clusters"
     to_model = FeaturesToModel(
@@ -370,20 +379,21 @@ if __name__ == "__main__":
     )
     to_model.set_output_tags(["wine", "clustering"])
     new_model = to_model.transform(
-        target_column="wine_class", description="Wine Clustering", train_all_data=True
+        target_column=None, description="Wine Clustering", train_all_data=True
     )
+    """
 
-    # Scikit-Learn 2D Projection Model
-    input_uuid = "abalone_features"
-    output_uuid = "abalone-2d-projection"
+    # Scikit-Learn 2D Projection Model using UMAP
+    input_uuid = "wine_features"
+    output_uuid = "wine-2d-projection"
     to_model = FeaturesToModel(
         input_uuid,
         output_uuid,
-        model_class="TSNE",  # 2D projection algorithm
-        model_import_str="from sklearn.manifold import TSNE",  # Import statement for t-SNE
+        model_class="UMAP",  # Modern 2D projection algorithm
+        model_import_str="from umap import UMAP",  # Import statement for UMAP
         model_type=ModelType.TRANSFORMER
     )
-    to_model.set_output_tags(["abalone", "2d-projection"])
+    to_model.set_output_tags(["wine", "2d-projection"])
     new_model = to_model.transform(
-        target_column=None, description="Abalone 2D Projection", train_all_data=True
+        target_column=None, description="Wine 2D Projection", train_all_data=True
     )
