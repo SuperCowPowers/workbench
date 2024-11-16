@@ -12,8 +12,9 @@ TEMPLATE_PARAMS = {
 }
 
 import awswrangler as wr
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
 
 from io import StringIO
 import json
@@ -26,7 +27,6 @@ from typing import List
 # Global model_type for both training and inference
 model_type = TEMPLATE_PARAMS["model_type"]
 
-
 # Function to check if dataframe is empty
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
     """Check if the DataFrame is empty and raise an error if so."""
@@ -34,7 +34,6 @@ def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
         msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
         print(msg)
         raise ValueError(msg)
-
 
 # Function to expand probability column into individual class probability columns
 def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFrame:
@@ -53,7 +52,6 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     # Concatenate the new probability columns with the original DataFrame
     df = pd.concat([df, proba_df], axis=1)
     return df
-
 
 # Function to match DataFrame columns to model features (case-insensitive)
 def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
@@ -74,7 +72,6 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
 
     # Rename columns in the DataFrame to match model features
     return df.rename(columns=rename_dict)
-
 
 if __name__ == "__main__":
     # Template Parameters
@@ -104,6 +101,16 @@ if __name__ == "__main__":
 
     # Initialize the model using the specified model class
     model = model_class()
+
+    # Determine if standardization is needed based on the model type
+    needs_standardization = model_type in ["clusterer", "projection"]
+
+    if needs_standardization:
+        # Create a pipeline with standardization and the model
+        model = Pipeline([
+            ("scaler", StandardScaler()),
+            ("model", model)
+        ])
 
     # Handle logic based on the model_type
     if model_type in ["classifier", "regressor"]:
@@ -187,12 +194,10 @@ if __name__ == "__main__":
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
         json.dump(feature_list, fp)
 
-
 # Functions for inference
 def model_fn(model_dir):
     """Load and return the model from the specified directory."""
     return joblib.load(os.path.join(model_dir, "scikit_model.joblib"))
-
 
 def input_fn(input_data, content_type):
     """Parse input data and return a DataFrame."""
@@ -201,14 +206,12 @@ def input_fn(input_data, content_type):
         return pd.read_csv(StringIO(input_data))
     raise ValueError(f"{content_type} not supported!")
 
-
 def output_fn(output_df, accept_type):
     """Format output data and return as a CSV string."""
     if accept_type == "text/csv":
         # Return output data as a CSV string
         return output_df.to_csv(index=False), "text/csv"
     raise RuntimeError(f"{accept_type} not supported!")
-
 
 def predict_fn(df, model):
     """Make predictions or apply transformations using the model and return the DataFrame with results."""
