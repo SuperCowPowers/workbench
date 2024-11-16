@@ -1,7 +1,6 @@
 """Model Script Utilities for SageWorks endpoints"""
 
 import logging
-import json
 
 # SageWorks Imports
 
@@ -9,9 +8,11 @@ import json
 # Setup the logger
 log = logging.getLogger("sageworks")
 
+
 def fill_template(template: str, params: dict) -> str:
     """
-    Fill in the placeholders in the template with the values provided in params.
+    Fill in the placeholders in the template with the values provided in params,
+    ensuring that the correct Python data types are used.
     Args:
         template (str): The template string with placeholders.
         params (dict): A dictionary with placeholder keys and their corresponding values.
@@ -20,19 +21,12 @@ def fill_template(template: str, params: dict) -> str:
     """
     # Perform the replacements
     for key, value in params.items():
-        # Convert value to a string representation suitable for Python code
-        if value is None:
-            value_str = "None"
-        elif isinstance(value, str):
-            value_str = f"'{value}'" if key == "target_column" else value
-        elif isinstance(value, list):
-            value_str = json.dumps(value)
-        else:
-            value_str = str(value)
-
+        # For string values wrap them in quotes (except for model_imports and model_class
+        if isinstance(value, str) and key not in ["model_imports", "model_class"]:
+            value = f'"{value}"'
         # Replace the placeholder in the template
-        placeholder = f"{{{{{key}}}}}"  # Double curly braces to match the template
-        template = template.replace(placeholder, value_str)
+        placeholder = f'"{{{{{key}}}}}"'  # Double curly braces to match the template
+        template = template.replace(placeholder, str(value))
 
     # Sanity check to ensure all placeholders were replaced
     if "{{" in template or "}}" in template:
@@ -45,6 +39,24 @@ def fill_template(template: str, params: dict) -> str:
 
 if __name__ == "__main__":
     """Exercise the Model Script Utilities"""
+    import os
 
-    # Insert test here
-    print("my test")
+    # Hard Code for now :)
+    home_dir = os.path.expanduser("~")
+    template_path = f"{home_dir}/work/sageworks/src/sageworks/core/transforms/features_to_model/light_scikit_learn/scikit_learn.template"
+
+    # Define the template and params
+    my_template = open(template_path).read()
+    my_params = {
+        "model_imports": "from sklearn.cluster import KMeans",
+        "model_type": "clusterer",
+        "model_class": "KMeans",
+        "target_column": None,
+        "feature_list": ["alcohol", "malic_acid", "ash", "alcalinity_of_ash", "magnesium", "total_phenols",
+                         "flavanoids", "nonflavanoid_phenols", "proanthocyanins", "color_intensity", "hue",
+                         "od280_od315_of_diluted_wines", "proline"],
+        "model_metrics_s3_path": "s3://sandbox-sageworks-artifacts/models/training/wine-clusters",
+        "train_all_data": True
+    }
+    aws_script = fill_template(my_template, my_params)
+    print(aws_script)

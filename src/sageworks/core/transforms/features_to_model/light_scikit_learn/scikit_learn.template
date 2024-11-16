@@ -1,6 +1,8 @@
+# Model Imports (this will be replaced with the imports for the template)
+"{{model_imports}}"
+
 # Template Placeholders
 TEMPLATE_PARAMS = {
-    "model_imports": "{{model_imports}}",
     "model_type": "{{model_type}}",
     "target_column": "{{target_column}}",
     "feature_list": "{{feature_list}}",
@@ -8,9 +10,6 @@ TEMPLATE_PARAMS = {
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
     "train_all_data": "{{train_all_data}}"
 }
-
-# Model Imports (this will be replaced with the imports for the template)
-{{model_imports}}
 
 import awswrangler as wr
 from sklearn.preprocessing import LabelEncoder
@@ -27,6 +26,7 @@ from typing import List
 # Global model_type for both training and inference
 model_type = TEMPLATE_PARAMS["model_type"]
 
+
 # Function to check if dataframe is empty
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
     """Check if the DataFrame is empty and raise an error if so."""
@@ -34,6 +34,7 @@ def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
         msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
         print(msg)
         raise ValueError(msg)
+
 
 # Function to expand probability column into individual class probability columns
 def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFrame:
@@ -52,6 +53,7 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     # Concatenate the new probability columns with the original DataFrame
     df = pd.concat([df, proba_df], axis=1)
     return df
+
 
 # Function to match DataFrame columns to model features (case-insensitive)
 def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
@@ -72,6 +74,7 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
 
     # Rename columns in the DataFrame to match model features
     return df.rename(columns=rename_dict)
+
 
 if __name__ == "__main__":
     # Template Parameters
@@ -184,10 +187,12 @@ if __name__ == "__main__":
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
         json.dump(feature_list, fp)
 
+
 # Functions for inference
 def model_fn(model_dir):
     """Load and return the model from the specified directory."""
     return joblib.load(os.path.join(model_dir, "scikit_model.joblib"))
+
 
 def input_fn(input_data, content_type):
     """Parse input data and return a DataFrame."""
@@ -196,12 +201,14 @@ def input_fn(input_data, content_type):
         return pd.read_csv(StringIO(input_data))
     raise ValueError(f"{content_type} not supported!")
 
+
 def output_fn(output_df, accept_type):
     """Format output data and return as a CSV string."""
     if accept_type == "text/csv":
         # Return output data as a CSV string
         return output_df.to_csv(index=False), "text/csv"
     raise RuntimeError(f"{accept_type} not supported!")
+
 
 def predict_fn(df, model):
     """Make predictions or apply transformations using the model and return the DataFrame with results."""
