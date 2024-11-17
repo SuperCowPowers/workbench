@@ -348,13 +348,21 @@ if __name__ == "__main__":
     to_model.transform(target_column=None, description="Wine 2D Projection", train_all_data=True)
     """
 
-    # Custom Script Model
-
-    # This is cheesy, but basically you specify the full path to the custom script
-    project_root = Path(__file__).resolve().parents[3]
-    my_custom_script = project_root / "model_scripts" / "custom_script_example" / "custom_model_script.py"
+    # Custom Script Models
+    scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
+    my_custom_script = scripts_root / "custom_script_example" / "custom_model_script.py"
     input_uuid = "wine_features"
     output_uuid = "wine-custom"
     to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.CLASSIFIER, custom_script=my_custom_script)
     to_model.set_output_tags(["wine", "custom"])
     to_model.transform(target_column="wine_class", description="Wine Custom Classification")
+
+    """
+    # Temp Molecular Descriptors Model
+    my_custom_script = scripts_root / "custom_models" / "chem_info" / "rdkit_mordred_features.py"
+    input_uuid = "aqsol_features"
+    output_uuid = "smiles-to-rdkit-mordred-v2"
+    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.TRANSFORMER, custom_script=my_custom_script)
+    to_model.set_output_tags(["smiles", "molecular descriptors"])
+    to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Molecular Descriptors")
+    """
