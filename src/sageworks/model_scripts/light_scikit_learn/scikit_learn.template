@@ -122,16 +122,19 @@ if __name__ == "__main__":
     # Handle logic based on the model_type
     if model_type in ["classifier", "regressor"]:
         # Supervised Models: Prepare for training
-        if train_all_data == "True":
+        if train_all_data:
             # Use all data for both training and validation
+            print("Training on all data...")
             df_train = all_df.copy()
             df_val = all_df.copy()
         elif "training" in all_df.columns:
             # Split data based on a 'training' column if it exists
+            print("Splitting data based on 'training' column...")
             df_train = all_df[all_df["training"]].copy()
             df_val = all_df[~all_df["training"]].copy()
         else:
             # Perform a random split if no 'training' column is found
+            print("Splitting data randomly...")
             df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
 
         # Encode the target variable if the model is a classifier

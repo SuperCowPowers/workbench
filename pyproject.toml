@@ -84,8 +84,7 @@ packages = { find = { where = ["src"] } }
 "sageworks" = [
     "resources/signature_verify_pub.pem",
     "resources/open_source_api.key",
-    "core/transforms/features_to_model/light_xgb_model/xgb_model.template",
-    "core/transforms/features_to_model/light_xgb_model/requirements.txt",
+    "model_scripts/**"
 ]
 
 [project.scripts]

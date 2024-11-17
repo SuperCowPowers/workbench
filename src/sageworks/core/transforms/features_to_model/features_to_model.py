@@ -1,18 +1,16 @@
 """FeaturesToModel: Train/Create a Model from a Feature Set"""
 
-import os
-import json
 from pathlib import Path
 from sagemaker.sklearn.estimator import SKLearn
 import awswrangler as wr
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Local Imports
 from sageworks.core.transforms.transform import Transform, TransformInput, TransformOutput
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.artifacts.model_core import ModelCore, ModelType, InferenceImage
 from sageworks.core.artifacts.artifact import Artifact
-from sageworks.utils.model_script_utils import fill_template
+from sageworks.model_scripts.script_generation import generate_model_script
 
 
 class FeaturesToModel(Transform):
@@ -52,101 +50,11 @@ class FeaturesToModel(Transform):
         self.model_class = model_class
         self.model_import_str = model_import_str
         self.estimator = None
-        self.model_script_dir = None
         self.model_description = None
         self.model_training_root = self.models_s3_path + "/training"
         self.model_feature_list = None
         self.target_column = None
         self.class_labels = None
-
-    def generate_model_script(self, target_column: str, feature_list: list[str], train_all_data: bool) -> str:
-        """Fill in the model template with specific target and feature_list
-        Args:
-            target_column (str): Column name of the target variable
-            feature_list (list[str]): A list of columns for the features
-            train_all_data (bool): Train on ALL (100%) of the data
-        Returns:
-           str: The name of the generated model script
-        """
-
-        # Scikit-Learn models require a model_class and model_import_str
-        if self.model_class:
-            self.log.info(f"Using Scikit-Learn model class: {self.model_class}")
-            if not self.model_import_str:
-                msg = "Must specify model_import_str if model_class is specified!"
-                self.log.critical(msg)
-                raise ValueError(msg)
-
-            # Set up our scikit-learn model script
-            script_name = "generated_scikit_model.py"
-            dir_path = Path(__file__).parent.absolute()
-            self.model_script_dir = os.path.join(dir_path, "light_scikit_learn")
-            template_path = os.path.join(self.model_script_dir, "scikit_learn.template")
-            output_path = os.path.join(self.model_script_dir, script_name)
-            with open(template_path, "r") as fp:
-                scikit_template = fp.read()
-
-            # Fill in the scikit-learn template with a bunch of parameters
-            params = {
-                "model_imports": self.model_import_str,
-                "model_type": self.model_type.value,
-                "model_class": self.model_class,
-                "target_column": target_column,
-                "feature_list": feature_list,
-                "model_metrics_s3_path": f"{self.model_training_root}/{self.output_uuid}",
-                "train_all_data": train_all_data,
-            }
-
-            # Call the utility function to fill in the template
-            aws_script = fill_template(scikit_template, params)
-
-        elif self.model_type == ModelType.REGRESSOR or self.model_type == ModelType.CLASSIFIER:
-            script_name = "generated_xgb_model.py"
-            dir_path = Path(__file__).parent.absolute()
-            self.model_script_dir = os.path.join(dir_path, "light_xgb_model")
-            template_path = os.path.join(self.model_script_dir, "xgb_model.template")
-            output_path = os.path.join(self.model_script_dir, script_name)
-            with open(template_path, "r") as fp:
-                xgb_template = fp.read()
-
-            # Template replacements
-            aws_script = xgb_template.replace("{{target_column}}", target_column)
-            feature_list_str = json.dumps(feature_list)
-            aws_script = aws_script.replace("{{feature_list}}", feature_list_str)
-            aws_script = aws_script.replace("{{model_type}}", self.model_type.value)
-            metrics_s3_path = f"{self.model_training_root}/{self.output_uuid}"
-            aws_script = aws_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
-            aws_script = aws_script.replace("{{train_all_data}}", str(train_all_data))
-
-        elif self.model_type == ModelType.QUANTILE_REGRESSOR:
-            script_name = "generated_quantile_model.py"
-            dir_path = Path(__file__).parent.absolute()
-            self.model_script_dir = os.path.join(dir_path, "light_quant_regression")
-            template_path = os.path.join(self.model_script_dir, "quant_regression.template")
-            output_path = os.path.join(self.model_script_dir, script_name)
-            with open(template_path, "r") as fp:
-                quant_template = fp.read()
-
-            # Template replacements
-            aws_script = quant_template.replace("{{target_column}}", target_column)
-            feature_list_str = json.dumps(feature_list)
-            aws_script = aws_script.replace("{{feature_list}}", feature_list_str)
-            metrics_s3_path = f"{self.model_training_root}/{self.output_uuid}"
-            aws_script = aws_script.replace("{{model_metrics_s3_path}}", metrics_s3_path)
-
-        else:
-            self.log.critical(f"Unknown ModelType: {self.model_type}")
-            raise ValueError(f"Unknown ModelType: {self.model_type}")
-
-        # Now write out the generated model script and return the name
-        with open(output_path, "w") as fp:
-            fp.write(aws_script)
-
-        # Now we make sure the model script dir only has template, model script, and a requirements file
-        for file in os.listdir(self.model_script_dir):
-            if file not in [script_name, "requirements.txt"] and not file.endswith(".template"):
-                self.log.warning(f"Finding {file} in model_script_dir...")
-        return script_name
 
     def transform_impl(
         self, target_column: str, description: str = None, feature_list: list = None, train_all_data=False
@@ -218,8 +126,18 @@ class FeaturesToModel(Transform):
         self.model_feature_list = [c for c in feature_list if c not in remove_columns]
         self.log.important(f"Feature List for Modeling: {self.model_feature_list}")
 
+        # Set up our parameters for the model script
+        template_params = {
+            "model_imports": self.model_import_str,
+            "model_type": self.model_type,
+            "model_class": self.model_class,
+            "target_column": self.target_column,
+            "feature_list": self.model_feature_list,
+            "model_metrics_s3_path": f"{self.model_training_root}/{self.output_uuid}",
+            "train_all_data": train_all_data,
+        }
         # Generate our model script
-        script_path = self.generate_model_script(self.target_column, self.model_feature_list, train_all_data)
+        script_path = generate_model_script(template_params)
 
         # Metric Definitions for Regression
         if self.model_type == ModelType.REGRESSOR or self.model_type == ModelType.QUANTILE_REGRESSOR:
@@ -265,11 +183,15 @@ class FeaturesToModel(Transform):
             self.log.warning(f"ModelType is {self.model_type}, skipping metric_definitions...")
             metric_definitions = []
 
+        # Take the full script path and extract the entry point and source directory
+        entry_point = str(Path(script_path).name)
+        source_dir = str(Path(script_path).parent)
+
         # Create a Sagemaker Model with our script
         image = InferenceImage.get_image_uri(self.sm_session.boto_region_name, "sklearn", "1.2.1")
         self.estimator = SKLearn(
-            entry_point=script_path,
-            source_dir=self.model_script_dir,
+            entry_point=entry_point,
+            source_dir=source_dir,
             role=self.sageworks_role_arn,
             instance_type="ml.m5.large",
             sagemaker_session=self.sm_session,
@@ -279,7 +201,7 @@ class FeaturesToModel(Transform):
         )
 
         # Training Job Name based on the Model UUID and today's date
-        training_date_time_utc = datetime.utcnow().strftime("%Y-%m-%d-%H-%M")
+        training_date_time_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M")
         training_job_name = f"{self.output_uuid}-{training_date_time_utc}"
 
         # Train the estimator
