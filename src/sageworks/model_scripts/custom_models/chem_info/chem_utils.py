@@ -29,32 +29,6 @@ except ImportError:
     NO_MORDRED = True
 
 
-# Sageworks Imports
-from sageworks.utils import pandas_utils
-
-# Set up the logger
-log = logging.getLogger("sageworks")
-
-
-def display(smiles: str, size: tuple[int, int] = (500, 500)) -> None:
-    """
-    Displays an image of the molecule represented by the given SMILES string.
-
-    Args:
-        smiles (str): A SMILES string representing the molecule.
-        size (tuple[int, int]): A tuple specifying width and height of the image.
-
-    Returns:
-    None
-    """
-    mol = Chem.MolFromSmiles(smiles)
-    if mol:
-        img = Draw.MolToImage(mol, size=size)
-        img.show()
-    else:
-        print(f"Invalid SMILES: {smiles}")
-
-
 def micromolar_to_log(series_µM: pd.Series) -> pd.Series:
     """
     Convert a pandas Series of concentrations in µM (micromolar) to their logarithmic values (log10).
@@ -151,16 +125,6 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
 
     # Return the DataFrame with the RDKit and Mordred Descriptors added
     output_df = pd.concat([df, rdkit_features_df, mordred_df], axis=1)
-
-    # Get the columns that are descriptors
-    desc_columns = set(output_df.columns) - set(df.columns)
-
-    # Drop any NaNs (and INFs)
-    current_rows = output_df.shape[0]
-    output_df = pandas_utils.drop_nans(output_df, how="any", subset=desc_columns)
-    drop_rows = current_rows - output_df.shape[0]
-    if drop_rows > 0:
-        log.warning(f"Dropped {drop_rows} NaN rows")
 
     # Return the DataFrame with the RDKit and Mordred Descriptors added
     return output_df

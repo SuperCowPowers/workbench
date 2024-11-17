@@ -21,13 +21,9 @@ import json
 import joblib
 from io import StringIO
 import pandas as pd
-from pandas.api.types import is_numeric_dtype
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 
 # Local imports
-from .chem_utils import compute_molecular_descriptors
+from chem_utils import compute_molecular_descriptors
 
 
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
