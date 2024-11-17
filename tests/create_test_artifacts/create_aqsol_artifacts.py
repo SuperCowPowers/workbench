@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # Create the aqsol_features FeatureSet
     if recreate or not FeatureSet("aqsol_features").exists():
         ds = DataSource("aqsol_data")
-        ds.to_features("aqsol_features", id_column="id", target_column="solubility_class", tags=["aqsol", "public"])
+        ds.to_features("aqsol_features", id_column="id", tags=["aqsol", "public"])
 
     # Create the aqsol solubility regression Model
     if recreate or not Model("aqsol-regression").exists():
