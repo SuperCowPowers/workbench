@@ -1,7 +1,7 @@
 # Core Classes
 
 !!! warning inline end "SageWorks Core Classes"
-    These classes interact with many of the AWS service details and are therefore more complex. They provide additional control and refinement over the AWS ML Pipline. For most use cases the [API Classes](../api_classes/overview.md) should be used
+    These classes interact with many of the Cloud Platform services and are therefore more complex. They provide additional control and refinement over the AWS ML Pipline. For most use cases the [API Classes](../api_classes/overview.md) should be used
 
 **Welcome to the SageWorks Core Classes**
 
