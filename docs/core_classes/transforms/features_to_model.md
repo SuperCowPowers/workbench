@@ -83,7 +83,7 @@ For custom models we recommend the following steps:
     The SageWorks Custom Models are currently in experimental mode so have fun but expect issues. Requires `sageworks >= 0.8.59`. Feel free to submit issues to [SageWorks Github](https://github.com/SuperCowPowers/sageworks)
 
 - Copy the example custom model script into your own directory
-    - See: [Custom Model Script](https://github.com/SuperCowPowers/sageworks/tree/main/src/sageworks/model_scripts/custom_script)
+    - See: [Custom Model Script](https://github.com/SuperCowPowers/sageworks/tree/main/src/sageworks/model_scripts/custom_script_example)
 - Make a requirements.txt and put into the same directory
 - Train/deploy the ^existing^ example
     - This is an important step, don't skip it
@@ -93,10 +93,11 @@ For custom models we recommend the following steps:
 
 ### Training/Deploying Custom Models
 ```python
+from sageworks.api import ModelType
 from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
 
 # Note this directory should also have a requirements.txt in it
-my_custom_script = "/full/path/to/my/directory/custom_model_script.py"
+my_custom_script = "/full/path/to/my/directory/my_custom_script.py"
 input_uuid = "wine_features"    # FeatureSet you want to use
 output_uuid = "my-custom-model" # change to whatever
 target_column = "wine-class"    # change to whatever
