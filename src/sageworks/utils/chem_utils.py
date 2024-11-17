@@ -115,11 +115,8 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     """
 
     # Check for the smiles column (any capitalization)
-    if "SMILES" in df.columns:
-        smiles_column = "SMILES"
-    elif "smiles" in df.columns:
-        smiles_column = "smiles"
-    else:
+    smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
+    if smiles_column is None:
         raise ValueError("Input DataFrame must have a 'smiles' column")
 
     # Compute/add all the Molecular Descriptors
