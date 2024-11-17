@@ -7,7 +7,8 @@
 ## Supported Models
 Currently SageWorks supports XGBoost (classifier/regressor), and Scikit Learn models. Those models can be created by just specifying different parameters to the `FeaturesToModel` class. Here are some examples:
 
-```
+### XGBoost
+```python
 from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
 
 # XGBoost Regression Model
@@ -30,6 +31,10 @@ output_uuid = "abalone-quantile-reg"
 to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.QUANTILE_REGRESSOR)
 to_model.set_output_tags(["abalone", "quantiles"])
 to_model.transform(target_column="class_number_of_rings", description="Abalone Quantile Regression")
+```
+### Scikit-Learn
+```python
+from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
 
 # Scikit-Learn Kmeans Clustering Model
 input_uuid = "wine_features"
@@ -70,20 +75,24 @@ to_model = FeaturesToModel(
 to_model.set_output_tags(["wine", "2d-projection"])
 to_model.transform(target_column=None, description="Wine 2D Projection", train_all_data=True)
 ```
-
+    
 ## Custom Models
 For custom models we recommend the following steps:
 
+!!! warning inline end "Experimental"
+    The SageWorks Custom Models are currently in experimental mode so have fun but expect issues. Requires `sageworks >= 0.8.59`. Feel free to submit issues to [SageWorks Github](https://github.com/SuperCowPowers/sageworks)
+
 - Copy the example custom model script into your own directory
+    - See: [Custom Model Script](https://github.com/SuperCowPowers/sageworks/tree/main/src/sageworks/model_scripts/custom_script)
 - Make a requirements.txt and put into the same directory
 - Train/deploy the ^existing^ example
-   - This is an important step, don't skip it
-   - If the existing model script trains/deploys your in great shape for the next step, if it doesn't then now is a good time to debug AWS account/permissions/etc.
+    - This is an important step, don't skip it
+    - If the existing model script trains/deploys your in great shape for the next step, if it doesn't then now is a good time to debug AWS account/permissions/etc.
 - Now customize the model script
 - Train/deploy your custom script
 
 ### Training/Deploying Custom Models
-```
+```python
 from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
 
 # Note this directory should also have a requirements.txt in it
@@ -91,7 +100,29 @@ my_custom_script = "/full/path/to/my/directory/custom_model_script.py"
 input_uuid = "wine_features"    # FeatureSet you want to use
 output_uuid = "my-custom-model" # change to whatever
 target_column = "wine-class"    # change to whatever
-to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.CLASSIFIER, custom_script=my_custom_script)
+to_model = FeaturesToModel(input_uuid, output_uuid,
+                           model_type=ModelType.CLASSIFIER, 
+                           custom_script=my_custom_script)
 to_model.set_output_tags(["your", "tags"])
 to_model.transform(target_column=target_column, description="Custom Model")
 ``` 
+
+### Custom Models: Create an Endpoint/Run Inference
+```python
+from sageworks.api import Model, Endpoint
+
+model = Model("my-custom-model")
+end = model.to_endpoint()   # Note: This takes a while
+
+# Now run inference on my custom model :)
+end.auto_inference(capture=True)
+
+# Run inference with my own dataframe
+df = fs.pull_dataframe()  # Or whatever dataframe
+end.inference(df)
+``` 
+
+## Questions?
+<img align="right" src="../../../images/scp.png" width="180">
+
+The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8)
