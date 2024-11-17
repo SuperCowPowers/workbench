@@ -59,7 +59,7 @@ def generate_model_script(template_params: dict) -> str:
     output_script = "generated_model_script.py"
 
     # Determine which template to use based on model type
-    if template_params["model_class"]:
+    if template_params.get("model_class"):
         template_name = "scikit_learn.template"
         model_script_dir = "light_scikit_learn"
     elif template_params["model_type"] in [ModelType.REGRESSOR, ModelType.CLASSIFIER]:
@@ -72,7 +72,7 @@ def generate_model_script(template_params: dict) -> str:
         log.critical(f"Unknown ModelType: {template_params['model_type']}")
         raise ValueError(f"Unknown ModelType: {template_params['model_type']}")
 
-    # Model Type is an enumereted type, so we need to convert it to a string
+    # Model Type is an enumerated type, so we need to convert it to a string
     template_params["model_type"] = template_params["model_type"].value
 
     # Load the template
@@ -102,7 +102,32 @@ if __name__ == "__main__":
     """Exercise the Model Script Utilities"""
     from sageworks.api import ModelType
 
-    # Define the parameters for the model script
+    # Define the parameters for the model script (Classifier)
+    my_params = {
+        "model_type": ModelType.CLASSIFIER,
+        "target_column": "wine_class",
+        "feature_list": [
+            "alcohol",
+            "malic_acid",
+            "ash",
+            "alcalinity_of_ash",
+            "magnesium",
+            "total_phenols",
+            "flavanoids",
+            "nonflavanoid_phenols",
+            "proanthocyanins",
+            "color_intensity",
+            "hue",
+            "od280_od315_of_diluted_wines",
+            "proline",
+        ],
+        "model_metrics_s3_path": "s3://sandbox-sageworks-artifacts/models/training/wine-classifier",
+        "train_all_data": True,
+    }
+    my_model_script = generate_model_script(my_params)
+    print(my_model_script)
+
+    # Define the parameters for the model script (KMeans Clustering)
     my_params = {
         "model_type": ModelType.CLUSTERER,
         "model_class": "KMeans",

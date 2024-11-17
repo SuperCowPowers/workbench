@@ -1,3 +1,12 @@
+# Template Placeholders
+TEMPLATE_PARAMS = {
+    "model_type": "{{model_type}}",
+    "target_column": "{{target_column}}",
+    "feature_list": "{{feature_list}}",
+    "model_metrics_s3_path": "{{model_metrics_s3_path}}",
+    "train_all_data": "{{train_all_data}}"
+}
+
 # Imports for XGB Model
 import xgboost as xgb
 import awswrangler as wr
@@ -115,11 +124,11 @@ if __name__ == "__main__":
     """The main function is for training the XGBoost model"""
 
     # Harness Template Parameters
-    target = "{{target_column}}"
-    feature_list = {{feature_list}}
-    model_type = "{{model_type}}"
-    model_metrics_s3_path = "{{model_metrics_s3_path}}"
-    train_all_data = "{{train_all_data}}"
+    target = TEMPLATE_PARAMS["target_column"]
+    feature_list = TEMPLATE_PARAMS["feature_list"]
+    model_type = TEMPLATE_PARAMS["model_type"]
+    model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
+    train_all_data = TEMPLATE_PARAMS["train_all_data"]
     validation_split = 0.2
 
     # Sagemaker specific arguments. Defaults are set in the environment variables.

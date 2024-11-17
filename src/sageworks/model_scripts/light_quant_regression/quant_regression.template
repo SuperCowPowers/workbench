@@ -1,3 +1,12 @@
+# Template Placeholders
+TEMPLATE_PARAMS = {
+    "model_type": "{{model_type}}",
+    "target_column": "{{target_column}}",
+    "feature_list": "{{feature_list}}",
+    "model_metrics_s3_path": "{{model_metrics_s3_path}}",
+    "train_all_data": "{{train_all_data}}"
+}
+
 # Imports for XGB Model
 import xgboost as xgb
 import awswrangler as wr
@@ -71,9 +80,9 @@ if __name__ == "__main__":
     """The main function is for training the XGBoost Quantile Regression models"""
 
     # Harness Template Parameters
-    target = "{{target_column}}"
-    feature_list = {{feature_list}}
-    model_metrics_s3_path = "{{model_metrics_s3_path}}"
+    target = TEMPLATE_PARAMS["target_column"]
+    feature_list = TEMPLATE_PARAMS["feature_list"]
+    model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     quantiles = [0.05, 0.25, 0.50, 0.75, 0.95]
     q_models = {}
 

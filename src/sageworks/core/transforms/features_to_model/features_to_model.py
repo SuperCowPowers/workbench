@@ -267,7 +267,6 @@ class FeaturesToModel(Transform):
 if __name__ == "__main__":
     """Exercise the FeaturesToModel Class"""
 
-    """
     # Regression Model
     input_uuid = "abalone_features"
     output_uuid = "abalone-regression"
@@ -281,7 +280,6 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.CLASSIFIER)
     to_model.set_output_tags(["wine", "public"])
     to_model.transform(target_column="wine_class", description="Wine Classification")
-    """
 
     # Quantile Regression Model (Abalone)
     """
@@ -305,7 +303,6 @@ if __name__ == "__main__":
     )
     to_model.set_output_tags(["wine", "clustering"])
     to_model.transform(target_column=None, description="Wine Clustering", train_all_data=True)
-    """
 
     # Scikit-Learn HDBSCAN Clustering Model
     input_uuid = "wine_features"
@@ -320,7 +317,6 @@ if __name__ == "__main__":
     to_model.set_output_tags(["wine", "density-based clustering"])
     to_model.transform(target_column=None, description="Wine Clustering with HDBSCAN", train_all_data=True)
 
-    """
     # Scikit-Learn 2D Projection Model using UMAP
     input_uuid = "wine_features"
     output_uuid = "wine-2d-projection"
