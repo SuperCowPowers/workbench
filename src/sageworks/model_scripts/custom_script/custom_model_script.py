@@ -25,7 +25,6 @@ from pandas.api.types import is_numeric_dtype
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-import awswrangler as wr
 
 # REPLACE: Add any additional imports you need here
 

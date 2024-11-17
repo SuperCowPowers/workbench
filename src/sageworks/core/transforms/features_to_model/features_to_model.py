@@ -26,7 +26,13 @@ class FeaturesToModel(Transform):
     """
 
     def __init__(
-        self, feature_uuid: str, model_uuid: str, model_type: ModelType, model_class=None, model_import_str=None, custom_script=None
+        self,
+        feature_uuid: str,
+        model_uuid: str,
+        model_type: ModelType,
+        model_class=None,
+        model_import_str=None,
+        custom_script=None,
     ):
         """FeaturesToModel Initialization
         Args:
@@ -275,7 +281,6 @@ class FeaturesToModel(Transform):
 
 if __name__ == "__main__":
     """Exercise the FeaturesToModel Class"""
-    from pathlib import Path
 
     """
     # Regression Model
@@ -353,4 +358,3 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.CLASSIFIER, custom_script=my_custom_script)
     to_model.set_output_tags(["wine", "custom"])
     to_model.transform(target_column="wine_class", description="Wine Custom Classification")
-
