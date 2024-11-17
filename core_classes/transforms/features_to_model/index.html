@@ -1526,6 +1526,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Supported Models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#xgboost" class="md-nav__link">
+    <span class="md-ellipsis">
+      XGBoost
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scikit-learn" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scikit-Learn
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1547,8 +1571,26 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#custom-models-create-an-endpointrun-inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Models: Create an Endpoint/Run Inference
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Questions?
+    </span>
+  </a>
   
 </li>
       
@@ -3073,6 +3115,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Supported Models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#xgboost" class="md-nav__link">
+    <span class="md-ellipsis">
+      XGBoost
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scikit-learn" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scikit-Learn
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3094,8 +3160,26 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#custom-models-create-an-endpointrun-inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Models: Create an Endpoint/Run Inference
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Questions?
+    </span>
+  </a>
   
 </li>
       
@@ -4330,91 +4414,122 @@ Args:
 
 </div><h2 id="supported-models">Supported Models</h2>
 <p>Currently SageWorks supports XGBoost (classifier/regressor), and Scikit Learn models. Those models can be created by just specifying different parameters to the <code>FeaturesToModel</code> class. Here are some examples:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
+<h3 id="xgboost">XGBoost</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">sageworks.core.transforms.features_to_model.features_to_model</span> <span class="kn">import</span> <span class="n">FeaturesToModel</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a># XGBoost Regression Model
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>input_uuid = &quot;abalone_features&quot;
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>output_uuid = &quot;abalone-regression&quot;
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.REGRESSOR)
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>to_model.set_output_tags([&quot;abalone&quot;, &quot;public&quot;])
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>to_model.transform(target_column=&quot;class_number_of_rings&quot;, description=&quot;Abalone Regression&quot;)
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># XGBoost Regression Model</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">input_uuid</span> <span class="o">=</span> <span class="s2">&quot;abalone_features&quot;</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">output_uuid</span> <span class="o">=</span> <span class="s2">&quot;abalone-regression&quot;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span><span class="n">input_uuid</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">REGRESSOR</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">to_model</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">([</span><span class="s2">&quot;abalone&quot;</span><span class="p">,</span> <span class="s2">&quot;public&quot;</span><span class="p">])</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;class_number_of_rings&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Abalone Regression&quot;</span><span class="p">)</span>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a># XGBoost Classification Model
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>input_uuid = &quot;wine_features&quot;
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>output_uuid = &quot;wine-classification&quot;
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.CLASSIFIER)
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>to_model.set_output_tags([&quot;wine&quot;, &quot;public&quot;])
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>to_model.transform(target_column=&quot;wine_class&quot;, description=&quot;Wine Classification&quot;)
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># XGBoost Classification Model</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">input_uuid</span> <span class="o">=</span> <span class="s2">&quot;wine_features&quot;</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">output_uuid</span> <span class="o">=</span> <span class="s2">&quot;wine-classification&quot;</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span><span class="n">input_uuid</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">,</span> <span class="n">ModelType</span><span class="o">.</span><span class="n">CLASSIFIER</span><span class="p">)</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">to_model</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">([</span><span class="s2">&quot;wine&quot;</span><span class="p">,</span> <span class="s2">&quot;public&quot;</span><span class="p">])</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;wine_class&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Wine Classification&quot;</span><span class="p">)</span>
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a># Quantile Regression Model (Abalone)
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>input_uuid = &quot;abalone_features&quot;
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>output_uuid = &quot;abalone-quantile-reg&quot;
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.QUANTILE_REGRESSOR)
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>to_model.set_output_tags([&quot;abalone&quot;, &quot;quantiles&quot;])
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>to_model.transform(target_column=&quot;class_number_of_rings&quot;, description=&quot;Abalone Quantile Regression&quot;)
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a># Scikit-Learn Kmeans Clustering Model
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>input_uuid = &quot;wine_features&quot;
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>output_uuid = &quot;wine-clusters&quot;
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>to_model = FeaturesToModel(
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>    input_uuid,
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>    output_uuid,
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>    model_class=&quot;KMeans&quot;,  # Clustering algorithm
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>    model_import_str=&quot;from sklearn.cluster import KMeans&quot;,  # Import statement for KMeans
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>    model_type=ModelType.CLUSTERER,
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>)
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>to_model.set_output_tags([&quot;wine&quot;, &quot;clustering&quot;])
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>to_model.transform(target_column=None, description=&quot;Wine Clustering&quot;, train_all_data=True)
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a># Scikit-Learn HDBSCAN Clustering Model
-</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>input_uuid = &quot;wine_features&quot;
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>output_uuid = &quot;wine-clusters-hdbscan&quot;
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>to_model = FeaturesToModel(
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>    input_uuid,
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>    output_uuid,
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>    model_class=&quot;HDBSCAN&quot;,  # Density-based clustering algorithm
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>    model_import_str=&quot;from sklearn.cluster import HDBSCAN&quot;,
-</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>    model_type=ModelType.CLUSTERER,
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>)
-</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>to_model.set_output_tags([&quot;wine&quot;, &quot;density-based clustering&quot;])
-</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a>to_model.transform(target_column=None, description=&quot;Wine Clustering with HDBSCAN&quot;, train_all_data=True)
-</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a>
-</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a># Scikit-Learn 2D Projection Model using UMAP
-</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>input_uuid = &quot;wine_features&quot;
-</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a>output_uuid = &quot;wine-2d-projection&quot;
-</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a>to_model = FeaturesToModel(
-</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a>    input_uuid,
-</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a>    output_uuid,
-</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a>    model_class=&quot;UMAP&quot;,
-</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57" href="#__codelineno-0-57"></a>    model_import_str=&quot;from umap import UMAP&quot;,
-</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58" href="#__codelineno-0-58"></a>    model_type=ModelType.PROJECTION,
-</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59" href="#__codelineno-0-59"></a>)
-</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60" href="#__codelineno-0-60"></a>to_model.set_output_tags([&quot;wine&quot;, &quot;2d-projection&quot;])
-</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61" href="#__codelineno-0-61"></a>to_model.transform(target_column=None, description=&quot;Wine 2D Projection&quot;, train_all_data=True)
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="c1"># Quantile Regression Model (Abalone)</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">input_uuid</span> <span class="o">=</span> <span class="s2">&quot;abalone_features&quot;</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="n">output_uuid</span> <span class="o">=</span> <span class="s2">&quot;abalone-quantile-reg&quot;</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="n">to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span><span class="n">input_uuid</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">,</span> <span class="n">ModelType</span><span class="o">.</span><span class="n">QUANTILE_REGRESSOR</span><span class="p">)</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="n">to_model</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">([</span><span class="s2">&quot;abalone&quot;</span><span class="p">,</span> <span class="s2">&quot;quantiles&quot;</span><span class="p">])</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="n">to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;class_number_of_rings&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Abalone Quantile Regression&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="scikit-learn">Scikit-Learn</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">sageworks.core.transforms.features_to_model.features_to_model</span> <span class="kn">import</span> <span class="n">FeaturesToModel</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Scikit-Learn Kmeans Clustering Model</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">input_uuid</span> <span class="o">=</span> <span class="s2">&quot;wine_features&quot;</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">output_uuid</span> <span class="o">=</span> <span class="s2">&quot;wine-clusters&quot;</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">input_uuid</span><span class="p">,</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">output_uuid</span><span class="p">,</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">model_class</span><span class="o">=</span><span class="s2">&quot;KMeans&quot;</span><span class="p">,</span>  <span class="c1"># Clustering algorithm</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">model_import_str</span><span class="o">=</span><span class="s2">&quot;from sklearn.cluster import KMeans&quot;</span><span class="p">,</span>  <span class="c1"># Import statement for KMeans</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">CLUSTERER</span><span class="p">,</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="p">)</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="n">to_model</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">([</span><span class="s2">&quot;wine&quot;</span><span class="p">,</span> <span class="s2">&quot;clustering&quot;</span><span class="p">])</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Wine Clustering&quot;</span><span class="p">,</span> <span class="n">train_all_data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># Scikit-Learn HDBSCAN Clustering Model</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="n">input_uuid</span> <span class="o">=</span> <span class="s2">&quot;wine_features&quot;</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="n">output_uuid</span> <span class="o">=</span> <span class="s2">&quot;wine-clusters-hdbscan&quot;</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="n">to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="n">input_uuid</span><span class="p">,</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="n">output_uuid</span><span class="p">,</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="n">model_class</span><span class="o">=</span><span class="s2">&quot;HDBSCAN&quot;</span><span class="p">,</span>  <span class="c1"># Density-based clustering algorithm</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>    <span class="n">model_import_str</span><span class="o">=</span><span class="s2">&quot;from sklearn.cluster import HDBSCAN&quot;</span><span class="p">,</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">CLUSTERER</span><span class="p">,</span>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="p">)</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="n">to_model</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">([</span><span class="s2">&quot;wine&quot;</span><span class="p">,</span> <span class="s2">&quot;density-based clustering&quot;</span><span class="p">])</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="n">to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Wine Clustering with HDBSCAN&quot;</span><span class="p">,</span> <span class="n">train_all_data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="c1"># Scikit-Learn 2D Projection Model using UMAP</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="n">input_uuid</span> <span class="o">=</span> <span class="s2">&quot;wine_features&quot;</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="n">output_uuid</span> <span class="o">=</span> <span class="s2">&quot;wine-2d-projection&quot;</span>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="n">to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span>
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>    <span class="n">input_uuid</span><span class="p">,</span>
+</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>    <span class="n">output_uuid</span><span class="p">,</span>
+</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>    <span class="n">model_class</span><span class="o">=</span><span class="s2">&quot;UMAP&quot;</span><span class="p">,</span>
+</span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>    <span class="n">model_import_str</span><span class="o">=</span><span class="s2">&quot;from umap import UMAP&quot;</span><span class="p">,</span>
+</span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">PROJECTION</span><span class="p">,</span>
+</span><span id="__span-1-38"><a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="p">)</span>
+</span><span id="__span-1-39"><a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="n">to_model</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">([</span><span class="s2">&quot;wine&quot;</span><span class="p">,</span> <span class="s2">&quot;2d-projection&quot;</span><span class="p">])</span>
+</span><span id="__span-1-40"><a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="n">to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Wine 2D Projection&quot;</span><span class="p">,</span> <span class="n">train_all_data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div>
 <h2 id="custom-models">Custom Models</h2>
 <p>For custom models we recommend the following steps:</p>
+<div class="admonition warning inline end">
+<p class="admonition-title">Experimental</p>
+<p>The SageWorks Custom Models are currently in experimental mode so have fun but expect issues. Requires <code>sageworks &gt;= 0.8.59</code>. Feel free to submit issues to <a href="https://github.com/SuperCowPowers/sageworks">SageWorks Github</a></p>
+</div>
 <ul>
-<li>Copy the example custom model script into your own directory</li>
+<li>Copy the example custom model script into your own directory<ul>
+<li>See: <a href="https://github.com/SuperCowPowers/sageworks/tree/main/src/sageworks/model_scripts/custom_script">Custom Model Script</a></li>
+</ul>
+</li>
 <li>Make a requirements.txt and put into the same directory</li>
-<li>Train/deploy the ^existing^ example</li>
+<li>Train/deploy the ^existing^ example<ul>
 <li>This is an important step, don't skip it</li>
 <li>If the existing model script trains/deploys your in great shape for the next step, if it doesn't then now is a good time to debug AWS account/permissions/etc.</li>
+</ul>
+</li>
 <li>Now customize the model script</li>
 <li>Train/deploy your custom script</li>
 </ul>
 <h3 id="trainingdeploying-custom-models">Training/Deploying Custom Models</h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a># Note this directory should also have a requirements.txt in it
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>my_custom_script = &quot;/full/path/to/my/directory/custom_model_script.py&quot;
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>input_uuid = &quot;wine_features&quot;    # FeatureSet you want to use
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>output_uuid = &quot;my-custom-model&quot; # change to whatever
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>target_column = &quot;wine-class&quot;    # change to whatever
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.CLASSIFIER, custom_script=my_custom_script)
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>to_model.set_output_tags([&quot;your&quot;, &quot;tags&quot;])
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>to_model.transform(target_column=target_column, description=&quot;Custom Model&quot;)
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">sageworks.core.transforms.features_to_model.features_to_model</span> <span class="kn">import</span> <span class="n">FeaturesToModel</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Note this directory should also have a requirements.txt in it</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">my_custom_script</span> <span class="o">=</span> <span class="s2">&quot;/full/path/to/my/directory/custom_model_script.py&quot;</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">input_uuid</span> <span class="o">=</span> <span class="s2">&quot;wine_features&quot;</span>    <span class="c1"># FeatureSet you want to use</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">output_uuid</span> <span class="o">=</span> <span class="s2">&quot;my-custom-model&quot;</span> <span class="c1"># change to whatever</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">target_column</span> <span class="o">=</span> <span class="s2">&quot;wine-class&quot;</span>    <span class="c1"># change to whatever</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span><span class="n">input_uuid</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">,</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>                           <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">CLASSIFIER</span><span class="p">,</span> 
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>                           <span class="n">custom_script</span><span class="o">=</span><span class="n">my_custom_script</span><span class="p">)</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">to_model</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">([</span><span class="s2">&quot;your&quot;</span><span class="p">,</span> <span class="s2">&quot;tags&quot;</span><span class="p">])</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="n">to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="n">target_column</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Custom Model&quot;</span><span class="p">)</span>
 </span></code></pre></div>
+<h3 id="custom-models-create-an-endpointrun-inference">Custom Models: Create an Endpoint/Run Inference</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">sageworks.api</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Endpoint</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;my-custom-model&quot;</span><span class="p">)</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">end</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">()</span>   <span class="c1"># Note: This takes a while</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># Now run inference on my custom model :)</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">end</span><span class="o">.</span><span class="n">auto_inference</span><span class="p">(</span><span class="n">capture</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1"># Run inference with my own dataframe</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">df</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">pull_dataframe</span><span class="p">()</span>  <span class="c1"># Or whatever dataframe</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="n">end</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="questions">Questions?</h2>
+<p><img align="right" src="../../../images/scp.png" width="180"></p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
 
 
 
