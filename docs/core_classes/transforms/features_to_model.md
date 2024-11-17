@@ -5,7 +5,7 @@
 ::: sageworks.core.transforms.features_to_model.features_to_model
 
 ## Supported Models
-Currently SageWorks supports XGBoost (classifier/regressor), and Scikit Learn models. Those models can be created by just specifying different parameters to the `FeaturesToModel` class. Here are some examples:
+Currently SageWorks supports XGBoost (classifier/regressor), and Scikit Learn models. Those models can be created by just specifying different parameters to the `FeaturesToModel` class. The main issue with the supported models is they are vanilla versions with default parameters, any customization should be done with [Custom Models](#custom-models)
 
 ### XGBoost
 ```python
