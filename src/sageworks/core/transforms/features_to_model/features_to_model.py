@@ -26,15 +26,16 @@ class FeaturesToModel(Transform):
     """
 
     def __init__(
-        self, feature_uuid: str, model_uuid: str, model_type: ModelType, model_class=None, model_import_str=None
+        self, feature_uuid: str, model_uuid: str, model_type: ModelType, model_class=None, model_import_str=None, custom_script=None
     ):
         """FeaturesToModel Initialization
         Args:
             feature_uuid (str): UUID of the FeatureSet to use as input
             model_uuid (str): UUID of the Model to create as output
             model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.
-            model_class (str): The class of the model (optional)
-            model_import_str (str): The import string for the model (optional
+            model_class (str, optional): The class of the model (default None)
+            model_import_str (str, optional): The import string for the model (default None)
+            custom_script (str, optional): Custom script to use for the model (default None)
         """
 
         # Make sure the model_uuid is a valid name
@@ -49,6 +50,7 @@ class FeaturesToModel(Transform):
         self.model_type = model_type
         self.model_class = model_class
         self.model_import_str = model_import_str
+        self.custom_script = custom_script
         self.estimator = None
         self.model_description = None
         self.model_training_root = self.models_s3_path + "/training"
@@ -126,18 +128,25 @@ class FeaturesToModel(Transform):
         self.model_feature_list = [c for c in feature_list if c not in remove_columns]
         self.log.important(f"Feature List for Modeling: {self.model_feature_list}")
 
-        # Set up our parameters for the model script
-        template_params = {
-            "model_imports": self.model_import_str,
-            "model_type": self.model_type,
-            "model_class": self.model_class,
-            "target_column": self.target_column,
-            "feature_list": self.model_feature_list,
-            "model_metrics_s3_path": f"{self.model_training_root}/{self.output_uuid}",
-            "train_all_data": train_all_data,
-        }
-        # Generate our model script
-        script_path = generate_model_script(template_params)
+        # Custom Script
+        if self.custom_script:
+            self.log.info("Using custom script for the model...")
+            script_path = self.custom_script
+
+        # We're using one of the built-in model script templates
+        else:
+            # Set up our parameters for the model script
+            template_params = {
+                "model_imports": self.model_import_str,
+                "model_type": self.model_type,
+                "model_class": self.model_class,
+                "target_column": self.target_column,
+                "feature_list": self.model_feature_list,
+                "model_metrics_s3_path": f"{self.model_training_root}/{self.output_uuid}",
+                "train_all_data": train_all_data,
+            }
+            # Generate our model script
+            script_path = generate_model_script(template_params)
 
         # Metric Definitions for Regression
         if self.model_type == ModelType.REGRESSOR or self.model_type == ModelType.QUANTILE_REGRESSOR:
@@ -266,7 +275,9 @@ class FeaturesToModel(Transform):
 
 if __name__ == "__main__":
     """Exercise the FeaturesToModel Class"""
+    from pathlib import Path
 
+    """
     # Regression Model
     input_uuid = "abalone_features"
     output_uuid = "abalone-regression"
@@ -280,6 +291,7 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.CLASSIFIER)
     to_model.set_output_tags(["wine", "public"])
     to_model.transform(target_column="wine_class", description="Wine Classification")
+    """
 
     # Quantile Regression Model (Abalone)
     """
@@ -330,3 +342,15 @@ if __name__ == "__main__":
     to_model.set_output_tags(["wine", "2d-projection"])
     to_model.transform(target_column=None, description="Wine 2D Projection", train_all_data=True)
     """
+
+    # Custom Script Model
+
+    # This is cheesy, but basically you specify the full path to the custom script
+    project_root = Path(__file__).resolve().parents[3]
+    my_custom_script = project_root / "model_scripts" / "custom_script" / "custom_model_script.py"
+    input_uuid = "wine_features"
+    output_uuid = "wine-custom"
+    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.CLASSIFIER, custom_script=my_custom_script)
+    to_model.set_output_tags(["wine", "custom"])
+    to_model.transform(target_column="wine_class", description="Wine Custom Classification")
+
