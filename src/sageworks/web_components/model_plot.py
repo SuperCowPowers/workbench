@@ -42,7 +42,7 @@ class ModelPlot(ComponentInterface):
         elif model_type in ["regressor", "quantile_regressor"]:
             return RegressionPlot().update_properties(model, inference_run)
         else:
-            return self.display_text("Unknown Model Type")
+            return self.display_text(f"Model Type: {model_type}\n\n Awesome Plot Coming Soon!")
 
 
 if __name__ == "__main__":
