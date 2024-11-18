@@ -1,5 +1,5 @@
 """AWSDFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy"""
-
+from datetime import datetime, timezone
 from typing import Union
 import logging
 import awswrangler as wr
@@ -55,6 +55,31 @@ class AWSDFStore:
 
         # Read all the Pipelines from this S3 path
         self.s3_client = self.boto3_session.client("s3")
+
+    def list(self) -> list:
+        """List all objects in the data_store prefix."""
+        df = self.summary()
+        return df["location"].tolist()
+
+    def last_modified(self, location: str) -> Union[datetime, None]:
+        """Return the last modified date of the object at the specified location.
+
+        Args:
+            location (str): The location of the data to check.
+
+        Returns:
+            Union[datetime, None]: The last modified date as a timezone-aware datetime or None if not found.
+        """
+        df = self.details()
+        mask = df["location"] == location
+
+        if mask.any():
+            # Extract the modified time and convert to a timezone-aware datetime in UTC
+            time_str = df.loc[mask, "modified"].values[0]
+            time_obj = pd.to_datetime(time_str)
+            return time_obj.to_pydatetime().replace(tzinfo=timezone.utc)
+
+        return None
 
     def summary(self) -> pd.DataFrame:
         """Return a nicely formatted summary of object locations, sizes (in MB), and modified dates."""
@@ -236,9 +261,17 @@ if __name__ == "__main__":
     print("Detailed Data...")
     print(df_store.details())
 
+    # List all objects
+    print("List Data...")
+    print(df_store.list())
+
     # Add a new DataFrame
     my_df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
     df_store.upsert("/testing/test_data", my_df)
+
+    # Check the last modified date
+    print("Last Modified Date:")
+    print(df_store.last_modified("/testing/test_data"))
 
     # Get the DataFrame
     print(f"Getting data 'test_data':\n{df_store.get('/testing/test_data')}")
