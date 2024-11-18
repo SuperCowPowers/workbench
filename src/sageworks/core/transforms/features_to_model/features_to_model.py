@@ -18,6 +18,7 @@ class FeaturesToModel(Transform):
 
     Common Usage:
         ```python
+        from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
         to_model = FeaturesToModel(feature_uuid, model_uuid, model_type=ModelType)
         to_model.set_output_tags(["abalone", "public", "whatever"])
         to_model.transform(target_column="class_number_of_rings",
@@ -285,7 +286,6 @@ class FeaturesToModel(Transform):
 if __name__ == "__main__":
     """Exercise the FeaturesToModel Class"""
 
-    """
     # Regression Model
     input_uuid = "abalone_features"
     output_uuid = "abalone-regression"
@@ -299,18 +299,14 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.CLASSIFIER)
     to_model.set_output_tags(["wine", "public"])
     to_model.transform(target_column="wine_class", description="Wine Classification")
-    """
 
     # Quantile Regression Model (Abalone)
-    """
     input_uuid = "abalone_features"
     output_uuid = "abalone-quantile-reg"
     to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.QUANTILE_REGRESSOR)
     to_model.set_output_tags(["abalone", "quantiles"])
     to_model.transform(target_column="class_number_of_rings", description="Abalone Quantile Regression")
-    """
 
-    """
     # Scikit-Learn Kmeans Clustering Model
     input_uuid = "wine_features"
     output_uuid = "wine-clusters"
@@ -349,18 +345,15 @@ if __name__ == "__main__":
     )
     to_model.set_output_tags(["wine", "2d-projection"])
     to_model.transform(target_column=None, description="Wine 2D Projection", train_all_data=True)
-    """
 
     # Custom Script Models
     scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
-    """
     my_custom_script = scripts_root / "custom_script_example" / "custom_model_script.py"
     input_uuid = "wine_features"
     output_uuid = "wine-custom"
     to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.CLASSIFIER, custom_script=my_custom_script)
     to_model.set_output_tags(["wine", "custom"])
     to_model.transform(target_column="wine_class", description="Wine Custom Classification")
-    """
 
     # Temp Molecular Descriptors Model
     my_script = scripts_root / "custom_models" / "chem_info" / "rdkit_mordred_features.py"

@@ -80,7 +80,7 @@ to_model.transform(target_column=None, description="Wine 2D Projection", train_a
 For custom models we recommend the following steps:
 
 !!! warning inline end "Experimental"
-    The SageWorks Custom Models are currently in experimental mode so have fun but expect issues. Requires `sageworks >= 0.8.59`. Feel free to submit issues to [SageWorks Github](https://github.com/SuperCowPowers/sageworks)
+    The SageWorks Custom Models are currently in experimental mode so have fun but expect issues. Requires `sageworks >= 0.8.60`. Feel free to submit issues to [SageWorks Github](https://github.com/SuperCowPowers/sageworks)
 
 - Copy the example custom model script into your own directory
     - See: [Custom Model Script](https://github.com/SuperCowPowers/sageworks/tree/main/src/sageworks/model_scripts/custom_script_example)
