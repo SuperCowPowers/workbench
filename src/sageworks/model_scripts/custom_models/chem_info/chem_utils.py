@@ -160,8 +160,9 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=2048) -> pd.Da
 
     # Compute Morgan fingerprints (vectorized)
     fingerprints = molecules.apply(
-        lambda mol: AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits).ToBitString()
-        if mol else None
+        lambda mol: (
+            AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits).ToBitString() if mol else None
+        )
     )
 
     # Add the fingerprints to the DataFrame

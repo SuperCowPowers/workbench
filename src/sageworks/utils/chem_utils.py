@@ -189,14 +189,15 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=2048) -> pd.Da
     # Handle invalid molecules
     invalid_smiles = molecules.isna()
     if invalid_smiles.any():
-        logger.critical(f"Invalid SMILES strings found at indices: {df.index[invalid_smiles].tolist()}")
+        log.critical(f"Invalid SMILES strings found at indices: {df.index[invalid_smiles].tolist()}")
         molecules = molecules.dropna()
         df = df.loc[molecules.index].reset_index(drop=True)
 
     # Compute Morgan fingerprints (vectorized)
     fingerprints = molecules.apply(
-        lambda mol: AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits).ToBitString()
-        if mol else None
+        lambda mol: (
+            AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits).ToBitString() if mol else None
+        )
     )
 
     # Add the fingerprints to the DataFrame
@@ -233,4 +234,3 @@ if __name__ == "__main__":
     # Compute Morgan Fingerprints
     df = compute_morgan_fingerprints(df)
     print(df)
-
