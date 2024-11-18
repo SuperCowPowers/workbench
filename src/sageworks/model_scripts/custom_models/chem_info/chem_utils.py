@@ -2,11 +2,14 @@
 
 import numpy as np
 import pandas as pd
+import logging
+
+logger = logging.getLogger("sageworks")
 
 # Third Party Imports
 try:
     from rdkit import Chem
-    from rdkit.Chem import Descriptors
+    from rdkit.Chem import Descriptors, AllChem
     from rdkit.ML.Descriptors import MoleculeDescriptors
     from rdkit import RDLogger
 
@@ -128,6 +131,44 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     return output_df
 
 
+def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=2048) -> pd.DataFrame:
+    """Compute and add Morgan fingerprints to the DataFrame.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing SMILES strings.
+        radius (int): Radius for the Morgan fingerprint.
+        nBits (int): Number of bits for the fingerprint.
+
+    Returns:
+        pd.DataFrame: The input DataFrame with the Morgan fingerprints added as bit strings.
+    """
+
+    # Check for the SMILES column (case-insensitive)
+    smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
+    if smiles_column is None:
+        raise ValueError("Input DataFrame must have a 'smiles' column")
+
+    # Convert SMILES to RDKit molecule objects (vectorized)
+    molecules = df[smiles_column].apply(Chem.MolFromSmiles)
+
+    # Handle invalid molecules
+    invalid_smiles = molecules.isna()
+    if invalid_smiles.any():
+        logger.critical(f"Invalid SMILES strings found at indices: {df.index[invalid_smiles].tolist()}")
+        molecules = molecules.dropna()
+        df = df.loc[molecules.index].reset_index(drop=True)
+
+    # Compute Morgan fingerprints (vectorized)
+    fingerprints = molecules.apply(
+        lambda mol: AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits).ToBitString()
+        if mol else None
+    )
+
+    # Add the fingerprints to the DataFrame
+    df["morgan_fingerprint"] = fingerprints
+    return df
+
+
 if __name__ == "__main__":
 
     # Fake molecule
@@ -151,4 +192,8 @@ if __name__ == "__main__":
     # Compute Molecular Descriptors
     df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles]})
     df = compute_molecular_descriptors(df)
+    print(df)
+
+    # Compute Morgan Fingerprints
+    df = compute_morgan_fingerprints(df)
     print(df)

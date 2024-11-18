@@ -356,7 +356,7 @@ if __name__ == "__main__":
     to_model.transform(target_column="wine_class", description="Wine Custom Classification")
 
     # Temp Molecular Descriptors Model
-    my_script = scripts_root / "custom_models" / "chem_info" / "rdkit_mordred_features.py"
+    my_script = scripts_root / "custom_models" / "chem_info" / "molecular_descriptors.py"
     input_uuid = "aqsol_features"
     output_uuid = "smiles-to-rdkit-mordred-v2"
     to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.TRANSFORMER, custom_script=my_script)

@@ -1,19 +1,9 @@
-# Welcome to the custom script template
+# Model: molecular_descriptors
 #
-# This script is designed to be used with the SageMaker Scikit-learn container.
-# It runs a simple training and inference job using a Scikit-learn model.
-# This script will work 'as is' just to get you started, but you should modify it
-# to suit your own use case.
-#
-# We've placed a few comments throughout the script to help guide you.
-# Each section with have a 'REPLACE:' in the comment to indicate where you should
-# replace the code with your own.
-#
-# For Regression Models, basically remove all the LabelEncoder code.
-#
-# Also review the requirements.txt file to ensure you have all the necessary libraries.
-#
-# If you have any questions, please don't hesitate to touch base with SageWorks support.
+# Description: The molecular_descriptors model uses RDKit and Mordred to compute a wide array of
+#     molecular descriptors from SMILES strings. These descriptors quantify various chemical properties
+#     and structural features, providing critical insights for cheminformatics applications such as
+#     QSAR modeling and drug discovery.
 #
 import argparse
 import os
