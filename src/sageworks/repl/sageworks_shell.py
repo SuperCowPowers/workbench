@@ -124,7 +124,8 @@ class SageWorksShell:
         self.aws_status = self.check_aws_account()
         self.open_source_api_key = self.check_open_source_api_key()
         if self.aws_status:
-            self.import_sageworks()
+            with silence_logs():
+                self.import_sageworks()
 
         # Try cached meta (if that fails it will be set to direct meta)
         self.try_cached_meta()
