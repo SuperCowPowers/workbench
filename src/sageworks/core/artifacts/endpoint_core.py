@@ -354,9 +354,9 @@ class EndpointCore(Artifact):
         target_column = model.target()
 
         # Sanity Check that the target column is present
-        if target_column not in prediction_df.columns:
-            self.log.warning(f"Target Column {target_column} not found in prediction_df!")
-            self.log.warning("In order to compute metrics, the target column must be present!")
+        if target_column and (target_column not in prediction_df.columns):
+            self.log.important(f"Target Column {target_column} not found in prediction_df!")
+            self.log.important("In order to compute metrics, the target column must be present!")
             return prediction_df
 
         # Compute the standard performance metrics for this model
@@ -367,20 +367,21 @@ class EndpointCore(Artifact):
         elif model_type == ModelType.CLASSIFIER:
             metrics = self.classification_metrics(target_column, prediction_df)
         else:
-            # Unknown Model Type: Give log message and set metrics to empty dataframe
-            self.log.warning(f"Unknown Model Type: {model_type}")
+            # For other model types, we don't compute metrics
+            self.log.important(f"Model Type: {model_type} doesn't have metrics...")
             metrics = pd.DataFrame()
 
         # Print out the metrics
-        print(f"Performance Metrics for {self.model_name} on {self.uuid}")
-        print(metrics.head())
+        if not metrics.empty:
+            print(f"Performance Metrics for {self.model_name} on {self.uuid}")
+            print(metrics.head())
 
-        # Capture the inference results and metrics
-        if capture_uuid is not None:
-            description = capture_uuid.replace("_", " ").title()
-            self._capture_inference_results(
-                capture_uuid, prediction_df, target_column, model_type, metrics, description, id_column
-            )
+            # Capture the inference results and metrics
+            if capture_uuid is not None:
+                description = capture_uuid.replace("_", " ").title()
+                self._capture_inference_results(
+                    capture_uuid, prediction_df, target_column, model_type, metrics, description, id_column
+                )
 
         # Return the prediction DataFrame
         return prediction_df

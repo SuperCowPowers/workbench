@@ -118,20 +118,23 @@ class FeaturesToModel(Transform):
             ] + [self.target_column]
             feature_list = [c for c in all_columns if c not in filter_list]
 
-        # AWS Feature Store has 3 user column types (String, Integral, Fractional)
-        # and two internal types (Timestamp and Boolean). A Feature List for
-        # modeling can only contain Integral and Fractional types.
-        remove_columns = []
-        column_details = feature_set.column_details()
-        for column_name in feature_list:
-            if column_details[column_name] not in ["Integral", "Fractional"]:
-                self.log.warning(
-                    f"Removing {column_name} from feature list, improper type {column_details[column_name]}"
-                )
-                remove_columns.append(column_name)
+            # AWS Feature Store has 3 user column types (String, Integral, Fractional)
+            # and two internal types (Timestamp and Boolean). A Feature List for
+            # modeling can only contain Integral and Fractional types.
+            remove_columns = []
+            column_details = feature_set.column_details()
+            for column_name in feature_list:
+                if column_details[column_name] not in ["Integral", "Fractional"]:
+                    self.log.warning(
+                        f"Removing {column_name} from feature list, improper type {column_details[column_name]}"
+                    )
+                    remove_columns.append(column_name)
 
-        # Remove the columns that are not Integral or Fractional
-        self.model_feature_list = [c for c in feature_list if c not in remove_columns]
+            # Remove the columns that are not Integral or Fractional
+            feature_list = [c for c in feature_list if c not in remove_columns]
+
+        # Set the final feature list
+        self.model_feature_list = feature_list
         self.log.important(f"Feature List for Modeling: {self.model_feature_list}")
 
         # Custom Script
@@ -195,7 +198,7 @@ class FeaturesToModel(Transform):
 
         # If the model type is UNKNOWN, our metric_definitions will be empty
         else:
-            self.log.warning(f"ModelType is {self.model_type}, skipping metric_definitions...")
+            self.log.important(f"ModelType is {self.model_type}, skipping metric_definitions...")
             metric_definitions = []
 
         # Take the full script path and extract the entry point and source directory
@@ -350,19 +353,19 @@ if __name__ == "__main__":
 
     # Custom Script Models
     scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
+    """
     my_custom_script = scripts_root / "custom_script_example" / "custom_model_script.py"
     input_uuid = "wine_features"
     output_uuid = "wine-custom"
     to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.CLASSIFIER, custom_script=my_custom_script)
     to_model.set_output_tags(["wine", "custom"])
     to_model.transform(target_column="wine_class", description="Wine Custom Classification")
-
     """
+
     # Temp Molecular Descriptors Model
-    my_custom_script = scripts_root / "custom_models" / "chem_info" / "rdkit_mordred_features.py"
+    my_script = scripts_root / "custom_models" / "chem_info" / "rdkit_mordred_features.py"
     input_uuid = "aqsol_features"
     output_uuid = "smiles-to-rdkit-mordred-v2"
-    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.TRANSFORMER, custom_script=my_custom_script)
+    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.TRANSFORMER, custom_script=my_script)
     to_model.set_output_tags(["smiles", "molecular descriptors"])
     to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Molecular Descriptors")
-    """

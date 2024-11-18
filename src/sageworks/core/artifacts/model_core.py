@@ -168,7 +168,8 @@ class ModelCore(Artifact):
             self.remove_health_tag("model_type_unknown")
 
         # Model Performance Metrics
-        if self.get_inference_metrics() is None:
+        needs_metrics = self.model_type in {ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR, ModelType.CLASSIFIER}
+        if needs_metrics and self.get_inference_metrics() is None:
             health_issues.append("metrics_needed")
         else:
             self.remove_health_tag("metrics_needed")
@@ -534,9 +535,12 @@ class ModelCore(Artifact):
         if self.model_type == ModelType.CLASSIFIER:
             details["confusion_matrix"] = self.confusion_matrix()
             details["predictions"] = None
-        else:
+        elif self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]:
             details["confusion_matrix"] = None
             details["predictions"] = self.get_inference_predictions()
+        else:
+            details["confusion_matrix"] = None
+            details["predictions"] = None
 
         # Grab the inference metadata
         details["inference_meta"] = self.get_inference_metadata()
@@ -782,7 +786,7 @@ class ModelCore(Artifact):
         try:
             df = TrainingJobAnalytics(training_job_name=self.training_job_name).dataframe()
             if df.empty:
-                self.log.warning(f"No training job metrics found for {self.training_job_name}")
+                self.log.important(f"No training job metrics found for {self.training_job_name}")
                 self.upsert_sageworks_meta({"sageworks_training_metrics": None, "sageworks_training_cm": None})
                 return
             if self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]:
@@ -799,7 +803,7 @@ class ModelCore(Artifact):
                 return
 
         except (KeyError, botocore.exceptions.ClientError):
-            self.log.warning(f"No training job metrics found for {self.training_job_name}")
+            self.log.important(f"No training job metrics found for {self.training_job_name}")
             # Store and return the metrics in the SageWorks Metadata
             self.upsert_sageworks_meta({"sageworks_training_metrics": None, "sageworks_training_cm": None})
             return
@@ -897,6 +901,12 @@ class ModelCore(Artifact):
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)
         """
         self.log.important(f"Grabbing {capture_uuid} predictions for {self.model_name}...")
+
+        # Sanity check that the model should have predictions
+        has_predictions = self.model_type in [ModelType.CLASSIFIER, ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]
+        if not has_predictions:
+            self.log.warning(f"No Predictions for {self.model_name}...")
+            return None
 
         # Special case for model_training
         if capture_uuid == "model_training":
