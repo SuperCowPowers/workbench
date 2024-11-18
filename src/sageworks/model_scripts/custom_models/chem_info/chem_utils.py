@@ -1,6 +1,5 @@
 """Chem/RDKIT/Mordred utilities for Sageworks"""
 
-import logging
 import numpy as np
 import pandas as pd
 
@@ -10,7 +9,6 @@ try:
     from rdkit.Chem import Descriptors
     from rdkit.ML.Descriptors import MoleculeDescriptors
     from rdkit import RDLogger
-    from rdkit.Chem import Draw
 
     # Turn off warnings for RDKIT (revisit this)
     RDLogger.DisableLog("rdApp.*")
@@ -94,7 +92,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
         raise ValueError("Input DataFrame must have a 'smiles' column")
 
     # Compute/add all the Molecular Descriptors
-    log.info("Computing Molecular Descriptors...")
+    print("Computing Molecular Descriptors...")
 
     # Conversion to Molecules
     molecules = [Chem.MolFromSmiles(smile) for smile in df[smiles_column]]
@@ -132,9 +130,8 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
 
-    # Show a molecule
+    # Fake molecule
     smiles = "CC(CN1CC(C)OC(C)C1)"
-    display(smiles)
 
     # Test the concentration conversion functions
     df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles, smiles], "µM": [500, 50, 5, 1, 0.1, 0]})

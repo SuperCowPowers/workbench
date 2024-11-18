@@ -17,20 +17,12 @@
 #
 import argparse
 import os
-import json
 import joblib
 from io import StringIO
 import pandas as pd
 
 # Local imports
 from chem_utils import compute_molecular_descriptors
-
-
-def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
-    if df.empty:
-        raise ValueError(f"*** The training data {df_name} has 0 rows! ***STOPPING***")
-    if df.isnull().values.any():
-        raise ValueError(f"*** The training data {df_name} has NaN values! ***STOPPING***")
 
 
 # TRAINING SECTION
@@ -45,22 +37,11 @@ if __name__ == "__main__":
     parser.add_argument("--train", type=str, default=os.environ["SM_CHANNEL_TRAIN"])
     args = parser.parse_args()
 
-    # Load the training data
-    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
-    df = pd.concat([pd.read_csv(file) for file in training_files])
-
-    check_dataframe(df, "training_df")
-
-    # We'll capture the feature_list for use during inference
-    feature_list = ["smiles"]
+    # This model doesn't get trained, it just a feature creation 'model'
 
     # Sagemaker seems to get upset if we don't save a model, so we'll create a placeholder model
     placeholder_model = {}
     joblib.dump(placeholder_model, os.path.join(args.model_dir, "model.joblib"))
-
-    # Save the feature list
-    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
-        json.dump(feature_list, fp)
 
 
 # Model loading and prediction functions
@@ -83,9 +64,6 @@ def output_fn(output_df, accept_type):
 
 # Prediction function
 def predict_fn(df, model):
-    model_dir = os.environ["SM_MODEL_DIR"]
-    with open(os.path.join(model_dir, "feature_columns.json")) as fp:
-        model_features = json.load(fp)
 
     # Compute the Molecular Descriptors
     df = compute_molecular_descriptors(df)
