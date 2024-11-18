@@ -6,6 +6,8 @@ from sageworks.cached.cached_model import CachedModel
 models = CachedMeta().models()["Model Group"].tolist()
 for model_name in models:
     model = CachedModel(model_name)
+    for run in ["auto_inference", "nightly_holdout"]:
+        print(model.get_inference_metrics(run))
     time.sleep(1)  # Don't spam AWS
 
 # Let the Cache Threads return the results

@@ -81,6 +81,18 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         return super().list_inference_runs()
 
     @CachedArtifactMixin.cache_result
+    def get_inference_metrics(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
+        """Retrieve the captured prediction results for this model
+
+        Args:
+            capture_uuid (str, optional): Specific capture_uuid (default: latest)
+
+        Returns:
+            pd.DataFrame: DataFrame of the Captured Metrics (might be None)
+        """
+        return super().get_inference_metrics(capture_uuid=capture_uuid)
+
+    @CachedArtifactMixin.cache_result
     def get_inference_predictions(self, capture_uuid: str = "auto_inference") -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
@@ -102,7 +114,9 @@ if __name__ == "__main__":
     pprint(my_model.summary())
     pprint(my_model.details())
     pprint(my_model.health_check())
-    print(my_model.get_endpoint_inference_path())
+    pprint(my_model.list_inference_runs())
+    print(my_model.get_inference_metrics())
+    print(my_model.get_inference_predictions())
 
     # Shutdown the ThreadPoolExecutor (note: users should NOT call this)
     my_model._shutdown()
