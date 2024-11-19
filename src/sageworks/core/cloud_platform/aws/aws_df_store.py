@@ -36,25 +36,23 @@ class AWSDFStore:
         ```
     """
 
-    def __init__(self, path_prefix: Union[str, None] = None):
+    def __init__(self, path_prefix: Union[str, None] = None, exclude_prefix: str = "/sageworks"):
         """AWSDFStore Init Method
 
         Args:
-            path_prefix (Union[str, None], optional): Add a path prefix to storage locations (Defaults to None)
+            path_prefix (Union[str, None], optional): Path prefix for storage locations (Defaults to None)
+            exclude_prefix (str, optional): Prefix to exclude from listings (Defaults to "/sageworks")
         """
         self.log = logging.getLogger("sageworks")
         self._base_prefix = "df_store/"
         self.path_prefix = self._base_prefix + path_prefix if path_prefix else self._base_prefix
         self.path_prefix = re.sub(r"/+", "/", self.path_prefix)  # Collapse slashes
+        self.exclude_prefix = exclude_prefix
 
         # Initialize a SageWorks Session and retrieve the S3 bucket from ConfigManager
         config = ConfigManager()
         self.sageworks_bucket = config.get_config("SAGEWORKS_BUCKET")
-
-        # Grab a SageWorks Session (this allows us to assume the SageWorks ExecutionRole)
         self.boto3_session = AWSAccountClamp().boto3_session
-
-        # Read all the Pipelines from this S3 path
         self.s3_client = self.boto3_session.client("s3")
 
     def list(self) -> list:
@@ -97,7 +95,7 @@ class AWSDFStore:
         return formatted_df
 
     def details(self) -> pd.DataFrame:
-        """Return a DataFrame with detailed metadata for all objects in the data_store prefix."""
+        """Return detailed metadata for all objects, optionally excluding the specified prefix."""
         try:
             response = self.s3_client.list_objects_v2(Bucket=self.sageworks_bucket, Prefix=self.path_prefix)
             if "Contents" not in response:
@@ -115,8 +113,13 @@ class AWSDFStore:
                 modified = obj["LastModified"]
                 data.append([location, s3_file, size, modified])
 
-            # Create and return DataFrame
+            # Create the DataFrame
             df = pd.DataFrame(data, columns=["location", "s3_file", "size", "modified"])
+
+            # Apply the exclude_prefix filter if set
+            if self.exclude_prefix:
+                df = df[~df['location'].str.startswith(self.exclude_prefix)]
+
             return df
 
         except Exception as e:
