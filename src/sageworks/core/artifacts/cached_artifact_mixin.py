@@ -32,6 +32,7 @@ class CachedArtifactMixin:
             # Include the uuid in the cache key if available
             class_name = self.__class__.__name__.lower()
             cache_key = f"{class_name}_{self.uuid}_{cls._flatten_redis_key(method, *args, **kwargs)}"
+            # cache_key = f"{self.uuid}_{cls._flatten_redis_key(method, *args, **kwargs)}"
             if SageWorksCache.refresh_enabled and cls.fresh_cache.get(cache_key) is None:
                 self.log.debug(f"Async: Results for {cache_key} refresh thread started...")
                 cls.fresh_cache.set(cache_key, True)

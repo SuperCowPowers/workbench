@@ -3,20 +3,17 @@ import redis
 import datetime
 
 
-def redis_reaper(host, port, size_limit=1048576, expiration_days=30):
-    """Reap keys from Redis based on size and expiration date.
+def redis_reaper(host, port, size_limit=1048576, expire=7):
+    """Reap keys from Redis based on size and age.
 
     Args:
         host (str): Redis host.
         port (int): Redis port.
         size_limit (int): Size limit in bytes (default: 1MB).
-        expiration_days (int): Number of days before a key is considered expired (default: 30 days).
+        expire (int): Number of days before a key is considered expired (default: 7 days).
     """
     # Connect to Redis
     client = redis.Redis(host=host, port=port)
-
-    # Current time for expiration check
-    now = datetime.datetime.utcnow()
     keys_deleted = 0
 
     # Iterate through all keys
@@ -25,19 +22,18 @@ def redis_reaper(host, port, size_limit=1048576, expiration_days=30):
         size = client.memory_usage(key) or 0
         if size > size_limit:
             print(f"Deleting key {key} (size: {size} bytes)")
-            # client.delete(key)
+            client.delete(key)
             keys_deleted += 1
             continue
 
-        # Check the last modified/created time
-        ttl = client.ttl(key)
-        if ttl == -1:  # Skip keys that don't have an expiration set
-            continue
-        creation_time = now - datetime.timedelta(seconds=ttl)
-        if creation_time < now - datetime.timedelta(days=expiration_days):
-            print(f"Deleting key {key} (expired: {creation_time})")
-            # client.delete(key)
-            keys_deleted += 1
+        # Check if the key has a last modified timestamp
+        key_info = client.object("idletime", key)
+        if key_info is not None:
+            key_age_days = key_info / (60 * 60 * 24)
+            if key_age_days > expire:
+                print(f"Deleting key {key} (age: {key_age_days:.2f} days)")
+                client.delete(key)
+                keys_deleted += 1
 
     print(f"Total keys deleted: {keys_deleted}")
 
