@@ -4,30 +4,22 @@ import numpy as np
 import pandas as pd
 import logging
 
-logger = logging.getLogger("sageworks")
+log = logging.getLogger("sageworks")
 
 # Third Party Imports
-try:
-    from rdkit import Chem
-    from rdkit.Chem import Descriptors, AllChem
-    from rdkit.ML.Descriptors import MoleculeDescriptors
-    from rdkit import RDLogger
+from rdkit import Chem
+from rdkit.Chem import Descriptors
+from rdkit.ML.Descriptors import MoleculeDescriptors
+from rdkit import RDLogger
+from rdkit.Chem import rdFingerprintGenerator
+from rdkit.Chem.MolStandardize import rdMolStandardize
 
-    # Turn off warnings for RDKIT (revisit this)
-    RDLogger.DisableLog("rdApp.*")
-    NO_RDKIT = False
-except ImportError:
-    print("RDKit Python module not found! pip install rdkit")
-    NO_RDKIT = True
+# Turn off warnings for RDKIT (revisit this)
+RDLogger.DisableLog("rdApp.*")
 
-try:
-    from mordred import Calculator
-    from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
 
-    NO_MORDRED = False
-except ImportError:
-    print("Mordred Python module not found! pip install mordred")
-    NO_MORDRED = True
+from mordred import Calculator
+from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
 
 
 def micromolar_to_log(series_µM: pd.Series) -> pd.Series:
@@ -95,7 +87,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
         raise ValueError("Input DataFrame must have a 'smiles' column")
 
     # Compute/add all the Molecular Descriptors
-    print("Computing Molecular Descriptors...")
+    log.info("Computing Molecular Descriptors...")
 
     # Conversion to Molecules
     molecules = [Chem.MolFromSmiles(smile) for smile in df[smiles_column]]
@@ -154,19 +146,62 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=2048) -> pd.Da
     # Handle invalid molecules
     invalid_smiles = molecules.isna()
     if invalid_smiles.any():
-        logger.critical(f"Invalid SMILES strings found at indices: {df.index[invalid_smiles].tolist()}")
+        log.critical(f"Invalid SMILES strings found at indices: {df.index[invalid_smiles].tolist()}")
         molecules = molecules.dropna()
         df = df.loc[molecules.index].reset_index(drop=True)
+
+    # Create a Morgan fingerprint generator
+    morgan_generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=nBits)
 
     # Compute Morgan fingerprints (vectorized)
     fingerprints = molecules.apply(
         lambda mol: (
-            AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits).ToBitString() if mol else None
+            morgan_generator.GetFingerprint(mol).ToBitString() if mol else None
         )
     )
 
     # Add the fingerprints to the DataFrame
     df["morgan_fingerprint"] = fingerprints
+    return df
+
+
+def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
+    """Perform tautomer enumeration and canonicalization on the DataFrame.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing SMILES strings.
+
+    Returns:
+        pd.DataFrame: The input DataFrame with canonicalized tautomers.
+    """
+
+    # Check for the SMILES column (case-insensitive)
+    smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
+    if smiles_column is None:
+        raise ValueError("Input DataFrame must have a 'smiles' column")
+
+    # Convert SMILES to RDKit molecule objects (vectorized)
+    molecules = df[smiles_column].apply(Chem.MolFromSmiles)
+
+    # Handle invalid molecules
+    invalid_smiles = molecules.isna()
+    if invalid_smiles.any():
+        logger.critical(f"Invalid SMILES strings found at indices: {df.index[invalid_smiles].tolist()}")
+        molecules = molecules.dropna()
+        df = df.loc[molecules.index].reset_index(drop=True)
+
+    # Create a tautomer enumerator
+    tautomer_enumerator = rdMolStandardize.TautomerEnumerator()
+
+    # Perform tautomer canonicalization (vectorized)
+    canonical_tautomers = molecules.apply(
+        lambda mol: (
+            Chem.MolToSmiles(tautomer_enumerator.Canonicalize(mol)) if mol else None
+        )
+    )
+
+    # Add the canonicalized tautomers as SMILES to the DataFrame
+    df["canonical_tautomer"] = canonical_tautomers
     return df
 
 
@@ -197,4 +232,8 @@ if __name__ == "__main__":
 
     # Compute Morgan Fingerprints
     df = compute_morgan_fingerprints(df)
+    print(df)
+
+    # Perform Tautomerization
+    df = perform_tautomerization(df)
     print(df)

@@ -42,6 +42,14 @@ class DFStore(AWSDFStore):
         # Initialize the SuperClass
         super().__init__(path_prefix=path_prefix)
 
+    def list(self) -> list:
+        """List all the objects in the data_store prefix.
+
+        Returns:
+            list: A list of all the objects in the data_store prefix.
+        """
+        return super().list()
+
     def summary(self) -> pd.DataFrame:
         """Return a nicely formatted summary of object locations, sizes (in MB), and modified dates.
 
