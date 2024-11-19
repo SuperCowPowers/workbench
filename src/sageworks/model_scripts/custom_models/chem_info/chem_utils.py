@@ -4,22 +4,16 @@ import numpy as np
 import pandas as pd
 import logging
 
-log = logging.getLogger("sageworks")
-
 # Third Party Imports
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 from rdkit.ML.Descriptors import MoleculeDescriptors
-from rdkit import RDLogger
 from rdkit.Chem import rdFingerprintGenerator
 from rdkit.Chem.MolStandardize import rdMolStandardize
-
-# Turn off warnings for RDKIT (revisit this)
-RDLogger.DisableLog("rdApp.*")
-
-
 from mordred import Calculator
 from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
+
+log = logging.getLogger("sageworks")
 
 
 def micromolar_to_log(series_µM: pd.Series) -> pd.Series:
@@ -154,11 +148,7 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=2048) -> pd.Da
     morgan_generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=nBits)
 
     # Compute Morgan fingerprints (vectorized)
-    fingerprints = molecules.apply(
-        lambda mol: (
-            morgan_generator.GetFingerprint(mol).ToBitString() if mol else None
-        )
-    )
+    fingerprints = molecules.apply(lambda mol: (morgan_generator.GetFingerprint(mol).ToBitString() if mol else None))
 
     # Add the fingerprints to the DataFrame
     df["morgan_fingerprint"] = fingerprints
@@ -186,7 +176,7 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
     # Handle invalid molecules
     invalid_smiles = molecules.isna()
     if invalid_smiles.any():
-        logger.critical(f"Invalid SMILES strings found at indices: {df.index[invalid_smiles].tolist()}")
+        log.critical(f"Invalid SMILES strings found at indices: {df.index[invalid_smiles].tolist()}")
         molecules = molecules.dropna()
         df = df.loc[molecules.index].reset_index(drop=True)
 
@@ -195,9 +185,7 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
 
     # Perform tautomer canonicalization (vectorized)
     canonical_tautomers = molecules.apply(
-        lambda mol: (
-            Chem.MolToSmiles(tautomer_enumerator.Canonicalize(mol)) if mol else None
-        )
+        lambda mol: (Chem.MolToSmiles(tautomer_enumerator.Canonicalize(mol)) if mol else None)
     )
 
     # Add the canonicalized tautomers as SMILES to the DataFrame

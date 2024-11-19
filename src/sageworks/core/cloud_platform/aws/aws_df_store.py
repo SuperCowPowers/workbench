@@ -118,7 +118,7 @@ class AWSDFStore:
 
             # Apply the exclude_prefix filter if set
             if self.exclude_prefix:
-                df = df[~df['location'].str.startswith(self.exclude_prefix)]
+                df = df[~df["location"].str.startswith(self.exclude_prefix)]
 
             return df
 
