@@ -86,7 +86,10 @@ class DFStore(AWSDFStore):
         Returns:
             pd.DataFrame: The retrieved DataFrame or None if not found.
         """
-        return super().get(location)
+        _df = super().get(location)
+        if _df is None:
+            self.log.error(f"Dataframe not found at location: {location}")
+        return _df
 
     def upsert(self, location: str, data: Union[pd.DataFrame, pd.Series]):
         """Insert or update a DataFrame or Series in the AWS S3.

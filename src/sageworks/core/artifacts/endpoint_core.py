@@ -99,7 +99,6 @@ class EndpointCore(Artifact):
 
         # This is for endpoint error handling later
         self.endpoint_return_columns = None
-        self.endpoint_retry = 0
 
         # We temporary cache the endpoint metrics
         self.temp_storage = Cache(prefix="temp_storage", expire=300)  # 5 minutes
@@ -439,7 +438,7 @@ class EndpointCore(Artifact):
         # endpoint (with error handling) and stitch all the chunks back together
         df_list = []
         for index in range(0, len(eval_df), 500):
-            print("Processing...")
+            self.log.info("Processing...")
 
             # Compute partial DataFrames, add them to a list, and concatenate at the end
             partial_df = self._endpoint_error_handling(predictor, eval_df[index : index + 500])
@@ -469,75 +468,50 @@ class EndpointCore(Artifact):
         return converted_df
 
     def _endpoint_error_handling(self, predictor, feature_df):
-        """Internal: Method that handles Errors, Retries, and Binary Search for Error Row(s)"""
+        """Internal: Handles errors, retries, and binary search for problematic rows."""
 
-        # Convert the DataFrame into a CSV buffer
+        # Convert DataFrame into a CSV buffer
         csv_buffer = StringIO()
         feature_df.to_csv(csv_buffer, index=False)
 
-        # Error Handling if the Endpoint gives back an error
         try:
-            # Send the CSV Buffer to the predictor
+            # Send CSV buffer to the predictor and process results
             results = predictor.predict(csv_buffer.getvalue())
-
-            # Construct a DataFrame from the results
             results_df = pd.DataFrame.from_records(results[1:], columns=results[0])
-
-            # Capture the return columns
             self.endpoint_return_columns = results_df.columns.tolist()
-
-            # Return the results dataframe
             return results_df
 
         except botocore.exceptions.ClientError as err:
             error_code = err.response["Error"]["Code"]
 
-            if error_code == "ModelError":
-                # Report the error and raise an exception
-                self.log.critical(f"Endpoint prediction error: {err.response.get('Message')}")
-
-                # If we've retried this already, raise the exception...
-                if self.endpoint_retry >= 1:
-                    raise
-                else:
-                    self.log.error("Sleeping a bit and then retrying the inference...")
-                    time.sleep(60)
-                    self.endpoint_retry += 1
-                    return self._endpoint_error_handling(predictor, feature_df)
-
-            # Handle the ModelNotReadyException by checking the error code
             if error_code == "ModelNotReadyException":
-                if self.endpoint_retry >= 5:
-                    self.log.critical(f"Endpoint model not ready, raising exception {err}")
-                    self.endpoint_retry = 0
-                    raise
-                else:
-                    self.endpoint_retry += 1
-                    self.log.error(f"Endpoint model not ready: {err}")
-                    self.log.error("Waiting and Retrying...")
-                    time.sleep(60)
-                    return self._endpoint_error_handling(predictor, feature_df)
+                self.log.error(f"Error {error_code}: {err.response.get('Message', 'No message')}")
+                self.log.error("Model not ready. Sleeping and retrying...")
+                time.sleep(60)
+                return self._endpoint_error_handling(predictor, feature_df)
 
-            # Base case: DataFrame with 1 Row
-            if len(feature_df) == 1:
-                # If we don't have ANY known good results we're kinda screwed
-                if not self.endpoint_return_columns:
-                    raise
+            elif error_code == "ModelError":
+                self.log.warning("Model error. Bisecting the DataFrame and retrying...")
 
-                # Construct an Error DataFrame (one row of NaNs in the return columns)
-                results_df = self._error_df(feature_df, self.endpoint_return_columns)
-                return results_df
+                # Base case: If there is only one row, we can't binary search further
+                if len(feature_df) == 1:
+                    if not self.endpoint_return_columns:
+                        raise
+                    return self._error_df(feature_df, self.endpoint_return_columns)
 
-            # Recurse on binary splits of the dataframe
-            num_rows = len(feature_df)
-            split = int(num_rows / 2)
-            first_half = self._endpoint_error_handling(predictor, feature_df[0:split])
-            second_half = self._endpoint_error_handling(predictor, feature_df[split:num_rows])
-            return pd.concat([first_half, second_half], ignore_index=True)
+                # Binary search to find the problematic row(s)
+                mid_point = len(feature_df) // 2
+                first_half = self._endpoint_error_handling(predictor, feature_df.iloc[:mid_point])
+                second_half = self._endpoint_error_handling(predictor, feature_df.iloc[mid_point:])
+                return pd.concat([first_half, second_half], ignore_index=True)
+
+            else:
+                # Unknown ClientError, raise the exception
+                self.log.critical(f"Unexpected ClientError: {err}")
+                raise
 
         except Exception as err:
-            # Catch all other exceptions and log them as critical
-            self.log.critical(f"Unexpected error occurred: {err}")
+            self.log.critical(f"Unexpected general error: {err}")
             raise
 
     def _error_df(self, df, all_columns):

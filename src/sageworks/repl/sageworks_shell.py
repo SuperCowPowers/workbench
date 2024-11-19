@@ -459,7 +459,7 @@ class SageWorksShell:
             cprint("lightblue", "Using Cached Meta...")
         else:
             self.meta_status = "DIRECT"
-            cprint("lightblue", "Using Direct Meta...")
+            cprint("darkyellow", "Using Direct Meta [slower]...")
             with silence_logs():
                 self.meta.close()
                 self.meta = Meta()
@@ -473,7 +473,7 @@ class SageWorksShell:
             self.meta.close()
             self.meta_status = "FAIL"
             cprint("orange", "Failed to Switch to Cached Meta...")
-            cprint("lightblue", "Using Direct Meta...")
+            cprint("darkyellow", "Using Direct Meta [slower]...")
             self.meta = Meta()
 
     def switch_to_direct_meta(self):
@@ -483,7 +483,7 @@ class SageWorksShell:
         # Create a new direct Meta object
         self.meta = Meta()
         self.meta_status = "DIRECT"
-        cprint("lightblue", "Switched to Direct Meta...")
+        cprint("darkyellow", "Switched to Direct Meta...")
 
     def get_meta(self):
         return self.meta
