@@ -464,6 +464,11 @@ class EndpointCore(Artifact):
         # Convert columns to the best possible dtype that supports the pd.NA missing value.
         converted_df = converted_df.convert_dtypes()
 
+        # Report on any rows that failed
+        failed_rows = converted_df[converted_df.isna().any(axis=1)]
+        if not failed_rows.empty:
+            self.log.warning(f"Rows that failed:\n{failed_rows}")
+
         # Return the Dataframe
         return converted_df
 
