@@ -1,25 +1,35 @@
 import argparse
 import redis
-import datetime
+import heapq
 
 
-def redis_reaper(host, port, size_limit=1048576, expire=7):
+def redis_reaper(host, port, size_limit=512000, expire=7):
     """Reap keys from Redis based on size and age.
 
     Args:
         host (str): Redis host.
         port (int): Redis port.
-        size_limit (int): Size limit in bytes (default: 1MB).
+        size_limit (int): Size limit in bytes (default: 500KB).
         expire (int): Number of days before a key is considered expired (default: 7 days).
     """
     # Connect to Redis
     client = redis.Redis(host=host, port=port)
+    total_keys = client.dbsize()
     keys_deleted = 0
+
+    # Use a min-heap to track the 5 largest sizes
+    largest_keys = []
 
     # Iterate through all keys
     for key in client.scan_iter():
         # Check the size of the value
         size = client.memory_usage(key) or 0
+
+        # Track the largest keys
+        heapq.heappush(largest_keys, (size, key))
+        if len(largest_keys) > 5:
+            heapq.heappop(largest_keys)
+
         if size > size_limit:
             print(f"Deleting key {key} (size: {size} bytes)")
             client.delete(key)
@@ -35,7 +45,13 @@ def redis_reaper(host, port, size_limit=1048576, expire=7):
                 client.delete(key)
                 keys_deleted += 1
 
-    print(f"Total keys deleted: {keys_deleted}")
+    # Report
+    print(f"\nTotal keys: {total_keys}")
+    print("\nTop 5 largest keys (by size):")
+    for size, key in sorted(largest_keys, reverse=True):
+        print(f"Key: {key}, Size: {size} bytes")
+
+    print(f"\nTotal keys deleted: {keys_deleted}")
 
 
 if __name__ == "__main__":
