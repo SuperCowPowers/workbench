@@ -33,6 +33,74 @@ class DataFrameBuilder:
         return pd.DataFrame(self.rows)
 
 
+def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: list):
+    """Compare two DataFrames and report on differences.
+
+    Args:
+        df1 (pd.DataFrame): First DataFrame to compare.
+        df2 (pd.DataFrame): Second DataFrame to compare.
+        display_columns (list): Columns to display when differences are found.
+    """
+
+    # Check if the entire dataframes are equal
+    if df1.equals(df2):
+        print("The DataFrames are equal :)")
+        return
+
+    # Report on column differences
+    df1_columns = set(df1.columns)
+    df2_columns = set(df2.columns)
+    only_in_df1 = df1_columns - df2_columns
+    only_in_df2 = df2_columns - df1_columns
+    if only_in_df1:
+        print("\nColumns only in df1:", only_in_df1)
+    if only_in_df2:
+        print("\nColumns only in df2:", only_in_df2)
+
+    # Define tolerance for float comparisons
+    epsilon = 1e-5
+    common_columns = df1_columns.intersection(df2_columns)
+
+    # Check for differences in common columns
+    for column in common_columns:
+        if pd.api.types.is_string_dtype(df1[column]) or pd.api.types.is_string_dtype(df2[column]):
+            # String comparison with NaNs treated as equal
+            differences = ~(df1[column].fillna("") == df2[column].fillna(""))
+        elif pd.api.types.is_float_dtype(df1[column]) or pd.api.types.is_float_dtype(df2[column]):
+            # Float comparison within epsilon with NaNs treated as equal
+            differences = ~((df1[column] - df2[column]).abs() <= epsilon) & ~(
+                pd.isna(df1[column]) & pd.isna(df2[column])
+            )
+        else:
+            # Other types (e.g., int) with NaNs treated as equal
+            differences = ~(df1[column].fillna(0) == df2[column].fillna(0))
+
+        # Create a merged DataFrame showing values from both DataFrames
+        merged_df = pd.DataFrame(
+            {
+                **{col: df1.loc[differences, col] for col in display_columns},
+                f"{column}_1": df1.loc[differences, column],
+                f"{column}_2": df2.loc[differences, column],
+            }
+        )
+
+        # If differences exist, display them
+        if differences.any():
+            print(f"\nColumn {column} has differences:")
+
+            # Create a merged DataFrame showing values from both DataFrames
+            merged_df = pd.DataFrame(
+                {
+                    **{col: df1.loc[differences, col] for col in display_columns},
+                    f"{column}_1": df1.loc[differences, column],
+                    f"{column}_2": df2.loc[differences, column],
+                }
+            )
+
+            # Display the merged DataFrame
+            print(merged_df)
+
+
 def get_percent_nan(df):
     log.info("DataFrame ({:d} rows)".format(len(df)))
     s = df.isna().mean().round(3) * 100.0
@@ -459,3 +527,15 @@ if __name__ == "__main__":
 
     norm_df = drop_outliers_sdev(clean_df)
     log.info(norm_df)
+
+    # Create two dataframes for comparison
+    my_df1 = test_data.person_data()
+    my_df2 = my_df1.copy()
+    compare_dataframes(my_df1, my_df2, ["Id", "Name"])
+
+    # Make a couple of differences
+    my_df2.loc[6, "Height"] = 99
+    my_df2.loc[48, "Salary"] = 99000
+    my_df2.loc[82, "Age"] = 99
+    my_df2["new_column"] = "new_value"
+    compare_dataframes(my_df1, my_df2, ["Id", "Name"])
