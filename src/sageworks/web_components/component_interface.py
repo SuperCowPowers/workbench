@@ -106,7 +106,7 @@ class ComponentInterface(ABC):
         return component_id
 
     @staticmethod
-    def display_text(text_message: str, figure_height: int = None, font_size=32) -> go.Figure:
+    def display_text(text_message: str, figure_height: int = None, font_size=24) -> go.Figure:
         """This helper method displays a text message figure for the component
         Args:
             text_message (str): The text message to display
@@ -127,7 +127,7 @@ class ComponentInterface(ABC):
             yref="paper",
             text=text_message,
             showarrow=False,
-            font=dict(size=font_size),
+            font=dict(size=font_size, color="#9999cc"),
         )
 
         layout_options = dict(

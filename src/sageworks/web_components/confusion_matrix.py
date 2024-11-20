@@ -57,6 +57,8 @@ class ConfusionMatrix(ComponentInterface):
                 z=df,
                 x=x_labels,
                 y=y_labels,
+                xgap=2,
+                ygap=2,
                 name="",
                 colorscale=color_scale,
                 zmin=0,
@@ -95,7 +97,7 @@ class ConfusionMatrix(ComponentInterface):
 
                 # For floats, we want to show 2 decimal places
                 text_value = f"{value:.2f}" if isinstance(value, float) else str(value)
-                fig.add_annotation(x=j, y=i, text=text_value, showarrow=False, font_size=14, font_color="#dddddd")
+                fig.add_annotation(x=j, y=i, text=text_value, showarrow=False, font_size=16, font_color="#dddddd")
 
         return fig
 

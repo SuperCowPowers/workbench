@@ -49,6 +49,18 @@ class RegressionPlot(ComponentInterface):
             color_continuous_scale=color_scale,
         )
 
+        # Customize axis labels
+        fig.update_layout(
+            xaxis_title=dict(
+                text=actual_col,
+                font=dict(size=18, color="#9999cc")
+            ),
+            yaxis_title=dict(
+                text="Prediction",
+                font=dict(size=18, color="#9999cc")
+            )
+        )
+
         # Just fine-tuning the dots on the scatter plot
         fig.update_traces(
             marker=dict(size=14, line=dict(width=1, color="Black")),
