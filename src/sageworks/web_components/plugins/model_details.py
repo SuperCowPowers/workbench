@@ -3,6 +3,7 @@
 import logging
 from typing import Union
 
+import dash
 # Dash Imports
 from dash import html, callback, dcc
 from dash.dependencies import Input, Output
@@ -27,6 +28,7 @@ class ModelDetails(PluginInterface):
         """Initialize the ModelDetails plugin class"""
         self.component_id = None
         self.current_model = None
+        self.skip_inference_update = False
 
         # Call the parent class constructor
         super().__init__()
@@ -54,9 +56,9 @@ class ModelDetails(PluginInterface):
         self.properties = [
             (f"{self.component_id}-header", "children"),
             (f"{self.component_id}-summary", "children"),
-            (f"{self.component_id}-metrics", "children"),
             (f"{self.component_id}-dropdown", "options"),
             (f"{self.component_id}-dropdown", "value"),
+            (f"{self.component_id}-metrics", "children"),
         ]
         self.signals = [(f"{self.component_id}-dropdown", "value")]
 
@@ -83,9 +85,10 @@ class ModelDetails(PluginInterface):
         # Populate the inference runs dropdown
         inference_runs, default_run = self.get_inference_runs()
         metrics = self.inference_metrics(default_run)
+        self.skip_inference_update = True
 
         # Return the updated property values for the plugin
-        return [header, details, metrics, inference_runs, default_run]
+        return [header, details, inference_runs, default_run, metrics]
 
     def register_internal_callbacks(self):
         @callback(
@@ -94,6 +97,10 @@ class ModelDetails(PluginInterface):
             prevent_initial_call=True,
         )
         def update_inference_run(inference_run):
+            # Trying to handle a race condition where the inference run is updated before the model
+            if self.skip_inference_update:
+                self.skip_inference_update = False
+                return dash.no_update
 
             # Update the model metrics
             metrics = self.inference_metrics(inference_run)
