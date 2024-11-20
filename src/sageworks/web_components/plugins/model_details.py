@@ -1,6 +1,7 @@
 """A Markdown Component for details/information about Models"""
 
 import logging
+from typing import Union
 
 # Dash Imports
 from dash import html, callback, no_update, dcc
@@ -87,9 +88,6 @@ class ModelDetails(PluginInterface):
     def register_internal_callbacks(self):
         @callback(Output(f"{self.component_id}-metrics", "children"), Input(f"{self.component_id}-dropdown", "value"))
         def update_inference_run(inference_run):
-            # Check for no inference run
-            if not inference_run:
-                return no_update
 
             # Update the model metrics
             metrics = self.inference_metrics(inference_run)
@@ -146,16 +144,16 @@ class ModelDetails(PluginInterface):
 
         return markdown
 
-    def inference_metrics(self, inference_run: str):
+    def inference_metrics(self, inference_run: Union[str, None]) -> str:
         """Construct the markdown string for the model metrics
 
         Args:
-            inference_run (str): The inference run to get the metrics for
+            inference_run (str): The inference run to get the metrics for (None gives a 'not found' markdown)
         Returns:
             str: A markdown string
         """
         # Model Metrics
-        meta_df = self.current_model.get_inference_metadata(inference_run)
+        meta_df = self.current_model.get_inference_metadata(inference_run) if inference_run else None
         if meta_df is None:
             test_data = "Inference Metadata Not Found"
             test_data_hash = " N/A "
