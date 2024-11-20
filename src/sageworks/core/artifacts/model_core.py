@@ -290,7 +290,7 @@ class ModelCore(Artifact):
 
         # Grab the metrics from the SageWorks Metadata (try inference first, then training)
         if capture_uuid == "latest":
-            cm = self.sageworks_meta().get("sageworks_inference_cm")
+            cm = self.confusion_matrix("auto_inference")
             return cm if cm is not None else self.confusion_matrix("model_training")
 
         # Grab the confusion matrix captured during model training (could return None)
@@ -692,7 +692,6 @@ class ModelCore(Artifact):
         # Load the training metrics and inference metrics
         self._load_training_metrics()
         self._load_inference_metrics()
-        self._load_inference_cm()
 
         # Remove the needs_onboard tag
         self.remove_health_tag("needs_onboard")
@@ -832,26 +831,6 @@ class ModelCore(Artifact):
         # Store data into the SageWorks Metadata
         metrics_storage = None if inference_metrics is None else inference_metrics.to_dict("records")
         self.upsert_sageworks_meta({"sageworks_inference_metrics": metrics_storage})
-
-    def _load_inference_cm(self, capture_uuid: str = "auto_inference"):
-        """Internal: Pull the inference Confusion Matrix for this model
-                     and load the data into the SageWorks Metadata
-
-        Args:
-            capture_uuid (str, optional): A specific capture_uuid (default: "auto_inference")
-
-        Returns:
-            pd.DataFrame: DataFrame of the inference Confusion Matrix (might be None)
-
-        Notes:
-            This may or may not exist based on whether an Endpoint ran Inference
-        """
-        s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_cm.csv"
-        inference_cm = pull_s3_data(s3_path, embedded_index=True)
-
-        # Store data into the SageWorks Metadata
-        cm_storage = None if inference_cm is None else inference_cm.to_dict("records")
-        self.upsert_sageworks_meta({"sageworks_inference_cm": cm_storage})
 
     def get_inference_metadata(self, capture_uuid: str = "auto_inference") -> Union[pd.DataFrame, None]:
         """Retrieve the inference metadata for this model
