@@ -121,9 +121,13 @@ class CloudWatchHandler(logging.Handler):
         else:
             return f"laptop/{getpass.getuser()}"
 
+    @staticmethod
     def get_unique_identifier(self, job_name):
         """Get a unique identifier for the log stream."""
-        return glue_job_run_id(job_name, self.boto3_session) or datetime.now(timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
+
+        # Note: Glue Job run Id kinda doesn't work so we'll just return the datetime
+        # return glue_job_run_id(job_name, self.boto3_session) or
+        return datetime.now(timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
 
 
 if __name__ == "__main__":
