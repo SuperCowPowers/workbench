@@ -56,6 +56,7 @@ class ModelDetails(PluginInterface):
             (f"{self.component_id}-summary", "children"),
             (f"{self.component_id}-dropdown", "options"),
             (f"{self.component_id}-dropdown", "value"),
+            (f"{self.component_id}-metrics", "children"),
         ]
         self.signals = [(f"{self.component_id}-dropdown", "value")]
 
@@ -83,10 +84,12 @@ class ModelDetails(PluginInterface):
         inference_runs, default_run = self.get_inference_runs()
 
         # Return the updated property values for the plugin
-        return [header, details, inference_runs, default_run]
+        return [header, details, inference_runs, default_run, self.inference_metrics(default_run)]
 
     def register_internal_callbacks(self):
-        @callback(Output(f"{self.component_id}-metrics", "children"), Input(f"{self.component_id}-dropdown", "value"))
+        @callback(Output(f"{self.component_id}-metrics", "children", allow_duplicate=True),
+                  Input(f"{self.component_id}-dropdown", "value"),
+                  prevent_initial_call=True)
         def update_inference_run(inference_run):
 
             # Update the model metrics
