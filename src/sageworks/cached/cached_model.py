@@ -104,6 +104,18 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         """
         return super().get_inference_predictions(capture_uuid=capture_uuid)
 
+    @CachedArtifactMixin.cache_result
+    def confusion_matrix(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
+        """Retrieve the confusion matrix for the model
+
+        Args:
+            capture_uuid (str, optional): Specific capture_uuid (default: latest)
+
+        Returns:
+            pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
+        """
+        return super().confusion_matrix(capture_uuid=capture_uuid)
+
 
 if __name__ == "__main__":
     """Exercise the CachedModel Class"""
