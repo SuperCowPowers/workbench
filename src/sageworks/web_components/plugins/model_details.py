@@ -7,7 +7,7 @@ import dash
 
 # Dash Imports
 from dash import html, callback, dcc
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.api import Model
@@ -29,7 +29,6 @@ class ModelDetails(PluginInterface):
         """Initialize the ModelDetails plugin class"""
         self.component_id = None
         self.current_model = None
-        self.skip_inference_update = False
 
         # Call the parent class constructor
         super().__init__()
@@ -50,6 +49,7 @@ class ModelDetails(PluginInterface):
                 html.H3(children="Inference Metrics"),
                 dcc.Dropdown(id=f"{self.component_id}-dropdown", className="dropdown"),
                 dcc.Markdown(id=f"{self.component_id}-metrics"),
+                dcc.Store(id=f"{self.component_id}-current-model", data=None),
             ],
         )
 
@@ -60,6 +60,7 @@ class ModelDetails(PluginInterface):
             (f"{self.component_id}-dropdown", "options"),
             (f"{self.component_id}-dropdown", "value"),
             (f"{self.component_id}-metrics", "children"),
+            (f"{self.component_id}-current-model", "data"),
         ]
         self.signals = [(f"{self.component_id}-dropdown", "value")]
 
@@ -86,22 +87,22 @@ class ModelDetails(PluginInterface):
         # Populate the inference runs dropdown
         inference_runs, default_run = self.get_inference_runs()
         metrics = self.inference_metrics(default_run)
-        self.skip_inference_update = True
 
         # Return the updated property values for the plugin
-        return [header, details, inference_runs, default_run, metrics]
+        model_name = self.current_model.uuid
+        return [header, details, inference_runs, default_run, metrics, model_name]
 
     def register_internal_callbacks(self):
         @callback(
             Output(f"{self.component_id}-metrics", "children", allow_duplicate=True),
             Input(f"{self.component_id}-dropdown", "value"),
+            State(f"{self.component_id}-current-model", "data"),
             prevent_initial_call=True,
         )
-        def update_inference_run(inference_run):
+        def update_inference_run(inference_run, current_model_name):
             # Trying to handle a race condition where the inference run is updated before the model
-            if self.skip_inference_update:
-                self.skip_inference_update = False
-                return dash.no_update
+            if current_model_name != self.current_model.uuid:
+                raise dash.exceptions.PreventUpdate
 
             # Update the model metrics
             metrics = self.inference_metrics(inference_run)
