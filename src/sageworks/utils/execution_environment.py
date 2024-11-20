@@ -125,8 +125,8 @@ def glue_job_name():
 @deprecated(version=0.9)
 def glue_job_run_id(job_name: str, session: boto3.Session) -> Union[str, None]:
     """Retrieve the Glue Job Run ID closest to the current time for the given job name.
-       Note: This mostly doesn't work, it will grab A glue job id but often not the correct one.
-             For now, I would just skip using this
+    Note: This mostly doesn't work, it will grab A glue job id but often not the correct one.
+          For now, I would just skip using this
     """
     try:
         # Set current time in UTC
