@@ -54,9 +54,9 @@ class ModelDetails(PluginInterface):
         self.properties = [
             (f"{self.component_id}-header", "children"),
             (f"{self.component_id}-summary", "children"),
+            (f"{self.component_id}-metrics", "children"),
             (f"{self.component_id}-dropdown", "options"),
             (f"{self.component_id}-dropdown", "value"),
-            (f"{self.component_id}-metrics", "children"),
         ]
         self.signals = [(f"{self.component_id}-dropdown", "value")]
 
@@ -82,9 +82,10 @@ class ModelDetails(PluginInterface):
 
         # Populate the inference runs dropdown
         inference_runs, default_run = self.get_inference_runs()
+        metrics = self.inference_metrics(default_run)
 
         # Return the updated property values for the plugin
-        return [header, details, inference_runs, default_run, self.inference_metrics(default_run)]
+        return [header, details, metrics, inference_runs, default_run]
 
     def register_internal_callbacks(self):
         @callback(
@@ -161,7 +162,7 @@ class ModelDetails(PluginInterface):
         meta_df = self.current_model.get_inference_metadata(inference_run) if inference_run else None
         if meta_df is None:
             test_data = "Inference Metadata Not Found"
-            test_data_hash = " N/A "
+            test_data_hash = " - "
             test_rows = " - "
             description = " - "
         else:
