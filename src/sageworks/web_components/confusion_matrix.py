@@ -69,9 +69,24 @@ class ConfusionMatrix(ComponentInterface):
             yaxis_title="Actual",
         )
 
-        # Now remap the x and y axis labels (so they don't show the index)
-        fig.update_xaxes(tickvals=x_labels, ticktext=df.columns, tickangle=30, tickfont_size=14)
-        fig.update_yaxes(tickvals=y_labels, ticktext=df.index, tickfont_size=14)
+        # Now remap the x and y-axis labels (so they don't show the index)
+        fig.update_xaxes(
+            tickvals=x_labels,
+            ticktext=df.columns,
+            tickangle=30,
+            tickfont_size=14,
+            automargin=True,
+            title_standoff=20,
+            title_font={"size": 18, "color": "#9999cc"},
+        )
+        fig.update_yaxes(
+            tickvals=y_labels,
+            ticktext=df.index,
+            tickfont_size=14,
+            automargin=True,
+            title_standoff=20,
+            title_font={"size": 18, "color": "#9999cc"},
+        )
 
         # Now we're going to customize the annotations
         for i, row in enumerate(df.index):
@@ -80,7 +95,7 @@ class ConfusionMatrix(ComponentInterface):
 
                 # For floats, we want to show 2 decimal places
                 text_value = f"{value:.2f}" if isinstance(value, float) else str(value)
-                fig.add_annotation(x=j, y=i, text=text_value, showarrow=False, font_size=14)
+                fig.add_annotation(x=j, y=i, text=text_value, showarrow=False, font_size=14, font_color="#dddddd")
 
         return fig
 
