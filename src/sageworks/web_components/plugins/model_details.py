@@ -99,7 +99,9 @@ class ModelDetails(PluginInterface):
         def update_inference_run(inference_run, current_model_name):
             # Trying to handle a race condition where the inference run is updated before the model
             if current_model_name != self.current_model.uuid:
-                self.log.warning(f"Header Model {current_model_name} does not match current model {self.current_model.uuid}")
+                self.log.warning(
+                    f"Header Model {current_model_name} does not match current model {self.current_model.uuid}"
+                )
                 raise dash.exceptions.PreventUpdate
 
             # Update the model metrics
