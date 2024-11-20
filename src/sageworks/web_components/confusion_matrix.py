@@ -62,7 +62,12 @@ class ConfusionMatrix(ComponentInterface):
                 zmin=0,
             )
         )
-        fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10}, height=400)
+        fig.update_layout(
+            margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10},
+            height=400,
+            xaxis_title="Predicted",
+            yaxis_title="Actual"
+        )
 
         # Now remap the x and y axis labels (so they don't show the index)
         fig.update_xaxes(tickvals=x_labels, ticktext=df.columns, tickangle=30, tickfont_size=14)
