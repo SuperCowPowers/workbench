@@ -4,6 +4,7 @@ import logging
 from typing import Union
 
 import dash
+
 # Dash Imports
 from dash import html, callback, dcc
 from dash.dependencies import Input, Output
