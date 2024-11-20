@@ -66,7 +66,7 @@ class ConfusionMatrix(ComponentInterface):
             margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10},
             height=400,
             xaxis_title="Predicted",
-            yaxis_title="Actual"
+            yaxis_title="Actual",
         )
 
         # Now remap the x and y axis labels (so they don't show the index)
