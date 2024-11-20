@@ -87,9 +87,11 @@ class ModelDetails(PluginInterface):
         return [header, details, inference_runs, default_run, self.inference_metrics(default_run)]
 
     def register_internal_callbacks(self):
-        @callback(Output(f"{self.component_id}-metrics", "children", allow_duplicate=True),
-                  Input(f"{self.component_id}-dropdown", "value"),
-                  prevent_initial_call=True)
+        @callback(
+            Output(f"{self.component_id}-metrics", "children", allow_duplicate=True),
+            Input(f"{self.component_id}-dropdown", "value"),
+            prevent_initial_call=True,
+        )
         def update_inference_run(inference_run):
 
             # Update the model metrics
