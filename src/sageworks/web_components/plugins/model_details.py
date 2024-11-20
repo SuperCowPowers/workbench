@@ -49,13 +49,11 @@ class ModelDetails(PluginInterface):
                 html.H3(children="Inference Metrics"),
                 dcc.Dropdown(id=f"{self.component_id}-dropdown", className="dropdown"),
                 dcc.Markdown(id=f"{self.component_id}-metrics"),
-                dcc.Store(id=f"{self.component_id}-current-model", data=None),
             ],
         )
 
         # Fill in plugin properties
         self.properties = [
-            (f"{self.component_id}-current-model", "data"),
             (f"{self.component_id}-header", "children"),
             (f"{self.component_id}-summary", "children"),
             (f"{self.component_id}-dropdown", "options"),
@@ -89,14 +87,13 @@ class ModelDetails(PluginInterface):
         metrics = self.inference_metrics(default_run)
 
         # Return the updated property values for the plugin
-        model_name = self.current_model.uuid
-        return [model_name, header, details, inference_runs, default_run, metrics]
+        return [header, details, inference_runs, default_run, metrics]
 
     def register_internal_callbacks(self):
         @callback(
             Output(f"{self.component_id}-metrics", "children", allow_duplicate=True),
             Input(f"{self.component_id}-dropdown", "value"),
-            State(f"{self.component_id}-current-model", "data"),
+            State(f"{self.component_id}-header", "children"),
             prevent_initial_call=True,
         )
         def update_inference_run(inference_run, current_model_name):
