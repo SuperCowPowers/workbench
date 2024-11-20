@@ -18,7 +18,7 @@ class RegressionPlot(ComponentInterface):
         # Initialize an empty scatter plot figure
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_properties(self, model: Model, inference_run: str = None) -> go.Figure:
+    def update_properties(self, model: Model, inference_run: str) -> go.Figure:
         # Get predictions for specific inference
         df = model.get_inference_predictions(inference_run)
 
