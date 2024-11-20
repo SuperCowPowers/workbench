@@ -13,4 +13,4 @@ COPY requirements-no-dash.txt requirements.txt ./
 RUN pip install --no-cache-dir -r requirements-no-dash.txt
 
 # Install SageWorks on its own layer
-RUN pip install --no-cache-dir 'sageworks[ml-tool,chem]'==0.8.66
+RUN pip install --no-cache-dir 'sageworks[ml-tool,chem]'==0.8.67
