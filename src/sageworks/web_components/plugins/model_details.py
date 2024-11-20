@@ -55,12 +55,12 @@ class ModelDetails(PluginInterface):
 
         # Fill in plugin properties
         self.properties = [
+            (f"{self.component_id}-current-model", "data"),
             (f"{self.component_id}-header", "children"),
             (f"{self.component_id}-summary", "children"),
             (f"{self.component_id}-dropdown", "options"),
             (f"{self.component_id}-dropdown", "value"),
             (f"{self.component_id}-metrics", "children"),
-            (f"{self.component_id}-current-model", "data"),
         ]
         self.signals = [(f"{self.component_id}-dropdown", "value")]
 
@@ -90,7 +90,7 @@ class ModelDetails(PluginInterface):
 
         # Return the updated property values for the plugin
         model_name = self.current_model.uuid
-        return [header, details, inference_runs, default_run, metrics, model_name]
+        return [model_name, header, details, inference_runs, default_run, metrics]
 
     def register_internal_callbacks(self):
         @callback(
