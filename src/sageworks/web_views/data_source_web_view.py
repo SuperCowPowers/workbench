@@ -100,7 +100,7 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first DataSource
-    my_data_uuid = summary["uuid"][0]
+    my_data_uuid = summary["uuid"].iloc[0]
     print(f"\nDataSourceDetails: {my_data_uuid}")
     details = data_view.data_source_details(my_data_uuid)
     pprint(details)

@@ -2,6 +2,8 @@
 
 from typing import Union
 
+import pandas as pd
+
 # SageWorks Imports
 from sageworks.core.artifacts.athena_source import AthenaSource
 from sageworks.core.artifacts.cached_artifact_mixin import CachedArtifactMixin
@@ -60,6 +62,14 @@ class CachedDataSource(CachedArtifactMixin, AthenaSource):
             Union[dict, None]: Dictionary of SageWorks metadata for this Artifact
         """
         return super().sageworks_meta()
+
+    def smart_sample(self) -> pd.DataFrame:
+        """Retrieve the Smart Sample for this DataSource.
+
+        Returns:
+            pd.DataFrame: The Smart Sample DataFrame
+        """
+        return super().smart_sample(recompute=False)
 
 
 if __name__ == "__main__":

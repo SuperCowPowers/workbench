@@ -98,7 +98,7 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first FeatureSet
-    my_feature_uuid = summary["uuid"][0]
+    my_feature_uuid = summary["uuid"].iloc[0]
     print("\nFeatureSetDetails:")
     details = feature_view.feature_set_details(my_feature_uuid)
     pprint(details)
