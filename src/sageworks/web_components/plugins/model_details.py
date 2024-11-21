@@ -103,7 +103,8 @@ class ModelDetails(PluginInterface):
         def update_inference_run(inference_run):
             # Trying to handle a race condition where the inference run is updated before the model
             if update_pause_cache.get("inference_metrics"):
-                log.important(f"Pausing Inference Metrics Update for {self.current_model.uuid}")
+                model_name = self.current_model.uuid if self.current_model else "None"
+                log.important(f"Pausing Inference Metrics Update for {model_name}")
                 return no_update
 
             # Update the model metrics
