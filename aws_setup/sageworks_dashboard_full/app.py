@@ -12,7 +12,7 @@ print(f"Account: {aws_account}")
 print(f"Region: {aws_region}")
 
 # When you want a different docker image change this line
-dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_8_67_amd64"
+dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_8_68_amd64"
 
 # SageWorks Configuration
 try:
