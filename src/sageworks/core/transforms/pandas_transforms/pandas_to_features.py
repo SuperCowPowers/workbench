@@ -49,9 +49,6 @@ class PandasToFeatures(Transform):
         self.table_format = TableFormatEnum.ICEBERG
         self.incoming_hold_out_ids = None
 
-        # Delete the existing FeatureSet if it exists
-        self.delete_existing()
-
         # These will be set in the transform method
         self.output_feature_group = None
         self.output_feature_set = None
@@ -318,7 +315,8 @@ class PandasToFeatures(Transform):
         return my_feature_group
 
     def pre_transform(self, **kwargs):
-        """Pre-Transform: Create the Feature Group"""
+        """Pre-Transform: Delete any existing FeatureSet and Create the Feature Group"""
+        self.delete_existing()
         self.output_feature_group = self.create_feature_group()
 
     def transform_impl(self):

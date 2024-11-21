@@ -48,9 +48,6 @@ class PandasToData(Transform):
             self.log.warning("Parquet format works the best in most cases please consider using it")
         self.output_format = output_format
 
-        # Delete the existing DataSource if it exists
-        self.delete_existing()
-
     def set_input(self, input_df: pd.DataFrame):
         """Set the DataFrame Input for this Transform"""
         self.output_df = input_df.copy()
@@ -88,6 +85,10 @@ class PandasToData(Transform):
             df[c] = df[c].map(datetime_to_iso8601)
             df[c] = df[c].astype(pd.StringDtype())
         return df
+
+    def pre_transform(self, **kwargs):
+        """Pre-Transform: Delete the existing DataSource if it exists"""
+        self.delete_existing()
 
     def transform_impl(self, overwrite: bool = True, **kwargs):
         """Convert the Pandas DataFrame into Parquet Format in the SageWorks S3 Bucket, and
