@@ -171,7 +171,10 @@ class ModelDetails(PluginInterface):
             str: A markdown string
         """
         # Model Metrics
-        meta_df = self.current_model.get_inference_metadata(inference_run) if inference_run else None
+        if self.current_model is None:
+            meta_df = None
+        else:
+            meta_df = self.current_model.get_inference_metadata(inference_run) if inference_run else None
         if meta_df is None:
             test_data = "Inference Metadata Not Found"
             test_data_hash = " - "
