@@ -5,21 +5,16 @@ from typing import Union
 
 
 # Dash Imports
-from dash import html, callback, dcc, no_update
-from dash.dependencies import Input, Output
+from dash import html, callback, dcc
+from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
-from sageworks.api import Model
+from sageworks.cached.cached_model import CachedModel
 from sageworks.utils.markdown_utils import health_tag_markdown
 from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from sageworks.utils.sageworks_cache import SageWorksCache
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
-
-# We have some race conditions that we need to handle so
-# we will use a cache to pause the updates for a short time
-update_pause_cache = SageWorksCache(prefix="dashboard:update_pause", expire=1)
 
 
 class ModelDetails(PluginInterface):
@@ -32,7 +27,7 @@ class ModelDetails(PluginInterface):
     def __init__(self):
         """Initialize the ModelDetails plugin class"""
         self.component_id = None
-        self.current_model = None
+        self.current_model = None  # Don't use this in callbacks (not thread safe)
 
         # Call the parent class constructor
         super().__init__()
@@ -69,7 +64,7 @@ class ModelDetails(PluginInterface):
         # Return the container
         return container
 
-    def update_properties(self, model: Model, **kwargs) -> list:
+    def update_properties(self, model: CachedModel, **kwargs) -> list:
         """Update the properties for the plugin.
 
         Args:
@@ -80,7 +75,6 @@ class ModelDetails(PluginInterface):
             list: A list of the updated property values for the plugin
         """
         log.important(f"Updating Plugin with Model: {model.uuid} and kwargs: {kwargs}")
-        update_pause_cache.set("inference_metrics", True)
 
         # Update the header and the details
         self.current_model = model
@@ -98,14 +92,12 @@ class ModelDetails(PluginInterface):
         @callback(
             Output(f"{self.component_id}-metrics", "children", allow_duplicate=True),
             Input(f"{self.component_id}-dropdown", "value"),
+            State(f"{self.component_id}-header", "children"),
             prevent_initial_call=True,
         )
-        def update_inference_run(inference_run):
-            # Trying to handle a race condition where the inference run is updated before the model
-            if update_pause_cache.get("inference_metrics"):
-                model_name = self.current_model.uuid if self.current_model else "None"
-                log.important(f"Pausing Inference Metrics Update for {model_name}")
-                return no_update
+        def update_inference_run(inference_run, model_name):
+            # Suboptimal: We need to create the model object again
+            self.current_model = CachedModel(model_name)
 
             # Update the model metrics
             metrics = self.inference_metrics(inference_run)
