@@ -270,13 +270,6 @@ class PandasToFeatures(Transform):
         self._ensure_id_column()
         self._ensure_event_time()
 
-        # We need to convert some of our column types to the correct types
-        # Feature Store only supports these data types:
-        # - Integral
-        # - Fractional
-        # - String (timestamp/datetime types need to be converted to string)
-        self.output_df = self.convert_column_types(self.output_df)
-
         # Check for a training column (SageWorks uses dynamic training columns)
         if "training" in self.output_df.columns:
             self.log.important(
@@ -285,6 +278,13 @@ class PandasToFeatures(Transform):
             )
             self.incoming_hold_out_ids = self.output_df[~self.output_df["training"]][self.id_column].tolist()
             self.output_df = self.output_df.drop(columns=["training"])
+
+        # We need to convert some of our column types to the correct types
+        # Feature Store only supports these data types:
+        # - Integral
+        # - Fractional
+        # - String (timestamp/datetime types need to be converted to string)
+        self.output_df = self.convert_column_types(self.output_df)
 
     def create_feature_group(self):
         """Create a Feature Group, load our Feature Definitions, and wait for it to be ready"""
@@ -422,7 +422,7 @@ if __name__ == "__main__":
 
     # Test setting a training column
     data_df["training"] = False
-    data_df.loc[0:10, "training"] = True
+    data_df.loc[0:80, "training"] = True
 
     # Create my DF to Feature Set Transform (with one-hot encoding)
     df_to_features = PandasToFeatures("test_features")
