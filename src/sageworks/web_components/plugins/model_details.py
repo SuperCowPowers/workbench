@@ -3,11 +3,10 @@
 import logging
 from typing import Union
 
-import dash
 
 # Dash Imports
 from dash import html, callback, dcc, no_update
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 
 # SageWorks Imports
 from sageworks.api import Model
