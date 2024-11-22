@@ -52,7 +52,7 @@ class DFStore(AWSDFStore):
         Returns:
             list: A list of all the objects in the data_store prefix.
         """
-        return super().list()
+        return super().list(include_cache=include_cache)
 
     def summary(self, include_cache: bool = False) -> pd.DataFrame:
         """Return a nicely formatted summary of object locations, sizes (in MB), and modified dates.
@@ -63,7 +63,7 @@ class DFStore(AWSDFStore):
         Returns:
             pd.DataFrame: A formatted DataFrame with the summary details.
         """
-        return super().summary()
+        return super().summary(include_cache=include_cache)
 
     def details(self, include_cache: bool = False) -> pd.DataFrame:
         """Return a DataFrame with detailed metadata for all objects in the data_store prefix.
@@ -74,7 +74,7 @@ class DFStore(AWSDFStore):
         Returns:
             pd.DataFrame: A DataFrame with detailed metadata for all objects in the data_store prefix.
         """
-        return super().details()
+        return super().details(include_cache=include_cache)
 
     def check(self, location: str) -> bool:
         """Check if a DataFrame exists at the specified location

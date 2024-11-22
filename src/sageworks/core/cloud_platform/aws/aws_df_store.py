@@ -131,7 +131,7 @@ class AWSDFStore:
 
             # Apply the exclude_prefix filter if set
             cache_prefix = "/sageworks/dataframe_cache/"
-            if not self.include_cache:
+            if not include_cache:
                 df = df[~df["location"].str.startswith(cache_prefix)]
 
             return df
