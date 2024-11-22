@@ -1,4 +1,5 @@
 """DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy"""
+
 from datetime import datetime
 from typing import Union
 import logging
