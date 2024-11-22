@@ -36,18 +36,16 @@ class AWSDFStore:
         ```
     """
 
-    def __init__(self, path_prefix: Union[str, None] = None, exclude_prefix: str = "/sageworks"):
+    def __init__(self, path_prefix: Union[str, None] = None):
         """AWSDFStore Init Method
 
         Args:
             path_prefix (Union[str, None], optional): Path prefix for storage locations (Defaults to None)
-            exclude_prefix (str, optional): Prefix to exclude from listings (Defaults to "/sageworks")
         """
         self.log = logging.getLogger("sageworks")
         self._base_prefix = "df_store/"
         self.path_prefix = self._base_prefix + path_prefix if path_prefix else self._base_prefix
         self.path_prefix = re.sub(r"/+", "/", self.path_prefix)  # Collapse slashes
-        self.exclude_prefix = exclude_prefix
 
         # Initialize a SageWorks Session and retrieve the S3 bucket from ConfigManager
         config = ConfigManager()
@@ -55,9 +53,16 @@ class AWSDFStore:
         self.boto3_session = AWSAccountClamp().boto3_session
         self.s3_client = self.boto3_session.client("s3")
 
-    def list(self) -> list:
-        """List all objects in the data_store prefix."""
-        df = self.summary()
+    def list(self, include_cache: bool = False) -> list:
+        """List all objects in the data_store prefix
+
+        Args:
+            include_cache (bool, optional): Include cache objects in the list (Defaults to False)
+
+        Returns:
+            list: A list of all the objects in the data_store prefix.
+        """
+        df = self.summary(include_cache=i)
         return df["location"].tolist()
 
     def last_modified(self, location: str) -> Union[datetime, None]:
@@ -80,9 +85,13 @@ class AWSDFStore:
 
         return None
 
-    def summary(self) -> pd.DataFrame:
-        """Return a nicely formatted summary of object locations, sizes (in MB), and modified dates."""
-        df = self.details()
+    def summary(self, include_cache: bool = False) -> pd.DataFrame:
+        """Return a nicely formatted summary of object locations, sizes (in MB), and modified dates.
+
+        Args:
+            include_cache (bool, optional): Include cache objects in the summary (Defaults to False)
+        """
+        df = self.details(include_cache=include_cache)
 
         # Create a formatted DataFrame
         formatted_df = pd.DataFrame(
@@ -94,8 +103,12 @@ class AWSDFStore:
         )
         return formatted_df
 
-    def details(self) -> pd.DataFrame:
-        """Return detailed metadata for all objects, optionally excluding the specified prefix."""
+    def details(self, include_cache: bool = False) -> pd.DataFrame:
+        """Return detailed metadata for all objects, optionally excluding the specified prefix.
+
+        Args:
+            include_cache (bool, optional): Include cache objects in the details (Defaults to False)
+        """
         try:
             response = self.s3_client.list_objects_v2(Bucket=self.sageworks_bucket, Prefix=self.path_prefix)
             if "Contents" not in response:
@@ -117,8 +130,9 @@ class AWSDFStore:
             df = pd.DataFrame(data, columns=["location", "s3_file", "size", "modified"])
 
             # Apply the exclude_prefix filter if set
-            if self.exclude_prefix:
-                df = df[~df["location"].str.startswith(self.exclude_prefix)]
+            cache_prefix = "/sageworks/dataframe_cache/"
+            if not self.include_cache:
+                df = df[~df["location"].str.startswith(cache_prefix)]
 
             return df
 

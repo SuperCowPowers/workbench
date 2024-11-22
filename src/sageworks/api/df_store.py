@@ -1,5 +1,5 @@
 """DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy"""
-
+from datetime import datetime
 from typing import Union
 import logging
 import pandas as pd
@@ -42,24 +42,33 @@ class DFStore(AWSDFStore):
         # Initialize the SuperClass
         super().__init__(path_prefix=path_prefix)
 
-    def list(self) -> list:
+    def list(self, include_cache: bool = False) -> list:
         """List all the objects in the data_store prefix.
+
+        Args:
+            include_cache (bool, optional): Include cache objects in the list (Defaults to False).
 
         Returns:
             list: A list of all the objects in the data_store prefix.
         """
         return super().list()
 
-    def summary(self) -> pd.DataFrame:
+    def summary(self, include_cache: bool = False) -> pd.DataFrame:
         """Return a nicely formatted summary of object locations, sizes (in MB), and modified dates.
+
+        Args:
+            include_cache (bool, optional): Include cache objects in the summary (Defaults to False).
 
         Returns:
             pd.DataFrame: A formatted DataFrame with the summary details.
         """
         return super().summary()
 
-    def details(self) -> pd.DataFrame:
+    def details(self, include_cache: bool = False) -> pd.DataFrame:
         """Return a DataFrame with detailed metadata for all objects in the data_store prefix.
+
+        Args:
+            include_cache (bool, optional): Include cache objects in the details (Defaults to False).
 
         Returns:
             pd.DataFrame: A DataFrame with detailed metadata for all objects in the data_store prefix.
@@ -99,6 +108,17 @@ class DFStore(AWSDFStore):
             data (Union[pd.DataFrame, pd.Series]): The data to be stored.
         """
         super().upsert(location, data)
+
+    def last_modified(self, location: str) -> Union[datetime, None]:
+        """Get the last modified date of the DataFrame at the specified location.
+
+        Args:
+            location (str): The location of the data to check.
+
+        Returns:
+            Union[datetime, None]: The last modified date of the DataFrame or None if not found.
+        """
+        return super().last_modified(location)
 
     def delete(self, location: str):
         """Delete a DataFrame from the AWS S3.
