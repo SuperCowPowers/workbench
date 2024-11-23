@@ -371,6 +371,10 @@ class ModelCore(Artifact):
             return "-"
         return self.latest_model["CreationTime"]
 
+    def hash(self) -> str:
+        """Return the hash for this artifact"""
+        return "TBD"
+
     def register_endpoint(self, endpoint_name: str):
         """Add this endpoint to the set of registered endpoints for the model
 
