@@ -3,7 +3,7 @@
 import time
 from datetime import datetime
 import urllib.parse
-from typing import Union
+from typing import Union, Optional
 from enum import Enum
 import botocore
 from botocore.exceptions import ClientError
@@ -18,6 +18,7 @@ from sagemaker.model import Model as SagemakerModel
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
 from sageworks.utils.aws_utils import newest_path, pull_s3_data
+from sageworks.utils.s3_utils import get_s3_etag
 
 
 class ModelType(Enum):
@@ -371,9 +372,14 @@ class ModelCore(Artifact):
             return "-"
         return self.latest_model["CreationTime"]
 
-    def hash(self) -> str:
-        """Return the hash for this artifact"""
-        return
+    def hash(self) -> Optional[str]:
+        """Return the hash for this artifact
+
+        Returns:
+            Optional[str]: The hash for this artifact
+        """
+        model_url = self.get_model_data_url()
+        return get_s3_etag(model_url, self.boto3_session)
 
     def register_endpoint(self, endpoint_name: str):
         """Add this endpoint to the set of registered endpoints for the model
@@ -708,6 +714,18 @@ class ModelCore(Artifact):
         self.details(recompute=True)
         return True
 
+    def get_model_data_url(self) -> Optional[str]:
+        """Retrieve the ModelDataUrl from the model's AWS metadata.
+
+        Returns:
+            Optional[str]: The ModelDataUrl if available, otherwise None.
+        """
+        meta = self.aws_meta()
+        try:
+            return meta["ModelPackageList"][0]["InferenceSpecification"]["Containers"][0]["ModelDataUrl"]
+        except (KeyError, IndexError, TypeError):
+            return None
+
     def delete(self):
         """Delete the Model Packages and the Model Group"""
         if not self.exists():
@@ -964,7 +982,7 @@ class ModelCore(Artifact):
             capture_uuid (str, optional): Specific capture_uuid (default: training_holdout)
 
         Returns:
-            pd.DataFrame: Dataframe of the shapley values for the prediction dataframe
+            pd.DataFrame: Dataframe(s) of the shapley values or None if not found
 
         Notes:
             This may or may not exist based on whether an Endpoint ran Shapley

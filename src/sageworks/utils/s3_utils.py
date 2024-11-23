@@ -8,8 +8,6 @@ from typing import Optional
 import logging
 
 # SageWorks imports
-from sageworks.utils.performance_utils import performance
-
 log = logging.getLogger("sageworks")
 
 
@@ -78,7 +76,6 @@ def ensure_s3_bucket_and_prefix(s3_uri: str, session: boto3.session.Session):
         s3.put_object(Bucket=bucket, Key=f"{prefix.rstrip('/')}/.placeholder", Body=b"")
 
 
-@performance
 def compute_parquet_hash(s3_uri: str, session: boto3.session.Session) -> str:
     """
     Compute a hash for a set of Parquet files.

@@ -207,7 +207,7 @@ class EndpointCore(Artifact):
 
     def hash(self) -> str:
         """Return the hash for this artifact"""
-        return "TBD"
+        return ModelCore(self.model_name).hash()
 
     def endpoint_metrics(self) -> Union[pd.DataFrame, None]:
         """Return the metrics for this endpoint
