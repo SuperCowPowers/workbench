@@ -245,6 +245,10 @@ class FeatureSetCore(Artifact):
         # Note: We can't currently figure out how to this from AWS Metadata
         return self.feature_meta["CreationTime"]
 
+    def hash(self) -> str:
+        """Return the hash for this artifact"""
+        return self.data_source.hash()
+
     def get_data_source(self) -> DataSourceFactory:
         """Return the underlying DataSource object"""
         return self.data_source

@@ -205,6 +205,10 @@ class EndpointCore(Artifact):
         """Return the datetime when this artifact was last modified"""
         return self.endpoint_meta["LastModifiedTime"]
 
+    def hash(self) -> str:
+        """Return the hash for this artifact"""
+        return "TBD"
+
     def endpoint_metrics(self) -> Union[pd.DataFrame, None]:
         """Return the metrics for this endpoint
 

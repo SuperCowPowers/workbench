@@ -134,6 +134,10 @@ class GraphCore(Artifact):
         response = self.s3_client.head_object(Bucket=self.sageworks_bucket, Key=f"graphs/{self.uuid}.json")
         return response["LastModified"]
 
+    def hash(self) -> str:
+        """Get the hash for this graph artifact"""
+        return "TBD"
+
     def arn(self):
         """AWS ARN (Amazon Resource Name) for this graph artifact"""
         return f"arn:aws:s3:::{self.sageworks_bucket}/graphs/{self.uuid}.json"

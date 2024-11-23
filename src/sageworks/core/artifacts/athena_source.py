@@ -15,6 +15,7 @@ from sageworks.utils.datetime_utils import convert_all_to_iso8601
 from sageworks.algorithms import sql
 from sageworks.utils.json_utils import CustomEncoder
 from sageworks.utils.aws_utils import decode_value
+from sageworks.utils.athena_utils import compute_athena_table_hash
 from sageworks.core.cloud_platform.aws.cache_dataframe import cache_dataframe
 
 
@@ -164,6 +165,10 @@ class AthenaSource(DataSourceAbstract):
     def modified(self) -> datetime:
         """Return the datetime when this artifact was last modified"""
         return self.data_source_meta["UpdateTime"]
+
+    def hash(self) -> str:
+        """Get the hash for this AthenaSource Artifact"""
+        return compute_athena_table_hash(self.database, self.table, self.boto3_session)
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""

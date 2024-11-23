@@ -199,6 +199,11 @@ class Artifact(ABC):
         pass
 
     @abstractmethod
+    def hash(self) -> str:
+        """Return the hash of this artifact, useful for content checking"""
+        pass
+
+    @abstractmethod
     def arn(self):
         """AWS ARN (Amazon Resource Name) for this artifact"""
         pass

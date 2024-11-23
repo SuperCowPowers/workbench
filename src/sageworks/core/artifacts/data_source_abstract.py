@@ -6,6 +6,7 @@ import time
 
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
+from sageworks.utils.deprecated_utils import deprecated
 
 from typing import TYPE_CHECKING
 
@@ -32,7 +33,13 @@ class DataSourceAbstract(Artifact):
         # Call superclass post_init
         super().__post_init__()
 
+    @deprecated(version="0.9")
     def get_database(self) -> str:
+        """Get the database for this Data Source"""
+        return self._database
+
+    @property
+    def database(self) -> str:
         """Get the database for this Data Source"""
         return self._database
 
