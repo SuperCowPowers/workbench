@@ -35,7 +35,7 @@ def get_s3_etag(s3_uri: str, session: boto3.session.Session) -> Optional[str]:
     Returns:
         Optional[str]: The ETag of the object if it exists, otherwise None.
     """
-    s3 = session.client('s3')
+    s3 = session.client("s3")
 
     try:
         # Parse bucket and key from the S3 URI
