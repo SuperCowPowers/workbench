@@ -1,6 +1,6 @@
 # SageWorks Blogs
 !!! tip inline end "Just Getting Started?"
-    The SageWorks Blogs is a great way to see what's possible with SageWorks. Also if you're ready to just in the [API Classes](../api_classes/overview.md) will give you details on the SageWorks ML Pipeline Classes.
+    The SageWorks Blogs is a great way to see what's possible with SageWorks. Also if you're ready to jump in the [API Classes](../api_classes/overview.md) will give you details on the SageWorks ML Pipeline Classes.
 
 ## Blogs
 
