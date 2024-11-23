@@ -99,7 +99,7 @@ def compute_athena_table_hash(database: str, table: str, session: boto3.session,
     # Retrieve hash query result from S3
     obj = s3.get_object(Bucket=bucket, Key=key)
     table_hash = obj["Body"].read().decode("utf-8").splitlines()[1]  # Skip header row
-    table_hash = table_hash.replace(" ", "").replace("\"", "")  # Remove spaces and quotes from the hash
+    table_hash = table_hash.replace(" ", "").replace('"', "")  # Remove spaces and quotes from the hash
 
     # Clean up the temporary result files
     wr.s3.delete_objects(path=s3_scratch)
