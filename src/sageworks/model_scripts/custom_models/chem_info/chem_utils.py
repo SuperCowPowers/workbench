@@ -188,7 +188,9 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
         try:
             return Chem.MolToSmiles(tautomer_enumerator.Canonicalize(mol))
         except Exception as e:
-            log.warning(f"Canonicalization failed for molecule: {Chem.MolToSmiles(mol) if mol else 'Invalid molecule'}, error: {str(e)}")
+            log.warning(
+                f"Canonicalization failed: {Chem.MolToSmiles(mol) if mol else 'Invalid molecule'}, error: {str(e)}"
+            )
             return pd.NA
 
     df["canonical_tautomer"] = df["rdkit_molecule"].apply(safe_canonicalize)
