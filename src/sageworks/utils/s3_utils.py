@@ -2,6 +2,7 @@
 
 import os
 import boto3
+from botocore.exceptions import ClientError
 import logging
 
 # Get the SageWorks Logger
@@ -21,6 +22,36 @@ def read_s3_file(s3_path: str) -> str:
     bucket, key = s3_path.replace("s3://", "").split("/", 1)
     response = s3_client.get_object(Bucket=bucket, Key=key)
     return response["Body"].read().decode("utf-8")
+
+
+def ensure_s3_bucket_and_prefix(s3_uri: str, session: boto3.session.Session):
+    """
+    Ensure the S3 bucket and prefix exist, creating them if necessary.
+
+    Args:
+        s3_uri (str): The S3 URI (e.g., 's3://bucket-name/prefix/').
+        session (boto3.session.Session): The boto3 session.
+    """
+    s3 = session.client('s3')
+
+    # Parse bucket and prefix from the S3 path
+    bucket, *prefix_parts = s3_uri.replace("s3://", "").split("/", 1)
+    prefix = prefix_parts[0] if prefix_parts else ""
+
+    # Ensure bucket exists
+    try:
+        s3.head_bucket(Bucket=bucket)
+    except ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            print(f"Creating bucket: {bucket}")
+            s3.create_bucket(Bucket=bucket)
+        else:
+            raise e
+
+    # Ensure prefix exists by creating a placeholder object
+    if prefix:
+        print(f"Ensuring prefix: {prefix}")
+        s3.put_object(Bucket=bucket, Key=f"{prefix.rstrip('/')}/.placeholder", Body=b"")
 
 
 def copy_s3_files_to_local(s3_path: str, local_path: str):
@@ -51,7 +82,22 @@ if __name__ == "__main__":
     """Exercise the S3 Utilities"""
     import tempfile
 
+    # Get our Account Clamp and S3 Bucket
+    from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+    from sageworks.utils.config_manager import ConfigManager
+    session = AWSAccountClamp().boto3_session
+    sageworks_bucket = ConfigManager().get_config("SAGEWORKS_BUCKET")
+
+    # Setup a temporary S3 prefix for the Athena output
+    s3_scratch = f"s3://{sageworks_bucket}/temp/athena_output"
+
+    # Check if a bucket and prefix exist
+    print(f"Ensuring bucket and prefix exist: {s3_scratch}")
+    ensure_s3_bucket_and_prefix(s3_scratch, session)
+
     # Copy S3 files to local directory
+    """
     s3_path = "s3://sandbox-sageworks-artifacts/sageworks_plugins"
     local_path = tempfile.mkdtemp()
     copy_s3_files_to_local(s3_path, local_path)
+    """
