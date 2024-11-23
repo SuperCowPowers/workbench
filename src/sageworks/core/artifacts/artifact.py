@@ -200,7 +200,7 @@ class Artifact(ABC):
 
     @abstractmethod
     def hash(self) -> str:
-        """Return the hash of this artifact, useful for content checking"""
+        """Return the hash of this artifact, useful for content validation"""
         pass
 
     @abstractmethod

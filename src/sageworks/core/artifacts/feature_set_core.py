@@ -246,8 +246,12 @@ class FeatureSetCore(Artifact):
         return self.feature_meta["CreationTime"]
 
     def hash(self) -> str:
-        """Return the hash for this artifact"""
+        """Return the hash for the set of Parquet files for this artifact"""
         return self.data_source.hash()
+
+    def table_hash(self) -> str:
+        """Return the hash for the Athena table"""
+        return self.data_source.table_hash()
 
     def get_data_source(self) -> DataSourceFactory:
         """Return the underlying DataSource object"""

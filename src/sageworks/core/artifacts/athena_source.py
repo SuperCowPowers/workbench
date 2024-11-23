@@ -16,6 +16,7 @@ from sageworks.algorithms import sql
 from sageworks.utils.json_utils import CustomEncoder
 from sageworks.utils.aws_utils import decode_value
 from sageworks.utils.athena_utils import compute_athena_table_hash
+from sageworks.utils.s3_utils import compute_parquet_hash
 from sageworks.core.cloud_platform.aws.cache_dataframe import cache_dataframe
 
 
@@ -167,7 +168,12 @@ class AthenaSource(DataSourceAbstract):
         return self.data_source_meta["UpdateTime"]
 
     def hash(self) -> str:
-        """Get the hash for this AthenaSource Artifact"""
+        """Get the hash for the set of Parquet files used for this Artifact"""
+        s3_uri = self.s3_storage_location()
+        return compute_parquet_hash(s3_uri, self.boto3_session)
+
+    def table_hash(self) -> str:
+        """Get the table hash for this AthenaSource"""
         s3_scratch = f"s3://{self.sageworks_bucket}/temp/athena_output"
         return compute_athena_table_hash(self.database, self.table, self.boto3_session, s3_scratch)
 
