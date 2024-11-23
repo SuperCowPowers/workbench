@@ -67,31 +67,28 @@ def compute_parquet_hash(s3_uri: str, session: boto3.session.Session) -> str:
     Returns:
         str: Composite hash for a set of Parquet files
     """
-    import hashlib
-    import logging
     log = logging.getLogger("sageworks")
-
-    s3 = session.client('s3')
+    s3 = session.client("s3")
 
     # Parse bucket and prefix from the S3 URI
     bucket, prefix = s3_uri.replace("s3://", "").split("/", 1)
 
     # Ensure the prefix ends with a slash to match the exact directory
-    if not prefix.endswith('/'):
-        prefix += '/'
+    if not prefix.endswith("/"):
+        prefix += "/"
 
     # Initialize MD5 hash object
     md5_hash = hashlib.md5()
 
     # Use paginator to iterate through objects in the S3 prefix
-    paginator = s3.get_paginator('list_objects_v2')
+    paginator = s3.get_paginator("list_objects_v2")
     for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
-        for obj in page.get('Contents', []):
+        for obj in page.get("Contents", []):
             # Ensure the file is directly under the desired prefix
-            if obj['Key'].startswith(prefix) and obj['Key'].endswith('.parquet'):
+            if obj["Key"].startswith(prefix) and obj["Key"].endswith(".parquet"):
                 log.debug(f"Processing object: {obj['Key']}")
-                etag = obj['ETag'].strip('"')  # Remove quotes around the ETag
-                md5_hash.update(etag.encode('utf-8'))  # Add ETag to the composite hash
+                etag = obj["ETag"].strip('"')  # Remove quotes around the ETag
+                md5_hash.update(etag.encode("utf-8"))  # Add ETag to the composite hash
 
     return md5_hash.hexdigest()
 
