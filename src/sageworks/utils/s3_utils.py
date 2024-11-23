@@ -32,7 +32,7 @@ def ensure_s3_bucket_and_prefix(s3_uri: str, session: boto3.session.Session):
         s3_uri (str): The S3 URI (e.g., 's3://bucket-name/prefix/').
         session (boto3.session.Session): The boto3 session.
     """
-    s3 = session.client('s3')
+    s3 = session.client("s3")
 
     # Parse bucket and prefix from the S3 path
     bucket, *prefix_parts = s3_uri.replace("s3://", "").split("/", 1)
@@ -42,7 +42,7 @@ def ensure_s3_bucket_and_prefix(s3_uri: str, session: boto3.session.Session):
     try:
         s3.head_bucket(Bucket=bucket)
     except ClientError as e:
-        if e.response['Error']['Code'] == '404':
+        if e.response["Error"]["Code"] == "404":
             print(f"Creating bucket: {bucket}")
             s3.create_bucket(Bucket=bucket)
         else:
@@ -80,11 +80,11 @@ def copy_s3_files_to_local(s3_path: str, local_path: str):
 
 if __name__ == "__main__":
     """Exercise the S3 Utilities"""
-    import tempfile
 
     # Get our Account Clamp and S3 Bucket
     from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
     from sageworks.utils.config_manager import ConfigManager
+
     session = AWSAccountClamp().boto3_session
     sageworks_bucket = ConfigManager().get_config("SAGEWORKS_BUCKET")
 
@@ -97,6 +97,7 @@ if __name__ == "__main__":
 
     # Copy S3 files to local directory
     """
+    import tempfile
     s3_path = "s3://sandbox-sageworks-artifacts/sageworks_plugins"
     local_path = tempfile.mkdtemp()
     copy_s3_files_to_local(s3_path, local_path)

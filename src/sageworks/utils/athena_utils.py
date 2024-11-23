@@ -19,20 +19,20 @@ def compute_athena_table_hash(database: str, table: str, session: boto3.session,
     Returns:
         str: MD5 hash of the table content
     """
-    athena = session.client('athena')
-    s3 = session.client('s3')
+    athena = session.client("athena")
+    s3 = session.client("s3")
 
     def check_query_status(execution_id):
         """Check the status of an Athena query and return detailed failure info if applicable."""
         query_execution = athena.get_query_execution(QueryExecutionId=execution_id)
-        status = query_execution['QueryExecution']['Status']
-        state = status['State']
+        status = query_execution["QueryExecution"]["Status"]
+        state = status["State"]
 
-        if state == 'FAILED':
-            reason = status.get('StateChangeReason', 'No additional details provided.')
+        if state == "FAILED":
+            reason = status.get("StateChangeReason", "No additional details provided.")
             print(f"Query failed. Reason: {reason}")
             raise RuntimeError(f"Athena query failed with reason: {reason}")
-        elif state == 'CANCELLED':
+        elif state == "CANCELLED":
             print("Query was cancelled.")
             raise RuntimeError("Athena query was cancelled.")
         return state
@@ -47,20 +47,20 @@ def compute_athena_table_hash(database: str, table: str, session: boto3.session,
 
     schema_execution_id = athena.start_query_execution(
         QueryString=schema_query,
-        QueryExecutionContext={'Database': 'information_schema'},
-        ResultConfiguration={'OutputLocation': s3_scratch},
-    )['QueryExecutionId']
+        QueryExecutionContext={"Database": "information_schema"},
+        ResultConfiguration={"OutputLocation": s3_scratch},
+    )["QueryExecutionId"]
 
     # Wait for schema query to complete
     while True:
         state = check_query_status(schema_execution_id)
-        if state in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
+        if state in ["SUCCEEDED", "FAILED", "CANCELLED"]:
             break
         time.sleep(1)
 
     # Retrieve schema query results
     schema_result = athena.get_query_results(QueryExecutionId=schema_execution_id)
-    columns = [row['Data'][0]['VarCharValue'] for row in schema_result['ResultSet']['Rows'][1:]]  # Skip header
+    columns = [row["Data"][0]["VarCharValue"] for row in schema_result["ResultSet"]["Rows"][1:]]  # Skip header
 
     # Step 2: Build the hash query dynamically
     column_concat = ", '|', ".join([f"CAST({col} AS VARCHAR)" for col in columns])
@@ -80,26 +80,26 @@ def compute_athena_table_hash(database: str, table: str, session: boto3.session,
 
     hash_execution_id = athena.start_query_execution(
         QueryString=hash_query,
-        QueryExecutionContext={'Database': database},
-        ResultConfiguration={'OutputLocation': s3_scratch},
-    )['QueryExecutionId']
+        QueryExecutionContext={"Database": database},
+        ResultConfiguration={"OutputLocation": s3_scratch},
+    )["QueryExecutionId"]
 
     # Wait for hash query to complete
     while True:
         state = check_query_status(hash_execution_id)
-        if state in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
+        if state in ["SUCCEEDED", "FAILED", "CANCELLED"]:
             break
         time.sleep(1)
 
     # Retrieve the S3 location of the hash query result
     query_execution = athena.get_query_execution(QueryExecutionId=hash_execution_id)
-    result_location = query_execution['QueryExecution']['ResultConfiguration']['OutputLocation']
+    result_location = query_execution["QueryExecution"]["ResultConfiguration"]["OutputLocation"]
     bucket, key = result_location.replace("s3://", "").split("/", 1)
 
     # Retrieve hash query result from S3
     obj = s3.get_object(Bucket=bucket, Key=key)
-    table_hash = obj['Body'].read().decode('utf-8').splitlines()[1]  # Skip header row
-    table_hash = table_hash.replace(" ", "")  # Remove spaces from the hash
+    table_hash = obj["Body"].read().decode("utf-8").splitlines()[1]  # Skip header row
+    table_hash = table_hash.replace(" ", "").replace("\"", "")  # Remove spaces and quotes from the hash
 
     # Clean up the temporary result files
     wr.s3.delete_objects(path=s3_scratch)

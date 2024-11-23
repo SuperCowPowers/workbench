@@ -168,7 +168,8 @@ class AthenaSource(DataSourceAbstract):
 
     def hash(self) -> str:
         """Get the hash for this AthenaSource Artifact"""
-        return compute_athena_table_hash(self.database, self.table, self.boto3_session)
+        s3_scratch = f"s3://{self.sageworks_bucket}/temp/athena_output"
+        return compute_athena_table_hash(self.database, self.table, self.boto3_session, s3_scratch)
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
