@@ -8,13 +8,13 @@ from sageworks.utils.sageworks_cache import disable_refresh
 models = CachedMeta().models()["Model Group"].tolist()
 # models = models[:10]  # Ten for testing
 
-TEST_NORMAL = False
-TEST_CACHE_REFRESH = False
-TEST_CACHE_NO_REFRESH = True
+TEST_NORMAL = True
+TEST_CACHE_REFRESH = True
+TEST_CACHE_NO_REFRESH = False
 
 # Normal Models
 if TEST_NORMAL:
-    print("Model()")
+    print("\nModel()\n")
     for model_name in models:
         start_time = time.time()
         model = Model(model_name)
@@ -23,7 +23,7 @@ if TEST_NORMAL:
 
 # Cached Models (Refresh Enabled)
 if TEST_CACHE_REFRESH:
-    print("CachedModel()")
+    print("\n\nCachedModel()\n")
     for model_name in models:
         start_time = time.time()
         model = CachedModel(model_name)
@@ -33,7 +33,7 @@ if TEST_CACHE_REFRESH:
 if TEST_CACHE_NO_REFRESH:
     no_refresh_start_time = time.time()
     with disable_refresh():
-        print("CachedModel() No Refresh")
+        print("\n\nCachedModel() No Refresh\n")
         for model_name in models:
             start_time = time.time()
             model = CachedModel(model_name)
