@@ -155,6 +155,12 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=2048) -> pd.Da
     return df
 
 
+def canonicalize(smiles):
+    """Generate RDKit's canonical SMILES for a given input."""
+    mol = Chem.MolFromSmiles(smiles)
+    return Chem.MolToSmiles(mol) if mol else None
+
+
 def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
     """Perform tautomer enumeration and canonicalization on the DataFrame.
 
@@ -164,14 +170,16 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The input DataFrame with canonicalized tautomers.
     """
-
     # Identify the SMILES column (case-insensitive)
     smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
     if smiles_column is None:
         raise ValueError("Input DataFrame must have a 'smiles' column")
 
-    # Convert SMILES strings to RDKit Molecule objects
-    df["rdkit_molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
+    # Canonicalize input SMILES
+    df["canonical_smiles"] = df[smiles_column].apply(canonicalize)
+
+    # Convert canonical SMILES to RDKit Molecule objects
+    df["rdkit_molecule"] = df["canonical_smiles"].apply(Chem.MolFromSmiles)
 
     # Log invalid SMILES
     invalid_indices = df[df["rdkit_molecule"].isna()].index
@@ -181,21 +189,19 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
     # Create a tautomer enumerator
     tautomer_enumerator = rdMolStandardize.TautomerEnumerator()
 
-    # Perform canonicalization of tautomers with error handling
-    def safe_canonicalize(mol):
+    # Perform canonicalization of tautomers, handling invalid molecules with a placeholder
+    def safe_tautomerize(mol):
         if not mol:
             return pd.NA
         try:
             return Chem.MolToSmiles(tautomer_enumerator.Canonicalize(mol))
         except Exception as e:
-            log.warning(
-                f"Canonicalization failed: {Chem.MolToSmiles(mol) if mol else 'Invalid molecule'}, error: {str(e)}"
-            )
+            log.warning(f"Tautomerization failed: {str(e)}")
             return pd.NA
 
-    df["canonical_tautomer"] = df["rdkit_molecule"].apply(safe_canonicalize)
+    df["canonical_tautomer"] = df["rdkit_molecule"].apply(safe_tautomerize)
 
-    # Drop the intermediate RDKit molecule column to avoid clutter
+    # Drop intermediate columns if not needed
     df.drop(columns=["rdkit_molecule"], inplace=True)
 
     return df
