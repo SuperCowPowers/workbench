@@ -165,31 +165,37 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: The input DataFrame with canonicalized tautomers.
     """
 
-    # Check for the SMILES column (case-insensitive)
+    # Identify the SMILES column (case-insensitive)
     smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
     if smiles_column is None:
         raise ValueError("Input DataFrame must have a 'smiles' column")
 
-    # Convert SMILES to RDKit molecule objects (vectorized)
-    molecules = df[smiles_column].apply(Chem.MolFromSmiles)
+    # Convert SMILES strings to RDKit Molecule objects
+    df["rdkit_molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
 
-    # Handle invalid molecules
-    invalid_smiles = molecules.isna()
-    if invalid_smiles.any():
-        log.critical(f"Invalid SMILES strings found at indices: {df.index[invalid_smiles].tolist()}")
-        molecules = molecules.dropna()
-        df = df.loc[molecules.index].reset_index(drop=True)
+    # Log invalid SMILES
+    invalid_indices = df[df["rdkit_molecule"].isna()].index
+    if not invalid_indices.empty:
+        log.critical(f"Invalid SMILES strings at indices: {invalid_indices.tolist()}")
 
     # Create a tautomer enumerator
     tautomer_enumerator = rdMolStandardize.TautomerEnumerator()
 
-    # Perform tautomer canonicalization (vectorized)
-    canonical_tautomers = molecules.apply(
-        lambda mol: (Chem.MolToSmiles(tautomer_enumerator.Canonicalize(mol)) if mol else None)
-    )
+    # Perform canonicalization of tautomers with error handling
+    def safe_canonicalize(mol):
+        if not mol:
+            return pd.NA
+        try:
+            return Chem.MolToSmiles(tautomer_enumerator.Canonicalize(mol))
+        except Exception as e:
+            log.warning(f"Canonicalization failed for molecule: {Chem.MolToSmiles(mol) if mol else 'Invalid molecule'}, error: {str(e)}")
+            return pd.NA
 
-    # Add the canonicalized tautomers as SMILES to the DataFrame
-    df["canonical_tautomer"] = canonical_tautomers
+    df["canonical_tautomer"] = df["rdkit_molecule"].apply(safe_canonicalize)
+
+    # Drop the intermediate RDKit molecule column to avoid clutter
+    df.drop(columns=["rdkit_molecule"], inplace=True)
+
     return df
 
 
