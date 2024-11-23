@@ -473,6 +473,10 @@ class EndpointCore(Artifact):
         if not failed_rows.empty:
             self.log.warning(f"Rows that failed:\n{failed_rows}")
 
+        # Convert pd.NA placeholders to pd.NA
+        # Note: CSV serialization converts pd.NA to blank strings, so we have to put in placeholders
+        converted_df.replace("__NA__", pd.NA, inplace=True)
+
         # Return the Dataframe
         return converted_df
 

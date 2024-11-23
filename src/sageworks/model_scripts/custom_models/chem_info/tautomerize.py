@@ -49,6 +49,8 @@ def input_fn(input_data, content_type):
 
 def output_fn(output_df, accept_type):
     if accept_type == "text/csv":
+        # Convert NaNs to placeholder "__NA__" for CSV output
+        output_df.fillna("__NA__", inplace=True)
         return output_df.to_csv(index=False), "text/csv"
     raise RuntimeError(f"{accept_type} not supported!")
 
