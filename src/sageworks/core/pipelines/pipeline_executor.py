@@ -61,6 +61,7 @@ class PipelineExecutor:
             elif class_name == "feature_set":
 
                 # Special case for holdout_ids
+                holdout_ids = None
                 if "holdout_ids" in kwargs:
                     if kwargs["holdout_ids"] == "<<parameter_optional>>":
                         self.log.important("Hold out ids are not set, defaulting to 80/20 split")
