@@ -60,7 +60,7 @@ class View:
         # Get the data_source from the artifact
         self.artifact_name = artifact.uuid
         self.data_source = artifact.data_source if self.is_feature_set else artifact
-        self.database = self.data_source.detabase
+        self.database = self.data_source.database
 
         # Construct our base_table_name
         self.base_table_name = self.data_source.table
@@ -86,7 +86,7 @@ class View:
 
         # Now fill some details about the view
         self.columns, self.column_types, self.source_table, self.join_view = view_details(
-            self.table, self.data_source.detabase, self.data_source.boto3_session
+            self.table, self.data_source.database, self.data_source.boto3_session
         )
 
     def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:

@@ -32,7 +32,7 @@ def get_column_list(data_source: DataSource, source_table: str = None) -> list[s
     column_query = f"""
     SELECT column_name
     FROM information_schema.columns
-    WHERE table_schema = '{data_source.detabase}' AND table_name = '{source_table}'
+    WHERE table_schema = '{data_source.database}' AND table_name = '{source_table}'
     """
     df = data_source.query(column_query)
     return df["column_name"].tolist()
@@ -48,7 +48,7 @@ def list_views(data_source: DataSource) -> list[str]:
         list[str]: A list containing only the last part of the view table names
     """
     # Get the list of view tables for this data source
-    view_tables = list_view_tables(data_source.table, data_source.detabase)
+    view_tables = list_view_tables(data_source.table, data_source.database)
 
     # Each view will have the format: {data_table_name}_{view_name}
     return [view_table.replace(data_source.table + "_", "") for view_table in view_tables]
@@ -112,7 +112,7 @@ def dataframe_to_table(data_source: DataSource, df: pd.DataFrame, table_name: st
 
     # Grab information from the data_source
     bucket = data_source.sageworks_bucket
-    database = data_source.detabase
+    database = data_source.database
     boto3_session = data_source.boto3_session
     s3_path = f"s3://{bucket}/supplemental-data/{table_name}/"
 
@@ -279,7 +279,7 @@ if __name__ == "__main__":
 
     # Test view_details
     print("View Details on the FeatureSet Table...")
-    print(view_details(my_data_source.table, my_data_source.detabase, my_data_source.boto3_session))
+    print(view_details(my_data_source.table, my_data_source.database, my_data_source.boto3_session))
 
     print("View Details on the Training View...")
     training_view = fs.view("training")
@@ -294,7 +294,7 @@ if __name__ == "__main__":
 
     # Test list_view_tables
     print("List Views...")
-    print(list_view_tables(my_data_source.table, my_data_source.detabase))
+    print(list_view_tables(my_data_source.table, my_data_source.database))
 
     # Test list_views
     print("List Views...")
@@ -302,13 +302,13 @@ if __name__ == "__main__":
 
     # Test list_supplemental_data
     print("List Supplemental Data...")
-    print(list_supplemental_data_tables(my_data_source.table, my_data_source.detabase))
+    print(list_supplemental_data_tables(my_data_source.table, my_data_source.database))
 
     # Test view/supplemental data deletion
     print("Deleting Views and Supplemental Data...")
-    delete_views_and_supplemental_data(my_data_source.table, my_data_source.detabase, my_data_source.boto3_session)
+    delete_views_and_supplemental_data(my_data_source.table, my_data_source.database, my_data_source.boto3_session)
 
     # Test dataframe_to_table
     df = pd.DataFrame({"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]})
     dataframe_to_table(my_data_source, df, "test_table")
-    delete_table("test_table", my_data_source.detabase, my_data_source.boto3_session)
+    delete_table("test_table", my_data_source.database, my_data_source.boto3_session)
