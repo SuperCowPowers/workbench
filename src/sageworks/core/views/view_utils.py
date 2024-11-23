@@ -306,9 +306,7 @@ if __name__ == "__main__":
 
     # Test view/supplemental data deletion
     print("Deleting Views and Supplemental Data...")
-    delete_views_and_supplemental_data(
-        my_data_source.table, my_data_source.detabase, my_data_source.boto3_session
-    )
+    delete_views_and_supplemental_data(my_data_source.table, my_data_source.detabase, my_data_source.boto3_session)
 
     # Test dataframe_to_table
     df = pd.DataFrame({"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]})
