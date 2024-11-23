@@ -32,7 +32,7 @@ class CreateView(ABC):
 
         # Set up data source and database details
         self.data_source = artifact.data_source if self.is_feature_set else artifact
-        self.database = self.data_source.get_database()
+        self.database = self.data_source.detabase
 
         # Set table names
         self.base_table_name = self.data_source.table

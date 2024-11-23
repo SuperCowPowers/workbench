@@ -59,7 +59,7 @@ class AthenaSource(DataSourceAbstract):
 
     def refresh_meta(self):
         """Refresh our internal AWS Broker catalog metadata"""
-        self.data_source_meta = self.meta.data_source(self.uuid, database=self.get_database())
+        self.data_source_meta = self.meta.data_source(self.uuid, database=self.database)
 
     def exists(self) -> bool:
         """Validation Checks for this Data Source"""
@@ -76,7 +76,7 @@ class AthenaSource(DataSourceAbstract):
         # Grab our SageWorks Role Manager, get our AWS account id, and region for ARN creation
         account_id = self.aws_account_clamp.account_id
         region = self.aws_account_clamp.region
-        arn = f"arn:aws:glue:{region}:{account_id}:table/{self.get_database()}/{self.table}"
+        arn = f"arn:aws:glue:{region}:{account_id}:table/{self.database}/{self.table}"
         return arn
 
     def sageworks_meta(self) -> dict:
@@ -117,7 +117,7 @@ class AthenaSource(DataSourceAbstract):
         try:
             wr.catalog.upsert_table_parameters(
                 parameters=new_meta,
-                database=self.get_database(),
+                database=self.database,
                 table=self.table,
                 boto3_session=self.boto3_session,
             )
@@ -132,7 +132,7 @@ class AthenaSource(DataSourceAbstract):
                 time.sleep(5)
                 wr.catalog.upsert_table_parameters(
                     parameters=new_meta,
-                    database=self.get_database(),
+                    database=self.database,
                     table=self.table,
                     boto3_session=self.boto3_session,
                 )
@@ -173,7 +173,7 @@ class AthenaSource(DataSourceAbstract):
 
     def num_rows(self) -> int:
         """Return the number of rows for this Data Source"""
-        count_df = self.query(f'select count(*) AS sageworks_count from "{self.get_database()}"."{self.table}"')
+        count_df = self.query(f'select count(*) AS sageworks_count from "{self.database}"."{self.table}"')
         return count_df["sageworks_count"][0] if count_df is not None else 0
 
     def num_columns(self) -> int:
@@ -201,7 +201,7 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # Call internal class _query method
-        return self.database_query(self.get_database(), query)
+        return self.database_query(self.database, query)
 
     @classmethod
     def database_query(cls, database: str, query: str) -> Union[pd.DataFrame, None]:
@@ -245,7 +245,7 @@ class AthenaSource(DataSourceAbstract):
                 # Start the query execution
                 query_execution_id = wr.athena.start_query_execution(
                     sql=query,
-                    database=self.get_database(),
+                    database=self.database,
                     boto3_session=self.boto3_session,
                 )
                 self.log.debug(f"QueryExecutionId: {query_execution_id}")
@@ -281,7 +281,7 @@ class AthenaSource(DataSourceAbstract):
         query = f'select count(*) as sageworks_count from "{self.table}"'
         df = wr.athena.read_sql_query(
             sql=query,
-            database=self.get_database(),
+            database=self.database,
             ctas_approach=False,
             boto3_session=self.boto3_session,
         )
@@ -476,9 +476,9 @@ class AthenaSource(DataSourceAbstract):
         details["storage_type"] = "athena"
 
         # Compute our AWS URL
-        query = f'select * from "{self.get_database()}.{self.table}" limit 10'
+        query = f'select * from "{self.database}.{self.table}" limit 10'
         query_exec_id = wr.athena.start_query_execution(
-            sql=query, database=self.get_database(), boto3_session=self.boto3_session
+            sql=query, database=self.database, boto3_session=self.boto3_session
         )
         base_url = "https://console.aws.amazon.com/athena/home"
         details["aws_url"] = f"{base_url}?region={self.aws_region}#query/history/{query_exec_id}"
@@ -504,7 +504,7 @@ class AthenaSource(DataSourceAbstract):
             self.log.warning(f"Trying to delete an AthenaSource that doesn't exist: {self.uuid}")
 
         # Call the Class Method to delete the AthenaSource
-        AthenaSource.managed_delete(self.uuid, database=self.get_database())
+        AthenaSource.managed_delete(self.uuid, database=self.database)
 
     @classmethod
     def managed_delete(cls, data_source_name: str, database: str = "sageworks"):
