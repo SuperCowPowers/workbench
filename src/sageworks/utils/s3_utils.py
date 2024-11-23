@@ -4,6 +4,7 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 import hashlib
+from typing import Optional
 import logging
 
 # SageWorks imports
@@ -23,6 +24,28 @@ def read_s3_file(s3_path: str) -> str:
     bucket, key = s3_path.replace("s3://", "").split("/", 1)
     response = s3_client.get_object(Bucket=bucket, Key=key)
     return response["Body"].read().decode("utf-8")
+
+
+def get_s3_etag(s3_uri: str, session: boto3.session.Session) -> Optional[str]:
+    """
+    Retrieve the ETag of an S3 object.
+
+    Args:
+        s3_uri (str): The S3 URI of the object (e.g., 's3://bucket/key').
+        session (boto3.session.Session): A boto3 session.
+
+    Returns:
+        Optional[str]: The ETag of the object if it exists, otherwise None.
+    """
+    s3 = session.client('s3')
+
+    try:
+        # Parse bucket and key from the S3 URI
+        bucket, key = s3_uri.replace("s3://", "").split("/", 1)
+        response = s3.head_object(Bucket=bucket, Key=key)
+        return response.get("ETag", "").strip('"')  # Remove quotes from ETag
+    except s3.exceptions.ClientError:
+        return None
 
 
 def ensure_s3_bucket_and_prefix(s3_uri: str, session: boto3.session.Session):
