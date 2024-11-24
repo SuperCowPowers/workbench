@@ -104,9 +104,9 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         """
         # Note: This method can generate larger dataframes, so we'll sample if needed
         df = super().get_inference_predictions(capture_uuid=capture_uuid)
-        if df is not None and len(df) > 1000:
-            self.log.warning(f"{self.uuid}:{capture_uuid} Sampling Inference Predictions to 1000 rows")
-            return df.sample(1000)
+        if df is not None and len(df) > 5000:
+            self.log.warning(f"{self.uuid}:{capture_uuid} Sampling Inference Predictions to 5000 rows")
+            return df.sample(5000)
         return df
 
     @CachedArtifactMixin.cache_result
