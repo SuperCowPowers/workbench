@@ -148,3 +148,6 @@ sageworks_lambda_layer_output/
 
 # Some test datasets
 test_evaluation_data.csv
+
+# This is a copied file
+src/sageworks/model_scripts/custom_models/chem_info/chem_utils.py
