@@ -102,7 +102,12 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         Returns:
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)
         """
-        return super().get_inference_predictions(capture_uuid=capture_uuid)
+        # Note: This method can generate larger dataframes, so we'll sample if needed
+        df = super().get_inference_predictions(capture_uuid=capture_uuid)
+        if df is not None and len(df) > 1000:
+            self.log.warning(f"{self.uuid}:{capture_uuid} Sampling Inference Predictions to 1000 rows")
+            return df.sample(1000)
+        return df
 
     @CachedArtifactMixin.cache_result
     def confusion_matrix(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
