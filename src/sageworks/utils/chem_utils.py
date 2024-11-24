@@ -7,9 +7,9 @@ import pandas as pd
 # Third Party Imports
 try:
     from rdkit import Chem
-    from rdkit.Chem import Descriptors, rdFingerprintGenerator, Draw
+    from rdkit.Chem import Mol, Descriptors, rdFingerprintGenerator, Draw
     from rdkit.ML.Descriptors import MoleculeDescriptors
-    from rdkit.Chem.MolStandardize import rdMolStandardize
+    from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
 
     NO_RDKIT = False
 except ImportError:
@@ -226,6 +226,45 @@ def canonicalize(df: pd.DataFrame, remove_mol_col: bool = True) -> pd.DataFrame:
     return df
 
 
+def custom_tautomer_canonicalization(mol: Mol) -> str:
+    """Domain-specific processing of a molecule to select the canonical tautomer.
+
+    This function enumerates all possible tautomers for a given molecule and applies
+    custom logic to select the canonical form.
+
+    Args:
+        mol (Mol): The RDKit molecule for which the canonical tautomer is to be determined.
+
+    Returns:
+        str: The SMILES string of the selected canonical tautomer.
+    """
+    tautomer_enumerator = TautomerEnumerator()
+    enumerated_tautomers = tautomer_enumerator.Enumerate(mol)
+    for taut in enumerated_tautomers:
+        # Custom logic to select the canonical tautomer can go here
+        print(Chem.MolToSmiles(taut))
+
+    # Example: return the first tautomer (replace with actual custom selection logic)
+    return Chem.MolToSmiles(enumerated_tautomers[0])
+
+
+def standard_tautomer_canonicalization(mol: Mol) -> str:
+    """Standard processing of a molecule to select the canonical tautomer.
+
+    RDKit's `TautomerEnumerator` uses heuristics to select a canonical tautomer,
+    such as preferring keto over enol forms and minimizing formal charges.
+
+    Args:
+        mol (Mol): The RDKit molecule for which the canonical tautomer is to be determined.
+
+    Returns:
+        str: The SMILES string of the canonical tautomer.
+    """
+    tautomer_enumerator = TautomerEnumerator()
+    canonical_tautomer = tautomer_enumerator.Canonicalize(mol)
+    return Chem.MolToSmiles(canonical_tautomer)
+
+
 def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
     """
     Perform tautomer enumeration and canonicalization on a DataFrame.
@@ -237,14 +276,12 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: A new DataFrame with additional 'canonical_smiles' and 'tautomeric_form' columns.
     """
     # Standardize SMILES strings and create 'rdkit_molecule' column for further processing
-    # Retains 'rdkit_molecule' to avoid recomputation during tautomerization
     df = canonicalize(df, remove_mol_col=False)
 
     # Initialize the tautomer enumerator
     # RDKit's TautomerEnumerator generates all reasonable tautomers of a molecule
     # It uses predefined rules for transformations like proton shifts or bond rearrangements
-    # Canonicalize selects one tautomer using built-in heuristics (e.g., favoring keto over enol forms)
-    tautomer_enumerator = rdMolStandardize.TautomerEnumerator()
+    tautomer_enumerator = TautomerEnumerator()
 
     # Helper function to safely canonicalize a molecule's tautomer
     def safe_tautomerize(mol):
@@ -252,7 +289,9 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
         if not mol:
             return pd.NA
         try:
-            return Chem.MolToSmiles(tautomer_enumerator.Canonicalize(mol))
+            # Use RDKit's standard Tautomer enumeration and canonicalization
+            # For custom logic, replace with custom_tautomer_canonicalization(mol)
+            return standard_tautomer_canonicalization(mol)
         except Exception as e:
             log.warning(f"Tautomerization failed: {str(e)}")
             return pd.NA
@@ -268,8 +307,8 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
 
-    # Fake molecule
-    smiles = "CC(CN1CC(C)OC(C)C1)"
+    # Pyridone molecule
+    smiles = "C1=CC=NC(=O)C=C1"
     display(smiles)
 
     # Test the concentration conversion functions
