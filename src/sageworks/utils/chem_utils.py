@@ -234,16 +234,21 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Input DataFrame containing SMILES strings.
 
     Returns:
-        pd.DataFrame: A new DataFrame with additional 'canonical_smiles' and 'canonical_tautomer_smiles' columns.
+        pd.DataFrame: A new DataFrame with additional 'canonical_smiles' and 'tautomeric_form' columns.
     """
-    # Call canonicalize with remove_mol_col=False to retain 'rdkit_molecule' column
+    # Standardize SMILES strings and create 'rdkit_molecule' column for further processing
+    # Retains 'rdkit_molecule' to avoid recomputation during tautomerization
     df = canonicalize(df, remove_mol_col=False)
 
-    # Create a tautomer enumerator
+    # Initialize the tautomer enumerator
+    # RDKit's TautomerEnumerator generates all reasonable tautomers of a molecule
+    # It uses predefined rules for transformations like proton shifts or bond rearrangements
+    # Canonicalize selects one tautomer using built-in heuristics (e.g., favoring keto over enol forms)
     tautomer_enumerator = rdMolStandardize.TautomerEnumerator()
 
-    # Perform tautomer canonicalization
+    # Helper function to safely canonicalize a molecule's tautomer
     def safe_tautomerize(mol):
+        """Safely canonicalize a molecule's tautomer, handling errors gracefully."""
         if not mol:
             return pd.NA
         try:
@@ -252,9 +257,10 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
             log.warning(f"Tautomerization failed: {str(e)}")
             return pd.NA
 
-    df["canonical_tautomer_smiles"] = df["rdkit_molecule"].apply(safe_tautomerize)
+    # Apply tautomer canonicalization to each molecule
+    df["tautomeric_form"] = df["rdkit_molecule"].apply(safe_tautomerize)
 
-    # Drop intermediate RDKit molecule column
+    # Drop intermediate RDKit molecule column to clean up the DataFrame
     df.drop(columns=["rdkit_molecule"], inplace=True)
 
     return df
