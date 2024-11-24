@@ -29,23 +29,29 @@ class CachedArtifactMixin:
 
         @wraps(method)
         def wrapper(self, *args, **kwargs):
-            # Include the uuid in the cache key if available
+            # Cache key includes the class name, instance UUID, and method args/kwargs
             class_name = self.__class__.__name__.lower()
             cache_key = f"{class_name}_{self.uuid}_{cls._flatten_redis_key(method, *args, **kwargs)}"
-            # cache_key = f"{self.uuid}_{cls._flatten_redis_key(method, *args, **kwargs)}"
-            if SageWorksCache.refresh_enabled and cls.fresh_cache.get(cache_key) is None:
+
+            # Get the cached value and check if a refresh is needed
+            cached_value = cls.artifact_cache.get(cache_key)
+            cache_fresh = cls.fresh_cache.get(cache_key)
+
+            # Check for the blocking case (no cached value)
+            if cached_value is None:
+                self.log.important(f"Blocking: Invoking method {method.__name__} for {cache_key}")
+                result = method(self, *args, **kwargs)
+                cls.artifact_cache.set(cache_key, result)
+                return result
+
+            # Stale cache: Refresh in the background if enabled and no refresh is already in progress
+            if SageWorksCache.refresh_enabled and cache_fresh is None:
                 self.log.debug(f"Async: Results for {cache_key} refresh thread started...")
                 cls.fresh_cache.set(cache_key, True)
                 cls.thread_pool.submit(cls._refresh_data_in_background, self, cache_key, method, *args, **kwargs)
 
-            cached_value = cls.artifact_cache.get(cache_key)
-            if cached_value is not None:
-                return cached_value
-
-            self.log.important(f"Blocking: Invoking method {method.__name__} for {cache_key}")
-            result = method(self, *args, **kwargs)
-            cls.artifact_cache.set(cache_key, result)
-            return result
+            # Return the cached value (fresh or stale)
+            return cached_value
 
         return wrapper
 
