@@ -2993,7 +2993,7 @@
 <p>This release is an incremental release as part of the road map for <code>v.0.9.0</code>. Please see the full details of the planned changes here: <a href="../../road_maps/0_9_0/">v0.9.0 Roadmap</a>. </p>
 <h3 id="artifact-hashes">Artifact Hashes</h3>
 <p>For content verification purposes we've added a <code>hash()</code> method to all of the SageWorks Artifact classes (DataSource, FeatureSet, Model, Endpoint, Graph, etc). Also for DataSources and FeatureSets there is a <code>table_hash()</code> method that will compute a total hash of all data in the Athena table.</p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ds = DataSource(&quot;abalone_data&quot;)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ds = DataSource(&quot;abalone_data&quot;)
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>ds.modified()
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Out[2]: datetime.datetime(2024, 11, 17, 19, 45, 58, tzinfo=tzlocal())
@@ -3009,9 +3009,9 @@
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>fs.hash()
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>Out[5]: &#39;1571eee207b72f14bd5065d6c4acdaaf&#39;
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a># Note: Model/Endpoint hashes are both using the model package (model.tar.gz)
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a># Note: Model/Endpoint hashes will backtrack to model.tar.gz and can be used for validation
 </span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>model = Model(&quot;abalone-regression&quot;)
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>end = Endpoint(model.endpoints()[0])
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>end = Endpoint(&quot;abalone-regression-end&quot;)
 </span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
 </span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>model.get_model_data_url()
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>Out[6]: &#39;s3://sagemaker-us-west-2-507740646243/abalone-regression-2024-11-18-03-09/output/model.tar.gz&#39;
@@ -3019,10 +3019,16 @@
 </span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>model.hash()
 </span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>Out[7]: &#39;00def9381366cdd062413d0b395ba70c&#39;
 </span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>end.hash()
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>Out[7]: &#39;00def9381366cdd062413d0b395ba70c&#39;
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a># Verify endpoint is using expected model
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>end.hash()
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>Out[7]: &#39;00def9381366cdd062413d0b395ba70c&#39;
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a># Realtime endpoint created from the same model
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>end = Endpoint(&quot;abalone-regression-end-rt&quot;)
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>end.hash()
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>Out[8]: &#39;00def9381366cdd062413d0b395ba70c&#39;
 </span></code></pre></div>
-<strong>Note:</strong> You will get a performance warning when running table_hash() on DataSources and FeatureSets as it typically involves a deeper computation on the table contents of that artifact.</p>
+<p><strong>Note:</strong> You will get a performance warning when running table_hash() on DataSources and FeatureSets as it typically involves a deeper computation on the table contents of that artifact.</p>
 <h2 id="api-changes">API Changes</h2>
 <ul>
 <li>
