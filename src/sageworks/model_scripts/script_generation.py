@@ -1,12 +1,45 @@
 """Model Script Utilities for SageWorks endpoints"""
 
 import os
+import shutil
 import logging
 from pathlib import Path
+import importlib.util
 
 
 # Setup the logger
 log = logging.getLogger("sageworks")
+
+
+def copy_imports_to_script_dir(script_path: str, imports: list[str]) -> None:
+    """
+    Copy specified utility files to the script directory by resolving their locations dynamically.
+
+    Args:
+        script_path (str): Full path of the script file (we will copy the imports to the same directory).
+        imports (list[str]): A list of imports (e.g., "sageworks.utils.chem_utils") to copy.
+    """
+    # Compute the script directory from the script path
+    script_dir = Path(script_path).parent
+
+    for import_path in imports:
+        # Try to locate the module's file path
+        spec = importlib.util.find_spec(import_path)
+        if spec is None or spec.origin is None:
+            raise ImportError(f"Cannot find module: {import_path}")
+
+        source_path = Path(spec.origin)  # Get the file path from the module spec
+
+        # Ensure the source file exists
+        if not source_path.exists():
+            raise FileNotFoundError(f"Source file not found for: {import_path}")
+
+        # Resolve destination path
+        destination_path = script_dir / source_path.name
+
+        # Copy the file
+        shutil.copy(source_path, destination_path)
+        print(f"Copied {source_path} to {destination_path}")
 
 
 def fill_template(template: str, params: dict) -> str:
@@ -101,6 +134,8 @@ def generate_model_script(template_params: dict) -> str:
 if __name__ == "__main__":
     """Exercise the Model Script Utilities"""
     from sageworks.api import ModelType
+
+    copy_imports_to_script_dir("/tmp/model.py", ["sageworks.utils.chem_utils"])
 
     # Define the parameters for the model script (Classifier)
     my_params = {

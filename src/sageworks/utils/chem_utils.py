@@ -187,41 +187,75 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=2048) -> pd.Da
     return df
 
 
+def canonicalize(df: pd.DataFrame, remove_mol_col: bool = True) -> pd.DataFrame:
+    """
+    Generate RDKit's canonical SMILES for each molecule in the input DataFrame.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing a column named 'SMILES' (case-insensitive).
+        remove_mol_col (bool): Whether to drop the intermediate 'rdkit_molecule' column. Default is True.
+
+    Returns:
+        pd.DataFrame: A DataFrame with an additional 'canonical_smiles' column and,
+                      optionally, the 'rdkit_molecule' column.
+    """
+    # Identify the SMILES column (case-insensitive)
+    smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
+    if smiles_column is None:
+        raise ValueError("Input DataFrame must have a 'SMILES' column")
+
+    # Convert SMILES to RDKit molecules
+    df["rdkit_molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
+
+    # Handle invalid SMILES strings
+    invalid_indices = df[df["rdkit_molecule"].isna()].index
+    if not invalid_indices.empty:
+        log.critical(f"Invalid SMILES strings at indices: {invalid_indices.tolist()}")
+
+    # Vectorized canonicalization
+    def mol_to_canonical_smiles(mol):
+        return Chem.MolToSmiles(mol) if mol else pd.NA
+
+    df["canonical_smiles"] = df["rdkit_molecule"].apply(mol_to_canonical_smiles)
+
+    # Drop intermediate RDKit molecule column if requested
+    if remove_mol_col:
+        df.drop(columns=["rdkit_molecule"], inplace=True)
+
+    return df
+
+
 def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
-    """Perform tautomer enumeration and canonicalization on the DataFrame.
+    """
+    Perform tautomer enumeration and canonicalization on a DataFrame.
 
     Args:
         df (pd.DataFrame): Input DataFrame containing SMILES strings.
 
     Returns:
-        pd.DataFrame: The input DataFrame with canonicalized tautomers.
+        pd.DataFrame: A new DataFrame with additional 'canonical_smiles' and 'canonical_tautomer_smiles' columns.
     """
-
-    # Check for the SMILES column (case-insensitive)
-    smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
-    if smiles_column is None:
-        raise ValueError("Input DataFrame must have a 'smiles' column")
-
-    # Convert SMILES to RDKit molecule objects (vectorized)
-    molecules = df[smiles_column].apply(Chem.MolFromSmiles)
-
-    # Handle invalid molecules
-    invalid_smiles = molecules.isna()
-    if invalid_smiles.any():
-        log.critical(f"Invalid SMILES strings found at indices: {df.index[invalid_smiles].tolist()}")
-        molecules = molecules.dropna()
-        df = df.loc[molecules.index].reset_index(drop=True)
+    # Call canonicalize with remove_mol_col=False to retain 'rdkit_molecule' column
+    df = canonicalize(df, remove_mol_col=False)
 
     # Create a tautomer enumerator
     tautomer_enumerator = rdMolStandardize.TautomerEnumerator()
 
-    # Perform tautomer canonicalization (vectorized)
-    canonical_tautomers = molecules.apply(
-        lambda mol: (Chem.MolToSmiles(tautomer_enumerator.Canonicalize(mol)) if mol else None)
-    )
+    # Perform tautomer canonicalization
+    def safe_tautomerize(mol):
+        if not mol:
+            return pd.NA
+        try:
+            return Chem.MolToSmiles(tautomer_enumerator.Canonicalize(mol))
+        except Exception as e:
+            log.warning(f"Tautomerization failed: {str(e)}")
+            return pd.NA
 
-    # Add the canonicalized tautomers as SMILES to the DataFrame
-    df["canonical_tautomer"] = canonical_tautomers
+    df["canonical_tautomer_smiles"] = df["rdkit_molecule"].apply(safe_tautomerize)
+
+    # Drop intermediate RDKit molecule column
+    df.drop(columns=["rdkit_molecule"], inplace=True)
+
     return df
 
 

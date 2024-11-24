@@ -10,7 +10,7 @@ from sageworks.core.transforms.transform import Transform, TransformInput, Trans
 from sageworks.core.artifacts.feature_set_core import FeatureSetCore
 from sageworks.core.artifacts.model_core import ModelCore, ModelType, InferenceImage
 from sageworks.core.artifacts.artifact import Artifact
-from sageworks.model_scripts.script_generation import generate_model_script
+from sageworks.model_scripts.script_generation import generate_model_script, copy_imports_to_script_dir
 
 
 class FeaturesToModel(Transform):
@@ -140,8 +140,10 @@ class FeaturesToModel(Transform):
 
         # Custom Script
         if self.custom_script:
-            self.log.info("Using custom script for the model...")
             script_path = self.custom_script
+            self.log.info("Custom script path: {script_path}")
+            # Fixme: We'll need to circle back to this later
+            copy_imports_to_script_dir(script_path, ["sageworks.utils.chem_utils"])
 
         # We're using one of the built-in model script templates
         else:
@@ -375,6 +377,7 @@ if __name__ == "__main__":
     to_model.set_output_tags(["smiles", "morgan fingerprints"])
     to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Morgan Fingerprints")
 
+    """
     # Tautomerization Model
     scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
     my_script = scripts_root / "custom_models" / "chem_info" / "tautomerize.py"
@@ -383,3 +386,4 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.TRANSFORMER, custom_script=my_script)
     to_model.set_output_tags(["smiles", "tautomerization"])
     to_model.transform(target_column=None, feature_list=["smiles"], description="Tautomerize Smiles")
+    """
