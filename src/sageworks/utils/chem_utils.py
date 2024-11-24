@@ -29,20 +29,21 @@ except ImportError:
 log = logging.getLogger("sageworks")
 
 
-def display(smiles: str, size: tuple[int, int] = (500, 500)) -> None:
+def display(smiles: str, width: int = 500, height: int = 500) -> None:
     """
     Displays an image of the molecule represented by the given SMILES string.
 
     Args:
         smiles (str): A SMILES string representing the molecule.
-        size (tuple[int, int]): A tuple specifying width and height of the image.
+        width (int): Width of the image in pixels. Default is 500.
+        height (int): Height of the image in pixels. Default is 500.
 
     Returns:
     None
     """
     mol = Chem.MolFromSmiles(smiles)
     if mol:
-        img = Draw.MolToImage(mol, size=size)
+        img = Draw.MolToImage(mol, size=(width, height))
         img.show()
     else:
         print(f"Invalid SMILES: {smiles}")
