@@ -278,11 +278,6 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
     # Standardize SMILES strings and create 'rdkit_molecule' column for further processing
     df = canonicalize(df, remove_mol_col=False)
 
-    # Initialize the tautomer enumerator
-    # RDKit's TautomerEnumerator generates all reasonable tautomers of a molecule
-    # It uses predefined rules for transformations like proton shifts or bond rearrangements
-    tautomer_enumerator = TautomerEnumerator()
-
     # Helper function to safely canonicalize a molecule's tautomer
     def safe_tautomerize(mol):
         """Safely canonicalize a molecule's tautomer, handling errors gracefully."""
