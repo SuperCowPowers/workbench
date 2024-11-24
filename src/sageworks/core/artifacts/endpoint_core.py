@@ -213,6 +213,7 @@ class EndpointCore(Artifact):
             Optional[str]: The hash for the internal model used by this endpoint
         """
         from sageworks.utils.endpoint_utils import get_model_data_url  # Avoid circular import
+
         model_url = get_model_data_url(self.endpoint_config_name(), self.boto3_session)
         return get_s3_etag(model_url, self.boto3_session)
 
