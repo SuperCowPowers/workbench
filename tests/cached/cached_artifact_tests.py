@@ -13,7 +13,7 @@ def test_cached_data_source():
     print("\n\n*** Cached DataSource ***")
     my_data = CachedDataSource("abalone_data")
     pprint(my_data.summary())
-    pprint(my_data.details())
+    my_data.details()
     pprint(my_data.health_check())
     pprint(my_data.sageworks_meta())
 
