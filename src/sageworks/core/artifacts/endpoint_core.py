@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from io import StringIO
 import awswrangler as wr
-from typing import Union
+from typing import Union, Optional
 import joblib
 import logging
 
@@ -45,6 +45,7 @@ from sageworks.utils.endpoint_metrics import EndpointMetrics
 from sageworks.utils.shapley_values import generate_shap_values
 from sageworks.utils.fast_inference import fast_inference
 from sageworks.utils.cache import Cache
+from sageworks.utils.s3_utils import get_s3_etag
 
 
 class EndpointCore(Artifact):
@@ -205,9 +206,15 @@ class EndpointCore(Artifact):
         """Return the datetime when this artifact was last modified"""
         return self.endpoint_meta["LastModifiedTime"]
 
-    def hash(self) -> str:
-        """Return the hash for this artifact"""
-        return ModelCore(self.model_name).hash()
+    def hash(self) -> Optional[str]:
+        """Return the hash for the internal model used by this endpoint
+
+        Returns:
+            Optional[str]: The hash for the internal model used by this endpoint
+        """
+        from sageworks.utils.endpoint_utils import get_model_data_url  # Avoid circular import
+        model_url = get_model_data_url(self.endpoint_config_name(), self.boto3_session)
+        return get_s3_etag(model_url, self.boto3_session)
 
     def endpoint_metrics(self) -> Union[pd.DataFrame, None]:
         """Return the metrics for this endpoint

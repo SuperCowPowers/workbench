@@ -1,7 +1,7 @@
 """Endpoint Utilities for SageWorks endpoints"""
-
+import boto3
 import logging
-from typing import Union
+from typing import Union, Optional
 import pandas as pd
 
 # SageWorks Imports
@@ -9,8 +9,66 @@ from sageworks.api.feature_set import FeatureSet
 from sageworks.api.model import Model
 from sageworks.api.endpoint import Endpoint
 
-# Setup the logger
+# Set up the log
 log = logging.getLogger("sageworks")
+
+
+def get_model_data_url(endpoint_config_name: str, session: boto3.Session) -> Optional[str]:
+    """
+    Retrieves the S3 URL of the model.tar.gz file associated with a SageMaker endpoint configuration.
+
+    Args:
+        endpoint_config_name (str): The name of the SageMaker endpoint configuration.
+        session (boto3.Session): An active boto3 session.
+
+    Returns:
+        Optional[str]: S3 URL of the model.tar.gz file if found, otherwise None.
+    """
+    try:
+        sagemaker_client = session.client('sagemaker')
+
+        # Retrieve the Endpoint Config
+        endpoint_config = sagemaker_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
+
+        # Extract Model Name from Production Variants
+        production_variants = endpoint_config.get('ProductionVariants', [])
+        if not production_variants:
+            log.critical(f"No production variants found for endpoint config: {endpoint_config_name}")
+            return None
+
+        model_name = production_variants[0].get('ModelName')
+        if not model_name:
+            log.critical(f"No model name found in production variants for endpoint config: {endpoint_config_name}")
+            return None
+
+        # Retrieve Model Details
+        model_details = sagemaker_client.describe_model(ModelName=model_name)
+        containers = model_details.get('Containers')
+        if containers:
+            # Handle serverless or multi-container models
+            model_package_name = containers[0].get('ModelPackageName')
+            if model_package_name:
+                log.info(f"Model package name found: {model_package_name}")
+
+                # Describe the model package to get the ModelDataUrl
+                model_package_details = sagemaker_client.describe_model_package(ModelPackageName=model_package_name)
+                model_data_url = model_package_details.get('InferenceSpecification', {}).get('Containers', [{}])[0].get('ModelDataUrl')
+                if model_data_url:
+                    log.info(f"Model data URL from package: {model_data_url}")
+                    return model_data_url
+
+        # Handle standard models
+        model_data_url = model_details.get('PrimaryContainer', {}).get('ModelDataUrl')
+        if model_data_url:
+            log.info(f"Model data URL found: {model_data_url}")
+            return model_data_url
+
+        log.critical(f"No model data or package details found for model: {model_name}")
+        return None
+
+    except Exception as e:
+        log.critical(f"Error retrieving model data URL for endpoint config {endpoint_config_name}: {e}")
+        return None
 
 
 def fs_training_data(end: Endpoint) -> pd.DataFrame:
@@ -91,6 +149,15 @@ if __name__ == "__main__":
     if not my_endpoint.exists():
         print(f"Endpoint {endpoint_name} does not exist.")
         exit(1)
+
+    # Get the Model Data URL
+    model_data_url = get_model_data_url(my_endpoint.endpoint_config_name(), my_endpoint.boto3_session)
+    print(model_data_url)
+
+    # Also test for realtime endpoints
+    my_endpoint = Endpoint("abalone-regression-end-rt")
+    model_data_url = get_model_data_url(my_endpoint.endpoint_config_name(), my_endpoint.boto3_session)
+    print(model_data_url)
 
     # Get the training data
     my_train_df = fs_training_data(my_endpoint)
