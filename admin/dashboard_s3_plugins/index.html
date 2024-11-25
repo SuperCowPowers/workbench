@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../../api_classes/monitor/">
+        <link rel="prev" href="../dashboard_docker_push/">
       
       
-        <link rel="next" href="../cached_meta/">
+        <link rel="next" href="../dashboard_with_plugins/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>OverView - SageWorks</title>
+        <title>Dashboard with S3 Plugins - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#caching-overview" class="md-skip">
+        <a href="#deploying-s3-plugins-with-the-dashboard" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              OverView
+              Dashboard with S3 Plugins
             
           </span>
         </div>
@@ -579,19 +579,17 @@
       
   
   
-    
   
   
-  
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
           <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
@@ -605,7 +603,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             Caching Classes
@@ -616,30 +614,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    OverView
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../cached/overview/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -648,35 +626,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#welcome-to-the-sageworks-cached-classes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Welcome to the SageWorks Cached Classes
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -689,7 +638,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cached_meta/" class="md-nav__link">
+      <a href="../../cached/cached_meta/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -710,7 +659,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cached_data_source/" class="md-nav__link">
+      <a href="../../cached/cached_data_source/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -731,7 +680,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cached_feature_set/" class="md-nav__link">
+      <a href="../../cached/cached_feature_set/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -752,7 +701,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cached_model/" class="md-nav__link">
+      <a href="../../cached/cached_model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -773,7 +722,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cached_endpoint/" class="md-nav__link">
+      <a href="../../cached/cached_endpoint/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2793,17 +2742,19 @@
       
   
   
+    
   
   
+  
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19" checked>
         
           
           <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="0">
@@ -2817,7 +2768,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_19">
             <span class="md-nav__icon md-icon"></span>
             Admin
@@ -2831,7 +2782,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/aws_service_limits/" class="md-nav__link">
+      <a href="../aws_service_limits/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2852,7 +2803,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/pypi_release/" class="md-nav__link">
+      <a href="../pypi_release/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2873,7 +2824,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/base_docker_push/" class="md-nav__link">
+      <a href="../base_docker_push/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2894,7 +2845,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/dashboard_docker_push/" class="md-nav__link">
+      <a href="../dashboard_docker_push/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2912,10 +2863,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../admin/dashboard_s3_plugins/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Dashboard with S3 Plugins
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -2924,6 +2895,77 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#check-your-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      Check your Dashboard
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#develop-your-plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      Develop your Plugins
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#restart-the-ecs-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      Restart the ECS Service
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Restart the ECS Service">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#verify-new-plugin-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify new Plugin changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Questions?
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2936,7 +2978,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/dashboard_with_plugins/" class="md-nav__link">
+      <a href="../dashboard_with_plugins/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2992,7 +3034,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/sageworks_docker_for_lambdas/" class="md-nav__link">
+      <a href="../sageworks_docker_for_lambdas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3048,9 +3090,51 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#welcome-to-the-sageworks-cached-classes" class="md-nav__link">
+  <a href="#check-your-dashboard" class="md-nav__link">
     <span class="md-ellipsis">
-      Welcome to the SageWorks Cached Classes
+      Check your Dashboard
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#develop-your-plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      Develop your Plugins
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#restart-the-ecs-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      Restart the ECS Service
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Restart the ECS Service">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#verify-new-plugin-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify new Plugin changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Questions?
     </span>
   </a>
   
@@ -3071,24 +3155,60 @@
                   
 
 
-<h1 id="caching-overview">Caching Overview</h1>
+<h1 id="deploying-s3-plugins-with-the-dashboard">Deploying S3 Plugins with the Dashboard</h1>
 <div class="admonition tip inline end">
-<p class="admonition-title">Caching is Crazy</p>
-<p>Yes, but it's a necessary evil for Web Interfaces. AWS APIs (boto3, Sagemaker) often takes multiple seconds to respond and will often throttle requests if spammed. So for quicker response and less spamming we're using Cached Classes for any Web Interface work.</p>
+<p class="admonition-title">Need Help?</p>
+<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
-<h2 id="welcome-to-the-sageworks-cached-classes">Welcome to the SageWorks Cached Classes</h2>
-<p>These classes provide caching for the for the most used SageWorks classes. They transparently handle all the details around retrieving and caching results from the underlying classes.</p>
-<ul>
-<li><strong><a href="../cached_meta/">CachedMeta</a>:</strong> Manages lists of Artifacts (get all models, endpoints, etc).</li>
-<li><strong><a href="../cached_data_source/">CachedDataSource</a>:</strong> Caches the method results for SageWorks DataSource.</li>
-<li><strong><a href="../cached_feature_set/">CachedFeatureSet</a>:</strong> Caches the method results for SageWorks FeatureSets.</li>
-<li><strong><a href="../cached_model/">CachedModel</a>:</strong> Caches the method results for SageWorks Models.</li>
-<li><strong><a href="../cached_endpoint/">CachedEndpoint</a>:</strong> Caches the method results for SageWorks Endpoints.</li>
-</ul>
-<div class="admonition note">
-<p class="admonition-title">Examples</p>
-<p>All of the SageWorks Examples are in the Sageworks Repository under the <code>examples/</code> directory. For a full code listing of any example please visit our <a href="https://github.com/SuperCowPowers/sageworks/blob/main/examples">SageWorks Examples</a></p>
+<p>Notes and information on how to include S3 based plugins with your SageWorks Dashboard. </p>
+<p>Deploying your Dashboard plugins via an S3 bucket allows plugin developers to modify and improve plugins without a bunch of Docker builds, ECR, and CDK Deploy.</p>
+<p>On, the other hand when you have a 'final build' you might want to lock it in with a Docker image. If you'd like to bundle up your plugins in a Docker image and deploy please see <a href="../dashboard_with_plugins/">Dashboard with Plugins</a>.</p>
+<h2 id="check-your-dashboard">Check your Dashboard</h2>
+<p>Make sure your Dashboard is configured to pull plugin pages, views, and web_components from an S3 bucket. Go to your main dashboard page and there's a 'secret link' when you click on the main title that brings up the <strong>Dashboard Status Page</strong>.</p>
+<p><img src="../images/dashboard_secret_click.png" width="500"></p>
+<p><strong>Dashboard Status Page</strong>
+Okay now check your <strong>Plugin Path:</strong> config and make sure it points to the S3 bucket you're expected.</p>
+<p><img src="../images/status_showing_S3_path.png" width="350"></p>
+<h2 id="develop-your-plugins">Develop your Plugins</h2>
+<p>During development it's good to both unit testing and local dashboard testing. Please see our main plugin docs for how to do local testing <a href="../../plugins/">Plugins General</a>.</p>
+<p>When you're ready to 'deploy' the plugins you can copy them up to the S3 bucket/prefix. You want to copy recursively so if you're plugin directory looks like the listing below you want to copy all the files/directories, so that the dashboard picks up everything.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>- my_plugins
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>   - pages
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>      - page_1.py
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>   - views
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>      - view_1.py
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>   - web_components
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>       -component_1.py
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>       -component_2.py
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Careful with Plugin Copy</p>
+<p>In particular, pay attention to additional files in the directory structure. You do not want to copy _pycache_ and *.pyc files. So we recommend using this CLI.</p>
 </div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>cd my_plugins
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>aws s3 cp . s3://my_bucket/prefix --recursive --exclude &quot;*&quot; --include &quot;*.py&quot;
+</span></code></pre></div>
+<h2 id="restart-the-ecs-service">Restart the ECS Service</h2>
+<p>Okay, so this is a bit heavy handed, but automatically removing/adding/modifying the plugin pages, views, and web_components was 'amazingly complicated' and will be a feature request for a later date. :)</p>
+<p><strong>Getting Cluster and Service Names</strong></p>
+<p>You can go to the AWS Console, Elastic Container Service, find the cluster, click on that and find the service.</p>
+<p>The cluster will be something like:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>SageworksDashboard-SageworksCluster123456
+</span></code></pre></div>
+<p>and the service will be something like:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>SageworksDashboard-SageworksService789123
+</span></code></pre></div>
+<p>Anyway, find those two things and run this command below (<strong>Note:</strong> You probably need admin permisions)</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>aws ecs update-service --cluster your-cluster-name \
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>--service your-service-name --force-new-deployment
+</span></code></pre></div>
+<h3 id="verify-new-plugin-changes">Verify new Plugin changes</h3>
+<p>Okay now that the ECS service has restarted (which can take a bit) you can now go to the Dashboard and test/verify that the changes you made now show up on the Dashboard.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker build -t my_sageworks_with_plugins:v1_0 --platform linux/amd64 .
+</span></code></pre></div>
+<h2 id="questions">Questions?</h2>
+<p><img align="right" src="../../images/scp.png" width="180"></p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 
 
 
