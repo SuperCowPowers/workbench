@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 
 # SageWorks Imports
 from sageworks.web_components import table
-from sageworks.api import Meta
+from sageworks.cached.cached_meta import CachedMeta
 
 
 class PluginPage2:
@@ -17,7 +17,7 @@ class PluginPage2:
         self.page_name = "Hello World"
         self.models_table = table.Table()
         self.table_component = None
-        self.meta = Meta()
+        self.meta = CachedMeta()
 
     def page_setup(self, app: dash.Dash):
         """Required function to set up the page"""

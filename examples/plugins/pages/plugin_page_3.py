@@ -7,10 +7,10 @@ import dash_bootstrap_components as dbc
 
 # SageWorks Imports
 from sageworks.web_components import table
-from sageworks.api import Meta
 from sageworks.web_components.plugins.model_details import ModelDetails
 from sageworks.web_components.model_plot import ModelPlot
-from sageworks.api.model import Model
+from sageworks.cached.cached_meta import CachedMeta
+from sageworks.cached.cached_model import CachedModel
 
 
 class PluginPage3:
@@ -25,7 +25,7 @@ class PluginPage3:
         self.details_component = None
         self.model_plot = ModelPlot()
         self.plot_component = None
-        self.meta = Meta()
+        self.meta = CachedMeta()
         self.plugins = [self.model_details]  # Add any additional plugins here
 
     def page_setup(self, app: dash.Dash):
@@ -94,7 +94,7 @@ class PluginPage3:
             # Get the selected row data and grab the uuid
             selected_row_data = table_data[selected_rows[0]]
             model_uuid = selected_row_data["uuid"]
-            m = Model(model_uuid)
+            m = CachedModel(model_uuid)
 
             # Model Details Markdown component
             model_plot_fig = self.model_plot.update_properties(m, inference_run)
@@ -120,7 +120,7 @@ class PluginPage3:
             object_uuid = selected_row_data["uuid"]
 
             # Create the Model object
-            model = Model(object_uuid)
+            model = CachedModel(object_uuid)
 
             # Update all the properties for each plugin
             all_props = []
