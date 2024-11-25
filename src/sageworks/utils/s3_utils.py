@@ -133,7 +133,7 @@ def copy_s3_files_to_local(s3_path: str, local_path: str):
             os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
 
             # Download the object to the local file path
-            log.important(f"Downloading {obj['Key']} to {local_file_path}")
+            log.important(f"Downloading {bucket}/{obj['Key']} to {local_file_path}")
             s3_client.download_file(bucket, obj["Key"], local_file_path)
 
 
