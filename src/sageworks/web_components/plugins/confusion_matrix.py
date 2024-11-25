@@ -35,7 +35,7 @@ class ConfusionMatrix(PluginInterface):
         self.container = dcc.Graph(
             id=component_id,
             figure=self.display_text("Waiting for Data..."),
-            config={"scrollZoom": False, "doubleClick": "reset"}
+            config={"scrollZoom": False, "doubleClick": "reset"},
         )
 
         # Fill in plugin properties
@@ -121,6 +121,7 @@ class ConfusionMatrix(PluginInterface):
 
     def register_internal_callbacks(self):
         """Register internal callbacks for the plugin."""
+
         @callback(
             Output(self.component_id, "figure", allow_duplicate=True),
             Input(self.component_id, "clickData"),
