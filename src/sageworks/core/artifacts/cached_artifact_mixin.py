@@ -40,6 +40,7 @@ class CachedArtifactMixin:
             # Check for the blocking case (no cached value)
             if cached_value is None:
                 self.log.important(f"Blocking: Invoking method {method.__name__} for {cache_key}")
+                cls.fresh_cache.set(cache_key, True)
                 result = method(self, *args, **kwargs)
                 cls.artifact_cache.set(cache_key, result)
                 return result
