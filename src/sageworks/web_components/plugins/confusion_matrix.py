@@ -127,7 +127,7 @@ class ConfusionMatrix(PluginInterface):
             State(self.component_id, "figure"),
             prevent_initial_call=True,
         )
-        def highlight_square(click_data, current_figure):
+        def highlight_cm_square(click_data, current_figure):
             """Highlight the selected confusion matrix square."""
             if not click_data or "points" not in click_data:
                 return current_figure  # No click data, return the current figure
@@ -146,27 +146,16 @@ class ConfusionMatrix(PluginInterface):
             delta = 0.5
             highlight_shape = {
                 "type": "rect",
-                "xref": "x",
-                "yref": "y",
                 "x0": x_idx - delta,
                 "x1": x_idx + delta,
                 "y0": y_idx - delta,
                 "y1": y_idx + delta,
-                "line": {"color": "grey", "width": 4},
+                "line": {"color": "grey", "width": 2},
                 "layer": "above",
             }
 
-            # Add the rectangle to the figure layout
-            if "shapes" not in current_figure["layout"]:
-                current_figure["layout"]["shapes"] = []
-
-            # Remove previous highlight
-            current_figure["layout"]["shapes"] = [
-                shape for shape in current_figure["layout"]["shapes"] if shape.get("line", {}).get("color") != "grey"
-            ]
-
-            # Add the new highlight
-            current_figure["layout"]["shapes"].append(highlight_shape)
+            # Add the highlight
+            current_figure["layout"]["shapes"] = [highlight_shape]
 
             return current_figure
 
