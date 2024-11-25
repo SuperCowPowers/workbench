@@ -2,10 +2,13 @@ from abc import abstractmethod
 import inspect
 from typing import Union, Tuple, get_args, get_origin
 from enum import Enum
+import logging
 from dash.development.base_component import Component
 
 # Local Imports
 from sageworks.web_components.component_interface import ComponentInterface
+
+log = logging.getLogger("sageworks")
 
 
 class PluginPage(Enum):
@@ -97,6 +100,7 @@ class PluginInterface(ComponentInterface):
         if cls is PluginInterface:
             # Check if the subclass has all the required attributes
             if not all(hasattr(subclass, attr) for attr in ("auto_load_page", "plugin_input_type")):
+                log.error(f"Missing required attributes in {subclass.__name__}")
                 return False
 
             # Check if the subclass has all the required methods with correct signatures
@@ -104,19 +108,22 @@ class PluginInterface(ComponentInterface):
             for method in required_methods:
                 # Check for the presence of the method
                 if not hasattr(subclass, method):
+                    log.error(f"Missing required method: {method} in {subclass.__name__}")
                     return False
 
                 # Check if the method is implemented by the subclass itself
                 subclass_method = getattr(subclass, method)
                 if subclass_method.__qualname__.split(".")[0] != subclass.__name__:
+                    log.error(f"Method {method} is not implemented by {subclass.__name__}")
                     return False
 
                 # Check argument types and return type
                 base_class_method = getattr(cls, method)
                 arg_type_error = cls._check_argument_types(base_class_method, subclass_method)
                 return_type_error = cls._check_return_type(base_class_method, subclass_method)
-
                 if arg_type_error or return_type_error:
+                    log.error(arg_type_error)
+                    log.error(return_type_error)
                     return False
 
             # If all checks pass, return True
@@ -185,10 +192,10 @@ class PluginInterface(ComponentInterface):
             if get_origin(expected) is Union:
                 expected_types = get_args(expected)
                 if not cls._is_subtype_of_any(actual, expected_types):
-                    return f"Expected argument types {expected_types} do not include the actual argument type {actual}"
+                    return f"Argument type {actual} not in ({expected_types})"
             else:
                 if expected != actual:
-                    return f"Expected argument type {expected} does not match actual argument type {actual}"
+                    return f"Argument {actual} doesn't match expected {expected}"
 
         return None
 
