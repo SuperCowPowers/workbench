@@ -56,7 +56,7 @@ class ComponentInterface(ABC):
         CachedDataSource,
         CachedFeatureSet,
         CachedModel,
-        CachedEndpoint
+        CachedEndpoint,
     ]
 
     def __init__(self, theme: str = "DARK"):

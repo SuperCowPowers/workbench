@@ -29,7 +29,9 @@ class PluginUnitTest:
             auto_update (bool): Whether to automatically update the plugin properties (default: True)
             **kwargs: Additional keyword arguments
         """
-        assert issubclass(plugin_class, PluginInterface), "Plugin class has not passed all the PluginInterface validations"
+        assert issubclass(
+            plugin_class, PluginInterface
+        ), "Plugin class has not passed all the PluginInterface validations"
 
         # If the input data is provided, let's store it for when update_properties is called
         self.input_data = input_data
