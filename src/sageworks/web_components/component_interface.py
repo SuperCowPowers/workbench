@@ -15,6 +15,11 @@ import networkx as nx
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint
+from sageworks.cached.cached_data_source import CachedDataSource
+from sageworks.cached.cached_feature_set import CachedFeatureSet
+from sageworks.cached.cached_model import CachedModel
+from sageworks.cached.cached_endpoint import CachedEndpoint
+
 from sageworks.api.pipeline import Pipeline
 from sageworks.core.artifacts.graph_core import GraphCore
 
@@ -38,7 +43,21 @@ class ComponentInterface(ABC):
 
     log = logging.getLogger("sageworks")
 
-    SageworksObject = Union[DataSource, FeatureSet, Model, Endpoint, Pipeline, GraphCore, nx.Graph, pd.DataFrame]
+    # Define the SageWorks Objects Type (revisit allowing the non-cached objects)
+    SageworksObject = Union[
+        DataSource,
+        FeatureSet,
+        Model,
+        Endpoint,
+        Pipeline,
+        GraphCore,
+        nx.Graph,
+        pd.DataFrame,
+        CachedDataSource,
+        CachedFeatureSet,
+        CachedModel,
+        CachedEndpoint
+    ]
 
     def __init__(self, theme: str = "DARK"):
         """Initialize the Component Interface
