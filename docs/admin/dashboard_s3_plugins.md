@@ -75,9 +75,6 @@ aws ecs update-service --cluster your-cluster-name \
 ### Verify new Plugin changes
 Okay now that the ECS service has restarted (which can take a bit) you can now go to the Dashboard and test/verify that the changes you made now show up on the Dashboard.
 
-```
-docker build -t my_sageworks_with_plugins:v1_0 --platform linux/amd64 .
-```
 
 ## Questions?
 <img align="right" src="../../images/scp.png" width="180">
