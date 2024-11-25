@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 # SageWorks Imports
 from sageworks.api import Model
 from sageworks.web_components.component_interface import ComponentInterface
-from sageworks.web_components.confusion_matrix import ConfusionMatrix
+from sageworks.web_components.plugins.confusion_matrix import ConfusionMatrix
 from sageworks.web_components.regression_plot import RegressionPlot
 
 
@@ -38,7 +38,7 @@ class ModelPlot(ComponentInterface):
         # Based on the model type, we'll generate a different plot
         model_type = model_details.get("model_type")
         if model_type == "classifier":
-            return ConfusionMatrix().update_properties(model, inference_run)
+            return ConfusionMatrix().update_properties(model, inference_run=inference_run)[0]
         elif model_type in ["regressor", "quantile_regressor"]:
             return RegressionPlot().update_properties(model, inference_run)
         else:
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
     from sageworks.api.model import Model
 
-    m = Model("abalone-regression")
+    m = Model("wine-classification")
     inference_run = "model_training"
 
     # Instantiate the ModelPlot class

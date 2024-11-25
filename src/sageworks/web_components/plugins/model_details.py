@@ -68,7 +68,7 @@ class ModelDetails(PluginInterface):
         """Update the properties for the plugin.
 
         Args:
-            model (Model): An instantiated Model object
+            model (CachedModel): An instantiated CachedModel object
             **kwargs: Additional keyword arguments (unused)
 
         Returns:

@@ -15,7 +15,7 @@ def test_confusion_matrix():
     cm = ConfusionMatrix()
 
     # Generate the figure
-    fig = cm.update_properties(m, inference_run)
+    fig = cm.update_properties(m, inference_run=inference_run)
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")

@@ -5,12 +5,23 @@ import plotly.graph_objects as go
 
 
 # SageWorks Imports
-from sageworks.web_components.component_interface import ComponentInterface
-from sageworks.api import Model
+from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.cached.cached_model import CachedModel
 
 
-class ConfusionMatrix(ComponentInterface):
+class ConfusionMatrix(PluginInterface):
     """Confusion Matrix Component"""
+
+    """Initialize this Plugin Component Class with required attributes"""
+    auto_load_page = PluginPage.NONE
+    plugin_input_type = PluginInputType.MODEL
+
+    def __init__(self):
+        """Initialize the ModelDetails plugin class"""
+        self.component_id = None
+
+        # Call the parent class constructor
+        super().__init__()
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.
@@ -19,16 +30,28 @@ class ConfusionMatrix(ComponentInterface):
         Returns:
             dcc.Graph: The Confusion Matrix Component
         """
-        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
+        self.component_id = component_id
+        self.container = dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_properties(self, model: Model, inference_run: str) -> go.Figure:
+        # Fill in plugin properties
+        self.properties = [(self.component_id, "figure")]
+        # self.signals = [(f"{self.component_id}", "value")]
+
+        # Return the container
+        return self.container
+
+    def update_properties(self, model: CachedModel, **kwargs) -> list:
         """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
         Args:
-            model (Model): Sageworks Model object
-            inference_run (str): Inference capture UUID
+            model (CachedModel): Sageworks instantiated CachedModel object
+            **kwargs:
+                - inference_run (str): Inference capture UUID
         Returns:
             plotly.graph_objs.Figure: A Figure object containing the confusion matrix.
         """
+
+        # Get the inference run from the kwargs
+        inference_run = kwargs.get("inference_run", "auto_inference")
 
         # Grab the confusion matrix from the model details
         df = model.confusion_matrix(inference_run)
@@ -99,24 +122,13 @@ class ConfusionMatrix(ComponentInterface):
                 text_value = f"{value:.2f}" if isinstance(value, float) else str(value)
                 fig.add_annotation(x=j, y=i, text=text_value, showarrow=False, font_size=16, font_color="#dddddd")
 
-        return fig
+        return [fig]  # update_properties returns a list of updated property values
 
 
 if __name__ == "__main__":
-    # This class takes in model details and generates a Confusion Matrix
-    from sageworks.api.model import Model
+    """Run the Unit Test for the Plugin."""
+    from sageworks.web_components.plugin_unit_test import PluginUnitTest
 
-    m = Model("wine-classification")
-    inference_run = "auto_inference"
-
-    # Instantiate the ConfusionMatrix class
-    cm = ConfusionMatrix()
-
-    # Generate the figure
-    fig = cm.update_properties(m, inference_run)
-
-    # Apply dark theme
-    fig.update_layout(template="plotly_dark")
-
-    # Show the figure
-    fig.show()
+    # Run the Unit Test on the Plugin
+    model = CachedModel("wine-classification")
+    PluginUnitTest(ConfusionMatrix, input_data=model).run()
