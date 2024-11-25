@@ -47,6 +47,15 @@ class PluginManager:
             self.log.warning("SAGEWORKS_PLUGINS not set. No plugins will be loaded.")
             return
 
+        # Load the plugins
+        self.load_plugins()
+
+        # Singleton is now initialized
+        self.__initialized = True
+
+    def load_plugins(self):
+        """Loads plugins from our 'load_from' directory"""
+
         # Check if the config directory is local file or S3
         if not self.config_plugin_dir.startswith("s3://"):
             self.loading_dir = self.config_plugin_dir
@@ -57,14 +66,6 @@ class PluginManager:
             copy_s3_files_to_local(self.config_plugin_dir, self.loading_dir)
             atexit.register(self._cleanup_temp_dir)
 
-        # Load the plugins
-        self.load_plugins()
-
-        # Singleton is now initialized
-        self.__initialized = True
-
-    def load_plugins(self):
-        """Loads plugins from our 'load_from' directory"""
         self.log.important(f"Loading plugins from {self.loading_dir}...")
         for plugin_type in self.plugins.keys():
             self._load_plugins(self.loading_dir, plugin_type)
@@ -333,14 +334,13 @@ if __name__ == "__main__":
 
     # Test Modified Time by modifying a plugin file
     cm = ConfigManager()
-    plugin_path = cm.get_config("SAGEWORKS_PLUGINS") + "/web_components/model_plugin.py"
+    plugin_path = cm.get_config("SAGEWORKS_PLUGINS") + "/web_components/endpoint_turbo.py"
     print(manager.plugins_modified())
     # Modify the plugin file modified time to now
     os.utime(plugin_path, None)
     print(manager.plugins_modified())
 
     # Test S3 Plugin Loading
-    """
     print("\n\n*** Testing S3 Plugin Loading ***\n\n")
     s3_path = "s3://sandbox-sageworks-artifacts/sageworks_plugins"
     cm = ConfigManager()
@@ -349,7 +349,6 @@ if __name__ == "__main__":
     # Since we're using a singleton, we need to create a new instance
     PluginManager._instance = None
     manager = PluginManager()
-    """
 
     # Get web components for the model view
     model_plugin = manager.get_list_of_web_plugins(PluginPage.MODEL)
