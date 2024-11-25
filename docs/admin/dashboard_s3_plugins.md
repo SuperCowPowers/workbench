@@ -15,7 +15,7 @@ Make sure your Dashboard is configured to pull plugin pages, views, and web_comp
 <img src="../images/dashboard_secret_click.png" width="500">
 
 **Dashboard Status Page**
-Okay now check your **Plugin Path:** config and make sure it points to the S3 bucket you're expected.
+Okay now check your **Plugin Path:** config and make sure it points to the S3 bucket you're expecting.
 
 <img src="../images/status_showing_S3_path.png" width="350">
 
