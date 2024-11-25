@@ -111,7 +111,8 @@ nav:
     - PyPI Release:  admin/pypi_release.md
     - Base Docker Push:  admin/base_docker_push.md
     - Dashboard Docker Push:  admin/dashboard_docker_push.md
-    - Dashboard with Plugins:  admin/dashboard_with_plugins.md
+    - Dashboard with S3 Plugins:  admin/dashboard_s3_plugins.md
+    - Dashboard with Docker Plugins:  admin/dashboard_with_plugins.md
     - Storage:
       - SageWorks Docker for Lambdas:  admin/sageworks_docker_for_lambdas.md
 
