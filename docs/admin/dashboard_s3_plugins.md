@@ -70,6 +70,8 @@ aws ecs update-service --cluster your-cluster-name \
 --service your-service-name --force-new-deployment
 ```
 
+**Important:** Even though this command will finish immediately, the ECS service will slowly flip over to the new instance (like 5-10 minutes), so wait a bit before testing the changes.
+
 ### Verify new Plugin changes
 Okay now that the ECS service has restarted (which can take a bit) you can now go to the Dashboard and test/verify that the changes you made now show up on the Dashboard.
 
