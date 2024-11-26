@@ -109,7 +109,7 @@ class DataSource(AthenaSource):
     def to_features(
         self,
         name: str,
-        id_column: str,
+        id_column: str = None,
         tags: list = None,
         event_time_column: str = None,
         one_hot_columns: list = None,
@@ -119,7 +119,7 @@ class DataSource(AthenaSource):
 
         Args:
             name (str): Set the name for feature set (must be lowercase).
-            id_column (str): The ID column (must be specified, use "auto" for auto-generated IDs).
+            id_column (str, optional): The ID column (if not specified, an 'auto_id' will be generated).
             tags (list, optional: Set the tags for the feature set. If not specified tags will be generated
             event_time_column (str, optional): Set the event time for feature set. If not specified will be generated
             one_hot_columns (list, optional): Set the columns to be one-hot encoded. (default: None)

@@ -24,7 +24,7 @@ if __name__ == "__main__":
     ds = DataSource("s3://sageworks-public-data/common/abalone.csv")
 
     # Now create a FeatureSet
-    ds.to_features("abalone_features", id_column="auto")
+    ds.to_features("abalone_features")
 
     # Create the abalone_regression Model
     fs = FeatureSet("abalone_features")

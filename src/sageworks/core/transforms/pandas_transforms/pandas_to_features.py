@@ -54,12 +54,12 @@ class PandasToFeatures(Transform):
         self.output_feature_set = None
         self.expected_rows = 0
 
-    def set_input(self, input_df: pd.DataFrame, id_column, event_time_column=None, one_hot_columns=None):
+    def set_input(self, input_df: pd.DataFrame, id_column=None, event_time_column=None, one_hot_columns=None):
         """Set the Input DataFrame for this Transform
 
         Args:
             input_df (pd.DataFrame): The input DataFrame.
-            id_column (str): The ID column (must be specified, use "auto" for auto-generated IDs).
+            id_column (str, optional): The ID column (if not specified, an 'auto_id' will be generated).
             event_time_column (str, optional): The name of the event time column (default: None).
             one_hot_columns (list, optional): The list of columns to one-hot encode (default: None).
         """
@@ -79,8 +79,8 @@ class PandasToFeatures(Transform):
 
     def _ensure_id_column(self):
         """Internal: AWS Feature Store requires an Id field"""
-        if self.id_column in ["auto", "index"]:
-            self.log.info("Generating an 'auto_id' column from the dataframe index..")
+        if self.id_column is None:
+            self.log.warning("Generating an 'auto_id' column, highly recommended to set the id_column arg!")
             self.output_df["auto_id"] = self.output_df.index
             return
         if self.id_column not in self.output_df.columns:

@@ -25,7 +25,7 @@ def transform_test():
 def to_features_test():
 
     ds = DataSource("wine_data")
-    ds.to_features("wine_features", id_column="auto", tags=["wine", "classification"])
+    ds.to_features("wine_features", tags=["wine", "classification"])
 
 
 if __name__ == "__main__":

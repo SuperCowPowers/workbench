@@ -10,7 +10,7 @@ print(f"Hello from SageWorks: {sageworks.__version__}")
 ds = DataSource("s3://sageworks-public-data/common/abalone.csv", name="sp_abalone_data")
 
 # Now create a FeatureSet
-ds.to_features("sp_abalone_features", id_column="auto")
+ds.to_features("sp_abalone_features")
 
 # Create the abalone_regression Model
 fs = FeatureSet("sp_abalone_features")

@@ -13,7 +13,7 @@ def test():
     pprint(my_data.details())
 
     # Create a FeatureSet (with a name that has mixed case)
-    fs = my_data.to_features("aBaLone-feaTures", id_column="auto")
+    fs = my_data.to_features("aBaLone-feaTures")
     assert fs is None
 
 

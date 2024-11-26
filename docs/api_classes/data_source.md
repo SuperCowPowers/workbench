@@ -75,7 +75,7 @@ from sageworks.api.data_source import DataSource
 
 # Convert the Data Source to a Feature Set
 test_data = DataSource('test_data')
-my_features = test_data.to_features("test_features", id_column="auto")
+my_features = test_data.to_features("test_features")
 print(my_features.details())
 ```
 
