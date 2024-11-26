@@ -4323,7 +4323,7 @@ can be viewed and explored within the SageWorks Dashboard UI.</p>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Convert the Data Source to a Feature Set</span>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">test_data</span> <span class="o">=</span> <span class="n">DataSource</span><span class="p">(</span><span class="s1">&#39;test_data&#39;</span><span class="p">)</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">my_features</span> <span class="o">=</span> <span class="n">test_data</span><span class="o">.</span><span class="n">to_features</span><span class="p">()</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">my_features</span> <span class="o">=</span> <span class="n">test_data</span><span class="o">.</span><span class="n">to_features</span><span class="p">(</span><span class="s2">&quot;test_features&quot;</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>
 </span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nb">print</span><span class="p">(</span><span class="n">my_features</span><span class="o">.</span><span class="n">details</span><span class="p">())</span>
 </span></code></pre></div>
 <h2 id="sageworks-ui">SageWorks UI</h2>
