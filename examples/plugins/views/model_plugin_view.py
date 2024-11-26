@@ -4,7 +4,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.web_views.web_view import WebView
-from sageworks.api import Meta
+from sageworks.cached.cached_model import CachedModel
 
 
 class ModelPluginView(WebView):
@@ -14,7 +14,7 @@ class ModelPluginView(WebView):
         super().__init__()
 
         # We're using the SageWorks Meta class to get information about models
-        self.meta = Meta()
+        self.meta = CachedModel()
 
         # Call Refresh
         self.models_df = None
