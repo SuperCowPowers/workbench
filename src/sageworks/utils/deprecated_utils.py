@@ -1,6 +1,7 @@
 """Deprecated Utilities for Sageworks"""
 
 import traceback
+import sys
 import logging
 from functools import wraps
 from typing import Callable, Type, Union
@@ -49,6 +50,39 @@ def deprecated(version: str, stack_trace: bool = False) -> Callable:
     return decorator
 
 
+def hard_deprecated() -> Callable:
+    """Decorator to mark classes or functions as immediately deprecated and cause termination."""
+
+    def decorator(cls_or_func: Union[Type, Callable]) -> Union[Type, Callable]:
+        message = f"{cls_or_func.__name__} is immediately deprecated and is being removed."
+
+        if isinstance(cls_or_func, type):
+            # Class decorator
+            original_init = cls_or_func.__init__
+
+            @wraps(original_init)
+            def new_init(self, *args, **kwargs):
+                log.critical(message)
+                trimmed_stack = "".join(traceback.format_stack()[:-1])
+                log.critical("Call stack:\n%s", trimmed_stack)
+                sys.exit(1)
+
+            cls_or_func.__init__ = new_init
+            return cls_or_func
+        else:
+            # Function/method decorator
+            @wraps(cls_or_func)
+            def wrapper(*args, **kwargs):
+                log.critical(message)
+                trimmed_stack = "".join(traceback.format_stack()[:-1])
+                log.critical("Call stack:\n%s", trimmed_stack)
+                sys.exit(1)
+
+            return wrapper
+
+    return decorator
+
+
 if __name__ == "__main__":
 
     @deprecated(version="0.9")
@@ -65,3 +99,20 @@ if __name__ == "__main__":
 
     obj = MyClass()
     obj.old_method()
+
+    @hard_deprecated()
+    class ImmediateClass:
+        def __init__(self):
+            print("This should not be seen.")
+
+    # Uncomment to test (this will exit the script)
+    # instance = ImmediateClass()
+
+    class AnotherClass:
+        @hard_deprecated()
+        def immediate_method(self):
+            print("This should not be seen either.")
+
+    # Uncomment to test (this will exit the script)
+    # obj = AnotherClass()
+    # obj.immediate_method()
