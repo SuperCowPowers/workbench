@@ -92,9 +92,9 @@ if __name__ == "__main__":
     model_type = ModelType(model_type_str)
     feature_set = FeatureSet(feature_set_name)
     feature_set.to_model(
-        model_type,
-        target_column=model_target,
         name=model_name,
+        model_type=model_type,
+        target_column=model_target,
         feature_list=model_features,
         tags=model_tags,
     )

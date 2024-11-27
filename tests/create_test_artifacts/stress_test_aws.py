@@ -38,8 +38,8 @@ def create_model_pipeline(model_name):
     # Create the Model
     fs = FeatureSet(feature_set_name)
     m = fs.to_model(
-        model_type=ModelType.REGRESSOR,
         name=model_name,
+        model_type=ModelType.REGRESSOR,
         target_column="iq_score",
         tags=["test"],
         description=f"Test Model {model_name}",

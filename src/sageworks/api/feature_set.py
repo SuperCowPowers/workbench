@@ -22,8 +22,8 @@ class FeatureSet(FeatureSetCore):
         my_features = FeatureSet(name)
         my_features.details()
         my_features.to_model(
-            ModelType.REGRESSOR,
             name="abalone-regression",
+            model_type=ModelType.REGRESSOR,
             target_column="class_number_of_rings"
             feature_list=["my", "best", "features"])
         )
@@ -143,4 +143,4 @@ if __name__ == "__main__":
     pprint(my_features.details())
 
     # Create a Model from the FeatureSet
-    my_model = my_features.to_model(model_type=ModelType.REGRESSOR, target_column="iq_score")
+    my_model = my_features.to_model(name="test-model", model_type=ModelType.REGRESSOR, target_column="iq_score")

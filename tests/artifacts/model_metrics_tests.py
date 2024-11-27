@@ -138,7 +138,7 @@ def create_model_and_endpoint():
     my_features = FeatureSet("abalone_features")
 
     # Create a Model/Endpoint from the FeatureSet
-    model_reg = my_features.to_model(model_type=ModelType.REGRESSOR, target_column="class_number_of_rings")
+    model_reg = my_features.to_model(name="abalone-regression", model_type=ModelType.REGRESSOR, target_column="class_number_of_rings")
     model_reg.to_endpoint(name="abalone-regression-end", tags=["abalone", "public"])
 
 

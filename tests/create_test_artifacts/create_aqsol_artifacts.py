@@ -74,9 +74,9 @@ if __name__ == "__main__":
             "bertzct",
         ]
         feature_set.to_model(
-            ModelType.REGRESSOR,
-            target_column="solubility",
             name="aqsol-regression",
+            model_type=ModelType.REGRESSOR,
+            target_column="solubility",
             feature_list=feature_list,
             description="AQSol Regression Model",
             tags=["aqsol", "regression"],
@@ -104,9 +104,9 @@ if __name__ == "__main__":
         exclude = ["id", "smiles", "solubility", "solubility_class"]
         feature_list = [f for f in feature_set.columns if f not in exclude]
         feature_set.to_model(
-            ModelType.REGRESSOR,
-            target_column="solubility",
             name="aqsol-mol-regression",
+            model_type=ModelType.REGRESSOR,
+            target_column="solubility",
             feature_list=feature_list,
             description="AQSol Descriptor Regression Model",
             tags=["aqsol", "regression"],
@@ -119,9 +119,9 @@ if __name__ == "__main__":
         exclude = ["id", "smiles", "solubility", "solubility_class"]
         feature_list = [f for f in feature_set.columns if f not in exclude]
         feature_set.to_model(
-            ModelType.CLASSIFIER,
-            target_column="solubility_class",
             name="aqsol-mol-class",
+            model_type=ModelType.CLASSIFIER,
+            target_column="solubility_class",
             feature_list=feature_list,
             description="AQSol Descriptor Classification Model",
             tags=["aqsol", "classification"],

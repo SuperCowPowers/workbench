@@ -27,9 +27,9 @@ if __name__ == "__main__":
         # Transform FeatureSet into Quantile Regression Model
         feature_set = FeatureSet("abalone_features")
         feature_set.to_model(
-            ModelType.REGRESSOR,
-            target_column="class_number_of_rings",
             name="abalone-quantile-reg",
+            model_type=ModelType.REGRESSOR,
+            target_column="class_number_of_rings",
             description="Abalone Quantile Regression",
             tags=["abalone", "quantiles"],
         )
@@ -69,10 +69,10 @@ if __name__ == "__main__":
         # Transform FeatureSet into Quantile Regression Model
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
-            ModelType.REGRESSOR,
+            name="aqsol-quantile-reg",
+            model_type=ModelType.REGRESSOR,
             target_column="solubility",
             feature_list=features,
-            name="aqsol-quantile-reg",
             description="AQSol Quantile Regression",
             tags=["aqsol", "quantiles"],
         )

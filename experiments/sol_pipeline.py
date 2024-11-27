@@ -104,9 +104,9 @@ if __name__ == "__main__":
     if recreate or not Model(model_name).exists():
         feature_set = FeatureSet(feature_set_name)
         feature_set.to_model(
-            model_type,
-            target_column=model_target,
             name=model_name,
+            model_type=model_type,
+            target_column=model_target,
             feature_list=model_features,
             tags=model_tags,
         )

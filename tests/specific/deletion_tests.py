@@ -29,7 +29,7 @@ def create_model():
     # If the model doesn't exist, create it
     if not Model("abc-regression").exists():
         FeatureSet("abc_features").to_model(
-            model_type=ModelType.REGRESSOR, target_column="iq_score", name="abc-regression"
+            name="abc-regression", model_type=ModelType.REGRESSOR, target_column="iq_score"
         )
 
 

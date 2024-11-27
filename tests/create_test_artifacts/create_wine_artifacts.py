@@ -37,8 +37,8 @@ if __name__ == "__main__":
     if recreate or not Model("wine-classification").exists():
         fs = FeatureSet("wine_features")
         m = fs.to_model(
-            model_type=ModelType.CLASSIFIER,
             name="wine-classification",
+            model_type=ModelType.CLASSIFIER,
             target_column="wine_class",
             tags=["wine", "classification"],
             description="Wine Classification Model",

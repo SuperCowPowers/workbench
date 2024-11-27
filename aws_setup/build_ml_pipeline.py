@@ -58,8 +58,8 @@ if __name__ == "__main__":
     if not Model("abalone-regression").exists():
         fs = FeatureSet("abalone_features")
         fs.to_model(
-            ModelType.REGRESSOR,
             name="abalone-regression",
+            model_type=ModelType.REGRESSOR,
             target_column="class_number_of_rings",
             tags=["abalone", "regression"],
             description="Abalone Regression Model",

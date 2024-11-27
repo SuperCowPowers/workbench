@@ -252,10 +252,10 @@ tags_list = ["Nightly", f"assay:{assay_type}"]
 
 ################# CREATE MODEL, DEPLOY ENDPOINT, INFERENCE #################
 sw_model = full_fs.to_model(
+    name=model_name,
     model_type=ModelType.CLASSIFIER,
     target_column=target[0],
     feature_list=features,
-    name=model_name,
     tags=tags_list,
 )
 print("Model Creation Complete")
