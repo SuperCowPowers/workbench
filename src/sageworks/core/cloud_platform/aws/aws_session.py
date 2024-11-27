@@ -83,7 +83,6 @@ class AWSSession:
 
     def _assume_sageworks_role_session_credentials(self):
         """Internal: Assume SageWorks Role and set up AWS Session credentials with automatic refresh."""
-        self.log.debug("Assuming the SageWorks Execution Role with Refreshing Credentials...")
         sts_client = boto3.client("sts")
 
         try:
