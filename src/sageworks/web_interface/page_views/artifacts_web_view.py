@@ -3,7 +3,7 @@
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.web_views.artifacts_text_view import ArtifactsTextView
+from sageworks.web_interface.page_views.artifacts_text_view import ArtifactsTextView
 from sageworks.utils.symbols import tag_symbols
 
 

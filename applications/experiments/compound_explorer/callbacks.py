@@ -7,7 +7,7 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
-from sageworks.web_views.data_source_web_view import DataSourceWebView
+from sageworks.web_interface.page_views.data_source_web_view import DataSourceWebView
 from sageworks.web_components import (
     table,
     compound_details,

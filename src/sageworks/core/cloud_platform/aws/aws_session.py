@@ -84,7 +84,6 @@ class AWSSession:
     def _assume_sageworks_role_session_credentials(self):
         """Internal: Assume SageWorks Role and set up AWS Session credentials with automatic refresh."""
         sts_client = boto3.client("sts")
-
         try:
             response = sts_client.assume_role(
                 RoleArn=self.get_sageworks_execution_role_arn(),

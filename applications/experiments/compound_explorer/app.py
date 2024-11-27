@@ -11,7 +11,7 @@ from sageworks.web_components import (
     violin_plots,
     scatter_plot,
 )
-from sageworks.web_views.data_source_web_view import DataSourceWebView
+from sageworks.web_interface.page_views.data_source_web_view import DataSourceWebView
 
 # Local Imports
 from layout import data_sources_layout
