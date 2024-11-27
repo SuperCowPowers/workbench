@@ -82,7 +82,7 @@ class FeatureSet(FeatureSetCore):
         feature_list: list = None,
         target_column: str = None,
         scikit_model_class: str = None,
-        **kwargs,
+        model_import_str: str = None,
     ) -> Union[Model, None]:
         """Create a Model from the FeatureSet
 
@@ -95,6 +95,7 @@ class FeatureSet(FeatureSetCore):
             feature_list (list): Set the feature list for the model. If not specified a feature list is generated.
             target_column (str): The target column for the model (use None for unsupervised model)
             scikit_model_class (str): Scikit model class to use (e.g. "KNeighborsRegressor", default: None)
+            model_import_str (str): The import for the model (e.g. "from sklearn.neighbors import KNeighborsRegressor
 
         Returns:
             Model: The Model created from the FeatureSet (or None if the Model could not be created)
@@ -116,12 +117,14 @@ class FeatureSet(FeatureSetCore):
 
         # Transform the FeatureSet into a Model
         features_to_model = FeaturesToModel(
-            self.uuid, name, model_type=model_type, scikit_model_class=scikit_model_class
+            self.uuid,
+            name,
+            model_type=model_type,
+            scikit_model_class=scikit_model_class,
+            model_import_str=model_import_str,
         )
         features_to_model.set_output_tags(tags)
-        features_to_model.transform(
-            target_column=target_column, description=description, feature_list=feature_list, **kwargs
-        )
+        features_to_model.transform(target_column=target_column, description=description, feature_list=feature_list)
 
         # Return the Model
         return Model(name)
