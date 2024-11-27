@@ -7,7 +7,7 @@ from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.web_components import table, model_plot
-from sageworks.utils.pandas_utils import deserialize_aws_broker_data
+from sageworks.utils.pandas_utils import deserialize_aws_metadata
 from sageworks.cached.cached_model import CachedModel
 
 # Get the SageWorks logger
@@ -19,10 +19,10 @@ def update_models_table(app: Dash):
         [Output("models_table", "columns"), Output("models_table", "data")],
         Input("aws-broker-data", "data"),
     )
-    def models_update(serialized_aws_broker_data):
+    def models_update(serialized_aws_metadata):
         """Return the table data for the Models Table"""
-        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-        models = aws_broker_data["MODELS"]
+        aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
+        models = aws_metadata["MODELS"]
         models["id"] = range(len(models))
         column_setup_list = table.Table().column_setup(models, markdown_columns=["Model Group"])
         return [column_setup_list, models.to_dict("records")]

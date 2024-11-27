@@ -9,7 +9,7 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.web_views.data_source_web_view import DataSourceWebView
 from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
-from sageworks.utils.pandas_utils import deserialize_aws_broker_data
+from sageworks.utils.pandas_utils import deserialize_aws_metadata
 
 import logging
 
@@ -28,10 +28,10 @@ def update_data_sources_table(app: Dash):
         ],
         Input("aws-broker-data", "data"),
     )
-    def data_sources_update(serialized_aws_broker_data):
+    def data_sources_update(serialized_aws_metadata):
         """Return the table data for the DataSources Table"""
-        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-        data_sources = aws_broker_data["DATA_SOURCES"]
+        aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
+        data_sources = aws_metadata["DATA_SOURCES"]
         data_sources["id"] = range(len(data_sources))
         column_setup_list = table.Table().column_setup(data_sources, markdown_columns=["Name"])
         return [column_setup_list, data_sources.to_dict("records")]

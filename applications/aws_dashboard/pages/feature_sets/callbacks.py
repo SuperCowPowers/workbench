@@ -9,7 +9,7 @@ import pandas as pd
 # SageWorks Imports
 from sageworks.web_views.feature_set_web_view import FeatureSetWebView
 from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
-from sageworks.utils.pandas_utils import deserialize_aws_broker_data
+from sageworks.utils.pandas_utils import deserialize_aws_metadata
 
 # Cheese Sauce
 smart_sample_rows = []
@@ -23,10 +23,10 @@ def update_feature_sets_table(app: Dash):
         ],
         Input("aws-broker-data", "data"),
     )
-    def feature_sets_update(serialized_aws_broker_data):
+    def feature_sets_update(serialized_aws_metadata):
         """Return the table data for the FeatureSets Table"""
-        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-        feature_sets = aws_broker_data["FEATURE_SETS"]
+        aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
+        feature_sets = aws_metadata["FEATURE_SETS"]
         feature_sets["id"] = range(len(feature_sets))
         column_setup_list = table.Table().column_setup(feature_sets, markdown_columns=["Feature Group"])
         return [column_setup_list, feature_sets.to_dict("records")]

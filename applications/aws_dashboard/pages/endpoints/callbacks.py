@@ -8,7 +8,7 @@ from dash.dependencies import Input, Output, State
 # SageWorks Imports
 from sageworks.web_views.endpoint_web_view import EndpointWebView
 from sageworks.web_components import table, endpoint_metric_plots
-from sageworks.utils.pandas_utils import deserialize_aws_broker_data
+from sageworks.utils.pandas_utils import deserialize_aws_metadata
 from sageworks.cached.cached_endpoint import CachedEndpoint
 
 # Get the SageWorks logger
@@ -23,10 +23,10 @@ def update_endpoints_table(app: Dash):
         ],
         Input("aws-broker-data", "data"),
     )
-    def endpoints_update(serialized_aws_broker_data):
+    def endpoints_update(serialized_aws_metadata):
         """Return the table data for the Endpoints Table"""
-        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-        endpoints = aws_broker_data["ENDPOINTS"]
+        aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
+        endpoints = aws_metadata["ENDPOINTS"]
         endpoints["id"] = range(len(endpoints))
         column_setup_list = table.Table().column_setup(endpoints, markdown_columns=["Name"])
         return [column_setup_list, endpoints.to_dict("records")]

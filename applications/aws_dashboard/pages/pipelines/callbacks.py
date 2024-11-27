@@ -6,7 +6,7 @@ from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output
 
 # SageWorks Imports
-from sageworks.utils.pandas_utils import deserialize_aws_broker_data
+from sageworks.utils.pandas_utils import deserialize_aws_metadata
 from sageworks.api.pipeline import Pipeline
 
 # Get the SageWorks logger
@@ -18,10 +18,10 @@ def update_pipelines_table(table_object):
         [Output(component_id, prop) for component_id, prop in table_object.properties],
         Input("aws-broker-data", "data"),
     )
-    def pipelines_update(serialized_aws_broker_data):
+    def pipelines_update(serialized_aws_metadata):
         """Return the table data for the Pipelines Table"""
-        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-        pipelines = aws_broker_data["PIPELINES"]
+        aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
+        pipelines = aws_metadata["PIPELINES"]
         return table_object.update_properties(pipelines)
 
 

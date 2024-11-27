@@ -94,7 +94,7 @@ class PluginPageExample:
             [Output("my_model_table", "columns"), Output("my_model_table", "data")],
             Input("aws-broker-data", "data"),  # View this as an update trigger
         )
-        def models_update(serialized_aws_broker_data):
+        def models_update(serialized_aws_metadata):
             """Grab our view data and update the table"""
             models = self.my_model_view.view_data()
             models["id"] = range(len(models))
