@@ -83,6 +83,7 @@ class FeatureSet(FeatureSetCore):
         target_column: str = None,
         scikit_model_class: str = None,
         model_import_str: str = None,
+        **kwargs,
     ) -> Union[Model, None]:
         """Create a Model from the FeatureSet
 
@@ -124,7 +125,9 @@ class FeatureSet(FeatureSetCore):
             model_import_str=model_import_str,
         )
         features_to_model.set_output_tags(tags)
-        features_to_model.transform(target_column=target_column, description=description, feature_list=feature_list)
+        features_to_model.transform(
+            target_column=target_column, description=description, feature_list=feature_list, **kwargs
+        )
 
         # Return the Model
         return Model(name)
