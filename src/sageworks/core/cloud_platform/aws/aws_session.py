@@ -33,7 +33,7 @@ class AWSSession:
         try:
             self.account_id = boto3.client("sts").get_caller_identity()["Account"]
             self.region = boto3.Session().region_name
-        except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError) as e:
+        except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
             self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
             sys.exit(1)
 
@@ -103,8 +103,8 @@ class AWSSession:
             return credentials
 
         except botocore.exceptions.ClientError as e:
-            error_code = e.response['Error']['Code']
-            if error_code == 'ExpiredToken':
+            error_code = e.response["Error"]["Code"]
+            if error_code == "ExpiredToken":
                 self.log.error("AWS SSO session has expired. Please run 'aws sso login' to renew your session.")
             else:
                 self.log.error(f"Error during Refresh Credentials: {e}")
