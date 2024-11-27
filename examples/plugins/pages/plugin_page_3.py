@@ -6,9 +6,9 @@ from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
-from sageworks.web_components import table
-from sageworks.web_components.plugins.model_details import ModelDetails
-from sageworks.web_components.model_plot import ModelPlot
+from sageworks.web_interface.components import table
+from sageworks.web_interface.components.plugins.model_details import ModelDetails
+from sageworks.web_interface.components.model_plot import ModelPlot
 from sageworks.cached.cached_meta import CachedMeta
 from sageworks.cached.cached_model import CachedModel
 

@@ -8,7 +8,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
+from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
 from sageworks.utils.pandas_utils import deserialize_aws_metadata
 
 import logging

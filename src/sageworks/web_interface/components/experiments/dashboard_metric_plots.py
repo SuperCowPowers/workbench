@@ -9,7 +9,7 @@ from plotly.subplots import make_subplots
 from datetime import datetime
 
 # SageWorks Imports
-from sageworks.web_components.component_interface import ComponentInterface
+from sageworks.web_interface.components.component_interface import ComponentInterface
 from sageworks.utils.pandas_utils import subplot_positions
 
 # Get local timezone

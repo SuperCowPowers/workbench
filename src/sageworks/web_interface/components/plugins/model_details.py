@@ -11,7 +11,7 @@ from dash.dependencies import Input, Output, State
 # SageWorks Imports
 from sageworks.cached.cached_model import CachedModel
 from sageworks.utils.markdown_utils import health_tag_markdown
-from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
@@ -222,7 +222,7 @@ class ModelDetails(PluginInterface):
 
 if __name__ == "__main__":
     # This class takes in model details and generates a details Markdown component
-    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(ModelDetails).run()

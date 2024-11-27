@@ -8,7 +8,7 @@ import dash_bootstrap_components as dbc
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.data_source_web_view import DataSourceWebView
-from sageworks.web_components import (
+from sageworks.web_interface.components import (
     table,
     compound_details,
     violin_plots,

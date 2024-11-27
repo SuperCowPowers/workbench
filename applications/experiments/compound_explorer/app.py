@@ -5,7 +5,7 @@ from dash_bootstrap_templates import load_figure_template
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
-from sageworks.web_components import (
+from sageworks.web_interface.components import (
     table,
     compound_details,
     violin_plots,

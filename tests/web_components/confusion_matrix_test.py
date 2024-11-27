@@ -1,7 +1,7 @@
 """Tests for confusion_matrix web component"""
 
 # SageWorks Imports
-from sageworks.web_components.plugins.confusion_matrix import ConfusionMatrix
+from sageworks.web_interface.components.plugins.confusion_matrix import ConfusionMatrix
 from sageworks.api.model import Model
 
 

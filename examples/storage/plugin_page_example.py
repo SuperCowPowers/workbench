@@ -7,7 +7,7 @@ from dash.dependencies import Input, Output, State
 import logging
 
 # SageWorks Imports
-from sageworks.web_components import table
+from sageworks.web_interface.components import table
 from sageworks.utils.plugin_manager import PluginManager
 from sageworks.api.model import Model
 

@@ -13,8 +13,8 @@ from typing import Union, Dict, List, Any
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.s3_utils import copy_s3_files_to_local
 from sageworks.web_interface.page_views.web_view import WebView
-from sageworks.web_components.plugin_interface import PluginInterface
-from sageworks.web_components.plugin_interface import PluginPage
+from sageworks.web_interface.components.plugin_interface import PluginInterface
+from sageworks.web_interface.components.plugin_interface import PluginPage
 
 
 class PluginManager:
@@ -38,7 +38,7 @@ class PluginManager:
         self.config_plugin_dir = None
         self.loading_dir = False
         self.plugin_modified_time = None
-        self.plugins: Dict[str, dict] = {"web_components": {}, "transforms": {}, "views": {}, "pages": {}, "css": {}}
+        self.plugins: Dict[str, dict] = {"components": {}, "transforms": {}, "views": {}, "pages": {}, "css": {}}
 
         # Get the plugin directory from the config
         cm = ConfigManager()
@@ -78,7 +78,7 @@ class PluginManager:
 
         Args:
             base_dir (str): Base directory of the plugins.
-            plugin_type (str): Type of the plugin to load (e.g., web_components, pages, transforms).
+            plugin_type (str): Type of the plugin to load (e.g., components, pages, transforms).
         """
         type_dir = os.path.join(base_dir, plugin_type)
         if not os.path.isdir(type_dir):
@@ -95,7 +95,7 @@ class PluginManager:
                         self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
 
                         # For web components, check if the class is a subclass of PluginInterface
-                        if plugin_type == "web_components":
+                        if plugin_type == "components":
                             if issubclass(attr, PluginInterface):
                                 self.plugins[plugin_type][attr_name] = attr
                             else:
@@ -173,9 +173,9 @@ class PluginManager:
             List[Any]: A list of INSTANTIATED plugin classes for the requested page.
         """
         plugin_classes = [
-            self.plugins["web_components"][x]
-            for x in self.plugins["web_components"]
-            if self.plugins["web_components"][x].auto_load_page == plugin_page
+            self.plugins["components"][x]
+            for x in self.plugins["components"]
+            if self.plugins["components"][x].auto_load_page == plugin_page
         ]
         return [x() for x in plugin_classes]
 
@@ -189,7 +189,7 @@ class PluginManager:
         Returns:
             PluginInterface: The INSTANTIATED web plugin class with the given name
         """
-        web_plugin = self.plugins["web_components"].get(plugin_name)
+        web_plugin = self.plugins["components"].get(plugin_name)
         return web_plugin() if web_plugin else None
 
     def get_view(self, view_name: str) -> Union[WebView, None]:
@@ -334,7 +334,7 @@ if __name__ == "__main__":
 
     # Test Modified Time by modifying a plugin file
     cm = ConfigManager()
-    plugin_path = cm.get_config("SAGEWORKS_PLUGINS") + "/web_components/endpoint_turbo.py"
+    plugin_path = cm.get_config("SAGEWORKS_PLUGINS") + "/components/endpoint_turbo.py"
     print(manager.plugins_modified())
     # Modify the plugin file modified time to now
     os.utime(plugin_path, None)

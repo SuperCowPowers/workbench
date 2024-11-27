@@ -231,8 +231,8 @@ def confusion_matrix(confidence_df):
 def unit_test():
     """Unit test for the QuantileRegressor"""
     from sageworks.utils.test_data_generator import TestDataGenerator
-    from sageworks.web_components.plugins.scatter_plot import ScatterPlot
-    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+    from sageworks.web_interface.components.plugins.scatter_plot import ScatterPlot
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Generate some random data
     generator = TestDataGenerator()
@@ -295,8 +295,8 @@ def unit_test():
 def integration_test():
     from sageworks.api.feature_set import FeatureSet
     from sageworks.api.model import Model
-    from sageworks.web_components.plugins.scatter_plot import ScatterPlot
-    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+    from sageworks.web_interface.components.plugins.scatter_plot import ScatterPlot
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Load the AQSol data (with given features)
     # fs = FeatureSet("aqsol_features")

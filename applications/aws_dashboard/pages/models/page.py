@@ -9,9 +9,9 @@ from .layout import models_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, model_plot
-from sageworks.web_components.plugins import model_details
-from sageworks.web_components.plugin_interface import PluginPage
+from sageworks.web_interface.components import table, model_plot
+from sageworks.web_interface.components.plugins import model_details
+from sageworks.web_interface.components.plugin_interface import PluginPage
 from sageworks.utils.plugin_manager import PluginManager
 
 # Register this page with Dash

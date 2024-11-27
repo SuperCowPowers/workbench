@@ -6,7 +6,7 @@ import logging
 from dash import html, dcc
 
 # SageWorks Imports
-from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from sageworks.utils.sageworks_cache import SageWorksCache
 
 # Get the SageWorks logger

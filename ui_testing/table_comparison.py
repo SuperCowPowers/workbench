@@ -1,6 +1,6 @@
 """A table component testing script
    Note: This is purely slash/hack code to test and compare Table components
-         When the components are finalized, the classes will go into sageworks/web_components
+         When the components are finalized, the classes will go into sageworks/components
 """
 
 import sys
@@ -10,7 +10,7 @@ import webbrowser
 
 # SageWorks Imports
 try:
-    from sageworks.web_components.table import Table
+    from sageworks.web_interface.components.table import Table
     from sageworks.utils.symbols import health_icons
 except ImportError:
     print("Please install sageworks")

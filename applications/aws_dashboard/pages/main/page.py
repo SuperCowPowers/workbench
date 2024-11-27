@@ -5,7 +5,7 @@ import dash
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.artifacts_web_view import ArtifactsWebView
-from sageworks.web_components import table
+from sageworks.web_interface.components import table
 
 # Local Imports
 from .layout import main_layout

@@ -5,7 +5,7 @@ from dash import html, page_container, register_page
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
-from sageworks.web_components import table
+from sageworks.web_interface.components import table
 from sageworks.cached.cached_meta import CachedMeta
 
 

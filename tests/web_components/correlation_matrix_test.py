@@ -1,7 +1,7 @@
 """Tests for CorrelationMatrix web component"""
 
 # SageWorks Imports
-from sageworks.web_components.correlation_matrix import CorrelationMatrix
+from sageworks.web_interface.components.correlation_matrix import CorrelationMatrix
 from sageworks.api.data_source import DataSource
 
 

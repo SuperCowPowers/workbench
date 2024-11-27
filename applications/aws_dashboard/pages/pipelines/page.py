@@ -9,8 +9,8 @@ from .layout import pipelines_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components.plugins import ag_table, pipeline_details
-from sageworks.web_components.plugin_interface import PluginPage
+from sageworks.web_interface.components.plugins import ag_table, pipeline_details
+from sageworks.web_interface.components.plugin_interface import PluginPage
 from sageworks.utils.plugin_manager import PluginManager
 
 # Register this page with Dash

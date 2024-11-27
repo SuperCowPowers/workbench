@@ -10,7 +10,7 @@ Deploying your Dashboard plugins via an S3 bucket allows plugin developers to mo
 On, the other hand when you have a 'final build' you might want to lock it in with a Docker image. If you'd like to bundle up your plugins in a Docker image and deploy please see [Dashboard with Plugins](dashboard_with_plugins.md).
 
 ## Check your Dashboard
-Make sure your Dashboard is configured to pull plugin pages, views, and web_components from an S3 bucket. Go to your main dashboard page and there's a 'secret link' when you click on the main title that brings up the **Dashboard Status Page**.
+Make sure your Dashboard is configured to pull plugin pages, views, and components from an S3 bucket. Go to your main dashboard page and there's a 'secret link' when you click on the main title that brings up the **Dashboard Status Page**.
 
 <img src="../images/dashboard_secret_click.png" width="500">
 
@@ -30,7 +30,7 @@ When you're ready to 'deploy' the plugins you can copy them up to the S3 bucket/
       - page_1.py
    - views
       - view_1.py
-   - web_components
+   - components
        -component_1.py
        -component_2.py
 ```
@@ -45,7 +45,7 @@ aws s3 cp . s3://my_bucket/prefix --recursive --exclude "*" --include "*.py"
 
 
 ## Restart the ECS Service
-Okay, so this is a bit heavy handed, but automatically removing/adding/modifying the plugin pages, views, and web_components was 'amazingly complicated' and will be a feature request for a later date. :)
+Okay, so this is a bit heavy handed, but automatically removing/adding/modifying the plugin pages, views, and components was 'amazingly complicated' and will be a feature request for a later date. :)
 
 **Getting Cluster and Service Names**
 

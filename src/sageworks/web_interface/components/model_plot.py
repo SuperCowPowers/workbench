@@ -7,9 +7,9 @@ import plotly.graph_objects as go
 
 # SageWorks Imports
 from sageworks.api import Model
-from sageworks.web_components.component_interface import ComponentInterface
-from sageworks.web_components.plugins.confusion_matrix import ConfusionMatrix
-from sageworks.web_components.regression_plot import RegressionPlot
+from sageworks.web_interface.components.component_interface import ComponentInterface
+from sageworks.web_interface.components.plugins.confusion_matrix import ConfusionMatrix
+from sageworks.web_interface.components.regression_plot import RegressionPlot
 
 
 class ModelPlot(ComponentInterface):

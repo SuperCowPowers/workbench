@@ -1,31 +1,79 @@
 """A Markdown Component for details/information about DataSources (and FeatureSets)"""
 
-from dash import dcc
+from typing import Union
+import logging
+
+# Dash Imports
+from dash import html, dcc
 
 # SageWorks Imports
-from sageworks.web_components.component_interface import ComponentInterface
+from sageworks.api import DataSource, FeatureSet
+from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+
+# Get the SageWorks logger
+log = logging.getLogger("sageworks")
 
 
-class DataDetailsMarkdown(ComponentInterface):
-    """Data Details Markdown Component"""
+class DataDetails(PluginInterface):
+    """DataSource/FeatureSet Details Component"""
 
-    def create_component(self, component_id: str) -> dcc.Markdown:
+    """Initialize this Plugin Component Class with required attributes"""
+    auto_load_page = PluginPage.NONE
+    plugin_input_type = PluginInputType.DATA_SOURCE
+
+    def __init__(self):
+        """Initialize the DataDetails plugin class"""
+        self.component_id = None
+        self.data_source = None
+
+        # Call the parent class constructor
+        super().__init__()
+
+    def create_component(self, component_id: str) -> html.Div:
         """Create a Markdown Component without any data.
         Args:
             component_id (str): The ID of the web component
         Returns:
-            dcc.Markdown: The Dash Markdown Component
+            html.Div: A Container of Components for the Model Details
         """
-        waiting_markdown = "*Waiting for data...*"
-        return dcc.Markdown(id=component_id, children=waiting_markdown, dangerously_allow_html=True)
+        self.component_id = component_id
+        container = html.Div(
+            id=self.component_id,
+            children=[
+                html.H3(id=f"{self.component_id}-header", children="Loading..."),
+                dcc.Markdown(id=f"{self.component_id}-details", dangerously_allow_html=True),
+            ],
+        )
 
-    def generate_markdown(self, data_details: dict) -> str:
-        """Create the Markdown for the details/information about the DataSource or the FeatureSet
+        # Fill in plugin properties
+        self.properties = [
+            (f"{self.component_id}-header", "children"),
+            (f"{self.component_id}-details", "children"),
+        ]
+
+        # Return the container
+        return container
+
+    def update_properties(self, artifact: Union[DataSource, FeatureSet], **kwargs) -> list:
+        """Update the properties for the plugin.
+
         Args:
-            data_details (dict): A dictionary of information about the artifact
+            artifact (Union[DataSource, FeatureSet]): An instantiated DataSource or FeatureSet
+            **kwargs: Additional keyword arguments (unused)
+
         Returns:
-            str: A Markdown string
+            list: A list of the updated property values for the plugin
         """
+        log.important(f"Updating Plugin with Artifact: {artifact.uuid} and kwargs: {kwargs}")
+
+        # Update the header and the details
+        self.data_source = artifact.data_source if isinstance(artifact, FeatureSet) else artifact
+        header = f"{self.data_source.uuid}"
+        data_details_markdown = self.data_details_markdown(self.data_source.details())
+
+        return [header, data_details_markdown]
+
+    def data_details_markdown(self, data_details: dict) -> str:
 
         markdown_template = """
         **Rows:** <<num_rows>>
@@ -215,28 +263,8 @@ class DataDetailsMarkdown(ComponentInterface):
 
 
 if __name__ == "__main__":
-    # This class takes in model details and generates a Confusion Matrix
-    import dash
-    from dash import dcc
-    from dash import html
-    from sageworks.api.data_source import DataSource
+    # This class takes in model details and generates a details Markdown component
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
-    # Create the class and get the AWS FeatureSet details
-    ds = DataSource("wine_data")
-    data_details = ds.details()
-
-    # Instantiate the DataDetailsMarkdown class
-    ddm = DataDetailsMarkdown()
-    component = ddm.create_component("data_details_markdown")
-
-    # Generate the markdown
-    markdown = ddm.generate_markdown(data_details)
-
-    # Initialize Dash app
-    app = dash.Dash(__name__)
-
-    app.layout = html.Div([component])
-    component.children = markdown
-
-    if __name__ == "__main__":
-        app.run(debug=True)
+    # Run the Unit Test on the Plugin
+    PluginUnitTest(DataDetails).run()

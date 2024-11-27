@@ -2,7 +2,7 @@
 
 # SageWorks Imports
 from sageworks.api import FeatureSet
-from sageworks.web_components.plugins.scatter_plot import ScatterPlot
+from sageworks.web_interface.components.plugins.scatter_plot import ScatterPlot
 
 
 def test_scatter_plot():

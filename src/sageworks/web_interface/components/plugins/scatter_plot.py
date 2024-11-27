@@ -6,7 +6,7 @@ from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
-from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 
 
 class ScatterPlot(PluginInterface):
@@ -276,7 +276,7 @@ class ScatterPlot(PluginInterface):
 
 if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
-    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(ScatterPlot).run()

@@ -293,8 +293,8 @@ def test():
     data_df["confidence"] = f_spider.confidence_scores(data_df, model_preds=predictions)
 
     # Show a scatter plot of the confidence scores
-    from sageworks.web_components.plugins.scatter_plot import ScatterPlot
-    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+    from sageworks.web_interface.components.plugins.scatter_plot import ScatterPlot
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Columns of Interest
     dropdown_columns = ["feat1", "feat2", "feat3", "price", "confidence"]
@@ -340,8 +340,8 @@ def integration_test():
     pred_df["confidence"] = feature_spider.confidence_scores(feature_df, model_preds=pred_df["prediction"])
 
     # Show a scatter plot of the confidence scores
-    from sageworks.web_components.plugins.scatter_plot import ScatterPlot
-    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+    from sageworks.web_interface.components.plugins.scatter_plot import ScatterPlot
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Columns of Interest
     dropdown_columns = ["residuals_abs", "prediction", "solubility", "confidence"]

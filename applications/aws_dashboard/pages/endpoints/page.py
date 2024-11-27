@@ -9,9 +9,9 @@ from .layout import endpoints_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, endpoint_metric_plots
-from sageworks.web_components.plugins import endpoint_details
-from sageworks.web_components.plugin_interface import PluginPage
+from sageworks.web_interface.components import table, endpoint_metric_plots
+from sageworks.web_interface.components.plugins import endpoint_details
+from sageworks.web_interface.components.plugin_interface import PluginPage
 from sageworks.web_interface.page_views.endpoint_web_view import EndpointWebView
 from sageworks.utils.plugin_manager import PluginManager
 

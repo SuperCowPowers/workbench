@@ -6,7 +6,7 @@ import logging
 from dash.development.base_component import Component
 
 # Local Imports
-from sageworks.web_components.component_interface import ComponentInterface
+from sageworks.web_interface.components.component_interface import ComponentInterface
 
 log = logging.getLogger("sageworks")
 

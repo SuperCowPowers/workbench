@@ -6,7 +6,7 @@ import networkx as nx
 
 # SageWorks Imports
 from sageworks.core.artifacts.graph_core import GraphCore
-from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 
 
 class GraphPlot(PluginInterface):
@@ -279,7 +279,7 @@ class GraphPlot(PluginInterface):
 
 if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
-    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(GraphPlot).run()

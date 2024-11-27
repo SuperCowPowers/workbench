@@ -6,7 +6,7 @@ from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
-from sageworks.web_components import table, model_plot
+from sageworks.web_interface.components import table, model_plot
 from sageworks.utils.pandas_utils import deserialize_aws_metadata
 from sageworks.cached.cached_model import CachedModel
 

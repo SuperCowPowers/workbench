@@ -6,7 +6,7 @@ import random
 import plotly.graph_objects as go
 
 # SageWorks Imports
-from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from sageworks.api.model import Model
 
 # Get the SageWorks logger
@@ -62,7 +62,7 @@ class ModelPlugin(PluginInterface):
 
 
 if __name__ == "__main__":
-    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(ModelPlugin).run()

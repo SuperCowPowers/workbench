@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 
 # SageWorks Imports
-from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from sageworks.cached.cached_model import CachedModel
 
 
@@ -163,7 +163,7 @@ class ConfusionMatrix(PluginInterface):
 
 if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
-    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
     model = CachedModel("wine-classification")

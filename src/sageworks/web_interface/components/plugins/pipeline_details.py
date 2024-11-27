@@ -7,7 +7,7 @@ from dash import html, dcc
 
 # SageWorks Imports
 from sageworks.api.pipeline import Pipeline
-from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
@@ -68,7 +68,7 @@ class PipelineDetails(PluginInterface):
 
 if __name__ == "__main__":
     # This class takes in pipeline details and generates a details Markdown component
-    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(PipelineDetails).run()

@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 
 # SageWorks Imports
-from sageworks.web_components.component_interface import ComponentInterface
+from sageworks.web_interface.components.component_interface import ComponentInterface
 from sageworks.api import Model
 
 

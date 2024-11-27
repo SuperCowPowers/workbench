@@ -8,7 +8,7 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.feature_set_web_view import FeatureSetWebView
-from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
+from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
 from sageworks.utils.pandas_utils import deserialize_aws_metadata
 
 # Cheese Sauce

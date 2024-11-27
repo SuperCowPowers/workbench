@@ -5,7 +5,7 @@ import pandas as pd
 from dash_ag_grid import AgGrid
 
 # SageWorks Imports
-from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
@@ -77,7 +77,7 @@ class AGTable(PluginInterface):
 
 if __name__ == "__main__":
     # Run the Unit Test for the Plugin
-    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(AGTable).run()
