@@ -27,7 +27,7 @@ if __name__ == "__main__":
         # Transform FeatureSet into KNN Regression Model
         feature_set = FeatureSet("abalone_features")
         feature_set.to_model(
-            model_class="KNeighborsRegressor",
+            scikit_model_class="KNeighborsRegressor",
             target_column="class_number_of_rings",
             name="abalone-knn-reg",
             description="Abalone KNN Regression",
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
             ModelType.REGRESSOR,
-            model_class="KNeighborsRegressor",
+            scikit_model_class="KNeighborsRegressor",
             target_column="solubility",
             feature_list=features,
             name="aqsol-knn-reg",

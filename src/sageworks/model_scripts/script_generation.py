@@ -54,8 +54,8 @@ def fill_template(template: str, params: dict) -> str:
     """
     # Perform the replacements
     for key, value in params.items():
-        # For string values wrap them in quotes (except for model_imports and model_class
-        if isinstance(value, str) and key not in ["model_imports", "model_class"]:
+        # For string values wrap them in quotes (except for model_imports and scikit_model_class)
+        if isinstance(value, str) and key not in ["model_imports", "scikit_model_class"]:
             value = f'"{value}"'
         # Replace the placeholder in the template
         placeholder = f'"{{{{{key}}}}}"'  # Double curly braces to match the template
@@ -77,7 +77,7 @@ def generate_model_script(template_params: dict) -> str:
         template_params (dict): Dictionary containing the parameters:
             - model_imports (str): Import string for the model class
             - model_type (ModelType): The enumerated type of model to generate
-            - model_class (str): The model class to use (e.g., "RandomForestRegressor")
+            - scikit_model_class (str): The model class to use (e.g., "RandomForestRegressor")
             - target_column (str): Column name of the target variable
             - feature_list (list[str]): A list of columns for the features
             - model_metrics_s3_path (str): The S3 path to store the model metrics
@@ -92,7 +92,7 @@ def generate_model_script(template_params: dict) -> str:
     output_script = "generated_model_script.py"
 
     # Determine which template to use based on model type
-    if template_params.get("model_class"):
+    if template_params.get("scikit_model_class"):
         template_name = "scikit_learn.template"
         model_script_dir = "light_scikit_learn"
     elif template_params["model_type"] in [ModelType.REGRESSOR, ModelType.CLASSIFIER]:
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     # Define the parameters for the model script (KMeans Clustering)
     my_params = {
         "model_type": ModelType.CLUSTERER,
-        "model_class": "KMeans",
+        "scikit_model_class": "KMeans",
         "model_imports": "from sklearn.cluster import KMeans",
         "target_column": None,
         "feature_list": [

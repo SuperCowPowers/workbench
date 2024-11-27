@@ -31,7 +31,7 @@ class FeaturesToModel(Transform):
         feature_uuid: str,
         model_uuid: str,
         model_type: ModelType,
-        model_class=None,
+        scikit_model_class=None,
         model_import_str=None,
         custom_script=None,
     ):
@@ -40,7 +40,7 @@ class FeaturesToModel(Transform):
             feature_uuid (str): UUID of the FeatureSet to use as input
             model_uuid (str): UUID of the Model to create as output
             model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.
-            model_class (str, optional): The class of the model (default None)
+            scikit_model_class (str, optional): The scikit model (e.g. KNeighborsRegressor) (default None)
             model_import_str (str, optional): The import string for the model (default None)
             custom_script (str, optional): Custom script to use for the model (default None)
         """
@@ -55,7 +55,7 @@ class FeaturesToModel(Transform):
         self.input_type = TransformInput.FEATURE_SET
         self.output_type = TransformOutput.MODEL
         self.model_type = model_type
-        self.model_class = model_class
+        self.scikit_model_class = scikit_model_class
         self.model_import_str = model_import_str
         self.custom_script = custom_script
         self.estimator = None
@@ -151,7 +151,7 @@ class FeaturesToModel(Transform):
             template_params = {
                 "model_imports": self.model_import_str,
                 "model_type": self.model_type,
-                "model_class": self.model_class,
+                "scikit_model_class": self.scikit_model_class,
                 "target_column": self.target_column,
                 "feature_list": self.model_feature_list,
                 "model_metrics_s3_path": f"{self.model_training_root}/{self.output_uuid}",
@@ -317,7 +317,7 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(
         input_uuid,
         output_uuid,
-        model_class="KMeans",  # Clustering algorithm
+        scikit_model_class="KMeans",  # Clustering algorithm
         model_import_str="from sklearn.cluster import KMeans",  # Import statement for KMeans
         model_type=ModelType.CLUSTERER,
     )
@@ -330,7 +330,7 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(
         input_uuid,
         output_uuid,
-        model_class="HDBSCAN",  # Density-based clustering algorithm
+        scikit_model_class="HDBSCAN",  # Density-based clustering algorithm
         model_import_str="from sklearn.cluster import HDBSCAN",
         model_type=ModelType.CLUSTERER,
     )
@@ -343,7 +343,7 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(
         input_uuid,
         output_uuid,
-        model_class="UMAP",
+        scikit_model_class="UMAP",
         model_import_str="from umap import UMAP",
         model_type=ModelType.PROJECTION,
     )

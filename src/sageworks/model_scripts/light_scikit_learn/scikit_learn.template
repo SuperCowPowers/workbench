@@ -6,7 +6,7 @@ TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
     "target_column": "{{target_column}}",
     "feature_list": "{{feature_list}}",
-    "model_class": "{{model_class}}",
+    "scikit_model_class": "{{scikit_model_class}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
     "train_all_data": "{{train_all_data}}"
 }
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     # Template Parameters
     target = TEMPLATE_PARAMS["target_column"]  # Can be None for unsupervised models
     feature_list = TEMPLATE_PARAMS["feature_list"]
-    model_class = TEMPLATE_PARAMS["model_class"]
+    scikit_model_class = TEMPLATE_PARAMS["scikit_model_class"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
     validation_split = 0.2
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     check_dataframe(all_df, "training_df")
 
     # Initialize the model using the specified model class
-    model = model_class()
+    model = scikit_model_class()
 
     # Determine if standardization is needed based on the model type
     needs_standardization = model_type in ["clusterer", "projection"]
