@@ -5,7 +5,7 @@ from pprint import pprint
 my_features = FeatureSet("abalone_features")
 
 # Transform FeatureSet into KNN Regression Model
-# Note: scikit_model_class can be any sckit-learn model ("KNeighborsRegressor", "BayesianRidge",
+# Note: scikit_model_class can be any sckit-learn model ("KMeans", "BayesianRidge",
 #       "GaussianNB", "AdaBoostClassifier", "Ridge, "Lasso", "SVC", "SVR", etc...)
 my_model = my_features.to_model(
     scikit_model_class="KNeighborsRegressor",

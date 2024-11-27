@@ -4,7 +4,7 @@ import sys
 import boto3
 import botocore
 import re
-from botocore.exceptions import ClientError, UnauthorizedSSOTokenError, TokenRetrievalError
+from botocore.exceptions import ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError
 from botocore.credentials import RefreshableCredentials
 from botocore.session import get_session
 import logging
@@ -33,8 +33,8 @@ class AWSSession:
         try:
             self.account_id = boto3.client("sts").get_caller_identity()["Account"]
             self.region = boto3.Session().region_name
-        except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
-            self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+        except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError):
+            self.log.critical("AWS SSO Token Failure: Check AWS_PROFILE and/or Renew SSO Token...")
             sys.exit(1)
 
     @property
