@@ -1,5 +1,8 @@
 import os
+import sys
+
 import boto3
+import botocore
 import re
 from botocore.exceptions import ClientError, UnauthorizedSSOTokenError, TokenRetrievalError
 from botocore.credentials import RefreshableCredentials
@@ -32,7 +35,7 @@ class AWSSession:
             self.region = boto3.Session().region_name
         except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError) as e:
             self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
-            raise RuntimeError("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...") from e
+            sys.exit(1)
 
     @property
     def boto3_session(self):
@@ -79,22 +82,37 @@ class AWSSession:
         return boto3.Session(botocore_session=session)
 
     def _assume_sageworks_role_session_credentials(self):
-        """Internal: Assume SageWorks Role and set up AWS Session credentials for automatic refresh"""
-
-        self.log.info("Assuming the SageWorks Execution Role with Refreshing Credentials...")
+        """Internal: Assume SageWorks Role and set up AWS Session credentials with automatic refresh."""
+        self.log.debug("Assuming the SageWorks Execution Role with Refreshing Credentials...")
         sts_client = boto3.client("sts")
-        response = sts_client.assume_role(
-            RoleArn=self.get_sageworks_execution_role_arn(),
-            RoleSessionName="sageworks-execution-role-session",
-        ).get("Credentials")
-        credentials = {
-            "access_key": response["AccessKeyId"],
-            "secret_key": response["SecretAccessKey"],
-            "token": response["SessionToken"],
-            "expiry_time": response["Expiration"].isoformat(),
-        }
-        self.log.debug(f"Credentials Refreshed: Expires at {credentials['expiry_time']}")
-        return credentials
+
+        try:
+            response = sts_client.assume_role(
+                RoleArn=self.get_sageworks_execution_role_arn(),
+                RoleSessionName="sageworks-execution-role-session",
+            ).get("Credentials")
+
+            credentials = {
+                "access_key": response["AccessKeyId"],
+                "secret_key": response["SecretAccessKey"],
+                "token": response["SessionToken"],
+                "expiry_time": response["Expiration"].isoformat(),
+            }
+            local_time = response["Expiration"].astimezone()
+            self.log.info(f"AWS Credentials Refreshed: Expires at {local_time}")
+            return credentials
+
+        except botocore.exceptions.ClientError as e:
+            error_code = e.response['Error']['Code']
+            if error_code == 'ExpiredToken':
+                self.log.error("AWS SSO session has expired. Please run 'aws sso login' to renew your session.")
+            else:
+                self.log.error(f"Error during Refresh Credentials: {e}")
+            raise
+
+        except Exception as e:
+            self.log.error(f"Error during Refresh Credentials: {e}")
+            raise
 
 
 if __name__ == "__main__":
