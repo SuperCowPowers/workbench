@@ -5352,7 +5352,7 @@
 </span><span id="__span-0-379"><a id="__codelineno-0-379" name="__codelineno-0-379"></a><span class="sd">            Optional[str]: The hash for this artifact</span>
 </span><span id="__span-0-380"><a id="__codelineno-0-380" name="__codelineno-0-380"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-381"><a id="__codelineno-0-381" name="__codelineno-0-381"></a>        <span class="n">model_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_model_data_url</span><span class="p">()</span>
-</span><span id="__span-0-382"><a id="__codelineno-0-382" name="__codelineno-0-382"></a>        <span class="k">return</span> <span class="n">get_s3_etag</span><span class="p">(</span><span class="n">model_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">boto3_session</span><span class="p">)</span>
+</span><span id="__span-0-382"><a id="__codelineno-0-382" name="__codelineno-0-382"></a>        <span class="k">return</span> <span class="n">compute_s3_object_hash</span><span class="p">(</span><span class="n">model_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">boto3_session</span><span class="p">)</span>
 </span><span id="__span-0-383"><a id="__codelineno-0-383" name="__codelineno-0-383"></a>
 </span><span id="__span-0-384"><a id="__codelineno-0-384" name="__codelineno-0-384"></a>    <span class="k">def</span> <span class="nf">register_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">endpoint_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 </span><span id="__span-0-385"><a id="__codelineno-0-385" name="__codelineno-0-385"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Add this endpoint to the set of registered endpoints for the model</span>
@@ -7568,7 +7568,7 @@ Returns:
 </span><span id="__span-0-379"><a id="__codelineno-0-379" name="__codelineno-0-379"></a><span class="sd">        Optional[str]: The hash for this artifact</span>
 </span><span id="__span-0-380"><a id="__codelineno-0-380" name="__codelineno-0-380"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-381"><a id="__codelineno-0-381" name="__codelineno-0-381"></a>    <span class="n">model_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_model_data_url</span><span class="p">()</span>
-</span><span id="__span-0-382"><a id="__codelineno-0-382" name="__codelineno-0-382"></a>    <span class="k">return</span> <span class="n">get_s3_etag</span><span class="p">(</span><span class="n">model_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">boto3_session</span><span class="p">)</span>
+</span><span id="__span-0-382"><a id="__codelineno-0-382" name="__codelineno-0-382"></a>    <span class="k">return</span> <span class="n">compute_s3_object_hash</span><span class="p">(</span><span class="n">model_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">boto3_session</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
