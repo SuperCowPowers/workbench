@@ -3679,7 +3679,7 @@
 </span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>        <span class="n">feature_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 </span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>        <span class="n">model_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>        <span class="n">model_type</span><span class="p">:</span> <span class="n">ModelType</span><span class="p">,</span>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>        <span class="n">model_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>        <span class="n">scikit_model_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>        <span class="n">model_import_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>        <span class="n">custom_script</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="p">):</span>
@@ -3688,7 +3688,7 @@
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">            feature_uuid (str): UUID of the FeatureSet to use as input</span>
 </span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">            model_uuid (str): UUID of the Model to create as output</span>
 </span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">            model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.</span>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">            model_class (str, optional): The class of the model (default None)</span>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">            scikit_model_class (str, optional): The scikit model (e.g. KNeighborsRegressor) (default None)</span>
 </span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">            model_import_str (str, optional): The import string for the model (default None)</span>
 </span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">            custom_script (str, optional): Custom script to use for the model (default None)</span>
 </span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">        &quot;&quot;&quot;</span>
@@ -3703,7 +3703,7 @@
 </span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">input_type</span> <span class="o">=</span> <span class="n">TransformInput</span><span class="o">.</span><span class="n">FEATURE_SET</span>
 </span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span> <span class="o">=</span> <span class="n">TransformOutput</span><span class="o">.</span><span class="n">MODEL</span>
 </span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="n">model_type</span>
-</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model_class</span> <span class="o">=</span> <span class="n">model_class</span>
+</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">scikit_model_class</span> <span class="o">=</span> <span class="n">scikit_model_class</span>
 </span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model_import_str</span> <span class="o">=</span> <span class="n">model_import_str</span>
 </span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">custom_script</span> <span class="o">=</span> <span class="n">custom_script</span>
 </span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span> <span class="o">=</span> <span class="kc">None</span>
@@ -3799,7 +3799,7 @@
 </span><span id="__span-0-151"><a id="__codelineno-0-151" name="__codelineno-0-151"></a>            <span class="n">template_params</span> <span class="o">=</span> <span class="p">{</span>
 </span><span id="__span-0-152"><a id="__codelineno-0-152" name="__codelineno-0-152"></a>                <span class="s2">&quot;model_imports&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_import_str</span><span class="p">,</span>
 </span><span id="__span-0-153"><a id="__codelineno-0-153" name="__codelineno-0-153"></a>                <span class="s2">&quot;model_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span>
-</span><span id="__span-0-154"><a id="__codelineno-0-154" name="__codelineno-0-154"></a>                <span class="s2">&quot;model_class&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_class</span><span class="p">,</span>
+</span><span id="__span-0-154"><a id="__codelineno-0-154" name="__codelineno-0-154"></a>                <span class="s2">&quot;scikit_model_class&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scikit_model_class</span><span class="p">,</span>
 </span><span id="__span-0-155"><a id="__codelineno-0-155" name="__codelineno-0-155"></a>                <span class="s2">&quot;target_column&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="p">,</span>
 </span><span id="__span-0-156"><a id="__codelineno-0-156" name="__codelineno-0-156"></a>                <span class="s2">&quot;feature_list&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_feature_list</span><span class="p">,</span>
 </span><span id="__span-0-157"><a id="__codelineno-0-157" name="__codelineno-0-157"></a>                <span class="s2">&quot;model_metrics_s3_path&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_training_root</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
@@ -3950,7 +3950,7 @@
 
 
 <h3 id="sageworks.core.transforms.features_to_model.features_to_model.FeaturesToModel.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">feature_uuid</span><span class="p">,</span> <span class="n">model_uuid</span><span class="p">,</span> <span class="n">model_type</span><span class="p">,</span> <span class="n">model_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_import_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_script</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">feature_uuid</span><span class="p">,</span> <span class="n">model_uuid</span><span class="p">,</span> <span class="n">model_type</span><span class="p">,</span> <span class="n">scikit_model_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_import_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_script</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h3>
 
@@ -3962,7 +3962,7 @@ Args:
     feature_uuid (str): UUID of the FeatureSet to use as input
     model_uuid (str): UUID of the Model to create as output
     model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.
-    model_class (str, optional): The class of the model (default None)
+    scikit_model_class (str, optional): The scikit model (e.g. KNeighborsRegressor) (default None)
     model_import_str (str, optional): The import string for the model (default None)
     custom_script (str, optional): Custom script to use for the model (default None)</p>
 
@@ -4010,7 +4010,7 @@ Args:
 </span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="n">feature_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 </span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>    <span class="n">model_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>    <span class="n">model_type</span><span class="p">:</span> <span class="n">ModelType</span><span class="p">,</span>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="n">model_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="n">scikit_model_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>    <span class="n">model_import_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="n">custom_script</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="p">):</span>
@@ -4019,7 +4019,7 @@ Args:
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">        feature_uuid (str): UUID of the FeatureSet to use as input</span>
 </span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">        model_uuid (str): UUID of the Model to create as output</span>
 </span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">        model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.</span>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">        model_class (str, optional): The class of the model (default None)</span>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">        scikit_model_class (str, optional): The scikit model (e.g. KNeighborsRegressor) (default None)</span>
 </span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">        model_import_str (str, optional): The import string for the model (default None)</span>
 </span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">        custom_script (str, optional): Custom script to use for the model (default None)</span>
 </span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">    &quot;&quot;&quot;</span>
@@ -4034,7 +4034,7 @@ Args:
 </span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">input_type</span> <span class="o">=</span> <span class="n">TransformInput</span><span class="o">.</span><span class="n">FEATURE_SET</span>
 </span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span> <span class="o">=</span> <span class="n">TransformOutput</span><span class="o">.</span><span class="n">MODEL</span>
 </span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="n">model_type</span>
-</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">model_class</span> <span class="o">=</span> <span class="n">model_class</span>
+</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">scikit_model_class</span> <span class="o">=</span> <span class="n">scikit_model_class</span>
 </span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">model_import_str</span> <span class="o">=</span> <span class="n">model_import_str</span>
 </span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">custom_script</span> <span class="o">=</span> <span class="n">custom_script</span>
 </span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span> <span class="o">=</span> <span class="kc">None</span>
@@ -4454,7 +4454,7 @@ Args:
 </span><span id="__span-0-151"><a id="__codelineno-0-151" name="__codelineno-0-151"></a>        <span class="n">template_params</span> <span class="o">=</span> <span class="p">{</span>
 </span><span id="__span-0-152"><a id="__codelineno-0-152" name="__codelineno-0-152"></a>            <span class="s2">&quot;model_imports&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_import_str</span><span class="p">,</span>
 </span><span id="__span-0-153"><a id="__codelineno-0-153" name="__codelineno-0-153"></a>            <span class="s2">&quot;model_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span>
-</span><span id="__span-0-154"><a id="__codelineno-0-154" name="__codelineno-0-154"></a>            <span class="s2">&quot;model_class&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_class</span><span class="p">,</span>
+</span><span id="__span-0-154"><a id="__codelineno-0-154" name="__codelineno-0-154"></a>            <span class="s2">&quot;scikit_model_class&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scikit_model_class</span><span class="p">,</span>
 </span><span id="__span-0-155"><a id="__codelineno-0-155" name="__codelineno-0-155"></a>            <span class="s2">&quot;target_column&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="p">,</span>
 </span><span id="__span-0-156"><a id="__codelineno-0-156" name="__codelineno-0-156"></a>            <span class="s2">&quot;feature_list&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_feature_list</span><span class="p">,</span>
 </span><span id="__span-0-157"><a id="__codelineno-0-157" name="__codelineno-0-157"></a>            <span class="s2">&quot;model_metrics_s3_path&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_training_root</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
@@ -4597,7 +4597,7 @@ Args:
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span>
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">input_uuid</span><span class="p">,</span>
 </span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">output_uuid</span><span class="p">,</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">model_class</span><span class="o">=</span><span class="s2">&quot;KMeans&quot;</span><span class="p">,</span>  <span class="c1"># Clustering algorithm</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">scikit_model_class</span><span class="o">=</span><span class="s2">&quot;KMeans&quot;</span><span class="p">,</span>  <span class="c1"># Clustering algorithm</span>
 </span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">model_import_str</span><span class="o">=</span><span class="s2">&quot;from sklearn.cluster import KMeans&quot;</span><span class="p">,</span>  <span class="c1"># Import statement for KMeans</span>
 </span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">CLUSTERER</span><span class="p">,</span>
 </span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="p">)</span>
@@ -4610,7 +4610,7 @@ Args:
 </span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="n">to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span>
 </span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="n">input_uuid</span><span class="p">,</span>
 </span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="n">output_uuid</span><span class="p">,</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="n">model_class</span><span class="o">=</span><span class="s2">&quot;HDBSCAN&quot;</span><span class="p">,</span>  <span class="c1"># Density-based clustering algorithm</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="n">scikit_model_class</span><span class="o">=</span><span class="s2">&quot;HDBSCAN&quot;</span><span class="p">,</span>  <span class="c1"># Density-based clustering algorithm</span>
 </span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>    <span class="n">model_import_str</span><span class="o">=</span><span class="s2">&quot;from sklearn.cluster import HDBSCAN&quot;</span><span class="p">,</span>
 </span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">CLUSTERER</span><span class="p">,</span>
 </span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="p">)</span>
@@ -4623,7 +4623,7 @@ Args:
 </span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="n">to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span>
 </span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>    <span class="n">input_uuid</span><span class="p">,</span>
 </span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>    <span class="n">output_uuid</span><span class="p">,</span>
-</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>    <span class="n">model_class</span><span class="o">=</span><span class="s2">&quot;UMAP&quot;</span><span class="p">,</span>
+</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>    <span class="n">scikit_model_class</span><span class="o">=</span><span class="s2">&quot;UMAP&quot;</span><span class="p">,</span>
 </span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>    <span class="n">model_import_str</span><span class="o">=</span><span class="s2">&quot;from umap import UMAP&quot;</span><span class="p">,</span>
 </span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">PROJECTION</span><span class="p">,</span>
 </span><span id="__span-1-38"><a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="p">)</span>
