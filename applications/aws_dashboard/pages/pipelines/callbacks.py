@@ -16,7 +16,7 @@ log = logging.getLogger("sageworks")
 def update_pipelines_table(table_object):
     @callback(
         [Output(component_id, prop) for component_id, prop in table_object.properties],
-        Input("aws-broker-data", "data"),
+        Input("aws-metadata", "data"),
     )
     def pipelines_update(serialized_aws_metadata):
         """Return the table data for the Pipelines Table"""

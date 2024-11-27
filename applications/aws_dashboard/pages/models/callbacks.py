@@ -17,7 +17,7 @@ log = logging.getLogger("sageworks")
 def update_models_table(app: Dash):
     @app.callback(
         [Output("models_table", "columns"), Output("models_table", "data")],
-        Input("aws-broker-data", "data"),
+        Input("aws-metadata", "data"),
     )
     def models_update(serialized_aws_metadata):
         """Return the table data for the Models Table"""

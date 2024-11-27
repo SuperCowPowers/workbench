@@ -21,10 +21,10 @@ def refresh_data(app: Dash, web_view: ArtifactsWebView):
     @app.callback(
         [
             Output("data-last-updated", "children"),
-            Output("aws-broker-data", "data"),
+            Output("aws-metadata", "data"),
         ],
-        Input("broker-update-timer", "n_intervals"),
-        State("aws-broker-data", "data"),
+        Input("metadata-update-timer", "n_intervals"),
+        State("aws-metadata", "data"),
     )
     def refresh_aws_metadata(n, aws_metadata):
         # A string of the new time
@@ -55,7 +55,7 @@ def update_artifact_tables(app: Dash):
             Output("INCOMING_DATA", "columns"),
             Output("INCOMING_DATA", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("aws-metadata", "data"),
     )
     def incoming_data_update(serialized_aws_metadata):
         aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
@@ -68,7 +68,7 @@ def update_artifact_tables(app: Dash):
             Output("GLUE_JOBS", "columns"),
             Output("GLUE_JOBS", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("aws-metadata", "data"),
     )
     def glue_jobs_update(serialized_aws_metadata):
         aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
@@ -81,7 +81,7 @@ def update_artifact_tables(app: Dash):
             Output("DATA_SOURCES", "columns"),
             Output("DATA_SOURCES", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("aws-metadata", "data"),
     )
     def data_sources_update(serialized_aws_metadata):
         aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
@@ -94,7 +94,7 @@ def update_artifact_tables(app: Dash):
             Output("FEATURE_SETS", "columns"),
             Output("FEATURE_SETS", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("aws-metadata", "data"),
     )
     def feature_sets_update(serialized_aws_metadata):
         aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
@@ -107,7 +107,7 @@ def update_artifact_tables(app: Dash):
             Output("MODELS", "columns"),
             Output("MODELS", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("aws-metadata", "data"),
     )
     def models_update(serialized_aws_metadata):
         aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
@@ -120,7 +120,7 @@ def update_artifact_tables(app: Dash):
             Output("ENDPOINTS", "columns"),
             Output("ENDPOINTS", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("aws-metadata", "data"),
     )
     def endpoints_update(serialized_aws_metadata):
         aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)

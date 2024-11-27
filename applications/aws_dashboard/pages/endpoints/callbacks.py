@@ -21,7 +21,7 @@ def update_endpoints_table(app: Dash):
             Output("endpoints_table", "columns"),
             Output("endpoints_table", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("aws-metadata", "data"),
     )
     def endpoints_update(serialized_aws_metadata):
         """Return the table data for the Endpoints Table"""

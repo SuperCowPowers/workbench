@@ -92,7 +92,7 @@ class PluginPageExample:
 
         @self.app.callback(
             [Output("my_model_table", "columns"), Output("my_model_table", "data")],
-            Input("aws-broker-data", "data"),  # View this as an update trigger
+            Input("aws-metadata", "data"),  # View this as an update trigger
         )
         def models_update(serialized_aws_metadata):
             """Grab our view data and update the table"""

@@ -21,7 +21,7 @@ def update_feature_sets_table(app: Dash):
             Output("feature_sets_table", "columns"),
             Output("feature_sets_table", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("aws-metadata", "data"),
     )
     def feature_sets_update(serialized_aws_metadata):
         """Return the table data for the FeatureSets Table"""

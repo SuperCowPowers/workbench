@@ -34,7 +34,7 @@ server = app.server
 # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
 app.layout = html.Div(
     [
-        dcc.Store(id="aws-broker-data", storage_type="local"),
+        dcc.Store(id="aws-metadata", storage_type="local"),
         page_container,
     ]
 )

@@ -26,7 +26,7 @@ def update_data_sources_table(app: Dash):
             Output("data_sources_table", "columns"),
             Output("data_sources_table", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("aws-metadata", "data"),
     )
     def data_sources_update(serialized_aws_metadata):
         """Return the table data for the DataSources Table"""
