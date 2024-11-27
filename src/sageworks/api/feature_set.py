@@ -115,7 +115,9 @@ class FeatureSet(FeatureSetCore):
         tags = [name] if tags is None else tags
 
         # Transform the FeatureSet into a Model
-        features_to_model = FeaturesToModel(self.uuid, name, model_type=model_type, scikit_model_class=scikit_model_class)
+        features_to_model = FeaturesToModel(
+            self.uuid, name, model_type=model_type, scikit_model_class=scikit_model_class
+        )
         features_to_model.set_output_tags(tags)
         features_to_model.transform(
             target_column=target_column, description=description, feature_list=feature_list, **kwargs
