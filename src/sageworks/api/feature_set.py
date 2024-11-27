@@ -91,12 +91,12 @@ class FeatureSet(FeatureSetCore):
 
             name (str): The name of the Model to create
             model_type (ModelType): The type of model to create (See sageworks.model.ModelType)
-            tags (list, optional): Set the tags for the model.  If not specified tags will be generated.
-            description (str, optional): Set the description for the model. If not specified a description is generated.
-            feature_list (list, optional): Set the feature list for the model. If not specified a feature list is generated.
+            tags (list, optional): Set the tags for the model.  If not given tags will be generated.
+            description (str, optional): Set the description for the model. If not give a description is generated.
+            feature_list (list, optional): Set the feature list for the model. If not given a feature list is generated.
             target_column (str, optional): The target column for the model (use None for unsupervised model)
-            scikit_model_class (str, optional): Scikit model class to use (e.g. "KNeighborsRegressor", default: None)
-            model_import_str (str, optional): The import for the model (e.g. "from sklearn.neighbors import KNeighborsRegressor
+            scikit_model_class (str, optional): Scikit model class to use (e.g. "KMeans", default: None)
+            model_import_str (str, optional): The import for the model (e.g. "from sklearn.cluster import KMeans")
 
         Returns:
             Model: The Model created from the FeatureSet (or None if the Model could not be created)
