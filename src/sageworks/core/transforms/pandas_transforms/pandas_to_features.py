@@ -80,8 +80,9 @@ class PandasToFeatures(Transform):
     def _ensure_id_column(self):
         """Internal: AWS Feature Store requires an Id field"""
         if self.id_column is None:
-            self.log.warning("Generating an 'auto_id' column, highly recommended to set the id_column arg!")
+            self.log.warning("Generating an 'auto_id' column, we highly recommended setting the 'id_column'")
             self.output_df["auto_id"] = self.output_df.index
+            self.id_column = "auto_id"
             return
         if self.id_column not in self.output_df.columns:
             error_msg = f"Id column {self.id_column} not found in the DataFrame"

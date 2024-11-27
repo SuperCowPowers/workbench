@@ -45,7 +45,7 @@ from sageworks.utils.endpoint_metrics import EndpointMetrics
 from sageworks.utils.shapley_values import generate_shap_values
 from sageworks.utils.fast_inference import fast_inference
 from sageworks.utils.cache import Cache
-from sageworks.utils.s3_utils import get_s3_etag
+from sageworks.utils.s3_utils import compute_s3_object_hash
 
 
 class EndpointCore(Artifact):
@@ -215,7 +215,7 @@ class EndpointCore(Artifact):
         from sageworks.utils.endpoint_utils import get_model_data_url  # Avoid circular import
 
         model_url = get_model_data_url(self.endpoint_config_name(), self.boto3_session)
-        return get_s3_etag(model_url, self.boto3_session)
+        return compute_s3_object_hash(model_url, self.boto3_session)
 
     def endpoint_metrics(self) -> Union[pd.DataFrame, None]:
         """Return the metrics for this endpoint

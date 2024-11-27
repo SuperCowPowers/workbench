@@ -18,7 +18,7 @@ from sagemaker.model import Model as SagemakerModel
 # SageWorks Imports
 from sageworks.core.artifacts.artifact import Artifact
 from sageworks.utils.aws_utils import newest_path, pull_s3_data
-from sageworks.utils.s3_utils import get_s3_etag
+from sageworks.utils.s3_utils import compute_s3_object_hash
 
 
 class ModelType(Enum):
@@ -379,7 +379,7 @@ class ModelCore(Artifact):
             Optional[str]: The hash for this artifact
         """
         model_url = self.get_model_data_url()
-        return get_s3_etag(model_url, self.boto3_session)
+        return compute_s3_object_hash(model_url, self.boto3_session)
 
     def register_endpoint(self, endpoint_name: str):
         """Add this endpoint to the set of registered endpoints for the model

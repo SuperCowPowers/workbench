@@ -2,12 +2,14 @@
 
 import os
 import boto3
+from urllib.parse import urlparse
 from botocore.exceptions import ClientError
 import hashlib
 from typing import Optional
 import logging
 
 # SageWorks imports
+from sageworks.utils.performance_utils import performance
 log = logging.getLogger("sageworks")
 
 
@@ -34,6 +36,10 @@ def get_s3_etag(s3_uri: str, session: boto3.session.Session) -> Optional[str]:
 
     Returns:
         Optional[str]: The ETag of the object if it exists, otherwise None.
+
+    Note:
+        In general AWS ETags aren't useful, they aren't content hashes, they just indicate
+        'change' in the object, and for that you can just use the last modified date.
     """
     s3 = session.client("s3")
 
@@ -76,41 +82,73 @@ def ensure_s3_bucket_and_prefix(s3_uri: str, session: boto3.session.Session):
         s3.put_object(Bucket=bucket, Key=f"{prefix.rstrip('/')}/.placeholder", Body=b"")
 
 
-def compute_parquet_hash(s3_uri: str, session: boto3.session.Session) -> str:
+def compute_s3_object_hash(s3_url: str, session: boto3.session.Session) -> str:
     """
-    Compute a hash for a set of Parquet files.
+    Compute the MD5 hash of an S3 object's content.
 
     Args:
-        s3_uri (str): S3 URI for the FeatureGroup's offline storage (e.g., 's3://bucket-name/path/to/data/').
+        s3_url (str): The S3 URL (e.g., "s3://bucket-name/object-key").
         session (boto3.session.Session): Boto3 session.
 
     Returns:
-        str: Composite hash for a set of Parquet files
+        str: MD5 hash of the object's content.
+    """
+    log.important(f"Computing S3 Object Hash: {s3_url}")
+
+    # Parse the S3 URL
+    parsed_url = urlparse(s3_url)
+    bucket_name = parsed_url.netloc
+    object_key = parsed_url.path.lstrip("/")
+
+    s3_client = session.client("s3")
+    file_hash = hashlib.md5()
+    response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+
+    # Stream the object content to avoid memory overhead
+    for chunk in response["Body"].iter_chunks(chunk_size=8192):
+        file_hash.update(chunk)
+
+    return file_hash.hexdigest()
+
+
+@performance
+def compute_parquet_hash(s3_url: str, session: boto3.session.Session) -> str:
+    """
+    Compute a composite content hash for a set of Parquet files in an S3 prefix.
+
+    Args:
+        s3_url (str): S3 URL for the FeatureGroup's offline storage (e.g., "s3://bucket-name/path/to/data/").
+        session (boto3.session.Session): Boto3 session.
+
+    Returns:
+        str: Composite hash for a set of Parquet files.
     """
     log = logging.getLogger("sageworks")
-    s3 = session.client("s3")
+    s3_client = session.client("s3")
 
-    # Parse bucket and prefix from the S3 URI
-    bucket, prefix = s3_uri.replace("s3://", "").split("/", 1)
+    # Parse bucket and prefix from the S3 URL
+    parsed_url = urlparse(s3_url)
+    bucket_name = parsed_url.netloc
+    prefix = parsed_url.path.lstrip("/")
 
     # Ensure the prefix ends with a slash to match the exact directory
     if not prefix.endswith("/"):
         prefix += "/"
 
-    # Initialize MD5 hash object
-    md5_hash = hashlib.md5()
+    # Initialize MD5 hash object for composite hash
+    composite_hash = hashlib.md5()
 
     # Use paginator to iterate through objects in the S3 prefix
-    paginator = s3.get_paginator("list_objects_v2")
-    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+    paginator = s3_client.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket_name, Prefix=prefix):
         for obj in page.get("Contents", []):
-            # Ensure the file is directly under the desired prefix
             if obj["Key"].startswith(prefix) and obj["Key"].endswith(".parquet"):
-                log.debug(f"Processing object: {obj['Key']}")
-                etag = obj["ETag"].strip('"')  # Remove quotes around the ETag
-                md5_hash.update(etag.encode("utf-8"))  # Add ETag to the composite hash
+                # Compute the hash for the current Parquet file
+                file_hash = compute_s3_object_hash(f"s3://{bucket_name}/{obj['Key']}", session)
+                composite_hash.update(file_hash.encode("utf-8"))
+                log.debug(f"Hash for {obj['Key']}: {file_hash}")
 
-    return md5_hash.hexdigest()
+    return composite_hash.hexdigest()
 
 
 def copy_s3_files_to_local(s3_path: str, local_path: str):
