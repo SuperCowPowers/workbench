@@ -42,7 +42,7 @@ output_uuid = "wine-clusters"
 to_model = FeaturesToModel(
     input_uuid,
     output_uuid,
-    model_class="KMeans",  # Clustering algorithm
+    scikit_model_class="KMeans",  # Clustering algorithm
     model_import_str="from sklearn.cluster import KMeans",  # Import statement for KMeans
     model_type=ModelType.CLUSTERER,
 )
@@ -55,7 +55,7 @@ output_uuid = "wine-clusters-hdbscan"
 to_model = FeaturesToModel(
     input_uuid,
     output_uuid,
-    model_class="HDBSCAN",  # Density-based clustering algorithm
+    scikit_model_class="HDBSCAN",  # Density-based clustering algorithm
     model_import_str="from sklearn.cluster import HDBSCAN",
     model_type=ModelType.CLUSTERER,
 )
@@ -68,7 +68,7 @@ output_uuid = "wine-2d-projection"
 to_model = FeaturesToModel(
     input_uuid,
     output_uuid,
-    model_class="UMAP",
+    scikit_model_class="UMAP",
     model_import_str="from umap import UMAP",
     model_type=ModelType.PROJECTION,
 )

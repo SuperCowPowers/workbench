@@ -10,6 +10,7 @@ my_features = FeatureSet("abalone_features")
 #       "GaussianNB", "AdaBoostClassifier", "Ridge, "Lasso", "SVC", "SVR", etc...)
 my_model = my_features.to_model(
     scikit_model_class="DBSCAN",
+    model_import_str="from sklearn.cluster import DBSCAN",
     target_column="class_number_of_rings",
     name="abalone-clusters",
     description="Abalone DBSCAN Clustering",
