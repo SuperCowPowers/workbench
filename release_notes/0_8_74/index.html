@@ -20,7 +20,7 @@
     
     
       
-        <title>0.8.72 - SageWorks</title>
+        <title>0.8.74 - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-0872" class="md-skip">
+        <a href="#release-0874" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              0.8.72
+              0.8.74
             
           </span>
         </div>
@@ -2269,7 +2269,7 @@
           
   
   <span class="md-ellipsis">
-    0.8.72
+    0.8.74
   </span>
   
 
@@ -2280,7 +2280,7 @@
         
   
   <span class="md-ellipsis">
-    0.8.72
+    0.8.74
   </span>
   
 
@@ -2310,6 +2310,15 @@
   
     <nav class="md-nav" aria-label="General">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#s3-based-plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      S3 based Plugins
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#artifact-hashes" class="md-nav__link">
@@ -3118,6 +3127,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#s3-based-plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      S3 based Plugins
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#artifact-hashes" class="md-nav__link">
     <span class="md-ellipsis">
       Artifact Hashes
@@ -3191,15 +3209,17 @@
                   
 
 
-<h1 id="release-0872">Release 0.8.72</h1>
+<h1 id="release-0874">Release 0.8.74</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
 <p>The SageWorks framework continues to flex to support different real world use cases when operating a set of production machine learning pipelines.</p>
-<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.71</code> to <code>0.8.72</code></p>
+<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.71</code> to <code>0.8.74</code></p>
 <h2 id="general">General</h2>
 <p>This release is an incremental release as part of the road map for <code>v.0.9.0</code>. Please see the full details of the planned changes here: <a href="../../road_maps/0_9_0/">v0.9.0 Roadmap</a>. </p>
+<h3 id="s3-based-plugins">S3 based Plugins</h3>
+<p>We've added the ability to grab Dashboard plugins directly from an S3 bucket. Please see <a href="../../admin/dashboard_s3_plugins/">Dashboard S3 Plugin</a></p>
 <h3 id="artifact-hashes">Artifact Hashes</h3>
 <p>For content verification purposes we've added a <code>hash()</code> method to all of the SageWorks Artifact classes (DataSource, FeatureSet, Model, Endpoint, Graph, etc). Also for DataSources and FeatureSets there is a <code>table_hash()</code> method that will compute a total hash of all data in the Athena table.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ds = DataSource(&quot;abalone_data&quot;)
@@ -3237,16 +3257,26 @@
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>end.hash()
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>Out[8]: &#39;00def9381366cdd062413d0b395ba70c&#39;
 </span></code></pre></div>
-<p><strong>Note:</strong> You will get a performance warning when running table_hash() on DataSources and FeatureSets as it typically involves a deeper computation on the table contents of that artifact.</p>
+<p><strong>Note:</strong> You will get a performance warning when running hash() or table_hash() as these operations compute actual content hashes on the underlying data.</p>
 <h2 id="custom-model-scripts">Custom Model Scripts</h2>
 <p>We're expanding our custom model script to include some additional chemical informatics capabilities. In addition to our molecular descriptors and Morgan fingerprints we also have RDKIT canonicalization and tautomerization.</p>
 <h2 id="api-changes">API Changes</h2>
+<p><strong>FeatureSet</strong></p>
+<p>When creating a FeatureSet the <code>id_column</code> is now NOT required. The old "auto" functionality is gone, if you don't specify an <code>id_column</code> and id column named <code>auto_id</code> will be automatically generated.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ds = DataSource(&quot;test_data&quot;)
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>fs = ds.to_features(&quot;test_features&quot;, id_column=&quot;auto&quot;)
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>&lt;replaced by&gt;
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>fs = ds.to_features(&quot;test_features&quot;)
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a># We do recommend that you specify an id :)
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>fs = ds.to_features(&quot;test_features&quot;, id_column=&quot;my_id&quot;)
+</span></code></pre></div>
 <ul>
 <li>
 <p><code>get_database()</code> has a deprecation warning, it's replaced with just the <code>database</code> property.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ds.get_database()
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>&lt;replaced by&gt;
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>ds.database
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ds.get_database()
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>&lt;replaced by&gt;
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>ds.database
 </span></code></pre></div>
 </li>
 <li>
@@ -3257,7 +3287,7 @@
 <h2 id="internal-changes">Internal Changes</h2>
 <p>There was a small refactor of the cache decorator. We fixed a case where if we blocked on getting a value we also spun up a background thread to get it. This chance will not affect existing code or APIs.</p>
 <h2 id="specific-code-changes">Specific Code Changes</h2>
-<p><a href="https://github.com/supercowpowers/sageworks/compare/v0.8.71...v0.8.72" target="_blank">Code Diff v0.8.71 --&gt; v0.8.72</a> </p>
+<p><a href="https://github.com/supercowpowers/sageworks/compare/v0.8.71...v0.8.74" target="_blank">Code Diff v0.8.71 --&gt; v0.8.74</a> </p>
 <p>Who doesn't like looking at code! Also +3 points for getting down this far! Here's a cow joke as a reward:</p>
 <blockquote>
 <p><strong><em>What do you call that feeling like you’ve done this before?
