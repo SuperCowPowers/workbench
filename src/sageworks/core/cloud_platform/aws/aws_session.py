@@ -12,6 +12,7 @@ import logging
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.execution_environment import running_on_lambda, running_on_glue
+from sageworks.utils.ipython_utils import is_running_in_ipython, display_error_and_raise
 
 
 class AWSSession:
@@ -34,8 +35,12 @@ class AWSSession:
             self.account_id = boto3.client("sts").get_caller_identity()["Account"]
             self.region = boto3.Session().region_name
         except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError):
-            self.log.critical("AWS SSO Token Failure: Check AWS_PROFILE and/or Renew SSO Token...")
-            sys.exit(1)
+            msg = "AWS SSO Token Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+            self.log.critical(msg)
+            if is_running_in_ipython():
+                display_error_and_raise(msg)
+            else:
+                sys.exit(1)
 
     @property
     def boto3_session(self):
