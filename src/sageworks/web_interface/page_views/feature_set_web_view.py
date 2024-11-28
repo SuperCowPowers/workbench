@@ -3,11 +3,11 @@
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.all_artifacts import AllArtifacts
+from sageworks.web_interface.page_views.main_page import MainPage
 from sageworks.cached.cached_feature_set import CachedFeatureSet
 
 
-class FeatureSetWebView(AllArtifacts):
+class FeatureSetWebView(MainPage):
     def __init__(self):
         """FeatureSetWebView pulls FeatureSet metadata and populates a Details Panel"""
         # Call SuperClass Initialization

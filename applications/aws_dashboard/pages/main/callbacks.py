@@ -7,7 +7,7 @@ from dash.dependencies import Input, Output, State
 
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.all_artifacts import AllArtifacts
+from sageworks.web_interface.page_views.main_page import MainPage
 from sageworks.web_interface.components import table
 from sageworks.utils.pandas_utils import serialize_aws_metadata, deserialize_aws_metadata
 
@@ -17,7 +17,7 @@ def content_hash(serialized_data):
     return hashlib.md5(serialized_data.encode()).hexdigest()
 
 
-def refresh_data(app: Dash, my_page_view: AllArtifacts):
+def refresh_data(app: Dash, my_page_view: MainPage):
     @app.callback(
         [
             Output("data-last-updated", "children"),

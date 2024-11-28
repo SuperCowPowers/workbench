@@ -1,4 +1,4 @@
-"""AllArtifacts pulls All the metadata from the Cloud Platform and organizes/summarizes it"""
+"""MainPage pulls All the metadata from the Cloud Platform and organizes/summarizes it"""
 
 from typing import Dict
 import pandas as pd
@@ -9,9 +9,9 @@ from sageworks.utils.symbols import tag_symbols
 from sageworks.cached.cached_meta import CachedMeta
 
 
-class AllArtifacts(PageView):
+class MainPage(PageView):
     def __init__(self):
-        """AllArtifacts pulls All the metadata from the Cloud Platform and organizes/summarizes it"""
+        """MainPage pulls All the metadata from the Cloud Platform and organizes/summarizes it"""
         # Call SuperClass Initialization
         super().__init__()
 
@@ -20,7 +20,7 @@ class AllArtifacts(PageView):
 
     def refresh(self) -> bool:
         """Refresh the data associated with this page view"""
-        self.log.info("AllArtifacts Refresh (does nothing)")
+        self.log.info("MainPage Refresh (does nothing)")
         return True
 
     def all_artifacts(self) -> Dict[str, pd.DataFrame]:
@@ -244,11 +244,11 @@ if __name__ == "__main__":
     import time
 
     # Create the class and get the AWS Model Registry details
-    artifact_view = AllArtifacts()
+    artifact_view = MainPage()
 
-    # List the Endpoint Names
-    print("AllArtifacts:")
-    for category, df in artifact_view.view_data().items():
+    # List all the artifacts in the main page
+    print("All Cloud Platform Artifacts:")
+    for category, df in artifact_view.all_artifacts().items():
         print(f"\n{category}")
         print(df.head())
 
