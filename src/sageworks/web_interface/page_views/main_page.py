@@ -1,6 +1,5 @@
 """MainPage pulls All the metadata from the Cloud Platform and organizes/summarizes it"""
 
-from typing import Dict
 import pandas as pd
 
 # SageWorks Imports
@@ -18,28 +17,9 @@ class MainPage(PageView):
         # CachedMeta object for Cloud Platform Metadata
         self.meta = CachedMeta()
 
-    def refresh(self) -> bool:
+    def refresh(self):
         """Refresh the data associated with this page view"""
         self.log.info("MainPage Refresh (does nothing)")
-        return True
-
-    def all_artifacts(self) -> Dict[str, pd.DataFrame]:
-        """Get all the data that's useful for this view
-
-        Returns:
-            dict: Dictionary of Pandas Dataframes, e.g. {'INCOMING_DATA_S3': pd.DataFrame, ...}
-        """
-
-        # We're filling in Summary Data for all the AWS Services
-        summary_data = {
-            "INCOMING_DATA": self.incoming_data_summary(),
-            "GLUE_JOBS": self.glue_jobs_summary(),
-            "DATA_SOURCES": self.data_sources_summary(),
-            "FEATURE_SETS": self.feature_sets_summary(),
-            "MODELS": self.models_summary(),
-            "ENDPOINTS": self.endpoints_summary(),
-        }
-        return summary_data
 
     def incoming_data_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
         """Get summary data about the AWS Glue Jobs
@@ -248,9 +228,24 @@ if __name__ == "__main__":
 
     # List all the artifacts in the main page
     print("All Cloud Platform Artifacts:")
-    for category, df in artifact_view.all_artifacts().items():
-        print(f"\n{category}")
-        print(df.head())
+    print("Incoming Data:")
+    df = artifact_view.incoming_data_summary()
+    print(df.head())
+    print("\nGlue Jobs:")
+    df = artifact_view.glue_jobs_summary()
+    print(df.head())
+    print("\nData Sources:")
+    df = artifact_view.data_sources_summary()
+    print(df.head())
+    print("\nFeature Sets:")
+    df = artifact_view.feature_sets_summary()
+    print(df.head())
+    print("\nModels:")
+    df = artifact_view.models_summary()
+    print(df.head())
+    print("\nEndpoints:")
+    df = artifact_view.endpoints_summary()
+    print(df.head())
 
     # Give any broker threads time to finish
     time.sleep(1)

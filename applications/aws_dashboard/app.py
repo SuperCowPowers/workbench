@@ -32,12 +32,7 @@ app = Dash(
 server = app.server
 
 # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
-app.layout = html.Div(
-    [
-        dcc.Store(id="aws-metadata", storage_type="local"),
-        page_container,
-    ]
-)
+app.layout = html.Div([page_container])
 
 # Grab any plugin pages
 plugin_pages = pm.get_pages()

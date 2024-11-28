@@ -62,5 +62,13 @@ main_page_view = MainPage()
 
 # Setup our callbacks/connections
 app = dash.get_app()
-callbacks.refresh_data(app, main_page_view)
-callbacks.update_artifact_tables(app)
+
+# Set up the callbacks for all the tables on the main page
+callbacks.last_updated()
+callbacks.incoming_data_update(main_page_view)
+callbacks.etl_jobs_update(main_page_view)
+callbacks.data_sources_update(main_page_view)
+callbacks.feature_sets_update(main_page_view)
+callbacks.models_update(main_page_view)
+callbacks.endpoints_update(main_page_view)
+
