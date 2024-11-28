@@ -1,17 +1,45 @@
-"""ArtifactsWebView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
+"""AllArtifacts pulls All the metadata from the Cloud Platform and organizes/summarizes it"""
 
+from typing import Dict
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.artifacts_text_view import ArtifactsTextView
+from sageworks.web_interface.page_views.page_view import PageView
 from sageworks.utils.symbols import tag_symbols
+from sageworks.cached.cached_meta import CachedMeta
 
 
-class ArtifactsWebView(ArtifactsTextView):
+class AllArtifacts(PageView):
     def __init__(self):
-        """ArtifactsWebView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
+        """AllArtifacts pulls All the metadata from the Cloud Platform and organizes/summarizes it"""
         # Call SuperClass Initialization
         super().__init__()
+
+        # CachedMeta object for Cloud Platform Metadata
+        self.meta = CachedMeta()
+
+    def refresh(self) -> bool:
+        """Refresh the data associated with this page view"""
+        self.log.info("AllArtifacts Refresh (does nothing)")
+        return True
+
+    def all_artifacts(self) -> Dict[str, pd.DataFrame]:
+        """Get all the data that's useful for this view
+
+        Returns:
+            dict: Dictionary of Pandas Dataframes, e.g. {'INCOMING_DATA_S3': pd.DataFrame, ...}
+        """
+
+        # We're filling in Summary Data for all the AWS Services
+        summary_data = {
+            "INCOMING_DATA": self.incoming_data_summary(),
+            "GLUE_JOBS": self.glue_jobs_summary(),
+            "DATA_SOURCES": self.data_sources_summary(),
+            "FEATURE_SETS": self.feature_sets_summary(),
+            "MODELS": self.models_summary(),
+            "ENDPOINTS": self.endpoints_summary(),
+        }
+        return summary_data
 
     def incoming_data_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
         """Get summary data about the AWS Glue Jobs
@@ -23,8 +51,8 @@ class ArtifactsWebView(ArtifactsTextView):
             pd.DataFrame: Summary data about the AWS Glue Jobs
         """
 
-        # We get the dataframe from the ArtifactsTextView
-        s3_data_df = super().incoming_data_summary()
+        # We get the dataframe from our CachedMeta
+        s3_data_df = self.meta.incoming_data()
 
         # We might get an empty dataframe
         if s3_data_df.empty:
@@ -54,8 +82,8 @@ class ArtifactsWebView(ArtifactsTextView):
             pd.DataFrame: Summary data about the AWS Glue Jobs
         """
 
-        # We get the dataframe from the ArtifactsTextView
-        glue_df = super().glue_jobs_summary()
+        # We get the dataframe from our CachedMeta
+        glue_df = self.meta.etl_jobs()
 
         # We might get an empty dataframe
         if glue_df.empty:
@@ -85,8 +113,8 @@ class ArtifactsWebView(ArtifactsTextView):
             pd.DataFrame: Summary data about the SageWorks DataSources
         """
 
-        # We get the dataframe from the ArtifactsTextView
-        data_df = super().data_sources_summary()
+        # We get the dataframe from our CachedMeta
+        data_df = self.meta.data_sources()
 
         # We might get an empty dataframe
         if data_df.empty:
@@ -116,8 +144,8 @@ class ArtifactsWebView(ArtifactsTextView):
             pd.DataFrame: Summary data about the SageWorks FeatureSets
         """
 
-        # We get the dataframe from the ArtifactsTextView
-        feature_df = super().feature_sets_summary()
+        # We get the dataframe from our CachedMeta
+        feature_df = self.meta.feature_sets(details=True)
 
         # We might get an empty dataframe
         if feature_df.empty:
@@ -147,8 +175,8 @@ class ArtifactsWebView(ArtifactsTextView):
             pd.DataFrame: Summary data about the SageWorks Models
         """
 
-        # We get the dataframe from the ArtifactsTextView and hyperlink the Model Group column
-        model_df = super().models_summary()
+        # We get the dataframe from our CachedMeta and hyperlink the Model Group column
+        model_df = self.meta.models(details=True)
 
         # We might get an empty dataframe
         if model_df.empty:
@@ -178,8 +206,8 @@ class ArtifactsWebView(ArtifactsTextView):
             pd.DataFrame: Summary data about the SageWorks Endpoints
         """
 
-        # We get the dataframe from the ArtifactsTextView and hyperlink the Name column
-        endpoint_df = super().endpoints_summary()
+        # We get the dataframe from our CachedMeta and hyperlink the Name column
+        endpoint_df = self.meta.endpoints()
 
         # We might get an empty dataframe
         if endpoint_df.empty:
@@ -216,10 +244,10 @@ if __name__ == "__main__":
     import time
 
     # Create the class and get the AWS Model Registry details
-    artifact_view = ArtifactsWebView()
+    artifact_view = AllArtifacts()
 
     # List the Endpoint Names
-    print("ArtifactsWebView:")
+    print("AllArtifacts:")
     for category, df in artifact_view.view_data().items():
         print(f"\n{category}")
         print(df.head())

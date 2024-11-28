@@ -1,4 +1,4 @@
-"""ArtifactsTextView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
+"""AllMetaAsDataFrames pulls All the metadata from the Cloud Platform and organizes/summarizes it"""
 
 import pandas as pd
 from typing import Dict
@@ -6,12 +6,14 @@ from typing import Dict
 # SageWorks Imports
 from sageworks.web_interface.page_views.page_view import PageView
 from sageworks.cached.cached_meta import CachedMeta
+from sageworks.utils.deprecated_utils import hard_deprecated
 
 
-class ArtifactsTextView(PageView):
+@hard_deprecated
+class AllMetaAsDataFrames(PageView):
 
     def __init__(self):
-        """ArtifactsTextView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""
+        """AllMetaAsDataFrames pulls All the metadata from the Cloud Platform and organizes/summarizes it"""
         # Call SuperClass Initialization
         super().__init__()
 
@@ -84,7 +86,7 @@ if __name__ == "__main__":
     import time
 
     # Create the class and get the AWS Model Registry details
-    artifacts = ArtifactsTextView()
+    artifacts = AllMetaAsDataFrames()
 
     # Pull the data for all Artifacts in the AWS Account
     artifacts.view_data()

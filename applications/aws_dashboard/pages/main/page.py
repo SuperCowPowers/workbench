@@ -4,7 +4,7 @@ from dash import register_page
 import dash
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.artifacts_web_view import ArtifactsWebView
+from sageworks.web_interface.page_views.all_artifacts import AllArtifacts
 from sageworks.web_interface.components import table
 
 # Local Imports
@@ -58,7 +58,7 @@ components = {
 layout = main_layout(**components)
 
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks
-main_page_view = ArtifactsWebView()
+main_page_view = AllArtifacts()
 
 # Setup our callbacks/connections
 app = dash.get_app()

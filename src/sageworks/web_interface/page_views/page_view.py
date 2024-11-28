@@ -19,11 +19,6 @@ class PageView(ABC):
         self.sm_session = self.aws_account_clamp.sagemaker_session()
 
     @abstractmethod
-    def refresh(self) -> bool:
+    def refresh(self):
         """Refresh the data associated with this page view"""
-        pass
-
-    @abstractmethod
-    def view_data(self) -> dict:
-        """Return all the data that's useful for this view"""
         pass

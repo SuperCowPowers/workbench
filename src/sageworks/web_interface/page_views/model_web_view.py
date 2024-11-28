@@ -3,11 +3,11 @@
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.artifacts_web_view import ArtifactsWebView
+from sageworks.web_interface.page_views.all_artifacts import AllArtifacts
 from sageworks.cached.cached_model import CachedModel
 
 
-class ModelWebView(ArtifactsWebView):
+class ModelWebView(AllArtifacts):
     def __init__(self):
         """ModelWebView pulls Model metadata and populates a Details Panel"""
         # Call SuperClass Initialization
