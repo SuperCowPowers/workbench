@@ -4,11 +4,11 @@ import pandas as pd
 from typing import Dict
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.web_view import WebView
+from sageworks.web_interface.page_views.page_view import PageView
 from sageworks.cached.cached_meta import CachedMeta
 
 
-class ArtifactsTextView(WebView):
+class ArtifactsTextView(PageView):
 
     def __init__(self):
         """ArtifactsTextView pulls All the metadata from the AWS Service Broker and organizes/summarizes it"""

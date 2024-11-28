@@ -12,7 +12,7 @@ from typing import Union, Dict, List, Any
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.s3_utils import copy_s3_files_to_local
-from sageworks.web_interface.page_views.web_view import WebView
+from sageworks.web_interface.page_views.page_view import PageView
 from sageworks.web_interface.components.plugin_interface import PluginInterface
 from sageworks.web_interface.components.plugin_interface import PluginPage
 
@@ -106,8 +106,8 @@ class PluginManager:
                                 self.log.error(f"\tClass: {attr_name}")
                                 self.log.error(f"\tDetails: {filename} {validation_error}")
 
-                        # For views, check if the class is a subclass of WebView
-                        elif plugin_type == "views" and issubclass(attr, WebView):
+                        # For views, check if the class is a subclass of PageView
+                        elif plugin_type == "views" and issubclass(attr, PageView):
                             self.plugins[plugin_type][attr_name] = attr
 
                         # For pages, check if the class has the required page plugin method (page_setup)
@@ -192,15 +192,15 @@ class PluginManager:
         web_plugin = self.plugins["components"].get(plugin_name)
         return web_plugin() if web_plugin else None
 
-    def get_view(self, view_name: str) -> Union[WebView, None]:
+    def get_view(self, view_name: str) -> Union[PageView, None]:
         """
-        Retrieve a view plugin with the given name.
+        Retrieve a page view plugin with the given name.
 
         Args:
-            view_name (str): The name of the view to retrieve (None if not found).
+            view_name (str): The name of the page view to retrieve (None if not found).
 
         Returns:
-            WebView: An INSTANTIATED view class with the given name.
+            PageView: An INSTANTIATED view class with the given name.
         """
         view = self.plugins["views"].get(view_name)
         return view() if view else None

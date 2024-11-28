@@ -58,9 +58,9 @@ components = {
 layout = main_layout(**components)
 
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks
-web_view = ArtifactsWebView()
+main_page_view = ArtifactsWebView()
 
 # Setup our callbacks/connections
 app = dash.get_app()
-callbacks.refresh_data(app, web_view)
+callbacks.refresh_data(app, main_page_view)
 callbacks.update_artifact_tables(app)

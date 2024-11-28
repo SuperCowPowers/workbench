@@ -17,7 +17,7 @@ def content_hash(serialized_data):
     return hashlib.md5(serialized_data.encode()).hexdigest()
 
 
-def refresh_data(app: Dash, web_view: ArtifactsWebView):
+def refresh_data(app: Dash, my_page_view: ArtifactsWebView):
     @app.callback(
         [
             Output("data-last-updated", "children"),
@@ -31,7 +31,7 @@ def refresh_data(app: Dash, web_view: ArtifactsWebView):
         new_time = datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
         # Grab all the data from the Web View
-        new_metadata = web_view.view_data()
+        new_metadata = my_page_view.view_data()
         serialized_data = serialize_aws_metadata(new_metadata)
 
         # Sanity check our existing data

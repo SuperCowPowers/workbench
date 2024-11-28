@@ -3,11 +3,11 @@
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.web_view import WebView
+from sageworks.web_interface.page_views.page_view import PageView
 from sageworks.api import Meta
 
 
-class MyViewPlugin(WebView):
+class MyViewPlugin(PageView):
     def __init__(self):
         """MyViewPlugin pulls Model metadata"""
 
