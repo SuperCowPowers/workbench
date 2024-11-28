@@ -1,15 +1,14 @@
 """FeatureSets Callbacks: Callback within the DataSources Web User Interface"""
 
 import dash
+from dash import callback, Output, Input, State
 from dash import Dash
-from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 import pandas as pd
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.data_source_web_view import DataSourceWebView
 from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
-from sageworks.utils.pandas_utils import deserialize_aws_metadata
 
 import logging
 
@@ -20,18 +19,19 @@ log = logging.getLogger("sageworks")
 smart_sample_rows = []
 
 
-def update_data_sources_table(app: Dash):
-    @app.callback(
+def update_data_sources_table(page_view: DataSourceWebView):
+    @callback(
         [
             Output("data_sources_table", "columns"),
             Output("data_sources_table", "data"),
         ],
-        Input("aws-metadata", "data"),
+        Input("data_sources_refresh", "n_intervals"),
     )
-    def data_sources_update(serialized_aws_metadata):
-        """Return the table data for the DataSources Table"""
-        aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
-        data_sources = aws_metadata["DATA_SOURCES"]
+    def data_sources_update(_n_intervals):
+        """Pull the latest data sources from the DataSourceWebView and update the table"""
+        page_view.refresh()
+        data_sources = page_view.data_sources()
+        data_sources["uuid"] = data_sources["Name"]
         data_sources["id"] = range(len(data_sources))
         column_setup_list = table.Table().column_setup(data_sources, markdown_columns=["Name"])
         return [column_setup_list, data_sources.to_dict("records")]

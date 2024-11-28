@@ -22,8 +22,7 @@ register_page(
 load_figure_template("darkly")
 
 # Grab a view that gives us a summary of the DataSources in SageWorks
-data_source_broker = DataSourceWebView()
-data_source_rows = data_source_broker.data_sources_summary()
+data_source_view = DataSourceWebView()
 
 # Create a table to display the data sources
 data_sources_table = table.Table().create_component(
@@ -32,7 +31,7 @@ data_sources_table = table.Table().create_component(
     row_select="single",
 )
 
-# Create a table that sample rows from the currently selected  data source
+# Create a table that sample rows from the currently selected data source
 data_source_sample_rows = table.Table().create_component(
     "data_source_sample_rows",
     header_color="rgb(70, 70, 110)",
@@ -64,12 +63,12 @@ layout = data_sources_layout(**components)
 app = dash.get_app()
 
 # Periodic update to the data sources summary table
-callbacks.update_data_sources_table(app)
+callbacks.update_data_sources_table(data_source_view)
 
 # Callbacks for when a data source is selected
 callbacks.table_row_select(app, "data_sources_table")
-callbacks.update_data_source_details(app, data_source_broker)
-callbacks.update_data_source_sample_rows(app, data_source_broker)
+callbacks.update_data_source_details(app, data_source_view)
+callbacks.update_data_source_sample_rows(app, data_source_view)
 
 # Callbacks for selections
 callbacks.violin_plot_selection(app)

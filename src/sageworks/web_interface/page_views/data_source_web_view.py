@@ -3,29 +3,33 @@
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.main_page import MainPage
+from sageworks.web_interface.page_views.page_view import PageView
+from sageworks.cached.cached_meta import CachedMeta
 from sageworks.cached.cached_data_source import CachedDataSource
 
 
-class DataSourceWebView(MainPage):
+class DataSourceWebView(PageView):
     def __init__(self):
         """DataSourceWebView pulls DataSource metadata and populates a Details Panel"""
         # Call SuperClass Initialization
         super().__init__()
 
-        # DataFrame of the DataSources Summary
-        self.data_sources_df = self.data_sources_summary()
+        # CachedMeta object for Cloud Platform Metadata
+        self.meta = CachedMeta()
+        self.data_sources_df = self.meta.data_sources()
 
     def refresh(self):
-        """Refresh the data from the AWS Service Broker"""
-        self.data_sources_df = self.data_sources_summary()
+        """Refresh our list of DataSources from the Cloud Platform"""
+        self.log.important("Calling refresh()..")
+        self.data_sources_df = self.meta.data_sources()
 
-    def view_data(self) -> pd.DataFrame:
-        """Get all the data that's useful for this view
+    def data_sources(self) -> pd.DataFrame:
+        """Get a list of all the DataSources
 
         Returns:
-            pd.DataFrame: DataFrame of the DataSources View Data
+            pd.DataFrame: DataFrame of all the DataSources
         """
+        self.log.important("Pulling data_sources()...")
         return self.data_sources_df
 
     @staticmethod
@@ -96,11 +100,11 @@ if __name__ == "__main__":
 
     # List the DataSources
     print("DataSourcesSummary:")
-    summary = data_view.view_data()
+    summary = data_view.data_sources()
     print(summary.head())
 
     # Get the details for the first DataSource
-    my_data_uuid = summary["uuid"].iloc[0]
+    my_data_uuid = summary["Name"].iloc[0]
     print(f"\nDataSourceDetails: {my_data_uuid}")
     details = data_view.data_source_details(my_data_uuid)
     pprint(details)
