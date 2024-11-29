@@ -137,9 +137,7 @@ class PluginManager:
                         if hasattr(attr, "page_setup"):
                             self.plugins[plugin_type][attr_name] = attr
                         else:
-                            self.log.warning(
-                                f"Class {attr_name} in {filename} does not have all required page methods"
-                            )
+                            self.log.warning(f"Class {attr_name} in {filename} does not have all required page methods")
 
                     # Unexpected type
                     else:
