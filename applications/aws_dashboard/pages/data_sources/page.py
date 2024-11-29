@@ -1,7 +1,6 @@
 """DataSources:  A SageWorks Web Interface to view, interact, and manage Data Sources"""
 
 from dash import register_page
-import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports

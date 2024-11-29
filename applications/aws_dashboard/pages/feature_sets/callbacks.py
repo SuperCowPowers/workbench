@@ -1,7 +1,7 @@
 """Callbacks for the FeatureSets Subpage Web User Interface"""
 
 import dash
-from dash import Dash, callback, Input, Output, State
+from dash import callback, Input, Output, State
 import plotly.graph_objects as go
 import pandas as pd
 import logging

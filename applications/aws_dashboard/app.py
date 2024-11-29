@@ -1,7 +1,7 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
 import os
-from dash import Dash, page_container, html, dcc
+from dash import Dash, page_container, html
 from sageworks.utils.plugin_manager import PluginManager
 
 

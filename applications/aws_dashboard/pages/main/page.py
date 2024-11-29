@@ -1,7 +1,6 @@
 """Main: The main SageWorks Web Interface to view, interact, and manage SageWorks Artifacts"""
 
 from dash import register_page
-import dash
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.main_page import MainPage
@@ -68,4 +67,3 @@ callbacks.data_sources_update(main_page_view)
 callbacks.feature_sets_update(main_page_view)
 callbacks.models_update(main_page_view)
 callbacks.endpoints_update(main_page_view)
-
