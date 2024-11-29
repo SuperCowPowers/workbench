@@ -4,9 +4,6 @@ from abc import ABC, abstractmethod
 
 import logging
 
-# SageWorks Imports
-from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-
 
 class PageView(ABC):
     def __init__(self):

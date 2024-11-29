@@ -15,10 +15,7 @@ log = logging.getLogger("sageworks")
 
 def update_models_table(page_view: ModelWebView):
     @callback(
-        [
-            Output("models_table", "columns"),
-            Output("models_table", "data")
-        ],
+        [Output("models_table", "columns"), Output("models_table", "data")],
         Input("models_refresh", "n_intervals"),
     )
     def models_update(_n):
