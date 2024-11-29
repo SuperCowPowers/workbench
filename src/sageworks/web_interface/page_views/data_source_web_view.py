@@ -16,7 +16,10 @@ class DataSourceWebView(PageView):
 
         # CachedMeta object for Cloud Platform Metadata
         self.meta = CachedMeta()
-        self.data_sources_df = self.meta.data_sources()
+
+        # Initialize the DataSources DataFrame
+        self.data_sources_df = None
+        self.refresh()
 
     def refresh(self):
         """Refresh our list of DataSources from the Cloud Platform"""

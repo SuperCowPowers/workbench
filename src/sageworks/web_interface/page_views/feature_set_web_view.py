@@ -16,12 +16,15 @@ class FeatureSetWebView(PageView):
 
         # CachedMeta object for Cloud Platform Metadata
         self.meta = CachedMeta()
-        self.feature_sets_df = self.meta.feature_sets()
+
+        # Initialize the Endpoints DataFrame
+        self.feature_sets_df = None
+        self.refresh()
 
     def refresh(self):
         """Refresh the data from the AWS Service Broker"""
         self.log.important("Calling refresh()..")
-        self.feature_sets_df = self.feature_sets()
+        self.feature_sets_df = self.meta.feature_sets(details=True)
 
     def feature_sets(self) -> pd.DataFrame:
         """Get a list of all the Feature
