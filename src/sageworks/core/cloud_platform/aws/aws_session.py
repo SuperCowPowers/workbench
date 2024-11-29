@@ -105,16 +105,10 @@ class AWSSession:
             self.log.info(f"AWS Credentials Refreshed: Expires at {local_time}")
             return credentials
 
-        except botocore.exceptions.ClientError as e:
-            error_code = e.response["Error"]["Code"]
-            if error_code == "ExpiredToken":
-                self.log.error("AWS SSO session has expired. Please run 'aws sso login' to renew your session.")
-            else:
-                self.log.error(f"Error during Refresh Credentials: {e}")
-            raise
-
         except Exception as e:
-            self.log.error(f"Error during Refresh Credentials: {e}")
+            # Note: We can't use a log message because that goes through the CloudWatchHandler
+            #       which would require AWS credentials to log the error message
+            print(f"Error during Refresh Credentials: {e}")
             raise
 
 
