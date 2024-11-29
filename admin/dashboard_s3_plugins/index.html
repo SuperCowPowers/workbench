@@ -764,7 +764,7 @@
             
   
   <span class="md-ellipsis">
-    Blogs/Research
+    Blogs
   </span>
   
 
@@ -774,7 +774,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
-            Blogs/Research
+            Blogs
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -785,7 +785,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs_research/" class="md-nav__link">
+      <a href="../../blogs/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -806,7 +806,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs_research/residual_analysis/" class="md-nav__link">
+      <a href="../../blogs/residual_analysis/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -827,7 +827,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs_research/eda/" class="md-nav__link">
+      <a href="../../blogs/eda/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -848,7 +848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs_research/htg/" class="md-nav__link">
+      <a href="../../blogs/htg/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -869,7 +869,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs_research/model_monitoring/" class="md-nav__link">
+      <a href="../../blogs/model_monitoring/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3164,7 +3164,7 @@
 <p>Deploying your Dashboard plugins via an S3 bucket allows plugin developers to modify and improve plugins without a bunch of Docker builds, ECR, and CDK Deploy.</p>
 <p>On, the other hand when you have a 'final build' you might want to lock it in with a Docker image. If you'd like to bundle up your plugins in a Docker image and deploy please see <a href="../dashboard_with_plugins/">Dashboard with Plugins</a>.</p>
 <h2 id="check-your-dashboard">Check your Dashboard</h2>
-<p>Make sure your Dashboard is configured to pull plugin pages, views, and web_components from an S3 bucket. Go to your main dashboard page and there's a 'secret link' when you click on the main title that brings up the <strong>Dashboard Status Page</strong>.</p>
+<p>Make sure your Dashboard is configured to pull plugin pages, views, and components from an S3 bucket. Go to your main dashboard page and there's a 'secret link' when you click on the main title that brings up the <strong>Dashboard Status Page</strong>.</p>
 <p><img src="../images/dashboard_secret_click.png" width="500"></p>
 <p><strong>Dashboard Status Page</strong>
 Okay now check your <strong>Plugin Path:</strong> config and make sure it points to the S3 bucket you're expecting.</p>
@@ -3177,7 +3177,7 @@ Okay now check your <strong>Plugin Path:</strong> config and make sure it points
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>      - page_1.py
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>   - views
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>      - view_1.py
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>   - web_components
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>   - components
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>       -component_1.py
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>       -component_2.py
 </span></code></pre></div>
@@ -3189,7 +3189,7 @@ Okay now check your <strong>Plugin Path:</strong> config and make sure it points
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>aws s3 cp . s3://my_bucket/prefix --recursive --exclude &quot;*&quot; --include &quot;*.py&quot;
 </span></code></pre></div>
 <h2 id="restart-the-ecs-service">Restart the ECS Service</h2>
-<p>Okay, so this is a bit heavy handed, but automatically removing/adding/modifying the plugin pages, views, and web_components was 'amazingly complicated' and will be a feature request for a later date. :)</p>
+<p>Okay, so this is a bit heavy handed, but automatically removing/adding/modifying the plugin pages, views, and components was 'amazingly complicated' and will be a feature request for a later date. :)</p>
 <p><strong>Getting Cluster and Service Names</strong></p>
 <p>You can go to the AWS Console, Elastic Container Service, find the cluster, click on that and find the service.</p>
 <p>The cluster will be something like:</p>

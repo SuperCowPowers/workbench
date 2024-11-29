@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../eda/">
+        <link rel="prev" href="../residual_analysis/">
       
       
-        <link rel="next" href="../model_monitoring/">
+        <link rel="next" href="../htg/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>High Target Gradients (HTG) - SageWorks</title>
+        <title>Exploratory Data Analysis(EDA) - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#eda-high-target-gradients" class="md-skip">
+        <a href="#exploratory-data-analysis" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              High Target Gradients (HTG)
+              Exploratory Data Analysis(EDA)
             
           </span>
         </div>
@@ -766,7 +766,7 @@
             
   
   <span class="md-ellipsis">
-    Blogs/Research
+    Blogs
   </span>
   
 
@@ -776,7 +776,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
-            Blogs/Research
+            Blogs
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -826,27 +826,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../eda/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Exploratory Data Analysis(EDA)
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -863,7 +842,7 @@
           
   
   <span class="md-ellipsis">
-    High Target Gradients (HTG)
+    Exploratory Data Analysis(EDA)
   </span>
   
 
@@ -874,7 +853,7 @@
         
   
   <span class="md-ellipsis">
-    High Target Gradients (HTG)
+    Exploratory Data Analysis(EDA)
   </span>
   
 
@@ -908,6 +887,27 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../htg/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    High Target Gradients (HTG)
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -3071,7 +3071,7 @@
                   
 
 
-<h1 id="eda-high-target-gradients">EDA: High Target Gradients</h1>
+<h1 id="exploratory-data-analysis">Exploratory Data Analysis</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">SageWorks EDS</p>
 <p>The SageWorks toolkit a set of plots that show EDA results, it also has a flexible plugin architecture to expand, enhance, or even replace the current set of web components <a href="../../aws_setup/dashboard_stack/">Dashboard</a>.</p>
@@ -3081,25 +3081,11 @@
 <li>TBD</li>
 <li>TBD2</li>
 </ul>
-<p>One of the latest EDA techniques we've added is the addition of a concept called <strong>High Target Gradients</strong> </p>
-<ol>
-<li><strong>Definition</strong>: For a given data point (x_i) with target value (y_i), and its neighbor (x_j) with target value (y_j), the target gradient (G_{ij}) can be defined as:</li>
-</ol>
-<p>[G_{ij} = \frac{|y_i - y_j|}{d(x_i, x_j)}]</p>
-<p>where (d(x_i, x_j)) is the distance between (x_i) and (x_j) in the feature space. This equation gives you the rate of change of the target value with respect to the change in features, similar to a slope in a two-dimensional space.</p>
-<ol>
-<li><strong>Max Gradient for Each Point</strong>: For each data point (x_i), you can compute the maximum target gradient with respect to all its neighbors:</li>
-</ol>
-<p>[G_{i}^{max} = \max_{j \neq i} G_{ij}]</p>
-<p>This gives you a scalar value for each point in your training data that represents the maximum rate of change of the target value in its local neighborhood.</p>
-<ol>
-<li>
-<p><strong>Usage</strong>: You can use (G_{i}^{max}) to identify and filter areas in the feature space that have high target gradients, which may indicate potential issues with data quality or feature representation.</p>
-</li>
-<li>
-<p><strong>Visualization</strong>: Plotting the distribution of (G_{i}^{max}) values or visualizing them in the context of the feature space can help you identify regions or specific points that warrant further investigation.</p>
-</li>
-</ol>
+<figure style="float: right; width: 400px;">
+<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4">
+<figcaption>SageWorks Exploratory Data Analysis</figcaption>
+</figure>
+
 <h2 id="additional-resources">Additional Resources</h2>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
 <ul>

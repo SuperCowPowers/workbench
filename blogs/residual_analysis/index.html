@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../residual_analysis/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../htg/">
+        <link rel="next" href="../eda/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Exploratory Data Analysis(EDA) - SageWorks</title>
+        <title>Residual Analysis - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#exploratory-data-analysis" class="md-skip">
+        <a href="#residual-analysis" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Exploratory Data Analysis(EDA)
+              Residual Analysis
             
           </span>
         </div>
@@ -766,7 +766,7 @@
             
   
   <span class="md-ellipsis">
-    Blogs/Research
+    Blogs
   </span>
   
 
@@ -776,7 +776,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
-            Blogs/Research
+            Blogs
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -805,27 +805,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../residual_analysis/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Residual Analysis
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -835,14 +814,12 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
-      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
   
   <span class="md-ellipsis">
-    Exploratory Data Analysis(EDA)
+    Residual Analysis
   </span>
   
 
@@ -853,7 +830,7 @@
         
   
   <span class="md-ellipsis">
-    Exploratory Data Analysis(EDA)
+    Residual Analysis
   </span>
   
 
@@ -865,8 +842,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -875,9 +850,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#additional-resources" class="md-nav__link">
+  <a href="#residual-analysis" class="md-nav__link">
     <span class="md-ellipsis">
-      Additional Resources
+      Residual Analysis
     </span>
   </a>
   
@@ -887,6 +862,27 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../eda/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Exploratory Data Analysis(EDA)
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -3038,8 +3034,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -3048,9 +3042,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#additional-resources" class="md-nav__link">
+  <a href="#residual-analysis" class="md-nav__link">
     <span class="md-ellipsis">
-      Additional Resources
+      Residual Analysis
     </span>
   </a>
   
@@ -3071,26 +3065,23 @@
                   
 
 
-<h1 id="exploratory-data-analysis">Exploratory Data Analysis</h1>
-<div class="admonition tip inline end">
-<p class="admonition-title">SageWorks EDS</p>
-<p>The SageWorks toolkit a set of plots that show EDA results, it also has a flexible plugin architecture to expand, enhance, or even replace the current set of web components <a href="../../aws_setup/dashboard_stack/">Dashboard</a>.</p>
-</div>
-<p>The SageWorks framework has a broad range of Exploratory Data Analysis (EDA) functionality. Each time a DataSource or FeatureSet is created that data is run through a full set of EDA techniques:</p>
-<ul>
-<li>TBD</li>
-<li>TBD2</li>
-</ul>
-<figure style="float: right; width: 400px;">
-<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4">
-<figcaption>SageWorks Exploratory Data Analysis</figcaption>
-</figure>
+  <h1>Residual Analysis</h1>
 
-<h2 id="additional-resources">Additional Resources</h2>
-<p><img align="right" src="../../images/scp.png" width="180"></p>
-<ul>
-<li>Consulting Available: <a href="https://www.supercowpowers.com">SuperCowPowers LLC</a></li>
-</ul>
+<h3 id="residual-analysis">Residual Analysis</h3>
+<p><strong>Overview and Definition</strong><br />
+Residual analysis involves examining the differences between observed and predicted values, known as residuals, to assess the performance of a predictive model. It is a critical step in model evaluation as it helps identify patterns of errors, diagnose potential problems, and improve model performance. By understanding where and why a model's predictions deviate from actual values, we can make informed adjustments to the model or the data to enhance accuracy and robustness.</p>
+<p><strong>Sparse Data Regions</strong><br />
+The observation is in a part of feature space with little or no nearby training observations, leading to poor generalization in these regions and resulting in high prediction errors.</p>
+<p><strong>Noisy/Inconsistent Data and Preprocessing Issues</strong><br />
+The observation is in a part of feature space where the training data is noisy, incorrect, or has high variance in the target variable. Additionally, missing values or incorrect data transformations can introduce errors, leading to unreliable predictions and high residuals.</p>
+<p><strong>Feature Resolution</strong><br />
+The current feature set may not fully resolve the compounds, leading to ‘collisions’ where different compounds are assigned identical features. Such unresolved features can result in different compounds exhibiting the same features, causing high residuals due to unaccounted structural or chemical nuances.</p>
+<p><strong>Activity Cliffs</strong><br />
+Structurally similar compounds exhibit significantly different activities, making accurate prediction challenging due to steep changes in activity with minor structural modifications.</p>
+<p><strong>Feature Engineering Issues</strong><br />
+Irrelevant or redundant features and poor feature scaling can negatively impact the model's performance and accuracy, resulting in higher residuals.</p>
+<p><strong>Model Overfitting or Underfitting</strong><br />
+Overfitting occurs when the model is too complex and captures noise, while underfitting happens when the model is too simple and misses underlying patterns, both leading to inaccurate predictions.</p>
 
 
 

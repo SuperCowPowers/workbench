@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../htg/">
-      
-      
-        <link rel="next" href="../../core_classes/overview/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +16,7 @@
     
     
       
-        <title>Model Monitoring - SageWorks</title>
+        <title>AWS Credentials Lock - SageWorks</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#model-monitoring" class="md-skip">
+        <a href="#aws-credentials-lock" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Model Monitoring
+              AWS Credentials Lock
             
           </span>
         </div>
@@ -747,36 +743,34 @@
       
   
   
-    
   
   
-  
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
           <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   <span class="md-ellipsis">
-    Blogs/Research
+    Blogs
   </span>
   
 
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
-            Blogs/Research
+            Blogs
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -868,19 +862,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../model_monitoring/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -889,7 +874,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -3002,6 +2986,50 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tbd" class="md-nav__link">
+    <span class="md-ellipsis">
+      TBD
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threading-lock" class="md-nav__link">
+    <span class="md-ellipsis">
+      Threading Lock
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error" class="md-nav__link">
+    <span class="md-ellipsis">
+      Error
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Questions?
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -3015,14 +3043,29 @@
                   
 
 
-<h1 id="model-monitoring">Model Monitoring</h1>
-<p><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html">Amazon SageMaker Model Monitor</a> currently provides the following types of monitoring:</p>
-<ul>
-<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-quality.html">Monitor Data Quality</a>: Detect drifts in data quality such as deviations from baseline data types.</li>
-<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality.html">Monitor Model Quality</a>: Monitor drift in model quality metrics, such as accuracy.</li>
-<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-monitor-bias-drift.html">Monitor Bias Drift for Models in Production</a>: Monitor bias in your model’s predictions.</li>
-<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-monitor-feature-attribution-drift.html">Monitor Feature Attribution Drift for Models in Production</a>: Monitor drift in feature attribution.</li>
-</ul>
+<h1 id="aws-credentials-lock">AWS Credentials Lock</h1>
+<div class="admonition tip inline end">
+<p class="admonition-title">AWS Curious?</p>
+<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
+</div>
+<h2 id="tbd">TBD</h2>
+<h2 id="threading-lock">Threading Lock</h2>
+<p>A threading lock object in Python is used to ensure that only one thread can access a specific section of code or resource at a time, preventing race conditions.</p>
+<p><strong>botocore/credentials.py</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>self._refresh_lock = threading.Lock()
+</span></code></pre></div></p>
+<h2 id="error">Error</h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>elif self.refresh_needed(self._mandatory_refresh_timeout):
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    # If we&#39;re within the mandatory refresh window,
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    # we must block until we get refreshed credentials.
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    with self._refresh_lock:
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        if not self.refresh_needed(self._mandatory_refresh_timeout):
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>            return
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        self._protected_refresh(is_mandatory=True)
+</span></code></pre></div>
+<h2 id="questions">Questions?</h2>
+<p><img align="right" src="../../images/scp.png" width="180"></p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 
 
 

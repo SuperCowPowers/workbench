@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../htg/">
       
       
-        <link rel="next" href="../eda/">
+        <link rel="next" href="../../core_classes/overview/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Residual Analysis - SageWorks</title>
+        <title>Model Monitoring - SageWorks</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#residual-analysis" class="md-skip">
+        <a href="#model-monitoring" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Residual Analysis
+              Model Monitoring
             
           </span>
         </div>
@@ -766,7 +766,7 @@
             
   
   <span class="md-ellipsis">
-    Blogs/Research
+    Blogs
   </span>
   
 
@@ -776,7 +776,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
-            Blogs/Research
+            Blogs
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -805,28 +805,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Residual Analysis
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../residual_analysis/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -835,33 +817,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#residual-analysis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Residual Analysis
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -913,10 +868,19 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../model_monitoring/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -925,6 +889,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -3034,23 +2999,8 @@
   
   
   
+    
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#residual-analysis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Residual Analysis
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -3065,23 +3015,14 @@
                   
 
 
-  <h1>Residual Analysis</h1>
-
-<h3 id="residual-analysis">Residual Analysis</h3>
-<p><strong>Overview and Definition</strong><br />
-Residual analysis involves examining the differences between observed and predicted values, known as residuals, to assess the performance of a predictive model. It is a critical step in model evaluation as it helps identify patterns of errors, diagnose potential problems, and improve model performance. By understanding where and why a model's predictions deviate from actual values, we can make informed adjustments to the model or the data to enhance accuracy and robustness.</p>
-<p><strong>Sparse Data Regions</strong><br />
-The observation is in a part of feature space with little or no nearby training observations, leading to poor generalization in these regions and resulting in high prediction errors.</p>
-<p><strong>Noisy/Inconsistent Data and Preprocessing Issues</strong><br />
-The observation is in a part of feature space where the training data is noisy, incorrect, or has high variance in the target variable. Additionally, missing values or incorrect data transformations can introduce errors, leading to unreliable predictions and high residuals.</p>
-<p><strong>Feature Resolution</strong><br />
-The current feature set may not fully resolve the compounds, leading to ‘collisions’ where different compounds are assigned identical features. Such unresolved features can result in different compounds exhibiting the same features, causing high residuals due to unaccounted structural or chemical nuances.</p>
-<p><strong>Activity Cliffs</strong><br />
-Structurally similar compounds exhibit significantly different activities, making accurate prediction challenging due to steep changes in activity with minor structural modifications.</p>
-<p><strong>Feature Engineering Issues</strong><br />
-Irrelevant or redundant features and poor feature scaling can negatively impact the model's performance and accuracy, resulting in higher residuals.</p>
-<p><strong>Model Overfitting or Underfitting</strong><br />
-Overfitting occurs when the model is too complex and captures noise, while underfitting happens when the model is too simple and misses underlying patterns, both leading to inaccurate predictions.</p>
+<h1 id="model-monitoring">Model Monitoring</h1>
+<p><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html">Amazon SageMaker Model Monitor</a> currently provides the following types of monitoring:</p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-quality.html">Monitor Data Quality</a>: Detect drifts in data quality such as deviations from baseline data types.</li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality.html">Monitor Model Quality</a>: Monitor drift in model quality metrics, such as accuracy.</li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-monitor-bias-drift.html">Monitor Bias Drift for Models in Production</a>: Monitor bias in your model’s predictions.</li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-monitor-feature-attribution-drift.html">Monitor Feature Attribution Drift for Models in Production</a>: Monitor drift in feature attribution.</li>
+</ul>
 
 
 
