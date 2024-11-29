@@ -1,4 +1,4 @@
-"""FeatureSetWebView pulls FeatureSet metadata from the AWS Service Broker with Details Panels on each FeatureSet"""
+"""FeatureSetsPageView pulls FeatureSet metadata from the AWS Service Broker with Details Panels on each FeatureSet"""
 
 import pandas as pd
 
@@ -8,9 +8,9 @@ from sageworks.cached.cached_meta import CachedMeta
 from sageworks.cached.cached_feature_set import CachedFeatureSet
 
 
-class FeatureSetWebView(PageView):
+class FeatureSetsPageView(PageView):
     def __init__(self):
-        """FeatureSetWebView pulls FeatureSet metadata and populates a Details Panel"""
+        """FeatureSetsPageView pulls FeatureSet metadata and populates a Details Panel"""
         # Call SuperClass Initialization
         super().__init__()
 
@@ -92,12 +92,12 @@ class FeatureSetWebView(PageView):
 
 
 if __name__ == "__main__":
-    # Exercising the FeatureSetWebView
+    # Exercising the FeatureSetsPageView
     import time
     from pprint import pprint
 
     # Create the class and get the AWS FeatureSet details
-    feature_view = FeatureSetWebView()
+    feature_view = FeatureSetsPageView()
 
     # List the FeatureSets
     print("FeatureSetsSummary:")

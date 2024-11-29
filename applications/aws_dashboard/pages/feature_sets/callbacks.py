@@ -7,7 +7,7 @@ import pandas as pd
 import logging
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.feature_set_web_view import FeatureSetWebView
+from sageworks.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
 from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
 
 # Set up logging
@@ -18,7 +18,7 @@ log = logging.getLogger("sageworks")
 smart_sample_rows = []
 
 
-def update_feature_sets_table(page_view: FeatureSetWebView):
+def update_feature_sets_table(page_view: FeatureSetsPageView):
     @callback(
         [
             Output("feature_sets_table", "columns"),
@@ -57,7 +57,7 @@ def table_row_select(table_name: str):
 
 
 # Updates the feature set details and correlation matrix when a new FeatureSet is selected
-def update_feature_set_details(feature_set_web_view: FeatureSetWebView):
+def update_feature_set_details(page_view: FeatureSetsPageView):
     @callback(
         [
             Output("feature_details_header", "children"),
@@ -82,7 +82,7 @@ def update_feature_set_details(feature_set_web_view: FeatureSetWebView):
         header = f"Details: {feature_set_uuid}"
 
         # FeatureSet Details
-        feature_details = feature_set_web_view.feature_set_details(feature_set_uuid)
+        feature_details = page_view.feature_set_details(feature_set_uuid)
         feature_details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(feature_details)
 
         # Generate a new correlation matrix figure
@@ -92,7 +92,7 @@ def update_feature_set_details(feature_set_web_view: FeatureSetWebView):
         return [header, feature_details_markdown, corr_figure]
 
 
-def update_feature_set_sample_rows(feature_set_web_view: FeatureSetWebView):
+def update_feature_set_sample_rows(page_view: FeatureSetsPageView):
     @callback(
         [
             Output("feature_sample_rows_header", "children"),
@@ -116,7 +116,7 @@ def update_feature_set_sample_rows(feature_set_web_view: FeatureSetWebView):
         print(f"FeatureSet UUID: {feature_set_uuid}")
 
         print("Calling FeatureSet Sample Rows...")
-        smart_sample_rows = feature_set_web_view.feature_set_smart_sample(feature_set_uuid)
+        smart_sample_rows = page_view.feature_set_smart_sample(feature_set_uuid)
 
         # Header Text
         header = f"Sample/Outlier Rows: {feature_set_uuid}"

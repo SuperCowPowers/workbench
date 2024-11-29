@@ -5,7 +5,7 @@ from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
 from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
-from sageworks.web_interface.page_views.feature_set_web_view import FeatureSetWebView
+from sageworks.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
 
 # Local Imports
 from .layout import feature_sets_layout
@@ -54,7 +54,7 @@ components = {
 layout = feature_sets_layout(**components)
 
 # Grab a view that gives us a summary of the FeatureSets in SageWorks
-feature_set_view = FeatureSetWebView()
+feature_set_view = FeatureSetsPageView()
 
 # Periodic update to the data sources summary table
 callbacks.update_feature_sets_table(feature_set_view)
