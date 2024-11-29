@@ -1,11 +1,10 @@
 """Main: The main SageWorks Web Interface to view, interact, and manage SageWorks Artifacts"""
 
 from dash import register_page
-import dash
 
 # SageWorks Imports
-from sageworks.web_views.artifacts_web_view import ArtifactsWebView
-from sageworks.web_components import table
+from sageworks.web_interface.page_views.main_page import MainPage
+from sageworks.web_interface.components import table
 
 # Local Imports
 from .layout import main_layout
@@ -58,9 +57,13 @@ components = {
 layout = main_layout(**components)
 
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks
-web_view = ArtifactsWebView()
+main_page_view = MainPage()
 
-# Setup our callbacks/connections
-app = dash.get_app()
-callbacks.refresh_data(app, web_view)
-callbacks.update_artifact_tables(app)
+# Set up the callbacks for all the tables on the main page
+callbacks.last_updated()
+callbacks.incoming_data_update(main_page_view)
+callbacks.etl_jobs_update(main_page_view)
+callbacks.data_sources_update(main_page_view)
+callbacks.feature_sets_update(main_page_view)
+callbacks.models_update(main_page_view)
+callbacks.endpoints_update(main_page_view)

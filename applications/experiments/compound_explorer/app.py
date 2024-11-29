@@ -5,13 +5,13 @@ from dash_bootstrap_templates import load_figure_template
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
-from sageworks.web_components import (
+from sageworks.web_interface.components import (
     table,
     compound_details,
     violin_plots,
     scatter_plot,
 )
-from sageworks.web_views.data_source_web_view import DataSourceWebView
+from sageworks.web_interface.page_views.data_sources_page_view import DataSourcesPageView
 
 # Local Imports
 from layout import data_sources_layout
@@ -30,7 +30,7 @@ app = Dash(
 load_figure_template("darkly")
 
 # Grab a view that gives us a summary of the FeatureSets in SageWorks
-data_source_broker = DataSourceWebView()
+data_source_broker = DataSourcesPageView()
 data_source_rows = data_source_broker.data_sources_summary()
 
 # Create a table to display the data sources

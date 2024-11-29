@@ -1,129 +1,109 @@
-"""Callbacks/Connections in the Web User Interface"""
+"""Callbacks/Connections for the Main/Front Dashboard Page"""
 
 from datetime import datetime
-import hashlib
-from dash import Dash, no_update
-from dash.dependencies import Input, Output, State
-
+from dash import callback, Input, Output
 
 # SageWorks Imports
-from sageworks.web_views.artifacts_web_view import ArtifactsWebView
-from sageworks.web_components import table
-from sageworks.utils.pandas_utils import serialize_aws_broker_data, deserialize_aws_broker_data
+from sageworks.web_interface.page_views.main_page import MainPage
+from sageworks.web_interface.components import table
 
 
-# Helper functions
-def content_hash(serialized_data):
-    return hashlib.md5(serialized_data.encode()).hexdigest()
-
-
-def refresh_data(app: Dash, web_view: ArtifactsWebView):
-    @app.callback(
-        [
-            Output("data-last-updated", "children"),
-            Output("aws-broker-data", "data"),
-        ],
-        Input("broker-update-timer", "n_intervals"),
-        State("aws-broker-data", "data"),
+# Update the last updated time
+def last_updated():
+    @callback(
+        Output("data-last-updated", "children"),
+        Input("main_page_refresh", "n_intervals"),
     )
-    def refresh_aws_broker_data(n, aws_broker_data):
-        # A string of the new time
-        new_time = datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
-
-        # Grab all the data from the Web View
-        new_broker_data = web_view.view_data()
-        serialized_data = serialize_aws_broker_data(new_broker_data)
-
-        # Sanity check our existing data
-        if aws_broker_data is None:
-            print("No existing data...")
-            new_time = new_time + " (Data Update)"
-            return [new_time, serialized_data]
-
-        # If the data hasn't changed just return the new time
-        if n and content_hash(aws_broker_data) == content_hash(serialized_data):
-            return [new_time, no_update]
-
-        # Update both the time and the data
-        new_time = new_time + " (Data Update)"
-        return [new_time, serialized_data]
+    def refresh_last_updated_time(_n):
+        # A string of the new time (in the local time zone)
+        return datetime.now().strftime("Last Updated: %Y-%m-%d (%I:%M %p)")
 
 
-def update_artifact_tables(app: Dash):
-    @app.callback(
+# Update the incoming data table
+def incoming_data_update(main_page: MainPage):
+    @callback(
         [
             Output("INCOMING_DATA", "columns"),
             Output("INCOMING_DATA", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("main_page_refresh", "n_intervals"),
     )
-    def incoming_data_update(serialized_aws_broker_data):
-        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-        incoming_data = aws_broker_data["INCOMING_DATA"]
+    def _incoming_data_update(_n):
+        incoming_data = main_page.incoming_data_summary()
         column_setup_list = table.Table().column_setup(incoming_data, markdown_columns=["Name"])
         return [column_setup_list, incoming_data.to_dict("records")]
 
-    @app.callback(
+
+# Update the ETL Jobs table
+def etl_jobs_update(main_page: MainPage):
+    @callback(
         [
             Output("GLUE_JOBS", "columns"),
             Output("GLUE_JOBS", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("main_page_refresh", "n_intervals"),
     )
-    def glue_jobs_update(serialized_aws_broker_data):
-        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-        glue_jobs = aws_broker_data["GLUE_JOBS"]
+    def _etl_jobs_update(_n):
+        glue_jobs = main_page.glue_jobs_summary()
         column_setup_list = table.Table().column_setup(glue_jobs, markdown_columns=["Name"])
         return [column_setup_list, glue_jobs.to_dict("records")]
 
-    @app.callback(
+
+# Update the data sources table
+def data_sources_update(main_page: MainPage):
+    @callback(
         [
             Output("DATA_SOURCES", "columns"),
             Output("DATA_SOURCES", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("main_page_refresh", "n_intervals"),
     )
-    def data_sources_update(serialized_aws_broker_data):
-        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-        data_sources = aws_broker_data["DATA_SOURCES"]
+    def _data_sources_update(_n):
+        data_sources = main_page.data_sources_summary()
         column_setup_list = table.Table().column_setup(data_sources, markdown_columns=["Name"])
         return [column_setup_list, data_sources.to_dict("records")]
 
-    @app.callback(
+
+# Update the feature sets table
+def feature_sets_update(main_page: MainPage):
+    @callback(
         [
             Output("FEATURE_SETS", "columns"),
             Output("FEATURE_SETS", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("main_page_refresh", "n_intervals"),
     )
-    def feature_sets_update(serialized_aws_broker_data):
-        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-        feature_sets = aws_broker_data["FEATURE_SETS"]
+    def _feature_sets_update(_n):
+        feature_sets = main_page.feature_sets_summary()
         column_setup_list = table.Table().column_setup(feature_sets, markdown_columns=["Feature Group"])
         return [column_setup_list, feature_sets.to_dict("records")]
 
-    @app.callback(
+
+# Update the models table
+def models_update(main_page: MainPage):
+    @callback(
         [
             Output("MODELS", "columns"),
             Output("MODELS", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("main_page_refresh", "n_intervals"),
     )
-    def models_update(serialized_aws_broker_data):
-        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-        models = aws_broker_data["MODELS"]
+    def _models_update(_n):
+        models = main_page.models_summary()
         column_setup_list = table.Table().column_setup(models, markdown_columns=["Model Group"])
         return [column_setup_list, models.to_dict("records")]
 
-    @app.callback(
+
+# Update the endpoints table
+def endpoints_update(main_page: MainPage):
+    @callback(
         [
             Output("ENDPOINTS", "columns"),
             Output("ENDPOINTS", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("main_page_refresh", "n_intervals"),
     )
-    def endpoints_update(serialized_aws_broker_data):
-        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-        endpoints = aws_broker_data["ENDPOINTS"]
+    def _endpoints_update(_n):
+        endpoints = main_page.endpoints_summary()
         column_setup_list = table.Table().column_setup(endpoints, markdown_columns=["Name"])
         return [column_setup_list, endpoints.to_dict("records")]

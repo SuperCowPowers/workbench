@@ -1,40 +1,44 @@
 """Callbacks for the FeatureSets Subpage Web User Interface"""
 
 import dash
-from dash import Dash
-from dash.dependencies import Input, Output, State
+from dash import callback, Input, Output, State
 import plotly.graph_objects as go
 import pandas as pd
+import logging
 
 # SageWorks Imports
-from sageworks.web_views.feature_set_web_view import FeatureSetWebView
-from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
-from sageworks.utils.pandas_utils import deserialize_aws_broker_data
+from sageworks.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
+from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
+
+# Set up logging
+log = logging.getLogger("sageworks")
+
 
 # Cheese Sauce
 smart_sample_rows = []
 
 
-def update_feature_sets_table(app: Dash):
-    @app.callback(
+def update_feature_sets_table(page_view: FeatureSetsPageView):
+    @callback(
         [
             Output("feature_sets_table", "columns"),
             Output("feature_sets_table", "data"),
         ],
-        Input("aws-broker-data", "data"),
+        Input("feature_sets_refresh", "n_intervals"),
     )
-    def feature_sets_update(serialized_aws_broker_data):
+    def feature_sets_update(_n):
         """Return the table data for the FeatureSets Table"""
-        aws_broker_data = deserialize_aws_broker_data(serialized_aws_broker_data)
-        feature_sets = aws_broker_data["FEATURE_SETS"]
+        page_view.refresh()
+        feature_sets = page_view.feature_sets()
+        feature_sets["uuid"] = feature_sets["Feature Group"]
         feature_sets["id"] = range(len(feature_sets))
         column_setup_list = table.Table().column_setup(feature_sets, markdown_columns=["Feature Group"])
         return [column_setup_list, feature_sets.to_dict("records")]
 
 
 # Highlights the selected row in the table
-def table_row_select(app: Dash, table_name: str):
-    @app.callback(
+def table_row_select(table_name: str):
+    @callback(
         Output(table_name, "style_data_conditional"),
         Input(table_name, "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
@@ -53,8 +57,8 @@ def table_row_select(app: Dash, table_name: str):
 
 
 # Updates the feature set details and correlation matrix when a new FeatureSet is selected
-def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebView):
-    @app.callback(
+def update_feature_set_details(page_view: FeatureSetsPageView):
+    @callback(
         [
             Output("feature_details_header", "children"),
             Output("feature_set_details", "children"),
@@ -78,7 +82,7 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
         header = f"Details: {feature_set_uuid}"
 
         # FeatureSet Details
-        feature_details = feature_set_web_view.feature_set_details(feature_set_uuid)
+        feature_details = page_view.feature_set_details(feature_set_uuid)
         feature_details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(feature_details)
 
         # Generate a new correlation matrix figure
@@ -88,8 +92,8 @@ def update_feature_set_details(app: Dash, feature_set_web_view: FeatureSetWebVie
         return [header, feature_details_markdown, corr_figure]
 
 
-def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWebView):
-    @app.callback(
+def update_feature_set_sample_rows(page_view: FeatureSetsPageView):
+    @callback(
         [
             Output("feature_sample_rows_header", "children"),
             Output("feature_set_sample_rows", "columns"),
@@ -112,7 +116,7 @@ def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWe
         print(f"FeatureSet UUID: {feature_set_uuid}")
 
         print("Calling FeatureSet Sample Rows...")
-        smart_sample_rows = feature_set_web_view.feature_set_smart_sample(feature_set_uuid)
+        smart_sample_rows = page_view.feature_set_smart_sample(feature_set_uuid)
 
         # Header Text
         header = f"Sample/Outlier Rows: {feature_set_uuid}"
@@ -150,11 +154,11 @@ def update_feature_set_sample_rows(app: Dash, feature_set_web_view: FeatureSetWe
 #
 
 
-def violin_plot_selection(app: Dash):
+def violin_plot_selection():
     """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
     and send the updated figure to the client"""
 
-    @app.callback(
+    @callback(
         Output("feature_set_violin_plot", "figure", allow_duplicate=True),
         Input("feature_set_violin_plot", "selectedData"),
         State("feature_set_violin_plot", "figure"),
@@ -166,8 +170,8 @@ def violin_plot_selection(app: Dash):
             selected_indices = []
         else:
             selected_indices = [point["pointIndex"] for point in selected_data["points"]]
-        print("Selected Indices")
-        print(selected_indices)
+        log.info("Selected Indices")
+        log.info(selected_indices)
 
         # Create a figure object so that we can use nice methods like update_traces
         figure = go.Figure(current_figure)
@@ -184,9 +188,9 @@ def get_selection_indices(click_data, df: pd.DataFrame):
     first_column = click_data["points"][0]["y"].split(":")[0]
     second_column = click_data["points"][0]["x"].split(":")[0]
     correlation = click_data["points"][0]["z"]
-    print(f"First Column: {first_column}")
-    print(f"Second Column: {second_column}")
-    print(f"Correlation: {correlation}")
+    log.info(f"First Column: {first_column}")
+    log.info(f"Second Column: {second_column}")
+    log.info(f"Correlation: {correlation}")
 
     # Now grab the indexes for the top 10 value from the first column
     selection_indices = set(df[first_column].nlargest(10).index.tolist())
@@ -210,8 +214,8 @@ def select_row_column(figure, click_data):
     # Get the columns index from the click_data
     first_column_index = int(click_data["points"][0]["x"].split(":")[1])
     second_column_index = int(click_data["points"][0]["y"].split(":")[1])
-    print(f"First Column Index: {first_column_index}")
-    print(f"Second Column Index: {second_column_index}")
+    log.info(f"First Column Index: {first_column_index}")
+    log.info(f"Second Column Index: {second_column_index}")
 
     # Clear any existing shapes (highlights)
     figure["layout"]["shapes"] = ()
@@ -229,11 +233,11 @@ def select_row_column(figure, click_data):
     )
 
 
-def correlation_matrix_selection(app: Dash):
+def correlation_matrix_selection():
     """A selection has occurred on the Correlation Matrix so highlight the selected box, and also update
     the selections in the violin plot"""
 
-    @app.callback(
+    @callback(
         [
             Output("feature_set_correlation_matrix", "figure", allow_duplicate=True),
             Output("feature_set_violin_plot", "figure", allow_duplicate=True),
@@ -264,11 +268,11 @@ def correlation_matrix_selection(app: Dash):
         return [corr_figure, violin_figure]
 
 
-def reorder_sample_rows(app: Dash):
+def reorder_sample_rows():
     """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
     regenerate the figure"""
 
-    @app.callback(
+    @callback(
         Output("feature_set_sample_rows", "data", allow_duplicate=True),
         Input("feature_set_violin_plot", "selectedData"),
         prevent_initial_call=True,

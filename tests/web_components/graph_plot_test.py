@@ -2,7 +2,7 @@
 
 # SageWorks Imports
 from sageworks.core.artifacts.graph_core import GraphCore
-from sageworks.web_components.plugins.graph_plot import GraphPlot
+from sageworks.web_interface.components.plugins.graph_plot import GraphPlot
 
 
 def test_graph_plot():

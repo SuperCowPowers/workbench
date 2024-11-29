@@ -6,9 +6,9 @@ from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
 from sageworks.api import DataSource, FeatureSet
-from sageworks.web_components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from sageworks.web_components.plugins.scatter_plot import ScatterPlot
-from sageworks.web_components.plugin_unit_test import PluginUnitTest
+from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.web_interface.components.plugins.scatter_plot import ScatterPlot
+from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
 # Run an integration test
 from pprint import pprint

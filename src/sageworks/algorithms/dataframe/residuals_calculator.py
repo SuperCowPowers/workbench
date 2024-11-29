@@ -199,8 +199,8 @@ if __name__ == "__main__":
     result_df_endpoint = residuals_calculator_endpoint.fit_transform(df[feature_columns], df[target_column])
 
     # Show a scatter plot of the residuals
-    from sageworks.web_components.plugins.scatter_plot import ScatterPlot
-    from sageworks.web_components.plugin_unit_test import PluginUnitTest
+    from sageworks.web_interface.components.plugins.scatter_plot import ScatterPlot
+    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Columns of Interest
     dropdown_columns = ["residuals", "residuals_abs", "prediction", "solubility"]

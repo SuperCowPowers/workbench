@@ -61,7 +61,7 @@ if not ConfigManager().config_okay():
     onboard()
 
 # Delayed SageWorks Imports
-from sageworks.web_components.plugin_unit_test import PluginUnitTest  # noqa E402
+from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest  # noqa E402
 
 
 # Set the log level to important

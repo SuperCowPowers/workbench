@@ -1,7 +1,7 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
 import os
-from dash import Dash, page_container, html, dcc
+from dash import Dash, page_container, html
 from sageworks.utils.plugin_manager import PluginManager
 
 
@@ -32,12 +32,7 @@ app = Dash(
 server = app.server
 
 # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
-app.layout = html.Div(
-    [
-        dcc.Store(id="aws-broker-data", storage_type="local"),
-        page_container,
-    ]
-)
+app.layout = html.Div([page_container])
 
 # Grab any plugin pages
 plugin_pages = pm.get_pages()

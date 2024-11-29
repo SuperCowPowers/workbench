@@ -23,18 +23,19 @@ class CloudWatchHandler(logging.Handler):
         super().__init__()  # Initialize the base Handler class
         from sageworks.utils.sageworks_logging import ColoredFormatter  # Import here to avoid circular imports
 
+        # Buffer to hold log messages
+        self.buffer = []
+        self.buffer_size = buffer_size
+        self.send_interval = send_interval
+        self.last_sent_time = time.time()
+
+        # Get our session and log stream name
         self.boto3_session = AWSSession().boto3_session
         self.log_stream_name = self.determine_log_stream()
         self.formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
         self.cloudwatch_client = self.boto3_session.client("logs")
         self.sequence_token = None
         self.log_group_name = "SageWorksLogGroup"
-
-        # Buffer to hold log messages
-        self.buffer = []
-        self.buffer_size = buffer_size
-        self.send_interval = send_interval
-        self.last_sent_time = time.time()
 
         # Create the log group and stream
         self.create_log_group()

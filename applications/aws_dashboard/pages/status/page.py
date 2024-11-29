@@ -5,7 +5,7 @@ from dash import html
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components.plugins import dashboard_status
+from sageworks.web_interface.components.plugins import dashboard_status
 from sageworks.utils.config_manager import ConfigManager
 
 

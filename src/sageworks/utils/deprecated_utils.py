@@ -50,37 +50,34 @@ def deprecated(version: str, stack_trace: bool = False) -> Callable:
     return decorator
 
 
-def hard_deprecated() -> Callable:
+def hard_deprecated(cls_or_func: Union[Type, Callable]) -> Union[Type, Callable]:
     """Decorator to mark classes or functions as immediately deprecated and cause termination."""
 
-    def decorator(cls_or_func: Union[Type, Callable]) -> Union[Type, Callable]:
-        message = f"{cls_or_func.__name__} is immediately deprecated and is being removed."
+    message = f"{cls_or_func.__name__} is immediately deprecated and has been removed."
 
-        if isinstance(cls_or_func, type):
-            # Class decorator
-            original_init = cls_or_func.__init__
+    if isinstance(cls_or_func, type):
+        # Class decorator
+        original_init = cls_or_func.__init__
 
-            @wraps(original_init)
-            def new_init(self, *args, **kwargs):
-                log.critical(message)
-                trimmed_stack = "".join(traceback.format_stack()[:-1])
-                log.critical("Call stack:\n%s", trimmed_stack)
-                sys.exit(1)
+        @wraps(original_init)
+        def new_init(self, *args, **kwargs):
+            log.critical(message)
+            trimmed_stack = "".join(traceback.format_stack()[:-1])
+            log.critical("Call stack:\n%s", trimmed_stack)
+            sys.exit(1)
 
-            cls_or_func.__init__ = new_init
-            return cls_or_func
-        else:
-            # Function/method decorator
-            @wraps(cls_or_func)
-            def wrapper(*args, **kwargs):
-                log.critical(message)
-                trimmed_stack = "".join(traceback.format_stack()[:-1])
-                log.critical("Call stack:\n%s", trimmed_stack)
-                sys.exit(1)
+        cls_or_func.__init__ = new_init
+        return cls_or_func
+    else:
+        # Function/method decorator
+        @wraps(cls_or_func)
+        def wrapper(*args, **kwargs):
+            log.critical(message)
+            trimmed_stack = "".join(traceback.format_stack()[:-1])
+            log.critical("Call stack:\n%s", trimmed_stack)
+            sys.exit(1)
 
-            return wrapper
-
-    return decorator
+        return wrapper
 
 
 if __name__ == "__main__":
@@ -100,7 +97,7 @@ if __name__ == "__main__":
     obj = MyClass()
     obj.old_method()
 
-    @hard_deprecated()
+    @hard_deprecated
     class ImmediateClass:
         def __init__(self):
             print("This should not be seen.")
@@ -109,7 +106,7 @@ if __name__ == "__main__":
     # instance = ImmediateClass()
 
     class AnotherClass:
-        @hard_deprecated()
+        @hard_deprecated
         def immediate_method(self):
             print("This should not be seen either.")
 

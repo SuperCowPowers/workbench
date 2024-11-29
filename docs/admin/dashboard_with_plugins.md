@@ -31,7 +31,7 @@ sageworks_plugins/
    views/
       my_plugin_view.py
       ...
-   web_components/
+   components/
       my_component.py
       ...
 ```

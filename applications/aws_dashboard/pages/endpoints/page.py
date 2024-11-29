@@ -1,7 +1,6 @@
 """Endpoints:  A SageWorks Web Interface to view and interact with Endpoints"""
 
 from dash import register_page
-import dash
 from dash_bootstrap_templates import load_figure_template
 
 # Local Imports
@@ -9,10 +8,10 @@ from .layout import endpoints_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_components import table, endpoint_metric_plots
-from sageworks.web_components.plugins import endpoint_details
-from sageworks.web_components.plugin_interface import PluginPage
-from sageworks.web_views.endpoint_web_view import EndpointWebView
+from sageworks.web_interface.components import table, endpoint_metric_plots
+from sageworks.web_interface.components.plugins import endpoint_details
+from sageworks.web_interface.components.plugin_interface import PluginPage
+from sageworks.web_interface.page_views.endpoints_page_view import EndpointsPageView
 from sageworks.utils.plugin_manager import PluginManager
 
 # Register this page with Dash
@@ -24,9 +23,6 @@ register_page(
 
 # Put the components into 'dark' mode
 load_figure_template("darkly")
-
-# Grab a view that gives us a summary of the Models in SageWorks
-endpoint_broker = EndpointWebView()
 
 # Create a table to display the endpoints
 endpoints_table = table.Table().create_component(
@@ -62,13 +58,15 @@ for plugin in plugins:
 # Set up our layout (Dash looks for a var called layout)
 layout = endpoints_layout(**components)
 
+# Grab a view that gives us a summary of the Endpoints in SageWorks
+endpoints_view = EndpointsPageView()
+
 # Setup our callbacks/connections
-app = dash.get_app()
-callbacks.update_endpoints_table(app)
+callbacks.update_endpoints_table(endpoints_view)
 
 # Callback for the endpoints table
-callbacks.table_row_select(app, "endpoints_table")
-callbacks.update_endpoint_metrics(app, endpoint_broker)
+callbacks.table_row_select("endpoints_table")
+callbacks.update_endpoint_metrics(endpoints_view)
 
 # For all the plugins we have we'll call their update_properties method
 if plugins:

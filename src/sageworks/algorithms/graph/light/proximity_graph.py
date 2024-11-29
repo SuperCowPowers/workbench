@@ -117,7 +117,7 @@ if __name__ == "__main__":
     """Example usage of the ProximityGraph class"""
     from sageworks.api.feature_set import FeatureSet
     from sageworks.core.artifacts.graph_core import GraphCore
-    from sageworks.web_components.plugins.graph_plot import GraphPlot
+    from sageworks.web_interface.components.plugins.graph_plot import GraphPlot
 
     # Load the Abalone FeatureSet
     fs = FeatureSet("abalone_features")

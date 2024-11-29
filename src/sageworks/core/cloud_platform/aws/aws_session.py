@@ -2,7 +2,6 @@ import os
 import sys
 
 import boto3
-import botocore
 import re
 from botocore.exceptions import ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError
 from botocore.credentials import RefreshableCredentials
@@ -12,6 +11,7 @@ import logging
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.execution_environment import running_on_lambda, running_on_glue
+from sageworks.utils.ipython_utils import is_running_in_ipython, display_error_and_raise
 
 
 class AWSSession:
@@ -34,8 +34,12 @@ class AWSSession:
             self.account_id = boto3.client("sts").get_caller_identity()["Account"]
             self.region = boto3.Session().region_name
         except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError):
-            self.log.critical("AWS SSO Token Failure: Check AWS_PROFILE and/or Renew SSO Token...")
-            sys.exit(1)
+            msg = "AWS SSO Token Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+            self.log.critical(msg)
+            if is_running_in_ipython():
+                display_error_and_raise(msg)
+            else:
+                sys.exit(1)
 
     @property
     def boto3_session(self):
@@ -84,7 +88,6 @@ class AWSSession:
     def _assume_sageworks_role_session_credentials(self):
         """Internal: Assume SageWorks Role and set up AWS Session credentials with automatic refresh."""
         sts_client = boto3.client("sts")
-
         try:
             response = sts_client.assume_role(
                 RoleArn=self.get_sageworks_execution_role_arn(),
@@ -101,16 +104,10 @@ class AWSSession:
             self.log.info(f"AWS Credentials Refreshed: Expires at {local_time}")
             return credentials
 
-        except botocore.exceptions.ClientError as e:
-            error_code = e.response["Error"]["Code"]
-            if error_code == "ExpiredToken":
-                self.log.error("AWS SSO session has expired. Please run 'aws sso login' to renew your session.")
-            else:
-                self.log.error(f"Error during Refresh Credentials: {e}")
-            raise
-
         except Exception as e:
-            self.log.error(f"Error during Refresh Credentials: {e}")
+            # Note: We can't use a log message because that goes through the CloudWatchHandler
+            #       which would require AWS credentials to log the error message
+            print(f"Error during Refresh Credentials: {e}")
             raise
 
 

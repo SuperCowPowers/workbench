@@ -392,19 +392,19 @@ def convert_object_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def serialize_aws_broker_data(broker_data):
+def serialize_aws_metadata(metadata):
     """
     Serializes a dictionary of DataFrames to a JSON-formatted string.
     Args:
-        broker_data (dict): Dictionary of DataFrames
+        metadata (dict): Dictionary of DataFrames
     Returns:
         str: JSON-formatted string
     """
-    serialized_dict = {key: df.to_json() for key, df in broker_data.items()}
+    serialized_dict = {key: df.to_json() for key, df in metadata.items()}
     return json.dumps(serialized_dict)
 
 
-def deserialize_aws_broker_data(serialized_data):
+def deserialize_aws_metadata(serialized_data):
     """
     Deserializes a JSON-formatted string to a dictionary of DataFrames.
     Args:

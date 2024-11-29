@@ -1,12 +1,11 @@
 """DataSources:  A SageWorks Web Interface to view, interact, and manage Data Sources"""
 
 from dash import register_page
-import dash
 from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
-from sageworks.web_components import table, data_details_markdown, violin_plots, correlation_matrix
-from sageworks.web_views.feature_set_web_view import FeatureSetWebView
+from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
+from sageworks.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
 
 # Local Imports
 from .layout import feature_sets_layout
@@ -14,13 +13,9 @@ from . import callbacks
 
 register_page(__name__, path="/feature_sets", name="SageWorks - Feature Sets")
 
-# Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 
 # Put the components into 'dark' mode
 load_figure_template("darkly")
-
-# Grab a view that gives us a summary of the FeatureSets in SageWorks
-feature_set_broker = FeatureSetWebView()
 
 # Create a table to display the feature sets
 feature_sets_table = table.Table().create_component(
@@ -58,18 +53,18 @@ components = {
 # Set up our layout (Dash looks for a var called layout)
 layout = feature_sets_layout(**components)
 
-# Setup our callbacks/connections
-app = dash.get_app()
+# Grab a view that gives us a summary of the FeatureSets in SageWorks
+feature_set_view = FeatureSetsPageView()
 
 # Periodic update to the data sources summary table
-callbacks.update_feature_sets_table(app)
+callbacks.update_feature_sets_table(feature_set_view)
 
 # Callbacks for when a data source is selected
-callbacks.table_row_select(app, "feature_sets_table")
-callbacks.update_feature_set_details(app, feature_set_broker)
-callbacks.update_feature_set_sample_rows(app, feature_set_broker)
+callbacks.table_row_select("feature_sets_table")
+callbacks.update_feature_set_details(feature_set_view)
+callbacks.update_feature_set_sample_rows(feature_set_view)
 
 # Callbacks for selections
-callbacks.violin_plot_selection(app)
-callbacks.reorder_sample_rows(app)
-callbacks.correlation_matrix_selection(app)
+callbacks.violin_plot_selection()
+callbacks.reorder_sample_rows()
+callbacks.correlation_matrix_selection()

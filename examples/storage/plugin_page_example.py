@@ -7,7 +7,7 @@ from dash.dependencies import Input, Output, State
 import logging
 
 # SageWorks Imports
-from sageworks.web_components import table
+from sageworks.web_interface.components import table
 from sageworks.utils.plugin_manager import PluginManager
 from sageworks.api.model import Model
 
@@ -92,9 +92,9 @@ class PluginPageExample:
 
         @self.app.callback(
             [Output("my_model_table", "columns"), Output("my_model_table", "data")],
-            Input("aws-broker-data", "data"),  # View this as an update trigger
+            Input("aws-metadata", "data"),  # View this as an update trigger
         )
-        def models_update(serialized_aws_broker_data):
+        def models_update(serialized_aws_metadata):
             """Grab our view data and update the table"""
             models = self.my_model_view.view_data()
             models["id"] = range(len(models))

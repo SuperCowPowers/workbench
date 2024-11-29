@@ -15,7 +15,7 @@ Many classes in SageWorks need additional high-level material that covers class 
 
 Each plugin class inherits from the SageWorks PluginInterface class and needs to set two attributes and implement two methods. These requirements are set so that each Plugin will conform to the Sageworks infrastructure; if the required attributes and methods aren’t included in the class definition, errors will be raised during tests and at runtime.
 
-**Note:** For full code see [Model Plugin Example](https://github.com/SuperCowPowers/sageworks/blob/main/examples/plugins/web_components/model_plugin.py)
+**Note:** For full code see [Model Plugin Example](https://github.com/SuperCowPowers/sageworks/blob/main/examples/plugins/components/model_plugin.py)
 
 ```
 
