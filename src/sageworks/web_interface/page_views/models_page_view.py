@@ -1,4 +1,4 @@
-"""ModelWebView pulls Model metadata from the AWS Service Broker with Details Panels on each Model"""
+"""ModelsPageView pulls Model metadata from the AWS Service Broker with Details Panels on each Model"""
 
 import pandas as pd
 
@@ -9,9 +9,9 @@ from sageworks.cached.cached_model import CachedModel
 from sageworks.utils.symbols import tag_symbols
 
 
-class ModelWebView(PageView):
+class ModelsPageView(PageView):
     def __init__(self):
-        """ModelWebView pulls Model metadata and populates a Details Panel"""
+        """ModelsPageView pulls Model metadata and populates a Details Panel"""
         # Call SuperClass Initialization
         super().__init__()
 
@@ -60,12 +60,12 @@ class ModelWebView(PageView):
 
 
 if __name__ == "__main__":
-    # Exercising the ModelWebView
+    # Exercising the ModelsPageView
     import time
     from pprint import pprint
 
     # Create the class and get the AWS Model details
-    model_view = ModelWebView()
+    model_view = ModelsPageView()
 
     # List the Models
     print("ModelsSummary:")

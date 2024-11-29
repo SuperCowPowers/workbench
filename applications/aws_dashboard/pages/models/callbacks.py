@@ -5,7 +5,7 @@ from dash import callback, no_update, Input, Output, State
 from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.model_web_view import ModelWebView
+from sageworks.web_interface.page_views.models_page_view import ModelsPageView
 from sageworks.web_interface.components import table, model_plot
 from sageworks.cached.cached_model import CachedModel
 
@@ -13,7 +13,7 @@ from sageworks.cached.cached_model import CachedModel
 log = logging.getLogger("sageworks")
 
 
-def update_models_table(page_view: ModelWebView):
+def update_models_table(page_view: ModelsPageView):
     @callback(
         [Output("models_table", "columns"), Output("models_table", "data")],
         Input("models_refresh", "n_intervals"),
