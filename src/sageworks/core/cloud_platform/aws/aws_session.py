@@ -2,7 +2,6 @@ import os
 import sys
 
 import boto3
-import botocore
 import re
 from botocore.exceptions import ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError
 from botocore.credentials import RefreshableCredentials
