@@ -2,16 +2,15 @@
 
 import dash
 from dash import callback, Output, Input, State
-from dash import Dash
 import plotly.graph_objects as go
 import pandas as pd
+import logging
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.data_source_web_view import DataSourceWebView
 from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
 
-import logging
-
+# Set up logging
 log = logging.getLogger("sageworks")
 
 
@@ -27,7 +26,7 @@ def update_data_sources_table(page_view: DataSourceWebView):
         ],
         Input("data_sources_refresh", "n_intervals"),
     )
-    def data_sources_update(_n_intervals):
+    def data_sources_update(_n):
         """Pull the latest data sources from the DataSourceWebView and update the table"""
         page_view.refresh()
         data_sources = page_view.data_sources()
@@ -38,8 +37,8 @@ def update_data_sources_table(page_view: DataSourceWebView):
 
 
 # Highlights the selected row in the table
-def table_row_select(app: Dash, table_name: str):
-    @app.callback(
+def table_row_select(table_name: str):
+    @callback(
         Output(table_name, "style_data_conditional"),
         Input(table_name, "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
@@ -58,8 +57,8 @@ def table_row_select(app: Dash, table_name: str):
 
 
 # Updates the data source details and the correlation matrix when a new DataSource is selected
-def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebView):
-    @app.callback(
+def update_data_source_details(data_source_web_view: DataSourceWebView):
+    @callback(
         [
             Output("data_details_header", "children"),
             Output("data_source_details", "children"),
@@ -79,12 +78,12 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
         data_source_uuid = selected_row_data["uuid"]
         log.debug(f"DataSource UUID: {data_source_uuid}")
 
-        log.info("Calling DataSource Details...")
-        data_details = data_source_web_view.data_source_details(data_source_uuid)
-        details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(data_details)
-
         # Set the Header Text
         header = f"Details: {data_source_uuid}"
+
+        # DataSource Details
+        data_details = data_source_web_view.data_source_details(data_source_uuid)
+        details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(data_details)
 
         # Generate a new correlation matrix figure
         corr_figure = correlation_matrix.CorrelationMatrix().update_properties(data_details)
@@ -93,8 +92,8 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
         return [header, details_markdown, corr_figure]
 
 
-def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWebView):
-    @app.callback(
+def update_data_source_sample_rows(data_source_web_view: DataSourceWebView):
+    @callback(
         [
             Output("sample_rows_header", "children"),
             Output("data_source_sample_rows", "columns"),
@@ -155,11 +154,11 @@ def update_data_source_sample_rows(app: Dash, data_source_web_view: DataSourceWe
 #
 
 
-def violin_plot_selection(app: Dash):
+def violin_plot_selection():
     """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
     and send the updated figure to the client"""
 
-    @app.callback(
+    @callback(
         Output("data_source_violin_plot", "figure", allow_duplicate=True),
         Input("data_source_violin_plot", "selectedData"),
         State("data_source_violin_plot", "figure"),
@@ -234,11 +233,11 @@ def select_row_column(figure, click_data):
     )
 
 
-def correlation_matrix_selection(app: Dash):
+def correlation_matrix_selection():
     """A selection has occurred on the Correlation Matrix so highlight the selected box, and also update
     the selections in the violin plot"""
 
-    @app.callback(
+    @callback(
         [
             Output("data_source_correlation_matrix", "figure", allow_duplicate=True),
             Output("data_source_violin_plot", "figure", allow_duplicate=True),
@@ -269,11 +268,11 @@ def correlation_matrix_selection(app: Dash):
         return [corr_figure, violin_figure]
 
 
-def reorder_sample_rows(app: Dash):
+def reorder_sample_rows():
     """A selection has occurred on the Violin Plots so highlight the selected points on the plot,
     regenerate the figure"""
 
-    @app.callback(
+    @callback(
         Output("data_source_sample_rows", "data", allow_duplicate=True),
         Input("data_source_violin_plot", "selectedData"),
         prevent_initial_call=True,
@@ -282,7 +281,7 @@ def reorder_sample_rows(app: Dash):
         # Convert the current table data back to a DataFrame
 
         # Get the selected indices from your plot selection
-        if not selected_data or smart_sample_rows is None:
+        if selected_data is None or smart_sample_rows is None:
             return dash.no_update
         selected_indices = [point["pointIndex"] for point in selected_data["points"]]
 

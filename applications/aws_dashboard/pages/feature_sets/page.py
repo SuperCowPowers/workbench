@@ -20,7 +20,7 @@ register_page(__name__, path="/feature_sets", name="SageWorks - Feature Sets")
 load_figure_template("darkly")
 
 # Grab a view that gives us a summary of the FeatureSets in SageWorks
-feature_set_broker = FeatureSetWebView()
+feature_set_view = FeatureSetWebView()
 
 # Create a table to display the feature sets
 feature_sets_table = table.Table().create_component(
@@ -58,18 +58,15 @@ components = {
 # Set up our layout (Dash looks for a var called layout)
 layout = feature_sets_layout(**components)
 
-# Setup our callbacks/connections
-app = dash.get_app()
-
 # Periodic update to the data sources summary table
-callbacks.update_feature_sets_table(app)
+callbacks.update_feature_sets_table(feature_set_view)
 
 # Callbacks for when a data source is selected
-callbacks.table_row_select(app, "feature_sets_table")
-callbacks.update_feature_set_details(app, feature_set_broker)
-callbacks.update_feature_set_sample_rows(app, feature_set_broker)
+callbacks.table_row_select("feature_sets_table")
+callbacks.update_feature_set_details(feature_set_view)
+callbacks.update_feature_set_sample_rows(feature_set_view)
 
 # Callbacks for selections
-callbacks.violin_plot_selection(app)
-callbacks.reorder_sample_rows(app)
-callbacks.correlation_matrix_selection(app)
+callbacks.violin_plot_selection()
+callbacks.reorder_sample_rows()
+callbacks.correlation_matrix_selection()

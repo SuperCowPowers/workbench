@@ -18,17 +18,20 @@ class FeatureSetWebView(MainPage):
 
     def refresh(self):
         """Refresh the data from the AWS Service Broker"""
+        self.log.important("Calling refresh()..")
         self.feature_sets_df = self.feature_sets_summary()
 
-    def view_data(self) -> pd.DataFrame:
-        """Get all the data that's useful for this view
+    def feature_sets(self) -> pd.DataFrame:
+        """Get a list of all the Feature
 
         Returns:
-            pd.DataFrame: DataFrame of the FeatureSets View Data
+            pd.DataFrame: DataFrame of all the FeatureSets
         """
+        self.log.important("Pulling feature_sets()...")
         return self.feature_sets_df
 
-    def feature_set_smart_sample(self, feature_uuid: str) -> pd.DataFrame:
+    @staticmethod
+    def feature_set_smart_sample(feature_uuid: str) -> pd.DataFrame:
         """Get a smart-sample dataframe (sample + outliers) for the given FeatureSet Index
         Args:
             feature_uuid(str): The UUID of the DataSource

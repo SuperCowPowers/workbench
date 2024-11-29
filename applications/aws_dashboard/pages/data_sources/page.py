@@ -59,18 +59,15 @@ components = {
 # Set up our layout (Dash looks for a var called layout)
 layout = data_sources_layout(**components)
 
-# Setup our callbacks/connections
-app = dash.get_app()
-
 # Periodic update to the data sources summary table
 callbacks.update_data_sources_table(data_source_view)
 
 # Callbacks for when a data source is selected
-callbacks.table_row_select(app, "data_sources_table")
-callbacks.update_data_source_details(app, data_source_view)
-callbacks.update_data_source_sample_rows(app, data_source_view)
+callbacks.table_row_select("data_sources_table")
+callbacks.update_data_source_details(data_source_view)
+callbacks.update_data_source_sample_rows(data_source_view)
 
 # Callbacks for selections
-callbacks.violin_plot_selection(app)
-callbacks.reorder_sample_rows(app)
-callbacks.correlation_matrix_selection(app)
+callbacks.violin_plot_selection()
+callbacks.reorder_sample_rows()
+callbacks.correlation_matrix_selection()

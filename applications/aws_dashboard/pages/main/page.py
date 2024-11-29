@@ -60,9 +60,6 @@ layout = main_layout(**components)
 # Grab a view that gives us a summary of all the artifacts currently in SageWorks
 main_page_view = MainPage()
 
-# Setup our callbacks/connections
-app = dash.get_app()
-
 # Set up the callbacks for all the tables on the main page
 callbacks.last_updated()
 callbacks.incoming_data_update(main_page_view)

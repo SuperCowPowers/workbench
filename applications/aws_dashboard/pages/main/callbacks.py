@@ -1,8 +1,7 @@
-"""Callbacks/Connections in the Web User Interface"""
+"""Callbacks/Connections for the Main/Front Dashboard Page"""
 
 from datetime import datetime
 from dash import callback, Input, Output
-
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.main_page import MainPage
