@@ -3,23 +3,25 @@
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.main_page import MainPage
+from sageworks.web_interface.page_views.page_view import PageView
+from sageworks.cached.cached_meta import CachedMeta
 from sageworks.cached.cached_feature_set import CachedFeatureSet
 
 
-class FeatureSetWebView(MainPage):
+class FeatureSetWebView(PageView):
     def __init__(self):
         """FeatureSetWebView pulls FeatureSet metadata and populates a Details Panel"""
         # Call SuperClass Initialization
         super().__init__()
 
-        # DataFrame of the FeatureSets Summary
-        self.feature_sets_df = self.feature_sets_summary()
+        # CachedMeta object for Cloud Platform Metadata
+        self.meta = CachedMeta()
+        self.feature_sets_df = self.meta.feature_sets()
 
     def refresh(self):
         """Refresh the data from the AWS Service Broker"""
         self.log.important("Calling refresh()..")
-        self.feature_sets_df = self.feature_sets_summary()
+        self.feature_sets_df = self.feature_sets()
 
     def feature_sets(self) -> pd.DataFrame:
         """Get a list of all the Feature
@@ -27,7 +29,6 @@ class FeatureSetWebView(MainPage):
         Returns:
             pd.DataFrame: DataFrame of all the FeatureSets
         """
-        self.log.important("Pulling feature_sets()...")
         return self.feature_sets_df
 
     @staticmethod
@@ -97,7 +98,7 @@ if __name__ == "__main__":
 
     # List the FeatureSets
     print("FeatureSetsSummary:")
-    summary = feature_view.view_data()
+    summary = feature_view.feature_sets()
     print(summary.head())
 
     # Get the details for the first FeatureSet

@@ -29,7 +29,6 @@ class DataSourceWebView(PageView):
         Returns:
             pd.DataFrame: DataFrame of all the DataSources
         """
-        self.log.important("Pulling data_sources()...")
         return self.data_sources_df
 
     @staticmethod

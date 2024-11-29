@@ -3,24 +3,27 @@
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.main_page import MainPage
+from sageworks.web_interface.page_views.page_view import PageView
+from sageworks.cached.cached_meta import CachedMeta
 from sageworks.cached.cached_model import CachedModel
 
 
-class ModelWebView(MainPage):
+class ModelWebView(PageView):
     def __init__(self):
         """ModelWebView pulls Model metadata and populates a Details Panel"""
         # Call SuperClass Initialization
         super().__init__()
 
-        # DataFrame of the Models Summary
-        self.models_df = self.models_summary()
+        # CachedMeta object for Cloud Platform Metadata
+        self.meta = CachedMeta()
+        self.models_df = self.meta.models()
 
     def refresh(self):
         """Refresh the data from the AWS Service Broker"""
-        self.models_df = self.models_summary()
+        self.log.important("Calling refresh()..")
+        self.models_df = self.meta.models()
 
-    def view_data(self) -> pd.DataFrame:
+    def models(self) -> pd.DataFrame:
         """Get all the data that's useful for this view
 
         Returns:
@@ -55,7 +58,7 @@ if __name__ == "__main__":
 
     # List the Models
     print("ModelsSummary:")
-    summary = model_view.view_data()
+    summary = model_view.models()
     print(summary.head())
 
     # Get the details for the first Model

@@ -13,13 +13,9 @@ from . import callbacks
 
 register_page(__name__, path="/feature_sets", name="SageWorks - Feature Sets")
 
-# Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
 
 # Put the components into 'dark' mode
 load_figure_template("darkly")
-
-# Grab a view that gives us a summary of the FeatureSets in SageWorks
-feature_set_view = FeatureSetWebView()
 
 # Create a table to display the feature sets
 feature_sets_table = table.Table().create_component(
@@ -56,6 +52,9 @@ components = {
 
 # Set up our layout (Dash looks for a var called layout)
 layout = feature_sets_layout(**components)
+
+# Grab a view that gives us a summary of the FeatureSets in SageWorks
+feature_set_view = FeatureSetWebView()
 
 # Periodic update to the data sources summary table
 callbacks.update_feature_sets_table(feature_set_view)

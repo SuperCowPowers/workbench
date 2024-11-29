@@ -20,9 +20,6 @@ register_page(
 # Put the components into 'dark' mode
 load_figure_template("darkly")
 
-# Grab a view that gives us a summary of the DataSources in SageWorks
-data_source_view = DataSourceWebView()
-
 # Create a table to display the data sources
 data_sources_table = table.Table().create_component(
     "data_sources_table",
@@ -57,6 +54,9 @@ components = {
 
 # Set up our layout (Dash looks for a var called layout)
 layout = data_sources_layout(**components)
+
+# Grab a view that gives us a summary of the DataSources in SageWorks
+data_source_view = DataSourceWebView()
 
 # Periodic update to the data sources summary table
 callbacks.update_data_sources_table(data_source_view)

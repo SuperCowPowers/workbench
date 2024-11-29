@@ -1,36 +1,40 @@
 """Callbacks for the Model Subpage Web User Interface"""
 
 import logging
-from dash import Dash, callback, no_update
+from dash import callback, no_update
 from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
+from sageworks.web_interface.page_views.model_web_view import ModelWebView
 from sageworks.web_interface.components import table, model_plot
-from sageworks.utils.pandas_utils import deserialize_aws_metadata
 from sageworks.cached.cached_model import CachedModel
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
 
 
-def update_models_table(app: Dash):
-    @app.callback(
-        [Output("models_table", "columns"), Output("models_table", "data")],
-        Input("aws-metadata", "data"),
+def update_models_table(page_view: ModelWebView):
+    @callback(
+        [
+            Output("models_table", "columns"),
+            Output("models_table", "data")
+        ],
+        Input("models_refresh", "n_intervals"),
     )
-    def models_update(serialized_aws_metadata):
+    def models_update(_n):
         """Return the table data for the Models Table"""
-        aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
-        models = aws_metadata["MODELS"]
+        page_view.refresh()
+        models = page_view.models()
+        models["uuid"] = models["Model Group"]
         models["id"] = range(len(models))
         column_setup_list = table.Table().column_setup(models, markdown_columns=["Model Group"])
         return [column_setup_list, models.to_dict("records")]
 
 
 # Highlights the selected row in the table
-def table_row_select(app: Dash, table_name: str):
-    @app.callback(
+def table_row_select(table_name: str):
+    @callback(
         Output(table_name, "style_data_conditional"),
         Input(table_name, "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
@@ -54,8 +58,8 @@ def table_row_select(app: Dash, table_name: str):
 
 
 # Updates the model plot when the model inference run is changed
-def update_model_plot_component(app: Dash):
-    @app.callback(
+def update_model_plot_component():
+    @callback(
         Output("model_plot", "figure"),
         Input("model_details-dropdown", "value"),
         State("models_table", "data"),

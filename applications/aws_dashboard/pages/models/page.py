@@ -13,6 +13,7 @@ from sageworks.web_interface.components import table, model_plot
 from sageworks.web_interface.components.plugins import model_details
 from sageworks.web_interface.components.plugin_interface import PluginPage
 from sageworks.utils.plugin_manager import PluginManager
+from sageworks.web_interface.page_views.model_web_view import ModelWebView
 
 # Register this page with Dash
 register_page(
@@ -58,13 +59,16 @@ for plugin in plugins:
 # Set up our layout (Dash looks for a var called layout)
 layout = models_layout(**components)
 
+# Grab a view that gives us a summary of the DataSources in SageWorks
+model_view = ModelWebView()
+
 # Setup our callbacks/connections
 app = dash.get_app()
-callbacks.update_models_table(app)
+callbacks.update_models_table(model_view)
 
 # Callback for the model table
-callbacks.table_row_select(app, "models_table")
-callbacks.update_model_plot_component(app)
+callbacks.table_row_select("models_table")
+callbacks.update_model_plot_component()
 
 # Set up callbacks for all the plugins
 if plugins:

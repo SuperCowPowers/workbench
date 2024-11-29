@@ -30,7 +30,7 @@ def update_feature_sets_table(page_view: FeatureSetWebView):
         """Return the table data for the FeatureSets Table"""
         page_view.refresh()
         feature_sets = page_view.feature_sets()
-        # feature_sets["uuid"] = feature_sets["Feature Group"]
+        feature_sets["uuid"] = feature_sets["Feature Group"]
         feature_sets["id"] = range(len(feature_sets))
         column_setup_list = table.Table().column_setup(feature_sets, markdown_columns=["Feature Group"])
         return [column_setup_list, feature_sets.to_dict("records")]
