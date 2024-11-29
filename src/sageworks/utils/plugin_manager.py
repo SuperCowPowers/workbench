@@ -7,7 +7,8 @@ import tempfile
 import logging
 import importlib
 import threading
-from typing import Union, Dict, List, Any
+from typing import Union, Dict, List, Any, Optional
+from types import ModuleType
 
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager
@@ -80,75 +81,84 @@ class PluginManager:
             base_dir (str): Base directory of the plugins.
             plugin_type (str): Type of the plugin to load (e.g., components, pages, transforms).
         """
-        type_dir = os.path.join(base_dir, plugin_type)
-        if not os.path.isdir(type_dir):
+        plugin_dir = os.path.join(base_dir, plugin_type)
+        if not os.path.isdir(plugin_dir):
             return
 
-        for filename in os.listdir(type_dir):
-            module = self._load_module(type_dir, filename)
-            if module:
-                for attr_name in dir(module):
-                    attr = getattr(module, attr_name)
-
-                    # Check if the attribute is a class and is defined in the module
-                    if isinstance(attr, type) and attr.__module__ == module.__name__:
-                        self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
-
-                        # For web components, check if the class is a subclass of PluginInterface
-                        if plugin_type == "components":
-                            if issubclass(attr, PluginInterface):
-                                self.plugins[plugin_type][attr_name] = attr
-                            else:
-                                # PluginInterface has additional information for failed validation
-                                valid, validation_error = PluginInterface.validate_subclass(attr)
-                                self.log.error(f"Plugin '{attr_name}' failed validation:")
-                                self.log.error(f"\tFile: {os.path.join(type_dir, filename)}")
-                                self.log.error(f"\tClass: {attr_name}")
-                                self.log.error(f"\tDetails: {filename} {validation_error}")
-
-                        # For views, check if the class is a subclass of PageView
-                        elif plugin_type == "views" and issubclass(attr, PageView):
-                            self.plugins[plugin_type][attr_name] = attr
-
-                        # For pages, check if the class has the required page plugin method (page_setup)
-                        elif plugin_type == "pages":
-                            if hasattr(attr, "page_setup"):
-                                self.plugins[plugin_type][attr_name] = attr
-                            else:
-                                self.log.warning(
-                                    f"Class {attr_name} in {filename} does not have all required page methods"
-                                )
-
-                        # Unexpected type
-                        else:
-                            self.log.error(f"Unexpected plugin type '{plugin_type}' for plugin '{attr_name}'")
+        # For every file in the plugin directory
+        for filename in os.listdir(plugin_dir):
 
             # Check for CSS files
-            else:
-                # For CSS, check if the file ends with .css
-                if plugin_type == "css":
-                    if filename.endswith(".css"):
-                        self.log.important(f"Storing {plugin_type} plugin: {filename}")
-                        # Basename of the filename without the extension
-                        basename = os.path.splitext(filename)[0]
+            if plugin_type == "css":
+                if filename.endswith(".css"):
+                    self.log.important(f"Storing {plugin_type} plugin: {filename}")
+                    # Basename of the filename without the extension
+                    basename = os.path.splitext(filename)[0]
 
-                        # Full path to the CSS file
-                        fullpath = os.path.join(type_dir, filename)
-                        self.plugins[plugin_type][basename] = fullpath
+                    # Full path to the CSS file
+                    fullpath = os.path.join(plugin_dir, filename)
+                    self.plugins[plugin_type][basename] = fullpath
+                else:
+                    self.log.warning(f"{filename} is not a CSS file")
+                continue
+
+            # Normal plugin loading
+            module = self._load_module(plugin_dir, filename)
+            if module is None:
+                self.log.warning(f"Failed to load plugin: '{filename}' skipping...")
+                continue
+
+            # Now we have a module, let's iterate through its attributes
+            for attr_name in dir(module):
+                attr = getattr(module, attr_name)
+
+                # Check if the attribute is a class and is defined in the module
+                if isinstance(attr, type) and attr.__module__ == module.__name__:
+                    self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
+
+                    # For web components, check if the class is a subclass of PluginInterface
+                    if plugin_type == "components":
+                        if issubclass(attr, PluginInterface):
+                            self.plugins[plugin_type][attr_name] = attr
+                        else:
+                            # PluginInterface has additional information for failed validation
+                            valid, validation_error = PluginInterface.validate_subclass(attr)
+                            self.log.error(f"Plugin '{attr_name}' failed validation:")
+                            self.log.error(f"\tFile: {os.path.join(plugin_dir, filename)}")
+                            self.log.error(f"\tClass: {attr_name}")
+                            self.log.error(f"\tDetails: {filename} {validation_error}")
+
+                    # For views, check if the class is a subclass of PageView
+                    elif plugin_type == "views" and issubclass(attr, PageView):
+                        self.plugins[plugin_type][attr_name] = attr
+
+                    # For pages, check if the class has the required page plugin method (page_setup)
+                    elif plugin_type == "pages":
+                        if hasattr(attr, "page_setup"):
+                            self.plugins[plugin_type][attr_name] = attr
+                        else:
+                            self.log.warning(
+                                f"Class {attr_name} in {filename} does not have all required page methods"
+                            )
+
+                    # Unexpected type
                     else:
-                        self.log.warning(f"{fullpath} is not a CSS file")
+                        self.log.error(f"Unexpected plugin type '{plugin_type}' for plugin '{attr_name}'")
 
-    @staticmethod
-    def _load_module(dir_path: str, filename: str):
+    def _load_module(self, dir_path: str, filename: str) -> Optional[ModuleType]:
         """Internal: Load a module from a file"""
-        if filename.endswith(".py") and not filename.startswith("_"):
-            file_path = os.path.join(dir_path, filename)
-            module_name = filename[:-3]
-            spec = importlib.util.spec_from_file_location(module_name, file_path)
-            if spec and spec.loader:
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                return module
+        try:
+            if filename.endswith(".py") and not filename.startswith("_"):
+                file_path = os.path.join(dir_path, filename)
+                module_name = filename[:-3]
+                spec = importlib.util.spec_from_file_location(module_name, file_path)
+                if spec and spec.loader:
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+                    return module
+        except Exception as e:
+            # Log or handle the exception as needed
+            self.log.critical(f"Failed to load plugin: '{filename}': {e}")
         return None
 
     def get_all_plugins(self) -> Dict[str, dict[Any]]:
