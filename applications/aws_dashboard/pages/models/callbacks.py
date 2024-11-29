@@ -1,9 +1,8 @@
 """Callbacks for the Model Subpage Web User Interface"""
 
 import logging
-from dash import callback, no_update
+from dash import callback, no_update, Input, Output, State
 from dash.exceptions import PreventUpdate
-from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.model_web_view import ModelWebView
