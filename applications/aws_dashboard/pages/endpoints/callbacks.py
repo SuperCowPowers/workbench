@@ -1,40 +1,39 @@
 """Callbacks for the Endpoints Subpage Web User Interface"""
 
 import logging
-from dash import Dash, callback, no_update
+from dash import callback, no_update, Input, Output, State
 from dash.exceptions import PreventUpdate
-from dash.dependencies import Input, Output, State
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.endpoint_web_view import EndpointWebView
 from sageworks.web_interface.components import table, endpoint_metric_plots
-from sageworks.utils.pandas_utils import deserialize_aws_metadata
 from sageworks.cached.cached_endpoint import CachedEndpoint
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
 
 
-def update_endpoints_table(app: Dash):
-    @app.callback(
+def update_endpoints_table(page_view: EndpointWebView):
+    @callback(
         [
             Output("endpoints_table", "columns"),
             Output("endpoints_table", "data"),
         ],
-        Input("aws-metadata", "data"),
+        Input("endpoints_refresh", "n_intervals"),
     )
-    def endpoints_update(serialized_aws_metadata):
+    def endpoints_update(_n):
         """Return the table data for the Endpoints Table"""
-        aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
-        endpoints = aws_metadata["ENDPOINTS"]
+        page_view.refresh()
+        endpoints = page_view.endpoints()
+        endpoints["uuid"] = endpoints["Name"]
         endpoints["id"] = range(len(endpoints))
         column_setup_list = table.Table().column_setup(endpoints, markdown_columns=["Name"])
         return [column_setup_list, endpoints.to_dict("records")]
 
 
 # Highlights the selected row in the table
-def table_row_select(app: Dash, table_name: str):
-    @app.callback(
+def table_row_select(table_name: str):
+    @callback(
         Output(table_name, "style_data_conditional"),
         Input(table_name, "derived_viewport_selected_row_ids"),
         prevent_initial_call=True,
@@ -58,8 +57,8 @@ def table_row_select(app: Dash, table_name: str):
 
 
 # Updates the endpoint details when a endpoint row is selected
-def update_endpoint_metrics(app: Dash, endpoint_web_view: EndpointWebView):
-    @app.callback(
+def update_endpoint_metrics(endpoint_web_view: EndpointWebView):
+    @callback(
         Output("endpoint_metrics", "figure"),
         Input("endpoints_table", "derived_viewport_selected_row_ids"),
         State("endpoints_table", "data"),

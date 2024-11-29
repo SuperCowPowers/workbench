@@ -25,9 +25,6 @@ register_page(
 # Put the components into 'dark' mode
 load_figure_template("darkly")
 
-# Grab a view that gives us a summary of the Models in SageWorks
-endpoint_broker = EndpointWebView()
-
 # Create a table to display the endpoints
 endpoints_table = table.Table().create_component(
     "endpoints_table", header_color="rgb(100, 60, 100)", row_select="single", max_height=270
@@ -62,13 +59,15 @@ for plugin in plugins:
 # Set up our layout (Dash looks for a var called layout)
 layout = endpoints_layout(**components)
 
+# Grab a view that gives us a summary of the Endpoints in SageWorks
+endpoint_view = EndpointWebView()
+
 # Setup our callbacks/connections
-app = dash.get_app()
-callbacks.update_endpoints_table(app)
+callbacks.update_endpoints_table(endpoint_view)
 
 # Callback for the endpoints table
-callbacks.table_row_select(app, "endpoints_table")
-callbacks.update_endpoint_metrics(app, endpoint_broker)
+callbacks.table_row_select("endpoints_table")
+callbacks.update_endpoint_metrics(endpoint_view)
 
 # For all the plugins we have we'll call their update_properties method
 if plugins:

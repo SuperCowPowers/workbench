@@ -19,7 +19,7 @@ class ModelWebView(PageView):
         self.models_df = self.meta.models()
 
     def refresh(self):
-        """Refresh the data from the AWS Service Broker"""
+        """Refresh the model data from the Cloud Platform"""
         self.log.important("Calling refresh()..")
         self.models_df = self.meta.models()
 

@@ -3,24 +3,27 @@
 import pandas as pd
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.main_page import MainPage
+from sageworks.web_interface.page_views.page_view import PageView
+from sageworks.cached.cached_meta import CachedMeta
 from sageworks.cached.cached_endpoint import CachedEndpoint
 
 
-class EndpointWebView(MainPage):
+class EndpointWebView(PageView):
     def __init__(self):
         """EndpointWebView pulls Endpoint metadata and populates a Details Panel"""
         # Call SuperClass Initialization
         super().__init__()
 
-        # DataFrame of the Endpoints Summary
-        self.endpoint_df = self.endpoints_summary()
+        # CachedMeta object for Cloud Platform Metadata
+        self.meta = CachedMeta()
+        self.endpoint_df = self.meta.endpoints()
 
     def refresh(self):
-        """Refresh the data from the AWS Service Broker"""
-        self.endpoint_df = self.endpoints_summary()
+        """Refresh the endpoint data from the Cloud Platform"""
+        self.log.important("Calling refresh()..")
+        self.endpoint_df = self.meta.endpoints()
 
-    def view_data(self) -> pd.DataFrame:
+    def endpoints(self) -> pd.DataFrame:
         """Get all the data that's useful for this view
 
         Returns:
@@ -28,7 +31,8 @@ class EndpointWebView(MainPage):
         """
         return self.endpoint_df
 
-    def endpoint_details(self, endpoint_uuid: str) -> (dict, None):
+    @staticmethod
+    def endpoint_details(endpoint_uuid: str) -> (dict, None):
         """Get all the details for the given Endpoint UUID
          Args:
             endpoint_uuid(str): The UUID of the Endpoint
