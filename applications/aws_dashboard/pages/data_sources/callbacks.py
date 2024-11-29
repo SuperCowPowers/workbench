@@ -7,7 +7,7 @@ import pandas as pd
 import logging
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.data_source_web_view import DataSourceWebView
+from sageworks.web_interface.page_views.data_sources_page_view import DataSourcesPageView
 from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
 
 # Set up logging
@@ -18,7 +18,7 @@ log = logging.getLogger("sageworks")
 smart_sample_rows = []
 
 
-def update_data_sources_table(page_view: DataSourceWebView):
+def update_data_sources_table(page_view: DataSourcesPageView):
     @callback(
         [
             Output("data_sources_table", "columns"),
@@ -27,7 +27,7 @@ def update_data_sources_table(page_view: DataSourceWebView):
         Input("data_sources_refresh", "n_intervals"),
     )
     def data_sources_update(_n):
-        """Pull the latest data sources from the DataSourceWebView and update the table"""
+        """Pull the latest data sources from the DataSourcesPageView and update the table"""
         page_view.refresh()
         data_sources = page_view.data_sources()
         data_sources["uuid"] = data_sources["Name"]
@@ -57,7 +57,7 @@ def table_row_select(table_name: str):
 
 
 # Updates the data source details and the correlation matrix when a new DataSource is selected
-def update_data_source_details(data_source_web_view: DataSourceWebView):
+def update_data_source_details(page_view: DataSourcesPageView):
     @callback(
         [
             Output("data_details_header", "children"),
@@ -82,7 +82,7 @@ def update_data_source_details(data_source_web_view: DataSourceWebView):
         header = f"Details: {data_source_uuid}"
 
         # DataSource Details
-        data_details = data_source_web_view.data_source_details(data_source_uuid)
+        data_details = page_view.data_source_details(data_source_uuid)
         details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(data_details)
 
         # Generate a new correlation matrix figure
@@ -92,7 +92,7 @@ def update_data_source_details(data_source_web_view: DataSourceWebView):
         return [header, details_markdown, corr_figure]
 
 
-def update_data_source_sample_rows(data_source_web_view: DataSourceWebView):
+def update_data_source_sample_rows(page_view: DataSourcesPageView):
     @callback(
         [
             Output("sample_rows_header", "children"),
@@ -116,7 +116,7 @@ def update_data_source_sample_rows(data_source_web_view: DataSourceWebView):
         log.debug(f"DataSource UUID: {data_source_uuid}")
 
         log.info("Calling DataSource Smart Sample Rows...")
-        smart_sample_rows = data_source_web_view.data_source_smart_sample(data_source_uuid)
+        smart_sample_rows = page_view.data_source_smart_sample(data_source_uuid)
 
         # Header Text
         header = f"Sample/Outlier Rows: {data_source_uuid}"

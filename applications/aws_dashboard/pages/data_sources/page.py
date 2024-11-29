@@ -5,7 +5,7 @@ from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
 from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
-from sageworks.web_interface.page_views.data_source_web_view import DataSourceWebView
+from sageworks.web_interface.page_views.data_sources_page_view import DataSourcesPageView
 
 # Local Imports
 from .layout import data_sources_layout
@@ -56,7 +56,7 @@ components = {
 layout = data_sources_layout(**components)
 
 # Grab a view that gives us a summary of the DataSources in SageWorks
-data_source_view = DataSourceWebView()
+data_source_view = DataSourcesPageView()
 
 # Periodic update to the data sources summary table
 callbacks.update_data_sources_table(data_source_view)

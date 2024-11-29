@@ -1,4 +1,4 @@
-"""DataSourceWebView pulls DataSource metadata from the AWS Service Broker with Details Panels on each DataSource"""
+"""DataSourcesPageView pulls DataSource metadata from the AWS Service Broker with Details Panels on each DataSource"""
 
 import pandas as pd
 
@@ -8,9 +8,9 @@ from sageworks.cached.cached_meta import CachedMeta
 from sageworks.cached.cached_data_source import CachedDataSource
 
 
-class DataSourceWebView(PageView):
+class DataSourcesPageView(PageView):
     def __init__(self):
-        """DataSourceWebView pulls DataSource metadata and populates a Details Panel"""
+        """DataSourcesPageView pulls DataSource metadata and populates a Details Panel"""
         # Call SuperClass Initialization
         super().__init__()
 
@@ -93,12 +93,12 @@ class DataSourceWebView(PageView):
 
 
 if __name__ == "__main__":
-    # Exercising the DataSourceWebView
+    # Exercising the DataSourcesPageView
     import time
     from pprint import pprint
 
     # Create the class and get the AWS DataSource details
-    data_view = DataSourceWebView()
+    data_view = DataSourcesPageView()
 
     # List the DataSources
     print("DataSourcesSummary:")

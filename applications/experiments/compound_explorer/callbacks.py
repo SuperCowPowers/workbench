@@ -7,7 +7,7 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.data_source_web_view import DataSourceWebView
+from sageworks.web_interface.page_views.data_sources_page_view import DataSourcesPageView
 from sageworks.web_interface.components import (
     table,
     compound_details,
@@ -35,7 +35,7 @@ def refresh_data_timer(app: Dash):
         return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
 
 
-def update_data_sources_table(app: Dash, data_source_broker: DataSourceWebView):
+def update_data_sources_table(app: Dash, data_source_broker: DataSourcesPageView):
     @app.callback(
         Output("data_sources_table", "data"),
         Input("data-sources-updater", "n_intervals"),
@@ -69,7 +69,7 @@ def table_row_select(app: Dash, table_name: str):
 
 
 # Updates the data source details when a row is selected in the summary table
-def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebView):
+def update_data_source_details(app: Dash, page_view: DataSourcesPageView):
     @app.callback(
         [
             Output("data_source_details_header", "children"),
@@ -82,18 +82,18 @@ def update_data_source_details(app: Dash, data_source_web_view: DataSourceWebVie
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling DataSource Details...")
-        data_source_details = data_source_web_view.data_source_details(selected_rows[0])
+        data_source_details = page_view.data_source_details(selected_rows[0])
         data_source_details_markdown = compound_details.create_markdown(data_source_details)
 
         # Name of the data source for the Header
-        data_source_name = data_source_web_view.data_source_name(selected_rows[0])
+        data_source_name = page_view.data_source_name(selected_rows[0])
         header = f"Dataset: {data_source_name}"
 
         # Return the details/markdown for these data details
         return [header, data_source_details_markdown]
 
 
-def update_compound_rows(app: Dash, data_source_web_view: DataSourceWebView):
+def update_compound_rows(app: Dash, page_view: DataSourcesPageView):
     @app.callback(
         [
             Output("data_source_rows_header", "children"),
@@ -108,13 +108,13 @@ def update_compound_rows(app: Dash, data_source_web_view: DataSourceWebView):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
         print("Calling DataSource Sample Rows...")
-        sample_rows = data_source_web_view.data_source_outliers(selected_rows[0])
+        sample_rows = page_view.data_source_outliers(selected_rows[0])
 
         # To select rows we need to set up an (0->N) ID for each row
         sample_rows["id"] = range(len(sample_rows))
 
         # Name of the data source
-        data_source_name = data_source_web_view.data_source_name(selected_rows[0])
+        data_source_name = page_view.data_source_name(selected_rows[0])
         header = f"{data_source_name}: compounds"
 
         # The columns need to be in a special format for the DataTable
@@ -167,7 +167,7 @@ def update_compound_diagram(app: Dash):
         return children
 
 
-def update_cluster_plot(app: Dash, data_source_web_view: DataSourceWebView):
+def update_cluster_plot(app: Dash, page_view: DataSourcesPageView):
     """Updates the Cluster Plot when a new data source is selected"""
 
     @app.callback(
@@ -179,11 +179,11 @@ def update_cluster_plot(app: Dash, data_source_web_view: DataSourceWebView):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
-        outlier_rows = data_source_web_view.data_source_outliers(selected_rows[0])
+        outlier_rows = page_view.data_source_outliers(selected_rows[0])
         return scatter_plot.create_figure(outlier_rows)
 
 
-def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
+def update_violin_plots(app: Dash, page_view: DataSourcesPageView):
     """Updates the Violin Plots when a new feature set is selected"""
 
     @app.callback(
@@ -195,7 +195,7 @@ def update_violin_plots(app: Dash, data_source_web_view: DataSourceWebView):
         print(f"Selected Rows: {selected_rows}")
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
-        smart_sample_rows = data_source_web_view.data_source_smart_sample(selected_rows[0])
+        smart_sample_rows = page_view.data_source_smart_sample(selected_rows[0])
         return violin_plots.ViolinPlots().update_properties(
             smart_sample_rows,
             figure_args={
