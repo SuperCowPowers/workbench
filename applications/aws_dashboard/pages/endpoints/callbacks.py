@@ -5,7 +5,7 @@ from dash import callback, no_update, Input, Output, State
 from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
-from sageworks.web_interface.page_views.endpoint_web_view import EndpointWebView
+from sageworks.web_interface.page_views.endpoints_page_view import EndpointsPageView
 from sageworks.web_interface.components import table, endpoint_metric_plots
 from sageworks.cached.cached_endpoint import CachedEndpoint
 
@@ -13,7 +13,7 @@ from sageworks.cached.cached_endpoint import CachedEndpoint
 log = logging.getLogger("sageworks")
 
 
-def update_endpoints_table(page_view: EndpointWebView):
+def update_endpoints_table(page_view: EndpointsPageView):
     @callback(
         [
             Output("endpoints_table", "columns"),
@@ -57,7 +57,7 @@ def table_row_select(table_name: str):
 
 
 # Updates the endpoint details when a endpoint row is selected
-def update_endpoint_metrics(endpoint_web_view: EndpointWebView):
+def update_endpoint_metrics(page_view: EndpointsPageView):
     @callback(
         Output("endpoint_metrics", "figure"),
         Input("endpoints_table", "derived_viewport_selected_row_ids"),
@@ -75,7 +75,7 @@ def update_endpoint_metrics(endpoint_web_view: EndpointWebView):
         print(f"Endpoint UUID: {endpoint_uuid}")
 
         # Endpoint Details
-        endpoint_details = endpoint_web_view.endpoint_details(endpoint_uuid)
+        endpoint_details = page_view.endpoint_details(endpoint_uuid)
 
         # Endpoint Metrics
         endpoint_metrics_figure = endpoint_metric_plots.EndpointMetricPlots().update_properties(endpoint_details)

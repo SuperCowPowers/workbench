@@ -1,4 +1,4 @@
-"""EndpointWebView pulls Endpoint metadata from the AWS Service Broker with Details Panels on each Endpoint"""
+"""EndpointsPageView pulls Endpoint metadata from the AWS Service Broker with Details Panels on each Endpoint"""
 
 import pandas as pd
 
@@ -9,9 +9,9 @@ from sageworks.cached.cached_endpoint import CachedEndpoint
 from sageworks.utils.symbols import tag_symbols
 
 
-class EndpointWebView(PageView):
+class EndpointsPageView(PageView):
     def __init__(self):
-        """EndpointWebView pulls Endpoint metadata and populates a Details Panel"""
+        """EndpointsPageView pulls Endpoint metadata and populates a Details Panel"""
         # Call SuperClass Initialization
         super().__init__()
 
@@ -60,12 +60,12 @@ class EndpointWebView(PageView):
 
 
 if __name__ == "__main__":
-    # Exercising the EndpointWebView
+    # Exercising the EndpointsPageView
     import time
     from pprint import pprint
 
     # Create the class and get the AWS Endpoint details
-    endpoint_view = EndpointWebView()
+    endpoint_view = EndpointsPageView()
 
     # List the Endpoints
     print("EndpointsSummary:")

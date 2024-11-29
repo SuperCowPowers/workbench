@@ -11,7 +11,7 @@ from . import callbacks
 from sageworks.web_interface.components import table, endpoint_metric_plots
 from sageworks.web_interface.components.plugins import endpoint_details
 from sageworks.web_interface.components.plugin_interface import PluginPage
-from sageworks.web_interface.page_views.endpoint_web_view import EndpointWebView
+from sageworks.web_interface.page_views.endpoints_page_view import EndpointsPageView
 from sageworks.utils.plugin_manager import PluginManager
 
 # Register this page with Dash
@@ -59,14 +59,14 @@ for plugin in plugins:
 layout = endpoints_layout(**components)
 
 # Grab a view that gives us a summary of the Endpoints in SageWorks
-endpoint_view = EndpointWebView()
+endpoints_view = EndpointsPageView()
 
 # Setup our callbacks/connections
-callbacks.update_endpoints_table(endpoint_view)
+callbacks.update_endpoints_table(endpoints_view)
 
 # Callback for the endpoints table
 callbacks.table_row_select("endpoints_table")
-callbacks.update_endpoint_metrics(endpoint_view)
+callbacks.update_endpoint_metrics(endpoints_view)
 
 # For all the plugins we have we'll call their update_properties method
 if plugins:
