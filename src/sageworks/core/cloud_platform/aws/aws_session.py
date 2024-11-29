@@ -10,8 +10,8 @@ import logging
 
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager
-from sageworks.utils.execution_environment import running_on_lambda, running_on_glue
 from sageworks.utils.ipython_utils import is_running_in_ipython, display_error_and_raise
+from sageworks.utils.execution_environment import running_on_lambda, running_on_glue
 
 
 class AWSSession:
@@ -43,22 +43,27 @@ class AWSSession:
 
     @property
     def boto3_session(self):
-        """Get the AWS Boto3 Session which might assume the SageWorks Role"""
-
-        self.log.info("Checking Execution Environment...")
-        if running_on_lambda() or running_on_glue() or self.is_sageworks_role():
-            return boto3.Session()
-
-        return self._sageworks_role_boto3_session()
+        """Get the AWS Boto3 Session, defaulting to the SageWorks Role if possible."""
+        try:
+            return self._sageworks_role_boto3_session()
+        except Exception as e:
+            self.log.info("Checking Execution Environment...")
+            if running_on_lambda() or running_on_glue() or self.is_sageworks_role():
+                self.log.important(f"Using the default Boto3 session: {e}")
+                return boto3.Session()
+            else:
+                msg = "SageWorks Session Failure: Check AWS_PROFILE and/or Renew SSO Token.."
+                self.log.critical(msg)
+                raise RuntimeError(msg) from e
 
     def is_sageworks_role(self) -> bool:
-        """Check if the current AWS Identity is the SageWorks Role"""
+        """Helper: Check if the current AWS Identity is the SageWorks Role"""
         sts_client = boto3.client("sts")
         try:
             return self.sageworks_role_name in sts_client.get_caller_identity()["Arn"]
-        except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError) as e:
-            self.log.critical("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
-            raise RuntimeError("SageWorks Role Check Failure: Check AWS_PROFILE and/or Renew SSO Token...") from e
+        except Exception as e:
+            msg = f"Failed: get_caller_identity() for SageWorks Role: {e}"
+            raise RuntimeError(msg)
 
     def get_sageworks_execution_role_arn(self):
         """Get the SageWorks Execution Role ARN"""
@@ -75,7 +80,6 @@ class AWSSession:
 
     def _sageworks_role_boto3_session(self):
         """Internal: Get a boto3 session with assumed SageWorks role and refreshing credentials"""
-
         refreshable_credentials = RefreshableCredentials.create_from_metadata(
             metadata=self._assume_sageworks_role_session_credentials(),
             refresh_using=self._assume_sageworks_role_session_credentials,
@@ -100,13 +104,14 @@ class AWSSession:
                 "token": response["SessionToken"],
                 "expiry_time": response["Expiration"].isoformat(),
             }
-            local_time = response["Expiration"].astimezone()
-            self.log.info(f"AWS Credentials Refreshed: Expires at {local_time}")
+            # Note: We can't use a log messages, because they go through the CloudWatchHandler
+            #       which require AWS credentials so results in a refresh_lock() deadlock.
+            print(f"AWS Credentials Refreshed: Expires at {response['Expiration'].astimezone()}")
             return credentials
 
         except Exception as e:
-            # Note: We can't use a log message because that goes through the CloudWatchHandler
-            #       which would require AWS credentials to log the error message
+            # Note: We can't use a log message, because they go through the CloudWatchHandler
+            #       which require AWS credentials so results in a refresh_lock() deadlock.
             print(f"Error during Refresh Credentials: {e}")
             raise
 
