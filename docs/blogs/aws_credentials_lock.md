@@ -9,6 +9,7 @@
 ## Threading Lock
 A threading lock object in Python is used to ensure that only one thread can access a specific section of code or resource at a time, preventing race conditions.
 
+**botocore/credentials.py**
 ```
 self._refresh_lock = threading.Lock()
 ```
