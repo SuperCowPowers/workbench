@@ -12,7 +12,7 @@ from sageworks.web_interface.components import table
 def last_updated():
     @callback(
         Output("data-last-updated", "children"),
-        Input("metadata-update-timer", "n_intervals"),
+        Input("main_page_refresh", "n_intervals"),
     )
     def refresh_last_updated_time(_n):
         # A string of the new time (in the local time zone)
@@ -26,7 +26,7 @@ def incoming_data_update(main_page: MainPage):
             Output("INCOMING_DATA", "columns"),
             Output("INCOMING_DATA", "data"),
         ],
-        Input("metadata-update-timer", "n_intervals"),
+        Input("main_page_refresh", "n_intervals"),
     )
     def _incoming_data_update(_n):
         incoming_data = main_page.incoming_data_summary()
@@ -41,7 +41,7 @@ def etl_jobs_update(main_page: MainPage):
             Output("GLUE_JOBS", "columns"),
             Output("GLUE_JOBS", "data"),
         ],
-        Input("metadata-update-timer", "n_intervals"),
+        Input("main_page_refresh", "n_intervals"),
     )
     def _etl_jobs_update(_n):
         glue_jobs = main_page.glue_jobs_summary()
@@ -56,7 +56,7 @@ def data_sources_update(main_page: MainPage):
             Output("DATA_SOURCES", "columns"),
             Output("DATA_SOURCES", "data"),
         ],
-        Input("metadata-update-timer", "n_intervals"),
+        Input("main_page_refresh", "n_intervals"),
     )
     def _data_sources_update(_n):
         data_sources = main_page.data_sources_summary()
@@ -71,7 +71,7 @@ def feature_sets_update(main_page: MainPage):
             Output("FEATURE_SETS", "columns"),
             Output("FEATURE_SETS", "data"),
         ],
-        Input("metadata-update-timer", "n_intervals"),
+        Input("main_page_refresh", "n_intervals"),
     )
     def _feature_sets_update(_n):
         feature_sets = main_page.feature_sets_summary()
@@ -86,7 +86,7 @@ def models_update(main_page: MainPage):
             Output("MODELS", "columns"),
             Output("MODELS", "data"),
         ],
-        Input("metadata-update-timer", "n_intervals"),
+        Input("main_page_refresh", "n_intervals"),
     )
     def _models_update(_n):
         models = main_page.models_summary()
@@ -101,7 +101,7 @@ def endpoints_update(main_page: MainPage):
             Output("ENDPOINTS", "columns"),
             Output("ENDPOINTS", "data"),
         ],
-        Input("metadata-update-timer", "n_intervals"),
+        Input("main_page_refresh", "n_intervals"),
     )
     def _endpoints_update(_n):
         endpoints = main_page.endpoints_summary()
