@@ -23,12 +23,12 @@ nav:
     - Cached FeatureSet: cached/cached_feature_set.md
     - Cached Model: cached/cached_model.md
     - Cached Endpoint: cached/cached_endpoint.md
-  - Blogs/Research: 
-    - OverView: blogs_research/index.md
-    - Residual Analysis: blogs_research/residual_analysis.md 
-    - Exploratory Data Analysis(EDA): blogs_research/eda.md
-    - High Target Gradients (HTG): blogs_research/htg.md
-    - Model Monitoring: blogs_research/model_monitoring.md
+  - Blogs: 
+    - OverView: blogs/index.md
+    - Residual Analysis: blogs/residual_analysis.md 
+    - Exploratory Data Analysis(EDA): blogs/eda.md
+    - High Target Gradients (HTG): blogs/htg.md
+    - Model Monitoring: blogs/model_monitoring.md
   - Core Classes: 
     - OverView: core_classes/overview.md
     - Artifacts: 
