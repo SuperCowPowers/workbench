@@ -106,25 +106,34 @@ class AWSSession:
             }
             # Note: We can't use a log messages, because they go through the CloudWatchHandler
             #       which require AWS credentials so results in a refresh_lock() deadlock.
-            print(f"AWS Credentials Refreshed: Expires at {response['Expiration'].astimezone()}")
+            self.c_print(f"AWS Credentials Refreshed: Expires at {response['Expiration'].astimezone()}")
             return credentials
 
         except Exception as e:
             # Note: We can't use a log message, because they go through the CloudWatchHandler
             #       which require AWS credentials so results in a refresh_lock() deadlock.
-            print(f"Error during Refresh Credentials: {e}")
+            self.c_print(f"Error during Refresh Credentials: {e}", critical=True)
             raise
+
+    @staticmethod
+    def c_print(text: str, critical: bool = False):
+        if critical:
+            print(f"\x1b[38;5;198m{text}\x1b[0m")
+        else:
+            print(f"\x1b[38;5;69m{text}\x1b[0m")
 
 
 if __name__ == "__main__":
     """Exercise the AWS Session Class"""
 
-    my_session = AWSSession().boto3_session
-    my_sts_client = my_session.client("sts")
+    my_aws_session = AWSSession()
+    my_boto_session = AWSSession().boto3_session
+    my_sts_client = my_boto_session.client("sts")
 
     print(f"Account ID: {my_sts_client.get_caller_identity()['Account']}")
-    print(f"Region: {my_session.region_name}")
+    print(f"Region: {my_boto_session.region_name}")
     print(f"Identity: {my_sts_client.get_caller_identity()['Arn']}")
-    print(f"Session Token: {my_session.get_credentials().token}")
-    print(f"Session Expiry: {my_session.get_credentials()._expiry_time}")
-    print(f"Assumed Role: {my_session.get_credentials().method}")
+    print(f"Session Token: {my_boto_session.get_credentials().token}")
+    print(f"Session Expiry: {my_boto_session.get_credentials()._expiry_time}")
+    my_aws_session.c_print(f"Assumed Role: {my_boto_session.get_credentials().method}")
+    my_aws_session.c_print(f"Fake Critical Message", critical=True)
