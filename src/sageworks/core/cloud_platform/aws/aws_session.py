@@ -110,7 +110,7 @@ class AWSSession:
 
         except Exception as e:
             self.c_print(f"Error during Refresh Credentials: {e}", critical=True)
-            raise RuntimeError("Failed to refresh SageWorks role session credentials") from e
+            raise RuntimeError("Failed to refresh SageWorks role session credentials")
 
     @staticmethod
     def c_print(text: str, critical: bool = False):
