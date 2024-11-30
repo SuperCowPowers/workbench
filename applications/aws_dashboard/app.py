@@ -4,42 +4,41 @@ import os
 import json
 import plotly.io as pio
 from dash import Dash, page_container, html
+import dash_bootstrap_components as dbc
 from sageworks.utils.plugin_manager import PluginManager
 
 
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
 
-# Load our custom template (themes for Plotly figures)
-with open("assets/dark_custom.json", "r") as f:
-    custom_template = json.load(f)
+# Hardcoded theme selection
+USE_DARK_THEME = True
 
-# Register the custom template (themes for Plotly figures)
-pio.templates["dark_custom"] = custom_template
+# Set Plotly template
+template_file = "assets/darkly_custom.json" if USE_DARK_THEME else "assets/flatly.json"
+with open(template_file, "r") as f:
+    template = json.load(f)
 
-# Set as the default template
-pio.templates.default = "dark_custom"
+pio.templates["custom_template"] = template
+pio.templates.default = "custom_template"
 
-# Spin up our Plugin Manager
+# Dynamically set the Bootstrap theme
+bootstrap_theme = dbc.themes.DARKLY if USE_DARK_THEME else dbc.themes.FLATLY
+
+# Spin up the Plugin Manager
 pm = PluginManager()
 
-# Custom CSS
+# Load any custom CSS files
 custom_css_files = pm.get_css_files()
-
-# Load our custom CSS files into the Assets folder
-"""
-for css_file in custom_css_files:
-    shutil.copy(css_file, "assets/")
-"""
-
-# Get basename of the CSS files
-css_files = [os.path.basename(css_file) for css_file in custom_css_files]
+css_files = [bootstrap_theme]  # Start with the Bootstrap theme
+css_files.extend(custom_css_files)
 
 # Create our Dash Application
 app = Dash(
     __name__,
     title="SageWorks Dashboard",
-    use_pages=True
+    use_pages=True,
+    external_stylesheets=css_files,
 )
 server = app.server
 
