@@ -4,7 +4,6 @@ import os
 import json
 import plotly.io as pio
 from dash import Dash, page_container, html
-import dash_bootstrap_components as dbc
 from sageworks.utils.plugin_manager import PluginManager
 
 
@@ -40,8 +39,7 @@ css_files = [os.path.basename(css_file) for css_file in custom_css_files]
 app = Dash(
     __name__,
     title="SageWorks Dashboard",
-    use_pages=True,
-    external_stylesheets=[dbc.themes.DARKLY]
+    use_pages=True
 )
 server = app.server
 
