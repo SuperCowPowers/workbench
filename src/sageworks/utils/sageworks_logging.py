@@ -42,6 +42,7 @@ logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
 
 def trace(self, message, *args, **kws):
     if self.isEnabledFor(TRACE_LEVEL_NUM):
+        kws.setdefault("stacklevel", 2)
         self._log(TRACE_LEVEL_NUM, message, args, **kws)
 
 
@@ -53,6 +54,7 @@ logging.addLevelName(IMPORTANT_LEVEL_NUM, "IMPORTANT")
 
 def important(self, message, *args, **kws):
     if self.isEnabledFor(IMPORTANT_LEVEL_NUM):
+        kws.setdefault("stacklevel", 2)
         self._log(IMPORTANT_LEVEL_NUM, message, args, **kws)
 
 
@@ -64,6 +66,7 @@ logging.addLevelName(MONITOR_LEVEL_NUM, "MONITOR")
 
 def monitor(self, message, *args, **kws):
     if self.isEnabledFor(MONITOR_LEVEL_NUM):
+        kws.setdefault("stacklevel", 2)
         self._log(MONITOR_LEVEL_NUM, message, args, **kws)
 
 
