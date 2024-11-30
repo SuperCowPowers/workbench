@@ -104,16 +104,13 @@ class AWSSession:
                 "token": response["SessionToken"],
                 "expiry_time": response["Expiration"].isoformat(),
             }
-            # Note: We can't use a log messages, because they go through the CloudWatchHandler
-            #       which require AWS credentials so results in a refresh_lock() deadlock.
+            # Use direct print instead of logging due to deadlock concerns.
             self.c_print(f"AWS Credentials Refreshed: Expires at {response['Expiration'].astimezone()}")
             return credentials
 
         except Exception as e:
-            # Note: We can't use a log message, because they go through the CloudWatchHandler
-            #       which require AWS credentials so results in a refresh_lock() deadlock.
             self.c_print(f"Error during Refresh Credentials: {e}", critical=True)
-            raise
+            raise RuntimeError("Failed to refresh SageWorks role session credentials") from e
 
     @staticmethod
     def c_print(text: str, critical: bool = False):
