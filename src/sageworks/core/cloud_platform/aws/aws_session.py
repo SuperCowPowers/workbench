@@ -133,4 +133,4 @@ if __name__ == "__main__":
     print(f"Session Token: {my_boto_session.get_credentials().token}")
     print(f"Session Expiry: {my_boto_session.get_credentials()._expiry_time}")
     my_aws_session.c_print(f"Assumed Role: {my_boto_session.get_credentials().method}")
-    my_aws_session.c_print(f"Fake Critical Message", critical=True)
+    my_aws_session.c_print("Fake Critical Message", critical=True)
