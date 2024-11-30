@@ -1,7 +1,6 @@
 """DataSources:  A SageWorks Web Interface to view, interact, and manage Data Sources"""
 
 from dash import Dash
-from dash_bootstrap_templates import load_figure_template
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
@@ -23,11 +22,6 @@ app = Dash(
     title="SageWorks: Compounds Explorer",
     external_stylesheets=[dbc.themes.DARKLY],
 )
-
-# Okay feels a bit weird but Dash pages just have a bunch of top level code (no classes/methods)
-
-# Put the components into 'dark' mode
-load_figure_template("darkly")
 
 # Grab a view that gives us a summary of the FeatureSets in SageWorks
 data_source_broker = DataSourcesPageView()

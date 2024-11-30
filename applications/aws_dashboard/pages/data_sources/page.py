@@ -1,7 +1,6 @@
 """DataSources:  A SageWorks Web Interface to view, interact, and manage Data Sources"""
 
 from dash import register_page
-from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
 from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
@@ -17,8 +16,7 @@ register_page(
     name="SageWorks - Data Sources",
 )
 
-# Put the components into 'dark' mode
-load_figure_template("darkly")
+
 
 # Create a table to display the data sources
 data_sources_table = table.Table().create_component(

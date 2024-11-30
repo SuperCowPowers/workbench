@@ -2,7 +2,6 @@
 
 from dash import register_page
 from dash import html
-from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
 from sageworks.web_interface.components.plugins import license_details
@@ -21,9 +20,6 @@ cm = ConfigManager()
 api_key = cm.get_config("SAGEWORKS_API_KEY")
 license_api_key = cm.get_config("LICENSE_API_KEY")
 my_license_info = LicenseManager.load_api_license(aws_account_id=None, api_key=api_key, license_api_key=license_api_key)
-
-# Put the components into 'dark' mode
-load_figure_template("darkly")
 
 # Create a Markdown component to display the license details
 markdown_details = license_details.LicenseDetails()

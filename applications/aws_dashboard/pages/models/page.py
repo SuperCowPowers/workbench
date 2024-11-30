@@ -2,7 +2,6 @@
 
 from dash import register_page
 import dash
-from dash_bootstrap_templates import load_figure_template
 
 # Local Imports
 from .layout import models_layout
@@ -21,9 +20,6 @@ register_page(
     path="/models",
     name="SageWorks - Models",
 )
-
-# Put the components into 'dark' mode
-load_figure_template("darkly")
 
 # Create a table to display the models
 models_table = table.Table().create_component(

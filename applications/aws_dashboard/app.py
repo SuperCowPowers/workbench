@@ -1,12 +1,25 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
 import os
+import json
+import plotly.io as pio
 from dash import Dash, page_container, html
+import dash_bootstrap_components as dbc
 from sageworks.utils.plugin_manager import PluginManager
 
 
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
+
+# Load our custom template (themes for Plotly figures)
+with open("assets/dark_custom.json", "r") as f:
+    custom_template = json.load(f)
+
+# Register the custom template (themes for Plotly figures)
+pio.templates["dark_custom"] = custom_template
+
+# Set as the default template
+pio.templates.default = "dark_custom"
 
 # Spin up our Plugin Manager
 pm = PluginManager()
@@ -28,6 +41,7 @@ app = Dash(
     __name__,
     title="SageWorks Dashboard",
     use_pages=True,
+    external_stylesheets=[dbc.themes.DARKLY]
 )
 server = app.server
 

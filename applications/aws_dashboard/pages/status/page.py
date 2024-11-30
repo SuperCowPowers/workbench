@@ -2,7 +2,6 @@
 
 from dash import register_page
 from dash import html
-from dash_bootstrap_templates import load_figure_template
 
 # SageWorks Imports
 from sageworks.web_interface.components.plugins import dashboard_status
@@ -19,9 +18,6 @@ register_page(
 # Grab the SageWorks ConfigManager
 cm = ConfigManager()
 config_details = cm.get_all_config()
-
-# Put the components into 'dark' mode
-load_figure_template("darkly")
 
 # Create a Markdown component to display the license details
 markdown_details = dashboard_status.DashboardStatus()

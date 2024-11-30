@@ -1,7 +1,6 @@
 """Endpoints:  A SageWorks Web Interface to view and interact with Endpoints"""
 
 from dash import register_page
-from dash_bootstrap_templates import load_figure_template
 
 # Local Imports
 from .layout import endpoints_layout
@@ -21,8 +20,7 @@ register_page(
     name="SageWorks - Endpoints",
 )
 
-# Put the components into 'dark' mode
-load_figure_template("darkly")
+
 
 # Create a table to display the endpoints
 endpoints_table = table.Table().create_component(

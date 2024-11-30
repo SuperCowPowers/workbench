@@ -2,7 +2,6 @@
 
 from dash import register_page
 import dash
-from dash_bootstrap_templates import load_figure_template
 
 # Local Imports
 from .layout import pipelines_layout
@@ -19,9 +18,6 @@ register_page(
     path="/pipelines",
     name="SageWorks - Pipelines",
 )
-
-# Put the components into 'dark' mode
-load_figure_template("darkly")
 
 # Create a table to display the pipelines
 pipeline_table = ag_table.AGTable()
