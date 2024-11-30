@@ -17,7 +17,6 @@ register_page(
 )
 
 
-
 # Create a table to display the data sources
 data_sources_table = table.Table().create_component(
     "data_sources_table",

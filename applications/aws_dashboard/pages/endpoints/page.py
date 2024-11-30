@@ -21,7 +21,6 @@ register_page(
 )
 
 
-
 # Create a table to display the endpoints
 endpoints_table = table.Table().create_component(
     "endpoints_table", header_color="rgb(100, 60, 100)", row_select="single", max_height=270
