@@ -2,7 +2,6 @@
     "SAGEWORKS_BUCKET": "env-will-overwrite",
     "SAGEWORKS_ROLE": "SageWorks-ExecutionRole",
     "SAGEWORKS_PLUGINS": "package",
-    "SAGEWORKS_PLUGINS": "s3://sandbox-sageworks-artifacts/sageworks_plugins",
     "SAGEWORKS_FEATURES": {
         "plugins": "true",
         "experimental": "false",
