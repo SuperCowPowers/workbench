@@ -32,8 +32,7 @@ class PluginInputType(Enum):
     ENDPOINT = "endpoint"
     PIPELINE = "pipeline"
     GRAPH = "graph"
-    MODEL_TABLE = "model_table"
-    PIPELINE_TABLE = "pipeline_table"
+    DATAFRAME = "dataframe"
     CUSTOM = "custom"
 
 

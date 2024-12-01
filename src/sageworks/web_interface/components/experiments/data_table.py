@@ -14,7 +14,7 @@ class DataTable(PluginInterface):
 
     """Initialize this Plugin Component Class with required attributes"""
     auto_load_page = PluginPage.NONE
-    plugin_input_type = PluginInputType.MODEL_TABLE
+    plugin_input_type = PluginInputType.DATAFRAME
 
     def create_component(self, component_id: str) -> dash_table.DataTable:
         """Create a Table Component without any data."""

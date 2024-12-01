@@ -1,6 +1,8 @@
 import dash
 from dash import html, Output, Input
 import dash_bootstrap_components as dbc
+import plotly.io as pio
+import json
 import logging
 import socket
 
@@ -11,7 +13,7 @@ from pathlib import Path
 # SageWorks Imports
 from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginInputType
 from sageworks.api import DataSource, FeatureSet, Model, Endpoint
-from sageworks.api import Meta
+from sageworks.cached.cached_meta import CachedMeta
 from sageworks.api.pipeline import Pipeline
 from sageworks.core.artifacts.graph_core import GraphCore
 
@@ -42,9 +44,28 @@ class PluginUnitTest:
         self.component = self.plugin.create_component(f"{self.plugin.__class__.__name__.lower()}_test")
 
         # Create the Dash app
-        assets_dir = Path(__file__).parent.parent.parent.parent / "applications/aws_dashboard/assets"
+        assets_dir = str(Path(__file__).parent.parent.parent.parent.parent / "applications/aws_dashboard/assets")
         log.important(f"Using assets directory: {assets_dir}")
-        self.app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], assets_folder=assets_dir)
+
+        # List out the files in the assets directory
+        log.important(f"Files in assets directory: {list(Path(assets_dir).iterdir())}")
+
+        # Set the theme to dark
+        USE_DARK_THEME = False
+
+        # Set Plotly template
+        template_file = f"{assets_dir}/darkly_custom.json" if USE_DARK_THEME else f"{assets_dir}/flatly.json"
+        with open(template_file, "r") as f:
+            template = json.load(f)
+
+        pio.templates["custom_template"] = template
+        pio.templates.default = "custom_template"
+
+        # Dynamically set the Bootstrap theme
+        bootstrap_theme = dbc.themes.DARKLY if USE_DARK_THEME else dbc.themes.FLATLY
+
+        dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
+        self.app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc_css], assets_folder=assets_dir)
 
         # Set up the layout
         container = html.Div(self.component, style={"height": "75vh"})
@@ -110,12 +131,9 @@ class PluginUnitTest:
         elif plugin_input_type == PluginInputType.GRAPH:
             graph = self.input_data if self.input_data is not None else GraphCore("karate_club")
             return self.plugin.update_properties(graph, labels="club", hover_text=["club", "degree"], **self.kwargs)
-        elif plugin_input_type == PluginInputType.MODEL_TABLE:
-            model_df = self.input_data if self.input_data is not None else Meta().models()
+        elif plugin_input_type == PluginInputType.DATAFRAME:
+            model_df = self.input_data if self.input_data is not None else CachedMeta().models(details=True)
             return self.plugin.update_properties(model_df, **self.kwargs)
-        elif plugin_input_type == PluginInputType.PIPELINE_TABLE:
-            pipeline_df = self.input_data if self.input_data is not None else Meta().pipelines()
-            return self.plugin.update_properties(pipeline_df, **self.kwargs)
         else:
             raise ValueError(f"Invalid test type: {plugin_input_type}")
 

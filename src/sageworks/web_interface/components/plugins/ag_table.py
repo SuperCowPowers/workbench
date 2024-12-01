@@ -6,6 +6,7 @@ from dash_ag_grid import AgGrid
 
 # SageWorks Imports
 from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.utils.symbols import tag_symbols
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
@@ -16,7 +17,7 @@ class AGTable(PluginInterface):
 
     """Initialize this Plugin Component Class with required attributes"""
     auto_load_page = PluginPage.NONE
-    plugin_input_type = PluginInputType.PIPELINE_TABLE
+    plugin_input_type = PluginInputType.DATAFRAME
 
     def create_component(self, component_id: str) -> AgGrid:
         """Create a Table Component without any data.
@@ -28,11 +29,12 @@ class AGTable(PluginInterface):
         self.component_id = component_id
         self.container = AgGrid(
             id=component_id,
+            # className="ag-theme-balham-light",
             # className="ag-theme-balham-dark",
-            className="ag-theme-alpine-auto-dark",
+            className="ag-custom-dark",
             columnSize="sizeToFit",
             dashGridOptions={"rowSelection": "single"},
-            style={"maxHeight": "200px", "overflow": "auto"},
+            style={"maxHeight": "800px", "overflow": "auto"},
         )
 
         # Fill in plugin properties
@@ -61,6 +63,10 @@ class AGTable(PluginInterface):
             list: A list of the updated property values for the plugin
         """
         log.important(f"Updating Table Plugin with a table dataframe and kwargs: {kwargs}")
+
+        # TEMP: Add Health Symbols to the Model Group Name
+        if "Health" in table_df.columns:
+            table_df["Health"] = table_df["Health"].map(lambda x: tag_symbols(x))
 
         # Convert the DataFrame to a list of dictionaries for AG Grid
         table_data = table_df.to_dict("records")
