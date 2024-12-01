@@ -1,9 +1,8 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
-import os
 import json
 import plotly.io as pio
-from dash import Dash, page_container, html
+from dash import Dash, page_container
 import dash_bootstrap_components as dbc
 from sageworks.utils.plugin_manager import PluginManager
 
@@ -35,7 +34,7 @@ pm = PluginManager()
 
 # Load any custom CSS files
 custom_css_files = pm.get_css_files()
-css_files = [dbc.themes.DARKLY] #, dbc_css]
+css_files = [dbc.themes.DARKLY]  # , dbc_css]
 css_files.extend(custom_css_files)
 
 # Create our Dash Application
@@ -49,11 +48,7 @@ server = app.server
 
 # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
 # app.layout = html.Div([page_container])
-app.layout = dbc.Container(
-    [page_container],
-    fluid=True,
-    className="dbc"
-)
+app.layout = dbc.Container([page_container], fluid=True, className="dbc")
 
 # Grab any plugin pages
 plugin_pages = pm.get_pages()
