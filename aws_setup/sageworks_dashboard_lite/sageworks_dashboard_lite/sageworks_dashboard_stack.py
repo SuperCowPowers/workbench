@@ -19,6 +19,7 @@ class SageworksDashboardStackProps(StackProps):
         dashboard_image: str,
         sageworks_bucket: str,
         sageworks_api_key: str,
+        sageworks_plugins: str,
         existing_vpc_id: Optional[str] = None,
         existing_subnet_ids: Optional[List[str]] = None,
         whitelist_ips: Optional[List[str]] = None,
@@ -29,6 +30,7 @@ class SageworksDashboardStackProps(StackProps):
         self.dashboard_image = dashboard_image
         self.sageworks_bucket = sageworks_bucket
         self.sageworks_api_key = sageworks_api_key
+        self.sageworks_plugins = sageworks_plugins
         self.existing_vpc_id = existing_vpc_id
         self.existing_subnet_ids = existing_subnet_ids
         self.whitelist_ips = whitelist_ips
@@ -114,6 +116,7 @@ class SageworksDashboardStack(Stack):
                 "REDIS_HOST": redis_endpoint,
                 "SAGEWORKS_BUCKET": props.sageworks_bucket,
                 "SAGEWORKS_API_KEY": props.sageworks_api_key,
+                "SAGEWORKS_PLUGINS": props.sageworks_plugins,
             },
             logging=ecs.LogDriver.aws_logs(stream_prefix="SageWorksDashboard", log_group=log_group),
         )
