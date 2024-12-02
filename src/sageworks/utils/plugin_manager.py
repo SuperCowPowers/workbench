@@ -1,6 +1,7 @@
 """A Singleton Plugin Manager Class: Manages the loading and retrieval of SageWorks plugins"""
 
 import os
+import sys
 import atexit
 import shutil
 import tempfile
@@ -65,6 +66,11 @@ class PluginManager:
         else:
             self.loading_dir = tempfile.mkdtemp()
             copy_s3_files_to_local(self.config_plugin_dir, self.loading_dir)
+
+            # Add the loading directory to the PYTHONPATH for custom packages
+            sys.path.append(self.loading_dir + "/packages")
+
+            # Cleanup the temporary directory on exit
             atexit.register(self._cleanup_temp_dir)
 
         self.log.important(f"Loading plugins from {self.loading_dir}...")

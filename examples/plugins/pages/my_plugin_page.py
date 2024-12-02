@@ -9,6 +9,9 @@ import plotly.graph_objs as go
 # SageWorks Imports
 from sageworks.utils.plugin_manager import PluginManager
 
+# Custom Imports
+from my_plugin_utils import cool_stuff
+
 
 class MyPluginPage:
     """MyPluginPage:  A SageWorks Example Plugin Page"""
@@ -51,7 +54,7 @@ class MyPluginPage:
             children=[
                 dbc.Row(
                     [
-                        dash.html.H2("My Plugin Page"),
+                        dash.html.H2(f"NEW Plugin Page: {cool_stuff.super()}"),
                         dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                     ]
                 ),
