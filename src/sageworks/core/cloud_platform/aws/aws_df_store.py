@@ -62,7 +62,7 @@ class AWSDFStore:
         Returns:
             list: A list of all the objects in the data_store prefix.
         """
-        df = self.summary(include_cache=i)
+        df = self.summary(include_cache=include_cache)
         return df["location"].tolist()
 
     def last_modified(self, location: str) -> Union[datetime, None]:
