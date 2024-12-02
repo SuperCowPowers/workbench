@@ -22,6 +22,7 @@ try:
     pprint(cm.config)
     sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
     sageworks_api_key = cm.get_config("SAGEWORKS_API_KEY")
+    sageworks_plugins = cm.get_config("SAGEWORKS_PLUGINS")
     existing_vpc_id = cm.get_config("SAGEWORKS_VPC_ID")
     existing_subnet_ids = cm.get_config("SAGEWORKS_SUBNET_IDS")
     config_ips = cm.get_config("SAGEWORKS_WHITELIST", "")
@@ -46,6 +47,7 @@ SageworksDashboardStack(
         dashboard_image=dashboard_image,
         sageworks_bucket=sageworks_bucket,
         sageworks_api_key=sageworks_api_key,
+        sageworks_plugins=sageworks_plugins,
         existing_vpc_id=existing_vpc_id,
         existing_subnet_ids=existing_subnet_ids,
         whitelist_ips=whitelist_ips,
