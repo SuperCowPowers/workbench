@@ -23,6 +23,8 @@ nav:
     - Cached FeatureSet: cached/cached_feature_set.md
     - Cached Model: cached/cached_model.md
     - Cached Endpoint: cached/cached_endpoint.md
+  - Theme Support:
+    - Overview: themes/index.md
   - Blogs: 
     - OverView: blogs/index.md
     - Residual Analysis: blogs/residual_analysis.md 
@@ -84,6 +86,7 @@ nav:
     - 0.9.0:  road_maps/0_9_0.md
     - 0.9.5:  road_maps/0_9_5.md
   - Release Notes: 
+    - 0.8.78:  release_notes/0_8_78.md
     - 0.8.74:  release_notes/0_8_74.md
     - 0.8.71:  release_notes/0_8_71.md
     - 0.8.60:  release_notes/0_8_60.md
