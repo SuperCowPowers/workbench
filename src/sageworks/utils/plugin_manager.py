@@ -71,7 +71,7 @@ class PluginManager:
             atexit.register(self._cleanup_temp_dir)
 
         # Add the loading directory to the PYTHONPATH for custom packages
-        sys.path.append(self.loading_dir + "/packages")
+        sys.path.append(os.path.join(self.loading_dir, "packages"))
 
         self.log.important(f"Loading plugins from {self.loading_dir}...")
         for plugin_type in self.plugins.keys():
