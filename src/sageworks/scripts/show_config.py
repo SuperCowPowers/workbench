@@ -1,4 +1,5 @@
 """Show the current SageWorks Config"""
+
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.repl_utils import cprint
 
