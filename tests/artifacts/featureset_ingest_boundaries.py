@@ -82,16 +82,15 @@ def test_overflow_nan_inf():
     INF:
       - Positive and Negative Infinity values.
     """
-    overflow_values = [1e309, -1e309]  # Values beyond IEEE 754 range
-    special_values = [np.inf, -np.inf, np.nan]  # INF and NaN
-    control_values = [42, 0, -42]  # Normal range values for comparison
 
-    # Create a test DataFrame
+    # Test data with 8 rows: 4 valid, 4 with special numerics
     data = {
-        "feature1": control_values + overflow_values + special_values,
-        "special_feature": control_values + overflow_values + special_values,
-        "id": list(range(1, len(control_values + overflow_values + special_values) + 1)),
+        "overflow_feature": [0, 0, 1e309, -1e309, 0, 0, 0, 0],  # Overflow (both ways)
+        "inf_feature": [0, 0, 0, 0, np.inf, -np.inf, 0, 0],  # INF values
+        "nan_feature": [0, 0, 0, 0, 0, 0, np.nan, np.nan],  # NaN values
+        "id": list(range(1, 9)),  # Unique IDs for each row
     }
+
     test_df = pd.DataFrame(data)
     print("Test DataFrame:")
     print(test_df)
