@@ -90,6 +90,7 @@ packages = { find = { where = ["src"] } }
 [project.scripts]
 sageworks = "sageworks.repl.sageworks_shell:launch_shell"
 cloud_watch = "sageworks.scripts.monitor_cloud_watch:main"
+sageworks_config = "sageworks.scripts.show_config:main"
 
 [tool.pytest.ini_options]
 addopts = "-v --cov-report term-missing"
