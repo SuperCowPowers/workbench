@@ -2,6 +2,7 @@
 
 import pytest
 import pandas as pd
+import numpy as np
 from sageworks.api import FeatureSet
 from sageworks.core.transforms.pandas_transforms import PandasToFeatures
 
@@ -48,8 +49,6 @@ def test_underflow():
     test_df = pd.DataFrame(data)
     print("Test DataFrame:")
     print(test_df)
-    test_df = pd.DataFrame(data)
-    print(test_df)
 
     # Transform and ingest the dataframe using PandasToFeatures
     feature_set_name = "test_underflow"
@@ -65,12 +64,59 @@ def test_underflow():
     print("FeatureSet DataFrame:")
     print(fs_df)
 
-    # Step 4: Check for dropped rows
+    # Check for dropped rows
     original_ids = set(test_df["id"])
     ingested_ids = set(fs_df["id"])
     rejected_ids = original_ids - ingested_ids
     print(f"Rejected IDs (due to underflow or ingest errors): {rejected_ids}")
 
 
+@pytest.mark.long
+def test_overflow_nan_inf():
+    """Overflow, NaN, and INF Analysis:
+
+    Overflow:
+      - Values beyond the range of IEEE 754 double-precision floating-point.
+    NaN:
+      - Special IEEE 754 value representing "Not a Number."
+    INF:
+      - Positive and Negative Infinity values.
+    """
+    overflow_values = [1e309, -1e309]  # Values beyond IEEE 754 range
+    special_values = [np.inf, -np.inf, np.nan]  # INF and NaN
+    control_values = [42, 0, -42]  # Normal range values for comparison
+
+    # Create a test DataFrame
+    data = {
+        "feature1": control_values + overflow_values + special_values,
+        "special_feature": control_values + overflow_values + special_values,
+        "id": list(range(1, len(control_values + overflow_values + special_values) + 1)),
+    }
+    test_df = pd.DataFrame(data)
+    print("Test DataFrame:")
+    print(test_df)
+
+    # Transform and ingest the dataframe using PandasToFeatures
+    feature_set_name = "test_special_values"
+    to_features = PandasToFeatures(feature_set_name)
+    to_features.set_output_tags(["test", "special"])
+    to_features.set_input(test_df, id_column="id")
+    to_features.transform()
+
+    # Pull the transformed data from the FeatureSet and verify
+    fs = FeatureSet(feature_set_name)
+    fs_df = fs.pull_dataframe()
+    fs_df = fs_df.sort_values(by="id").reset_index(drop=True)  # Sort by ids
+    print("FeatureSet DataFrame:")
+    print(fs_df)
+
+    # Check for dropped rows
+    original_ids = set(test_df["id"])
+    ingested_ids = set(fs_df["id"])
+    rejected_ids = original_ids - ingested_ids
+    print(f"Rejected IDs (due to overflow, NaN, or INF): {rejected_ids}")
+
+
 if __name__ == "__main__":
-    test_underflow()
+    # test_underflow()
+    test_overflow_nan_inf()
