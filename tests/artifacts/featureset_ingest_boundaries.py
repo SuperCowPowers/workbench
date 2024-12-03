@@ -118,5 +118,5 @@ def test_overflow_nan_inf():
 
 
 if __name__ == "__main__":
-    # test_underflow()
+    test_underflow()
     test_overflow_nan_inf()
