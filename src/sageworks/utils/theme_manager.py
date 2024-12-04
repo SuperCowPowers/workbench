@@ -3,6 +3,7 @@ import os
 import logging
 from pathlib import Path
 import plotly.io as pio
+import dash_bootstrap_components as dbc
 from sageworks.utils.config_manager import ConfigManager
 
 
@@ -28,7 +29,8 @@ class ThemeManager:
             self.log.error(f"The themes directory '{self.themes_dir}' does not exist.")
 
         self.available_themes = {}
-        self.current_theme = None
+        self.current_theme = 'dark'  # Default theme
+        self.dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 
         # Load available themes
         self.load_themes()
@@ -39,17 +41,34 @@ class ThemeManager:
     def load_themes(self):
         """
         Load available themes from the themes directory.
-        Looks for JSON files (component templates) and CSS files.
+        Each theme is expected to have a subdirectory containing:
+        - JSON for Plotly template (e.g., `dark_template.json`).
+        - CSS files (e.g., `base.css`, `custom.css`, `tweaks.css`).
         """
         if not self.themes_dir:
-            self.log.important("No themes directory specified.")
+            self.log.warning("No themes directory specified.")
             return
-        for theme_file in self.themes_dir.glob("*.json"):
-            theme_name = theme_file.stem
-            self.available_themes[theme_name] = {
-                "component_template": theme_file,
-                "css": self.themes_dir / f"{theme_name}.css",
-            }
+
+        for theme_dir in self.themes_dir.iterdir():
+            if theme_dir.is_dir():
+                theme_name = theme_dir.name
+                plotly_template = theme_dir / f"{theme_name}_template.json"
+                css_files = [
+                    theme_dir / "base.css",
+                    theme_dir / "custom.css",
+                    theme_dir / "tweaks.css",
+                ]
+
+                # Check for the required files
+                if not plotly_template.exists():
+                    self.log.warning(f"Missing Plotly template for theme '{theme_name}'")
+                    plotly_template = None
+
+                # Add theme to available themes
+                self.available_themes[theme_name] = {
+                    "plotly_template": plotly_template,
+                    "css_files": [css_file for css_file in css_files if css_file.exists()],
+                }
 
         if not self.available_themes:
             self.log.warning(f"No themes found in '{self.themes_dir}'.")
@@ -80,30 +99,18 @@ class ThemeManager:
         theme = self.available_themes[theme_name]
 
         # Set Plotly template
-        with open(theme["component_template"], "r") as f:
+        with open(theme["plotly_template"], "r") as f:
             template = json.load(f)
         pio.templates["custom_template"] = template
         pio.templates.default = "custom_template"
 
         # Dynamically load or switch the CSS
-        self._reload_css(theme["css"])
+        self._reload_css(theme["css_files"])
 
         # Update the current theme
         self.current_theme = theme_name
 
-    def _reload_css(self, css_file: Path):
-        """
-        Reload or switch the application's CSS.
-
-        Args:
-            css_file (Path): Path to the CSS file to load.
-
-        TODO: Implement dynamic CSS reloading in the app.
-        """
-        # For now, print the CSS path to simulate loading
-        print(f"Reloading CSS from {css_file}")
-
-    def get_current_theme(self):
+    def get_current_theme(self) -> str:
         """
         Get the name of the current theme.
 
@@ -112,6 +119,31 @@ class ThemeManager:
         """
         return self.current_theme
 
+    def get_current_css_files(self) -> list[str]:
+        """
+        Get the list of CSS files for the current theme.
+
+        Returns:
+            list[str]: List of CSS files for the current theme.
+        """
+
+        theme = self.available_themes[self.current_theme]
+        theme_css = theme["css_files"]
+        base_css = [dbc.themes.DARKLY, self.dbc_css]
+        return base_css + [str(css_file) for css_file in theme_css]
+
+    def _reload_css(self, css_files: list[Path]):
+        """
+        Reload or switch the application's CSS.
+
+        Args:
+            css_files (list[Path]): List of CSS files to load.
+
+        TODO: Implement dynamic CSS reloading in the app.
+        """
+        for css_file in css_files:
+            # For now, just log the CSS path to simulate loading
+            print(f"Reloading CSS from {css_file}")
 
 if __name__ == "__main__":
     # Example usage of the ThemeManager
@@ -123,3 +155,6 @@ if __name__ == "__main__":
     # Set a new theme
     theme_manager.set_theme("dark")
     print("Theme switched to:", theme_manager.get_current_theme())
+
+    print("Current Theme:", theme_manager.get_current_theme())
+    print("CSS Files for Current Theme:", theme_manager.get_current_css_files())

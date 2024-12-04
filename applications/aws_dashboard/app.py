@@ -1,10 +1,10 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
-import os
-import json
-import plotly.io as pio
 from dash import Dash, page_container
 import dash_bootstrap_components as dbc
+import shutil
+
+# SageWorks Imports
 from sageworks.utils.plugin_manager import PluginManager
 from sageworks.utils.theme_manager import ThemeManager
 
@@ -12,36 +12,17 @@ from sageworks.utils.theme_manager import ThemeManager
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
 
+# Set up the Theme Manager
+tm = ThemeManager(default_theme="dark")
+css_files = tm.get_current_css_files()
 
-# Hardcoded theme selection
-USE_DARK_THEME = True
+# Copy custom CSS to the assets directory
+assets_dir = Path(__file__).parent / "assets"
+assets_dir.mkdir(exist_ok=True)
 
-# Determine the directory where this script is located
-current_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Set Plotly template
-template_file = (
-    os.path.join(current_dir, "assets", "darkly_custom.json")
-    if USE_DARK_THEME
-    else os.path.join(current_dir, "assets", "flatly.json")
-)
-with open(template_file, "r") as f:
-    template = json.load(f)
-
-pio.templates["custom_template"] = template
-pio.templates.default = "custom_template"
-
-# Dynamically set the Bootstrap theme
-bootstrap_theme = dbc.themes.DARKLY if USE_DARK_THEME else dbc.themes.FLATLY
-dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-
-# Spin up the Plugin Manager
-pm = PluginManager()
-
-# Load any custom CSS files
-custom_css_files = pm.get_css_files()
-css_files = [bootstrap_theme, dbc_css]
-css_files.extend(custom_css_files)
+for css_file in tm.get_current_css_files():
+    if not css_file.startswith("http"):  # Skip external URLs
+        shutil.copy(css_file, assets_dir / Path(css_file).name)
 
 # Create our Dash Application
 app = Dash(
@@ -55,6 +36,9 @@ server = app.server
 # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
 # app.layout = html.Div([page_container])
 app.layout = dbc.Container([page_container], fluid=True, className="dbc")
+
+# Spin up the Plugin Manager
+pm = PluginManager()
 
 # Grab any plugin pages
 plugin_pages = pm.get_pages()
