@@ -1,44 +1,60 @@
 import json
+import os
+import logging
 from pathlib import Path
 import plotly.io as pio
+from sageworks.utils.config_manager import ConfigManager
 
 
 class ThemeManager:
     """
-    A class to manage themes for the application, including Plotly templates
-    and CSS.
+    A class to manage themes (Plotly templates and CSS) for a Dash application.
     """
 
-    def __init__(self, themes_dir: str, default_theme: str = "light"):
+    def __init__(self, default_theme: str = "light"):
         """
         Initialize the ThemeManager with a directory containing themes.
 
         Args:
-            themes_dir (str): Path to the directory containing theme assets (JSON and CSS).
             default_theme (str): Default theme to load (e.g., 'light' or 'dark').
         """
-        self.themes_dir = Path(themes_dir)
+        self.log = logging.getLogger("sageworks")
+
+        # Get themes directory from the configuration manager
+        cm = ConfigManager()
+        theme_path = cm.get_config("SAGEWORKS_THEMES")
+        self.themes_dir = Path(theme_path) if theme_path else None
+        if self.themes_dir is None or not self.themes_dir.exists():
+            self.log.error(f"The themes directory '{self.themes_dir}' does not exist.")
+
         self.available_themes = {}
         self.current_theme = None
 
         # Load available themes
         self.load_themes()
+
         # Set the default theme
         self.set_theme(default_theme)
 
     def load_themes(self):
         """
         Load available themes from the themes directory.
-        Looks for JSON files (Plotly templates) and CSS files.
+        Looks for JSON files (component templates) and CSS files.
         """
+        if not self.themes_dir:
+            self.log.important("No themes directory specified.")
+            return
         for theme_file in self.themes_dir.glob("*.json"):
             theme_name = theme_file.stem
             self.available_themes[theme_name] = {
-                "plotly_template": theme_file,
+                "component_template": theme_file,
                 "css": self.themes_dir / f"{theme_name}.css",
             }
 
-    def list_themes(self):
+        if not self.available_themes:
+            self.log.warning(f"No themes found in '{self.themes_dir}'.")
+
+    def list_themes(self) -> list:
         """
         List all available themes.
 
@@ -58,18 +74,18 @@ class ThemeManager:
             ValueError: If the theme is not available.
         """
         if theme_name not in self.available_themes:
-            raise ValueError(f"Theme '{theme_name}' is not available.")
+            self.log.error(f"Theme '{theme_name}' is not available.")
+            return
 
         theme = self.available_themes[theme_name]
 
         # Set Plotly template
-        with open(theme["plotly_template"], "r") as f:
+        with open(theme["component_template"], "r") as f:
             template = json.load(f)
         pio.templates["custom_template"] = template
         pio.templates.default = "custom_template"
 
-        # TBD: Dynamically load or switch the CSS
-        # Replace this with actual implementation for injecting CSS dynamically
+        # Dynamically load or switch the CSS
         self._reload_css(theme["css"])
 
         # Update the current theme
@@ -82,9 +98,10 @@ class ThemeManager:
         Args:
             css_file (Path): Path to the CSS file to load.
 
-        TBD: Actual implementation for dynamic CSS loading.
+        TODO: Implement dynamic CSS reloading in the app.
         """
-        print(f"TBD: CSS reload for {css_file}")  # Placeholder
+        # For now, print the CSS path to simulate loading
+        print(f"Reloading CSS from {css_file}")
 
     def get_current_theme(self):
         """
@@ -97,9 +114,8 @@ class ThemeManager:
 
 
 if __name__ == "__main__":
-    # Example usage
-    themes_dir = "path/to/themes"  # Replace with your themes directory path
-    theme_manager = ThemeManager(themes_dir)
+    # Example usage of the ThemeManager
+    theme_manager = ThemeManager(default_theme="light")
 
     print("Available Themes:", theme_manager.list_themes())
     print("Current Theme:", theme_manager.get_current_theme())

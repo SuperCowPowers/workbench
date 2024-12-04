@@ -6,6 +6,7 @@ import plotly.io as pio
 from dash import Dash, page_container
 import dash_bootstrap_components as dbc
 from sageworks.utils.plugin_manager import PluginManager
+from sageworks.utils.theme_manager import ThemeManager
 
 
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
@@ -30,19 +31,16 @@ with open(template_file, "r") as f:
 pio.templates["custom_template"] = template
 pio.templates.default = "custom_template"
 
-"""
 # Dynamically set the Bootstrap theme
 bootstrap_theme = dbc.themes.DARKLY if USE_DARK_THEME else dbc.themes.FLATLY
-
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-"""
 
 # Spin up the Plugin Manager
 pm = PluginManager()
 
 # Load any custom CSS files
 custom_css_files = pm.get_css_files()
-css_files = [dbc.themes.DARKLY]  # , dbc_css]
+css_files = [bootstrap_theme, dbc_css]
 css_files.extend(custom_css_files)
 
 # Create our Dash Application
