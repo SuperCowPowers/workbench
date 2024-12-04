@@ -1,5 +1,6 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
+import os
 import json
 import plotly.io as pio
 from dash import Dash, page_container
@@ -14,8 +15,11 @@ from sageworks.utils.plugin_manager import PluginManager
 # Hardcoded theme selection
 USE_DARK_THEME = True
 
+# Determine the directory where this script is located
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
 # Set Plotly template
-template_file = "assets/darkly_custom.json" if USE_DARK_THEME else "assets/flatly.json"
+template_file = os.path.join(current_dir, "assets", "darkly_custom.json") if USE_DARK_THEME else os.path.join(current_dir, "assets", "flatly.json")
 with open(template_file, "r") as f:
     template = json.load(f)
 
