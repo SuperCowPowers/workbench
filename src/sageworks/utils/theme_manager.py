@@ -138,7 +138,7 @@ class ThemeManager:
 
         @app.server.route("/custom.css")
         def serve_custom_css():
-            theme = self.available_themes[self.current_theme]
+            theme = self.available_themes[self.current_theme["name"]]
             custom_css_file = theme.get("custom_css")
             if custom_css_file:
                 return send_from_directory(custom_css_file.parent, custom_css_file.name)

@@ -14,6 +14,7 @@ from sageworks.utils.theme_manager import ThemeManager
 # Set up the Theme Manager
 tm = ThemeManager(theme="dark")
 css_files = tm.get_current_css_files()
+print(css_files)
 
 # Create the Dash app
 app = Dash(
