@@ -19,10 +19,12 @@ class AGTable(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
 
-    def create_component(self, component_id: str) -> AgGrid:
+    def create_component(self, component_id: str, header_color: str = "rgb(60, 60, 60)", **kwargs) -> AgGrid:
         """Create a Table Component without any data.
+
         Args:
             component_id (str): The ID of the web component
+            header_color (str): The color of the table header bar
         Returns:
             AgGrid: The Table Component using AG Grid
         """
