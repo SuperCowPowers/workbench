@@ -1,12 +1,12 @@
 """Callbacks for the Pipelines Subpage Dashboard Interface"""
 
 import logging
-from dash import callback
+
+import pandas as pd
+from dash import callback, Output, Input
 from dash.exceptions import PreventUpdate
-from dash.dependencies import Input, Output
 
 # SageWorks Imports
-from sageworks.utils.pandas_utils import deserialize_aws_metadata
 from sageworks.api.pipeline import Pipeline
 
 # Get the SageWorks logger
@@ -16,12 +16,13 @@ log = logging.getLogger("sageworks")
 def update_pipelines_table(table_object):
     @callback(
         [Output(component_id, prop) for component_id, prop in table_object.properties],
-        Input("aws-metadata", "data"),
+        Input("pipelines_refresh", "n_intervals"),
     )
-    def pipelines_update(serialized_aws_metadata):
+    def pipelines_update(_n):
         """Return the table data for the Pipelines Table"""
-        aws_metadata = deserialize_aws_metadata(serialized_aws_metadata)
-        pipelines = aws_metadata["PIPELINES"]
+
+        # FIXME: This is a placeholder for the actual data
+        pipelines = pd.DataFrame({"name": ["Pipeline 1", "Pipeline 2", "Pipeline 3"]})
         return table_object.update_properties(pipelines)
 
 
