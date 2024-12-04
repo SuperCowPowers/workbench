@@ -2,7 +2,6 @@
 
 from dash import Dash, page_container
 import dash_bootstrap_components as dbc
-import shutil
 
 # SageWorks Imports
 from sageworks.utils.plugin_manager import PluginManager
@@ -13,24 +12,21 @@ from sageworks.utils.theme_manager import ThemeManager
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
 
 # Set up the Theme Manager
-tm = ThemeManager(default_theme="dark")
+tm = ThemeManager(theme="dark")
 css_files = tm.get_current_css_files()
 
-# Copy custom CSS to the assets directory
-assets_dir = Path(__file__).parent / "assets"
-assets_dir.mkdir(exist_ok=True)
-
-for css_file in tm.get_current_css_files():
-    if not css_file.startswith("http"):  # Skip external URLs
-        shutil.copy(css_file, assets_dir / Path(css_file).name)
-
-# Create our Dash Application
+# Create the Dash app
 app = Dash(
     __name__,
     title="SageWorks Dashboard",
     use_pages=True,
     external_stylesheets=css_files,
 )
+
+# Register the CSS route in the ThemeManager
+tm.register_css_route(app)
+
+# Note: The 'server' object is required for running the app with NGINX/uWSGI
 server = app.server
 
 # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
