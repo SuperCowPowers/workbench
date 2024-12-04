@@ -19,7 +19,11 @@ USE_DARK_THEME = True
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Set Plotly template
-template_file = os.path.join(current_dir, "assets", "darkly_custom.json") if USE_DARK_THEME else os.path.join(current_dir, "assets", "flatly.json")
+template_file = (
+    os.path.join(current_dir, "assets", "darkly_custom.json")
+    if USE_DARK_THEME
+    else os.path.join(current_dir, "assets", "flatly.json")
+)
 with open(template_file, "r") as f:
     template = json.load(f)
 
