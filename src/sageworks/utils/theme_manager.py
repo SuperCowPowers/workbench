@@ -100,12 +100,16 @@ class ThemeManager:
             pio.templates.default = "custom_template"
 
         # Update current theme and log
-        self.current_theme = theme_name
+        self.current_theme = {"name": theme_name, "plotly_template": template}
         self.log.info(f"Theme set to '{theme_name}'")
 
-    def get_current_theme(self) -> str:
+    def get_current_theme(self) -> dict:
         """Get the name of the current theme."""
         return self.current_theme
+
+    def get_current_template(self) -> dict:
+        """Get the current Plotly template."""
+        return self.current_theme["plotly_template"]
 
     def get_current_css_files(self) -> list[str]:
         """
@@ -115,10 +119,11 @@ class ThemeManager:
             list[str]: List of CSS files for the current theme.
         """
         # Bootstrap CDN and dbc.min.css
-        base_css = [self.bootstrap_themes[self.current_theme], self.dbc_css]
+        theme_name = self.current_theme["name"]
+        base_css = [self.bootstrap_themes[theme_name], self.dbc_css]
 
         # Use Flask route for custom.css if it exists
-        theme = self.available_themes[self.current_theme]
+        theme = self.available_themes[theme_name]
         custom_css = ["/custom.css"] if theme["custom_css"] else []
 
         return base_css + custom_css
@@ -130,6 +135,7 @@ class ThemeManager:
         Args:
             app: The Dash app (to access the Flask server).
         """
+
         @app.server.route("/custom.css")
         def serve_custom_css():
             theme = self.available_themes[self.current_theme]
