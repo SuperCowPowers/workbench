@@ -16,17 +16,19 @@ from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 from sageworks.cached.cached_meta import CachedMeta
 from sageworks.api.pipeline import Pipeline
 from sageworks.core.artifacts.graph_core import GraphCore
+from sageworks.utils.theme_manager import ThemeManager
 
 # Setup Logging
 log = logging.getLogger("sageworks")
 
 
 class PluginUnitTest:
-    def __init__(self, plugin_class, input_data=None, auto_update=True, **kwargs):
+    def __init__(self, plugin_class, theme="dark", input_data=None, auto_update=True, **kwargs):
         """A class to unit test a PluginInterface class.
 
         Args:
             plugin_class (PluginInterface): The PluginInterface class to test
+            theme (str): The theme to use for the Dash app (default: "dark")
             input_data (Optional): The input data for this plugin (FeatureSet, Model, Endpoint, or DataFrame)
             auto_update (bool): Whether to automatically update the plugin properties (default: True)
             **kwargs: Additional keyword arguments
@@ -50,22 +52,12 @@ class PluginUnitTest:
         # List out the files in the assets directory
         log.important(f"Files in assets directory: {list(Path(assets_dir).iterdir())}")
 
-        # Set the theme to dark
-        USE_DARK_THEME = False
+        # Set up the Theme Manager
+        tm = ThemeManager(theme=theme)
+        css_files = tm.get_current_css_files()
 
-        # Set Plotly template
-        template_file = f"{assets_dir}/darkly_custom.json" if USE_DARK_THEME else f"{assets_dir}/flatly.json"
-        with open(template_file, "r") as f:
-            template = json.load(f)
-
-        pio.templates["custom_template"] = template
-        pio.templates.default = "custom_template"
-
-        # Dynamically set the Bootstrap theme
-        # bootstrap_theme = dbc.themes.DARKLY if USE_DARK_THEME else dbc.themes.FLATLY
-
-        dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-        self.app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc_css], assets_folder=assets_dir)
+        # Load the custom CSS
+        self.app = dash.Dash(__name__, external_stylesheets=css_files)
 
         # Set up the layout
         container = html.Div(self.component, style={"height": "75vh"})
