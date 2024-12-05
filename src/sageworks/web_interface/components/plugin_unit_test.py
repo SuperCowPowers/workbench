@@ -41,6 +41,9 @@ class PluginUnitTest:
         self.input_data = input_data
         self.kwargs = kwargs
 
+        # Set up the Theme Manager
+        tm = ThemeManager(theme=theme)
+
         # Instantiate the plugin
         self.plugin = plugin_class()
         self.component = self.plugin.create_component(f"{self.plugin.__class__.__name__.lower()}_test")
@@ -52,12 +55,8 @@ class PluginUnitTest:
         # List out the files in the assets directory
         log.important(f"Files in assets directory: {list(Path(assets_dir).iterdir())}")
 
-        # Set up the Theme Manager
-        tm = ThemeManager(theme=theme)
-        css_files = tm.get_current_css_files()
-
         # Load the custom CSS
-        self.app = dash.Dash(__name__, external_stylesheets=css_files)
+        self.app = dash.Dash(__name__, external_stylesheets=tm.css_files())
 
         # Set up the layout
         container = html.Div(self.component, style={"height": "75vh"})

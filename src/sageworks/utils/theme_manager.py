@@ -2,6 +2,7 @@ import json
 import logging
 from pathlib import Path
 import plotly.io as pio
+from plotly.colors import sequential
 import dash_bootstrap_components as dbc
 from flask import send_from_directory
 from sageworks.utils.config_manager import ConfigManager
@@ -29,7 +30,8 @@ class ThemeManager:
         }
         self.dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
         self.available_themes = {}
-        self.current_theme = None
+        self.current_theme_name = None
+        self.current_template = None
 
         self.load_themes()
         self.set_theme(theme)
@@ -68,28 +70,48 @@ class ThemeManager:
         # Update Plotly template
         if theme["plotly_template"]:
             with open(theme["plotly_template"], "r") as f:
-                template = json.load(f)
-            pio.templates["custom_template"] = template
+                self.current_template = json.load(f)
+            pio.templates["custom_template"] = self.current_template
             pio.templates.default = "custom_template"
 
         # Store the theme name in `current_theme`
-        self.current_theme = theme_name
+        self.current_theme_name = theme_name
         self.log.info(f"Theme set to '{theme_name}'")
 
-    def get_data_bs_theme(self) -> str:
+    def data_bs_theme(self) -> str:
         """
         Get the current Bootstrap `data-bs-theme` value.
 
         Returns:
             str: "dark" or "light" based on the current theme.
         """
-        return "dark" if "dark" in self.current_theme.lower() else "light"
+        return "dark" if "dark" in self.current_theme_name.lower() else "light"
 
-    def get_current_theme(self) -> str:
+    def current_theme(self) -> str:
         """Get the name of the current theme."""
-        return self.current_theme
+        return self.current_theme_name
 
-    def get_current_css_files(self) -> list[str]:
+    def colorscale(self) -> list[list[float | str]]:
+        """
+        Get the colorscale for the current theme.
+
+        Returns:
+            list[list[float | str]]: The colorscale for the current theme.
+        """
+        # Map themes to color scales
+        theme_to_colorscale = {
+            "dark": sequential.Plasma,
+            "light": sequential.Viridis,
+            "minty": sequential.Cividis,
+            "minty_dark": sequential.Inferno,
+        }
+        #return sequential.Viridis
+        return theme_to_colorscale.get(self.current_theme(), sequential.Plasma)
+        # Get directly from the current template (these ALL seem to be plasma :/)
+        # template = self.current_template
+        # return template["data"]["heatmapgl"][0]["colorscale"]
+
+    def css_files(self) -> list[str]:
         """
         Get the list of CSS files for the current theme.
 
@@ -97,22 +119,18 @@ class ThemeManager:
             list[str]: List of CSS files for the current theme.
         """
         # Bootstrap CDN and dbc.min.css
-        base_css = [self.bootstrap_themes[self.current_theme], self.dbc_css]
+        base_css = [self.bootstrap_themes[self.current_theme_name], self.dbc_css]
 
         # Use Flask route for custom.css if it exists
-        theme = self.available_themes[self.current_theme]
+        theme = self.available_themes[self.current_theme_name]
         custom_css = ["/custom.css"] if theme["custom_css"] else []
         return base_css + custom_css
-
-    def get_bs_theme(self) -> str:
-        """Get the Bootstrap `data-bs-theme` attribute."""
-        return self.current_theme
 
     def register_css_route(self, app):
         """Register Flask route for custom.css."""
         @app.server.route("/custom.css")
         def serve_custom_css():
-            theme = self.available_themes[self.current_theme]
+            theme = self.available_themes[self.current_theme_name]
             if theme["custom_css"]:
                 return send_from_directory(theme["custom_css"].parent, theme["custom_css"].name)
             return "", 404
@@ -122,9 +140,17 @@ if __name__ == "__main__":
     # Example usage of the ThemeManager
     theme_manager = ThemeManager(theme="dark")
     print("Available Themes:", theme_manager.list_themes())
-    print("Current Theme:", theme_manager.get_current_theme())
-    print("CSS Files for Current Theme:", theme_manager.get_current_css_files())
+    print("Current Theme:", theme_manager.current_theme())
+    print("CSS Files for Current Theme:", theme_manager.css_files())
 
     theme_manager.set_theme("light")
-    print("Theme switched to:", theme_manager.get_current_theme())
-    print("CSS Files for Current Theme:", theme_manager.get_current_css_files())
+    print("Theme switched to:", theme_manager.current_theme())
+    print("CSS Files for Current Theme:", theme_manager.css_files())
+
+    # Example usage of the ThemeManager
+    theme_manager = ThemeManager(theme="dark")
+    print("Available Themes:", theme_manager.list_themes())
+    print("Current Theme:", theme_manager.current_theme())
+    print("CSS Files for Current Theme:", theme_manager.css_files())
+    print("Bootstrap Theme:", theme_manager.data_bs_theme())
+    print("Colorscale:", theme_manager.colorscale())

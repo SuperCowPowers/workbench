@@ -13,7 +13,7 @@ from sageworks.utils.theme_manager import ThemeManager
 
 # Set up the Theme Manager
 tm = ThemeManager(theme="minty_dark")
-css_files = tm.get_current_css_files()
+css_files = tm.css_files()
 print(css_files)
 
 # Create the Dash app
@@ -37,7 +37,7 @@ app.layout = html.Div(
         dbc.Container([page_container], fluid=True, className="dbc"),
     ],
     style={"backgroundColor": "var(--bs-body-bg)", "minHeight": "100vh"},  # Use Bootstrap variable
-    **{"data-bs-theme": tm.get_data_bs_theme()}
+    **{"data-bs-theme": tm.data_bs_theme()}
 )
 
 # Spin up the Plugin Manager
