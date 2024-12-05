@@ -94,20 +94,6 @@ class PluginManager:
         # For every file in the plugin directory
         for filename in os.listdir(plugin_dir):
 
-            # Check for CSS files
-            if plugin_type == "css":
-                if filename.endswith(".css"):
-                    self.log.important(f"Storing {plugin_type} plugin: {filename}")
-                    # Basename of the filename without the extension
-                    basename = os.path.splitext(filename)[0]
-
-                    # Full path to the CSS file
-                    fullpath = os.path.join(plugin_dir, filename)
-                    self.plugins[plugin_type][basename] = fullpath
-                else:
-                    self.log.warning(f"{filename} is not a CSS file")
-                continue
-
             # Normal plugin loading
             module = self._load_module(plugin_dir, filename)
             if module is None:
@@ -261,16 +247,6 @@ class PluginManager:
 
         return instantiated_pages
 
-    def get_css_files(self) -> List[str]:
-        """
-        Retrieve a list of CSS files
-
-        Returns:
-            List[str]: A list of CSS files
-        """
-        css_files = list(self.plugins["css"].values())
-        return css_files
-
     def _cleanup_temp_dir(self):
         """Cleans up the temporary directory created for S3 files."""
         if self.loading_dir and os.path.isdir(self.loading_dir):
@@ -375,9 +351,6 @@ if __name__ == "__main__":
 
     # Get plugin pages
     plugin_pages = manager.get_pages()
-
-    # Get css files
-    css_files = manager.get_css_files()
 
     # Get all the plugins
     pprint(manager.get_all_plugins())
