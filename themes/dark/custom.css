@@ -1,29 +1,16 @@
-/* Remove DashTable borders */
-.dash-table-container {
-    border: none !important;
+/* Remove borders for Dash DataTable */
+.dash-spreadsheet-container {
+    --bs-border-color: transparent; /* Make cell borders invisible */
 }
 
-.dash-table .cell {
-    border: none !important;
+/* Add a thin border between rows */
+.dash-spreadsheet-container tr {
+    border-bottom: 1px solid rgba(200, 200, 200, 0.3); /* Thin row border */
 }
 
-.dash-table .cell-header {
-    border: none !important;
-}
-
-.dash-table .row {
-    border: none !important;
-}
-
-.dash-spreadsheet-container .dash-fixed-content {
-    border: 0 !important;
-}
-
-.column,
-.columns {
-  width: 100%;
-  float: left;
-  box-sizing: border-box;
+/* Optional: Style the header row separately */
+.dash-spreadsheet-container thead tr {
+    border-bottom: 2px solid rgba(200, 200, 200, 0.5); /* Slightly thicker header border */
 }
 
 /* Style links */
