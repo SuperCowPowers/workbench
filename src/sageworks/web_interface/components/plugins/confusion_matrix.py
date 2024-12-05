@@ -167,4 +167,4 @@ if __name__ == "__main__":
 
     # Run the Unit Test on the Plugin
     model = CachedModel("wine-classification")
-    PluginUnitTest(ConfusionMatrix, input_data=model).run()
+    PluginUnitTest(ConfusionMatrix, input_data=model, theme="dark").run()
