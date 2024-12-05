@@ -1,3 +1,56 @@
+# Summary of Theming Mechanisms
+
+## 1. CSS Files
+CSS affects **global styling** of the entire application, including:
+
+- Font styles and sizes.
+- Layout styles (e.g., margins, padding, spacing).
+- Background and text colors for non-Bootstrap or custom elements.
+- Borders and shadows.
+- Interactive element styling (e.g., hover effects, link colors).
+- Dash custom components.
+
+---
+
+## 2. Plotly Templates
+Plotly templates control **figure-specific styling** for Plotly charts and graphs:
+
+- Axis styling (e.g., line colors, grid lines, and ticks).
+- Color scales for heatmaps, bar charts, and scatter plots.
+- Marker and line styles.
+- Background colors for the figure and plot areas.
+- Font styles inside the figures.
+
+---
+
+## 3. `data-bs-theme`
+The `data-bs-theme` attribute affects **Bootstrap-specific components**, primarily from **Dash Bootstrap Components (DBC)**:
+
+- Buttons.
+- Tables.
+- Forms (e.g., input boxes, checkboxes, radio buttons).
+- Cards, modals, and alerts.
+
+---
+
+## Key Differences
+| **Aspect**            | **CSS Files**                | **Plotly Templates**       | **`data-bs-theme`**          |
+|------------------------|------------------------------|-----------------------------|------------------------------|
+| **Scope**             | Global app styling          | Plotly figures             | Bootstrap-specific elements |
+| **Dynamic Switching?** | Not easily (reloading needed)| Can update dynamically     | Supports dynamic switching  |
+
+---
+
+## Conclusion
+For **Phase 1**:
+
+- **CSS Files**: Use for global look and feel.
+- **Plotly Templates**: Use for consistent chart/figure themes.
+- **`data-bs-theme`**: Use to control Bootstrap component styling.
+
+
+
+
 # Theming Strategy for SageWorks Dashboard
 
 ## **Phase 1: Application Start-Up Theming**

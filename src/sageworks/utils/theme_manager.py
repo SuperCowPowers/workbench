@@ -24,6 +24,8 @@ class ThemeManager:
         self.bootstrap_themes = {
             "dark": dbc.themes.DARKLY,
             "light": dbc.themes.FLATLY,
+            "minty": dbc.themes.MINTY,
+            "minty_dark": dbc.themes.MINTY,
         }
         self.dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
         self.available_themes = {}
@@ -57,35 +59,52 @@ class ThemeManager:
         return list(self.available_themes.keys())
 
     def set_theme(self, theme_name: str):
-        """Set the application's theme."""
         if theme_name not in self.available_themes:
             self.log.error(f"Theme '{theme_name}' is not available.")
             return
 
         theme = self.available_themes[theme_name]
 
+        # Update Plotly template
         if theme["plotly_template"]:
             with open(theme["plotly_template"], "r") as f:
                 template = json.load(f)
             pio.templates["custom_template"] = template
             pio.templates.default = "custom_template"
 
+        # Store the theme name in `current_theme`
         self.current_theme = theme_name
         self.log.info(f"Theme set to '{theme_name}'")
+
+    def get_data_bs_theme(self) -> str:
+        """
+        Get the current Bootstrap `data-bs-theme` value.
+
+        Returns:
+            str: "dark" or "light" based on the current theme.
+        """
+        return "dark" if "dark" in self.current_theme.lower() else "light"
 
     def get_current_theme(self) -> str:
         """Get the name of the current theme."""
         return self.current_theme
 
     def get_current_css_files(self) -> list[str]:
-        """Get the list of CSS files for the current theme."""
-        theme = self.available_themes[self.current_theme]
-        css_files = [self.bootstrap_themes[self.current_theme], self.dbc_css]
-        if theme["custom_css"]:
-            css_files.append("/custom.css")
-        return css_files
+        """
+        Get the list of CSS files for the current theme.
 
-    def get_bs_theme_attribute(self) -> str:
+        Returns:
+            list[str]: List of CSS files for the current theme.
+        """
+        # Bootstrap CDN and dbc.min.css
+        base_css = [self.bootstrap_themes[self.current_theme], self.dbc_css]
+
+        # Use Flask route for custom.css if it exists
+        theme = self.available_themes[self.current_theme]
+        custom_css = ["/custom.css"] if theme["custom_css"] else []
+        return base_css + custom_css
+
+    def get_bs_theme(self) -> str:
         """Get the Bootstrap `data-bs-theme` attribute."""
         return self.current_theme
 

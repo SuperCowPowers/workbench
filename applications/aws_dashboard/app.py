@@ -1,6 +1,6 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
-from dash import Dash, page_container
+from dash import Dash, html, page_container
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
@@ -12,7 +12,7 @@ from sageworks.utils.theme_manager import ThemeManager
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
 
 # Set up the Theme Manager
-tm = ThemeManager(theme="dark")
+tm = ThemeManager(theme="minty_dark")
 css_files = tm.get_current_css_files()
 print(css_files)
 
@@ -32,7 +32,13 @@ server = app.server
 
 # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
 # app.layout = html.Div([page_container])
-app.layout = dbc.Container([page_container], fluid=True, className="dbc")
+app.layout = html.Div(
+    [
+        dbc.Container([page_container], fluid=True, className="dbc"),
+    ],
+    style={"backgroundColor": "var(--bs-body-bg)", "minHeight": "100vh"},  # Use Bootstrap variable
+    **{"data-bs-theme": tm.get_data_bs_theme()}
+)
 
 # Spin up the Plugin Manager
 pm = PluginManager()
