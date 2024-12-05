@@ -39,7 +39,8 @@ class PluginUnitTest:
         self.kwargs = kwargs
 
         # Set up the Theme Manager
-        tm = ThemeManager(theme=theme)
+        tm = ThemeManager()
+        tm.set_theme(theme)
 
         # Instantiate the plugin
         self.plugin = plugin_class()
