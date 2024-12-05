@@ -37,7 +37,7 @@ app.layout = html.Div(
         dbc.Container([page_container], fluid=True, className="dbc"),
     ],
     style={"backgroundColor": "var(--bs-body-bg)", "minHeight": "100vh"},  # Use Bootstrap variable
-    **{"data-bs-theme": tm.data_bs_theme()}
+    **{"data-bs-theme": tm.data_bs_theme()},
 )
 
 # Spin up the Plugin Manager

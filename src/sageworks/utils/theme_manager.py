@@ -105,7 +105,7 @@ class ThemeManager:
             "minty": sequential.Cividis,
             "minty_dark": sequential.Inferno,
         }
-        #return sequential.Viridis
+        # return sequential.Viridis
         return theme_to_colorscale.get(self.current_theme(), sequential.Plasma)
         # Get directly from the current template (these ALL seem to be plasma :/)
         # template = self.current_template
@@ -128,6 +128,7 @@ class ThemeManager:
 
     def register_css_route(self, app):
         """Register Flask route for custom.css."""
+
         @app.server.route("/custom.css")
         def serve_custom_css():
             theme = self.available_themes[self.current_theme_name]

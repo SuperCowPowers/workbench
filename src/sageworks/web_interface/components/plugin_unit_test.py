@@ -1,8 +1,5 @@
 import dash
 from dash import html, Output, Input
-import dash_bootstrap_components as dbc
-import plotly.io as pio
-import json
 import logging
 import socket
 
