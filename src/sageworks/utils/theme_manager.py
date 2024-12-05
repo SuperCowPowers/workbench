@@ -9,11 +9,23 @@ from sageworks.utils.config_manager import ConfigManager
 
 
 class ThemeManager:
-    """
-    A class to manage themes (Plotly templates and CSS) for a Dash application.
-    """
+    _instance = None  # Class attribute to hold the singleton instance
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(self, theme: str = "dark"):
+        """Initialize the ThemeManager singleton instance
+
+        Args:
+            theme (str): The default theme to use (default: "dark")
+        """
+        # The singleton has already been initialized
+        if hasattr(self, "_initialized") and self._initialized:
+            return  # Skip re-initialization
+
         self.log = logging.getLogger("sageworks")
         cm = ConfigManager()
         theme_path = cm.get_config("SAGEWORKS_THEMES")
@@ -33,8 +45,12 @@ class ThemeManager:
         self.current_theme_name = None
         self.current_template = None
 
+        # Load available themes and set the default theme
         self.load_themes()
         self.set_theme(theme)
+
+        # Mark the instance as initialized
+        self._initialized = True
 
     def load_themes(self):
         """Load available themes."""
@@ -47,7 +63,6 @@ class ThemeManager:
                 theme_name = theme_dir.name
                 plotly_template = theme_dir / f"{theme_name}_template.json"
                 custom_css = theme_dir / "custom.css"
-
                 self.available_themes[theme_name] = {
                     "plotly_template": plotly_template if plotly_template.exists() else None,
                     "custom_css": custom_css if custom_css.exists() else None,
@@ -99,6 +114,7 @@ class ThemeManager:
             list[list[float | str]]: The colorscale for the current theme.
         """
         # Map themes to color scales
+        """
         theme_to_colorscale = {
             "dark": sequential.Plasma,
             "light": sequential.Viridis,
@@ -107,9 +123,10 @@ class ThemeManager:
         }
         # return sequential.Viridis
         return theme_to_colorscale.get(self.current_theme(), sequential.Plasma)
-        # Get directly from the current template (these ALL seem to be plasma :/)
-        # template = self.current_template
-        # return template["data"]["heatmapgl"][0]["colorscale"]
+        """
+        # Get colorscale from the current template
+        template = self.current_template
+        return template["data"]["heatmapgl"][0]["colorscale"]
 
     def css_files(self) -> list[str]:
         """
