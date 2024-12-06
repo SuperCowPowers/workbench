@@ -1,5 +1,6 @@
 import dash
 from dash import html, Output, Input
+import dash_bootstrap_components as dbc
 import logging
 import socket
 
@@ -57,7 +58,13 @@ class PluginUnitTest:
             layout_children.append(html.H4(f"Property: {property}"))
             layout_children.append(html.Div(id=f"test-output-{component_id}-{property}"))
 
-        self.app.layout = html.Div(layout_children, style={"padding": "20px"})
+        # self.app.layout = html.Div(layout_children, style={"padding": "20px"}, className="dbc dbc-ag-grid")
+        self.app.layout = html.Div(
+            [
+                dbc.Container(layout_children, style={"padding": "20px"}, fluid=True, className="dbc dbc-ag-grid"),
+            ],
+            **{"data-bs-theme": tm.data_bs_theme()}
+        )
 
         # Make sure the plugin has a properties attribute (non-empty list of tuples)
         assert hasattr(self.plugin, "properties"), "Plugin must have a 'properties' attribute"
