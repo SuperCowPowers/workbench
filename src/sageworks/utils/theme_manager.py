@@ -102,7 +102,7 @@ class ThemeManager:
                 cls._log.warning(f"Using color scale '{backup_colorscale}' instead.")
                 return backup_colorscale
             except IndexError:
-               cls._log.error(f"No color scales found for template '{cls._current_theme_name}'.")
+                cls._log.error(f"No color scales found for template '{cls._current_theme_name}'.")
         return []
 
     @classmethod
