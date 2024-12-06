@@ -54,10 +54,16 @@ class ThemeManager:
         for theme_dir in cls._themes_dir.iterdir():
             if theme_dir.is_dir():
                 theme_name = theme_dir.name
-                plotly_template = theme_dir / f"{theme_name}_template.json"
+
+                # Find the first JSON file in the directory
+                json_files = list(theme_dir.glob("*.json"))
+                plotly_template = json_files[0] if json_files else None
+
+                # Check for a custom.css file
                 custom_css = theme_dir / "custom.css"
+
                 cls._available_themes[theme_name] = {
-                    "plotly_template": plotly_template if plotly_template.exists() else None,
+                    "plotly_template": plotly_template,
                     "custom_css": custom_css if custom_css.exists() else None,
                 }
 
@@ -84,10 +90,12 @@ class ThemeManager:
                 cls._current_template = json.load(f)
             pio.templates["custom_template"] = cls._current_template
             pio.templates.default = "custom_template"
+        else:
+            cls._log.error(f"No Plotly template found for '{theme_name}'.")
 
         # Update the current theme name
         cls._current_theme_name = theme_name
-        cls._log.warning(f"Theme set to '{theme_name}'")
+        cls._log.important(f"Theme set to '{theme_name}'")
 
     @classmethod
     def data_bs_theme(cls) -> str:
@@ -105,7 +113,7 @@ class ThemeManager:
 
         # Map themes to Plotly's predefined colorscales
         theme_to_colorscale = {
-            "dark": sequential.Blues,  # Cooler, more subtle gradient for dark themes
+            "dark": sequential.Turbo,  # Bright and colorful for dark themes
             "light": sequential.Viridis,  # Bright and colorful for light themes
             "minty": sequential.Greens,  # Shades of green to match "minty"
             "minty_dark": sequential.Darkmint,  # Dark greens and teals for "minty_dark"
@@ -115,10 +123,7 @@ class ThemeManager:
         return theme_to_colorscale.get(cls._current_theme_name, sequential.Inferno)
 
         # All the dash-bootstrap-templates seem to use the same colorscale (Plasma)
-        """
-        return cls._current_template["data"]["heatmapgl"][0]["colorscale"]
-        """
-
+        # return cls._current_template["data"]["heatmapgl"][0]["colorscale"]
 
     @classmethod
     def css_files(cls) -> list[str]:

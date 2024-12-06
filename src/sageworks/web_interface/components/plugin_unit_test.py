@@ -46,13 +46,6 @@ class PluginUnitTest:
         self.plugin = plugin_class()
         self.component = self.plugin.create_component(f"{self.plugin.__class__.__name__.lower()}_test")
 
-        # Create the Dash app
-        assets_dir = str(Path(__file__).parent.parent.parent.parent.parent / "applications/aws_dashboard/assets")
-        log.important(f"Using assets directory: {assets_dir}")
-
-        # List out the files in the assets directory
-        log.important(f"Files in assets directory: {list(Path(assets_dir).iterdir())}")
-
         # Load the custom CSS
         self.app = dash.Dash(__name__, external_stylesheets=tm.css_files())
 
