@@ -1,7 +1,6 @@
 """DataSources:  A SageWorks Web Interface to view, interact, and manage Data Sources"""
 
 from dash import Dash
-import dash_bootstrap_components as dbc
 
 # SageWorks Imports
 from sageworks.web_interface.components import (

@@ -58,12 +58,7 @@ if __name__ == "__main__":
     import webbrowser
 
     # Create our Dash Application
-    my_app = dash.Dash(
-        __name__,
-        title="SageWorks Dashboard",
-        use_pages=True,
-        pages_folder=""
-    )
+    my_app = dash.Dash(__name__, title="SageWorks Dashboard", use_pages=True, pages_folder="")
 
     # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
     my_app.layout = html.Div([page_container])
