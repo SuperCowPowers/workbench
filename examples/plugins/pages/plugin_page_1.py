@@ -39,7 +39,6 @@ if __name__ == "__main__":
         title="SageWorks Dashboard",
         use_pages=True,
         pages_folder="",
-        external_stylesheets=[dbc.themes.DARKLY],
     )
 
     # For Multi-Page Applications, we need to create a 'page container' to hold all the pages

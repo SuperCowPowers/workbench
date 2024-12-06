@@ -17,10 +17,12 @@ from layout import data_sources_layout
 import callbacks
 
 
+# FIXME: Put in logic for ThemeManager
+
 # Create our Dash app
 app = Dash(
     title="SageWorks: Compounds Explorer",
-    external_stylesheets=[dbc.themes.DARKLY],
+    external_stylesheets=[],
 )
 
 # Grab a view that gives us a summary of the FeatureSets in SageWorks

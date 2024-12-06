@@ -137,7 +137,7 @@ if __name__ == "__main__":
 
     # Create our Dash Application
     my_app = dash.Dash(
-        __name__, title="SageWorks Dashboard", use_pages=True, pages_folder="", external_stylesheets=[dbc.themes.DARKLY]
+        __name__, title="SageWorks Dashboard", use_pages=True, pages_folder=""
     )
 
     # For Multi-Page Applications, we need to create a 'page container' to hold all the pages

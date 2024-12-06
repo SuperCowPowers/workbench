@@ -73,7 +73,7 @@ class MyPluginPage:
 
 if __name__ == "__main__":
     # Create a Dash app for testing
-    app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
+    app = dash.Dash(__name__)
 
     # Instantiate the plugin page
     plugin_page = MyPluginPage()

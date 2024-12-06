@@ -70,14 +70,6 @@ class ComponentInterface(ABC):
         self.properties = []
         self.signals = []
 
-        # Store the theme for the Web Component
-        if theme == "DARK":
-            self.theme = dbc.themes.DARKLY
-            self.dark_theme = True
-        else:
-            self.theme = dbc.themes.BOOTSTRAP
-            self.dark_theme = False
-
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
