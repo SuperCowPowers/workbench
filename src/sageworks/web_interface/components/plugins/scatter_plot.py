@@ -267,4 +267,4 @@ if __name__ == "__main__":
     from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ScatterPlot, theme="light").run()
+    PluginUnitTest(ScatterPlot, theme="dark").run()

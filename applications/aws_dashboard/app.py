@@ -12,7 +12,7 @@ from sageworks.utils.theme_manager import ThemeManager
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
 
 # Set up the Theme Manager
-tm = ThemeManager(theme="minty_dark")
+tm = ThemeManager(theme="quartz")
 css_files = tm.css_files()
 print(css_files)
 

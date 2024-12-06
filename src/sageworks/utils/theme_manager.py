@@ -2,7 +2,6 @@ import json
 import logging
 from pathlib import Path
 import plotly.io as pio
-from plotly.colors import sequential
 import dash_bootstrap_components as dbc
 from flask import send_from_directory
 from sageworks.utils.config_manager import ConfigManager
@@ -18,7 +17,7 @@ class ThemeManager:
         "dark": dbc.themes.DARKLY,
         "light": dbc.themes.FLATLY,
         "minty": dbc.themes.MINTY,
-        "minty_dark": dbc.themes.MINTY,
+        "quartz": dbc.themes.QUARTZ,
     }
     _dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
     _available_themes = {}
@@ -108,22 +107,24 @@ class ThemeManager:
         return cls._current_theme_name
 
     @classmethod
-    def colorscale(cls) -> list[list[float | str]]:
+    def colorscale(cls, scale_type: str = "diverging") -> list[list[float | str]]:
         """Get the colorscale for the current theme."""
 
-        # Map themes to Plotly's predefined colorscales
-        theme_to_colorscale = {
-            "dark": sequential.Turbo,  # Bright and colorful for dark themes
-            "light": sequential.Viridis,  # Bright and colorful for light themes
-            "minty": sequential.Greens,  # Shades of green to match "minty"
-            "minty_dark": sequential.Darkmint,  # Dark greens and teals for "minty_dark"
-        }
-
-        # Return the colorscale for the current theme, default to Inferno
-        return theme_to_colorscale.get(cls._current_theme_name, sequential.Inferno)
-
-        # All the dash-bootstrap-templates seem to use the same colorscale (Plasma)
-        # return cls._current_template["data"]["heatmapgl"][0]["colorscale"]
+        # We have 3 colorscale options (diverging, sequential, and sequentialminus)
+        color_scales = cls._current_template["layout"]["colorscale"]
+        if scale_type in color_scales:
+            return color_scales[scale_type]
+        else:
+            # Use the default colorscale (first one in the dictionary)
+            try:
+                first_colorscale_name = list(color_scales.keys())[0]
+                backup_colorscale = color_scales[first_colorscale_name]
+                cls._log.warning(f"Color scale '{scale_type}' not found for template '{cls._current_theme_name}'.")
+                cls._log.warning(f"Using color scale '{backup_colorscale}' instead.")
+                return backup_colorscale
+            except IndexError:
+                cls._log.error(f"No color scales found for template '{cls._current_theme_name}'.")
+                return []
 
     @classmethod
     def css_files(cls) -> list[str]:
