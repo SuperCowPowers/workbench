@@ -63,7 +63,7 @@ class PluginUnitTest:
             [
                 dbc.Container(layout_children, style={"padding": "20px"}, fluid=True, className="dbc dbc-ag-grid"),
             ],
-            **{"data-bs-theme": tm.data_bs_theme()}
+            **{"data-bs-theme": tm.data_bs_theme()},
         )
 
         # Make sure the plugin has a properties attribute (non-empty list of tuples)
