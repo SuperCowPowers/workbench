@@ -136,6 +136,7 @@ class ThemeManager:
     @classmethod
     def register_css_route(cls, app):
         """Register Flask route for custom.css."""
+
         @app.server.route("/custom.css")
         def serve_custom_css():
             theme = cls._available_themes[cls._current_theme_name]

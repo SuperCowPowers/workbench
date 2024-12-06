@@ -3,9 +3,6 @@ from dash import html, Output, Input
 import logging
 import socket
 
-# Import the Path class from the pathlib module
-from pathlib import Path
-
 
 # SageWorks Imports
 from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginInputType
