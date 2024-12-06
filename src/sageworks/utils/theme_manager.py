@@ -22,7 +22,7 @@ class ThemeManager:
     _theme_set = False
     _default_theme = "dark"
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._initialize()  # Initialize class-level state
