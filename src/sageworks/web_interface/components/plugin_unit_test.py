@@ -61,7 +61,7 @@ class PluginUnitTest:
         # self.app.layout = html.Div(layout_children, style={"padding": "20px"}, className="dbc dbc-ag-grid")
         self.app.layout = html.Div(
             [
-                dbc.Container(layout_children, style={"padding": "20px"}, fluid=True, className="dbc dbc-ag-grid"),
+                dbc.Container(layout_children, fluid=True, className="dbc dbc-ag-grid"),
             ],
             **{"data-bs-theme": tm.data_bs_theme()},
         )
