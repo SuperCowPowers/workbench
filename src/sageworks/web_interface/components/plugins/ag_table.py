@@ -32,10 +32,18 @@ class AGTable(PluginInterface):
             AgGrid: The Table Component using AG Grid
         """
         self.component_id = component_id
+
+        # AG Grid configuration for tighter rows and columns
+        grid_options = {
+            "rowSelection": "single",
+            "rowHeight": 30,  # Set tighter row height
+            "headerHeight": 40,  # Set tighter header height
+        }
+
         self.container = AgGrid(
             id=component_id,
             columnSize="sizeToFit",
-            dashGridOptions={"rowSelection": "single"},
+            dashGridOptions=grid_options,
             style={"maxHeight": f"{max_height}px", "overflow": "auto"},
         )
 
