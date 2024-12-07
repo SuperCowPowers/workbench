@@ -10,8 +10,10 @@ from sageworks.web_interface.components.experiments.color_maps import color_map_
 
 # SageWorks Imports
 from sageworks.web_interface.components.component_interface import ComponentInterface
+from sageworks.utils.deprecated_utils import deprecated
 
 
+# @deprecated("v0.9.0", "Use the AGTable plugin instead")
 class Table(ComponentInterface):
     """Data Details Markdown Component"""
 

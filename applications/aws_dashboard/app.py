@@ -1,6 +1,6 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
-from dash import Dash, html, page_container
+from dash import Dash, dcc, html, page_container
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
@@ -13,7 +13,7 @@ from sageworks.utils.theme_manager import ThemeManager
 
 # Set up the Theme Manager
 tm = ThemeManager()
-tm.set_theme("quartz_dark")
+tm.set_theme("dark")
 css_files = tm.css_files()
 print(css_files)
 
@@ -35,6 +35,7 @@ server = app.server
 # app.layout = html.Div([page_container])
 app.layout = html.Div(
     [
+        dcc.Location(id="url", refresh=True),
         dbc.Container([page_container], fluid=True, className="dbc dbc-ag-grid"),
     ],
     **{"data-bs-theme": tm.data_bs_theme()},

@@ -21,7 +21,7 @@ class MainPage(PageView):
         """Refresh the data associated with this page view"""
         self.log.info("MainPage Refresh (does nothing)")
 
-    def incoming_data_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
+    def incoming_data_summary(self, add_hyperlinks: bool = False) -> pd.DataFrame:
         """Get summary data about the AWS Glue Jobs
 
         Args:
@@ -52,7 +52,7 @@ class MainPage(PageView):
         s3_data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return s3_data_df
 
-    def glue_jobs_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
+    def glue_jobs_summary(self, add_hyperlinks: bool = False) -> pd.DataFrame:
         """Get summary data about the AWS Glue Jobs
 
         Args:
@@ -83,7 +83,7 @@ class MainPage(PageView):
         glue_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return glue_df
 
-    def data_sources_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
+    def data_sources_summary(self, add_hyperlinks: bool = False) -> pd.DataFrame:
         """Get summary data about the SageWorks DataSources
 
         Args:
@@ -114,7 +114,7 @@ class MainPage(PageView):
         data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return data_df
 
-    def feature_sets_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
+    def feature_sets_summary(self, add_hyperlinks: bool = False) -> pd.DataFrame:
         """Get summary data about the SageWorks FeatureSets
 
         Args:
@@ -145,7 +145,7 @@ class MainPage(PageView):
         feature_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return feature_df
 
-    def models_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
+    def models_summary(self, add_hyperlinks: bool = False) -> pd.DataFrame:
         """Get summary data about the SageWorks Models
 
         Args:
@@ -176,7 +176,7 @@ class MainPage(PageView):
 
         return model_df
 
-    def endpoints_summary(self, add_hyperlinks: bool = True) -> pd.DataFrame:
+    def endpoints_summary(self, add_hyperlinks: bool = False) -> pd.DataFrame:
         """Get summary data about the SageWorks Endpoints
 
         Args:

@@ -19,24 +19,22 @@ class AGTable(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
 
-    def create_component(self, component_id: str, header_color: str = "rgb(60, 60, 60)", **kwargs) -> AgGrid:
+    def create_component(self, component_id: str, header_color: str = "rgb(60, 60, 60)", max_height: int = 800) -> AgGrid:
         """Create a Table Component without any data.
 
         Args:
             component_id (str): The ID of the web component
             header_color (str): The color of the table header bar
+            max_height (int): The maximum height of the table
         Returns:
             AgGrid: The Table Component using AG Grid
         """
         self.component_id = component_id
         self.container = AgGrid(
             id=component_id,
-            # className="ag-theme-balham-light",
-            # className="ag-theme-balham-dark",
-            className="ag-custom-dark",
             columnSize="sizeToFit",
             dashGridOptions={"rowSelection": "single"},
-            style={"maxHeight": "800px", "overflow": "auto"},
+            style={"maxHeight": f"{max_height}px", "overflow": "auto"},
         )
 
         # Fill in plugin properties
@@ -88,4 +86,4 @@ if __name__ == "__main__":
     from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(AGTable).run()
+    PluginUnitTest(AGTable, theme="quartz_dark").run()
