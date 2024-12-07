@@ -39,5 +39,5 @@ def tag_symbols(tag_list: str) -> str:
 
     # Loop through tags, get the symbol, and add it to the list
     for tag in tag_list:
-        symbol_list.append(health_icons.get(tag, ""))
+        symbol_list.append(health_icons.get(tag, tag))
     return "".join(symbol_list)
