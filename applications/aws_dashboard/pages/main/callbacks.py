@@ -1,7 +1,7 @@
 """Callbacks/Connections for the Main/Front Dashboard Page"""
 
 from datetime import datetime
-from dash import callback, Input, Output
+from dash import callback, Input, Output, callback_context
 from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
@@ -20,11 +20,13 @@ def last_updated():
         return datetime.now().strftime("Last Updated: %Y-%m-%d (%I:%M %p)")
 
 
-# Update the all of the artifact tables
+# Update all of the artifact tables
 def tables_refresh(main_page: MainPage, tables: dict[str, AGTable]):
     # Aggregate all the output properties for all the tables
     @callback(
-        [Output(component_id, prop) for t in tables.values() for component_id, prop in t.properties],  # Aggregate properties
+        [
+            Output(component_id, prop) for t in tables.values() for component_id, prop in t.properties
+        ],  # Aggregate properties
         Input("main_page_refresh", "n_intervals"),
     )
     def _all_tables_update(_n):
@@ -51,15 +53,28 @@ def tables_refresh(main_page: MainPage, tables: dict[str, AGTable]):
         return all_props
 
 
-def setup_navigation_models():
+def navigate_to_subpage(tables: dict[str, AGTable]):
+    """Setup navigation callbacks for all the tables."""
     @callback(
         Output("url", "pathname"),  # Update the URL path
-        Input("main_models", "selectedRows"),  # Trigger on row selection
+        [Input(f"main_{table_id}", "selectedRows") for table_id in tables.keys()],
         prevent_initial_call=True,
     )
-    def navigate_to_models_page(selected_rows):
-        if not selected_rows:
+    def _navigate_to_subpage(*selected_rows_list):
+        # Identify which table triggered the callback
+        ctx = callback_context
+        if not ctx.triggered:
             raise PreventUpdate
-        selected_model_id = selected_rows[0]["uuid"]
-        return f"/models"
-        # return f"/models/{selected_model_id}"  # Navigate to the specific model subpage
+
+        # Get the triggering table's ID
+        triggered_table = ctx.triggered[0]["prop_id"].split(".")[0]
+
+        # Map the triggered table ID to its corresponding subpage
+        for subpage_name, table_id in zip(tables.keys(), tables.keys()):
+            if f"main_{table_id}" == triggered_table:
+                selected_rows = selected_rows_list[list(tables.keys()).index(table_id)]
+                if selected_rows:  # Check if rows are selected
+                    return f"/{subpage_name}"  # Navigate to the respective subpage
+
+        # No selection made in any table
+        raise PreventUpdate
