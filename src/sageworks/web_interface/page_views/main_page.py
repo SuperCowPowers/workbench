@@ -167,8 +167,8 @@ class MainPage(PageView):
         if add_hyperlinks:
             model_df["Model Group"] = model_df["Model Group"].map(lambda x: self.hyperlinks(x, "models", ""))
 
-        # Drop the AWS URL column
-        model_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
+        # Drop some columns
+        model_df.drop(columns=["Ver", "Status", "_aws_url"], inplace=True, errors="ignore")
 
         # Add Health Symbols to the Model Group Name
         if "Health" in model_df.columns:

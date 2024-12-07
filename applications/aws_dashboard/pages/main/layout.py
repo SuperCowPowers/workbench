@@ -23,7 +23,7 @@ def main_layout(
     # Update rate is in seconds (convert to milliseconds)
     update_rate = update_rate * 1000
 
-    # Define the layout with 2 rows and 2 columns
+    # Define the layout with one table per row
     layout = html.Div(
         children=[
             dcc.Interval(id="main_page_refresh", interval=update_rate, n_intervals=0),
@@ -68,43 +68,32 @@ def main_layout(
                     ),
                 ]
             ),
-            # First row with 2 columns
+            # Each table in its own row
             dbc.Row(
                 [
-                    dbc.Col(
-                        [
-                            html.H3("Data Sources", style={"textAlign": "center"}),
-                            data_sources,
-                        ],
-                        width=6,
-                    ),
-                    dbc.Col(
-                        [
-                            html.H3("Feature Sets", style={"textAlign": "center"}),
-                            feature_sets,
-                        ],
-                        width=6,
-                    ),
+                    html.H3("Data Sources", style={"textAlign": "center"}),
+                    data_sources,
                 ],
                 style={"padding": "20px 0px"},
             ),
-            # Second row with 2 columns
             dbc.Row(
                 [
-                    dbc.Col(
-                        [
-                            html.H3("Models", style={"textAlign": "center"}),
-                            models,
-                        ],
-                        width=6,
-                    ),
-                    dbc.Col(
-                        [
-                            html.H3("Endpoints", style={"textAlign": "center"}),
-                            endpoints,
-                        ],
-                        width=6,
-                    ),
+                    html.H3("Feature Sets", style={"textAlign": "center"}),
+                    feature_sets,
+                ],
+                style={"padding": "20px 0px"},
+            ),
+            dbc.Row(
+                [
+                    html.H3("Models", style={"textAlign": "center"}),
+                    models,
+                ],
+                style={"padding": "20px 0px"},
+            ),
+            dbc.Row(
+                [
+                    html.H3("Endpoints", style={"textAlign": "center"}),
+                    endpoints,
                 ],
                 style={"padding": "20px 0px"},
             ),

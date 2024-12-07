@@ -19,30 +19,19 @@ class AGTable(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
 
-    def create_component(
-        self, component_id: str, header_color: str = "rgb(60, 60, 60)", max_height: int = 800
-    ) -> AgGrid:
-        """Create a Table Component without any data.
-
-        Args:
-            component_id (str): The ID of the web component
-            header_color (str): The color of the table header bar
-            max_height (int): The maximum height of the table
-        Returns:
-            AgGrid: The Table Component using AG Grid
-        """
+    def create_component(self, component_id: str, header_color: str = "rgb(60, 60, 60)", max_height: int = 800) -> AgGrid:
+        """Create a Table Component without any data."""
         self.component_id = component_id
 
         # AG Grid configuration for tighter rows and columns
         grid_options = {
             "rowSelection": "single",
-            "rowHeight": 30,  # Set tighter row height
-            "headerHeight": 40,  # Set tighter header height
+            "rowHeight": 30,
+            "headerHeight": 40,
         }
 
         self.container = AgGrid(
             id=component_id,
-            columnSize="sizeToFit",
             dashGridOptions=grid_options,
             style={"maxHeight": f"{max_height}px", "overflow": "auto"},
         )
@@ -59,7 +48,6 @@ class AGTable(PluginInterface):
             (self.component_id, "selectedRows"),
         ]
 
-        # Return the container
         return self.container
 
     def update_properties(self, table_df: pd.DataFrame, **kwargs) -> list:
@@ -81,8 +69,16 @@ class AGTable(PluginInterface):
         # Convert the DataFrame to a list of dictionaries for AG Grid
         table_data = table_df.to_dict("records")
 
-        # Define column definitions based on the DataFrame
-        column_defs = [{"headerName": col, "field": col, "filter": "agTextColumnFilter"} for col in table_df.columns]
+        # Okay the Health and Owner columns are always way too big
+        column_defs = [
+            {
+                "headerName": col,
+                "field": col,
+                "resizable": True,
+                "width": 80 if col in ["Health", "Owner", "Ver"] else None,  # Smaller width for specific columns
+            }
+            for col in table_df.columns
+        ]
 
         # Select the first row by default
         selected_rows = table_df.head(1).to_dict("records")
