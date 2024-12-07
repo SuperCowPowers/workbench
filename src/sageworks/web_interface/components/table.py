@@ -13,7 +13,7 @@ from sageworks.web_interface.components.component_interface import ComponentInte
 from sageworks.utils.deprecated_utils import deprecated
 
 
-# @deprecated("v0.9.0", "Use the AGTable plugin instead")
+@deprecated("v0.9.0")
 class Table(ComponentInterface):
     """Data Details Markdown Component"""
 

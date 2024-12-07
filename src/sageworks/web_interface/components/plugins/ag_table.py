@@ -19,7 +19,9 @@ class AGTable(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
 
-    def create_component(self, component_id: str, header_color: str = "rgb(60, 60, 60)", max_height: int = 800) -> AgGrid:
+    def create_component(
+        self, component_id: str, header_color: str = "rgb(60, 60, 60)", max_height: int = 800
+    ) -> AgGrid:
         """Create a Table Component without any data.
 
         Args:
@@ -64,7 +66,7 @@ class AGTable(PluginInterface):
         """
         log.important(f"Updating Table Plugin with a table dataframe and kwargs: {kwargs}")
 
-        # TEMP: Add Health Symbols to the Model Group Name
+        # Add Health Symbols
         if "Health" in table_df.columns:
             table_df["Health"] = table_df["Health"].map(lambda x: tag_symbols(x))
 
