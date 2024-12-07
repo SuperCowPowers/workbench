@@ -78,6 +78,7 @@ class AGTable(PluginInterface):
 
         # Select the first row by default
         selected_rows = table_df.head(1).to_dict("records")
+        print(f"SELECTED ROWS: {selected_rows}")
 
         # Return the column definitions and table data (must match the plugin properties)
         return [column_defs, table_data, selected_rows]
