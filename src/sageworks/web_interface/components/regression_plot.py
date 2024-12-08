@@ -7,12 +7,22 @@ import plotly.express as px
 # SageWorks Imports
 from sageworks.web_interface.components.component_interface import ComponentInterface
 from sageworks.api import Model
+from sageworks.utils.theme_manager import ThemeManager
 
 
 # This class is basically a specialized version of a Plotly Scatter Plot
 # For heatmaps see (https://plotly.com/python/line-and-scatter/)
 class RegressionPlot(ComponentInterface):
     """Regression Plot Component"""
+
+    def __init__(self):
+        """Initialize the Regression Plot Class"""
+
+        # Initialize the Theme Manager
+        self.theme_manager = ThemeManager()
+
+        # Call the parent class constructor
+        super().__init__()
 
     def create_component(self, component_id: str) -> dcc.Graph:
         # Initialize an empty scatter plot figure
@@ -31,13 +41,6 @@ class RegressionPlot(ComponentInterface):
         # Calculate the distance from the diagonal for each point
         df["prediction_error"] = abs(df["prediction"] - df[actual_col])
 
-        color_scale = [
-            [0, "rgb(64,64,160)"],
-            [0.35, "rgb(48, 140, 140)"],
-            [0.65, "rgb(140, 140, 48)"],
-            [1.0, "rgb(160, 64, 64)"],
-        ]
-
         # Create the scatter plot with bigger dots
         fig = px.scatter(
             df,
@@ -46,13 +49,13 @@ class RegressionPlot(ComponentInterface):
             size="prediction_error",
             size_max=20,
             color="prediction_error",
-            color_continuous_scale=color_scale,
+            color_continuous_scale=self.theme_manager.colorscale(),
         )
 
         # Customize axis labels
         fig.update_layout(
-            xaxis_title=dict(text=actual_col, font=dict(size=18, color="#9999cc")),
-            yaxis_title=dict(text="Prediction", font=dict(size=18, color="#9999cc")),
+            xaxis_title=dict(text=actual_col, font=dict(size=18)),
+            yaxis_title=dict(text="Prediction", font=dict(size=18)),
         )
 
         # Just fine-tuning the dots on the scatter plot
@@ -83,6 +86,9 @@ if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
     from sageworks.api import Model
 
+    tm = ThemeManager()
+    tm.set_theme("quartz")
+
     m = Model("abalone-regression")
     my_inference_run = "model_training"
 
@@ -93,7 +99,7 @@ if __name__ == "__main__":
     fig = reg_plot.update_properties(m, my_inference_run)
 
     # Apply dark theme
-    fig.update_layout(template="plotly_dark")
+    fig.update_layout()
 
     # Show the figure
     fig.show()
