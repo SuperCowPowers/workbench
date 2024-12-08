@@ -26,11 +26,7 @@ class AGTable(PluginInterface):
         self.component_id = component_id
 
         # AG Grid configuration for tighter rows and columns
-        grid_options = {
-            "rowSelection": "single",
-            "rowHeight": 30,
-            "headerHeight": 40
-        }
+        grid_options = {"rowSelection": "single", "rowHeight": 30, "headerHeight": 40}
 
         self.container = AgGrid(
             id=component_id,

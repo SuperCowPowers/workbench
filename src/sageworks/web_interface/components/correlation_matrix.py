@@ -40,17 +40,6 @@ class CorrelationMatrix(ComponentInterface):
             plotly.graph_objs.Figure: A Figure object containing the correlation matrix.
         """
 
-        # A nice color scale for the correlation matrix
-        _color_scale_not_used = [
-            [0, "rgb(64,64,128)"],
-            [0.15, "rgb(48, 120, 120)"],
-            [0.35, "rgb(40, 40, 40)"],
-            [0.5, "rgb(40, 40, 40)"],
-            [0.65, "rgb(40, 40, 40)"],
-            [0.85, "rgb(120, 120, 48)"],
-            [1.0, "rgb(128, 64, 64)"],
-        ]
-
         # Sanity check the data
         if data_source_details is None:
             return self.display_text("No Details Data Found", figure_height=200)
@@ -79,8 +68,10 @@ class CorrelationMatrix(ComponentInterface):
                 z=df,
                 x=x_labels,
                 y=y_labels,
+                xgap=2,  # Add space between cells
+                ygap=2,
                 name="",
-                colorscale=self.theme_manager.colorscale(),
+                colorscale=self.theme_manager.colorscale("diverging"),
                 zmin=-1,
                 zmax=1,
             )
@@ -88,8 +79,8 @@ class CorrelationMatrix(ComponentInterface):
         fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 0}, height=height)
 
         # Now remap the x and y axis labels (so they don't show the index)
-        fig.update_xaxes(tickvals=x_labels, ticktext=df.columns, tickangle=30)
-        fig.update_yaxes(tickvals=y_labels, ticktext=df.index)
+        fig.update_xaxes(tickvals=x_labels, ticktext=df.columns, tickangle=30,  showgrid=False)
+        fig.update_yaxes(tickvals=y_labels, ticktext=df.index, showgrid=False)
 
         # Now we're going to customize the annotations and filter out low values
         label_threshold = 0.3
