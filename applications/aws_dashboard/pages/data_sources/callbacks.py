@@ -1,14 +1,15 @@
 """FeatureSets Callbacks: Callback within the DataSources Web User Interface"""
 
 import dash
-from dash import callback, Output, Input, State
+from dash import callback, Input, Output, State
 import plotly.graph_objects as go
 import pandas as pd
 import logging
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.data_sources_page_view import DataSourcesPageView
-from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
+from sageworks.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
+from sageworks.web_interface.components.plugins.ag_table import AGTable
 
 # Set up logging
 log = logging.getLogger("sageworks")
@@ -18,42 +19,18 @@ log = logging.getLogger("sageworks")
 smart_sample_rows = []
 
 
-def update_data_sources_table(page_view: DataSourcesPageView):
+def data_sources_refresh(page_view: DataSourcesPageView, ds_table: AGTable):
     @callback(
-        [
-            Output("data_sources_table", "columns"),
-            Output("data_sources_table", "data"),
-        ],
+        [Output(component_id, prop) for component_id, prop in ds_table.properties],
         Input("data_sources_refresh", "n_intervals"),
     )
-    def data_sources_update(_n):
+    def _data_sources_refresh(_n):
         """Pull the latest data sources from the DataSourcesPageView and update the table"""
         page_view.refresh()
         data_sources = page_view.data_sources()
         data_sources["uuid"] = data_sources["Name"]
         data_sources["id"] = range(len(data_sources))
-        column_setup_list = table.Table().column_setup(data_sources, markdown_columns=["Name"])
-        return [column_setup_list, data_sources.to_dict("records")]
-
-
-# Highlights the selected row in the table
-def table_row_select(table_name: str):
-    @callback(
-        Output(table_name, "style_data_conditional"),
-        Input(table_name, "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def style_selected_rows(selected_rows):
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-        row_style = [
-            {
-                "if": {"filter_query": "{{id}}={}".format(i)},
-                "backgroundColor": "rgb(80, 80, 80)",
-            }
-            for i in selected_rows
-        ]
-        return row_style
+        return ds_table.update_properties(data_sources)
 
 
 # Updates the data source details and the correlation matrix when a new DataSource is selected
@@ -64,17 +41,16 @@ def update_data_source_details(page_view: DataSourcesPageView):
             Output("data_source_details", "children"),
             Output("data_source_correlation_matrix", "figure", allow_duplicate=True),
         ],
-        Input("data_sources_table", "derived_viewport_selected_row_ids"),
-        State("data_sources_table", "data"),
+        Input("data_sources_table", "selectedRows"),
         prevent_initial_call=True,
     )
-    def generate_data_source_markdown(selected_rows, table_data):
+    def generate_data_source_markdown(selected_rows):
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
 
         # Get the selected row data and grab the uuid
-        selected_row_data = table_data[selected_rows[0]]
+        selected_row_data = selected_rows[0]
         data_source_uuid = selected_row_data["uuid"]
         log.debug(f"DataSource UUID: {data_source_uuid}")
 
@@ -92,26 +68,24 @@ def update_data_source_details(page_view: DataSourcesPageView):
         return [header, details_markdown, corr_figure]
 
 
-def update_data_source_sample_rows(page_view: DataSourcesPageView):
+def update_data_source_sample_rows(page_view: DataSourcesPageView, samples_table: AGTable):
     @callback(
         [
             Output("sample_rows_header", "children"),
-            Output("data_source_sample_rows", "columns"),
-            Output("data_source_sample_rows", "style_data_conditional"),
-            Output("data_source_sample_rows", "data", allow_duplicate=True),
+            Output("data_source_sample_rows", "columnDefs"),
+            Output("data_source_sample_rows", "rowData"),
             Output("data_source_violin_plot", "figure", allow_duplicate=True),
         ],
-        Input("data_sources_table", "derived_viewport_selected_row_ids"),
-        State("data_sources_table", "data"),
+        Input("data_sources_table", "selectedRows"),
         prevent_initial_call=True,
     )
-    def smart_sample_rows_update(selected_rows, table_data):
+    def smart_sample_rows_update(selected_rows):
         global smart_sample_rows
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
 
         # Get the selected row data and grab the uuid
-        selected_row_data = table_data[selected_rows[0]]
+        selected_row_data = selected_rows[0]
         data_source_uuid = selected_row_data["uuid"]
         log.debug(f"DataSource UUID: {data_source_uuid}")
 
@@ -121,10 +95,12 @@ def update_data_source_sample_rows(page_view: DataSourcesPageView):
         # Header Text
         header = f"Sample/Outlier Rows: {data_source_uuid}"
 
-        # The columns need to be in a special format for the DataTable
-        column_setup_list = table.Table().column_setup(smart_sample_rows)
+        # Grab column definitions and row data from our Samples Table
+        [column_defs, _, _] = samples_table.update_properties(smart_sample_rows)
 
-        # We need to update our style_data_conditional to color the outlier groups
+        # We need to update our cellStyle to color the outlier groups
+        # FIXME: Revise this to use the AGTable class (this should be a part of column_defs)
+        """
         color_column = "outlier_group"
         if color_column not in smart_sample_rows.columns:
             style_cells = table.Table().style_data_conditional()
@@ -132,6 +108,8 @@ def update_data_source_sample_rows(page_view: DataSourcesPageView):
             unique_categories = smart_sample_rows[color_column].unique().tolist()
             unique_categories = [x for x in unique_categories if x != "sample"]
             style_cells = table.Table().style_data_conditional(color_column, unique_categories)
+        """
+        style_cells = {}
 
         # Update the Violin Plot with the new smart sample rows
         violin_figure = violin_plots.ViolinPlots().update_properties(
@@ -146,7 +124,7 @@ def update_data_source_sample_rows(page_view: DataSourcesPageView):
         )
 
         # Return the header, columns, style_cell, and the data
-        return [header, column_setup_list, style_cells, smart_sample_rows.to_dict("records"), violin_figure]
+        return [header, column_defs, smart_sample_rows.to_dict("records"), violin_figure]
 
 
 #
@@ -245,7 +223,7 @@ def correlation_matrix_selection():
         Input("data_source_correlation_matrix", "clickData"),
         State("data_source_correlation_matrix", "figure"),
         State("data_source_violin_plot", "figure"),
-        State("data_source_sample_rows", "data"),
+        State("data_source_sample_rows", "rowData"),
         prevent_initial_call=True,
     )
     def update_figure(click_data, corr_figure, violin_figure, sample_rows):
@@ -273,7 +251,7 @@ def reorder_sample_rows():
     regenerate the figure"""
 
     @callback(
-        Output("data_source_sample_rows", "data", allow_duplicate=True),
+        Output("data_source_sample_rows", "rowData", allow_duplicate=True),
         Input("data_source_violin_plot", "selectedData"),
         prevent_initial_call=True,
     )
