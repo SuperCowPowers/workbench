@@ -7,8 +7,8 @@ from .layout import endpoints_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_interface.components import table, endpoint_metric_plots
-from sageworks.web_interface.components.plugins import endpoint_details
+from sageworks.web_interface.components import endpoint_metric_plots
+from sageworks.web_interface.components.plugins import endpoint_details, ag_table
 from sageworks.web_interface.components.plugin_interface import PluginPage
 from sageworks.web_interface.page_views.endpoints_page_view import EndpointsPageView
 from sageworks.utils.plugin_manager import PluginManager
@@ -22,8 +22,9 @@ register_page(
 
 
 # Create a table to display the endpoints
-endpoints_table = table.Table().create_component(
-    "endpoints_table", header_color="rgb(100, 60, 100)", row_select="single", max_height=270
+endpoints_table = ag_table.AGTable()
+endpoints_component = endpoints_table.create_component(
+    "endpoints_table", header_color="rgb(100, 60, 100)", max_height=270
 )
 
 # Create a Markdown component to display the endpoint details
@@ -35,7 +36,7 @@ endpoint_metrics = endpoint_metric_plots.EndpointMetricPlots().create_component(
 
 # Capture our components in a dictionary to send off to the layout
 components = {
-    "endpoints_table": endpoints_table,
+    "endpoints_table": endpoints_component,
     "endpoint_details": endpoint_details_component,
     "endpoint_metrics": endpoint_metrics,
 }
@@ -59,10 +60,9 @@ layout = endpoints_layout(**components)
 endpoints_view = EndpointsPageView()
 
 # Setup our callbacks/connections
-callbacks.update_endpoints_table(endpoints_view)
+callbacks.endpoint_table_refresh(endpoints_view, endpoints_table)
 
 # Callback for the endpoints table
-callbacks.table_row_select("endpoints_table")
 callbacks.update_endpoint_metrics(endpoints_view)
 
 # For all the plugins we have we'll call their update_properties method

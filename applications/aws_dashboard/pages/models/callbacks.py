@@ -33,7 +33,7 @@ def update_model_plot_component():
     @callback(
         Output("model_plot", "figure"),
         Input("model_details-dropdown", "value"),
-        State("models_table", "selectedRows"),
+        Input("models_table", "selectedRows"),
         prevent_initial_call=True,
     )
     def generate_model_plot_figure(inference_run, selected_rows):
