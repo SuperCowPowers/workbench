@@ -140,11 +140,7 @@ if __name__ == "__main__":
 
     # Create the Dash app
     my_app = dash.Dash(
-        __name__,
-        title="SageWorks Dashboard",
-        use_pages=True,
-        external_stylesheets=css_files,
-        pages_folder=""
+        __name__, title="SageWorks Dashboard", use_pages=True, external_stylesheets=css_files, pages_folder=""
     )
     my_app.layout = html.Div(
         [

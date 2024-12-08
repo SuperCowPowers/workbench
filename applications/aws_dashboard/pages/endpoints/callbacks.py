@@ -1,7 +1,7 @@
 """Callbacks for the Endpoints Subpage Web User Interface"""
 
 import logging
-from dash import callback, no_update, Input, Output, State
+from dash import callback, no_update, Input, Output
 from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
