@@ -87,7 +87,7 @@ if __name__ == "__main__":
     from sageworks.api import Model
 
     tm = ThemeManager()
-    tm.set_theme("quartz")
+    tm.set_theme("dark")
 
     m = Model("abalone-regression")
     my_inference_run = "model_training"

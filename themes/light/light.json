@@ -4,7 +4,7 @@
             {
                 "marker": {
                     "line": {
-                        "color": "rgb(17,17,17)",
+                        "color": "white",
                         "width": 0.5
                     },
                     "pattern": {
@@ -19,14 +19,14 @@
         "bar": [
             {
                 "error_x": {
-                    "color": "#f2f5fa"
+                    "color": "#2a3f5f"
                 },
                 "error_y": {
-                    "color": "#f2f5fa"
+                    "color": "#2a3f5f"
                 },
                 "marker": {
                     "line": {
-                        "color": "rgb(17,17,17)",
+                        "color": "white",
                         "width": 0.5
                     },
                     "pattern": {
@@ -41,18 +41,18 @@
         "carpet": [
             {
                 "aaxis": {
-                    "endlinecolor": "#A2B1C6",
-                    "gridcolor": "#506784",
-                    "linecolor": "#506784",
-                    "minorgridcolor": "#506784",
-                    "startlinecolor": "#A2B1C6"
+                    "endlinecolor": "#2a3f5f",
+                    "gridcolor": "#C8D4E3",
+                    "linecolor": "#C8D4E3",
+                    "minorgridcolor": "#C8D4E3",
+                    "startlinecolor": "#2a3f5f"
                 },
                 "baxis": {
-                    "endlinecolor": "#A2B1C6",
-                    "gridcolor": "#506784",
-                    "linecolor": "#506784",
-                    "minorgridcolor": "#506784",
-                    "startlinecolor": "#A2B1C6"
+                    "endlinecolor": "#2a3f5f",
+                    "gridcolor": "#C8D4E3",
+                    "linecolor": "#C8D4E3",
+                    "minorgridcolor": "#C8D4E3",
+                    "startlinecolor": "#2a3f5f"
                 },
                 "type": "carpet"
             }
@@ -411,7 +411,7 @@
             {
                 "marker": {
                     "line": {
-                        "color": "#686dc3"
+                        "color": "#fff"
                     }
                 },
                 "type": "scattergl"
@@ -454,7 +454,7 @@
             {
                 "marker": {
                     "line": {
-                        "color": "#686dc3"
+                        "color": "#fff"
                     }
                 },
                 "type": "scatter"
@@ -526,18 +526,18 @@
             {
                 "cells": {
                     "fill": {
-                        "color": "#506784"
+                        "color": "#EBF0F8"
                     },
                     "line": {
-                        "color": "rgb(17,17,17)"
+                        "color": "white"
                     }
                 },
                 "header": {
                     "fill": {
-                        "color": "#2a3f5f"
+                        "color": "#C8D4E3"
                     },
                     "line": {
-                        "color": "rgb(17,17,17)"
+                        "color": "white"
                     }
                 },
                 "type": "table"
@@ -546,11 +546,11 @@
     },
     "layout": {
         "annotationdefaults": {
-            "arrowcolor": "#f2f5fa",
+            "arrowcolor": "#2a3f5f",
             "arrowhead": 0,
             "arrowwidth": 1,
             "font": {
-                "color": "#fff"
+                "color": "#212529"
             }
         },
         "autotypenumbers": "strict",
@@ -610,47 +610,47 @@
             "sequential": [
                 [
                     0.0,
-                    "#e83283"
+                    "#0d6efd"
                 ],
                 [
                     0.1,
-                    "#f03f7e"
+                    "#286eef"
                 ],
                 [
                     0.2,
-                    "#f84c79"
+                    "#426fe2"
                 ],
                 [
                     0.30000000000000004,
-                    "#ff5974"
+                    "#5d6fd4"
                 ],
                 [
                     0.4,
-                    "#ff666f"
+                    "#786fc7"
                 ],
                 [
                     0.5,
-                    "#ff7469"
+                    "#926fb9"
                 ],
                 [
                     0.6000000000000001,
-                    "#ff8164"
+                    "#ad70ac"
                 ],
                 [
                     0.7000000000000001,
-                    "#ff8e5f"
+                    "#c8709e"
                 ],
                 [
                     0.8,
-                    "#ff9b5a"
+                    "#e37091"
                 ],
                 [
                     0.9,
-                    "#ffa855"
+                    "#fd7083"
                 ],
                 [
                     1.0,
-                    "#ffb550"
+                    "#ff7176"
                 ]
             ],
             "sequentialminus": [
@@ -697,23 +697,23 @@
             ]
         },
         "colorway": [
-            "#e72e84",
-            "#f77f14",
-            "#52e8b5",
-            "#ffef47",
-            "#21a4d3"
+            "#5769fe",
+            "#d93446",
+            "#0a8853",
+            "#f7c200",
+            "#43c9f0"
         ],
         "font": {
-            "color": "#fff",
+            "color": "#212529",
             "family": "system-ui,-apple-system,\"Segoe UI\",Roboto,\"Helvetica Neue\",\"Noto Sans\",\"Liberation Sans\",Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\",\"Noto Color Emoji\""
         },
         "geo": {
-            "bgcolor": "#686dc3",
-            "lakecolor": "#686dc3",
-            "landcolor": "#686dc3",
+            "bgcolor": "#fff",
+            "lakecolor": "#fff",
+            "landcolor": "#fff",
             "showlakes": true,
             "showland": true,
-            "subunitcolor": "#506784"
+            "subunitcolor": "#C8D4E3"
         },
         "hoverlabel": {
             "align": "left",
@@ -723,118 +723,108 @@
         },
         "hovermode": "closest",
         "mapbox": {
-            "style": "dark"
+            "style": "light"
         },
-        "paper_bgcolor": "#686dc3",
-        "plot_bgcolor": "#686dc3",
+        "paper_bgcolor": "#fff",
+        "plot_bgcolor": "#fff",
         "polar": {
             "angularaxis": {
-                "gridcolor": "#506784",
-                "linecolor": "#506784",
+                "gridcolor": "#EBF0F8",
+                "linecolor": "#EBF0F8",
                 "ticks": ""
             },
-            "bgcolor": "rgb(17,17,17)",
+            "bgcolor": "white",
             "radialaxis": {
-                "gridcolor": "#506784",
-                "linecolor": "#506784",
+                "gridcolor": "#EBF0F8",
+                "linecolor": "#EBF0F8",
                 "ticks": ""
             }
         },
         "scene": {
             "xaxis": {
-                "backgroundcolor": "rgb(17,17,17)",
-                "gridcolor": "#506784",
+                "backgroundcolor": "white",
+                "gridcolor": "#DFE8F3",
                 "gridwidth": 2,
-                "linecolor": "#506784",
+                "linecolor": "#EBF0F8",
                 "showbackground": true,
                 "ticks": "",
-                "zerolinecolor": "#C8D4E3"
+                "zerolinecolor": "#EBF0F8"
             },
             "yaxis": {
-                "backgroundcolor": "rgb(17,17,17)",
-                "gridcolor": "#506784",
+                "backgroundcolor": "white",
+                "gridcolor": "#DFE8F3",
                 "gridwidth": 2,
-                "linecolor": "#506784",
+                "linecolor": "#EBF0F8",
                 "showbackground": true,
                 "ticks": "",
-                "zerolinecolor": "#C8D4E3"
+                "zerolinecolor": "#EBF0F8"
             },
             "zaxis": {
-                "backgroundcolor": "rgb(17,17,17)",
-                "gridcolor": "#506784",
+                "backgroundcolor": "white",
+                "gridcolor": "#DFE8F3",
                 "gridwidth": 2,
-                "linecolor": "#506784",
+                "linecolor": "#EBF0F8",
                 "showbackground": true,
                 "ticks": "",
-                "zerolinecolor": "#C8D4E3"
+                "zerolinecolor": "#EBF0F8"
             }
         },
         "shapedefaults": {
             "line": {
-                "color": "#f2f5fa"
+                "color": "#2a3f5f"
             }
-        },
-        "sliderdefaults": {
-            "bgcolor": "#C8D4E3",
-            "bordercolor": "rgb(17,17,17)",
-            "borderwidth": 1,
-            "tickwidth": 0
         },
         "ternary": {
             "aaxis": {
-                "gridcolor": "#506784",
-                "linecolor": "#506784",
+                "gridcolor": "#DFE8F3",
+                "linecolor": "#A2B1C6",
                 "ticks": ""
             },
             "baxis": {
-                "gridcolor": "#506784",
-                "linecolor": "#506784",
+                "gridcolor": "#DFE8F3",
+                "linecolor": "#A2B1C6",
                 "ticks": ""
             },
-            "bgcolor": "rgb(17,17,17)",
+            "bgcolor": "white",
             "caxis": {
-                "gridcolor": "#506784",
-                "linecolor": "#506784",
+                "gridcolor": "#DFE8F3",
+                "linecolor": "#A2B1C6",
                 "ticks": ""
             }
         },
         "title": {
             "x": 0.05
         },
-        "updatemenudefaults": {
-            "bgcolor": "#506784",
-            "borderwidth": 0
-        },
         "xaxis": {
             "automargin": true,
-            "gridcolor": "#7479c8",
-            "linecolor": "#506784",
+            "gridcolor": "#edeeee",
+            "linecolor": "#EBF0F8",
             "ticks": "",
             "title": {
                 "standoff": 15
             },
-            "zerolinecolor": "#7479c8",
+            "zerolinecolor": "#edeeee",
             "zerolinewidth": 2,
             "gridwidth": 0.5
         },
         "yaxis": {
             "automargin": true,
-            "gridcolor": "#7479c8",
-            "linecolor": "#506784",
+            "gridcolor": "#edeeee",
+            "linecolor": "#EBF0F8",
             "ticks": "",
             "title": {
                 "standoff": 15
             },
-            "zerolinecolor": "#7479c8",
+            "zerolinecolor": "#edeeee",
             "zerolinewidth": 2,
             "gridwidth": 0.5
         },
         "piecolorway": [
-            "#e72e84",
-            "#f77f14",
-            "#52e8b5",
-            "#ffef47",
-            "#21a4d3"
+            "#5769fe",
+            "#d93446",
+            "#0a8853",
+            "#f7c200",
+            "#43c9f0"
         ]
     }
 }

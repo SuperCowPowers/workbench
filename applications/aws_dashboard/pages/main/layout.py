@@ -35,7 +35,7 @@ def main_layout(
                             html.A(
                                 "SageWorks Dashboard ",
                                 href="/status",
-                                style={"color": "rgb(200, 200, 200)", "textDecoration": "none"},
+                                style={"textDecoration": "none"},
                             ),
                             html.Span(
                                 f"{sageworks_version}",
@@ -71,28 +71,28 @@ def main_layout(
             # Each table in its own row
             dbc.Row(
                 [
-                    html.H3("Data Sources", style={"textAlign": "center"}),
+                    html.H3("Data Sources", style={"textAlign": "left"}),
                     data_sources,
                 ],
                 style={"padding": "20px 0px"},
             ),
             dbc.Row(
                 [
-                    html.H3("Feature Sets", style={"textAlign": "center"}),
+                    html.H3("Feature Sets", style={"textAlign": "left"}),
                     feature_sets,
                 ],
                 style={"padding": "20px 0px"},
             ),
             dbc.Row(
                 [
-                    html.H3("Models", style={"textAlign": "center"}),
+                    html.H3("Models", style={"textAlign": "left"}),
                     models,
                 ],
                 style={"padding": "20px 0px"},
             ),
             dbc.Row(
                 [
-                    html.H3("Endpoints", style={"textAlign": "center"}),
+                    html.H3("Endpoints", style={"textAlign": "left"}),
                     endpoints,
                 ],
                 style={"padding": "20px 0px"},

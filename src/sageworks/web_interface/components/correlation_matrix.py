@@ -145,7 +145,7 @@ if __name__ == "__main__":
     from sageworks.api.data_source import DataSource
 
     tm = ThemeManager()
-    tm.set_theme("quartz")
+    tm.set_theme("dark")
 
     ds = DataSource("test_data")
     ds_details = ds.details()

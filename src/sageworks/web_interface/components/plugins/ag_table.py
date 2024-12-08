@@ -20,7 +20,7 @@ class AGTable(PluginInterface):
     plugin_input_type = PluginInputType.DATAFRAME
 
     def create_component(
-        self, component_id: str, header_color: str = "rgb(60, 60, 60)", max_height: int = 800
+        self, component_id: str, header_color: str = "rgb(120, 60, 60)", max_height: int = 800
     ) -> AgGrid:
         """Create a Table Component without any data."""
         self.component_id = component_id
@@ -29,7 +29,7 @@ class AGTable(PluginInterface):
         grid_options = {
             "rowSelection": "single",
             "rowHeight": 30,
-            "headerHeight": 40,
+            "headerHeight": 40
         }
 
         self.container = AgGrid(
@@ -78,6 +78,7 @@ class AGTable(PluginInterface):
                 "field": col,
                 "resizable": True,
                 "width": 80 if col in ["Health", "Owner", "Ver"] else None,  # Smaller width for specific columns
+                "cellStyle": {"fontSize": "18px"} if col == "Health" else None,  # Larger font for Health column
             }
             for col in table_df.columns
         ]
@@ -95,4 +96,4 @@ if __name__ == "__main__":
     from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(AGTable, theme="quartz_dark").run()
+    PluginUnitTest(AGTable, theme="quartz").run()

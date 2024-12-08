@@ -411,7 +411,7 @@
             {
                 "marker": {
                     "line": {
-                        "color": "#686dc3"
+                        "color": "#222"
                     }
                 },
                 "type": "scattergl"
@@ -454,7 +454,7 @@
             {
                 "marker": {
                     "line": {
-                        "color": "#686dc3"
+                        "color": "#222"
                     }
                 },
                 "type": "scatter"
@@ -562,96 +562,17 @@
         },
         "colorscale": {
             "diverging": [
-                [
-                    0,
-                    "#8e0152"
-                ],
-                [
-                    0.1,
-                    "#c51b7d"
-                ],
-                [
-                    0.2,
-                    "#de77ae"
-                ],
-                [
-                    0.3,
-                    "#f1b6da"
-                ],
-                [
-                    0.4,
-                    "#fde0ef"
-                ],
-                [
-                    0.5,
-                    "#f7f7f7"
-                ],
-                [
-                    0.6,
-                    "#e6f5d0"
-                ],
-                [
-                    0.7,
-                    "#b8e186"
-                ],
-                [
-                    0.8,
-                    "#7fbc41"
-                ],
-                [
-                    0.9,
-                    "#4d9221"
-                ],
-                [
-                    1,
-                    "#276419"
-                ]
+                [0.0, "rgba(100, 100, 255, 1.0)"],
+                [0.4, "rgba(100, 10, 100, 0.2)"],
+                [0.6, "rgba(100, 10, 100, 0.2)"],
+                [1.0, "rgba(255, 100, 100, 1.0)"]
             ],
             "sequential": [
-                [
-                    0.0,
-                    "#e83283"
-                ],
-                [
-                    0.1,
-                    "#f03f7e"
-                ],
-                [
-                    0.2,
-                    "#f84c79"
-                ],
-                [
-                    0.30000000000000004,
-                    "#ff5974"
-                ],
-                [
-                    0.4,
-                    "#ff666f"
-                ],
-                [
-                    0.5,
-                    "#ff7469"
-                ],
-                [
-                    0.6000000000000001,
-                    "#ff8164"
-                ],
-                [
-                    0.7000000000000001,
-                    "#ff8e5f"
-                ],
-                [
-                    0.8,
-                    "#ff9b5a"
-                ],
-                [
-                    0.9,
-                    "#ffa855"
-                ],
-                [
-                    1.0,
-                    "#ffb550"
-                ]
+                [0.0, "rgba(100, 100, 255, 0.35)"],
+                [0.4, "rgb(100, 240, 100)"],
+                [0.65, "rgb(200, 200, 50)"],
+                [0.85, "rgb(255, 100, 100)"],
+                [1.0, "rgb(255, 100, 100)"]
             ],
             "sequentialminus": [
                 [
@@ -697,20 +618,20 @@
             ]
         },
         "colorway": [
-            "#e72e84",
-            "#f77f14",
-            "#52e8b5",
-            "#ffef47",
-            "#21a4d3"
+            "#324c71",
+            "#b71e1d",
+            "#00bd8b",
+            "#ec9d0e",
+            "#6eaff5"
         ],
         "font": {
             "color": "#fff",
-            "family": "system-ui,-apple-system,\"Segoe UI\",Roboto,\"Helvetica Neue\",\"Noto Sans\",\"Liberation Sans\",Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\",\"Noto Color Emoji\""
+            "family": "Lato,-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,\"Helvetica Neue\",Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\""
         },
         "geo": {
-            "bgcolor": "#686dc3",
-            "lakecolor": "#686dc3",
-            "landcolor": "#686dc3",
+            "bgcolor": "#222",
+            "lakecolor": "#222",
+            "landcolor": "#222",
             "showlakes": true,
             "showland": true,
             "subunitcolor": "#506784"
@@ -718,15 +639,15 @@
         "hoverlabel": {
             "align": "left",
             "font": {
-                "family": "system-ui,-apple-system,\"Segoe UI\",Roboto,\"Helvetica Neue\",\"Noto Sans\",\"Liberation Sans\",Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\",\"Noto Color Emoji\""
+                "family": "Lato,-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,\"Helvetica Neue\",Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\""
             }
         },
         "hovermode": "closest",
         "mapbox": {
             "style": "dark"
         },
-        "paper_bgcolor": "#686dc3",
-        "plot_bgcolor": "#686dc3",
+        "paper_bgcolor": "rgba(0, 0, 0, 0)",
+        "plot_bgcolor": "rgba(0, 0, 0, 0)",
         "polar": {
             "angularaxis": {
                 "gridcolor": "#506784",
@@ -807,34 +728,34 @@
         },
         "xaxis": {
             "automargin": true,
-            "gridcolor": "#7479c8",
+            "gridcolor": "#343434",
             "linecolor": "#506784",
             "ticks": "",
             "title": {
                 "standoff": 15
             },
-            "zerolinecolor": "#7479c8",
+            "zerolinecolor": "#343434",
             "zerolinewidth": 2,
             "gridwidth": 0.5
         },
         "yaxis": {
             "automargin": true,
-            "gridcolor": "#7479c8",
+            "gridcolor": "#343434",
             "linecolor": "#506784",
             "ticks": "",
             "title": {
                 "standoff": 15
             },
-            "zerolinecolor": "#7479c8",
+            "zerolinecolor": "#343434",
             "zerolinewidth": 2,
             "gridwidth": 0.5
         },
         "piecolorway": [
-            "#e72e84",
-            "#f77f14",
-            "#52e8b5",
-            "#ffef47",
-            "#21a4d3"
+            "#324c71",
+            "#b71e1d",
+            "#00bd8b",
+            "#ec9d0e",
+            "#6eaff5"
         ]
     }
 }

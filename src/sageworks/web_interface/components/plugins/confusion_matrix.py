@@ -83,8 +83,8 @@ class ConfusionMatrix(PluginInterface):
                 z=df,
                 x=x_labels,
                 y=y_labels,
-                xgap=2,  # Add space between cells
-                ygap=2,
+                xgap=3,  # Add space between cells
+                ygap=3,
                 colorscale=self.theme_manager.colorscale(),  # Use the current theme's colorscale
             )
         )
@@ -107,6 +107,7 @@ class ConfusionMatrix(PluginInterface):
             automargin=True,  # Automatically manage margins
             title_standoff=20,  # Add space between axis title and labels
             title_font={"size": 18},  # Use theme-defined colors
+            showgrid=False,  # Hide gridlines
         )
 
         # Configure y-axis with dynamic theming
@@ -117,6 +118,7 @@ class ConfusionMatrix(PluginInterface):
             automargin=True,  # Automatically manage margins
             title_standoff=20,  # Add space between axis title and labels
             title_font={"size": 18},  # Use theme-defined colors
+            showgrid=False,  # Hide gridlines
         )
 
         # Add annotations for each cell in the confusion matrix
@@ -183,4 +185,4 @@ if __name__ == "__main__":
 
     # Run the Unit Test on the Plugin
     model = CachedModel("wine-classification")
-    PluginUnitTest(ConfusionMatrix, input_data=model, theme="quartz_dark").run()
+    PluginUnitTest(ConfusionMatrix, input_data=model, theme="dark").run()
