@@ -6,12 +6,22 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.web_interface.components.component_interface import ComponentInterface
+from sageworks.utils.theme_manager import ThemeManager
 
 
 # This class is basically a specialized version of a Plotly Heatmap
 # For heatmaps see (https://plotly.com/python/heatmaps/)
 class CorrelationMatrix(ComponentInterface):
     """Correlation Matrix Component"""
+
+    def __init__(self):
+        """Initialize the Regression Plot Class"""
+
+        # Initialize the Theme Manager
+        self.theme_manager = ThemeManager()
+
+        # Call the parent class constructor
+        super().__init__()
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Correlation Matrix Component without any data.
@@ -31,7 +41,7 @@ class CorrelationMatrix(ComponentInterface):
         """
 
         # A nice color scale for the correlation matrix
-        color_scale = [
+        _color_scale_not_used = [
             [0, "rgb(64,64,128)"],
             [0.15, "rgb(48, 120, 120)"],
             [0.35, "rgb(40, 40, 40)"],
@@ -70,7 +80,7 @@ class CorrelationMatrix(ComponentInterface):
                 x=x_labels,
                 y=y_labels,
                 name="",
-                colorscale=color_scale,
+                colorscale=self.theme_manager.colorscale(),
                 zmin=-1,
                 zmax=1,
             )
@@ -134,6 +144,9 @@ if __name__ == "__main__":
     # This class takes in data details and generates a Correlation Matrix
     from sageworks.api.data_source import DataSource
 
+    tm = ThemeManager()
+    tm.set_theme("quartz")
+
     ds = DataSource("test_data")
     ds_details = ds.details()
 
@@ -144,7 +157,7 @@ if __name__ == "__main__":
     fig = corr_plot.update_properties(ds_details)
 
     # Apply dark theme
-    fig.update_layout(template="plotly_dark")
+    fig.update_layout()
 
     # Show the figure
     fig.show()
